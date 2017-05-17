@@ -61,8 +61,8 @@ struct ScalableMeshGroupDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainM
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
 
         virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
-        virtual bool _IntersectRay(bvector<DPoint3d>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
-
+        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
+        
         //volume calls
 
         virtual DTMStatusInt _ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh) override;
@@ -188,6 +188,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) override;
 
+		virtual void                               _CompactExtraFiles() override {}
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;

@@ -12,6 +12,7 @@
 //#include "DgnTexture.h"
 //#include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
+#include <ScalableMesh\GeoCoords\GCS.h>
 
 namespace BENTLEY_NAMESPACE_NAME
     {
@@ -82,7 +83,14 @@ namespace BENTLEY_NAMESPACE_NAME
             //! @param[in,out] stringBuffer The output buffer for the id string. Must be large enough
             //! to hold the maximal number of decimal digits of UInt64 plus the trailing 0 character.
             //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
-            void ToString(Utf8P stringBuffer) const { BeStringUtilities::FormatUInt64(stringBuffer, m_id); } //BeStringUtilities::FormatUInt64 is faster than sprintf.
+            void ToString(Utf8P stringBuffer) const
+                {
+#ifndef VANCOUVER_API
+                BeStringUtilities::FormatUInt64(stringBuffer, m_id); //BeStringUtilities::FormatUInt64 is faster than sprintf.
+#else
+                sprintf(stringBuffer, "%lld", m_id);
+#endif
+                }
 
                                                                                                              //! Converts this BeInt64Id to its string representation.
                                                                                                              //! @remarks Consider the overload BeInt64Id::ToString(Utf8Char*) if you want
@@ -100,22 +108,26 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
 END_BENTLEY_GEOMETRY_NAMESPACE
 
-DGNPLATFORM_TYPEDEFS(Triangle);
-DGNPLATFORM_TYPEDEFS(TilePolyline);
-DGNPLATFORM_TYPEDEFS(TileMesh);
-DGNPLATFORM_TYPEDEFS(TileMeshBuilder);
-DGNPLATFORM_TYPEDEFS(TileNode);
-//BENTLEY_RENDER_TYPEDEFS(ElementTileNode);
-//BENTLEY_RENDER_TYPEDEFS(ModelTileNode);
-DGNPLATFORM_TYPEDEFS(TileGenerator);
-DGNPLATFORM_TYPEDEFS(TileGeometry);
-DGNPLATFORM_TYPEDEFS(TileDisplayParams);
-DGNPLATFORM_TYPEDEFS(Image);
-DGNPLATFORM_TYPEDEFS(ImageSource);
-DGNPLATFORM_TYPEDEFS(TileTextureImage);
-//BENTLEY_RENDER_TYPEDEFS(ITileGenerationFilter);
-//BENTLEY_RENDER_TYPEDEFS(TileGenerationCache);
-//BENTLEY_RENDER_TYPEDEFS(ITileGenerationProgressMonitor);
+#ifndef VANCOUVER_API
+#define CREATE_TYPEDEFS(_name_) DGNPLATFORM_TYPEDEFS(_name_)
+#else
+#define CREATE_TYPEDEFS(_name_) \
+DGNPLATFORM_TYPEDEFS(_name_); \
+typedef _name_##P _name_##Ptr; \
+typedef _name_##CP _name_##CPtr;
+#endif
+
+CREATE_TYPEDEFS(Triangle);
+CREATE_TYPEDEFS(TilePolyline);
+CREATE_TYPEDEFS(TileMesh);
+CREATE_TYPEDEFS(TileMeshBuilder);
+CREATE_TYPEDEFS(TileNode);
+CREATE_TYPEDEFS(TileGenerator);
+CREATE_TYPEDEFS(TileGeometry);
+CREATE_TYPEDEFS(TileDisplayParams);
+CREATE_TYPEDEFS(Image);
+CREATE_TYPEDEFS(ImageSource);
+CREATE_TYPEDEFS(TileTextureImage);
 
 DGNPLATFORM_REF_COUNTED_PTR(TileMesh);
 DGNPLATFORM_REF_COUNTED_PTR(TileNode);
@@ -147,6 +159,7 @@ enum class TileSource
     None,       //!< No IDs are associated with geometry in the tile
 };
 
+#ifndef VANCOUVER_API
 //=======================================================================================
 //! A stream of bytes in a resizeable buffer. Released on destruction, never gets smaller.
 //! This class is more efficient than bvector<byte> since it does not initialize the memory to zeros.
@@ -226,6 +239,7 @@ struct ByteStream
         uint8_t const& operator[](size_t i) const { return data()[i]; }
         uint8_t& operator[](size_t i) { return data()[i]; }
     };
+#endif
 
 //=======================================================================================
 //! An uncompressed image in Rgb (3 bytes per pixel) or Rgba (4 bytes per pixel) format suitable for rendering.
@@ -246,7 +260,7 @@ struct Image
         void Initialize(uint32_t width, uint32_t height, Format format = Format::Rgb) { m_height = height; m_width = width; m_format = format; ClearData(); }
 
         void ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp);
-        void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
+        //void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
 
     public:
         //! Construct a blank invalid Image
@@ -284,7 +298,7 @@ struct Image
         //! @param[in]      targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
         //! If the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
         //! @return The decompressed Image, or an invalid Image if decompression failed.
-        DGNPLATFORM_EXPORT static Image FromPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat = Format::Rgba);
+        //DGNPLATFORM_EXPORT static Image FromPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat = Format::Rgba);
 
         //! Create an image by resizing a source image.
         //! @param[in] width the width of the image in pixels
@@ -355,7 +369,11 @@ struct TileTextureImage : RefCountedBase
     private:
         ImageSource       m_imageSource;
 
+#ifndef VANCOUVER_API
         static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
+#else
+        static ImageSource Load(TileDisplayParamsCR params);
+#endif
 
         TileTextureImage(ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
         TileTextureImage(ImageSource& imageSource) : m_imageSource (imageSource) { BeAssert(m_imageSource.IsValid()); }
@@ -364,7 +382,11 @@ struct TileTextureImage : RefCountedBase
         static TileTextureImagePtr Create(ImageSource& imageSource) { return new TileTextureImage(imageSource); }
 
         ImageSourceCR GetImageSource() const { return m_imageSource; }
+#ifndef VANCOUVER_API
         static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
+#else
+        static void ResolveTexture(TileDisplayParamsCR params);
+#endif
     };
 
 //=======================================================================================
@@ -482,6 +504,9 @@ public:
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline (TilePolyline polyline) { m_polylines.push_back(polyline); }
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param/*, BeInt64Id entityId*/);
+
+    void ReprojectPoints(GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS);
+    void ApplyTransform(const Transform& transform);
 };
 
 //=======================================================================================
@@ -546,7 +571,12 @@ public:
 
     void AddTriangle(PolyfaceVisitorR visitor, /*DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId,*/ bool doVertexClustering, bool duplicateTwoSidedTriangles);
     void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
+
+#ifndef VANCOUVER_API
     void AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTriangles);
+#else
+    void AddPolyface(PolyfaceQueryCR polyface, bool duplicateTwoSidedTriangles);
+#endif
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);
@@ -580,7 +610,11 @@ private:
     bool                    m_hasTexture;
 
 protected:
+#ifndef VANCOUVER_API
     TileGeometry(TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ bool isCurved, DgnDbR db);
+#else
+    TileGeometry(TransformCR tf, DRange3dCR tileRange, bool isCurved);
+#endif
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
@@ -604,72 +638,83 @@ public:
     bool IsPolyface() const { return _IsPolyface(); }
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
+#ifndef VANCOUVER_API
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an ISolidKernelEntity
     static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, DgnDbR db);
-};
+#else
+    //! Create a TileGeometry for an IGeometry
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved);
+    //! Create a TileGeometry for an ISolidKernelEntity
+    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
+#endif
+    };
 
-//=======================================================================================
-//! Filters elements during TileNode generation. Elements are selected according to their
-//! intersection with a TileNode's range, then tested against the supplied ITileGenerationFilter
-//! to apply additional selection criteria.
-// @bsistruct                                                   Paul.Connelly   09/16
-//=======================================================================================
-struct ITileGenerationFilter
-{
-protected:
-    virtual bool _AcceptElement(DgnElementId elementId) = 0;
-public:
-    //! Invoked for each element in the tile's range. Returns false to exclude the element from the tile geometry, or true to include it.
-    bool AcceptElement(DgnElementId elementId) { return _AcceptElement(elementId); }
-};
+////=======================================================================================
+////! Filters elements during TileNode generation. Elements are selected according to their
+////! intersection with a TileNode's range, then tested against the supplied ITileGenerationFilter
+////! to apply additional selection criteria.
+//// @bsistruct                                                   Paul.Connelly   09/16
+////=======================================================================================
+//struct ITileGenerationFilter
+//{
+//protected:
+//    virtual bool _AcceptElement(DgnElementId elementId) = 0;
+//public:
+//    //! Invoked for each element in the tile's range. Returns false to exclude the element from the tile geometry, or true to include it.
+//    bool AcceptElement(DgnElementId elementId) { return _AcceptElement(elementId); }
+//};
 
-//=======================================================================================
-//! Accepts all elements.
-// @bsistruct                                                   Paul.Connelly   09/16
-//=======================================================================================
-struct UnconditionalTileGenerationFilter : ITileGenerationFilter
-{
-protected:
-    virtual bool _AcceptElement(DgnElementId) override { return true; }
-};
-
-//=======================================================================================
-//! Filters elements according to a set of models and categories.
-// @bsistruct                                                   Paul.Connelly   09/16
-//=======================================================================================
-struct TileModelCategoryFilter : ITileGenerationFilter
-{
-    struct ModelAndCategorySet : BeSQLite::VirtualSet
-        {
-    private:
-        DgnModelIdSet       m_models;
-        DgnCategoryIdSet    m_categories;
-
-        virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const override
-            {
-            return m_models.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_categories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
-            }
-    public:
-        ModelAndCategorySet(DgnModelIdSet const* models, DgnCategoryIdSet const* categories)
-            {
-            if (nullptr != models)      m_models = *models;
-            if (nullptr != categories)  m_categories = *categories;
-            }
-
-        bool IsEmpty() const { return m_models.empty() && m_categories.empty(); }
-        };
-protected:
-    ModelAndCategorySet                     m_set;
-    BeSQLite::EC::CachedECSqlStatementPtr   m_stmt;
-
-    DGNPLATFORM_EXPORT virtual bool _AcceptElement(DgnElementId elementId) override;
-public:
-    DGNPLATFORM_EXPORT TileModelCategoryFilter(DgnDbR dgndb, DgnModelIdSet const* modelIds, DgnCategoryIdSet const* categoryIds);
-
-    bool IsEmpty() const { return m_set.IsEmpty(); }
-};
+////=======================================================================================
+////! Accepts all elements.
+//// @bsistruct                                                   Paul.Connelly   09/16
+////=======================================================================================
+//struct UnconditionalTileGenerationFilter : ITileGenerationFilter
+//{
+//protected:
+//    virtual bool _AcceptElement(DgnElementId) override { return true; }
+//};
+//
+////=======================================================================================
+////! Filters elements according to a set of models and categories.
+//// @bsistruct                                                   Paul.Connelly   09/16
+////=======================================================================================
+//struct TileModelCategoryFilter : ITileGenerationFilter
+//{
+//    struct ModelAndCategorySet : BeSQLite::VirtualSet
+//        {
+//    private:
+//        DgnModelIdSet       m_models;
+//        DgnCategoryIdSet    m_categories;
+//
+//        virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const override
+//            {
+//            return m_models.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_categories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
+//            }
+//    public:
+//        ModelAndCategorySet(DgnModelIdSet const* models, DgnCategoryIdSet const* categories)
+//            {
+//            if (nullptr != models)      m_models = *models;
+//            if (nullptr != categories)  m_categories = *categories;
+//            }
+//
+//        bool IsEmpty() const { return m_models.empty() && m_categories.empty(); }
+//        };
+//protected:
+//    ModelAndCategorySet                     m_set;
+//    BeSQLite::EC::CachedECSqlStatementPtr   m_stmt;
+//
+//    DGNPLATFORM_EXPORT virtual bool _AcceptElement(DgnElementId elementId) override;
+//public:
+//#ifndef VANCOUVER_API
+//    DGNPLATFORM_EXPORT TileModelCategoryFilter(DgnDbR dgndb, DgnModelIdSet const* modelIds, DgnCategoryIdSet const* categoryIds);
+//#else
+//    DGNPLATFORM_EXPORT TileModelCategoryFilter(DgnModelIdSet const* modelIds, DgnCategoryIdSet const* categoryIds);
+//#endif
+//
+//    bool IsEmpty() const { return m_set.IsEmpty(); }
+//};
 
 ////=======================================================================================
 ////! Filters elements according to the viewed models and categories associated with a

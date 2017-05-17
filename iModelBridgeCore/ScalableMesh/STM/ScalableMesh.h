@@ -323,6 +323,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) override;
 
+		virtual void                               _CompactExtraFiles() override;
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
@@ -503,6 +504,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             {
             return;
             }
+		virtual void                               _CompactExtraFiles() override {}
 
         virtual bool                               _ShouldInvertClips() override { return false; }
 

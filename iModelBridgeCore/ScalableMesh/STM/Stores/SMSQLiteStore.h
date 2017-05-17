@@ -12,6 +12,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         DRange3d m_totalExtent;
         GeoCoordinates::BaseGCSCPtr m_cs;
         IDTMSourceCollection m_sources;
+        HFCPtr<HRFRASTERFILE> m_streamingRasterFile;
         HFCPtr<HRARASTER> m_raster;
         SMIndexMasterHeader<EXTENT> m_masterHeader;
 
@@ -37,6 +38,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
 
         virtual void SaveProjectFiles() override;
+
+		virtual void CompactProjectFiles() override;
 
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
         

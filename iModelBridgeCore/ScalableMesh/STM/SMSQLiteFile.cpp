@@ -185,7 +185,7 @@ bool SMSQLiteFile::UpdateDatabase()
         }
     #endif
     assert(!"ERROR - Unknown database schema version");
-    return false;
+    return true; //for now, allow opening more recent versions
     }
 
 
@@ -212,7 +212,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
         assert(result == BE_SQLITE_OK);
-        
+
         if (result == BE_SQLITE_OK)
         {
             UpdateDatabase();
@@ -1559,24 +1559,25 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         while (stmtSequence->Step() == BE_SQLITE_ROW)
             {
             ImportCommandData data;
-            if (!stmt->IsColumnNull(0))
+            
+            if (!stmtSequence->IsColumnNull(0))
                 {
-                data.sourceLayerID = stmt->GetValueInt(0);
+                data.sourceLayerID = stmtSequence->GetValueInt(0);
                 data.sourceLayerSet = true;
                 }
-            if (!stmt->IsColumnNull(1))
+            if (!stmtSequence->IsColumnNull(1))
                 {
-                data.targetLayerID = stmt->GetValueInt(1);
+                data.targetLayerID = stmtSequence->GetValueInt(1);
                 data.targetLayerSet = true;
                 }
-            if (!stmt->IsColumnNull(2))
+            if (!stmtSequence->IsColumnNull(2))
                 {
-                data.sourceTypeID = stmt->GetValueInt(2);
+                data.sourceTypeID = stmtSequence->GetValueInt(2);
                 data.sourceTypeSet = true;
                 }
-            if (!stmt->IsColumnNull(3))
+            if (!stmtSequence->IsColumnNull(3))
                 {
-                data.targetTypeID = stmt->GetValueInt(3);
+                data.targetTypeID = stmtSequence->GetValueInt(3);
                 data.targetTypeSet = true;
                 }
             sequenceData.push_back(data);
@@ -1629,3 +1630,11 @@ bool SMSQLiteFile::SetSingleFile(bool isSingleFile)
     return ((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
 }
 
+void SMSQLiteFile::Compact()
+{
+	m_database->SaveChanges();
+	Savepoint* savepoint = m_database->GetSavepoint(0);
+	savepoint->Commit(nullptr);
+	m_database->TryExecuteSql("VACUUM");
+	savepoint->Begin();
+}

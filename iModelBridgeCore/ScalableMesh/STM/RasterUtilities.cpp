@@ -18,11 +18,14 @@
 #include <ImagePP/all/h/HCPGCoordUtility.h>
 //#include <ImagePP/all/h/HRFVirtualEarthFile.h>
 #include <ImagePP/all/h/HRFVirtualEarthFile.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
 
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 HPMPool* RasterUtilities::s_rasterMemPool = nullptr;
+
+static bool s_useMapBox = true;
 
 HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     {
@@ -31,9 +34,11 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 
 #ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {    
-        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
-        //pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
+        {   
+        if (s_useMapBox)
+            pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        else
+            pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
         }
     else
 #endif
@@ -42,6 +47,14 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
         }
 
     pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
+
+#ifndef VANCOUVER_API
+    if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+        {
+        //pRasterFile = new HRFRasterFileCache(pRasterFile, HRFiTiffCacheFileCreator::GetInstance());
+        }
+#endif
+
     return pRasterFile;
     }
 
@@ -59,7 +72,7 @@ HGFHMRStdWorldCluster* RasterUtilities::GetWorldCluster()
 HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
     {
     if (s_rasterMemPool == nullptr)
-        s_rasterMemPool = new HPMPool(30000, HPMPool::None);
+        s_rasterMemPool = new HPMPool(300000, HPMPool::None);
     auto cluster = GetWorldCluster();
 
     HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
@@ -81,9 +94,16 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
 
 HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
     {
+    HFCPtr<HRFRasterFile> rasterFile;
+
+    return LoadRaster(rasterFile, path, targetCS, extentInTargetCS);
+    }
+
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
+    {
 
     if (s_rasterMemPool == nullptr)
-        s_rasterMemPool = new HPMPool(30000, HPMPool::None);
+        s_rasterMemPool = new HPMPool(300000, HPMPool::None);
     auto cluster = GetWorldCluster();
 
     HFCPtr<HRSObjectStore> pObjectStore;
@@ -194,6 +214,8 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DR
     HVEShape imageReprojectShape(imageExtent);
     rasterSource->SetShape(imageReprojectShape);
 
+    rasterFile = pRasterFile;
+
     return rasterSource;
 
    /*
@@ -208,10 +230,11 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DR
 StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster)
     {
     HFCMatrix<3, 3> transfoMatrix;
-
+/*
     if (textureResolution != nullptr)
         transfoMatrix[0][0] = *textureResolution;
     else
+*/
         transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
 
 
@@ -220,10 +243,11 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
     transfoMatrix[0][1] = 0;
     transfoMatrix[0][2] = area.low.x;
     transfoMatrix[1][0] = 0;
-
+/*
     if (textureResolution != nullptr)
         transfoMatrix[1][1] = -*textureResolution;
     else
+*/
         transfoMatrix[1][1] = -(area.high.y - area.low.y) / height;
 
     transfoMatrix[1][2] = area.high.y;

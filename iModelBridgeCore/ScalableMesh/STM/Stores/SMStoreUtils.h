@@ -1,20 +1,16 @@
 #pragma once
 
-#include <ImagePP\h\ImageppAPI.h>
-#include <ImagePP\h\ImagePPClassId.h>
-#include <ImagePP\all\h\HPMDataStore.h>
-#include <ImagePP\all\h\HCDPacket.h>
-#include <ImagePP\all\h\HFCAccessMode.h>
-#include <ImagePP\all\h\HRARaster.h>
+#include "../ImagePPHeaders.h"
 
 #include "ISMDataStore.h"
 #include "../SMSQLiteFile.h"
 
 #ifndef HRARASTER
 #ifndef VANCOUVER_API
-
+#define HRFRASTERFILE ImagePP::HRFRasterFile
 #define HRARASTER ImagePP::HRARaster
 #else
+#define HRFRASTERFILE HRFRasterFile
 #define HRARASTER HRARaster
 #endif
 #endif

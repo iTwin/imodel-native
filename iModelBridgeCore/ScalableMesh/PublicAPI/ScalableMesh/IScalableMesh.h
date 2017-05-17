@@ -246,6 +246,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) = 0;
 
+		virtual void                              _CompactExtraFiles() = 0;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) = 0;
 
@@ -429,6 +430,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   GetIsClipActive(uint64_t id, bool& isActive);
 
         BENTLEY_SM_EXPORT void                   GetClipType(uint64_t id, SMNonDestructiveClipType& type);
+
+		BENTLEY_SM_EXPORT void                   CompactExtraFiles();
 
         BENTLEY_SM_EXPORT void                   GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes);
 

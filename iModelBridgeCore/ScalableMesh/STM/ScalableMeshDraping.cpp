@@ -1215,6 +1215,7 @@ double DrapeLine3d(bvector<DPoint3d>& pts, const IScalableMeshNodePtr& node, DPo
                 DSegment3d projectSegment = DSegment3d::FromOriginAndDirection(firstPt, direction);
                 seg.ClosestApproachUnbounded(params[0], tmpParam, pt, tmpPt, seg, projectSegment);
                 seg.point[0] = pt;
+				origSeg.PointToFractionParameter(params[0], seg.point[0]);
                 }
             if (params[1] >= 1 + 1e-8)
                 {
@@ -1223,6 +1224,7 @@ double DrapeLine3d(bvector<DPoint3d>& pts, const IScalableMeshNodePtr& node, DPo
                 DSegment3d projectSegment = DSegment3d::FromOriginAndDirection(secondPt, direction);
                 seg.ClosestApproachUnbounded(params[1], tmpParam, pt, tmpPt, seg, projectSegment);
                 seg.point[1] = pt;
+				origSeg.PointToFractionParameter(params[1], seg.point[1]);
                 }
             orderedSegments.insert(make_bpair(params[0], seg));
             }

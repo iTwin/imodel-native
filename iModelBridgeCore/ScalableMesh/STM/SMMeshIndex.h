@@ -672,7 +672,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return SMMemoryPool::GetInstance();
         }               
 
-    void         Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
+    void         Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS);
 
     void         ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue);
 
@@ -854,7 +854,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
                         
-        StatusInt           Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
+        StatusInt           Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS);
 
         StatusInt           SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
 
