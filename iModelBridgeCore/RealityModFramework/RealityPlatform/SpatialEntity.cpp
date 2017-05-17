@@ -334,6 +334,12 @@ SpatialEntityMetadata::SpatialEntityMetadata(Utf8CP filePath, SpatialEntityMetad
     if (metadataSeed.GetKeywords().size() > 0)
         m_keywords = metadataSeed.GetKeywords();
 
+    if (metadataSeed.GetMetadataUrl().size() > 0)
+        m_metadataUrl = metadataSeed.GetMetadataUrl();
+
+    if (metadataSeed.GetDisplayStyle().size() > 0)
+        m_displayStyle = metadataSeed.GetDisplayStyle();
+
 
     BeXmlStatus xmlStatus = BEXML_Success;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filePath, NULL);
@@ -371,6 +377,8 @@ SpatialEntityMetadata::SpatialEntityMetadata(SpatialEntityMetadataCR metadataSee
     m_keywords = metadataSeed.GetKeywords();
 
     m_metadataUrl = metadataSeed.GetMetadataUrl();
+
+    m_displayStyle = metadataSeed.GetDisplayStyle();
     }
 
 //-------------------------------------------------------------------------------------

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Bentley.Collections;
 using Bentley.EC.Persistence.Query;
 using Bentley.EC.PluginBuilder;
 using Bentley.EC.PluginBuilder.Modules;
@@ -15,7 +14,7 @@ using IndexECPlugin.Tests.Common;
 using NUnit.Framework;
 using Rhino.Mocks;
 
-namespace IndexECPlugin.Tests.Tests
+namespace IndexECPlugin.Tests.Tests.Helpers
     {
     [TestFixture]
     class PackagerTests

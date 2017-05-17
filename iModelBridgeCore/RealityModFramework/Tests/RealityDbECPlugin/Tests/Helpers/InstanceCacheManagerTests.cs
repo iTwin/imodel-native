@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
@@ -14,7 +11,7 @@ using NUnit.Framework;
 using Rhino.Mocks;
 using Rhino.Mocks.Constraints;
 
-namespace IndexECPlugin.Tests.Tests
+namespace IndexECPlugin.Tests.Tests.Helpers
     {
     [TestFixture]
     class InstanceCacheManagerTests

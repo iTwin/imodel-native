@@ -297,18 +297,18 @@ void RDSUser::WrapUp(UserManager* owner)
 
 CURL* RDSUser::ListRealityData()
     {
-    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 25);
+    RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 25);
 
-    enterpriseReq.SetFilter(RealityDataFilterCreator::FilterBySize(100, 100000));
+    organizationReq.SetFilter(RealityDataFilterCreator::FilterBySize(100, 100000));
 
     m_correspondance.response.clear();
-    m_correspondance.req.url = enterpriseReq.GetHttpRequestString();
-    m_correspondance.req.headers = enterpriseReq.GetRequestHeaders();
-    m_correspondance.req.payload = enterpriseReq.GetRequestPayload();
+    m_correspondance.req.url = organizationReq.GetHttpRequestString();
+    m_correspondance.req.headers = organizationReq.GetRequestHeaders();
+    m_correspondance.req.payload = organizationReq.GetRequestPayload();
 
     m_correspondance.id = m_stats->LogRequest("List Reality Data");
 
-    return WSGRequest::GetInstance().PrepareRequest(enterpriseReq, m_correspondance.response, false, nullptr);
+    return WSGRequest::GetInstance().PrepareRequest(organizationReq, m_correspondance.response, false, nullptr);
     }
 
 void RDSUser::ValidateListRealityData(int activeUsers)

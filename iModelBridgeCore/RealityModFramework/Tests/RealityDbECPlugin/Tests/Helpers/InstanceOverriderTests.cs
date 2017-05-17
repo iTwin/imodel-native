@@ -1,23 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Bentley.EC.Persistence;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
-using Bentley.ECObjects.XML;
 using IndexECPlugin.Source;
 using IndexECPlugin.Source.Helpers;
 using IndexECPlugin.Tests.Common;
 using NUnit.Framework;
 using Rhino.Mocks;
 
-namespace IndexECPlugin.Tests
+namespace IndexECPlugin.Tests.Tests.Helpers
     {
     [TestFixture]
     class InstanceOverriderTests
