@@ -1016,10 +1016,8 @@ ViewFlagsOverrides Root::_GetViewFlagsOverrides() const
     {
     ViewFlagsOverrides flags;
 
-#ifdef NOTNOW
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     flags.SetShowVisibleEdges(false);
-#endif
     flags.SetShowTextures(true);
     flags.SetShowShadows(false);
     flags.SetShowCameraLights(false);

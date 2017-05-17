@@ -20,43 +20,6 @@ struct MeshEdgesBuilder
 {
 private:
 
-#ifdef QUANTIZE
-    struct  PointComparator 
-        {
-        bool operator()(Point3dCR lhs, Point3dCR rhs) const
-            {
-            COMPARE_VALUES(lhs.x, rhs.x);
-            COMPARE_VALUES(lhs.y, rhs.y);
-            return lhs.z < rhs.z; 
-            }
-        };
-
-    struct  PointMap : bmap<FPoint3d, uint32_t, PointComparator> 
-        {
-        PointMap(DRange3dCR range) : m_range(range), m_delta(range.DiagonalVector()) { }
-
-        uint32_t        m_next = 0;
-        DRange3dCR      m_range;
-
-        uint32_t GetIndex(FPoint3d point)
-            {
-            Point3d iPoint;
-
-            iPoint.x = (uint32_t) (.5 + (value.x - range.low.x) * s_quantizeRangeScale / diagonal.x); 
-            iPoint.y = (uint16_t) (.5 + (value.y - range.low.y) * s_quantizeRangeScale / diagonal.y); 
-            iPoint.z = (uint16_t) (.5 + (value.z - range.low.z) * s_quantizeRangeScale / diagonal.z); 
-
-            Point3d iPoint = ((int32_t) 0x7
-
-            auto insertPair = Insert(point, m_next);
-            if (insertPair.second)
-                m_next++;
-
-            return insertPair.first->second;
-            }
-        };
-
-#else
     struct  PointComparator 
         {
         bool operator()(FPoint3d const& lhs, FPoint3d const& rhs) const
@@ -83,7 +46,6 @@ private:
             return insertPair.first->second;
             }
         };
-#endif
 
 
     struct  EdgeInfo
