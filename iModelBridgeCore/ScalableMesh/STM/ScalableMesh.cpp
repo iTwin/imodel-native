@@ -2932,14 +2932,14 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 
     auto& modelInfo = dgnModel->AsDgnModelCP()->GetModelInfo();
     DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
+    DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
+    smGCS->UorsFromCartesian(scale, scale);
+    scale.DifferenceOf(scale, globalOrigin);
+    computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+        0, scale.y, 0, globalOrigin.y,
+        0, 0, scale.z, globalOrigin.z);
     if (smGCS != nullptr && !targetCS.IsEquivalent(*smGCS))
         {
-        DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
-        smGCS->UorsFromCartesian(scale, scale);
-        scale.DifferenceOf(scale, globalOrigin);
-        computedTransform = Transform::FromRowValues(scale.x,       0,       0, globalOrigin.x,
-                                                           0, scale.y,       0, globalOrigin.y,
-                                                           0,       0, scale.z, globalOrigin.z);
 
         DRange3d smExtent, smExtentUors;
         this->GetRange(smExtent);
