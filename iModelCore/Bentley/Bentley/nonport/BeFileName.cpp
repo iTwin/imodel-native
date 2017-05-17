@@ -1661,8 +1661,21 @@ BeFileNameStatus BeFileName::BeMoveFile(WCharCP source, WCharCP target, int numR
             return  BeFileNameStatus::Success;
 
 #elif defined (__unix__)
+        Utf8String sourceA(source);
+        Utf8String targetA(target);
 
-        if (0 == rename(toUtf8(source).c_str(), toUtf8(target).c_str()))
+        if (sourceA.empty() || targetA.empty())
+            return BeFileNameStatus::IllegalName;
+
+        auto lastChar = sourceA.begin() + sourceA.size() - 1;
+        if (*lastChar == '/')
+            sourceA.erase(lastChar);
+
+        lastChar = targetA.begin() + targetA.size() - 1;
+        if (*lastChar == '/')
+            targetA.erase(lastChar);
+
+        if (0 == rename(sourceA.c_str(), targetA.c_str()))
             return  BeFileNameStatus::Success;
 
 #else

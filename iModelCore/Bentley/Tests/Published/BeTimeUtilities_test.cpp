@@ -5,9 +5,6 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#if defined (BENTLEY_WIN32)
-#include <windows.h>
-#endif
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/bmap.h>
@@ -174,7 +171,7 @@ TEST(BeTimeUtilitiesTests, AdjustUnixMillisForLocalTime)
                 dateTimeTemp.GetMinute(), dateTimeTemp.GetSecond(), dateTimeTemp.GetMillisecond());
     ASSERT_EQ(BentleyStatus::SUCCESS, dateTimeUtc.ToUnixMilliseconds(retUtcMillis));
     ASSERT_EQ(BentleyStatus::SUCCESS, dateTimeLocal.ToUnixMilliseconds(retLocalMillis));
-    uint64_t localMillis = static_cast <uint64_t>(retLocalMillis - retUtcMillis);
+    int64_t localMillis = retLocalMillis - retUtcMillis;
 
     uint64_t actualMillis = 1095379199000;
     uint64_t expectedMillis = 1095379199000 + localMillis;
