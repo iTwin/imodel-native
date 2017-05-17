@@ -1313,6 +1313,8 @@ void StdFormatSet::StdInit()
     cvs = new CompositeValueSpec("FT", "IN");
     cvs->SetUnitLabels("'", "\"");
     AddFormat("AmerFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "fi8");
+    AddFormat("AmerFI16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), cvs, "fi16");
+
     cvs = new CompositeValueSpec("YRD", "FT", "IN");
     cvs->SetUnitLabels("yrd(s)", "'", "\"");
     AddFormat("AmerYFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "yfi8");

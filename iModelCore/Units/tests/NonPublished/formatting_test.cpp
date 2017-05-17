@@ -103,6 +103,25 @@ public:
         EXPECT_STREQ (aliased, fug.ToText(true).c_str());
         }
 
+    static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat)
+        {
+        BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+        if (nullptr == unit)
+            {
+            LOG.infov("Invalid UOM: >%s<", uom);
+            return;
+            }
+        BEU::Quantity const q = BEU::Quantity(dval, *unit);
+        FormatUnitSet fus = FormatUnitSet(fusFormat, fusUnit);
+        if (fus.HasProblem())
+            {
+            LOG.infov("Invalid Formatting Set: >%s< or unit: >%s<", fus.GetProblemDescription());
+            return;
+            }
+
+        Utf8String fmtQ = fus.FormatQuantity(q);
+        LOG.infov("%f of %s = %s", dval, uom, fmtQ.c_str());
+        }
     };
 
 TEST(FormattingTest, Preliminary)
@@ -143,6 +162,9 @@ TEST(FormattingTest, Preliminary)
     else
         LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText().c_str());
 
+    FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi8");
+    FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi16");
+    FormattingTestFixture::ShowQuantity(20.0, "M", "FT", "fi8");
 
     /*LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
@@ -287,6 +309,7 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("546yrd(s) 2' 5\"", NumericFormatSpec::StdFormatQuantity("yfi8", distM).c_str());
     EXPECT_STREQ ("1640' 5\"", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());
 
+  
     BEU::Quantity ang90 = BEU::Quantity(89.9999999986, *degUOM);
     LOG.infov("DMS-90 %s", NumericFormatSpec::StdFormatQuantity("AngleDMS", ang90).c_str());
 
