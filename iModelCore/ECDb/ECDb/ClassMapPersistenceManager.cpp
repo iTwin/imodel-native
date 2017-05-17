@@ -111,8 +111,9 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
         if (tphInfo.GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::No)
             stmt->BindInt(3, Enum::ToInt(tphInfo.GetShareColumnsMode()));
 
+        //uint32_t are persisted as int64 to not lose unsigned-ness
         if (!tphInfo.GetMaxSharedColumnsBeforeOverflow().IsNull())
-            stmt->BindInt(4, (int) tphInfo.GetMaxSharedColumnsBeforeOverflow().Value());
+            stmt->BindInt64(4, (int64_t) tphInfo.GetMaxSharedColumnsBeforeOverflow().Value());
 
         if (tphInfo.GetJoinedTableInfo() != JoinedTableInfo::None)
             stmt->BindInt(5, Enum::ToInt(tphInfo.GetJoinedTableInfo()));
@@ -199,8 +200,9 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         {
         const TablePerHierarchyInfo::ShareColumnsMode shareColumnsMode = stmt->IsColumnNull(1) ? TablePerHierarchyInfo::ShareColumnsMode::No : Enum::FromInt<TablePerHierarchyInfo::ShareColumnsMode>(stmt->GetValueInt(1));
         Nullable<uint32_t> maxSharedColumnsBeforeOverflow;
+        //uint32_t are persisted as int64 to not lose unsigned-ness
         if (!stmt->IsColumnNull(2))
-            maxSharedColumnsBeforeOverflow = Nullable<uint32_t>((uint32_t) stmt->GetValueInt(2));
+            maxSharedColumnsBeforeOverflow = Nullable<uint32_t>((uint32_t) stmt->GetValueInt64(2));
 
         const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(3) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(3));
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(shareColumnsMode, maxSharedColumnsBeforeOverflow, joinedTableInfo));

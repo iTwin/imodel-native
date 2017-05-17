@@ -57,6 +57,28 @@ BentleyStatus SchemaWriter::ValidateSchemasPreImport(bvector<ECSchemaCP> const& 
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ValidateSchemasPostImport() const
     {
+ /*  PERFLOG_START("ECDb", "ValidateSchemasPostImport");
+
+   /* Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT s.Name, c.Name FROM ec_Class c INNER JOIN ec_Schema s ON s.Id=c.SchemaId "
+                                     "INNER JOIN ec_ClassMap cm ON cm.ClassId=c.Id "
+                                     "LEFT JOIN ec_Property p ON p.NavigationRelationshipClassId=c.Id "
+                                     "LEFT JOIN ec_ClassHasBaseClasses bc ON c.Id=bc.ClassId "
+                                     "WHERE p.Id IS NULL AND bc.BaseClassId IS NULL AND cm.MapStrategy IN(" SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable ")"))
+        return ERROR;
+
+
+    bool isValid = true;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        isValid = false;
+        if (Issues().IsEnabled())
+            Issues().Report("Failed to import ECRelationshipClass '%s:%s'. A navigation property must be defined for it.", stmt.GetValueText(0), stmt.GetValueText(1));
+        }
+    PERFLOG_FINISH("ECDb", "ValidateSchemasPostImport");
+
+    return isValid ? SUCCESS : ERROR;
+    */
     return SUCCESS;
     }
 
@@ -537,7 +559,7 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(ECClassId relClassId, E
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, uint32_t ordinal)
+BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ordinal)
     {
     //Local properties are expected to not be imported at this point as they get imported along with their class.
     BeAssert(!m_ecdb.Schemas().GetReader().GetPropertyId(ecProperty).IsValid());
@@ -668,12 +690,13 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, uint32_
                 return ERROR;
             }
 
-        if (BE_SQLITE_OK != stmt->BindInt(arrayMinIndex, (int) arrayProp->GetMinOccurs()))
+        //uint32_t are persisted as int64 to not lose the unsigned-ness.
+        if (BE_SQLITE_OK != stmt->BindInt64(arrayMinIndex, (int64_t) arrayProp->GetMinOccurs()))
             return ERROR;
 
         //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
         //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
-        if (BE_SQLITE_OK != stmt->BindInt(arrayMaxIndex, (int) arrayProp->GetStoredMaxOccurs()))
+        if (BE_SQLITE_OK != stmt->BindInt64(arrayMaxIndex, (int64_t) arrayProp->GetStoredMaxOccurs()))
             return ERROR;
 
         }
@@ -759,10 +782,14 @@ BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(ECRelationshipCons
     if (BE_SQLITE_OK != stmt->BindInt(3, (int) endpoint))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(4, relationshipConstraint.GetMultiplicity().GetLowerLimit()))
+    //uint32_t are persisted as int64 to not lose the unsigned-ness.
+    if (BE_SQLITE_OK != stmt->BindInt64(4, (int64_t) relationshipConstraint.GetMultiplicity().GetLowerLimit()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(5, relationshipConstraint.GetMultiplicity().GetUpperLimit()))
+    //uint32_t are persisted as int64 to not lose the unsigned-ness.
+    //Exception is that for "unbounded" we explicitly persist -1 to tell it from the other cases
+    const int64_t upperLimit = relationshipConstraint.GetMultiplicity().IsUpperLimitUnbounded() ? INT64_C(-1) : (int64_t) relationshipConstraint.GetMultiplicity().GetUpperLimit();
+    if (BE_SQLITE_OK != stmt->BindInt64(5, upperLimit))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
@@ -821,13 +848,16 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR ecSchema)
     if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetAlias().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(6, ecSchema.GetVersionRead()))
+    //Persist uint32_t as int64 to not lose unsigned-ness
+    if (BE_SQLITE_OK != stmt->BindInt64(6, (int64_t) ecSchema.GetVersionRead()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(7, ecSchema.GetVersionWrite()))
+    //Persist uint32_t as int64 to not lose unsigned-ness
+    if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) ecSchema.GetVersionWrite()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(8, ecSchema.GetVersionMinor()))
+    //Persist uint32_t as int64 to not lose unsigned-ness
+    if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) ecSchema.GetVersionMinor()))
         return ERROR;
 
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
@@ -893,7 +923,7 @@ BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int pa
 
     if (prop.GetIsNavigation())
         {
-        Issues().Report("Failed to import Navigation ECProperty '%s.%s' because a KindOfQuantity is assigned to it which is not valid.", prop.GetClass().GetFullName(), prop.GetName().c_str());
+        Issues().Report("Failed to import Navigation ECProperty '%s.%s' because a KindOfQuantity is assigned to it.", prop.GetClass().GetFullName(), prop.GetName().c_str());
         return ERROR;
         }
 
@@ -1569,7 +1599,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateProperties(ECPropertyChanges& propertyChanges, ECClassCR oldClass, ECClassCR newClass)
     {
-    uint32_t ordinal = (uint32_t) oldClass.GetPropertyCount(false);
+    int ordinal = (int) oldClass.GetPropertyCount(false);
     for (size_t i = 0; i < propertyChanges.Count(); i++)
         {
         auto& change = propertyChanges.At(i);

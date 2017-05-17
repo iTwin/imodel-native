@@ -760,9 +760,10 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     Utf8CP displayLabel = stmt->IsColumnNull(1) ? nullptr : stmt->GetValueText(1);
     Utf8CP description = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
     Utf8CP alias = stmt->GetValueText(3);
-    uint32_t versionMajor = (uint32_t) stmt->GetValueInt(4);
-    uint32_t versionWrite = (uint32_t) stmt->GetValueInt(5);
-    uint32_t versionMinor = (uint32_t) stmt->GetValueInt(6);
+    //uint32_t is persisted as int64 to not lose unsigned-ness
+    uint32_t versionMajor = (uint32_t) stmt->GetValueInt64(4);
+    uint32_t versionWrite = (uint32_t) stmt->GetValueInt64(5);
+    uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(6);
     const int typesInSchema = stmt->GetValueInt(7);
 
     ECSchemaPtr schema = nullptr;
@@ -857,8 +858,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             Utf8String m_extendedTypeName;
             ECEnumerationId m_enumId;
             KindOfQuantityId m_koqId;
-            uint32_t m_arrayMinOccurs = 0;
-            uint32_t m_arrayMaxOccurs = std::numeric_limits<uint32_t>::max();
+            int64_t m_arrayMinOccurs = 0;
+            int64_t m_arrayMaxOccurs = (int64_t) std::numeric_limits<uint32_t>::max();
             ECClassId m_navPropRelClassId;
             int m_navPropDirection = -1;
             };
@@ -955,8 +956,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     }
                 else
                     {
-                    rowInfo.m_arrayMinOccurs = (uint32_t) stmt->GetValueInt(minOccursIx);
-                    rowInfo.m_arrayMaxOccurs = (uint32_t) stmt->GetValueInt(maxOccursIx);
+                    //uint32_t are persisted as int64 to not lose the unsigned-ness.
+                    rowInfo.m_arrayMinOccurs = (uint32_t) stmt->GetValueInt64(minOccursIx);
+                    rowInfo.m_arrayMaxOccurs = (uint32_t) stmt->GetValueInt64(maxOccursIx);
                     }
 
                 if (stmt->IsColumnNull(navRelationshipClassId))
@@ -1069,8 +1071,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                         return ERROR;
                     }
 
-                arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
-                arrayProp->SetMaxOccurs(rowInfo.m_arrayMaxOccurs);
+                //uint32_t was persisted as int64 to not lose unsigned-ness
+                arrayProp->SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs);
+                arrayProp->SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs);
 
                 prop = arrayProp;
                 break;
@@ -1094,8 +1097,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, rowInfo.m_name, *structClass))
                     return ERROR;
 
-                arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
-                arrayProp->SetMaxOccurs(rowInfo.m_arrayMaxOccurs);
+                //uint32_t was persisted as int64 to not lose unsigned-ness
+                arrayProp->SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs);
+                arrayProp->SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs);
 
                 prop = arrayProp;
                 break;
@@ -1253,7 +1257,15 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
 
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
 
-    constraint.SetMultiplicity(RelationshipMultiplicity(stmt->GetValueInt(1), stmt->GetValueInt(2)));
+    //uint32_t was persisted as int64 to not lose signed-ness. Exception: Upper limit unboundedness was persisted as -1, so we need
+    //to tell that case explicitly
+    const uint32_t multiplicityLowerLimit = (uint32_t) stmt->GetValueInt64(1);
+    const int64_t multiplicityUpperLimitRaw = stmt->GetValueInt64(2);
+    if (multiplicityUpperLimitRaw < 0) // means upper limit is unbound
+        constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit));
+    else
+        constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit, (uint32_t) multiplicityUpperLimitRaw));
+
     constraint.SetIsPolymorphic(stmt->GetValueBoolean(3));
 
     if (!stmt->IsColumnNull(4))

@@ -26,7 +26,7 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus ImportClass(ECN::ECClassCR);
         BentleyStatus ImportEnumeration(ECN::ECEnumerationCR);
         BentleyStatus ImportKindOfQuantity(ECN::KindOfQuantityCR);
-        BentleyStatus ImportProperty(ECN::ECPropertyCR, uint32_t ordinal);
+        BentleyStatus ImportProperty(ECN::ECPropertyCR, int ordinal);
         BentleyStatus ImportRelationshipClass(ECN::ECRelationshipClassCP);
         BentleyStatus ImportRelationshipConstraint(ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
         BentleyStatus ImportCustomAttributes(ECN::IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
