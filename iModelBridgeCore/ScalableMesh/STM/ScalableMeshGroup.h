@@ -162,6 +162,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override { return nullptr; }
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override { return nullptr; }
+        virtual IScalableMeshAnalysePtr    _GetMeshAnalyseInterface() override { return nullptr; }
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override { return ERROR; }

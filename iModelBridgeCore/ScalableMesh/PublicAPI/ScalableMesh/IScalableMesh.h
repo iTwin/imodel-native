@@ -16,6 +16,7 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
 #include <ScalableMesh/IScalableMeshEdit.h>
+#include <ScalableMesh/IScalableMeshAnalyse.h>
 
 #undef static_assert
 
@@ -168,6 +169,8 @@ struct IScalableMesh abstract:  IRefCounted
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const = 0;
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const = 0;
+
+        virtual IScalableMeshAnalysePtr    _GetMeshAnalyseInterface() = 0;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DTMAnalysisType type) = 0;
 
@@ -345,6 +348,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
         BENTLEY_SM_EXPORT IScalableMeshEditPtr    GetMeshEditInterface() const;
+
+        BENTLEY_SM_EXPORT IScalableMeshAnalysePtr    GetMeshAnalyseInterface();
 
         BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DTMAnalysisType type = DTMAnalysisType::Precise);
 
