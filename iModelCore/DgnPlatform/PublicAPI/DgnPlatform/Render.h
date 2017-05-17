@@ -1831,14 +1831,14 @@ struct QPoint2d
 //=======================================================================================
 struct PointCloudArgs
 {
-    QPoint3dCP  m_points;
-    ByteCP      m_colors;
-    DRange3d    m_range;
-    int32_t     m_numPoints;
+    QPoint3dCP          m_points;
+    ByteCP              m_colors;
+    QPoint3d::Params    m_qParams;
+    int32_t             m_numPoints;
 
-    PointCloudArgs() : PointCloudArgs(DRange3d::NullRange(), 0, nullptr, nullptr) { }
-    PointCloudArgs(DRange3dCR range, int32_t numPoints, QPoint3dCP points, ByteCP colors)
-        : m_points(points), m_colors(colors), m_range(range), m_numPoints(numPoints) { }
+    PointCloudArgs() : PointCloudArgs(QPoint3d::Params(DRange3d::NullRange()), 0, nullptr, nullptr) { }
+    PointCloudArgs(QPoint3d::Params qParams, int32_t numPoints, QPoint3dCP points, ByteCP colors)
+        : m_points(points), m_colors(colors), m_qParams(qParams), m_numPoints(numPoints) { }
 };
 
 
