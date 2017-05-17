@@ -290,6 +290,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override;
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override;
+        virtual IScalableMeshAnalysePtr    _GetMeshAnalyseInterface() override;
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override;        
@@ -462,6 +463,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override;
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override { return nullptr; };
+        virtual IScalableMeshAnalysePtr    _GetMeshAnalyseInterface() override { return nullptr; };
 
         const GeoCoords::GCS&          _GetGCS() const override;
         StatusInt                      _SetGCS(const GeoCoords::GCS& sourceGCS) override;
