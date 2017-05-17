@@ -223,5 +223,145 @@ GEOMDLLIMPEXP Angle operator +(Angle const &alpha, Angle const &beta);
 GEOMDLLIMPEXP Angle operator -(Angle const &alpha, Angle const &beta);
 END_BENTLEY_GEOMETRY_NAMESPACE
 
+//==============================================================================
+// FPoint3d and FVec3d family.
+// These are entirely "float to float".
+// Insert standard diatribe about the horrible precision of float.
+BEGIN_BENTLEY_NAMESPACE
+//! operator overload for in-place addition of a point plus a vector
+//    i.e. {point += vector}
+//! @param [in] point point being updated.
+//! @param [in] vector vector to be added to point.
+GEOMDLLIMPEXP void operator+=(FPoint3d &point, FVec3d const &vector);
+
+//! operator overload for in-place subtraction of a point minus a vector
+//    i.e. {point -= vector}
+//! @param [in] point point being updated.
+//! @param [in] vector vector to be subtracted from point.
+GEOMDLLIMPEXP void operator-=(FPoint3d &point, FVec3d const &vector);
+
+//! operator overload for sum of a point plus a vector
+//! @param [in] point left operand (point)
+//! @param [in] vector right operand (vector)
+//! @return point sum {point+vector}
+GEOMDLLIMPEXP FPoint3d operator+(FPoint3d const &point, FVec3d const &vector);
+
+//! operator overload for sum of a point minus a vector
+//! @param [in] point left operand (point)
+//! @param [in] vector right operand (vector)
+//! @return point sum {point+vector}
+GEOMDLLIMPEXP FPoint3d operator-(FPoint3d const &point, FVec3d const &vector);
+
+
+//! operator overload for multiplication of a transform and a vector
+//!<li>The vector appears on the left as a row, with implied 0 weigth that multiplies the transform's translation column.
+//!<li>Compare to {vector*transform} which has the vector on the left as a row.
+//!<li>Only the matrix part of the transform participates.
+//!</ul>
+//! @param [in] transform left operand (transform)
+//! @param [in] vector right operand (vector)
+//! @return vector product {transform*vector}
+GEOMDLLIMPEXP FVec3d operator*( Transform const &transform, FVec3d const &vector);
+
+//! operator overload for multiplication of a transform and a point
+//! @param [in] transform left operand (transform)
+//! @param [in] point right operand (point)
+//! @return point product {transform*point}
+GEOMDLLIMPEXP FPoint3d operator*( Transform const &transform, FPoint3d const &point);
+
+//----------------------------------------------------------------------
+
+
+
+//! operator overload for multiplication of a vector times the matrix part of a transform.
+//!<ul> 
+//!<li>The vector appears on the left as a row.
+//!<li>Compare to {transform*vector} which has the vector on the right as a column.
+//!<li>Only the matrix part of the transform participates.
+//!</ul>
+//! @param [in] vector left operand (vector)
+//! @param [in] transform right operand
+//! @return vector product {vector*transform}
+GEOMDLLIMPEXP FVec3d operator*(FVec3d const &vector,Transform const &transform);
+
+
+//! operator overload for multiplication of a vector times a rotmatrix
+//!<ul> 
+//!<li>The vector appears on the left as a row.
+//!<li>Compare to {rotmatrix*vector} which has the vector on the right as a column.
+//!</ul>
+//! @param [in] vector vector to be multiplied
+//! @param [in] rotmatrix rotmatrix multiplier
+//! @return vector product {vector*rotmatrix}
+GEOMDLLIMPEXP FVec3d operator*(FVec3d const &vector, RotMatrix const &rotmatrix);
+
+//! operator overload for multiplication of a matrix and a vector
+//!<ul> 
+//!<li>Compare to {vector*matrix} which has the vector on the left as a row.
+//!</ul>
+//! @param [in] matrix left operand (matrix)
+//! @param [in] vector right operand (vector)
+//! @return vector product {matrix*vector}
+GEOMDLLIMPEXP FVec3d operator*( RotMatrix const &matrix, FVec3d const &vector);
+
+//----------------------------------------------------------------------
+
+//! operator overload for in-place multiplication of a vector times a scalar,
+//    i.e. {vector *= scalar}
+//! @param [in] vector vector being updated.
+//! @param [in] scalar scalar multiplier.
+GEOMDLLIMPEXP void operator*=(FVec3d &vector, double const scalar);
+
+//! operator overload for in-place addition of vectors
+//    i.e. {vector += vector}
+//! @param [in] left vector being updated
+//! @param [in] right vector to be added to left
+GEOMDLLIMPEXP void operator+=(FVec3d &left, FVec3d const &right);
+
+//! operator overload for in-place subtraction of vectors
+//    i.e. {vector -= vector}
+//! @param [in] left vector being updated
+//! @param [in] right vector to be subtracted from left
+GEOMDLLIMPEXP void operator-=(FVec3d &left, FVec3d const &right);
+
+//! operator overload for difference of vector
+//! @param [in] left left operand
+//! @param [in] right right operand.
+//! @return vector difference {left-right}
+GEOMDLLIMPEXP FVec3d operator-(FVec3d const &left, FVec3d const &right);
+
+//! operator overload for difference of points
+//! @param [in] left left operand
+//! @param [in] right right operand.
+//! @return vector difference {left-right}
+GEOMDLLIMPEXP FVec3d operator-(FPoint3d const &left, FPoint3d const &right);
+
+
+//! operator overload for sum of vectors
+//! @param [in] left left operand
+//! @param [in] right right operand.
+//! @return vector sum {left+right}
+GEOMDLLIMPEXP FVec3d operator+(FVec3d const &left, FVec3d const &right);
+
+//! operator overload for division of vector and scalar
+//! @param [in] vector vector to be scaled (vector)
+//! @param [in] scalar scalar divisor (scalar)
+//! @return ValidatedVector quotient {vector/scalar}
+GEOMDLLIMPEXP ValidatedFVec3d operator/(FVec3d const &vector, double const scalar);
+
+//! operator overload for multiplication of a scalar times a vector
+//! @param [in] scalar scalar multiplier (scalar)
+//! @param [in] vector vector to be multiplied (vector)
+//! @return vector product {scalar*vector}
+GEOMDLLIMPEXP FVec3d operator*(double const scalar, FVec3d const &vector);
+
+//! operator overload for multiplication of a vector times a scalar
+//! @param [in] vector vector to be multiplied (vector)
+//! @param [in] scalar scalar multiplier (scalar)
+//! @return vector product {vector*scalar}
+GEOMDLLIMPEXP FVec3d operator*(FVec3d const &vector, double const scalar);
+
+
+END_BENTLEY_NAMESPACE
 
 #endif

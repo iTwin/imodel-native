@@ -420,7 +420,209 @@ DMatrix4d operator+(DMatrix4d const &matrixA, DMatrix4d const &matrixB)
     }
 
 
+//==============================================================================
+void operator+=(FPoint3d &point, FVec3d const &vector)
+    {
+        point.x = point.x + vector.x;
+        point.y = point.y + vector.y;
+        point.z = point.z + vector.z;
+    }
+void operator-=(FPoint3d &point, FVec3d const &vector)
+    {
+        point.x = point.x - vector.x;
+        point.y = point.y - vector.y;
+        point.z = point.z - vector.z;
+    }
+FPoint3d operator+(FPoint3d const &point, FVec3d const &vector)
+    {
+        FPoint3d result;
+        result.x = point.x + vector.x;
+        result.y = point.y + vector.y;
+        result.z = point.z + vector.z;
+        return result;
+    }
 
+FPoint3d operator-(FPoint3d const &point, FVec3d const &vector)
+    {
+        FPoint3d result;
+        result.x = point.x - vector.x;
+        result.y = point.y - vector.y;
+        result.z = point.z - vector.z;
+        return result;
+    }
+
+FVec3d operator-(FPoint3d const &point1, FPoint3d const &point0)
+    {
+        FVec3d result;
+        result.x = point1.x - point0.x;
+        result.y = point1.y - point0.y;
+        result.z = point1.z - point0.z;
+        return result;
+    }
+
+
+
+FPoint3d operator*( Transform const &transform, FPoint3d const &point)
+    {
+    DPoint3d result;
+    result.x = transform.form3d[0][0] * point.x
+            + transform.form3d[0][1] * point.y
+            + transform.form3d[0][2] * point.z
+            + transform.form3d[0][3];
+
+    result.y = transform.form3d[1][0] * point.x
+            + transform.form3d[1][1] * point.y
+            + transform.form3d[1][2] * point.z
+            + transform.form3d[1][3];
+
+    result.z = transform.form3d[2][0] * point.x
+            + transform.form3d[2][1] * point.y
+            + transform.form3d[2][2] * point.z
+            + transform.form3d[2][3];
+    return FPoint3d::From (result);
+    }
+
+FVec3d operator*( Transform const &transform, FVec3d const &vector)
+    {
+    DVec3d result;
+    result.x = transform.form3d[0][0] * vector.x
+            + transform.form3d[0][1] * vector.y
+            + transform.form3d[0][2] * vector.z;
+
+    result.y = transform.form3d[1][0] * vector.x
+            + transform.form3d[1][1] * vector.y
+            + transform.form3d[1][2] * vector.z;
+
+    result.z = transform.form3d[2][0] * vector.x
+            + transform.form3d[2][1] * vector.y
+            + transform.form3d[2][2] * vector.z;
+    return FVec3d::From (result);
+    }
+
+
+FVec3d operator*( RotMatrix const &matrix, FVec3d const &vector)
+    {
+    DVec3d result;
+    result.x = matrix.form3d[0][0] * vector.x
+            + matrix.form3d[0][1] * vector.y
+            + matrix.form3d[0][2] * vector.z;
+
+    result.y = matrix.form3d[1][0] * vector.x
+            + matrix.form3d[1][1] * vector.y
+            + matrix.form3d[1][2] * vector.z;
+
+    result.z = matrix.form3d[2][0] * vector.x
+            + matrix.form3d[2][1] * vector.y
+            + matrix.form3d[2][2] * vector.z;
+    return FVec3d::From (result);
+    }
+
+
+
+//----------------------------------------------------------------------
+
+void operator*=(FVec3d &vector, double const scalar)
+    {
+    vector.x = (float)(vector.x * scalar);
+    vector.y = (float)(vector.y * scalar);
+    vector.z = (float)(vector.z * scalar);
+    }
+
+void operator+=(FVec3d &first, FVec3d const &second)
+    {
+        first.x = first.x + second.x;
+        first.y = first.y + second.y;
+        first.z = first.z + second.z;
+
+    }
+
+void operator-=(FVec3d &first, FVec3d const &second)
+    {
+        first.x = first.x - second.x;
+        first.y = first.y - second.y;
+        first.z = first.z - second.z;
+
+    }
+FVec3d operator-(FVec3d const &first, FVec3d const &second)
+    {
+        FVec3d result;
+        result.x = first.x - second.x;
+        result.y = first.y - second.y;
+        result.z = first.z - second.z;
+        return result;
+    }
+
+FVec3d operator+(FVec3d const &first, FVec3d const &second)
+    {
+        FVec3d result;
+        result.x = first.x + second.x;
+        result.y = first.y + second.y;
+        result.z = first.z + second.z;
+        return result;
+    }
+
+
+ValidatedFVec3d operator/(FVec3d const &vector, double const scalar)
+    {
+    DVec3d result;
+    result.x = vector.x;
+    result.y = vector.y;
+    result.z = vector.z;
+    bool stat = result.SafeDivide(result,scalar);
+    return ValidatedFVec3d (FVec3d::From (result), stat);
+    }
+
+FVec3d operator*(double const scalar, FVec3d const &vector)
+    {
+    return FVec3d::From
+        (
+        vector.x * scalar,
+        vector.y * scalar,
+        vector.z * scalar
+        );
+    }
+
+FVec3d operator*(FVec3d const &vector, double const scalar)
+    {
+    return FVec3d::From
+        (
+        vector.x * scalar,
+        vector.y * scalar,
+        vector.z * scalar
+        );
+    }
+
+FVec3d operator*(FVec3d const &vector, Transform const &transform)
+    {
+    return FVec3d::From
+        (
+          vector.x * transform.form3d[0][0]
+        + vector.y * transform.form3d[1][0]
+        + vector.z * transform.form3d[2][0],
+          vector.x * transform.form3d[0][1]
+        + vector.y * transform.form3d[1][1]
+        + vector.z * transform.form3d[2][1],
+          vector.x * transform.form3d[0][2]
+        + vector.y * transform.form3d[1][2]
+        + vector.z * transform.form3d[2][2]
+        );
+    }
+
+FVec3d operator*(FVec3d const &vector, RotMatrix const &matrix)
+    {
+    return FVec3d::From
+        (
+          vector.x * matrix.form3d[0][0]
+        + vector.y * matrix.form3d[1][0]
+        + vector.z * matrix.form3d[2][0],
+          vector.x * matrix.form3d[0][1]
+        + vector.y * matrix.form3d[1][1]
+        + vector.z * matrix.form3d[2][1],
+          vector.x * matrix.form3d[0][2]
+        + vector.y * matrix.form3d[1][2]
+        + vector.z * matrix.form3d[2][2]
+        );
+    }
 
 
 
