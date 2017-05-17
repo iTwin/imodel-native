@@ -132,6 +132,7 @@ private:
     IAzureBlobStorageClientPtr m_azureClient;
 
     EventServiceClient*        m_eventServiceClient = nullptr;
+    mutable BeMutex            m_eventServiceClientMutex;
     EventSubscriptionPtr       m_eventSubscription;
     AzureServiceBusSASDTOPtr   m_eventSAS;
     EventManagerPtr            m_eventManagerPtr;
