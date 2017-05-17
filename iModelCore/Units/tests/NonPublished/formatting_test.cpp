@@ -115,7 +115,7 @@ public:
         FormatUnitSet fus = FormatUnitSet(fusFormat, fusUnit);
         if (fus.HasProblem())
             {
-            LOG.infov("Invalid Formatting Set: >%s< or unit: >%s<", fus.GetProblemDescription());
+            LOG.infov("Invalid Formatting Set: >%s< or unit: >%s<", fus.GetProblemDescription().c_str());
             return;
             }
 
