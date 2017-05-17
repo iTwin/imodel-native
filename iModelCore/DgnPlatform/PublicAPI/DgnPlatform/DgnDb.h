@@ -365,7 +365,7 @@ public:
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     BeSQLite::DbResult DeleteLinkTableRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
         {
-        return DeleteLinkTableRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return DeleteLinkTableRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValueUnchecked()), BeSQLite::EC::ECInstanceId(targetId.GetValueUnchecked()));
         }
 
     //! Deletes a specific link table ECRelationship
