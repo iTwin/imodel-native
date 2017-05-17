@@ -1675,7 +1675,23 @@ struct  MeshEdge
     MeshEdge(uint32_t index0, uint32_t index1);
 
     bool operator < (MeshEdge const& rhs) const;
-    };
+    };                 
+
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================
+struct MeshEdges : RefCountedBase
+{
+    bvector<MeshEdge>           m_visible;
+    bvector<MeshEdge>           m_silhouette;
+    bvector<FPoint3d>           m_silhouetteNormals0;
+    bvector<FPoint3d>           m_silhouetteNormals1;
+
+    MeshEdges() {}
+    DGNPLATFORM_EXPORT MeshEdges(TriMeshArgsCR triMesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeCreationOptions);
+};
+
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
@@ -1688,8 +1704,11 @@ struct MeshEdgeArgs
     FeatureIndex                m_features;
     ColorIndex                  m_colors;
 
+
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, FPoint3dCP points);
+
 }; 
- 
+
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
@@ -1698,6 +1717,9 @@ struct SilhouetteEdgeArgs   : MeshEdgeArgs
     // two normals per edge - define the triangle normals for silhouette calculation.
     FPoint3d const*             m_normals0;
     FPoint3d const*             m_normals1;
+
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, FPoint3dCP points);
+
 };  
 
 
@@ -2190,6 +2212,21 @@ struct ViewletPosition
 };
 
 //=======================================================================================
+// @bsiclass                                                    Ray.Bentley     05/17
+//=======================================================================================
+struct MeshEdgeCreationOptions
+
+    {
+    bool        m_generateAllEdges      = false;
+    bool        m_generateSheetEdges    = true;
+    bool        m_generateCreaseEdges   = true;
+    double      m_minCreaseAngle        = 20.0 * msGeomConst_radiansPerDegree;
+
+    MeshEdgeCreationOptions() {}
+    MeshEdgeCreationOptions(bool generateAllEdges, bool generateSheetEdges, bool generateCreaseEdges, double minCreaseAngle) : m_generateAllEdges(generateAllEdges), m_generateSheetEdges(generateSheetEdges), m_generateCreaseEdges(generateCreaseEdges), m_minCreaseAngle(minCreaseAngle) { }
+    };
+
+//=======================================================================================
 //! A Render::System is the renderer-specific factory for creating Render::Graphics, Render::Textures, and Render::Materials.
 //! @note The methods of this class may be called from any thread.
 // @bsiclass                                                    Keith.Bentley   03/16
@@ -2220,6 +2257,9 @@ struct System
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
+    // Create a triangle mesh primitive and edges (if required).
+    virtual bvector<GraphicPtr> _CreateTriMeshAndEdges (TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeOptions) const { return bvector<GraphicPtr> (1, _CreateTriMesh(args, dgndb, params)); }
+
     //! Create a triangle mesh primitive
     virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
@@ -2229,8 +2269,8 @@ struct System
     //! Create visible mesh edges primitive
     virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
-    //! Create invisible mesh edges primitive  - these edges are displayed only if they become silhouettes.
-    virtual GraphicPtr _CreateInvisibleEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    //! Create silhouette mesh edges primitive  - these edges are displayed only if they become silhouettes.
+    virtual GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;

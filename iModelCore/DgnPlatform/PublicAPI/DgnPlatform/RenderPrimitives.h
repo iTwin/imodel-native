@@ -39,7 +39,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshEdges);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(MeshPart);
@@ -47,7 +46,6 @@ DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
-DEFINE_REF_COUNTED_PTR(MeshEdges);
 
 typedef bvector<MeshInstance>       MeshInstanceList;
 typedef bvector<MeshPartPtr>        MeshPartList;
@@ -308,19 +306,6 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct                                                   Ray.Bentley     05/2017
-//=======================================================================================
-struct MeshEdges : RefCountedBase
-{
-    bvector<MeshEdge>           m_visible;
-    bvector<MeshEdge>           m_silhouette;
-    bvector<FPoint3d>           m_silhouetteNormals0;
-    bvector<FPoint3d>           m_silhouetteNormals1;
-
-    MeshEdges(MeshCR mesh);
-};
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct Mesh : RefCountedBase
@@ -384,7 +369,7 @@ public:
     bvector<uint16_t> const&        Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
     ColorTableCR                    GetColorTable() const { return m_colorTable; }
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
-    MeshEdgesPtr                    GetEdges() const;
+    MeshEdgesPtr                    GetEdges(DRange3dCR tileRange, MeshEdgeCreationOptionsCR options) const;
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     PrimitiveType GetType() const { return m_type; }
@@ -395,7 +380,7 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
     void AddPolyline(PolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
-    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db);
+    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db, DRange3dCR tileRange);
 
 
 };
@@ -531,7 +516,6 @@ public:
 
     MeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
     double GetTolerance() const { return m_tolerance; }
-
     void SetDisplayParams(DisplayParamsCR params) { m_mesh->SetDisplayParams(params); }
 };
 
@@ -718,12 +702,13 @@ private:
     mutable DisplayParamsCache  m_displayParamsCache;
     bool                        m_surfacesOnly;
     bool                        m_haveTransform;
+    DRange3dCR                  m_tileRange;
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range);
 public:
-    GeometryAccumulator(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
-    explicit GeometryAccumulator(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
+    GeometryAccumulator(DgnDbR db, TransformCR transform, DRange3dCR tileRange, bool surfacesOnly) : m_transform(transform), m_tileRange(tileRange), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
+    explicit GeometryAccumulator(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false), m_tileRange(DRange3d::NullRange()) { }
 
     void AddGeometry(GeometryR geom) { m_geometries.push_back(geom); }
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
@@ -754,7 +739,7 @@ public:
     DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance=0.001) const;
 
     //! Populate a list of Graphic objects from the accumulated Geometry objects.
-    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance=0.001) const;
+    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options,double tolerance=0.001) const;
 
     //! Clear the geometry list and reinitialize for reuse. DisplayParamsCache contents are preserved.
     void ReInitialize(TransformCR transform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId(), bool surfacesOnly=false)
@@ -838,24 +823,22 @@ struct PolylineArgs : IndexedPolylineArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderMeshEdgeArgs : MeshEdgeArgs
+struct ElementMeshEdgeArgs : MeshEdgeArgs
 {
-    MeshEdgesPtr                    m_meshEdges;
     bvector<uint32_t>               m_colorTable;
 
-    bool Init(MeshCR mesh);
+    bool Init(MeshCR mesh, DRange3dCR tileRange);
 };
 
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderSilhouetteEdgeArgs : SilhouetteEdgeArgs
+struct ElementSilhouetteEdgeArgs : SilhouetteEdgeArgs
 {
-    MeshEdgesPtr                    m_meshEdges;
     bvector<uint32_t>               m_colorTable;
 
-    bool Init(MeshCR mesh);
+    bool Init(MeshCR mesh, DRange3dCR tileRange);
 };
 
 
@@ -866,8 +849,8 @@ struct GetMeshGraphicsArgs
 {
     PolylineArgs                    m_polylineArgs;
     MeshArgs                        m_meshArgs;
-    RenderMeshEdgeArgs              m_visibleEdgesArgs;
-    RenderSilhouetteEdgeArgs        m_invisibleEdgesArgs;
+    ElementMeshEdgeArgs              m_visibleEdgesArgs;
+    ElementSilhouetteEdgeArgs        m_invisibleEdgesArgs;
 };
 
 //=======================================================================================

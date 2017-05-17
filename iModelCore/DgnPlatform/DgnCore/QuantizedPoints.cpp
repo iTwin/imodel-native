@@ -10,7 +10,6 @@
 
 static const double     s_quantizeRangeScale   = (double) 0xffff;
 static const double     s_unquantizeRangeScale = 1.0 / (double) 0xffff;
-static const double     s_halfRangeScale       = (double) 0xffff / 2.0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
