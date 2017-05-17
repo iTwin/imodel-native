@@ -576,7 +576,7 @@ public:
 TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double rangeDiagonalSquared, CreateParams const& params)
     : GeometryListBuilder(params, elemId, context.GetTransformFromDgn()), m_context(context), m_rangeDiagonalSquared(rangeDiagonalSquared)
     {
-    //
+    SetCheckGlyphBoxes(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -586,6 +586,7 @@ TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
     : GeometryListBuilder(CreateParams(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
     {
     // for TileSubGraphic...
+    SetCheckGlyphBoxes(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -709,7 +710,7 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& o
 TileSubGraphic::TileSubGraphic(TileContext& context, DgnGeometryPartCP part)
     : TileBuilder(context, nullptr != part ? part->GetBoundingBox() : DRange3d::NullRange()), m_input(part)
     {
-    //
+    SetCheckGlyphBoxes(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1211,6 +1212,27 @@ void Tile::_Invalidate()
     m_graphic = nullptr;
     m_contentRange = ElementAlignedBox3d();
     InitTolerance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::_IsInvalidated(TileTree::DirtyRangesCR dirty) const
+    {
+    if (IsLeaf())
+        return true;
+
+    double minRangeDiagonalSquared = s_minRangeBoxSize * m_tolerance;
+    minRangeDiagonalSquared *= minRangeDiagonalSquared;
+    for (DRange3dCR range : dirty)
+        {
+        double diagSq = range.low.DistanceSquared(range.high);
+        if (diagSq >= minRangeDiagonalSquared || diagSq == 0.0) // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
+            return true;
+        }
+
+    // No damaged range is large enough to contribute to this tile, so no need to regenerate it.
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

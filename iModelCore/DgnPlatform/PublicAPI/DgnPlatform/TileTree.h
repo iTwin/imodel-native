@@ -185,6 +185,8 @@ protected:
 
     //! Mark this tile as invalidated, e.g. because its contents have been modified.
     virtual void _Invalidate() = 0;
+    //! Given the non-empty set of damaged ranges intersecting this tile's range, return whether the tile has become invalidated and must be regenerated.
+    virtual bool _IsInvalidated(DirtyRangesCR dirty) const { return true; }
 
     bool IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const;
 public:

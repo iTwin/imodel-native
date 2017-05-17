@@ -1371,6 +1371,7 @@ void Root::InvalidateDamagedTiles()
     DgnDb::VerifyClientThread();
     BeAssert(m_rootTile.IsValid());
 
+    BeMutexHolder lock(m_cv.GetMutex());
     if (m_damagedRanges.empty() || m_rootTile.IsNull())
         return;
 
@@ -1392,7 +1393,7 @@ void Tile::Invalidate(DirtyRangesCR dirty)
         return;
 
         // some nodes are solely for structured and contain no graphics, therefore do not need to be invalidated.
-    if (IsDisplayable())
+    if (IsDisplayable() && _IsInvalidated(dirty))
         {
         // This tile needs to be regenerated
         m_root.CancelTileLoad(*this);

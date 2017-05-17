@@ -605,7 +605,7 @@ public:
     //! Create a Geometry for an IBRepEntity
     static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, DgnDbR db);
     //! Create a Geometry for text.
-    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db);
+    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes);
     //! Create a Geometry for a part instance.
     static GeometryPtr Create(GeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db);
 };
@@ -702,7 +702,8 @@ private:
     mutable DisplayParamsCache  m_displayParamsCache;
     bool                        m_surfacesOnly;
     bool                        m_haveTransform;
-    DRange3dCR                  m_tileRange;
+    bool                        m_checkGlyphBoxes = false;
+    DRange3d                    m_tileRange;
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range);
@@ -749,6 +750,10 @@ public:
         SetElementId(elemId);
         m_surfacesOnly = surfacesOnly;
         }
+
+    //! If enabled, TextString range will be tested against chord tolerance to determine whether the text should be stroked or rendered as a simple box.
+    //! By default, it is always stroked.
+    void SetCheckGlyphBoxes(bool check) { m_checkGlyphBoxes = check; }
 };
 
 //=======================================================================================
@@ -911,6 +916,7 @@ protected:
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 
     void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetDisplayParams(), GetLocalToWorldTransform()); }
+    void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
 public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
