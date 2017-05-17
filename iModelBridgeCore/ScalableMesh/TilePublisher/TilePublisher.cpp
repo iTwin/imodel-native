@@ -115,13 +115,34 @@ void BatchIdMap::ToJson(Json::Value& value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilePublisher::TilePublisher(PublisherContextPtr context)
-    : m_batchIds(TileSource::None), m_context(context)
+TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS)
+    : m_batchIds(TileSource::None), m_centroid(tile.GetTileCenter()), m_tile(&tile), m_context(nullptr)
     {
-#define CESIUM_RTC_ZERO
+//#define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0, 0, 0);
 #endif
+    m_meshes = m_tile->GenerateMeshes();
+    if (!m_meshes.empty())
+        {
+        m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
+
+        if (sourceGCS != nullptr && sourceGCS != destinationGCS)
+            {
+            GeoPoint inLatLong, outLatLong;
+            if (sourceGCS->LatLongFromCartesian(inLatLong, m_centroid) != SUCCESS)
+                assert(false);
+            if (sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *destinationGCS) != SUCCESS)
+                assert(false);
+            if (destinationGCS->XYZFromLatLong(m_centroid, outLatLong) != SUCCESS)
+                assert(false);
+            }
+        // Convert points to follow Y-up convention and translate to zero (avoids jittering for distant datasets)
+        Transform transform = Transform::FromRowValues(1, 0, 0, -m_centroid.x,
+            0, 0, 1, -m_centroid.z,
+            0, -1, 0, m_centroid.y);
+        m_meshes[0]->ApplyTransform(transform);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -362,12 +383,21 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilePublisher::Publish(bvector<Byte>& outData)
+    {
+    if (m_meshes.empty()) return PublisherContext::Status::Success;
+    return this->Publish(*m_meshes[0], outData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& outData)
     {
     // .b3dm file
     Json::Value sceneJson(Json::objectValue);
 
-    m_meshes.push_back(TileMeshPtr(&mesh));
+    //m_meshes.push_back(TileMeshPtr(&mesh));
 
     ProcessMeshes(sceneJson);
 
