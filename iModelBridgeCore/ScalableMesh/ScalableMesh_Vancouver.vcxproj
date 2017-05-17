@@ -152,10 +152,10 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh -c
 BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\VendorAPI</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies />
-    <AdditionalOptions />
+    <AdditionalOptions>/Yu $(OutRoot)Winx64\build\ScalableMesh\ScalableMesh\ScalableMeshPCH.pch</AdditionalOptions>
     <NMakeAssemblySearchPath />
     <SourcePath>$(SourcePath);C:\dev\ConceptStation\src\Pointools\BePointCloud;D:\PointoolsVortexAPI</SourcePath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
@@ -225,11 +225,12 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh   -c
 BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel;$(ProjectDir)PublicAPI\ScalableMesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\DgnDisplay\PublicAPI;$(OutRoot)Winx64\BuildContexts\Bentley\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\PublicAPI;$(OutRoot)Winx64\BuildContexts\ScalableMeshCore\VendorAPI</NMakeIncludeSearchPath>
     <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <AdditionalOptions>/Yu $(OutRoot)Winx64\build\ScalableMesh\ScalableMesh\ScalableMeshPCH.pch</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeBuildCommandLine>
@@ -455,6 +456,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClInclude Include="STM\MosaicTextureProvider.h" />
     <ClInclude Include="stm\RasterUtilities.h" />
     <ClInclude Include="stm\ReprojectionModel.h" />
+    <ClInclude Include="STM\ScalableMeshAnalyse.h" />
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
@@ -640,6 +642,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="stm\RasterUtilities.cpp" />
     <ClCompile Include="stm\ReprojectionModel.cpp" />
+    <ClCompile Include="STM\ScalableMeshAnalyse.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp" />
