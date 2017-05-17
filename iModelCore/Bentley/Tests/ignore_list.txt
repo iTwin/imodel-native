@@ -22,8 +22,6 @@ DirectoryObserverTests.ModificationInObservedDirectory_UIThread
 #TFS 633328: randomly Crash on iosArm64
 DirectoryObserverTests.*
 
-BeFileTests.GetLastError  #failing when run individually
-
 #--------------------------------------------------------------------------------------
 # Randomly hanging tests, NDEGUG, Winx64
 #--------------------------------------------------------------------------------------
