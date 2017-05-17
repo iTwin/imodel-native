@@ -171,6 +171,7 @@ private:
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     double _GetMaximumSize() const override;
     void _Invalidate() override;
+    bool _IsInvalidated(TileTree::DirtyRangesCR dirty) const override;
     void _DrawGraphics(TileTree::DrawArgsR) const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;

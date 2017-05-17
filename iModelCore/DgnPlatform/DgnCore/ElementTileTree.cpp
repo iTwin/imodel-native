@@ -1215,6 +1215,27 @@ void Tile::_Invalidate()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::_IsInvalidated(TileTree::DirtyRangesCR dirty) const
+    {
+    if (IsLeaf())
+        return true;
+
+    double minRangeDiagonalSquared = s_minRangeBoxSize * m_tolerance;
+    minRangeDiagonalSquared *= minRangeDiagonalSquared;
+    for (DRange3dCR range : dirty)
+        {
+        double diagSq = range.low.DistanceSquared(range.high);
+        if (diagSq >= minRangeDiagonalSquared || diagSq == 0.0) // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
+            return true;
+        }
+
+    // No damaged range is large enough to contribute to this tile, so no need to regenerate it.
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
