@@ -200,6 +200,7 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 #define QUERY_ID 0 
 
 static double s_minScreenPixelsPerPoint = 800;
+static double s_maxPixelError = 1;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
@@ -915,7 +916,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
 
         viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
-        viewDependentQueryParams->SetMaxPixelError(3);
+        viewDependentQueryParams->SetMaxPixelError(s_maxPixelError);
             
         ClipVectorCP clip;
         clip = context.GetTransformClipStack().GetClip();
