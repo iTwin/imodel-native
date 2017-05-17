@@ -157,11 +157,43 @@ TEST(FPoint3d, SumOf)
     dpoint.Interpolate(originD0, 2, originD1);
     Check::Exact(DPoint3d::From(fpoint), dpoint);
 
+    //Is Instance in sector
+    /*fpoint.Init(3, 3, 0);
+    FPoint3d fpointTest = FPoint3d::From(10, 10, 0);
+    FPoint3d limit0 = FPoint3d::From(4, 5, 0);
+    FPoint3d limit1 = FPoint3d::From(5, 3, 0);
+    Check::True(fpoint.IsPointInCCWector(fpointTest, limit0, limit1, DVec3d::From(0, 0, 1)));
+
+    Check::True(fpoint.IsPointInSmallerSector(FPoint3d::From(2, 2, 0), FPoint3d::From(0, 3, 0), FPoint3d::From(3, 0, 0)));
+*/
     //Equal AlmostEqual
     bvector<FPoint3d> left = { originF0, originF1, originF2 };
     bvector<FPoint3d> right = { FPoint3d::From(originD0), FPoint3d::From(originD1), FPoint3d::From(originD2) };
     Check::True(FPoint3d::AlmostEqual(left, right));
     Check::True(FPoint3d::AlmostEqualXY(left, right));
+
+    Check::True(originF0.AlmostEqual(FPoint3d::From(1, 2, 3)) == originD0.AlmostEqual(DPoint3d::From(1, 2, 3)));
+    Check::True(originF0.AlmostEqual(FPoint3d::From(1, 2, 3), 0.001) == originD0.AlmostEqual(DPoint3d::From(1, 2, 3), 0.001));
+    Check::True(originF0.AlmostEqualXY(FPoint3d::From(1, 2, 3)) == originD0.AlmostEqualXY(DPoint3d::From(1, 2, 3)));
+    Check::True(originF0.AlmostEqualXY(FPoint3d::From(1, 2, 3), 0.001) == originD0.AlmostEqualXY(DPoint3d::From(1, 2, 3), 0.001));
+
+
+    Check::True(originF0.IsEqual(originF1)== originD0.IsEqual(originD1));
+    Check::True(originF0.IsEqual(FPoint3d::From(originD0)) == originD0.IsEqual(DPoint3d::From(originF0)));
+    Check::True(originF0.IsEqual(FPoint3d::From(1.001, 2.001, 3.001), 0.01) ==
+    originD0.IsEqual(DPoint3d::From(1.001, 2.001, 3.001), 0.01));
+
+    // Dot/cross/triple products with instance as base point of vectors to other FPoint3d
+    Check::ExactDouble(originF0.TripleProductToPoints(originF1, originF2, FPoint3d::From(13,14,15)),
+                       originD0.TripleProductToPoints(originD1, originD2, DPoint3d::From(13,14,15)));
+    Check::ExactDouble(originF0.DotDifference(originF1, vector0),
+                       originD0.DotDifference(originD1, vector0));
+    Check::ExactDouble(originF0.DotProductToPoints(originF1, originF2),
+                       originD0.DotProductToPoints(originD1, originD2));
+    Check::ExactDouble(originF0.DotProductToPointsXY(originF1, originF2),
+                       originD0.DotProductToPointsXY(originD1, originD2));
+    Check::ExactDouble(originF0.CrossProductToPointsXY(originF1, originF2),
+                       originD0.CrossProductToPointsXY(originD1, originD2));
 
     DPoint3d fullXYZD = DPoint3d::From (2,3,4);
     FPoint3d fullXYZF = FPoint3d::From (2,3,4);
@@ -169,6 +201,32 @@ TEST(FPoint3d, SumOf)
                  DPoint3d::FromXY(fullXYZD));
     Check::Exact(DPoint3d::From(FPoint3d::FromXY(fullXYZF, 1.0)),
                  DPoint3d::FromXY(fullXYZD, 1.0));
+    Check::Exact(DPoint3d::From(FPoint3d::FromXY(fullXYZD, 1.0)),
+                 DPoint3d::FromXY(fullXYZD, 1.0));
+
+    //other
+    originF0.Swap(originF1);
+    originD0.Swap(originD1);
+    Check::Exact(DPoint3d::From(originF0), originD0);
+    Check::Exact(DPoint3d::From(originF1), originD1);
+
+    DPoint4d pnt4d = DPoint4d::From(3, 4, 5, 2);
+    originF0.XyzOf(pnt4d);
+    originD0.XyzOf(pnt4d);
+
+    Check::Exact(DPoint3d::From(originF0), originD0);
+
+    //init
+    FPoint3d fpnt;
+    DPoint3d dpnt;
+    fpnt.Init(2.0, 3.0, 4.0);
+    dpnt.Init(2.0, 3.0, 4.0);
+    Check::Exact(DPoint3d::From(fpnt), dpnt);
+    fpnt.Init(DPoint2d::From( 2.0, 3.0), 4.0);
+    Check::Exact(DPoint3d::From(fpnt), dpnt);
+    fpnt.Init(DVec3d::From( 2.0, 3.0, 4.0));
+    dpnt.Init(DVec3d::From( 2.0, 3.0, 4.0));
+    Check::Exact(DPoint3d::From(fpnt), dpnt);
     }
 	
 	
