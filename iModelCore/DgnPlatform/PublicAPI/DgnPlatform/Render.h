@@ -1700,6 +1700,7 @@ struct SilhouetteEdgeArgs   : MeshEdgeArgs
     FPoint3d const*             m_normals1;
 };  
 
+//! Common operations for QPoint2d and QPoint3d
 namespace Quantization
 {
     static constexpr double RangeScale() { return static_cast<double>(0xffff); }
@@ -1723,12 +1724,16 @@ namespace Quantization
 }
 
 //=======================================================================================
+//! Represents a DPoint3d quantized within some known range to a triplet of 16-bit
+//! integers. This is a lossy compression technique.
+//! known range.
 // @bsistruct                                                   Ray.Bentley     01/2017
 //=======================================================================================
 struct QPoint3d
 {
     uint16_t x, y, z;
 
+    //! Describes the range associated with a QPoint3d.
     struct Params
     {
         DPoint3d    origin;
@@ -1742,6 +1747,7 @@ struct QPoint3d
             scale.z = Quantization::ComputeScale(diagonal.z);
             }
 
+        //! Create params suitable for quantizing points with components in the range [-1.0,1.0].
         static Params FromNormalizedRange()
             {
             return Params(DRange3d::From(DPoint3d::FromXYZ(-1.0,-1.0,-1.0), DPoint3d::FromXYZ(1.0,1.0,1.0)));
@@ -1758,6 +1764,7 @@ struct QPoint3d
         z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
         }
 
+    //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
     DPoint3d Unquantize(Params params) const
         {
         return DPoint3d::FromXYZ(
@@ -1766,6 +1773,7 @@ struct QPoint3d
             Quantization::Unquantize(z, params.origin.z, params.scale.z));
         }
 
+    //! Decode this QPoint3d into an FPoint3d, with the center of the original range translated to (0,0,0).
     FPoint3d UnquantizeAboutCenter(Params params) const
         {
         return FPoint3d::From(
@@ -1779,12 +1787,15 @@ struct QPoint3d
 };
 
 //=======================================================================================
+//! Represents a DPoint2d quantized within some known range to a pair of 16-bit integers.
+//! This is a lossy compression technique.
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct QPoint2d
 {
     uint16_t x, y;
 
+    //! Describes the range associated with a QPoint2d.
     struct Params
     {
         DPoint2d    origin;
@@ -1806,6 +1817,7 @@ struct QPoint2d
         y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
         }
 
+    //! Decode this QPoint2d into a DPoint2d using the same params from which the QPoint2d was created.
     DPoint2d Unquantize(Params params) const
         {
         return DPoint2d::From(
@@ -1815,32 +1827,17 @@ struct QPoint2d
 };
 
 //=======================================================================================
-// @bsistruct                                                   Ray.Bentley     01/2017
-//=======================================================================================
-struct QuantizedPoint
-{
-    uint16_t                    m_x;
-    uint16_t                    m_y;
-    uint16_t                    m_z;
-
-    QuantizedPoint() { };
-    DGNPLATFORM_EXPORT QuantizedPoint(DRange3dCR range, DPoint3dCR value);
-    DGNPLATFORM_EXPORT DPoint3d Unquantized(DRange3dCR range) const;
-    DGNPLATFORM_EXPORT FPoint3d UnquantizedAboutCenter(DRange3dCR range) const;
-};
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct PointCloudArgs
 {
-    QuantizedPoint const*       m_points;
-    ByteCP                      m_colors;
-    DRange3d                    m_range;
-    int32_t                     m_numPoints;
+    QPoint3dCP  m_points;
+    ByteCP      m_colors;
+    DRange3d    m_range;
+    int32_t     m_numPoints;
 
     PointCloudArgs() : PointCloudArgs(DRange3d::NullRange(), 0, nullptr, nullptr) { }
-    PointCloudArgs(DRange3dCR range, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)
+    PointCloudArgs(DRange3dCR range, int32_t numPoints, QPoint3dCP points, ByteCP colors)
         : m_points(points), m_colors(colors), m_range(range), m_numPoints(numPoints) { }
 };
 

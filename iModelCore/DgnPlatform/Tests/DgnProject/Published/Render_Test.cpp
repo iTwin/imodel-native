@@ -43,32 +43,6 @@ void ExpectQPoint3d(DPoint3dCR dpt, QPoint3d::Params params, QPoint3dCR exp, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ExpectQuantizedPoint(DPoint3dCR dpt, DRange3dCR range, uint16_t qx, uint16_t qy, uint16_t qz, double tolerance)
-    {
-    QuantizedPoint qpt(range, dpt);
-    EXPECT_EQ(qpt.m_x, qx);
-    EXPECT_EQ(qpt.m_y, qy);
-    EXPECT_EQ(qpt.m_z, qz);
-    ExpectPointsEqual(qpt.Unquantized(range), dpt, tolerance);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(Render_Tests, QuantizedPoint)
-    {
-    DRange3d range = DRange3d::From(DPoint3d::FromXYZ(0.0, -100.0, 200.0), DPoint3d::FromXYZ(50.0, 100.0, 10000.0));
-
-    ExpectQuantizedPoint(range.low, range, 0, 0, 0, 0.0);
-    ExpectQuantizedPoint(range.high, range, 0xffff, 0xffff, 0xffff, 0.0);
-
-    DPoint3d center = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-    ExpectQuantizedPoint(center, range, 0x8000, 0x8000, 0x8000, 0.08);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Render_Tests, QPoint)
     {
     DRange3d range = DRange3d::From(DPoint3d::FromXYZ(0.0, -100.0, 200.0), DPoint3d::FromXYZ(50.0, 100.0, 10000.0));
