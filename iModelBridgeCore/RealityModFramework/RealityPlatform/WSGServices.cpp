@@ -304,7 +304,7 @@ void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& re
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
 WSGURL::WSGURL(Utf8String url) : 
-    m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url), m_requestHeader(bvector<Utf8String>())
+    m_validRequestString(true), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url), m_requestHeader(bvector<Utf8String>())
     {}
 
 //-------------------------------------------------------------------------------------

@@ -378,7 +378,7 @@ protected:
 //! This class inherits from the general request class but adds additional 
 //! control for paging.
 //! Default page size is 25 with, of course a start index of 0
-//! To advance to next/previous page simply call AdvancePage(), RewingPage() or
+//! To advance to next/previous page simply call AdvancePage(), RewindPage() or
 //! GoToPage()
 //=====================================================================================
 struct WSGPagedRequest : public WSGURL
@@ -393,11 +393,11 @@ public:
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object) { if(&object != this){WSGURL::operator=(object);  m_startIndex = object.m_startIndex; m_pageSize = object.m_pageSize; } return *this;}
 
     //! Get/Set the page size. It must be greater or equal to 1 
-    REALITYDATAPLATFORM_EXPORT void SetPageSize(uint16_t pageSize) {BeAssert(pageSize > 0); m_pageSize = pageSize;}
+    REALITYDATAPLATFORM_EXPORT void SetPageSize(uint16_t pageSize) {BeAssert(pageSize > 0); m_validRequestString = false; m_pageSize = pageSize;}
     REALITYDATAPLATFORM_EXPORT uint16_t GetPageSize() const {return m_pageSize;}
   
     //! The start index of the request.
-    REALITYDATAPLATFORM_EXPORT void SetStartIndex(uint32_t startIndex) {m_startIndex = startIndex;} 
+    REALITYDATAPLATFORM_EXPORT void SetStartIndex(uint32_t startIndex) {m_validRequestString = false; m_startIndex = startIndex;} 
     REALITYDATAPLATFORM_EXPORT uint32_t GetStartIndex() const {return m_startIndex;}
 
     //! Page oriented methods. These methods advance a page, rewind a page or go to specified page.
