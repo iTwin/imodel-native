@@ -50,18 +50,18 @@ protected:
     bvector<FPoint3d> m_normals;
     bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
-    Dgn::Render::GraphicPtr m_graphic;
+    bvector<Dgn::Render::GraphicPtr> m_graphics;
 
 public:
     Geometry() {}
-    THREEMX_EXPORT Geometry(Dgn::Render::TriMeshArgs const&, SceneR);
+    THREEMX_EXPORT Geometry(Dgn::Render::TriMeshArgs const&, SceneR, DRange3dCR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
     void Pick(Dgn::TileTree::PickArgsR);
-    void ClearGraphic() {m_graphic = nullptr;}
+    void ClearGraphic() {m_graphics.clear();}
     bvector<FPoint3d> const& GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
-    bool HasGraphics() const {return m_graphic.IsValid();}
+    bool HasGraphics() const {return !m_graphics.empty() && m_graphics.front().IsValid();}
 };
 
 /*=================================================================================**//**
@@ -161,7 +161,7 @@ private:
     SceneInfo   m_sceneInfo;
     Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
-    virtual GeometryPtr _CreateGeometry(Dgn::Render::TriMeshArgs const& args) {return new Geometry(args, *this);}
+    virtual GeometryPtr _CreateGeometry(Dgn::Render::TriMeshArgs const& args, DRange3dCR tileRange) {return new Geometry(args, *this, tileRange);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr;}
     virtual Utf8CP _GetName() const override { return m_rootResource.c_str(); }
     virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
