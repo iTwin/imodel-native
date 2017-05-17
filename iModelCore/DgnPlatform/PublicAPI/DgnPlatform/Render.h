@@ -1700,6 +1700,119 @@ struct SilhouetteEdgeArgs   : MeshEdgeArgs
     FPoint3d const*             m_normals1;
 };  
 
+namespace Quantization
+{
+    static constexpr double RangeScale() { return static_cast<double>(0xffff); }
+
+    static constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
+
+    static constexpr uint16_t Quantize(double pos, double origin, double scale)
+        {
+        return static_cast<uint16_t>(0.5 + (pos - origin) * scale);
+        }
+
+    static constexpr double Unquantize(uint16_t pos, double origin, double scale)
+        {
+        return 0.0 == scale ? origin : origin + pos/scale;
+        }
+
+    static constexpr double UnquantizeAboutCenter(uint16_t pos, double origin, double scale)
+        {
+        return 0.0 == scale ? 0.0 : (static_cast<double>(pos) - 0x7fff) * (pos/scale);
+        }
+}
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     01/2017
+//=======================================================================================
+struct QPoint3d
+{
+    uint16_t x, y, z;
+
+    struct Params
+    {
+        DPoint3d    origin;
+        DPoint3d    scale;
+
+        explicit Params(DRange3dCR range) : origin(range.low)
+            {
+            DVec3d diagonal = range.DiagonalVector();
+            scale.x = Quantization::ComputeScale(diagonal.x);
+            scale.y = Quantization::ComputeScale(diagonal.y);
+            scale.z = Quantization::ComputeScale(diagonal.z);
+            }
+
+        static Params FromNormalizedRange()
+            {
+            return Params(DRange3d::From(DPoint3d::FromXYZ(-1.0,-1.0,-1.0), DPoint3d::FromXYZ(1.0,1.0,1.0)));
+            }
+    };
+
+    QPoint3d() { }
+    QPoint3d(uint16_t x_, uint16_t y_, uint16_t z_) : x(x_), y(y_), z(z_) { }
+    QPoint3d(DPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
+    QPoint3d(DPoint3dCR pt, Params params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
+        }
+
+    DPoint3d Unquantize(Params params) const
+        {
+        return DPoint3d::FromXYZ(
+            Quantization::Unquantize(x, params.origin.x, params.scale.x),
+            Quantization::Unquantize(y, params.origin.y, params.scale.y),
+            Quantization::Unquantize(z, params.origin.z, params.scale.z));
+        }
+
+    FPoint3d UnquantizeAboutCenter(Params params) const
+        {
+        return FPoint3d::From(
+            Quantization::UnquantizeAboutCenter(x, params.origin.x, params.scale.x),
+            Quantization::UnquantizeAboutCenter(y, params.origin.y, params.scale.y),
+            Quantization::UnquantizeAboutCenter(z, params.origin.z, params.scale.z));
+        }
+
+    bool operator==(QPoint3dCR rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
+    bool operator!=(QPoint3dCR rhs) const { return !(*this == rhs); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct QPoint2d
+{
+    uint16_t x, y;
+
+    struct Params
+    {
+        DPoint2d    origin;
+        DPoint2d    scale;
+
+        explicit Params(DRange2dCR range) : origin(range.low)
+            {
+            DVec2d diagonal = range.IsNull() ? DVec2d::From(0, 0) : DVec2d::FromStartEnd(range.low, range.high);
+            scale.x = Quantization::ComputeScale(diagonal.x);
+            scale.y = Quantization::ComputeScale(diagonal.y);
+            }
+    };
+
+    QPoint2d() { }
+    QPoint2d(DPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
+    QPoint2d(DPoint2dCR pt, Params params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        }
+
+    DPoint2d Unquantize(Params params) const
+        {
+        return DPoint2d::From(
+            Quantization::Unquantize(x, params.origin.x, params.scale.x),
+            Quantization::Unquantize(y, params.origin.y, params.scale.y));
+        }
+};
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     01/2017
