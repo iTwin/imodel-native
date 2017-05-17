@@ -85,10 +85,11 @@ BentleyStatus DoGetFromSource()
     PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
     size_t                      nBatchPoints = 0;
     bvector<FPoint3d>           batchPoints(s_maxTileBatchCount);
-    QuantizedPointList          points;
+    QPoint3dList                points;
     bvector<PointCloudColorDef> batchColors(s_maxTileBatchCount), colors;
     Transform                   dgnToTile, cloudToTile;
     DRange3d                    tileRange = tile.GetRange();
+    QPoint3d::Params            qParams(tileRange);
 
     dgnToTile.InverseOf(root.GetLocation());
     cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
@@ -101,7 +102,7 @@ BentleyStatus DoGetFromSource()
 
             cloudToTile.Multiply(tmpPoint);
 
-            points.push_back(QuantizedPoint(tileRange, tmpPoint));
+            points.push_back(QPoint3d(tmpPoint, qParams));
             if (colorsPresent)
                 colors.push_back(batchColors[i]);
             }
@@ -130,7 +131,7 @@ BentleyStatus DoGetFromSource()
     featureTable["QUANTIZED_VOLUME_SCALE"].append(tileRangeDiagonal.z);
 
     if (rgbPresent)
-        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(QuantizedPoint);
+        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(QPoint3d);
 
     Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
     uint32_t        featureTableStrLen = featureTableStr.size();
@@ -139,7 +140,7 @@ BentleyStatus DoGetFromSource()
     m_tileBytes.Append((uint8_t const*) featureTableStr.c_str(), featureTableStrLen);
     if (!points.empty())
         {
-        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(QuantizedPoint));
+        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(QPoint3d));
         if (rgbPresent)
             m_tileBytes.Append((uint8_t const*) colors.data(), colors.size() * sizeof(PointCloudColorDef));
         }
@@ -231,7 +232,7 @@ BentleyStatus Tile::Read (TileTree::StreamBuffer& streamBuffer)
         m_points.resize(nPoints);                                      
         
         streamBuffer.SetPos(binaryPos + (positionOffset = featureTable["POSITION"]["byteOffset"].asUInt()));;
-        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(QuantizedPoint)))
+        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(QPoint3d)))
             {
             BeAssert(false);
             return ERROR;
