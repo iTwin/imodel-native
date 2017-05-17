@@ -10,7 +10,7 @@
 #pragma once
 
 
-#include <ScalableMesh/IScalableMeshAnalyse.h>
+//#include <ScalableMesh/IScalableMeshAnalyse.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "ImagePPHeaders.h"
 #include "SMMeshIndex.h"
