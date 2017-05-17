@@ -333,7 +333,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
 #ifdef VANCOUVER_API
-        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override;
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override;
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
@@ -542,7 +542,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return ERROR;
             }
 #ifdef VANCOUVER_API
-        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override
             {
             return ERROR;
             }

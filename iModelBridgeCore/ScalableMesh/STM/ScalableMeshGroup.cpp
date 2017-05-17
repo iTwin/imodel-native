@@ -494,7 +494,7 @@ BentleyStatus                      ScalableMeshGroup::_SetReprojection(GeoCoordi
     }
 
 #ifdef VANCOUVER_API
-BentleyStatus                      ScalableMeshGroup::_Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
+BentleyStatus                      ScalableMeshGroup::_Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel)
     {
     return ERROR;
     }
