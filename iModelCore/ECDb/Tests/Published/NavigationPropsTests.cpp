@@ -228,6 +228,91 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
+    {
+    ECDbCR ecdb = SetupECDb("navpropcolumnorder.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="CodeSpec" modifier="Sealed">
+                   <ECProperty propertyName="Name" typeName="string" />
+               </ECEntityClass>
+               <ECEntityClass typeName="CodeScope" modifier="Sealed">
+                   <ECProperty propertyName="Name" typeName="string" />
+               </ECEntityClass>
+               <ECEntityClass typeName="HasNavPropsWithRelECClassId" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                   <ECProperty propertyName="Name" typeName="string" />
+                   <ECNavigationProperty propertyName="CodeSpec" relationshipName="CodeSpecHasFoo" direction="Backward" />
+                   <ECNavigationProperty propertyName="CodeScope" relationshipName="CodeScopeHasFoo" direction="Backward" />
+                   <ECProperty propertyName="LastMod" typeName="DateTime" />
+               </ECEntityClass>
+               <ECEntityClass typeName="HasNavPropsWithoutRelECClassId" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                   <ECProperty propertyName="Name" typeName="string" />
+                   <ECNavigationProperty propertyName="CodeSpec" relationshipName="CodeSpecHasFoo_Sealed" direction="Backward" />
+                   <ECNavigationProperty propertyName="CodeScope" relationshipName="CodeScopeHasFoo_Sealed" direction="Backward" />
+                   <ECProperty propertyName="LastMod" typeName="DateTime" />
+               </ECEntityClass>
+             <ECRelationshipClass typeName="CodeSpecHasFoo" strength="Referencing"  modifier="None">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                </ECCustomAttributes>
+                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
+                    <Class class ="CodeSpec" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                    <Class class ="HasNavPropsWithRelECClassId" />
+                </Target>
+             </ECRelationshipClass>
+             <ECRelationshipClass typeName="CodeScopeHasFoo" strength="Referencing"  modifier="None">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                </ECCustomAttributes>
+                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
+                    <Class class ="CodeScope" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                    <Class class ="HasNavPropsWithRelECClassId" />
+                </Target>
+             </ECRelationshipClass>
+             <ECRelationshipClass typeName="CodeSpecHasFoo_Sealed" strength="Referencing"  modifier="Sealed">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                </ECCustomAttributes>
+                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
+                    <Class class ="CodeSpec" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                    <Class class ="HasNavPropsWithoutRelECClassId" />
+                </Target>
+             </ECRelationshipClass>
+             <ECRelationshipClass typeName="CodeScopeHasFoo_Sealed" strength="Referencing"  modifier="Sealed">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                </ECCustomAttributes>
+                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
+                    <Class class ="CodeScope" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                    <Class class ="HasNavPropsWithoutRelECClassId" />
+                </Target>
+             </ECRelationshipClass>
+              </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, ClearBindings)

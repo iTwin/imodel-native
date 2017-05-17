@@ -102,19 +102,13 @@ PropertyMap::Path PropertyMap::Path::From(PropertyMap const& propertyMap)
 //---------------------------------------------------------------------------------------
 BentleyStatus PropertyMapContainer::Insert(RefCountedPtr<PropertyMap> propertyMap, size_t position)
     {
-    if (m_readonly)
-        {
-        BeAssert(false && "Readonly collection cannot be modified");
-        return ERROR;
-        }
-
     if (propertyMap == nullptr)
         {
         BeAssert(false && "PropertyMap passed cannot be null");
         return ERROR;
         }
 
-    if (&propertyMap->GetClassMap() != &GetClassMap())
+    if (&propertyMap->GetClassMap() != &m_classMap)
         {
         BeAssert(false && "propertyMap must belong to same classMap context");
         return ERROR;
@@ -126,10 +120,11 @@ BentleyStatus PropertyMapContainer::Insert(RefCountedPtr<PropertyMap> propertyMa
         return ERROR;
         }
 
-    auto where = position > m_directDecendentList.size() ? m_directDecendentList.end() : m_directDecendentList.begin() + position;
-    m_map[propertyMap->GetAccessString().c_str()] = propertyMap;
+    auto positionIt = position > m_topLevelPropMapsOrdered.size() ? m_topLevelPropMapsOrdered.end() : m_topLevelPropMapsOrdered.begin() + position;
+    m_byAccessString[propertyMap->GetAccessString().c_str()] = propertyMap;
     if (propertyMap->GetParent() == nullptr)
-        m_directDecendentList.insert(where, propertyMap.get());
+        m_topLevelPropMapsOrdered.insert(positionIt, propertyMap.get());
+
     return SUCCESS;
     }
 
@@ -138,7 +133,7 @@ BentleyStatus PropertyMapContainer::Insert(RefCountedPtr<PropertyMap> propertyMa
 //---------------------------------------------------------------------------------------
 BentleyStatus PropertyMapContainer::_AcceptVisitor(IPropertyMapVisitor const&  visitor)  const
     {
-    for (PropertyMap const* propertyMap : m_directDecendentList)
+    for (PropertyMap const* propertyMap : m_topLevelPropMapsOrdered)
         {
         if (SUCCESS != propertyMap->AcceptVisitor(visitor))
             return ERROR;
@@ -152,8 +147,8 @@ BentleyStatus PropertyMapContainer::_AcceptVisitor(IPropertyMapVisitor const&  v
 //---------------------------------------------------------------------------------------
 PropertyMap const* PropertyMapContainer::Find(Utf8CP accessString) const
     {
-    auto itor = m_map.find(accessString);
-    if (itor != m_map.end())
+    auto itor = m_byAccessString.find(accessString);
+    if (itor != m_byAccessString.end())
         return itor->second.get();
 
     return nullptr;

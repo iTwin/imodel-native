@@ -358,7 +358,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
 
         if (base == nullptr)
             {
-            size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().size();
+            const size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().Size();
             if (unmapped > 0)
                 {
                 if (QueryInheritedColumnMaps(columnMaps, classMap) != SUCCESS)
@@ -386,7 +386,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
 
         if (base == nullptr)
             {
-            size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().size();
+            size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().Size();
             if (unmapped > 0)
                 {
                 if (QueryInheritedColumnMaps(columnMaps, classMap) != SUCCESS)

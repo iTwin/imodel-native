@@ -1678,10 +1678,7 @@ bool DbTable::EditHandle::AssertNotInEditMode()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-bool DbColumn::IsUnique() const
-    {
-    return m_constraints.HasUniqueConstraint() || IsOnlyColumnOfPrimaryKeyConstraint();
-    }
+bool DbColumn::IsUnique() const { return m_constraints.HasUniqueConstraint() || IsOnlyColumnOfPrimaryKeyConstraint(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
@@ -1713,7 +1710,7 @@ int DbColumn::DeterminePosition() const
 BentleyStatus DbColumn::SetKind(Kind kind)
     {
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
-        return BentleyStatus::ERROR;
+        return ERROR;
 
     m_kind = kind;
     return SUCCESS;

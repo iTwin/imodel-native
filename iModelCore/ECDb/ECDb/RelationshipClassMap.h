@@ -106,14 +106,15 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 RelationshipMappingInfo const& m_relInfo;
                 std::map<DbTable const*, std::unique_ptr<EndTableRelationshipColumnResolutionScope>> m_scopes;
                 bset<ClassMapCP> m_sharedBlock;
+
                 void Initialize();
 
             public:
-                explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo);
+                ColumnFactory(RelationshipClassEndTableMap const&, RelationshipMappingInfo const&);
                 ~ColumnFactory(){}
 
-                DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, int position);
-                DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
+                DbColumn* AllocateForeignKeyECInstanceId(DbTable&, Utf8StringCR colName, int position);
+                DbColumn* AllocateForeignKeyRelECClassId(DbTable&, Utf8StringCR colName, PersistenceType, int position);
         
             };
 
@@ -159,15 +160,15 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         struct ForeignKeyColumnInfo final: NonCopyableClass
             {
             private:
-                bool m_canImplyFromNavigationProperty;
+                bool m_canImplyFromNavigationProperty = false;
                 Utf8String m_impliedFkColName;
                 Utf8String m_impliedRelClassIdColName;
-                bool m_appendToEnd;
-                PropertyMap const* m_propMapBeforeNavProp;
-                PropertyMap const* m_propMapAfterNavProp;
+                bool m_appendToEnd = true;
+                PropertyMap const* m_propMapBeforeNavProp = nullptr;
+                PropertyMap const* m_propMapAfterNavProp = nullptr;
 
             public:
-                ForeignKeyColumnInfo() : m_canImplyFromNavigationProperty(false), m_appendToEnd(true), m_propMapBeforeNavProp(nullptr), m_propMapAfterNavProp(nullptr) {}
+                ForeignKeyColumnInfo() {}
 
                 void Assign(Utf8StringCR impliedFkColName, Utf8StringCR impliedRelClassIdColName, bool appendToEnd, PropertyMap const* propMapBeforeNavProp, PropertyMap const* propMapAfterNavProp)
                     {
@@ -177,16 +178,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                     m_appendToEnd = appendToEnd;
                     m_propMapBeforeNavProp = propMapBeforeNavProp;
                     m_propMapAfterNavProp = propMapAfterNavProp;
-                    }
-
-                void Clear()
-                    {
-                    m_canImplyFromNavigationProperty = false;
-                    m_impliedFkColName.clear();
-                    m_impliedRelClassIdColName.clear();
-                    m_appendToEnd = true;
-                    m_propMapBeforeNavProp = nullptr;
-                    m_propMapAfterNavProp = nullptr;
                     }
 
                 bool CanImplyFromNavigationProperty() const { return m_canImplyFromNavigationProperty; }

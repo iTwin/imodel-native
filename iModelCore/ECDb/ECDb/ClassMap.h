@@ -190,7 +190,7 @@ struct ClassMap : RefCountedBase
         ObjectState GetState() const { return m_state; }
         template<typename TClassMap>
         TClassMap const& GetAs() const { BeAssert(dynamic_cast<TClassMap const*> (this) != nullptr); return *static_cast<TClassMap const*>(this); }
-         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
+        PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
         ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
         ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;

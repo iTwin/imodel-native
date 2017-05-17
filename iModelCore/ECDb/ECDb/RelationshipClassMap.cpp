@@ -979,8 +979,6 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetReferencedEnd() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo& fkColInfo, ECN::ECRelationshipConstraintCR constraint, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd) const
     {
-    fkColInfo.Clear();
-
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     if (constraintClasses.size() == 0)
         return SUCCESS;
@@ -998,6 +996,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
                     singleNavProperty = navProp;
                 else
                     {
+                    BeAssert(false && "This should not be hit anymore since we disallowed multiple nav props to same relationship");
                     LOG.infov("More than one NavigationECProperty found on the %s constraint classes of the ECRelationship %s. Therefore the constraint column name cannot be implied from a navigation property. A default name will be picked.",
                               constraintEnd == ECRelationshipEnd_Source ? "source" : "target", relClass.GetFullName());
                     return SUCCESS;
@@ -1754,9 +1753,9 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
 // @bsimethod                                 Affan.Khan                         01/2017
 //---------------------------------------------------------------------------------------
 RelationshipClassEndTableMap::ColumnFactory::ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
-    :m_relMap(relMap), m_relInfo(relInfo) 
+    :m_relMap(relMap), m_relInfo(relInfo)
     {
-        Initialize();
+    Initialize();
     }
 
 //---------------------------------------------------------------------------------------
