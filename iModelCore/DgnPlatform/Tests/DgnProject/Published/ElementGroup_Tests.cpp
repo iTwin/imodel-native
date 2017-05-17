@@ -249,7 +249,7 @@ TEST_F(ElementGroupTests, DeleteMemberElement)
         {
         ++relationshipCount;
         }
-    ASSERT_EQ(1, relationshipCount);
+    ASSERT_EQ(1, relationshipCount); // WIP: was 0 before foreign key constraints were removed from bis:ElementGroupsMembers
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -282,8 +282,8 @@ TEST_F(ElementGroupTests, DeleteElementGroup)
         {
         ++relationshipCount;
         }
-    // relationship table is not cleaned up because the ECRel is set up with the mode to not create FK constraints on the link table
-    ASSERT_EQ(1, relationshipCount);
+    // WIP: relationship table is not cleaned up because the ECRel is set up with the mode to not create FK constraints on the link table
+    ASSERT_EQ(1, relationshipCount); // WIP: was 0 before foreign key constraints were removed from bis:ElementGroupsMembers
 
     EXPECT_TRUE(m_db->Elements().GetElement(member1->GetElementId()).IsValid());
     }
