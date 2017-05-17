@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Client/ObjectId.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,6 +43,7 @@ struct ObjectId
     Utf8String remoteId;
 
     WSCLIENT_EXPORT Utf8String GetClassKey() const;
+    WSCLIENT_EXPORT Utf8String GetRemoteId() const;
     };
 
 typedef const ObjectId& ObjectIdCR;

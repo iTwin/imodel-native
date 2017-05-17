@@ -2,7 +2,7 @@
  |
  |     $Source: Client/ObjectId.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -154,4 +154,12 @@ ObjectId ObjectId::FromString(Utf8StringCR string)
 Utf8String ObjectId::GetClassKey() const
     {
     return Utf8PrintfString("%s.%s", schemaName.c_str(), className.c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Robert.Priest    05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ObjectId::GetRemoteId() const
+    {
+    return Utf8PrintfString("%s", remoteId.c_str());
     }
