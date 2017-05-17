@@ -694,9 +694,11 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
         if (BE_SQLITE_OK != stmt->BindInt64(arrayMinIndex, (int64_t) arrayProp->GetMinOccurs()))
             return ERROR;
 
+        //If maxoccurs is unbounded, we persist -1
         //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
         //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
-        if (BE_SQLITE_OK != stmt->BindInt64(arrayMaxIndex, (int64_t) arrayProp->GetStoredMaxOccurs()))
+        const int64_t maxOccurs = arrayProp->IsStoredMaxOccursUnbounded() ? INT64_C(-1) : (int64_t) arrayProp->GetStoredMaxOccurs();
+        if (BE_SQLITE_OK != stmt->BindInt64(arrayMaxIndex, maxOccurs))
             return ERROR;
 
         }

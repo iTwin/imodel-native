@@ -957,8 +957,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 else
                     {
                     //uint32_t are persisted as int64 to not lose the unsigned-ness.
-                    rowInfo.m_arrayMinOccurs = (uint32_t) stmt->GetValueInt64(minOccursIx);
-                    rowInfo.m_arrayMaxOccurs = (uint32_t) stmt->GetValueInt64(maxOccursIx);
+                    rowInfo.m_arrayMinOccurs = stmt->GetValueInt64(minOccursIx);
+                    rowInfo.m_arrayMaxOccurs = stmt->GetValueInt64(maxOccursIx);
                     }
 
                 if (stmt->IsColumnNull(navRelationshipClassId))
@@ -1073,7 +1073,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
                 //uint32_t was persisted as int64 to not lose unsigned-ness
                 arrayProp->SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs);
-                arrayProp->SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs);
+                if (rowInfo.m_arrayMaxOccurs >= 0)
+                    arrayProp->SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs);
 
                 prop = arrayProp;
                 break;
@@ -1099,7 +1100,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
                 //uint32_t was persisted as int64 to not lose unsigned-ness
                 arrayProp->SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs);
-                arrayProp->SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs);
+                if (rowInfo.m_arrayMaxOccurs >= 0)
+                    arrayProp->SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs);
 
                 prop = arrayProp;
                 break;
