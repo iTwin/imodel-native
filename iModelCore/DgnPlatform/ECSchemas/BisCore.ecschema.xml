@@ -1421,26 +1421,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
-        <!-- Creates the bis_ElementGroupsMembers link table -->
-        <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
-                <SourceECInstanceIdColumn>GroupId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>MemberId</TargetECInstanceIdColumn>
-                <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
-            <Class class="Element"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
-            <Class class="Element"/>
-        </Target>
-        <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority">
-            <!-- Can be used to prioritize or order members within an ElementGroup. Values do not have to be unique within a particular group. -->
-        </ECProperty>
-    </ECRelationshipClass>
-
     <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="An Element Aspect is a class that defines a set of properties that are related to (and owned by) a single element. Semantically, an Element Aspect can be considered part of the Element. Thus, an Element Aspect is deleted if its owning Element is deleted.">
         <!-- BIS Guideline: Subclass ElementUniqueAspect or ElementMultiAspect rather than subclassing ElementAspect directly. -->
         <ECCustomAttributes>
@@ -1579,6 +1559,19 @@
         <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
             <Class class="Element"/>
         </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+        <BaseClass>ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+        <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority">
+            <!-- Can be used to prioritize or order members within an ElementGroup. Values do not have to be unique within a particular group. -->
+        </ECProperty>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing" modifier="None">

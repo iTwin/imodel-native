@@ -1010,6 +1010,29 @@ DgnDbStatus DgnElement::_OnDelete() const
     return GetModel()->_OnDeleteElement(*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void deleteLinkTableRelationships(DgnDbR db, Utf8CP tableName, DgnElementId elementId)
+    {
+    BeAssert(db.TableExists(tableName));
+    Utf8PrintfString sql("DELETE FROM %s WHERE SourceId=? OR TargetId=?", tableName);
+    CachedStatementPtr statement = db.Elements().GetStatement(sql.c_str());
+    statement->BindId(1, elementId);
+    statement->BindId(2, elementId);
+    statement->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void deleteLinkTableRelationships(DgnDbR db, DgnElementId elementId)
+    {
+    // provide clean up behavior previously handled by foreign keys (the following link tables use "logical" foreign keys now)
+    deleteLinkTableRelationships(db, BIS_TABLE(BIS_REL_ElementRefersToElements), elementId);
+    deleteLinkTableRelationships(db, BIS_TABLE(BIS_REL_ElementDrivesElement), elementId);
+    }
+
 struct OnDeletedCaller  {DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -1018,6 +1041,7 @@ void DgnElement::_OnDeleted() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
+    deleteLinkTableRelationships(GetDgnDb(), GetElementId());
     DgnModelPtr model = GetModel();
     if (model.IsValid())
         model->_OnDeletedElement(*this);
@@ -1030,6 +1054,7 @@ void DgnElement::_OnAppliedDelete() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
+    deleteLinkTableRelationships(GetDgnDb(), GetElementId());
     DgnModelPtr model = GetModel();
     if (model.IsValid())
         model->_OnAppliedDeleteElement(*this);
