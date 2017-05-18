@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: STM/ScalableMeshAnalyse.h $
+|     $Source: STM/ScalableMeshAnalysis.h $
 |       $Date: 2016/08/23 10:33:32 $
 |     $Author:Stephane.Nullans $
 |
@@ -10,7 +10,7 @@
 #pragma once
 
 
-//#include <ScalableMesh/IScalableMeshAnalyse.h>
+#include <ScalableMesh/IScalableMeshAnalysis.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "ImagePPHeaders.h"
 #include "SMMeshIndex.h"
@@ -18,7 +18,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-class ScalableMeshAnalyse : public IScalableMeshAnalyse
+class ScalableMeshAnalysis : public IScalableMeshAnalysis
     {
     private:
         IScalableMesh* m_scmPtr;
@@ -31,10 +31,10 @@ class ScalableMeshAnalyse : public IScalableMeshAnalyse
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr anotherMesh, double resolution, ISMGridVolume& grid) override;
 
     public:
-        ScalableMeshAnalyse(IScalableMesh* scmPtr);
-        ~ScalableMeshAnalyse();
+        ScalableMeshAnalysis(IScalableMesh* scmPtr);
+        ~ScalableMeshAnalysis();
 
-        static ScalableMeshAnalyse* Create(IScalableMesh* scmPtr);
+        static ScalableMeshAnalysis* Create(IScalableMesh* scmPtr);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

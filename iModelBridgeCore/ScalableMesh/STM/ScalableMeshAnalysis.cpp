@@ -1,13 +1,12 @@
 #include "ScalableMeshPCH.h"
-#include "ScalableMeshAnalyse.h"
+#include "ScalableMeshAnalysis.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 //=======================================================================================
 // @bsimethod                                                 Stephane.Nullans 16/05/2017
 //=======================================================================================
-//ScalableMeshAnalyse::ScalableMeshAnalyse(SMMeshIndex<DPoint3d, DRange3d>* smIndex) : m_smIndex(smIndex)
-ScalableMeshAnalyse::ScalableMeshAnalyse(IScalableMesh* scMesh) : m_scmPtr(scMesh)
+ScalableMeshAnalysis::ScalableMeshAnalysis(IScalableMesh* scMesh) : m_scmPtr(scMesh)
     {
 
     }
@@ -15,17 +14,17 @@ ScalableMeshAnalyse::ScalableMeshAnalyse(IScalableMesh* scMesh) : m_scmPtr(scMes
 //=======================================================================================
 // @bsimethod                                                 Stephane.Nullans 16/05/2017
 //=======================================================================================
-ScalableMeshAnalyse::~ScalableMeshAnalyse()
+ScalableMeshAnalysis::~ScalableMeshAnalysis()
     {
 
     }
 
-ScalableMeshAnalyse* ScalableMeshAnalyse::Create(IScalableMesh* scMesh)
+ScalableMeshAnalysis* ScalableMeshAnalysis::Create(IScalableMesh* scMesh)
     {
-    return new ScalableMeshAnalyse(scMesh);
+    return new ScalableMeshAnalysis(scMesh);
     }
 
-void ScalableMeshAnalyse::_CreateFillVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction)
+void ScalableMeshAnalysis::_CreateFillVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction)
     {
     // store the first border to consider
     bool bSearchExterior = true; // look first for an external border
@@ -53,7 +52,7 @@ void ScalableMeshAnalyse::_CreateFillVolumeRanges(SMVolumeSegment& segment, bvec
         }
     }
 
-void ScalableMeshAnalyse::_CreateCutVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction)
+void ScalableMeshAnalysis::_CreateCutVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction)
     {
     // store the first border to consider
     bool bSearchExterior = true; // look first for an external border
@@ -116,7 +115,7 @@ bool ISMGridVolume::InitFrom(double _resolution, const DRange3d& _rangeMesh, con
 // on a grid of given resolution
 // polygon points need to be in world coordinates
 // Returns a SMGridVolume structures
-DTMStatusInt ScalableMeshAnalyse::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid)
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid)
     {
     if (polygon.size() < 3)
         return DTMStatusInt::DTM_ERROR; // invalid region
@@ -240,7 +239,7 @@ DTMStatusInt ScalableMeshAnalyse::_ComputeDiscreteVolume(const bvector<DPoint3d>
     return DTMStatusInt::DTM_SUCCESS;
     }
 
-DTMStatusInt ScalableMeshAnalyse::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr anotherMesh, double resolution, ISMGridVolume& grid)
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr anotherMesh, double resolution, ISMGridVolume& grid)
     {
 
     return DTMStatusInt::DTM_SUCCESS;

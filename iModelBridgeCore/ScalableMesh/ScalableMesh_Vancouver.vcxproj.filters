@@ -1009,7 +1009,7 @@
     <ClInclude Include="stm\ReprojectionModel.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshAnalyse.h">
+    <ClInclude Include="STM\ScalableMeshAnalysis.h">
       <Filter>Includes\Core\Analysis</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1468,7 +1468,7 @@
     <ClCompile Include="stm\ReprojectionModel.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMeshAnalyse.cpp">
+    <ClCompile Include="STM\ScalableMeshAnalysis.cpp">
       <Filter>Source\Core\Analysis</Filter>
     </ClCompile>
   </ItemGroup>

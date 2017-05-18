@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/ScalableMesh/IScalableMeshAnalyse.h $
+|     $Source: PublicAPI/ScalableMesh/IScalableMeshAnalysis.h $
 |     $Date: 2016/08/23 10:24:32 $
 |     $Author:Stephane.Nullans $
 |
@@ -75,7 +75,7 @@ class ISMGridVolume
         bool m_bInitialised;
     };
 
-class IScalableMeshAnalyse abstract : public RefCountedBase
+class IScalableMeshAnalysis abstract : public RefCountedBase
     {
     protected:
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid) = 0;
@@ -90,6 +90,6 @@ class IScalableMeshAnalyse abstract : public RefCountedBase
             }
     };
 
-typedef RefCountedPtr<IScalableMeshAnalyse>                          IScalableMeshAnalysePtr;
+typedef RefCountedPtr<IScalableMeshAnalysis>                          IScalableMeshAnalysisPtr;
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

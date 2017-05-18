@@ -53,7 +53,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ImagePP\all\h\HIMMosaic.h>
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
-//#include "ScalableMeshAnalyse.h"
+#include "ScalableMeshAnalysis.h"
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "MosaicTextureProvider.h"
@@ -232,12 +232,11 @@ IScalableMeshEditPtr IScalableMesh::GetMeshEditInterface() const
     {
     return _GetMeshEditInterface();
     }
-/*
-IScalableMeshAnalysePtr IScalableMesh::GetMeshAnalyseInterface()
+
+IScalableMeshAnalysisPtr IScalableMesh::GetMeshAnalysisInterface()
     {
-    return _GetMeshAnalyseInterface();
+    return _GetMeshAnalysisInterface();
     }
-*/
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DTMAnalysisType type)
     {
@@ -2032,14 +2031,12 @@ template <class POINT> IScalableMeshEditPtr ScalableMesh<POINT>::_GetMeshEditInt
     }
 
 /*----------------------------------------------------------------------------+
-|ScalableMesh::_GetMeshAnalyseInterface
+|ScalableMesh::_GetMeshAnalysisInterface
 +----------------------------------------------------------------------------*/
-/*
-template <class POINT> IScalableMeshAnalysePtr ScalableMesh<POINT>::_GetMeshAnalyseInterface()
+template <class POINT> IScalableMeshAnalysisPtr ScalableMesh<POINT>::_GetMeshAnalysisInterface()
     {
-    return ScalableMeshAnalyse::Create(this);
+    return ScalableMeshAnalysis::Create(this);
     }
-*/
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetNbResolutions
