@@ -44,6 +44,7 @@ private:
     bvector<Utf8String> m_schemaReferencesToRemove;
 
     void ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName);
+    void ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource);
     void ConvertSchemaLevel(ECSchemaR schema) {ProcessCustomAttributeInstance(schema.GetCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName());}
     void ConvertClassLevel(bvector<ECClassP>& classes);
     void ConvertPropertyLevel(bvector<ECClassP>& classes);
