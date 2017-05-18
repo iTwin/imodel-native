@@ -34,7 +34,7 @@ FVec3d FVec3d::CrossProduct (FVec3dCR other) const {return GeometryTemplates::Cr
 
 double FVec3d::Magnitude () const { return sqrt (GeometryTemplates::DotProduct <double, double> (x,y,z, x,y,z));}
 double FVec3d::MagnitudeSquared () const { return GeometryTemplates::DotProduct <double, double> (x,y,z, x,y,z);}
-
+double FVec3d::MaxAbs () const {return DoubleOps::MaxAbs (x,y,z);}
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      05/2017
 +--------------------------------------------------------------------------------------*/
@@ -44,6 +44,18 @@ void FVec3d::Swap (FVec3dR other)
     *this = other;
     other = temp;
     }
+
+bool FVec3d::IsEqual (FVec3dCR other) const
+    {
+    return x == other.x && y == other.y && z == other.z;
+    }
+
+bool FVec3d::IsEqual (FVec3dCR other, double tolerance) const
+    {
+    return fabs (x - other.x) <= tolerance
+        && fabs (y - other.y) <= tolerance
+        && fabs (z - other.z) <= tolerance;
+   }
 
 
 END_BENTLEY_NAMESPACE

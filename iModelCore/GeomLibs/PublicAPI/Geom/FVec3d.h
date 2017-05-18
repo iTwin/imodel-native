@@ -14,7 +14,9 @@
 
 BEGIN_BENTLEY_NAMESPACE
 /**
-3d point coordinates.
+3d vector coordinates.
+
+Note that in addition to the methods here FPoint3d and FVec3d have a full set of operator overloads.
 
 @ingroup GROUP_Geometry
 */
@@ -114,6 +116,15 @@ FVec3d CrossProduct (FVec3dCR other) const;
 double Magnitude () const;
 //! Squared vector magnitude, promoting components to double and accumulating as double
 double MagnitudeSquared () const;
+
+//! maximum absolute value among x,y,z parts.
+double MaxAbs () const;
+
+//! bitwise equality test
+bool FVec3d::IsEqual (FVec3dCR range1) const;
+//! toleranced equality test.
+bool FVec3d::IsEqual (FVec3dCR other, double tolerance) const;
+
 
 #endif // __cplusplus
 
