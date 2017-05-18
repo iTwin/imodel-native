@@ -261,6 +261,25 @@ ConnectSignInManagerTests.GetTokenProvider_NotSignedIn_TokenProviderDoesNotRetur
     # bim0200dev, x64 & x86, DEBUG, 
     # hangs
 
-
 CachingDataSourceTests.OpenOrCreate_WSG22eBPluginRepository_Succeeds_KnownIssue
 
+ChunkedUploadRequestTests.PerformAsync_MethodSpecified_HandShakeWithSameMethod
+    # bim2-0r1, DEBUG, x64, random hang
+    # Main Thread
+    #   ntdll.dll!NtWaitForAlertByThreadId()   Unknown
+    #   ntdll.dll!RtlSleepConditionVariableSRW()    Unknown
+    #   KernelBase.dll!00007ff8f6bf88d8()   Unknown
+    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
+    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
+    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 58 C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 207   C++
+    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 344  C++
+    #   WSClientTest.exe!ChunkedUploadRequestTests_PerformAsync_MethodSpecified_HandShakeWithSameMethod_Test::TestBody() Line 25    C++
+    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void>(testing::TestCase *, void(testing::TestCase::*)(), const char *) Line 2434   C++
+    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void>(testing::TestCase *, void(testing::TestCase::*)(), const char *) Line 2485  C++
+    #   WSClientTest.exe!testing::Test::Run() Line 2528 C++
+    # Worker Thread
+    #   ntdll.dll!NtWaitForWorkViaWorkerFactory()  Unknown
+    #   ntdll.dll!TppWorkerThread() Unknown
+    #   kernel32.dll!00007ff8f9bc8364() Unknown
+    #   ntdll.dll!RtlUserThreadStart() Unknown
