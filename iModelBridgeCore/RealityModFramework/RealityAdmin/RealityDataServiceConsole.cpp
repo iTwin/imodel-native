@@ -186,7 +186,7 @@ RealityDataConsole::RealityDataConsole() :
     m_realityDataProperties.push_back("-Finish-");
 
     m_visibilityOptions = bvector<Utf8String>();
-    m_visibilityOptions.push_back("PUBLIC");
+    //m_visibilityOptions.push_back("PUBLIC");
     m_visibilityOptions.push_back("PRIVATE");
     m_visibilityOptions.push_back("PERMISSION");
     m_visibilityOptions.push_back("ENTERPRISE");

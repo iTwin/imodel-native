@@ -298,7 +298,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     ASSERT_TRUE(consoleOutput.ContainsI("New RealityData created with GUID")) << "createRD failed";
     ASSERT_TRUE(consoleOutput.ContainsI(Utf8PrintfString("Name : %s", id.c_str()))) << "filter failed";
     ASSERT_TRUE(consoleOutput.ContainsI("1 \t 945F9288 - 45C7 - 44ea - A9D4 - B05D015D4780")) << "list did not return created RD";
-    ASSERT_TRUE(consoleOutput.ContainsI("Visibility         : PUBLIC")) << "details did not return expected results";
+    ASSERT_TRUE(consoleOutput.ContainsI("Visibility         : PRIVATE")) << "details did not return expected results";
     ASSERT_TRUE(consoleOutput.ContainsI("DummyRootDocument.json 5000001 bytes")) << "upload was unsuccessful";
     ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile1.txt 1000001 bytes")) << "upload was unsuccessful";
     ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile2.txt 1000001 bytes")) << "upload was unsuccessful";
