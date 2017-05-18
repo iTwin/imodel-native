@@ -389,10 +389,10 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "Id INTEGER PRIMARY KEY,"
                            "RelationshipClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "RelationshipEnd INTEGER NOT NULL,"
-                           "MultiplicityLowerLimit INTEGER,"
+                           "MultiplicityLowerLimit INTEGER NOT NULL,"
                            "MultiplicityUpperLimit INTEGER,"
                            "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_False "," SQLVAL_True ")),"
-                           "RoleLabel TEXT,"
+                           "RoleLabel TEXT NOT NULL,"
                            "AbstractConstraintClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;

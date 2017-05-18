@@ -281,18 +281,18 @@ BentleyStatus SchemaWriter::ImportClass(ECN::ECClassCR ecClass)
     if (BE_SQLITE_OK != stmt->BindId(2, ecClass.GetSchema().GetId()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindText(3, ecClass.GetName().c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(3, ecClass.GetName(), Statement::MakeCopy::No))
         return ERROR;
 
     if (ecClass.GetIsDisplayLabelDefined())
         {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecClass.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(4, ecClass.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
             return ERROR;
         }
 
     if (!ecClass.GetInvariantDescription().empty())
         {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
         }
 
@@ -386,18 +386,18 @@ BentleyStatus SchemaWriter::ImportEnumeration(ECEnumerationCR ecEnum)
     if (BE_SQLITE_OK != stmt->BindId(2, ecEnum.GetSchema().GetId()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindText(3, ecEnum.GetName().c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(3, ecEnum.GetName(), Statement::MakeCopy::No))
         return ERROR;
 
     if (ecEnum.GetIsDisplayLabelDefined())
         {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
             return ERROR;
         }
 
     if (!ecEnum.GetInvariantDescription().empty())
         {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
         }
 
@@ -411,7 +411,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(ECEnumerationCR ecEnum)
     if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, ecEnum))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindText(8, enumValueJson.c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(8, enumValueJson, Statement::MakeCopy::No))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -450,18 +450,18 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     if (BE_SQLITE_OK != stmt->BindId(2, koq.GetSchema().GetId()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindText(3, koq.GetName().c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(3, koq.GetName(), Statement::MakeCopy::No))
         return ERROR;
    
     if (koq.GetIsDisplayLabelDefined())
         {
-        if (BE_SQLITE_OK != stmt->BindText(4, koq.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(4, koq.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
             return ERROR;
         }
    
     if (!koq.GetInvariantDescription().empty())
         {
-        if (BE_SQLITE_OK != stmt->BindText(5, koq.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(5, koq.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
         }
 
@@ -473,7 +473,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
 
     Utf8String persistenceUnitStr = koq.GetPersistenceUnit().ToText(false);
     BeAssert(!persistenceUnitStr.empty());
-    if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr.c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::No))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindDouble(7, koq.GetRelativeError()))
@@ -486,7 +486,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
         if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJsonStr, m_ecdb, koq))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindText(8, presUnitsJsonStr.c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(8, presUnitsJsonStr, Statement::MakeCopy::No))
             return ERROR;
         }
 
@@ -559,6 +559,62 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(ECClassId relClassId, E
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint(Id,RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId) VALUES(?,?,?,?,?,?,?,?)"))
+        return ERROR;
+
+    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::RelationshipConstraintId).GetNextValue(constraintId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, constraintId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(2, relationshipClassId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(3, (int) endpoint))
+        return ERROR;
+
+    //uint32_t are persisted as int64 to not lose the unsigned-ness.
+    if (BE_SQLITE_OK != stmt->BindInt64(4, (int64_t) relationshipConstraint.GetMultiplicity().GetLowerLimit()))
+        return ERROR;
+
+    //If unbounded, we persist DB NULL
+    if (!relationshipConstraint.GetMultiplicity().IsUpperLimitUnbounded())
+        {
+        //uint32_t are persisted as int64 to not lose the unsigned-ness.
+        if (BE_SQLITE_OK != stmt->BindInt64(5, (int64_t) relationshipConstraint.GetMultiplicity().GetUpperLimit()))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
+        return ERROR;
+
+    BeAssert(relationshipConstraint.IsRoleLabelDefinedLocally() && "ECObjects contract is that role labels are not inherited from base classes");
+    if (BE_SQLITE_OK != stmt->BindText(7, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (relationshipConstraint.IsAbstractConstraintDefinedLocally())
+        {
+        ECClassCR abstractConstraintClass = *relationshipConstraint.GetAbstractConstraint();
+        if (SUCCESS != ImportClass(abstractConstraintClass))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindId(8, abstractConstraintClass.GetId()))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ordinal)
     {
     //Local properties are expected to not be imported at this point as they get imported along with their class.
@@ -607,13 +663,13 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
 
     if (ecProperty.GetIsDisplayLabelDefined())
         {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
             return ERROR;
         }
     
     if (!ecProperty.GetInvariantDescription().empty())
         {
-        if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
         }
 
@@ -694,13 +750,14 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
         if (BE_SQLITE_OK != stmt->BindInt64(arrayMinIndex, (int64_t) arrayProp->GetMinOccurs()))
             return ERROR;
 
-        //If maxoccurs is unbounded, we persist -1
-        //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
-        //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
-        const int64_t maxOccurs = arrayProp->IsStoredMaxOccursUnbounded() ? INT64_C(-1) : (int64_t) arrayProp->GetStoredMaxOccurs();
-        if (BE_SQLITE_OK != stmt->BindInt64(arrayMaxIndex, maxOccurs))
-            return ERROR;
-
+        //If maxoccurs is unbounded, we persist DB NULL
+        if (!arrayProp->IsStoredMaxOccursUnbounded())
+            {
+            //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
+            //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
+            if (BE_SQLITE_OK != stmt->BindInt64(arrayMaxIndex, (int64_t) arrayProp->GetStoredMaxOccurs()))
+                return ERROR;
+            }
         }
     else if (ecProperty.GetIsNavigation())
         {
@@ -763,61 +820,7 @@ BentleyStatus SchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint(Id,RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId) VALUES(?,?,?,?,?,?,?,?)"))
-        return ERROR;
 
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::RelationshipConstraintId).GetNextValue(constraintId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, constraintId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(2, relationshipClassId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt(3, (int) endpoint))
-        return ERROR;
-
-    //uint32_t are persisted as int64 to not lose the unsigned-ness.
-    if (BE_SQLITE_OK != stmt->BindInt64(4, (int64_t) relationshipConstraint.GetMultiplicity().GetLowerLimit()))
-        return ERROR;
-
-    //uint32_t are persisted as int64 to not lose the unsigned-ness.
-    //Exception is that for "unbounded" we explicitly persist -1 to tell it from the other cases
-    const int64_t upperLimit = relationshipConstraint.GetMultiplicity().IsUpperLimitUnbounded() ? INT64_C(-1) : (int64_t) relationshipConstraint.GetMultiplicity().GetUpperLimit();
-    if (BE_SQLITE_OK != stmt->BindInt64(5, upperLimit))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
-        return ERROR;
-
-    if (relationshipConstraint.IsRoleLabelDefinedLocally())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(7, relationshipConstraint.GetRoleLabel().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-
-    if (relationshipConstraint.IsAbstractConstraintDefinedLocally())
-        {
-        ECClassCR abstractConstraintClass = *relationshipConstraint.GetAbstractConstraint();
-        if (SUCCESS != ImportClass(abstractConstraintClass))
-            return ERROR;
-
-        if (BE_SQLITE_OK != stmt->BindId(8, abstractConstraintClass.GetId()))
-            return ERROR;
-        }
-
-    if (BE_SQLITE_DONE != stmt->Step())
-        return ERROR;
-
-    return SUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -832,22 +835,22 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR ecSchema)
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchema.GetId()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindText(2, ecSchema.GetName().c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(2, ecSchema.GetName(), Statement::MakeCopy::No))
         return ERROR;
 
     if (ecSchema.GetIsDisplayLabelDefined())
         {
-        if (BE_SQLITE_OK != stmt->BindText(3, ecSchema.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(3, ecSchema.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
             return ERROR;
         }
 
     if (!ecSchema.GetInvariantDescription().empty())
         {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetAlias().c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetAlias(), Statement::MakeCopy::No))
         return ERROR;
 
     //Persist uint32_t as int64 to not lose unsigned-ness
@@ -901,7 +904,7 @@ BentleyStatus SchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int pa
     if (!prop.HasExtendedType() || prop.GetExtendedTypeName().empty())
         return SUCCESS;
 
-    return stmt.BindText(paramIndex, prop.GetExtendedTypeName().c_str(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    return stmt.BindText(paramIndex, prop.GetExtendedTypeName(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -912,7 +915,7 @@ BentleyStatus SchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int pa
     if (!prop.HasExtendedType() || prop.GetExtendedTypeName().empty())
         return SUCCESS;
 
-    return stmt.BindText(paramIndex, prop.GetExtendedTypeName().c_str(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    return stmt.BindText(paramIndex, prop.GetExtendedTypeName(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -970,7 +973,7 @@ BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECClassI
                                                                           true)) //store instance id for the rare cases where the client specified one.
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindText(6, caXml.c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(6, caXml, Statement::MakeCopy::No))
         return ERROR;
 
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
@@ -1035,7 +1038,7 @@ BentleyStatus SchemaWriter::ReplaceCAEntry(IECInstanceP customAttribute, ECClass
 //+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty) const
     {
-    //changing from primitive to enum and enum to primitve is supported with same type and enum is unstrict
+    //changing from primitive to enum and enum to primitive is supported with same type and enum is unstrict
     if (oldProperty.GetIsPrimitive() && newProperty.GetIsPrimitive())
         {
         PrimitiveECPropertyCP a = oldProperty.GetAsPrimitiveProperty();

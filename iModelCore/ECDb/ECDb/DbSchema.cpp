@@ -652,7 +652,7 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
         return ERROR;
 
     stmt->BindId(1, table.GetId());
-    stmt->BindText(2, table.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(2, table.GetName(), Statement::MakeCopy::No);
     stmt->BindInt(3, Enum::ToInt(table.GetType()));
     stmt->BindBoolean(4, table.GetPersistenceType() == PersistenceType::Virtual);
     if (table.HasExclusiveRootECClass())
@@ -707,7 +707,7 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
         return ERROR;
 
     stmt->BindId(5, table.GetId());
-    stmt->BindText(1, table.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(1, table.GetName(), Statement::MakeCopy::No);
     stmt->BindInt(2, Enum::ToInt(table.GetType()));
     stmt->BindBoolean(3, table.GetPersistenceType() == PersistenceType::Virtual);
     DbTable::LinkNode const* parentNode = table.GetLinkNode().GetParent();
@@ -869,7 +869,7 @@ BentleyStatus DbSchema::UpdateColumn(DbColumn const& column, int columnOrdinal, 
         return ERROR;
 
     stmt->BindId(12, column.GetId());
-    stmt->BindText(1, column.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(1, column.GetName(), Statement::MakeCopy::No);
     stmt->BindInt(2, Enum::ToInt(column.GetType()));
     stmt->BindBoolean(3, column.GetPersistenceType() == PersistenceType::Virtual);
     stmt->BindInt64(4, columnOrdinal);
@@ -877,10 +877,10 @@ BentleyStatus DbSchema::UpdateColumn(DbColumn const& column, int columnOrdinal, 
     stmt->BindBoolean(6, column.GetConstraints().HasUniqueConstraint());
 
     if (!column.GetConstraints().GetCheckConstraint().empty())
-        stmt->BindText(7, column.GetConstraints().GetCheckConstraint().c_str(), Statement::MakeCopy::No);
+        stmt->BindText(7, column.GetConstraints().GetCheckConstraint(), Statement::MakeCopy::No);
 
     if (!column.GetConstraints().GetDefaultValueConstraint().empty())
-        stmt->BindText(8, column.GetConstraints().GetDefaultValueConstraint().c_str(), Statement::MakeCopy::No);
+        stmt->BindText(8, column.GetConstraints().GetDefaultValueConstraint(), Statement::MakeCopy::No);
 
     stmt->BindInt(9, Enum::ToInt(column.GetConstraints().GetCollation()));
     if (primaryKeyOrdinal > -1)
@@ -902,7 +902,7 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
 
     stmt->BindId(1, column.GetId());
     stmt->BindId(2, column.GetTable().GetId());
-    stmt->BindText(3, column.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(3, column.GetName(), Statement::MakeCopy::No);
     stmt->BindInt(4, Enum::ToInt(column.GetType()));
     stmt->BindBoolean(5, column.GetPersistenceType() == PersistenceType::Virtual);
     stmt->BindInt64(6, columnOrdinal);
@@ -910,10 +910,10 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
     stmt->BindBoolean(8, column.GetConstraints().HasUniqueConstraint());
 
     if (!column.GetConstraints().GetCheckConstraint().empty())
-        stmt->BindText(9, column.GetConstraints().GetCheckConstraint().c_str(), Statement::MakeCopy::No);
+        stmt->BindText(9, column.GetConstraints().GetCheckConstraint(), Statement::MakeCopy::No);
 
     if (!column.GetConstraints().GetDefaultValueConstraint().empty())
-        stmt->BindText(10, column.GetConstraints().GetDefaultValueConstraint().c_str(), Statement::MakeCopy::No);
+        stmt->BindText(10, column.GetConstraints().GetDefaultValueConstraint(), Statement::MakeCopy::No);
 
     stmt->BindInt(11, Enum::ToInt(column.GetConstraints().GetCollation()));
     if (primaryKeyOrdinal > -1)
@@ -935,7 +935,7 @@ BentleyStatus DbSchema::InsertIndex(DbIndex const& index) const
 
     stmt->BindId(1, index.GetId());
     stmt->BindId(2, index.GetTable().GetId());
-    stmt->BindText(3, index.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(3, index.GetName(), Statement::MakeCopy::No);
     stmt->BindBoolean(4, index.GetIsUnique());
     stmt->BindBoolean(5, index.IsAddColumnsAreNotNullWhereExp());
 
@@ -1080,7 +1080,7 @@ BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
     if (stmt == nullptr)
         return ERROR;
 
-    stmt->BindText(1, name.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(1, name, Statement::MakeCopy::No);
     if (stmt->Step() != BE_SQLITE_ROW)
         return ERROR;
 

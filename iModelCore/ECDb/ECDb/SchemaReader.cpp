@@ -853,15 +853,15 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             Utf8String m_displayLabel;
             Utf8String m_description;
             bool m_isReadonly = false;
-            int m_primType = -1;
+            Nullable<int> m_primType;
             ECClassId m_structClassId;
             Utf8String m_extendedTypeName;
             ECEnumerationId m_enumId;
             KindOfQuantityId m_koqId;
-            int64_t m_arrayMinOccurs = 0;
-            int64_t m_arrayMaxOccurs = (int64_t) std::numeric_limits<uint32_t>::max();
+            int64_t m_arrayMinOccurs = INT64_C(0);
+            Nullable<int64_t> m_arrayMaxOccurs;
             ECClassId m_navPropRelClassId;
-            int m_navPropDirection = -1;
+            Nullable<int> m_navPropDirection;
             };
 
         static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, ECClassId classId)
@@ -899,6 +899,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 const PropertyKind kind = Enum::FromInt<PropertyKind>(stmt->GetValueInt(kindIx));
                 rowInfo.m_kind = kind;
                 rowInfo.m_name.assign(stmt->GetValueText(nameIx));
+
                 if (!stmt->IsColumnNull(displayLabelIx))
                     rowInfo.m_displayLabel.assign(stmt->GetValueText(displayLabelIx));
 
@@ -908,16 +909,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 if (!stmt->IsColumnNull(isReadonlyIx))
                     rowInfo.m_isReadonly = stmt->GetValueBoolean(isReadonlyIx);
 
-                bool primTypeIsNull = false;
-                if (stmt->IsColumnNull(primTypeIx))
-                    primTypeIsNull = true;
-                else
+                if (!stmt->IsColumnNull(primTypeIx))
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
 
                 if (!stmt->IsColumnNull(enumIdIx))
                     rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIdIx);
 
-                if (kind == PropertyKind::Primitive && primTypeIsNull && !rowInfo.m_enumId.IsValid())
+                if (kind == PropertyKind::Primitive && rowInfo.m_primType.IsNull() && !rowInfo.m_enumId.IsValid())
                     {
                     BeAssert(false && "Either PrimitiveType or EnumerationId column must not be NULL for primitive property");
                     return ERROR;
@@ -946,11 +944,11 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     return ERROR;
                     }
 
-                if (stmt->IsColumnNull(minOccursIx) || stmt->IsColumnNull(maxOccursIx))
+                if (stmt->IsColumnNull(minOccursIx))
                     {
                     if (kind == PropertyKind::PrimitiveArray || kind == PropertyKind::StructArray)
                         {
-                        BeAssert(false && "ArrayMinOccurs and ArrayMaxOccurs columns must not be NULL for array property");
+                        BeAssert(false && "ArrayMinOccurs column must not be NULL for array property");
                         return ERROR;
                         }
                     }
@@ -958,7 +956,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     {
                     //uint32_t are persisted as int64 to not lose the unsigned-ness.
                     rowInfo.m_arrayMinOccurs = stmt->GetValueInt64(minOccursIx);
-                    rowInfo.m_arrayMaxOccurs = stmt->GetValueInt64(maxOccursIx);
+                    //unbound maxOccurs is persisted as DB NULL.
+                    if (!stmt->IsColumnNull(maxOccursIx))
+                        rowInfo.m_arrayMaxOccurs = stmt->GetValueInt64(maxOccursIx);
                     }
 
                 if (stmt->IsColumnNull(navRelationshipClassId))
@@ -990,6 +990,25 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             return SUCCESS;
             }
 
+            static BentleyStatus AssignArrayBounds(ArrayECProperty& prop, RowInfo const& rowInfo)
+                {
+                //uint32_t was persisted as int64 to not lose unsigned-ness
+                if (ECObjectsStatus::Success != prop.SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs))
+                    return ERROR;
+
+                if (!rowInfo.m_arrayMaxOccurs.IsNull())
+                    {
+                    //if maxoccurs is DB NULL, it means unbound. This is the default in ArrayECProperty
+                    if (ECObjectsStatus::Success != prop.SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs.Value()))
+                        return ERROR;
+                    }
+                else
+                    {
+                    BeAssert(prop.IsStoredMaxOccursUnbounded());
+                    }
+
+                return SUCCESS;
+                }
         };
 
     std::vector<PropReaderHelper::RowInfo> rowInfos;
@@ -1003,7 +1022,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             {
                 case PropertyKind::Primitive:
                 {
-                BeAssert(rowInfo.m_primType >= 0 || rowInfo.m_enumId.IsValid());
+                BeAssert(!rowInfo.m_primType.IsNull() || rowInfo.m_enumId.IsValid());
 
                 PrimitiveECPropertyP primProp = nullptr;
 
@@ -1018,7 +1037,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     }
                 else
                     {
-                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType))
+                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
                         return ERROR;
                     }
 
@@ -1057,9 +1076,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
                 case PropertyKind::PrimitiveArray:
                 {
-                BeAssert(rowInfo.m_primType >= 0);
+                BeAssert(!rowInfo.m_primType.IsNull());
 
-                PrimitiveType primType = (PrimitiveType) rowInfo.m_primType;
+                PrimitiveType primType = (PrimitiveType) rowInfo.m_primType.Value();
 
                 PrimitiveArrayECPropertyP arrayProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, primType))
@@ -1071,10 +1090,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                         return ERROR;
                     }
 
-                //uint32_t was persisted as int64 to not lose unsigned-ness
-                arrayProp->SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs);
-                if (rowInfo.m_arrayMaxOccurs >= 0)
-                    arrayProp->SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs);
+                if (SUCCESS != PropReaderHelper::AssignArrayBounds(*arrayProp, rowInfo))
+                    return ERROR;
 
                 prop = arrayProp;
                 break;
@@ -1098,10 +1115,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, rowInfo.m_name, *structClass))
                     return ERROR;
 
-                //uint32_t was persisted as int64 to not lose unsigned-ness
-                arrayProp->SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs);
-                if (rowInfo.m_arrayMaxOccurs >= 0)
-                    arrayProp->SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs);
+                if (SUCCESS != PropReaderHelper::AssignArrayBounds(*arrayProp, rowInfo))
+                    return ERROR;
 
                 prop = arrayProp;
                 break;
@@ -1111,13 +1126,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 {
                 BeAssert(ecClass->IsEntityClass());
 
-                BeAssert(rowInfo.m_navPropRelClassId.IsValid());
+                BeAssert(rowInfo.m_navPropRelClassId.IsValid() && !rowInfo.m_navPropDirection.IsNull());
                 ECClassCP relClassRaw = GetClass(ctx, rowInfo.m_navPropRelClassId);
                 if (relClassRaw == nullptr)
                     return ERROR;
 
                 BeAssert(relClassRaw->IsRelationshipClass());
-                ECRelatedInstanceDirection direction = rowInfo.m_navPropDirection < 0 ? ECRelatedInstanceDirection::Forward : (ECRelatedInstanceDirection) rowInfo.m_navPropDirection;
+                ECRelatedInstanceDirection direction = (ECRelatedInstanceDirection) rowInfo.m_navPropDirection.Value();
                 NavigationECPropertyP navProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
                     return ERROR;
@@ -1137,6 +1152,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
         BeAssert(prop != nullptr);
         prop->SetId(rowInfo.m_id);
         prop->SetIsReadOnly(rowInfo.m_isReadonly);
+
         if (!rowInfo.m_description.empty())
             prop->SetDescription(rowInfo.m_description);
 
@@ -1243,7 +1259,7 @@ BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caCon
 BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel, AbstractConstraintClassId FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
@@ -1255,27 +1271,36 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
     if (BE_SQLITE_ROW != stmt->Step())
         return ERROR;
 
-    ECRelationshipConstraintId constraintId = stmt->GetValueId<ECRelationshipConstraintId>(0);
+    const int constraintIdIx = 0;
+    const int lowerLimitIx = 1;
+    const int upperLimitIx = 2;
+    const int isPolymorphicIx = 3;
+    const int roleLabelIx = 4;
+    const int abstractConstraintClassIdIx = 5;
+
+    ECRelationshipConstraintId constraintId = stmt->GetValueId<ECRelationshipConstraintId>(constraintIdIx);
 
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
 
-    //uint32_t was persisted as int64 to not lose signed-ness. Exception: Upper limit unboundedness was persisted as -1, so we need
-    //to tell that case explicitly
-    const uint32_t multiplicityLowerLimit = (uint32_t) stmt->GetValueInt64(1);
-    const int64_t multiplicityUpperLimitRaw = stmt->GetValueInt64(2);
-    if (multiplicityUpperLimitRaw < 0) // means upper limit is unbound
+    //uint32_t was persisted as int64 to not lose signed-ness. 
+    const uint32_t multiplicityLowerLimit = (uint32_t) stmt->GetValueInt64(lowerLimitIx);
+    if (stmt->IsColumnNull(upperLimitIx))
+        {
+        //If upper limit  DB NULL, this means it is unbounded -> Use ctor that only takes lower limit
         constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit));
+        BeAssert(constraint.GetMultiplicity().IsUpperLimitUnbounded());
+        }
     else
-        constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit, (uint32_t) multiplicityUpperLimitRaw));
+        constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit, (uint32_t) stmt->GetValueInt64(upperLimitIx)));
 
-    constraint.SetIsPolymorphic(stmt->GetValueBoolean(3));
+    constraint.SetIsPolymorphic(stmt->GetValueBoolean(isPolymorphicIx));
 
-    if (!stmt->IsColumnNull(4))
-        constraint.SetRoleLabel(stmt->GetValueText(4));
+    BeAssert(!stmt->IsColumnNull(roleLabelIx) && "RoleLabel is always expected to be not null");
+    constraint.SetRoleLabel(stmt->GetValueText(roleLabelIx));
 
     ECClassId abstractConstraintClassId;
-    if (!stmt->IsColumnNull(5))
-        abstractConstraintClassId = stmt->GetValueId<ECClassId>(5);
+    if (!stmt->IsColumnNull(abstractConstraintClassIdIx))
+        abstractConstraintClassId = stmt->GetValueId<ECClassId>(abstractConstraintClassIdIx);
 
     //release statement as we have read all information and so that child calls can reuse the same statement without repreparation.
     stmt = nullptr;
