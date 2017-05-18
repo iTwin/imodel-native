@@ -457,7 +457,7 @@ void PSolidUtil::ExtractStartAndSweepFromInterval (double& start, double& sweep,
     if (reverse)
         {
         start += sweep;
-        sweep =- sweep;
+        sweep = -sweep;
         }
     }
 

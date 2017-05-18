@@ -87,7 +87,7 @@ typedef RefCountedPtr<IFacetTopologyTable> IFacetTopologyTablePtr;
 
 static const double TOLERANCE_ChordAngle        = 0.4;
 static const double MESH_TOLERANCE_DIVISOR      = 2.5E2;    // Range diagonal divisor
-static const double HATCH_TOLERANCE_DIVISOR     = 2.5E4;
+// unused - static const double HATCH_TOLERANCE_DIVISOR     = 2.5E4;
 static const double MIN_MESH_TOLERANCE          = 1e-5;
 static const double MIN_STROKE_TOLERANCE        = 0.25;
 static const double MAX_STROKE_TOLERANCE        = 1.0;

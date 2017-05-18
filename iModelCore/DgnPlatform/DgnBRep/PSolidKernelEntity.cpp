@@ -56,7 +56,7 @@ bool _SetEntityTransform(TransformCR transform) override {m_transform = transfor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-EntityType _GetEntityType() const
+EntityType _GetEntityType() const override
     {
     PK_BODY_type_t  bodyType = PK_BODY_type_unspecified_c;
 
@@ -81,7 +81,7 @@ EntityType _GetEntityType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d _GetEntityRange() const
+DRange3d _GetEntityRange() const  override
     {
     PK_BOX_t    box;
 
@@ -698,7 +698,7 @@ bool _IsEqual(ISubEntityCR subEntity) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _IsParentEqual(GeometricPrimitiveCR parent) const
+virtual bool _IsParentEqual(GeometricPrimitiveCR parent) const override
     {
     if (GeometricPrimitive::GeometryType::BRepEntity != parent.GetGeometryType())
         return false;
