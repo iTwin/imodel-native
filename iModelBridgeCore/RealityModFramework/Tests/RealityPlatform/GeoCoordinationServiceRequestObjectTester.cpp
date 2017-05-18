@@ -411,8 +411,8 @@ TEST_F(GeoCoordinationServiceRequestsFixture, GeoCoordinationServiceRequestGette
     ////"example.com", "99", "Dummy-Server", "VirtualModeling");
     EXPECT_STREQ(requestUnderTest.GetServerName().c_str(), "example.com");
     EXPECT_STREQ(requestUnderTest.GetVersion().c_str(), "99");
-    EXPECT_STREQ(requestUnderTest.GetSchema().c_str(), "Dummy-Server");
-    EXPECT_STREQ(requestUnderTest.GetRepoId().c_str(), "VirtualModeling");
+    EXPECT_STREQ(requestUnderTest.GetSchema().c_str(), "VirtualModeling");
+    EXPECT_STREQ(requestUnderTest.GetRepoId().c_str(), "Dummy-Server");
     }
 
 TEST_F(GeoCoordinationServiceRequestsFixture, GeoCoordinationServicePagedRequestGetter)
@@ -422,6 +422,6 @@ TEST_F(GeoCoordinationServiceRequestsFixture, GeoCoordinationServicePagedRequest
     ////"example.com", "99", "Dummy-Server", "VirtualModeling");
     EXPECT_STREQ(requestUnderTest.GetServerName().c_str(), "example.com");
     EXPECT_STREQ(requestUnderTest.GetVersion().c_str(), "99");
-    EXPECT_STREQ(requestUnderTest.GetSchema().c_str(), "Dummy-Server");
-    EXPECT_STREQ(requestUnderTest.GetRepoId().c_str(), "VirtualModeling");
+    EXPECT_STREQ(requestUnderTest.GetSchema().c_str(), "VirtualModeling");
+    EXPECT_STREQ(requestUnderTest.GetRepoId().c_str(), "Dummy-Server");
     }
