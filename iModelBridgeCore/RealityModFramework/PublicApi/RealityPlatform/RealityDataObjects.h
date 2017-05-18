@@ -203,7 +203,7 @@ public:
     enum Visibility
         {
         UNDEFINED_VISIBILITY = 0x00,
-        PUBLIC = 0x01,
+        //PUBLIC = 0x01,
         ENTERPRISE = 0x02,
         PERMISSION = 0x04,
         PRIVATE = 0x08

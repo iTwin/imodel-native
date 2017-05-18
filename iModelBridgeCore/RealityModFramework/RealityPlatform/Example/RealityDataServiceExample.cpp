@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
     filter1.push_back(RealityDataFilterCreator::FilterByClassification(RealityDataBase::Classification::MODEL));
     filter2.push_back(RealityDataFilterCreator::GroupFiltersAND(filter1));
     filter2.push_back(RealityDataFilterCreator::FilterByType("3mx"));
-    filter2.push_back(RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility::PUBLIC));
+    filter2.push_back(RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility::ENTERPRISE));
     
     // important note: parentheses are not currently supported, which means that all filters (AND/OR) are evaluated together
     // results may differ from their intended goal

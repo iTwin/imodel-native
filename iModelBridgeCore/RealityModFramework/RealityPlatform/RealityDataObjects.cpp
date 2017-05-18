@@ -306,13 +306,13 @@ StatusInt RealityDataBase::GetClassificationFromTag(RealityDataBase::Classificat
 Utf8String RealityDataBase::GetTagFromClassification(RealityDataBase::Classification classification)
 {
     if (Classification::MODEL == classification)
-        return "PUBLIC";
+        return "Model";
     else if (Classification::TERRAIN == classification)
-        return "ENTERPRISE";
+        return "Terrain";
     else if (Classification::IMAGERY == classification)
-        return "PERMISSION";
+        return "Imagery";
     else if (Classification::PINNED == classification)
-        return "PRIVATE";
+        return "Pinned";
 
     return "UNDEFINED";
 }
@@ -526,9 +526,9 @@ Utf8String RealityDataBase::GetVisibilityTag() const
 StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& returnedVisibility, Utf8CP visibilityTag)
     {
     Utf8String tag(visibilityTag);
-    if (tag == "PUBLIC")
+    /*if (tag == "PUBLIC")
         returnedVisibility = Visibility::PUBLIC;
-    else if (tag == "ENTERPRISE")
+    else*/ if (tag == "ENTERPRISE")
         returnedVisibility = Visibility::ENTERPRISE;
     else if (tag == "PERMISSION")
         returnedVisibility = Visibility::PERMISSION;
@@ -548,9 +548,9 @@ StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& ret
 //-------------------------------------------------------------------------------------
 Utf8String RealityDataBase::GetTagFromVisibility(RealityDataBase::Visibility visibility)
     {
-    if (Visibility::PUBLIC == visibility)
+    /*if (Visibility::PUBLIC == visibility)
         return "PUBLIC";
-    else if (Visibility::ENTERPRISE == visibility)
+    else*/ if (Visibility::ENTERPRISE == visibility)
         return "ENTERPRISE";
     else if (Visibility::PERMISSION == visibility)
         return "PERMISSION";

@@ -142,8 +142,8 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
     EXPECT_STREQ(mySpatialEntity->GetDescription().c_str(), "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
     mySpatialEntity->SetAccuracy("2.34"); 
     EXPECT_STREQ(mySpatialEntity->GetAccuracy().c_str(), "2.34");
-    mySpatialEntity->SetVisibilityByTag("PUBLIC"); 
-    EXPECT_STREQ(mySpatialEntity->GetVisibilityTag().c_str(), "PUBLIC"); // Default is preset
+    mySpatialEntity->SetVisibilityByTag("ENTERPRISE"); 
+    EXPECT_STREQ(mySpatialEntity->GetVisibilityTag().c_str(), "ENTERPRISE"); // Default is preset
 
     EXPECT_TRUE(mySpatialEntity->GetMetadataCP() == NULL);
 
@@ -550,7 +550,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
 
     mySpatialEntity->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt"); 
     mySpatialEntity->SetAccuracy("2.34"); 
-    mySpatialEntity->SetVisibilityByTag("PUBLIC"); 
+    mySpatialEntity->SetVisibilityByTag("ENTERPRISE"); 
 
     mySpatialEntity->SetOcclusion(23.45); 
 
@@ -737,8 +737,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetRootDocument().c_str(), "./RootDocument");
     myRealityData->SetAccuracy("2.34"); 
     EXPECT_STREQ(myRealityData->GetAccuracy().c_str(), "2.34");
-    myRealityData->SetVisibilityByTag("PUBLIC"); 
-    EXPECT_STREQ(myRealityData->GetVisibilityTag().c_str(), "PUBLIC"); // Default is preset
+    myRealityData->SetVisibilityByTag("ENTERPRISE"); 
+    EXPECT_STREQ(myRealityData->GetVisibilityTag().c_str(), "ENTERPRISE"); // Default is preset
     myRealityData->SetListable(false); 
     EXPECT_TRUE(!myRealityData->IsListable());
     myRealityData->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b"); 

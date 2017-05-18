@@ -423,7 +423,7 @@ CURL* RDSUser::CreateRealityData()
 
     properties.Insert(RealityDataField::Type, "3DTiles");
 
-    properties.Insert(RealityDataField::Visibility, "PUBLIC");
+    properties.Insert(RealityDataField::Visibility, "ENTERPRISE");
 
     RealityDataCreateRequest createRequest = RealityDataCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
     m_correspondance.response.clear();
