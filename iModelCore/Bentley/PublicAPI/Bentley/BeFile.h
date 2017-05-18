@@ -121,12 +121,6 @@ public:
     //! portable function, such as StgOpenStorage.
     void* GetHandle() const {return (void*)(intptr_t)m_handle;}
 
-    //! For debugging, mark this object as purposely unusable to catch unwanted access.
-    void SetBogus() {m_handle = (void*) 0xbadf00d;}
-
-    //! For debugging, check if this object was marked as bogus
-    bool IsBogus() const {return m_handle == (void*) 0xbadf00d;}
-
 //__PUBLISH_SECTION_START__
     //! Gets the status returned by the last operation that failed.
     BeFileStatus GetLastError() const {return m_lastError;}
