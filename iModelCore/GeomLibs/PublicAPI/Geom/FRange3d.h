@@ -127,6 +127,9 @@ public:
     bool IsSinglePoint () const;
     double AreAllSidesLongerThan (double a);
     bool IntersectsWith (FRange3dCR other, bool trueForExactTouch) const;
+    //! test if a is a small distance relative to the size of this range.
+    //! For null range, alwyas return the second arg.
+    bool IsSmallDistance (double x, bool nullRangeResult = true) const;
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE

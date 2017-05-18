@@ -11,7 +11,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 #define ROUND_FLOAT_AWAY_FROM_ZERO 1.000000119
 #define ROUND_FLOAT_TOWARDS_ZERO   0.9999999404
-
+#define FLOAT_COORDINATE_RELTOL 2.0e-6
 
 float DoubleOps::DoubleToFloatRoundLeft (double d)
     {
@@ -434,53 +434,19 @@ double FRange3d::DistanceSquaredTo (FRange3dCR other) const
         + DistanceSquaredBetweenIntervals (low.z, high.z, other.low.z, other.high.z);
     }
 
+double FRange3d::IsSmallDistance (double x, bool nullRangeResult = true) const
+    {
+    if (IsNull ())
+        return nullRangeResult;
+    return fabs (a) < DoubleOps::FloatCoordinateRelTol () * DoubleOps::Max (1.0, LargestCoordinate ());
+    }
 /*-----------------------------------------------------------------*//**
 * @bsimethod                                                    EarlinLutz      11/2013
 +----------------------------------------------------------------------*/
-bool FRange3d::IsAlmostZeroZ () const
-    {
-    if (IsNull ())
-        return true;
-    double maxAbs = LargestCoordinate ();
-    double dz = high.z - low.z;
-    return DoubleOps::AlmostEqual (maxAbs, maxAbs + dz);
-    }
-
-/*-----------------------------------------------------------------*//**
-* @bsimethod                                                    EarlinLutz      11/2013
-+----------------------------------------------------------------------*/
-bool FRange3d::IsAlmostZeroY () const
-    {
-    if (IsNull ())
-        return true;
-    double maxAbs = LargestCoordinate ();
-    double d = high.y - low.y;
-    return DoubleOps::AlmostEqual (maxAbs, maxAbs + d);
-    }
-
-/*-----------------------------------------------------------------*//**
-* @bsimethod                                                    EarlinLutz      11/2013
-+----------------------------------------------------------------------*/
-bool FRange3d::IsAlmostZeroX () const
-    {
-    if (IsNull ())
-        return true;
-    double maxAbs = LargestCoordinate ();
-    double d = high.x - low.x;
-    return DoubleOps::AlmostEqual (maxAbs, maxAbs + d);
-    }
-
-/*-----------------------------------------------------------------*//**
-* @bsimethod                                                    EarlinLutz      11/2013
-+----------------------------------------------------------------------*/
-bool FRange3d::IsAlmostZeroXYZ () const
-    {
-    if (IsNull ())
-        return true;
-    double maxAbs = LargestCoordinate ();
-    double d = DoubleOps::MaxAbs (high.x - low.x, high.y - low.y, high.z - low.z);
-    return DoubleOps::AlmostEqual (maxAbs, maxAbs + d);
-    }
+bool FRange3d::IsAlmostZeroX () const {return IsSmallDistance (high.x - low.x);}
+bool FRange3d::IsAlmostZeroY () const {return IsSmallDistance (high.y - low.y);}
+bool FRange3d::IsAlmostZeroZ () const {return IsSmallDistance (fabs (high.z - low.z);}
+bool FRange3d::IsAlmostZeroXYZ () const {return IsSmallDistance (DoubleOps::MaxAbs (high.x - low.x, high.y - low.y, high.z - low.z));}
 
 
 
