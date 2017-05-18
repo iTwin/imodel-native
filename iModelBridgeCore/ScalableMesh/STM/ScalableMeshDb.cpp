@@ -44,7 +44,7 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
     SchemaVersion databaseSchema(schemaVs.c_str());
    
     SchemaVersion currentVersion = GetCurrentVersion();
-    if (s_checkShemaVersion && databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) != 0)
+    if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_MajorMinor) != 0))
         return BE_SQLITE_SCHEMA;
 
     return BE_SQLITE_OK;
