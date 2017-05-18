@@ -914,25 +914,8 @@ DgnDbStatus DgnModel::_OnDelete()
             return stat;
         }
 
-    // delete all views which use this model as their base model
-    stat = DeleteAllViews();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
     BeAssert(GetRefCount() > 1);
     m_dgndb.Models().DropLoadedModel(*this);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::DeleteAllViews()
-    {
-    if (Is3dModel())
-        return ModelSelector::OnModelDelete(GetDgnDb(), GetModelId());
-     
-    ViewDefinition2d::OnModelDelete(GetDgnDb(), GetModelId());
     return DgnDbStatus::Success;
     }
 
@@ -943,22 +926,7 @@ struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& ha
 void DgnModel::_OnDeleted()
     {
     CallAppData(DeletedCaller());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void getElementsThatPointToModel(bset<DgnElementId>& dependents, DgnModelCR model)
-    {
-    BeSQLite::EC::CachedECSqlStatementPtr stmt;
-    if (model.Is2dModel())
-        stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_BaseModelForView2d) " WHERE SourceECInstanceId = ?");
-    else
-        stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT SourceECInstanceId As ModelSelectorId, SourceECClassId ModelSelectorClassId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE TargetECInstanceId = ?");
-
-    stmt->BindId(1, model.GetModelId());
-    while (BE_SQLITE_ROW == stmt->Step())
-        dependents.insert(stmt->GetValueId<DgnElementId>(0));
+    GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), DgnElementId() /* all ModelSelectors */, GetModeledElementId()); // replicate former foreign key behavior
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -991,18 +959,6 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                         return stat;
                     }
                 }
-
-            // and we must delete all of its views
-            bset<DgnElementId> dependents;
-            getElementsThatPointToModel(dependents, *this);
-            for (auto id : dependents)
-                {
-                auto dependent = GetDgnDb().Elements().GetElement(id);
-                auto stat = dependent->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
-                if (RepositoryStatus::Success != stat)
-                    return stat;
-                }
-
             break;
             }
         case BeSQLite::DbOpcode::Update:

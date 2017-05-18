@@ -568,10 +568,6 @@ public:
     //! that some elements may have been deleted. Therefore, you should always call DgnDb::AbandonChanges after a failure to avoid partial deletions.
     DGNPLATFORM_EXPORT DgnDbStatus Delete();
 
-    //! Deletes all ViewDefinitions which use this model as their base model
-    //! @return Success if all views were successfully deleted, or an error code.
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteAllViews();
-
     //! Update the Properties of this model in the DgnDb
     //! @return DgnDbStatus::Success if the properties of this model were successfully updated, error otherwise.
     DGNPLATFORM_EXPORT DgnDbStatus Update();
