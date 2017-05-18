@@ -90,6 +90,7 @@ public:
     UNITS_EXPORT bool TryGetNewName(Utf8CP oldName, Utf8StringR newName) const;
     UNITS_EXPORT bool TryGetOldName(Utf8CP newName, Utf8StringR oldName) const;
     UNITS_EXPORT UnitCP LookupUnitUsingOldName(Utf8CP oldName) const;
+    UnitCP GetPlatformLengthUnit() { return LookupUnit("M"); }
     };
 
 END_BENTLEY_UNITS_NAMESPACE
