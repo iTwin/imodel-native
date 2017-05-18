@@ -295,28 +295,28 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
 
     Execute(directory.c_str(), commandString, consoleOutput);
 
-    ASSERT_TRUE(consoleOutput.ContainsI("New RealityData created with GUID")); //upload
-    ASSERT_TRUE(consoleOutput.ContainsI(Utf8PrintfString("Name : %s", id.c_str()))); //filter
-    ASSERT_TRUE(consoleOutput.ContainsI("1 \t 945F9288 - 45C7 - 44ea - A9D4 - B05D015D4780")); //list
-    ASSERT_TRUE(consoleOutput.ContainsI("Visibility         : PUBLIC")); //details
-    ASSERT_TRUE(consoleOutput.ContainsI("DummyRootDocument.json 5000001 bytes"));
-    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile1.txt 1000001 bytes")); // Upload/ListAll
-    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile2.txt 1000001 bytes"));
-    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile3.txt 1000001 bytes"));
-    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile4.txt 1000001 bytes"));
-    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile5.txt 1000001 bytes"));
-    ASSERT_TRUE(consoleOutput.ContainsI("Description        : CHANGE PROP TEST")); //changeprops
-    ASSERT_TRUE(consoleOutput.ContainsI("FileAccess.FileAccessKey?$filter=Permissions+eq+'Write'")); //FileAccess
-    ASSERT_TRUE(consoleOutput.ContainsI("?sv=")); //AzureAddress
-    ASSERT_TRUE(consoleOutput.ContainsI("ProjectId          : 1")); //link
-    ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no projects attached to this RealityData")); //Unlink
+    ASSERT_TRUE(consoleOutput.ContainsI("New RealityData created with GUID")) << "createRD failed";
+    ASSERT_TRUE(consoleOutput.ContainsI(Utf8PrintfString("Name : %s", id.c_str()))) << "filter failed";
+    ASSERT_TRUE(consoleOutput.ContainsI("1 \t 945F9288 - 45C7 - 44ea - A9D4 - B05D015D4780")) << "list did not return created RD";
+    ASSERT_TRUE(consoleOutput.ContainsI("Visibility         : PUBLIC")) << "details did not return expected results";
+    ASSERT_TRUE(consoleOutput.ContainsI("DummyRootDocument.json 5000001 bytes")) << "upload was unsuccessful";
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile1.txt 1000001 bytes")) << "upload was unsuccessful";
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile2.txt 1000001 bytes")) << "upload was unsuccessful";
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile3.txt 1000001 bytes")) << "upload was unsuccessful";
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile4.txt 1000001 bytes")) << "upload was unsuccessful";
+    ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile5.txt 1000001 bytes")) << "upload was unsuccessful";
+    ASSERT_TRUE(consoleOutput.ContainsI("Description        : CHANGE PROP TEST")) << "properties weren't properly changed";
+    ASSERT_TRUE(consoleOutput.ContainsI("FileAccess.FileAccessKey?$filter=Permissions+eq+'Write'")) << "FileAccess didn't return url";
+    ASSERT_TRUE(consoleOutput.ContainsI("?sv=")) << "FileAccess didn't return url";
+    ASSERT_TRUE(consoleOutput.ContainsI("ProjectId          : 1")) << "didn't link RD to project";
+    ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no projects attached to this RealityData")) << "didn't unlink RD from project";
     Utf8String outRoot = dummyRoot.GetNameUtf8();
-    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummyRootDocument.json", outRoot))));
-    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile1.txt", outRoot))));//Download
-    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile2.txt", outRoot))));
-    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile3.txt", outRoot))));
-    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile4.txt", outRoot))));
-    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile5.txt", outRoot))));
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummyRootDocument.json", outRoot)))) << "a document failed to download";
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile1.txt", outRoot)))) << "a document failed to download";
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile2.txt", outRoot)))) << "a document failed to download";
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile3.txt", outRoot)))) << "a document failed to download";
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile4.txt", outRoot)))) << "a document failed to download";
+    ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile5.txt", outRoot)))) << "a document failed to download";
 
     ASSERT_TRUE(BeFileName::EmptyAndRemoveDirectory(directory.c_str()) == BeFileNameStatus::Success);
     }

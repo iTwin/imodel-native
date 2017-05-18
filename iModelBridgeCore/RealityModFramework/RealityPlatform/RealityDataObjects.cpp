@@ -304,13 +304,13 @@ StatusInt RealityDataBase::GetClassificationFromTag(RealityDataBase::Classificat
 Utf8String RealityDataBase::GetTagFromClassification(RealityDataBase::Classification classification)
 {
     if (Classification::MODEL == classification)
-        return "PUBLIC";
+        return "Model";
     else if (Classification::TERRAIN == classification)
-        return "ENTERPRISE";
+        return "Terrain";
     else if (Classification::IMAGERY == classification)
-        return "PERMISSION";
+        return "Imagery";
     else if (Classification::PINNED == classification)
-        return "PRIVATE";
+        return "Pinned";
 
     return "UNDEFINED";
 }
