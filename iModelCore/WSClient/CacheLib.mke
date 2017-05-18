@@ -2,7 +2,7 @@
 #
 #     $Source: CacheLib.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # This only affect WinRT build.
@@ -63,25 +63,15 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 # DgnClientFx library name
-%if $(TARGET_PLATFORM)=="Android"
-    _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(shlibext)
-%else
-    _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
-%endif
+_dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
 
-%if $(TARGET_PLATFORM)=="Android"
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(shlibext)
-    %include dlmlink.mki
-%else
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
-    %include $(sharedMki)LinkLibrary.mki    
-%endif
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+%include $(sharedMki)LinkLibrary.mki    
