@@ -308,7 +308,7 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 
 $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshEdit.h ${MultiCompileDepends}
 
-$(o)ScalableMeshAnalyse$(oext) : $(stmDir)ScalableMeshAnalyse.cpp $(stmDir)ScalableMeshAnalyse.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshAnalyse.h ${MultiCompileDepends}
+#$(o)ScalableMeshAnalyse$(oext) : $(stmDir)ScalableMeshAnalyse.cpp $(stmDir)ScalableMeshAnalyse.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshAnalyse.h ${MultiCompileDepends}
 
 $(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 

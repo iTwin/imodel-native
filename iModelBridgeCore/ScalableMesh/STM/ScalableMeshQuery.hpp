@@ -1844,7 +1844,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform)
-    : ScalableMeshNode(nodePtr), m_reprojectionTransform(reprojectionTransform)
+    : ScalableMeshNode(nodePtr)
     {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -1860,7 +1860,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMesh)
-    : ScalableMeshNode(nodePtr), m_reprojectionTransform(scalableMesh->GetReprojectionTransform()), m_scalableMeshP(scalableMesh)
+    : ScalableMeshNode(nodePtr), m_scalableMeshP(scalableMesh)
 {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);

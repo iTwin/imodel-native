@@ -16,7 +16,7 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
 #include <ScalableMesh/IScalableMeshEdit.h>
-#include <ScalableMesh/IScalableMeshAnalyse.h>
+//#include <ScalableMesh/IScalableMeshAnalyse.h>
 
 #undef static_assert
 
@@ -170,7 +170,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const = 0;
 
-        virtual IScalableMeshAnalysePtr    _GetMeshAnalyseInterface() = 0;
+        //virtual IScalableMeshAnalysePtr    _GetMeshAnalyseInterface() = 0;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DTMAnalysisType type) = 0;
 
@@ -281,7 +281,7 @@ struct IScalableMesh abstract:  IRefCounted
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) =0;
 
 #ifdef VANCOUVER_API
-        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) = 0;
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) = 0;
 #endif
 
         virtual Transform              _GetReprojectionTransform() const = 0;
@@ -349,7 +349,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshEditPtr    GetMeshEditInterface() const;
 
-        BENTLEY_SM_EXPORT IScalableMeshAnalysePtr    GetMeshAnalyseInterface();
+        //BENTLEY_SM_EXPORT IScalableMeshAnalysePtr    GetMeshAnalyseInterface();
 
         BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DTMAnalysisType type = DTMAnalysisType::Precise);
 
@@ -458,7 +458,7 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
 
 #ifdef VANCOUVER_API
-        BENTLEY_SM_EXPORT BentleyStatus          Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel);
+        BENTLEY_SM_EXPORT BentleyStatus          Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel);
 #endif
 
         BENTLEY_SM_EXPORT Transform              GetReprojectionTransform() const;

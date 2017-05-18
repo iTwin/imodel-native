@@ -53,7 +53,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ImagePP\all\h\HIMMosaic.h>
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
-#include "ScalableMeshAnalyse.h"
+//#include "ScalableMeshAnalyse.h"
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "MosaicTextureProvider.h"
@@ -232,11 +232,12 @@ IScalableMeshEditPtr IScalableMesh::GetMeshEditInterface() const
     {
     return _GetMeshEditInterface();
     }
-
+/*
 IScalableMeshAnalysePtr IScalableMesh::GetMeshAnalyseInterface()
     {
     return _GetMeshAnalyseInterface();
     }
+*/
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DTMAnalysisType type)
     {
@@ -512,7 +513,7 @@ BentleyStatus   IScalableMesh::SetReprojection(GeoCoordinates::BaseGCSCR targetC
     }
 
 #ifdef VANCOUVER_API
-BentleyStatus   IScalableMesh::Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
+BentleyStatus   IScalableMesh::Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel)
     {
     return _Reproject(targetCS, dgnModel);
     }
@@ -2033,10 +2034,12 @@ template <class POINT> IScalableMeshEditPtr ScalableMesh<POINT>::_GetMeshEditInt
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetMeshAnalyseInterface
 +----------------------------------------------------------------------------*/
+/*
 template <class POINT> IScalableMeshAnalysePtr ScalableMesh<POINT>::_GetMeshAnalyseInterface()
     {
     return ScalableMeshAnalyse::Create(this);
     }
+*/
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetNbResolutions
@@ -2934,47 +2937,68 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoC
     }
 
 #ifdef VANCOUVER_API
-template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel)
+template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel)
     {
     Transform computedTransform = Transform::FromIdentity();
 
     // Greate a GCS from the ScalableMesh
-    GeoCoords::GCS       gcs(this->GetGCS());
-    assert(gcs.HasGeoRef()); // Missing GeoRef in SM
-
-    GeoCoordinates::DgnGCSPtr          smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
-    assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
+    GeoCoords::GCS gcs(this->GetGCS());
+    GeoCoords::Unit unit(gcs.GetHorizontalUnit());
 
     auto& modelInfo = dgnModel->AsDgnModelCP()->GetModelInfo();
-    DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
-    if (smGCS != nullptr && !targetCS.IsEquivalent(*smGCS))
+    
+    if (targetCS == nullptr || !gcs.HasGeoRef())
         {
-        DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
-        smGCS->UorsFromCartesian(scale, scale);
-        scale.DifferenceOf(scale, globalOrigin);
-        computedTransform = Transform::FromRowValues(scale.x,       0,       0, globalOrigin.x,
-                                                           0, scale.y,       0, globalOrigin.y,
-                                                           0,       0, scale.z, globalOrigin.z);
+        BaseGCSPtr targetGcs(BaseGCS::CreateGCS());
+                
+        double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * unit.GetRatioToBase();
 
-        DRange3d smExtent, smExtentUors;
-        this->GetRange(smExtent);
-        computedTransform.Multiply(smExtentUors, smExtent);
-
-        DPoint3d extent;
-        extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
-        Transform       approxTransform;
-
-        auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
-
-        auto status = smGCS->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, static_cast<DgnGCSCR>(targetCS));
-
-        if (0 == status || 1 == status)
+        computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
+                        
+        return _SetReprojection(*targetGcs, computedTransform);
+        }
+    else
+        {
+        GeoCoordinates::DgnGCSPtr  smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
+        assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
+        
+        DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
+        if (smGCS != nullptr && !targetCS->IsEquivalent(*smGCS))
             {
-            computedTransform = Transform::FromProduct(approxTransform, computedTransform);
+            DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
+            smGCS->UorsFromCartesian(scale, scale);
+            scale.DifferenceOf(scale, globalOrigin);            
+            
+            computedTransform = Transform::FromRowValues(scale.x,       0,       0, globalOrigin.x,
+                                                               0, scale.y,       0, globalOrigin.y,
+                                                               0,       0, scale.z, globalOrigin.z);
+
+            DRange3d smExtent, smExtentUors;
+            this->GetRange(smExtent);
+            computedTransform.Multiply(smExtentUors, smExtent);
+
+            DPoint3d extent;
+            extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
+            Transform       approxTransform;
+
+            auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
+
+            auto status = smGCS->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, static_cast<DgnGCSCR>(*targetCS));
+
+            if (0 == status || 1 == status)
+                {
+                computedTransform = Transform::FromProduct(approxTransform, computedTransform);
+                }
+            }
+        else
+            {             
+            double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * unit.GetRatioToBase();
+
+            computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
             }
         }
 
-    return _SetReprojection(targetCS, computedTransform);
+    return _SetReprojection(*targetCS, computedTransform);
     }
 #endif
 
