@@ -375,9 +375,9 @@ Render::TextureP DisplayParams::ResolveTexture(DgnDbR db, Render::System const& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange3d Mesh::GetTriangleRange(TriangleCR triangle) const
     {
-    return DRange3d::From(m_normals.Unquantize(triangle[0]),
-                          m_normals.Unquantize(triangle[1]),
-                          m_normals.Unquantize(triangle[2]));
+    return DRange3d::From(m_points.Unquantize(triangle[0]),
+                          m_points.Unquantize(triangle[1]),
+                          m_points.Unquantize(triangle[2]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -385,9 +385,9 @@ DRange3d Mesh::GetTriangleRange(TriangleCR triangle) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DVec3d Mesh::GetTriangleNormal(TriangleCR triangle) const
     {
-    return DVec3d::FromNormalizedCrossProductToPoints(m_normals.Unquantize(triangle[0]),
-                                                      m_normals.Unquantize(triangle[1]),
-                                                      m_normals.Unquantize(triangle[2]));
+    return DVec3d::FromNormalizedCrossProductToPoints(m_points.Unquantize(triangle[0]),
+                                                      m_points.Unquantize(triangle[1]),
+                                                      m_points.Unquantize(triangle[2]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1714,6 +1714,8 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
         m_indices.push_back(static_cast<int32_t>(triangle[2]));
         }
 
+    m_pointParams = mesh.Points().GetParams();
+
     Set(m_numIndices, m_vertIndex, m_indices);
     Set(m_numPoints, m_points, mesh.Points());
     Set(m_textureUV, mesh.Params());
@@ -1754,6 +1756,7 @@ void MeshArgs::Clear()
 bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
     {
     m_meshEdges = mesh.GetEdges();
+    m_pointParams = mesh.Points().GetParams();
 
     if (m_meshEdges->m_visible.empty())
         return false;
@@ -1774,6 +1777,7 @@ bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
 bool  RenderSilhouetteEdgeArgs::Init(MeshCR mesh)
     {
     m_meshEdges = mesh.GetEdges();
+    m_pointParams = mesh.Points().GetParams();
 
     if (m_meshEdges->m_silhouette.empty())
         return false;
@@ -1811,6 +1815,8 @@ void PolylineArgs::Reset()
 bool PolylineArgs::Init(MeshCR mesh)
     {
     Reset();
+
+    m_pointParams = mesh.Points().GetParams();
 
     m_numPoints = static_cast<uint32_t>(mesh.Points().size());
     m_points = &mesh.Points()[0];

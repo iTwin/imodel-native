@@ -388,6 +388,57 @@ bool FrustumPlanes::IntersectsRay(DPoint3dCR origin, DVec3dCR direction)
     return tNear <= tFar;
     }
 
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
+    {
+    for (double* pEnd = pDouble + n; pDouble < pEnd; )
+        *pDouble++ = *pFloat++;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void toDPoints(T& dpts, QPoint3dCP qpts, QPoint3d::ParamsCR qparams, int32_t numPoints)
+    {
+    dpts.resize(numPoints);
+    for (int32_t i = 0; i < numPoints; i++)
+        dpts[i] = qpts[i].UnquantizeAsVector(qparams);
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr TriMeshArgs::ToPolyface() const
+    {
+    PolyfaceHeaderPtr polyFace = PolyfaceHeader::CreateFixedBlockIndexed(3);
+
+    BlockedVectorIntR pointIndex = polyFace->PointIndex();
+    pointIndex.resize(m_numIndices);
+    int32_t const* pIndex = m_vertIndex;
+    int32_t const* pEnd = pIndex + m_numIndices;
+    int32_t* pOut = &pointIndex.front();
+
+    for (; pIndex < pEnd; )
+        *pOut++ = 1 + *pIndex++;
+
+    if (nullptr != m_points)
+        toDPoints(polyFace->Point(), m_points, m_pointParams, m_numPoints);
+
+    if (nullptr != m_normals)
+        toDPoints(polyFace->Normal(), m_normals, QPoint3d::Params::FromNormalizedRange(), m_numPoints);
+
+    if (nullptr != m_textureUV)
+        {
+        polyFace->Param().resize(m_numPoints);
+        floatToDouble(&polyFace->Param().front().x, &m_textureUV->x, 2 * m_numPoints);
+        polyFace->ParamIndex() = pointIndex;
+        }
+
+    return polyFace;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/

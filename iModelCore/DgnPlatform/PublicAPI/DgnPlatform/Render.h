@@ -1630,9 +1630,7 @@ namespace Quantization
         typedef typename T::Params Params;
         typedef typename T::T_Range Range;
         typedef typename T::T_DPoint DPoint;
-        //using Params = T::Params;
-        //using Range = T::T_Range;
-        //using DPoint = T::T_DPoint;
+        typedef typename T::T_DVec DVec;
 
         explicit QPointList(Params const& params) : m_params(params) { }
         explicit QPointList(Range const& range ) : QPointList(Params(range)) { }
@@ -1640,7 +1638,8 @@ namespace Quantization
         Params const& GetParams() const { return m_params; }
 
         void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
-        DPoint Unquantize(size_t index) const { BeAssert(index < size()); return (*this)[index].Unquantize(GetParams()); }
+        DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
+        DVec UnquantizeAsVector(size_t index) const { BeAssert(index < size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
     private:
         Params  m_params;
     };
@@ -1656,6 +1655,7 @@ struct QPoint3d
 {
     using T_Range = DRange3d;
     using T_DPoint = DPoint3d;
+    using T_DVec = DVec3d;
 
     uint16_t x, y, z;
 
@@ -1694,9 +1694,12 @@ struct QPoint3d
         }
 
     //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
-    DPoint3d Unquantize(ParamsCR params) const
+    DPoint3d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+
+    //! Decode this QPoint3d into a DVec3d using the same params from which the QPoint3d was created.
+    DVec3d UnquantizeAsVector(ParamsCR params) const
         {
-        return DPoint3d::FromXYZ(
+        return DVec3d::From(
             Quantization::Unquantize(x, params.origin.x, params.scale.x),
             Quantization::Unquantize(y, params.origin.y, params.scale.y),
             Quantization::Unquantize(z, params.origin.z, params.scale.z));
@@ -1724,6 +1727,7 @@ struct QPoint2d
 {
     using T_Range = DRange2d;
     using T_DPoint = DPoint2d;
+    using T_DVec = DVec2d;
 
     uint16_t x, y;
 
@@ -1753,9 +1757,12 @@ struct QPoint2d
         }
 
     //! Decode this QPoint2d into a DPoint2d using the same params from which the QPoint2d was created.
-    DPoint2d Unquantize(ParamsCR params) const
+    DPoint2d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+
+    //! Decode this QPoint2d into a DVec2d using the same params from which the QPoint2d was created.
+    DVec2d UnquantizeAsVector(ParamsCR params) const
         {
-        return DPoint2d::From(
+        return DVec2d::From(
             Quantization::Unquantize(x, params.origin.x, params.scale.x),
             Quantization::Unquantize(y, params.origin.y, params.scale.y));
         }
@@ -1785,6 +1792,8 @@ struct TriMeshArgs
     ColorIndex          m_colors;
     FeatureIndex        m_features;
     QPoint3d::Params    m_pointParams;
+
+    DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
 
 //=======================================================================================
