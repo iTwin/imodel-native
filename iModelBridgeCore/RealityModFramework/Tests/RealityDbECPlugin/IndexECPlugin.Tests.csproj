@@ -119,13 +119,14 @@
     <Compile Include="Tests\Helpers\MimicTableWriterTests.cs" />
     <Compile Include="Tests\Helpers\PackagerTests.cs" />
     <Compile Include="Tests\Helpers\IDbQuerierTests.cs" />
+    <Compile Include="Tests\PolygonModelTests.cs" />
     <Compile Include="Tests\SqlQueryProviderTests.cs" />
     <Compile Include="Tests\SqlServerInsertStatementBuilderTests.cs" />
     <Compile Include="Tests\USGSDataExtractorsTests.cs" />
     <Compile Include="Tests\USGSDataFetcherTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SrcRoot)\RealityModFramework\RealityDbECPlugin\IndexECPlugin.csproj">
+    <ProjectReference Include="..\..\RealityDbECPlugin\IndexECPlugin.csproj">
       <Project>{7b23aea6-9095-44d4-828e-3da7bfec58d1}</Project>
       <Name>IndexECPlugin</Name>
     </ProjectReference>

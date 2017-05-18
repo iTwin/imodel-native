@@ -1,28 +1,17 @@
 ﻿using System;
 using System.Data;
 using IndexECPlugin.Source.Helpers;
-using IndexECPlugin.Tests.Common;
 using NUnit.Framework;
 using Bentley.EC.Persistence.Query;
+using Bentley.ECObjects.Instance;
 using Bentley.Exceptions;
+using Rhino.Mocks;
 
 namespace IndexECPlugin.Tests.Tests.Helpers
     {
     [TestFixture]
     class ECToSQLMapTests
         {
-
-        [SetUp]
-        public void SetUp ()
-            {
-
-            }
-
-        [TearDown]
-        public void TearDown ()
-            {
-            
-            }
 
         [TestCase(RelationalOperator.EQ, "=")]
         [TestCase(RelationalOperator.GT, ">")]
@@ -84,13 +73,69 @@ namespace IndexECPlugin.Tests.Tests.Helpers
         [Test]
         public void SQLReaderToECPropertyTest ()
             {
+            const string returnedString = "abc123";
+            const double returnedDouble = 42.42;
+            const bool returnedBoolean = true;
+            const int returnedInt = 42;
+            const long returnedLong = 1337;
+            DateTime returnedDateTime = new DateTime(2017, 5, 18);
 
+            MockRepository mocks = new MockRepository();
+            IDataReader dataReaderStub = mocks.Stub<IDataReader>();
+            IECPropertyValue stringECPropertyValueStub = mocks.Stub<IECPropertyValue>();
+            IECPropertyValue doubleECPropertyValueStub = mocks.Stub<IECPropertyValue>();
+            IECPropertyValue booleanECPropertyValueStub = mocks.Stub<IECPropertyValue>();
+            IECPropertyValue intECPropertyValueStub = mocks.Stub<IECPropertyValue>();
+            IECPropertyValue longECPropertyValueStub = mocks.Stub<IECPropertyValue>();
+            IECPropertyValue dateTimeECPropertyValueStub = mocks.Stub<IECPropertyValue>();
+
+            using ( mocks.Record() )
+                {
+                SetupResult.For(dataReaderStub.GetString(Arg<int>.Is.Anything)).Return(returnedString);
+                SetupResult.For(dataReaderStub.GetDouble(Arg<int>.Is.Anything)).Return(returnedDouble);
+                SetupResult.For(dataReaderStub.GetBoolean(Arg<int>.Is.Anything)).Return(returnedBoolean);
+                SetupResult.For(dataReaderStub.GetInt32(Arg<int>.Is.Anything)).Return(returnedInt);
+                SetupResult.For(dataReaderStub.GetInt64(Arg<int>.Is.Anything)).Return(returnedLong);
+                SetupResult.For(dataReaderStub.GetDateTime(Arg<int>.Is.Anything)).Return(returnedDateTime);
+
+                SetupResult.For(stringECPropertyValueStub.Type).Return(Bentley.ECObjects.ECObjects.StringType);
+                SetupResult.For(doubleECPropertyValueStub.Type).Return(Bentley.ECObjects.ECObjects.DoubleType);
+                SetupResult.For(booleanECPropertyValueStub.Type).Return(Bentley.ECObjects.ECObjects.BooleanType);
+                SetupResult.For(intECPropertyValueStub.Type).Return(Bentley.ECObjects.ECObjects.IntegerType);
+                SetupResult.For(longECPropertyValueStub.Type).Return(Bentley.ECObjects.ECObjects.LongType);
+                SetupResult.For(dateTimeECPropertyValueStub.Type).Return(Bentley.ECObjects.ECObjects.DateTimeType);
+                }
+            ECToSQLMap.SQLReaderToECProperty(stringECPropertyValueStub, dataReaderStub, 0);
+            Assert.That(stringECPropertyValueStub.StringValue, Is.EqualTo(returnedString));
+
+            ECToSQLMap.SQLReaderToECProperty(doubleECPropertyValueStub, dataReaderStub, 0);
+            Assert.That(doubleECPropertyValueStub.DoubleValue, Is.EqualTo(returnedDouble));
+
+            ECToSQLMap.SQLReaderToECProperty(booleanECPropertyValueStub, dataReaderStub, 0);
+            Assert.That(booleanECPropertyValueStub.NativeValue, Is.EqualTo(returnedBoolean));
+
+            ECToSQLMap.SQLReaderToECProperty(intECPropertyValueStub, dataReaderStub, 0);
+            Assert.That(intECPropertyValueStub.IntValue, Is.EqualTo(returnedInt));
+
+            ECToSQLMap.SQLReaderToECProperty(longECPropertyValueStub, dataReaderStub, 0);
+            Assert.That(longECPropertyValueStub.NativeValue, Is.EqualTo(returnedLong));
+
+            ECToSQLMap.SQLReaderToECProperty(dateTimeECPropertyValueStub, dataReaderStub, 0);
+            Assert.That(dateTimeECPropertyValueStub.NativeValue, Is.EqualTo(returnedDateTime));
             }
 
         [Test]
         public void SQLReaderToECPropertyExceptionTest ()
             {
+            MockRepository mocks = new MockRepository();
+            IDataReader dataReaderStub = mocks.Stub<IDataReader>();
+            IECPropertyValue point2DECPropertyValueStub = mocks.Stub<IECPropertyValue>();
 
+            using ( mocks.Record() )
+                {
+                SetupResult.For(point2DECPropertyValueStub.Type).Return(Bentley.ECObjects.ECObjects.Point2dType);
+                }
+            Assert.That(() => ECToSQLMap.SQLReaderToECProperty(point2DECPropertyValueStub, dataReaderStub, 0), Throws.TypeOf<ProgrammerException>());
             }
         }
     }

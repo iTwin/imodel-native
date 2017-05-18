@@ -13,12 +13,6 @@ namespace IndexECPlugin.Tests.Tests.Helpers
         {
         private IDbConnection dbConnectionMock;
 
-        [SetUp]
-        public void setup ()
-            {
-
-            }
-
         [Test]
         public void GetSqlInsertStatementBuilderTest ()
             {
