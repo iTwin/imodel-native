@@ -19,7 +19,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(AnotherTestElement)
 DEFINE_REF_COUNTED_PTR(AnotherTestElement)
 
 // Turn this on for debugging.
-#define DUMP_REVISION 1
+// #define DUMP_REVISION 1
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DgnCore"))
 

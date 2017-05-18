@@ -707,8 +707,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 +---------------+---------------+---------------+---------------+---------------+------*/
 RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream)
     {
+    bool containsSchemaChanges;
     DbSchemaChangeSet dbSchemaChanges;
-    DbResult result = changeStream.GetDbSchemaChanges(dbSchemaChanges);
+    DbResult result = changeStream.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
