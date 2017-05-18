@@ -592,9 +592,11 @@ BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(ECRelationshipCons
     if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
         return ERROR;
 
-    BeAssert(relationshipConstraint.IsRoleLabelDefinedLocally() && "ECObjects contract is that role labels are not inherited from base classes");
-    if (BE_SQLITE_OK != stmt->BindText(7, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::No))
-        return ERROR;
+    if (relationshipConstraint.IsRoleLabelDefinedLocally())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(7, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
 
     if (relationshipConstraint.IsAbstractConstraintDefinedLocally())
         {

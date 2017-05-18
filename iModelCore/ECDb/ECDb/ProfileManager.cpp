@@ -392,7 +392,7 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "MultiplicityLowerLimit INTEGER NOT NULL,"
                            "MultiplicityUpperLimit INTEGER,"
                            "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_False "," SQLVAL_True ")),"
-                           "RoleLabel TEXT NOT NULL,"
+                           "RoleLabel TEXT,"
                            "AbstractConstraintClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;

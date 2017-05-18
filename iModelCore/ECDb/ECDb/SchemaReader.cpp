@@ -1295,8 +1295,8 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
 
     constraint.SetIsPolymorphic(stmt->GetValueBoolean(isPolymorphicIx));
 
-    BeAssert(!stmt->IsColumnNull(roleLabelIx) && "RoleLabel is always expected to be not null");
-    constraint.SetRoleLabel(stmt->GetValueText(roleLabelIx));
+    if (!stmt->IsColumnNull(roleLabelIx))
+        constraint.SetRoleLabel(stmt->GetValueText(roleLabelIx));
 
     ECClassId abstractConstraintClassId;
     if (!stmt->IsColumnNull(abstractConstraintClassIdIx))
