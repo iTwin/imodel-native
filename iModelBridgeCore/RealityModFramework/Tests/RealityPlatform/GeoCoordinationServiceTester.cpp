@@ -19,6 +19,7 @@ using ::testing::Return;
 using ::testing::_;
 using ::testing::Eq;
 using ::testing::Invoke;
+using ::testing::NiceMock;
 
 //=====================================================================================
 //! @bsiclass                                   Remi.Charbonneau              05/2017
@@ -138,14 +139,14 @@ class GeoCoordinationServiceRequestFixture : public testing::Test
 public:
     static GeoCoordinationService* s_geoCoordinateServiceUnderTest;
     static ErrorClass* s_errorClass;
-    static MockWSGRequest* s_mockWSGInstance;
+    static NiceMock<MockWSGRequest>* s_mockWSGInstance;
 
     static void SetUpTestCase()
     {
         s_geoCoordinateServiceUnderTest = new GeoCoordinationService();
         s_errorClass = new ErrorClass();
         s_geoCoordinateServiceUnderTest->SetErrorCallback(GeoCoordinationServiceRequestFixture::mockErrorCallBack);
-        s_mockWSGInstance = new MockWSGRequest;
+        s_mockWSGInstance = new NiceMock<MockWSGRequest>();
     }
 
     static void TearDownTestCase()
@@ -169,7 +170,7 @@ public:
 
 ErrorClass* GeoCoordinationServiceRequestFixture::s_errorClass = nullptr;
 GeoCoordinationService* GeoCoordinationServiceRequestFixture::s_geoCoordinateServiceUnderTest = nullptr;
-MockWSGRequest* GeoCoordinationServiceRequestFixture::s_mockWSGInstance = nullptr;
+NiceMock<MockWSGRequest>* GeoCoordinationServiceRequestFixture::s_mockWSGInstance = nullptr;
 
 //=====================================================================================
 //! @bsiclass                                   Remi.Charbonneau              05/2017
@@ -238,6 +239,7 @@ TEST_P(GeoCoordinateServiceBasicRequest, AdvancePageIsCalledAfterSuccessfulReque
     else
     {
         EXPECT_CALL(*dummyPagedRequest, AdvancePage()).Times(0);
+        EXPECT_CALL(*s_errorClass, errorCallBack(_, _));
     }
 
     auto response = GeoCoordinationService::BasicPagedRequest(dummyPagedRequest, GetParam().keyword);

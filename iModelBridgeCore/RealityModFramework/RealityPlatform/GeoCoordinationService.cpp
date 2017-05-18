@@ -304,21 +304,27 @@ void PackagePreparationRequest::_PrepareHttpRequestStringAndPayload() const
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s/PackageRequest/", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
 
-    m_requestPayload = "{'instance':{'instanceId':null,'className':'PackageRequest','schemaName':'RealityModeling','properties':{'RequestedEntities':[";
+    m_requestPayload = R"({"instance":{"instanceId":null,"className":"PackageRequest","schemaName":"RealityModeling","properties":{"RequestedEntities":[)";
     for (Utf8String id : m_listOfSpatialEntities)
         {
-        m_requestPayload.append("{ 'Id':'");
+        m_requestPayload.append(R"({ "Id":")");
         m_requestPayload.append(id);
-        m_requestPayload.append("'},");
+        m_requestPayload.append(R"("},)");
+        }
+    
+    // Remove comma from the last entities
+    if(m_listOfSpatialEntities.size() > 0 )
+        {
+        m_requestPayload = m_requestPayload.substr(0, m_requestPayload.size() - 1);
         }
 
     //if (containOsmClass())
     /*listAsPostFields.append("],'CoordinateSystem':null,'OSM': true,'Polygon':'[");
     else*/
-    m_requestPayload.append("],'CoordinateSystem':null,'OSM': false,'Polygon':'[");
+    m_requestPayload.append(R"(],"CoordinateSystem":null,"OSM": false,"Polygon":"[)");
 
     m_requestPayload.append(GetPolygonAsString(m_projectArea, false));
-    m_requestPayload.append("]'}}, 'requestOptions':{'CustomOptions':{'Version':'2', 'Requestor':'GeoCoordinationService', 'RequestorVersion':'1.0' }}}");
+    m_requestPayload.append(R"(]"}}, "requestOptions":{"CustomOptions":{"Version":"2", "Requestor":"GeoCoordinationService", "RequestorVersion":"1.0" }}})");
 
     m_requestHeader.clear();
     m_requestHeader.push_back("Content-Type: application/json");

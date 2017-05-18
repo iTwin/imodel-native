@@ -954,60 +954,75 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentSetIdFromFolderName)
     EXPECT_STREQ(myDocument->GetName().c_str(), "Production_Helsinki_3MX_ok.3mx");
     }
 
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataDocumentSetRealityDataId)
+    {
+    RealityDataDocumentPtr myDocument = RealityDataDocument::Create();
+    myDocument->SetRealityDataId("MyRealityID");
+    EXPECT_STREQ(myDocument->GetRealityDataId().c_str(), "MyRealityID");
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityDataObjectTestFixture, RealityDataDocumentSetIdFromDataFolder)
-{
+    {
     Utf8CP jsonString = "{"
-                          "\"instances\": [" 
-                            "{"
-                            "\"instanceId\": \"14812\","
-                            "\"schemaName\" : \"RealityModeling\","
-                            "\"className\" : \"RealityDataDocument\","
-                            "\"properties\" : {"
-                                  "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"Name\" : \"Production_Helsinki_3MX_ok.3mx\","
-                                  "\"Id\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/Production_Helsinki_3MX_ok.3mx\","
-                                  "\"FolderId\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/\","
-                                  "\"AccessUrl\" : \"https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file\","
-                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"ContentType\" : \"3mx\","
-                                  "\"Size\" : \"1399\""
-                               " },"
-                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-                           "},"
-                            "{"
-                            "\"instanceId\": \"14813\","
-                            "\"schemaName\" : \"RealityModeling\","
-                            "\"className\" : \"RealityDataDocument\","
-                            "\"properties\" : {"
-                                  "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"Name\" : \"Marseille.3mx\","
-                                  "\"Id\" : \"TBD\","
-                                  "\"FolderId\" : \"\","
-                                  "\"AccessUrl\" : \"?????\","
-                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"ContentType\" : \"3mx\","
-                                  "\"Size\" : \"\""
-                               " },"
-                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-                           "}"
-                       " ]"
-                     " }";
+        "\"instances\": ["
+        "{"
+        "\"instanceId\": \"14812\","
+        "\"schemaName\" : \"RealityModeling\","
+        "\"className\" : \"RealityDataDocument\","
+        "\"properties\" : {"
+        "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"Name\" : \"Production_Helsinki_3MX_ok.3mx\","
+        "\"Id\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene\","
+        "\"FolderId\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/\","
+        "\"AccessUrl\" : \"https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file\","
+        "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"ContentType\" : \"3mx\","
+        "\"ParentFolderId\" : \"parentsIDDdD\","
+        "\"Size\" : \"1399\""
+        " },"
+        " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+        "},"
+        "{"
+        "\"instanceId\": \"14813\","
+        "\"schemaName\" : \"RealityModeling\","
+        "\"className\" : \"RealityDataDocument\","
+        "\"properties\" : {"
+        "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"Name\" : \"Marseille.3mx\","
+        "\"Id\" : \"TBD\","
+        "\"FolderId\" : \"\","
+        "\"AccessUrl\" : \"?????\","
+        "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"ContentType\" : \"3mx\","
+        "\"ParentFolderId\" : \"parentsIDDdD\","
+        "\"Size\" : \"\""
+        " },"
+        " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+        "}"
+        " ]"
+        " }";
 
     // Parse.
     Json::Value root(Json::objectValue);
     ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
     const Json::Value instance = root["instances"][0];
 
-    RealityDataFolderPtr datafolder = RealityDataFolder::Create(instance);
+    RealityDataFolderPtr dataFolderPtr = RealityDataFolder::Create(instance);
+    RealityDataFolderCR datafolder = *dataFolderPtr;
     RealityDataDocumentPtr myDocument = RealityDataDocument::Create();
-    myDocument->SetId("43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene", "Production_Helsinki_3MX_ok.3mx");
+    myDocument->SetId(datafolder, "Production_Helsinki_3MX_ok.3mx");
     EXPECT_STREQ(myDocument->GetId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene~2FProduction_Helsinki_3MX_ok.3mx");
     EXPECT_STREQ(myDocument->GetFolderId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene");
     EXPECT_STREQ(myDocument->GetName().c_str(), "Production_Helsinki_3MX_ok.3mx");
-}
+    }
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017

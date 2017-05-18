@@ -170,6 +170,8 @@ RealityDataFolder::RealityDataFolder(Json::Value jsonInstance)
     {
     if (jsonInstance.isMember("properties"))
         {
+        if (jsonInstance["properties"].isMember("Id") && !jsonInstance["properties"]["Id"].isNull())
+            m_id = jsonInstance["properties"]["Id"].asCString();
         if (jsonInstance["properties"].isMember("Name") && !jsonInstance["properties"]["Name"].isNull())
             m_name = jsonInstance["properties"]["Name"].asCString();
         if (jsonInstance["properties"].isMember("RealityDataId") && !jsonInstance["properties"]["RealityDataId"].isNull())
