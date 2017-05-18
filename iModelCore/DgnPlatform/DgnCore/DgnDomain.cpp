@@ -672,6 +672,17 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
             LOG.debugv("\t%s", schema->GetFullSchemaName().c_str());
         }
 
+    if (dgndb.Txns().IsTracking())
+        {
+        // Note: When a DgnDb is first created, it isn't tracked and this flag won't be setup.
+        DbResult result = dgndb.Revisions().SaveContainsSchemaChanges();
+        if (result != BE_SQLITE_DONE)
+            {
+            BeAssert(false);
+            return SchemaStatus::SchemaImportFailed;
+            }
+        }
+
     if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken()))
         {
         DbResult result = dgndb.AbandonChanges();
