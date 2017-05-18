@@ -2559,6 +2559,8 @@ ICancellationTokenPtr cancellationToken
     if (!SetEventSubscription(eventTypes, cancellationToken))
         return false;
 
+    BeMutexHolder lock(m_eventServiceClientMutex);
+
     if (m_eventServiceClient == nullptr)
         m_eventServiceClient = new EventServiceClient(m_eventSAS->GetBaseAddress(), m_iModelInfo.GetId(), m_eventSubscription->GetSubscriptionId());
 
@@ -2734,6 +2736,15 @@ bool longpolling
 )
     {
     const Utf8String methodName = "iModelConnection::GetEventServiceResponse";
+    BeMutexHolder lock(m_eventServiceClientMutex);
+
+    if (!IsSubscribedToEvents())
+        {
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Not subscribed to event service.");
+        return CreateCompletedAsyncTask<EventReponseResult>
+            (EventReponseResult::Error(Error::Id::NotSubscribedToEventService));
+        }
+
     return m_eventServiceClient->MakeReceiveDeleteRequest(longpolling)
         ->Then<EventReponseResult>([=](const EventServiceResult& result)
     {
@@ -2792,9 +2803,11 @@ bool longPolling,
 ICancellationTokenPtr cancellationToken
 )
     {
+    BeMutexHolder lock(m_eventServiceClientMutex);
+
     const Utf8String methodName = "iModelConnection::GetEvent";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    if (m_eventServiceClient == nullptr || m_eventSubscription == nullptr || m_eventSAS == nullptr)
+    if (!IsSubscribedToEvents())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Not subscribed to event service.");
         return CreateCompletedAsyncTask<EventResult>
@@ -2849,6 +2862,8 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 StatusTaskPtr  iModelConnection::UnsubscribeToEvents()
     {
+    BeMutexHolder lock(m_eventServiceClientMutex);
+
     const Utf8String methodName = "iModelConnection::UnsubscribeToEvents";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (m_eventServiceClient != nullptr)
