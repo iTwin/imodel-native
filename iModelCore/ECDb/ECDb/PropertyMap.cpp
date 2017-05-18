@@ -285,6 +285,7 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
     {
     if (&x.GetTable() != &y.GetTable())
         {
+        BeAssert(false && "Point2d property must be mapped to columns in the same table.");
         return ERROR;
         }
 
@@ -364,6 +365,12 @@ RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap co
 //---------------------------------------------------------------------------------------
 BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbColumn const& z)
     {
+    if (!(&x.GetTable() == &y.GetTable() && &x.GetTable() == &z.GetTable()))
+        {
+        BeAssert(false && "Point3d property must be mapped to columns in the same table.");
+        return ERROR;
+        }
+
     ECDbSystemSchemaHelper const& systemSchemaHelper = GetClassMap().GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
     ECPropertyCP propX = systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::PointX());
     if (propX == nullptr)
@@ -511,7 +518,10 @@ BentleyStatus NavigationPropertyMap::SetMembers(DbColumn const& idColumn, DbColu
         }
 
     if (&relECClassIdColumn.GetTable() != &idColumn.GetTable())
+        {
+        BeAssert(false && "Navigation property must be mapped to columns in the same table.");
         return ERROR;
+        }
 
     RefCountedPtr<NavigationPropertyMap::IdPropertyMap> idPropertyMap = IdPropertyMap::CreateInstance(*this, idColumn);
     if (idPropertyMap == nullptr)
