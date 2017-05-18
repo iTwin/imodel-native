@@ -14,7 +14,6 @@ namespace ptds
 
 DataSourceFile::DataSourceFile(void)
 {
-    m_file.SetBogus();
 }
 
 
