@@ -109,6 +109,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectGateway(
+    "Mobile.ConnectWsgProjectGateway",
+    "https://dev-bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://qa-bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://prod-bcsf.bentley.com/ProjectGateway/Wsg",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
     "Mobile.ConnectForms",
     "https://dev-formswsg-eus.cloudapp.net",
