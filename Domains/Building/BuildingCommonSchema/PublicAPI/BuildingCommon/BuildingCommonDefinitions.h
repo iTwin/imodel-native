@@ -44,5 +44,11 @@
 #define BENTLEY_BUILDING_COMMON_SCHEMA_CODE                        BENTLEY_BUILDING_COMMON_SCHEMA_NAME 
 #define BENTLEY_BUILDING_COMMON_AUTHORITY                          BENTLEY_BUILDING_COMMON_SCHEMA_NAME
 
+//-----------------------------------------------------------------------------------------
+// ECClass names (combine with ARCHITECTURAL_PHYSICAL_SCHEMA macro for use in ECSql)
+//-----------------------------------------------------------------------------------------
+#define BC_CLASS_Classification                             "Classification"
+#define BC_CLASS_Manufacturer                               "Manufacturer"
+
 
 

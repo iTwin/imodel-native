@@ -4,12 +4,12 @@
 
     <Part Name="BuildingDomains" >
         <SubPart PartName="ArchitecturalPhysical"/>
-        <SubPart PartName="BuildingCommon"/>
     </Part>
 
     
     <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
         <SubPart PartName="ArchPhysPublicAPI"/>
+        <SubPart PartName="BuildingCommon"/>
         <SubPart PartName="BuildingPhysical"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>

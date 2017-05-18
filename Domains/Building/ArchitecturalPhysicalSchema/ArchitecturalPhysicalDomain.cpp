@@ -57,8 +57,6 @@ void ArchitecturalPhysicalDomain::_OnDgnDbOpened(DgnDbR db) const
     {
     }
 
-static  uint64_t s_windowFrameCategoryId;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
@@ -71,8 +69,6 @@ void ArchitecturalPhysicalCategory::InsertDomainCategories(DgnDbR db)
     Dgn::DgnCategoryId    windowCategoryId      = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Windows, ColorDef::White());
     Dgn::DgnSubCategoryId windowFrameCategoryId = InsertSubCategory(db, windowCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame, ColorDef::White());
     Dgn::DgnSubCategoryId windowPanelCategoryId = InsertSubCategory(db, windowCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel, ColorDef::DarkGrey());
-
-    s_windowFrameCategoryId = windowFrameCategoryId.GetBriefcaseId().GetValue();
     }
 
 //---------------------------------------------------------------------------------------
@@ -153,8 +149,6 @@ DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowPanel
 DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowFrameSubCategoryId(DgnDbR db)
     {
     DgnSubCategoryId windowFrameCategoryId = DgnSubCategory::QuerySubCategoryId(db, DgnSubCategory::CreateCode(db, QueryBuildingPhysicalWindowCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame));
-
- //   BeAssert (windowFrameCategoryId.GetBriefcaseId().GetValue() != s_windowFrameCategoryId);
     return windowFrameCategoryId;
     }
 

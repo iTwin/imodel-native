@@ -9,6 +9,7 @@
 
 #include <ArchitecturalPhysical\ArchitecturalPhysicalApi.h>
 #include <BuildingPhysical\BuildingPhysicalApi.h>
+#include <BuildingCommon\BuildingCommonApi.h>
 
 BEGIN_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
 
@@ -22,29 +23,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ArchitecturalBaseElement : Dgn::PhysicalElement
     DGNELEMENT_DECLARE_MEMBERS(AP_CLASS_ArchitecturalBaseElement, Dgn::PhysicalElement);
     friend struct ArchitecturalBaseElementHandler;
 
-    ////! Enum used to indicate the condition of a tile
-    //enum class Condition : int
-    //    {
-    //    Unknown=0,  //!< Tile condition is unknown
-    //    New,        //!< Tile condition is new or like new
-    //    Scratched,  //!< Tile is scratched
-    //    Cracked     //!< Tile is cracked (supersedes Scratched)
-    //    };
-
-    ////! Enum that describes material choices for tiles
-    //enum class CasingMaterialType : int
-    //    {
-    //    Invalid=0,
-    //    RedPlastic,
-    //    GreenPlastic,
-    //    BluePlastic,
-    //    OrangePlastic,
-    //    PurplePlastic,
-    //    YellowPlastic
-    //    };
-
     protected:
         explicit ArchitecturalBaseElement(CreateParams const& params) : T_Super(params) {}
+
+        static ECN::IECInstancePtr                   AddAspect(BuildingPhysical::BuildingPhysicalModelR model, ArchitecturalBaseElementPtr element, Utf8StringCR className);
 
         //BUILDING_PHYSICAL_DOMAIN_EXPORT Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR value, Dgn::PropertyArrayIndex const&) override;
 
@@ -52,14 +34,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ArchitecturalBaseElement : Dgn::PhysicalElement
         // static Dgn::Render::GeometryParams GetMagnetMaterialParams(Dgn::DgnDbR, Dgn::DgnCategoryId);
 
     public:
-        ARCHITECTURAL_PHYSICAL_EXPORT static ArchitecturalBaseElementPtr Create(Utf8CP,  BuildingPhysical::BuildingPhysicalModelR);
-        ARCHITECTURAL_PHYSICAL_EXPORT static ArchitecturalBaseElementPtr Create(CreateParams const& params);
+        ARCHITECTURAL_PHYSICAL_EXPORT static ArchitecturalBaseElementPtr           Create(Utf8CP,  BuildingPhysical::BuildingPhysicalModelR);
+        ARCHITECTURAL_PHYSICAL_EXPORT static ArchitecturalBaseElementPtr           Create(CreateParams const& params);
+        ARCHITECTURAL_PHYSICAL_EXPORT static ECN::IECInstancePtr                   AddClassificationAspect (BuildingPhysical::BuildingPhysicalModelR model, ArchitecturalBaseElementPtr element) {return AddAspect( model, element, BC_CLASS_Classification); }
+        ARCHITECTURAL_PHYSICAL_EXPORT static ECN::IECInstancePtr                   AddManufacturerAspect(BuildingPhysical::BuildingPhysicalModelR model, ArchitecturalBaseElementPtr element) { return AddAspect(model, element, BC_CLASS_Manufacturer); }
 
+        template <class T> static RefCountedPtr<T>                                 QueryById  (BuildingPhysical::BuildingPhysicalModelCR model, Dgn::DgnElementId id) { Dgn::DgnDbR    db = model.GetDgnDb(); return db.Elements().GetForEdit<T>(id);}
+        template <class T> static RefCountedPtr<T>                                 QueryByCode(BuildingPhysical::BuildingPhysicalModelCR model, Dgn::DgnCodeCR code) { Dgn::DgnDbR  db = model.GetDgnDb(); return QueryById<T>(model, db.Elements().QueryElementIdByCode(code));}
+        template <class T> static RefCountedPtr<T>                                 QueryByCodeValue(BuildingPhysical::BuildingPhysicalModelCR model, Utf8StringCR codeValue) { Dgn::DgnCode code = CreateCode(model, codeValue); return QueryByCode<T>(model, code); }
+        
+        static  Dgn::DgnCode                                                       CreateCode (BuildingPhysical::BuildingPhysicalModelCR model, Utf8StringCR codeValue) { return Dgn::CodeSpec::CreateCode (BENTLEY_ARCHITECTURAL_PHYSICAL_AUTHORITY, model, codeValue); }
+        
         //BUILDING_PHYSICAL_DOMAIN_EXPORT static CasingMaterialType ParseCasingMaterial(Utf8CP);
-
-        // BUILDING_PHYSICAL_DOMAIN_EXPORT Condition GetCondition() const;
-        // BUILDING_PHYSICAL_DOMAIN_EXPORT void SetCondition(Condition condition);
-        // BUILDING_PHYSICAL_DOMAIN_EXPORT void SetCondition(Utf8CP);
 
         //! Move the placement for this element by adding the specified vector to its current placement
         //  BUILDING_PHYSICAL_DOMAIN_EXPORT void MoveRelative(DVec3dCR);
@@ -87,6 +73,8 @@ struct EXPORT_VTABLE_ATTRIBUTE Door : ArchitecturalBaseElement
 
     public:
         ARCHITECTURAL_PHYSICAL_EXPORT static DoorPtr Create(BuildingPhysical::BuildingPhysicalModelR);
+   //     ARCHITECTURAL_PHYSICAL_EXPORT static DoorPtr QueryById(BuildingPhysical::BuildingPhysicalModelCR, Dgn::DgnElementId );
+        //ARCHITECTURAL_PHYSICAL_EXPORT static DoorPtr QueryByCodeValue(BuildingPhysical::BuildingPhysicalModelCR, Dgn::DgnCodeCR code);
     };
 
 //__PUBLISH_EXTRACT_END__

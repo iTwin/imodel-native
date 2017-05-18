@@ -285,10 +285,34 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
 
         GeometricTools::CreateDoorGeometry(door, physicalModel);
 
-        door->Insert( &status );
+        ECN::ECValue value;
 
+        ECN::IECInstancePtr instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddManufacturerAspect(physicalModel, door);
+
+        value.SetWCharCP(L"ACME");
+
+        instance->SetValue("Manufacturer", value);
+
+        value.SetWCharCP(L"SN-12345");
+
+        instance->SetValue("ModelNumber", value);
+
+        instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect (physicalModel, door);
+
+        value.SetWCharCP(L"10-10-10");
+
+        instance->SetValue("OmniClass", value);
+
+        Dgn::DgnElementCPtr element = door->Insert( &status );
+        
         if ( Dgn::DgnDbStatus::Success != status )
             return BentleyStatus::ERROR;
+
+//        element->GetCode();
+
+//        ArchitecturalPhysical::DoorPtr door1 = ArchitecturalPhysical::ArchitecturalBaseElement::QueryByCodeValue<ArchitecturalPhysical::Door> (physicalModel, "D001");
+
+//        Dgn::CodeSpec::CreateCode ( ( physicalModel.GetDgnDb(), BIS_CODESPEC_SpatialCategory, categoryName, nameSpace);
 
         ArchitecturalPhysical::WindowPtr window = DoorTools::CreateWindow1(physicalModel, i + 1);
 
@@ -299,6 +323,12 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
         status = window->SetPlacement(windowPlacement);
 
         GeometricTools::CreateWindowGeometry(window, physicalModel);
+
+        instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect(physicalModel, window);
+
+        value.SetWCharCP(L"20-10-10");
+
+        instance->SetValue("OmniClass", value);
 
         window->Insert(&status);
 

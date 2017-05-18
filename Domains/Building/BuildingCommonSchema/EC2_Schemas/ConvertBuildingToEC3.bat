@@ -11,5 +11,9 @@ REM %OPBIMClientSrc%\Winx64\Product\OPBimClientTest\Tests\OPSchemaConverter.exe 
 REM %OPBIMClientSrc%\Winx64\Product\OPBimClientTest\Tests\OPSchemaConverter.exe -i IfcRevitDomain2x3.01.01.ecschema.xml -o ..\\EC3_Schemas -r e: -x 3 -r .\ -v 01.00
 
 
+cd ..\EC3_Schemas
+
+del BuildingCommon.ecschema.xml
+rename   BuildingCommon.01.00.00.ecschema.xml  BuildingCommon.ecschema.xml
 
 

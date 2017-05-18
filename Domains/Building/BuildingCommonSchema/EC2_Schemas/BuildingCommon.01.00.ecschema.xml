@@ -21,6 +21,7 @@
         <ECProperty propertyName="UniFormatDescription" typeName="string" displayLabel="UniFormat Description" />
     </ECClass>
     <ECClass typeName="Manufacturer" description="This is a class to group the Manufacturer properties applied to Building Classes" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="Manufacturer" typeName="string" />
         <ECProperty propertyName="ModelNumber" typeName="string" displayLabel="Model Number" />
         <ECProperty propertyName="ManufacturerURL" typeName="string" displayLabel="Manufacturer URL" />
