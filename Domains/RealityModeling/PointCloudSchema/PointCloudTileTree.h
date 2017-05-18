@@ -51,8 +51,6 @@ public:
 
 };//     TileRoot
 
-typedef bvector<QPoint3d> QPoint3dList; 
-
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley      02/2017
 //=======================================================================================
@@ -63,7 +61,7 @@ struct Tile : Dgn::TileTree::OctTree::Tile
 
 private:
     double                          m_tolerance;
-    QPoint3dList                    m_points;
+    Render::QPoint3dList            m_points;
     bvector<PointCloudColorDef>     m_colors;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);

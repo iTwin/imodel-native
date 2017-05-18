@@ -85,11 +85,10 @@ BentleyStatus DoGetFromSource()
     PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
     size_t                      nBatchPoints = 0;
     bvector<FPoint3d>           batchPoints(s_maxTileBatchCount);
-    QPoint3dList                points;
     bvector<PointCloudColorDef> batchColors(s_maxTileBatchCount), colors;
     Transform                   dgnToTile, cloudToTile;
     DRange3d                    tileRange = tile.GetRange();
-    QPoint3d::Params            qParams(tileRange);
+    QPoint3dList                points(tileRange);
 
     dgnToTile.InverseOf(root.GetLocation());
     cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
@@ -102,7 +101,7 @@ BentleyStatus DoGetFromSource()
 
             cloudToTile.Multiply(tmpPoint);
 
-            points.push_back(QPoint3d(tmpPoint, qParams));
+            points.Add(tmpPoint);
             if (colorsPresent)
                 colors.push_back(batchColors[i]);
             }
@@ -158,7 +157,7 @@ public:
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range)
-    : T_Super(octRoot, id, parent, false)
+    : T_Super(octRoot, id, parent, false), m_points(QPoint3d::Params())
     {
     static const double s_minToleranceRatio = 1000.0;
 
@@ -167,6 +166,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     else
         m_range.Extend (*range);
 
+    m_points = QPoint3dList(m_range);
     m_tolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
     }
 
