@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErdasImgFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -430,7 +430,7 @@ GeoCoordinates::BaseGCSPtr HRFErdasImgFile::ExtractGeocodingInformation(double* 
     //TR 205873 and TR 230951
     if ((BeStringUtilities::Strnicmp(sProj.c_str(), pLocalCS, sizeof(pLocalCS)) != 0))
         {
-        pGeocodingInfo = HRFGdalSupportedFile::ExtractGeocodingInformation(nullptr);
+        pGeocodingInfo = HRFGdalSupportedFile::ExtractGeocodingInformation(po_pVerticalUnitsToMeterRatio);
         }
 
     if ((GetNbBands() == 1) && (m_GrayBandInd != -1))
