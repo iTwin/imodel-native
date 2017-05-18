@@ -1268,18 +1268,19 @@ struct MeshGenerator
 private:
     typedef bmap<MeshMergeKey, MeshBuilderPtr> BuilderMap;
 
-    TileCR          m_tile;
-    GeometryOptions m_options;
-    double          m_tolerance;
-    double          m_vertexTolerance;
-    double          m_facetAreaTolerance;
-    BuilderMap      m_builderMap;
-    DRange3d        m_tileRange;
-    LoadContextCR   m_loadContext;
-    size_t          m_geometryCount = 0;
-    FeatureTable    m_featureTable;
-    DRange3d        m_contentRange = DRange3d::NullRange();
-    bool            m_maxGeometryCountExceeded = false;
+    TileCR              m_tile;
+    GeometryOptions     m_options;
+    double              m_tolerance;
+    double              m_vertexTolerance;
+    double              m_facetAreaTolerance;
+    BuilderMap          m_builderMap;
+    DRange3d            m_tileRange;
+    LoadContextCR       m_loadContext;
+    size_t              m_geometryCount = 0;
+    FeatureTable        m_featureTable;
+    DRange3d            m_contentRange = DRange3d::NullRange();
+    QPoint3d::Params    m_qParams;
+    bool                m_maxGeometryCountExceeded = false;
 
     static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
@@ -1315,7 +1316,8 @@ public:
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
   : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_vertexTolerance(m_tolerance*ToleranceRatio::Vertex()),
     m_facetAreaTolerance(m_tolerance*ToleranceRatio::FacetArea()), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext),
-    m_featureTable(nullptr != tile.GetRoot().GetRenderSystem() ? tile.GetRoot().GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile)
+    m_featureTable(nullptr != tile.GetRoot().GetRenderSystem() ? tile.GetRoot().GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile),
+    m_qParams(m_tileRange)
     {
     //
     }
@@ -1329,7 +1331,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
     if (m_builderMap.end() != found)
         return *found->second;
 
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_qParams);
     m_builderMap[key] = builder;
     return *builder;
     }

@@ -1602,25 +1602,189 @@ struct FeatureIndex
     void Reset() { *this = FeatureIndex(); }
 };
 
+//! Common operations for QPoint2d and QPoint3d
+namespace Quantization
+{
+    static constexpr double RangeScale() { return static_cast<double>(0xffff); }
+
+    static constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
+
+    static constexpr uint16_t Quantize(double pos, double origin, double scale)
+        {
+        return static_cast<uint16_t>(0.5 + (pos - origin) * scale);
+        }
+
+    static constexpr double Unquantize(uint16_t pos, double origin, double scale)
+        {
+        return 0.0 == scale ? origin : origin + pos/scale;
+        }
+
+    static constexpr double UnquantizeAboutCenter(uint16_t pos, double origin, double scale)
+        {
+        return 0.0 == scale ? 0.0 : (static_cast<double>(pos) - 0x7fff) * (pos/scale);
+        }
+
+    template<typename T> class QPointList : public bvector<T>
+    {
+    public:
+        typedef typename T::Params Params;
+        typedef typename T::T_Range Range;
+        typedef typename T::T_DPoint DPoint;
+        //using Params = T::Params;
+        //using Range = T::T_Range;
+        //using DPoint = T::T_DPoint;
+
+        explicit QPointList(Params const& params) : m_params(params) { }
+        explicit QPointList(Range const& range ) : QPointList(Params(range)) { }
+
+        Params const& GetParams() const { return m_params; }
+
+        void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
+        DPoint Unquantize(size_t index) const { BeAssert(index < size()); return (*this)[index].Unquantize(GetParams()); }
+    private:
+        Params  m_params;
+    };
+}
+
+//=======================================================================================
+//! Represents a DPoint3d quantized within some known range to a triplet of 16-bit
+//! integers. This is a lossy compression technique.
+//! known range.
+// @bsistruct                                                   Ray.Bentley     01/2017
+//=======================================================================================
+struct QPoint3d
+{
+    using T_Range = DRange3d;
+    using T_DPoint = DPoint3d;
+
+    uint16_t x, y, z;
+
+    //! Describes the range associated with a QPoint3d.
+    struct Params
+    {
+        DPoint3d    origin;
+        DPoint3d    scale;
+
+        Params() : Params(DRange3d::NullRange()) { }
+        explicit Params(DRange3dCR range) : origin(range.low)
+            {
+            DVec3d diagonal = range.DiagonalVector();
+            scale.x = Quantization::ComputeScale(diagonal.x);
+            scale.y = Quantization::ComputeScale(diagonal.y);
+            scale.z = Quantization::ComputeScale(diagonal.z);
+            }
+
+        //! Create params suitable for quantizing points with components in the range [-1.0,1.0].
+        static Params FromNormalizedRange()
+            {
+            return Params(DRange3d::From(DPoint3d::FromXYZ(-1.0,-1.0,-1.0), DPoint3d::FromXYZ(1.0,1.0,1.0)));
+            }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+
+    QPoint3d() { }
+    QPoint3d(uint16_t x_, uint16_t y_, uint16_t z_) : x(x_), y(y_), z(z_) { }
+    QPoint3d(DPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
+    QPoint3d(DPoint3dCR pt, ParamsCR params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
+        }
+
+    //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
+    DPoint3d Unquantize(ParamsCR params) const
+        {
+        return DPoint3d::FromXYZ(
+            Quantization::Unquantize(x, params.origin.x, params.scale.x),
+            Quantization::Unquantize(y, params.origin.y, params.scale.y),
+            Quantization::Unquantize(z, params.origin.z, params.scale.z));
+        }
+
+    //! Decode this QPoint3d into an FPoint3d, with the center of the original range translated to (0,0,0).
+    FPoint3d UnquantizeAboutCenter(ParamsCR params) const
+        {
+        return FPoint3d::From(
+            Quantization::UnquantizeAboutCenter(x, params.origin.x, params.scale.x),
+            Quantization::UnquantizeAboutCenter(y, params.origin.y, params.scale.y),
+            Quantization::UnquantizeAboutCenter(z, params.origin.z, params.scale.z));
+        }
+
+    bool operator==(QPoint3dCR rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
+    bool operator!=(QPoint3dCR rhs) const { return !(*this == rhs); }
+};
+
+//=======================================================================================
+//! Represents a DPoint2d quantized within some known range to a pair of 16-bit integers.
+//! This is a lossy compression technique.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct QPoint2d
+{
+    using T_Range = DRange2d;
+    using T_DPoint = DPoint2d;
+
+    uint16_t x, y;
+
+    //! Describes the range associated with a QPoint2d.
+    struct Params
+    {
+        DPoint2d    origin;
+        DPoint2d    scale;
+
+        Params() : Params(DRange2d::NullRange()) { }
+        explicit Params(DRange2dCR range) : origin(range.low)
+            {
+            DVec2d diagonal = range.IsNull() ? DVec2d::From(0, 0) : DVec2d::FromStartEnd(range.low, range.high);
+            scale.x = Quantization::ComputeScale(diagonal.x);
+            scale.y = Quantization::ComputeScale(diagonal.y);
+            }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+
+    QPoint2d() { }
+    QPoint2d(DPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
+    QPoint2d(DPoint2dCR pt, ParamsCR params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        }
+
+    //! Decode this QPoint2d into a DPoint2d using the same params from which the QPoint2d was created.
+    DPoint2d Unquantize(ParamsCR params) const
+        {
+        return DPoint2d::From(
+            Quantization::Unquantize(x, params.origin.x, params.scale.x),
+            Quantization::Unquantize(y, params.origin.y, params.scale.y));
+        }
+};
+
+typedef Quantization::QPointList<QPoint2d> QPoint2dList;
+typedef Quantization::QPointList<QPoint3d> QPoint3dList;
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint3dList)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint2dList)
+
 //=======================================================================================
 //! Information needed to draw a triangle mesh
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
 struct TriMeshArgs
 {
-    int32_t         m_numIndices = 0;
-    int32_t const*  m_vertIndex = nullptr;
-    int32_t         m_numPoints = 0;
-    FPoint3d const* m_points= nullptr;
-    FPoint3d const* m_normals= nullptr;
-    FPoint2d const* m_textureUV= nullptr;
-    uint8_t const*  m_edgeFlags = nullptr;
-    TexturePtr      m_texture;
-    int32_t         m_flags = 0; // don't generate normals
-    ColorIndex      m_colors;
-    FeatureIndex    m_features;
-
-    DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+    int32_t             m_numIndices = 0;
+    int32_t const*      m_vertIndex = nullptr;
+    int32_t             m_numPoints = 0;
+    QPoint3dCP          m_points= nullptr;
+    QPoint3dCP          m_normals= nullptr; // Quantized using QPoint3d::Params::FromNormalizedRange()
+    FPoint2d const*     m_textureUV= nullptr;
+    uint8_t const*      m_edgeFlags = nullptr;
+    TexturePtr          m_texture;
+    int32_t             m_flags = 0; // don't generate normals
+    ColorIndex          m_colors;
+    FeatureIndex        m_features;
+    QPoint3d::Params    m_pointParams;
 };
 
 //=======================================================================================
@@ -1637,24 +1801,20 @@ struct IndexedPolylineArgs
 
         Polyline() { }
         Polyline(uint32_t const* indices, uint32_t numIndices) : m_vertIndex(indices), m_numIndices(numIndices) { }
-
-        DGNPLATFORM_EXPORT void ToPoints(bvector<DPoint3d>& points, FPoint3d const* verts) const;
     };
 
-    FPoint3d const*     m_points = nullptr;
+    QPoint3dCP          m_points = nullptr;
     Polyline const*     m_lines = nullptr;
     uint32_t            m_numPoints = 0;
     uint32_t            m_numLines = 0;
     ColorIndex          m_colors;
     FeatureIndex        m_features;
+    QPoint3d::Params    m_pointParams;
     bool                m_disjoint = false;
 
     IndexedPolylineArgs() { }
-    IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)
-        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines) { }
-
-    void PolylineToPoints(bvector<DPoint3d>& points, Polyline const& polyline) const { polyline.ToPoints(points, m_points); }
-    bvector<DPoint3d> PolylineToPoints(Polyline const& polyline) const { bvector<DPoint3d> pts; PolylineToPoints(pts, polyline); return pts; }
+    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams)
+        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams) { }
 };
 
 //=======================================================================================
@@ -1684,10 +1844,10 @@ struct MeshEdgeArgs
 {
     MeshEdgeCP                  m_edges;
     uint32_t                    m_numEdges;
-    FPoint3d const*             m_points = nullptr;
+    QPoint3dCP                  m_points = nullptr;
     FeatureIndex                m_features;
     ColorIndex                  m_colors;
-
+    QPoint3d::Params            m_pointParams;
 }; 
  
 //=======================================================================================
@@ -1696,135 +1856,9 @@ struct MeshEdgeArgs
 struct SilhouetteEdgeArgs   : MeshEdgeArgs
 {
     // two normals per edge - define the triangle normals for silhouette calculation.
-    FPoint3d const*             m_normals0;
-    FPoint3d const*             m_normals1;
+    QPoint3dCP                  m_normals0;
+    QPoint3dCP                  m_normals1;
 };  
-
-//! Common operations for QPoint2d and QPoint3d
-namespace Quantization
-{
-    static constexpr double RangeScale() { return static_cast<double>(0xffff); }
-
-    static constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
-
-    static constexpr uint16_t Quantize(double pos, double origin, double scale)
-        {
-        return static_cast<uint16_t>(0.5 + (pos - origin) * scale);
-        }
-
-    static constexpr double Unquantize(uint16_t pos, double origin, double scale)
-        {
-        return 0.0 == scale ? origin : origin + pos/scale;
-        }
-
-    static constexpr double UnquantizeAboutCenter(uint16_t pos, double origin, double scale)
-        {
-        return 0.0 == scale ? 0.0 : (static_cast<double>(pos) - 0x7fff) * (pos/scale);
-        }
-}
-
-//=======================================================================================
-//! Represents a DPoint3d quantized within some known range to a triplet of 16-bit
-//! integers. This is a lossy compression technique.
-//! known range.
-// @bsistruct                                                   Ray.Bentley     01/2017
-//=======================================================================================
-struct QPoint3d
-{
-    uint16_t x, y, z;
-
-    //! Describes the range associated with a QPoint3d.
-    struct Params
-    {
-        DPoint3d    origin;
-        DPoint3d    scale;
-
-        explicit Params(DRange3dCR range) : origin(range.low)
-            {
-            DVec3d diagonal = range.DiagonalVector();
-            scale.x = Quantization::ComputeScale(diagonal.x);
-            scale.y = Quantization::ComputeScale(diagonal.y);
-            scale.z = Quantization::ComputeScale(diagonal.z);
-            }
-
-        //! Create params suitable for quantizing points with components in the range [-1.0,1.0].
-        static Params FromNormalizedRange()
-            {
-            return Params(DRange3d::From(DPoint3d::FromXYZ(-1.0,-1.0,-1.0), DPoint3d::FromXYZ(1.0,1.0,1.0)));
-            }
-    };
-
-    QPoint3d() { }
-    QPoint3d(uint16_t x_, uint16_t y_, uint16_t z_) : x(x_), y(y_), z(z_) { }
-    QPoint3d(DPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
-    QPoint3d(DPoint3dCR pt, Params params)
-        {
-        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
-        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
-        z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
-        }
-
-    //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
-    DPoint3d Unquantize(Params params) const
-        {
-        return DPoint3d::FromXYZ(
-            Quantization::Unquantize(x, params.origin.x, params.scale.x),
-            Quantization::Unquantize(y, params.origin.y, params.scale.y),
-            Quantization::Unquantize(z, params.origin.z, params.scale.z));
-        }
-
-    //! Decode this QPoint3d into an FPoint3d, with the center of the original range translated to (0,0,0).
-    FPoint3d UnquantizeAboutCenter(Params params) const
-        {
-        return FPoint3d::From(
-            Quantization::UnquantizeAboutCenter(x, params.origin.x, params.scale.x),
-            Quantization::UnquantizeAboutCenter(y, params.origin.y, params.scale.y),
-            Quantization::UnquantizeAboutCenter(z, params.origin.z, params.scale.z));
-        }
-
-    bool operator==(QPoint3dCR rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
-    bool operator!=(QPoint3dCR rhs) const { return !(*this == rhs); }
-};
-
-//=======================================================================================
-//! Represents a DPoint2d quantized within some known range to a pair of 16-bit integers.
-//! This is a lossy compression technique.
-// @bsistruct                                                   Paul.Connelly   05/17
-//=======================================================================================
-struct QPoint2d
-{
-    uint16_t x, y;
-
-    //! Describes the range associated with a QPoint2d.
-    struct Params
-    {
-        DPoint2d    origin;
-        DPoint2d    scale;
-
-        explicit Params(DRange2dCR range) : origin(range.low)
-            {
-            DVec2d diagonal = range.IsNull() ? DVec2d::From(0, 0) : DVec2d::FromStartEnd(range.low, range.high);
-            scale.x = Quantization::ComputeScale(diagonal.x);
-            scale.y = Quantization::ComputeScale(diagonal.y);
-            }
-    };
-
-    QPoint2d() { }
-    QPoint2d(DPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
-    QPoint2d(DPoint2dCR pt, Params params)
-        {
-        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
-        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
-        }
-
-    //! Decode this QPoint2d into a DPoint2d using the same params from which the QPoint2d was created.
-    DPoint2d Unquantize(Params params) const
-        {
-        return DPoint2d::From(
-            Quantization::Unquantize(x, params.origin.x, params.scale.x),
-            Quantization::Unquantize(y, params.origin.y, params.scale.y));
-        }
-};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17

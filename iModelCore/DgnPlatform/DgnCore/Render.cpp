@@ -388,69 +388,6 @@ bool FrustumPlanes::IntersectsRay(DPoint3dCR origin, DVec3dCR direction)
     return tNear <= tFar;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
-    {
-    for (double* pEnd = pDouble + n; pDouble < pEnd; )
-        *pDouble++ = *pFloat++;
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr TriMeshArgs::ToPolyface() const
-    {
-    PolyfaceHeaderPtr polyFace = PolyfaceHeader::CreateFixedBlockIndexed(3);
-
-    BlockedVectorIntR pointIndex = polyFace->PointIndex();
-    pointIndex.resize(m_numIndices);
-    int32_t const* pIndex = m_vertIndex;
-    int32_t const* pEnd = pIndex + m_numIndices;
-    int32_t* pOut = &pointIndex.front();
-
-    for (; pIndex < pEnd; )
-        *pOut++ = 1 + *pIndex++;
-
-    if (nullptr != m_points)
-        {
-        polyFace->Point().resize(m_numPoints);
-        floatToDouble(&polyFace->Point().front().x, &m_points->x, 3 * m_numPoints);
-        }
-
-    if (nullptr != m_normals)
-        {
-        polyFace->Normal().resize(m_numPoints);
-        floatToDouble(&polyFace->Normal().front().x, &m_normals->x, 3 * m_numPoints);
-        polyFace->NormalIndex() = pointIndex;
-        }
-
-    if (nullptr != m_textureUV)
-        {
-        polyFace->Param().resize(m_numPoints);
-        floatToDouble(&polyFace->Param().front().x, &m_textureUV->x, 2 * m_numPoints);
-        polyFace->ParamIndex() = pointIndex;
-        }
-
-    return polyFace;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IndexedPolylineArgs::Polyline::ToPoints(bvector<DPoint3d>& dpts, FPoint3d const* fpts) const
-    {
-    dpts.clear();
-    dpts.reserve(m_numIndices);
-    for (uint32_t i = 0; i < m_numIndices; i++)
-        {
-        uint32_t index = m_vertIndex[i];
-        FPoint3d const& fpt = fpts[index];
-        dpts.push_back(DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z));
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
