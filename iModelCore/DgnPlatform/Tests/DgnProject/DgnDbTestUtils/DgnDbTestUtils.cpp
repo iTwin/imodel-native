@@ -434,6 +434,7 @@ int DgnDbTestUtils::SelectCountFromTable(DgnDbR db, Utf8CP tableName)
     if (!tableName || !*tableName)
         return -1;
 
+    EXPECT_TRUE(db.TableExists(tableName));
     Utf8PrintfString sql("SELECT COUNT(*) FROM %s", tableName);
 
     Statement statement;

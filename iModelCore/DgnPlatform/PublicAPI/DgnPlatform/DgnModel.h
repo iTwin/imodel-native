@@ -396,7 +396,7 @@ protected:
     /** @} */
 
     //! The sublcass should import elements from the source model into this model. 
-    //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportNonNavigationECRelationshipsFrom after calling this method.
+    //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportLinkTableECRelationshipsFrom after calling this method.
     //! @note It should be rare for a subclass to override _ImportElementsFrom. The base class implementation copies all elements in the model,
     //! and it fixes up all parent-child pointers. A subclass can override _ShouldImportElementFrom in order to exclude individual elements.
     //! @see _ShouldImportElementFrom
@@ -416,7 +416,7 @@ protected:
     //! Import is done in phases. This method will be called by the import framework after all elements and aspects have been imported.
     //! This method will be called after all elements (and aspects) have been imported.
     //! <p>
-    //! A subclass implementation of _ImportNonNavigationECRelationshipsFrom should copy only the non-navigation relationship subclasses that are defined by the 
+    //! A subclass implementation of _ImportLinkTableECRelationshipsFrom should copy only the non-navigation relationship subclasses that are defined by the 
     //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
     //! base bis schema, including ElementDrivesElement and ElementGroupsMembers.
     //! <p>
@@ -427,7 +427,7 @@ protected:
     //! deep-copying an element in the general case requires all of the support for copying and remapping of parents and aspects that is implemented by the framework,
     //! prior to the phase where ECRelationships are copied.
     //! @note The implementation should start by calling the superclass implementation.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportLinkTableECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
     //! Utility function to import non-Navigation ECRelationships from one DgnDb to another, selecting only the relationship instances whose source and target elements are
     //! in the specified source model and only if both source and target have already been imported and are registered in the importContext's remap tables. The source and 
@@ -440,7 +440,7 @@ protected:
     //! @param relname      The name of the relationship class
     //! @return non-zero error status if the relationship class does not exist in the source or target DgnDb. Note that this function will return success even if no 
     //! relationship instances are imported.
-    DGNPLATFORM_EXPORT static DgnDbStatus ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importContext, Utf8CP relschema, Utf8CP relname);
+    DGNPLATFORM_EXPORT static DgnDbStatus ImportLinkTableECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importContext, Utf8CP relschema, Utf8CP relname);
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
     //! @param[in]      request  Request to populate
@@ -621,7 +621,7 @@ public:
     //! This base class implemenation calls the following methods, in order:
     //!     -# _ImportElementsFrom
     //!     -# _ImportElementAspectsFrom
-    //!     -# _ImportNonNavigationECRelationshipsFrom
+    //!     -# _ImportLinkTableECRelationshipsFrom
     //! @param[in] sourceModel The model to copy
     //! @param[in] importer Used by elements when copying between DgnDbs.
     //! @return non-zero if the copy failed
