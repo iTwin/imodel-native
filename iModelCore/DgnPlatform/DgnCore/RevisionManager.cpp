@@ -333,7 +333,7 @@ Utf8StringCR RevisionChangesFileReader::GetPrefix(DbResult& result)
 DbResult RevisionChangesFileReader::GetSchemaChanges(bool& containsSchemaChanges, DbSchemaChangeSetR dbSchemaChanges)
     {
     DbResult result;
-    Utf8StringCR prefix = GetPrefix(result);
+    /* unused - Utf8StringCR prefix = */GetPrefix(result);
     if (result != BE_SQLITE_OK)
         return result;
 
