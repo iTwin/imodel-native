@@ -993,30 +993,51 @@ TEST_F(BeSQLiteDbTests, RealUpdateTest)
 //---------------------------------------------------------------------------------------
 TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     {
-    /* Tests that schema and data changes are not allowed in the same change set. 
-     * This validates our assumptions in storing transactions and creating revisions */
+    /* Tests that 
+     * 1. Schema and data changes are not allowed to the same tables in the same change set. 
+     * This validates our assumptions in storing transactions and creating revisions 
+     * 2. Schema and data changes can be made to different tables in the same change set. 
+     * This validates our assumptions in allowing this for bridge-framework workflows when
+     * importing v8 legacy schemas. 
+     * */
     
     SetupDb(L"RealTest.db");
 
-    DbResult result = m_db.ExecuteSql("CREATE TABLE TestTable ([Id] INTEGER PRIMARY KEY, [Column1] REAL)");
+    DbResult result = m_db.ExecuteSql("CREATE TABLE TestTable1 ([Id] INTEGER PRIMARY KEY, [Column1] REAL)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    result = m_db.ExecuteSql("CREATE TABLE TestTable2 ([Id] INTEGER PRIMARY KEY, [Column1] REAL)");
     ASSERT_TRUE(result == BE_SQLITE_OK);
 
     MyChangeTracker changeTracker(m_db);
     changeTracker.EnableTracking(true);
 
-    // Add row
-    result = m_db.ExecuteSql("INSERT INTO TestTable (Column1) values (1.1)");
+    // Add row to TestTable1
+    result = m_db.ExecuteSql("INSERT INTO TestTable1 (Column1) values (1.1)");
     ASSERT_TRUE(result == BE_SQLITE_OK);
 
-    // Add column 
-    result = m_db.AddColumnToTable("TestTable", "Column2", "REAL");
+    // Add column to TestTable2
+    result = m_db.AddColumnToTable("TestTable2", "Column2", "REAL");
     ASSERT_TRUE(result == BE_SQLITE_OK);
 
-    // Add row
-    result = m_db.ExecuteSql("INSERT INTO TestTable (Column1,Column2) values (3.3,4.4)");
+    // Add row to TestTable2
+    result = m_db.ExecuteSql("INSERT INTO TestTable2 (Column1,Column2) values (1.1,2.2)");
     ASSERT_TRUE(result == BE_SQLITE_OK);
 
+    // Create change set - succeeds!
     MyChangeSet changeSet;
+    result = changeSet.FromChangeTrack(changeTracker);
+    ASSERT_TRUE(result == BE_SQLITE_OK); 
+
+    // Add column to TestTable1
+    result = m_db.AddColumnToTable("TestTable1", "Column2", "REAL");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Add row to TestTable 1
+    result = m_db.ExecuteSql("INSERT INTO TestTable1 (Column1,Column2) values (3.3,4.4)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Create change set - fails!
+    changeSet.Free();
     result = changeSet.FromChangeTrack(changeTracker);
     ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
 
