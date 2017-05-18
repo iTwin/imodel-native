@@ -1471,13 +1471,18 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             }
         }
 
-    // NB: The mesh's display params contain a fill color, which is used by the tri mesh primitive if the color table is empty (uniform)
-    // But each polyface's display params may have a different fill color.
-    // If a polyface contributes no vertices, we may end up incorrectly using its fill color for the primitive
-    // Make sure the mesh's display params match one (any) mesh which actually contributed vertices, so that if the result is a uniform color,
-    // we will use the fill color of the (only) mesh which contributed.
     if (anyContributed)
+        {
+        // NB: The mesh's display params contain a fill color, which is used by the tri mesh primitive if the color table is empty (uniform)
+        // But each polyface's display params may have a different fill color.
+        // If a polyface contributes no vertices, we may end up incorrectly using its fill color for the primitive
+        // Make sure the mesh's display params match one (any) mesh which actually contributed vertices, so that if the result is a uniform color,
+        // we will use the fill color of the (only) mesh which contributed.
         builder.SetDisplayParams(displayParams);
+
+        // Do not allow vertices outside of this tile's range to expand its content range
+        m_contentRange.IntersectionOf(m_contentRange, m_tileRange);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
