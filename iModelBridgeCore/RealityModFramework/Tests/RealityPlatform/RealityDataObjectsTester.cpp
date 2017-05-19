@@ -861,29 +861,31 @@ TEST_F(RealityDataObjectTestFixture, RealityDataCustomCreate)
 TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
     {
     Utf8CP jsonString = "{"
-        "\"instances\": ["
-        "{"
-        "\"instanceId\": \"14812\","
-        "\"schemaName\" : \"RealityModeling\","
-        "\"className\" : \"RealityDataProjectRelationship\","
-        "\"properties\" : {"
-        "\"RealityDataId\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-        "\"ProjectId\" : \"504fc784-2b2d-465f-b1d9-de58bf6cf0f2\""
-        " },"
-        " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-        "},"
-        "{"
-        "\"instanceId\": \"14813\","
-        "\"schemaName\" : \"RealityModeling\","
-        "\"className\" : \"RealityDataProjectRelationship\","
-        "\"properties\" : {"
-        "\"RealityDataId\": \"8411d048-78ec-495a-b263-cad44dba7a17\","
-        "\"ProjectId\" : \"73597d7f-e2fe-4704-8ee9-be37ed1f3d37\""
-        " },"
-        " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-        "}"
-        " ]"
-        " }";
+                          "\"instances\": [" 
+                            "{"
+                            "\"instanceId\": \"14812\","
+                            "\"schemaName\" : \"RealityModeling\","
+                            "\"className\" : \"RealityDataRelationship\","
+                            "\"properties\" : {"
+                                  "\"RealityDataId\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"RelatedId\" : \"504fc784-2b2d-465f-b1d9-de58bf6cf0f2\","
+                                  "\"RelationType\" : \"CONNECT-Project\""
+                               " },"
+                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+                           "},"
+                            "{"
+                            "\"instanceId\": \"14813\","
+                            "\"schemaName\" : \"RealityModeling\","
+                            "\"className\" : \"RealityDataRelationship\","
+                            "\"properties\" : {"
+                                  "\"RealityDataId\": \"8411d048-78ec-495a-b263-cad44dba7a17\","
+                                  "\"RelatedId\" : \"73597d7f-e2fe-4704-8ee9-be37ed1f3d37\","
+                                  "\"RelationType\" : \"CONNECT-Project\""
+                               " },"
+                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+                           "}"
+                       " ]"
+                     " }";
     // Parse.
     Json::Value root(Json::objectValue);
     ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
@@ -897,13 +899,15 @@ TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
 
     RealityDataProjectRelationshipPtr myRelationShip = RealityDataProjectRelationship::Create(instance);
     EXPECT_STREQ(myRelationShip->GetRealityDataId().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
-    EXPECT_STREQ(myRelationShip->GetProjectId().c_str(), "504fc784-2b2d-465f-b1d9-de58bf6cf0f2");
+    EXPECT_STREQ(myRelationShip->GetRelatedId().c_str(), "504fc784-2b2d-465f-b1d9-de58bf6cf0f2");
+    EXPECT_STREQ(myRelationShip->GetRelationType().c_str(), "CONNECT-Project");
 
     const Json::Value instance2 = root["instances"][1];
     ASSERT_TRUE(instance.isMember("properties"));
     RealityDataProjectRelationshipPtr myRelationShip2 = RealityDataProjectRelationship::Create(instance2);
     EXPECT_STREQ(myRelationShip2->GetRealityDataId().c_str(), "8411d048-78ec-495a-b263-cad44dba7a17");
-    EXPECT_STREQ(myRelationShip2->GetProjectId().c_str(), "73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
+    EXPECT_STREQ(myRelationShip2->GetRelatedId().c_str(), "73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
+    EXPECT_STREQ(myRelationShip2->GetRelationType().c_str(), "CONNECT-Project");
     }
 
 
@@ -913,14 +917,18 @@ TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
 TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipGetSet)
     {
     RealityDataProjectRelationshipPtr myRelationShip = RealityDataProjectRelationship::Create();
-    ASSERT_STREQ(myRelationShip->GetProjectId().c_str(), "");
+    ASSERT_STREQ(myRelationShip->GetRelatedId().c_str(), "");
     ASSERT_STREQ(myRelationShip->GetRealityDataId().c_str(), "");
+    ASSERT_STREQ(myRelationShip->GetRelationType().c_str(), "");
 
-    myRelationShip->SetProjectId("73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
-    ASSERT_STREQ(myRelationShip->GetProjectId().c_str(), "73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
+    myRelationShip->SetRelatedId("73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
+    ASSERT_STREQ(myRelationShip->GetRelatedId().c_str(), "73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
 
     myRelationShip->SetRealityDataId("8411d048-78ec-495a-b263-cad44dba7a17");
     ASSERT_STREQ(myRelationShip->GetRealityDataId().c_str(), "8411d048-78ec-495a-b263-cad44dba7a17");
+
+    myRelationShip->SetRelationType("CONNECT-Project");
+    ASSERT_STREQ(myRelationShip->GetRelationType().c_str(), "CONNECT-Project");
     }
 
 //-------------------------------------------------------------------------------------

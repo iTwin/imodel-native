@@ -22,8 +22,10 @@ RealityDataProjectRelationship::RealityDataProjectRelationship(Json::Value jsonI
         {
         if (jsonInstance["properties"].isMember("RealityDataId") && !jsonInstance["properties"]["RealityDataId"].isNull())
             m_realityDataId = jsonInstance["properties"]["RealityDataId"].asCString();
-        if (jsonInstance["properties"].isMember("ProjectId") && !jsonInstance["properties"]["ProjectId"].isNull())
-            m_projectId = jsonInstance["properties"]["ProjectId"].asCString();
+        if (jsonInstance["properties"].isMember("RelatedId") && !jsonInstance["properties"]["RelatedId"].isNull())
+            m_relatedId = jsonInstance["properties"]["RelatedId"].asCString();
+        if (jsonInstance["properties"].isMember("RelationType") && !jsonInstance["properties"]["RelationType"].isNull())
+            m_relationType = jsonInstance["properties"]["RelationType"].asCString();
         }
     }
 
@@ -50,17 +52,32 @@ void RealityDataProjectRelationship::SetRealityDataId(Utf8StringCR realityDataId
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
-Utf8StringCR RealityDataProjectRelationship::GetProjectId() const { return m_projectId; }
+Utf8StringCR RealityDataProjectRelationship::GetRelatedId() const { return m_relatedId; }
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-void RealityDataProjectRelationship::SetProjectId(Utf8StringCR projectId)  
-{ 
+void RealityDataProjectRelationship::SetRelatedId(Utf8StringCR relatedId)
+    { 
     // Project id may comply with some naming rules ... check?
-    m_projectId = projectId; 
-}
+    m_relatedId = relatedId;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
+Utf8StringCR RealityDataProjectRelationship::GetRelationType() const { return m_relationType; }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataProjectRelationship::SetRelationType(Utf8StringCR relationType)
+    {   
+    // Project id may comply with some naming rules ... check?
+    m_relationType = relationType;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017

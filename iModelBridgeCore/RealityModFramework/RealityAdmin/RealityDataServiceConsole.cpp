@@ -1301,7 +1301,7 @@ void RealityDataConsole::Relationships()
 
     DisplayInfo("Projects attached to this RealityData\n\n");
     for (RealityDataProjectRelationshipPtr entity : entities)
-        DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetProjectId()));
+        DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetRelatedId()));
     }
 
 void RealityDataConsole::CreateRD()
