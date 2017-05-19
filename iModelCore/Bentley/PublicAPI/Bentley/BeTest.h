@@ -239,6 +239,9 @@ static Utf8CP GetNameOfCurrentTest()
     if (nullptr == tinfo)
         return "";
     return tinfo->name();
+#else
+    BeAssert(false);
+    return nullptr;
 #endif
 #else
     return GetNameOfCurrentTestInternal();
@@ -255,6 +258,9 @@ static Utf8CP GetNameOfCurrentTestCase()
     if (nullptr == tinfo)
         return "";
     return tinfo->test_case_name();
+#else
+    BeAssert(false);
+    return nullptr;
 #endif
 #else
     return GetNameOfCurrentTestCaseInternal();
