@@ -1609,9 +1609,9 @@ namespace Quantization
 
     constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
 
-    constexpr bool IsInRange(double quantizedPos)
+    inline bool IsInRange(double quantizedPos)
         {
-        return quantizedPos < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
+        return abs(quantizedPos) < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
         }
 
     constexpr double QuantizeDouble(double pos, double origin, double scale)
@@ -1619,7 +1619,7 @@ namespace Quantization
         return 0.5 + (pos - origin) * scale;
         }
 
-    constexpr bool IsQuantizable(double pos, double origin, double scale)
+    inline bool IsQuantizable(double pos, double origin, double scale)
         {
         return IsInRange(QuantizeDouble(pos, origin, scale));
         }

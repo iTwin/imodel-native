@@ -402,12 +402,13 @@ public:
             }
         }
 
-    void Requantize();
+    DGNPLATFORM_EXPORT void Requantize();
     bool IsFullyQuantized() const { return m_fpoints.empty(); }
     QPoint3dListCR GetQuantizedPoints() const { BeAssert(IsFullyQuantized()); return m_qpoints; }
     QPoint3d::ParamsCR GetParams() const { return m_qpoints.GetParams(); }
     bool empty() const { return m_fpoints.empty() && m_qpoints.empty(); }
     size_t size() const { return m_fpoints.size() + m_qpoints.size(); }
+    DRange3dCR GetRange() const { return m_range; }
 };
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QVertex3dList);
@@ -540,7 +541,7 @@ struct VertexKey
     //=======================================================================================
     struct Comparator
     {
-        bool operator()(VertexKey const& lhs, VertexKey const& rhs) const;
+        DGNPLATFORM_EXPORT bool operator()(VertexKey const& lhs, VertexKey const& rhs) const;
     };
 };
 
