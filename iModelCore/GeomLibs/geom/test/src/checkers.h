@@ -147,7 +147,7 @@ struct QuietFailureScope
 // the destructor needs to have this wrapped in a method because ASSERT_TRUE tries to return
 static void ThrowAssert ()
     {
-    ASSERT_TRUE (false) << "(Deferred assertion throw for previous errors)";
+    FAIL() << "(Deferred assertion throw for previous errors)";
     }
   ~QuietFailureScope ()
       {
