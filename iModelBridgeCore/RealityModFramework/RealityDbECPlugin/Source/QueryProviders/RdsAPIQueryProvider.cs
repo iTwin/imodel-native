@@ -444,7 +444,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     return stringWriter.ToString();
                     }
                 }
-            catch ( Exception e )
+            catch ( Exception )
                 {
                 //The footprint is malformed. We'll set it to null.
                 return null;
