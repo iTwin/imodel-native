@@ -23,15 +23,6 @@
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 
-//! The classification codes. The high level interface only supports the four base classification
-enum Classification
-    {
-    Imagery = 0x1,
-    Terrain = 0x2,
-    Model = 0x4,
-    Pinned = 0x8
-    };
-
 //=====================================================================================
 //! Overview:
 //! The present classes serve as interfaces to the GeoCoordination Service.
@@ -80,7 +71,7 @@ public:
     REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServiceRequest(){}
 protected:
     // Default constructor
-    GeoCoordinationServiceRequest() { m_validRequestString = false; }
+    REALITYDATAPLATFORM_EXPORT GeoCoordinationServiceRequest() { m_validRequestString = false; }
 
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const = 0;
     };
@@ -126,7 +117,7 @@ enum class GeoCoordinationField
 //! This class inherits from the general request class but adds additional 
 //! control for paging.
 //! Default page size is 25 with, of course a start index of 0
-//! To advance to next/previous page simply call AdvancePage() or RewingPage()
+//! To advance to next/previous page simply call AdvancePage() or RewindPage()
 //=====================================================================================
 struct GeoCoordinationServicePagedRequest : public WSGPagedRequest
     {
@@ -166,13 +157,13 @@ protected:
 //! This represents the most common GeoCoordination Service request.
 //! This request returns the list of SpatialEntityWithDetails objects that 
 //! are located within provided spatial area (usually the project area) for the 
-//! incdicated classification. Additional parameters can be provided after creation.
+//! indicated classification. Additional parameters can be provided after creation.
 //=====================================================================================
 struct SpatialEntityWithDetailsSpatialRequest : public GeoCoordinationServicePagedRequest
     {
 public:
     //! Create a request for spatial entity with details in the area covered by given polygon for specific classification
-    REALITYDATAPLATFORM_EXPORT SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d> projectArea, int classification);
+    REALITYDATAPLATFORM_EXPORT SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d> projectArea, int classification = -1);
 
     REALITYDATAPLATFORM_EXPORT void FilterBySource(int informationSource) { m_informationSourceFilter = informationSource; }
     

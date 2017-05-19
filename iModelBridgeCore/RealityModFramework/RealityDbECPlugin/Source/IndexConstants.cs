@@ -19,6 +19,9 @@ namespace IndexECPlugin.Source
 
         public const int USGSIdLenght = 24;
 
+        //PackageRequestContant
+        public const string PRExtendedDataName = "PackageRequest";
+
         //Australia Constants
         public const string AUBaseUrl = "http://portal.eginger.ninja/server/rest/services/ELVIS_Testing/MapServer/";
         public const string AUDataProviderString = "GeoscienceAUS";
@@ -38,6 +41,7 @@ namespace IndexECPlugin.Source
         public const string RdsLoginMethod = "CUSTOM";
         public const string RdsRegistrationPage = "https://ims.bentley.com/IMS/Registration/";
         public const string RdsOrganisationPage = "https://www.bentley.com/";
+        public const string RdsReadAccessAzureTokenUrlEnd = "/FileAccess.FileAccessKey?$filter=Permissions+eq+\'Read\'&api.singleurlperinstance=true";
 
         //Usgs
         public const string UsgsTermsOfUse = "https://www2.usgs.gov/laws/info_policies.html";

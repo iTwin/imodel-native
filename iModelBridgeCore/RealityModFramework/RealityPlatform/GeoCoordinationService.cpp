@@ -54,8 +54,8 @@ static Utf8String GetPolygonAsString(bvector<GeoPoint2d> area, bool urlEncode)
 static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, BeFile* fileStream)
     {
     uint32_t bytesRead = 0;
-    
-    BeFileStatus status = fileStream->Read(buffer, &bytesRead, (uint32_t)(size * count));
+
+    BeFileStatus status = fileStream->Read(buffer, &bytesRead, (uint32_t) (size * count));
     if (status != BeFileStatus::Success)
         return 0;
 
@@ -83,8 +83,8 @@ Utf8StringCR GeoCoordinationServicePagedRequest::GetRepoId() const { return GeoC
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
 SpatialEntityWithDetailsSpatialRequest::SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d> projectArea, int classification) :
-     m_projectArea(projectArea)
-    {   
+    m_projectArea(projectArea)
+    {
     m_informationSourceFilter = classification;
     m_filter = "";
     m_validRequestString = false;
@@ -104,11 +104,28 @@ void SpatialEntityWithDetailsSpatialRequest::_PrepareHttpRequestStringAndPayload
     m_httpRequestString.append(GetPolygonAsString(m_projectArea, false));
 
     m_httpRequestString.append("],coordinate_system:'4326'}&");
-    if (hasFilter)
+    if (hasFilter || m_informationSourceFilter > 0)
         {
         m_httpRequestString.append("$filter=");
-        m_httpRequestString.append(m_filter);
-        m_httpRequestString.append("&");
+        if (hasFilter)
+            {
+            m_httpRequestString.append(m_filter);
+            m_httpRequestString.append("&");
+            }
+        if (m_informationSourceFilter > 0)
+            {
+            m_httpRequestString.append("Classification+in+[");
+            if (m_informationSourceFilter & RealityDataBase::Classification::IMAGERY)
+                m_httpRequestString.append(Utf8PrintfString("'%s',", GeoCoordinationService::s_ImageryKey));
+            if (m_informationSourceFilter & RealityDataBase::Classification::TERRAIN)
+                m_httpRequestString.append(Utf8PrintfString("'%s',", GeoCoordinationService::s_TerrainKey));
+            if (m_informationSourceFilter & RealityDataBase::Classification::MODEL)
+                m_httpRequestString.append(Utf8PrintfString("'%s',", GeoCoordinationService::s_ModelKey));
+            if (m_informationSourceFilter & RealityDataBase::Classification::PINNED)
+                m_httpRequestString.append(Utf8PrintfString("'%s',", GeoCoordinationService::s_PinnedKey));
+            m_httpRequestString = m_httpRequestString.substr(0, m_httpRequestString.size() - 1); //remove comma
+            m_httpRequestString.append("]&");
+            }
         }
     if (hasOrder)
         {
@@ -131,78 +148,78 @@ void GeoCoordinationServicePagedRequest::SortBy(GeoCoordinationField field, bool
     Utf8String order = "$orderby=";
     switch (field)
         {
-    case GeoCoordinationField::Id:
-        order.append("Id");
-        break;
-    case GeoCoordinationField::Footprint:
-        order.append("Footprint");
-        break;
-    case GeoCoordinationField::Description:
-        order.append("Description");
-        break;
-    case GeoCoordinationField::ContactInformation:
-        order.append("ContactInformation");
-        break;
-    case GeoCoordinationField::Keywords:
-        order.append("Keywords");
-        break;
-    case GeoCoordinationField::Legal:
-        order.append("Legal");
-        break;
-    case GeoCoordinationField::TermsOfUse:
-        order.append("TermsOfUse");
-        break;
-    case GeoCoordinationField::DataSourceType:
-        order.append("DataSourceType");
-        break;
-    case GeoCoordinationField::AccuracyInMeters:
-        order.append("AccuracyInMeters");
-        break;
-    case GeoCoordinationField::Date:
-        order.append("Date");
-        break;
-    case GeoCoordinationField::Classification:
-        order.append("Classification");
-        break;
-    case GeoCoordinationField::FileSize:
-        order.append("FileSize");
-        break;
-    case GeoCoordinationField::Streamed:
-        order.append("Streamed");
-        break;
-    case GeoCoordinationField::SpatialDataSourceId:
-        order.append("SpatialDataSourceId");
-        break;
-    case GeoCoordinationField::ResolutionInMeters:
-        order.append("ResolutionInMeters");
-        break;
-    case GeoCoordinationField::ThumbnailURL:
-        order.append("ThumbnailURL");
-        break;
-    case GeoCoordinationField::DataProvider:
-        order.append("DataProvider");
-        break;
-    case GeoCoordinationField::DataProviderName:
-        order.append("DataProviderName");
-        break;
-    case GeoCoordinationField::Dataset:
-        order.append("Dataset");
-        break;
-    case GeoCoordinationField::Occlusion:
-        order.append("Occlusion");
-        break;
-    case GeoCoordinationField::MetadataURL:
-        order.append("MetadataURL");
-        break;
-    case GeoCoordinationField::RawMetadataURL:
-        order.append("RawMetadataURL");
-        break;
-    case GeoCoordinationField::RawMetadataFormat:
-        order.append("RawMetadataFormat");
-        break;
-    case GeoCoordinationField::SubAPI:
-        order.append("SubAPI");
-        break;
+            case GeoCoordinationField::Id:
+                order.append("Id");
+                break;
+            case GeoCoordinationField::Footprint:
+                order.append("Footprint");
+                break;
+            case GeoCoordinationField::Description:
+                order.append("Description");
+                break;
+            case GeoCoordinationField::ContactInformation:
+                order.append("ContactInformation");
+                break;
+            case GeoCoordinationField::Keywords:
+                order.append("Keywords");
+                break;
+            case GeoCoordinationField::Legal:
+                order.append("Legal");
+                break;
+            case GeoCoordinationField::TermsOfUse:
+                order.append("TermsOfUse");
+                break;
+            case GeoCoordinationField::DataSourceType:
+                order.append("DataSourceType");
+                break;
+            case GeoCoordinationField::AccuracyInMeters:
+                order.append("AccuracyInMeters");
+                break;
+            case GeoCoordinationField::Date:
+                order.append("Date");
+                break;
+            case GeoCoordinationField::Classification:
+                order.append("Classification");
+                break;
+            case GeoCoordinationField::FileSize:
+                order.append("FileSize");
+                break;
+            case GeoCoordinationField::Streamed:
+                order.append("Streamed");
+                break;
+            case GeoCoordinationField::SpatialDataSourceId:
+                order.append("SpatialDataSourceId");
+                break;
+            case GeoCoordinationField::ResolutionInMeters:
+                order.append("ResolutionInMeters");
+                break;
+            case GeoCoordinationField::ThumbnailURL:
+                order.append("ThumbnailURL");
+                break;
+            case GeoCoordinationField::DataProvider:
+                order.append("DataProvider");
+                break;
+            case GeoCoordinationField::DataProviderName:
+                order.append("DataProviderName");
+                break;
+            case GeoCoordinationField::Dataset:
+                order.append("Dataset");
+                break;
+            case GeoCoordinationField::Occlusion:
+                order.append("Occlusion");
+                break;
+            case GeoCoordinationField::MetadataURL:
+                order.append("MetadataURL");
+                break;
+            case GeoCoordinationField::RawMetadataURL:
+                order.append("RawMetadataURL");
+                break;
+            case GeoCoordinationField::RawMetadataFormat:
+                order.append("RawMetadataFormat");
+                break;
+            case GeoCoordinationField::SubAPI:
+                order.append("SubAPI");
+                break;
         }
 
     if (ascending)
@@ -271,7 +288,7 @@ void SpatialEntityMetadataByIdRequest::_PrepareHttpRequestStringAndPayload() con
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-PackagePreparationRequest::PackagePreparationRequest(bvector<GeoPoint2d> projectArea, bvector<Utf8String> listOfSpatialEntities):
+PackagePreparationRequest::PackagePreparationRequest(bvector<GeoPoint2d> projectArea, bvector<Utf8String> listOfSpatialEntities) :
     m_projectArea(projectArea), m_listOfSpatialEntities(listOfSpatialEntities)
     {
     m_validRequestString = false;
@@ -287,21 +304,27 @@ void PackagePreparationRequest::_PrepareHttpRequestStringAndPayload() const
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s/PackageRequest/", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
 
-    m_requestPayload = "{'instance':{'instanceId':null,'className':'PackageRequest','schemaName':'RealityModeling','properties':{'RequestedEntities':[";
+    m_requestPayload = R"({"instance":{"instanceId":null,"className":"PackageRequest","schemaName":"RealityModeling","properties":{"RequestedEntities":[)";
     for (Utf8String id : m_listOfSpatialEntities)
         {
-        m_requestPayload.append("{ 'Id':'");
+        m_requestPayload.append(R"({ "Id":")");
         m_requestPayload.append(id);
-        m_requestPayload.append("'},");
+        m_requestPayload.append(R"("},)");
+        }
+    
+    // Remove comma from the last entities
+    if(m_listOfSpatialEntities.size() > 0 )
+        {
+        m_requestPayload = m_requestPayload.substr(0, m_requestPayload.size() - 1);
         }
 
     //if (containOsmClass())
     /*listAsPostFields.append("],'CoordinateSystem':null,'OSM': true,'Polygon':'[");
     else*/
-    m_requestPayload.append("],'CoordinateSystem':null,'OSM': false,'Polygon':'[");
+    m_requestPayload.append(R"(],"CoordinateSystem":null,"OSM": false,"Polygon":"[)");
 
     m_requestPayload.append(GetPolygonAsString(m_projectArea, false));
-    m_requestPayload.append("]'}}, 'requestOptions':{'CustomOptions':{'Version':'2', 'Requestor':'GeoCoordinationService', 'RequestorVersion':'1.0' }}}");
+    m_requestPayload.append(R"(]"}}, "requestOptions":{"CustomOptions":{"Version":"2", "Requestor":"GeoCoordinationService", "RequestorVersion":"1.0" }}})");
 
     m_requestHeader.clear();
     m_requestHeader.push_back("Content-Type: application/json");
@@ -325,10 +348,10 @@ void PreparedPackageRequest::_PrepareHttpRequestStringAndPayload() const
 DownloadReportUploadRequest::DownloadReportUploadRequest(Utf8StringCR guid, Utf8StringCR identifier, BeFileName report)
     : m_downloadReport(report), m_guid(guid)
     {
-    m_validRequestString = false; 
-    m_id = identifier; 
+    m_validRequestString = false;
+    m_id = identifier;
     m_requestType = HttpRequestType::PUT_Request;
-    
+
     Utf8String fileFromRoot = report.GetNameUtf8();
 
     report.GetFileSize(m_fileSize);
@@ -394,7 +417,7 @@ bvector<SpatialEntityPtr> GeoCoordinationService::SpatialEntityRequestBase(const
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
     if (rawResponse.status != RequestStatus::OK)
-        s_errorCallback("SpatialEntityRequest failed with response", rawResponse); 
+        s_errorCallback("SpatialEntityRequest failed with response", rawResponse);
     else
         RealityConversionTools::JsonToSpatialEntity(rawResponse.body.c_str(), &entities);
 
@@ -406,7 +429,11 @@ bvector<SpatialEntityPtr> GeoCoordinationService::SpatialEntityRequestBase(const
 //=====================================================================================
 SpatialEntityPtr GeoCoordinationService::Request(const SpatialEntityByIdRequest& request, RawServerResponse& rawResponse)
     {
-    return SpatialEntityRequestBase(static_cast<const GeoCoordinationServiceRequest*>(&request), rawResponse)[0];
+    auto entities = SpatialEntityRequestBase(static_cast<const GeoCoordinationServiceRequest*>(&request), rawResponse);
+    if (entities.size() > 0)
+        return entities[0];
+    else
+        return nullptr;
     }
 
 //=====================================================================================
@@ -414,7 +441,11 @@ SpatialEntityPtr GeoCoordinationService::Request(const SpatialEntityByIdRequest&
 //=====================================================================================
 SpatialEntityPtr GeoCoordinationService::Request(const SpatialEntityWithDetailsByIdRequest& request, RawServerResponse& rawResponse)
     {
-    return SpatialEntityRequestBase(static_cast<const GeoCoordinationServiceRequest*>(&request), rawResponse)[0];
+    auto entities = SpatialEntityRequestBase(static_cast<const GeoCoordinationServiceRequest*>(&request), rawResponse);
+    if (entities.size() > 0)
+        return entities[0];
+    else
+        return nullptr;
     }
 
 //=====================================================================================
@@ -463,7 +494,7 @@ SpatialEntityMetadataPtr GeoCoordinationService::Request(const SpatialEntityMeta
     bvector<SpatialEntityMetadataPtr> entities = bvector<SpatialEntityMetadataPtr>();
     if (rawResponse.status != RequestStatus::OK)
         {
-        s_errorCallback("SpatialEntityServerByIdRequest failed with response", rawResponse);
+        s_errorCallback("SpatialEntityMetadataByIdRequest failed with response", rawResponse);
         return nullptr;
         }
     RealityConversionTools::JsonToSpatialEntityMetadata(rawResponse.body.c_str(), &entities);
@@ -479,15 +510,17 @@ bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWit
     rawResponse = BasicPagedRequest(static_cast<const GeoCoordinationServicePagedRequest*>(&request));
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
+    RealityConversionTools::JsonToSpatialEntity(rawResponse.body.c_str(), &entities);
+
     if (rawResponse.status == RequestStatus::BADREQ)
         {
         s_errorCallback("SpatialEntityWithDetailsSpatialRequest failed with response", rawResponse);
         return entities;
         }
-    else if ((uint8_t)entities.size() < request.GetPageSize())
+    else if ((uint8_t) entities.size() < request.GetPageSize())
         rawResponse.status = RequestStatus::LASTPAGE;
 
-    RealityConversionTools::JsonToSpatialEntity(rawResponse.body.c_str(), &entities);
+
     return entities;
     }
 
@@ -503,7 +536,7 @@ Utf8String GeoCoordinationService::Request(const PackagePreparationRequest& requ
     Json::Reader::Parse(rawResponse.body, packageInfos);
 
     if (rawResponse.status == RequestStatus::BADREQ || !packageInfos.isMember("changedInstance"))
-        rawResponse.status =  RequestStatus::BADREQ;
+        rawResponse.status = RequestStatus::BADREQ;
     else
         packageId = packageInfos["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
 
@@ -514,10 +547,10 @@ Utf8String GeoCoordinationService::Request(const PackagePreparationRequest& requ
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
 void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFileName filename, RawServerResponse& rawResponse)
-    {    
+    {
     WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());
     BeFile file;
-    if(file.Create(filename.GetNameUtf8().c_str(), true) != BeFileStatus::Success)
+    if (file.Create(filename.GetNameUtf8().c_str(), true) != BeFileStatus::Success)
         {
         s_errorCallback("PreparedPackageRequest failed to create file at provided location", rawResponse);
         return;
@@ -542,7 +575,7 @@ void GeoCoordinationService::Request(const DownloadReportUploadRequest& request,
     {
     BeFile fileStream;
     BeFileStatus status = fileStream.Open(request.GetFileName(), BeFileAccess::Read);
-    if(status != BeFileStatus::Success)
+    if (status != BeFileStatus::Success)
         {
         s_errorCallback("DownloadReport File not found", rawResponse);
         return;
@@ -564,7 +597,7 @@ void GeoCoordinationService::Request(const DownloadReportUploadRequest& request,
 
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, request.GetMessageSize());
 
-    rawResponse.curlCode = (int)curl_easy_perform(curl);
+    rawResponse.curlCode = (int) curl_easy_perform(curl);
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(rawResponse.responseCode));
     curl_easy_cleanup(curl);
 
@@ -587,13 +620,32 @@ RawServerResponse GeoCoordinationService::BasicPagedRequest(const GeoCoordinatio
     WSGRequest::GetInstance().PerformRequest(*request, rawResponse, GeoCoordinationService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if ((rawResponse.status != CURLE_OK) || !Json::Reader::Parse(rawResponse.body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword))
-        rawResponse.status =  RequestStatus::BADREQ;
+    if (rawResponse.status != CURLE_OK)
+        {
+        s_errorCallback("Curl error", rawResponse);
+        rawResponse.status = RequestStatus::BADREQ;
+        }
+    else if(!Json::Reader::Parse(rawResponse.body, instances))
+        {
+        s_errorCallback("Can't parse the JSON", rawResponse);
+        rawResponse.status = RequestStatus::BADREQ;
+        }
+    else if (instances.isMember("errorMessage"))
+        {
+        s_errorCallback("Error message in the JSON", rawResponse);
+        rawResponse.status = RequestStatus::BADREQ;
+        }
+    else if (!instances.isMember(keyword))
+        {
+        s_errorCallback("Keyword not found in the JSON", rawResponse);
+        rawResponse.status = RequestStatus::BADREQ;
+        }
     else
         {
         request->AdvancePage();
         rawResponse.status = RequestStatus::OK;
         }
+
     return rawResponse;
     }
 
@@ -607,8 +659,26 @@ RawServerResponse GeoCoordinationService::BasicRequest(const GeoCoordinationServ
     WSGRequest::GetInstance().PerformRequest(*request, rawResponse, GeoCoordinationService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if ((rawResponse.status != CURLE_OK) || !Json::Reader::Parse(rawResponse.body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword))
+    if (rawResponse.status != CURLE_OK)
+        {
+        s_errorCallback("Curl error", rawResponse);
         rawResponse.status = RequestStatus::BADREQ;
+        }
+    else if(!Json::Reader::Parse(rawResponse.body, instances))
+        {
+        s_errorCallback("Can't parse the JSON", rawResponse);
+        rawResponse.status = RequestStatus::BADREQ;
+        }
+    else if (instances.isMember("errorMessage"))
+        {
+        s_errorCallback("Error message in the JSON", rawResponse);
+        rawResponse.status = RequestStatus::BADREQ;
+        }
+    else if (!instances.isMember(keyword))
+        {
+        s_errorCallback("Keyword not found in the JSON", rawResponse);
+        rawResponse.status = RequestStatus::BADREQ;
+        }
     else
         rawResponse.status = RequestStatus::OK;
 

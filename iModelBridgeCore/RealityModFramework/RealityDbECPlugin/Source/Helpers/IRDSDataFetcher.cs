@@ -35,6 +35,13 @@ namespace IndexECPlugin.Source.Helpers
         JObject GetSingleData (string entityID);
 
         /// <summary>
+        /// Method for querying the ReadAccessAzureToken of a single entity
+        /// </summary>
+        /// <param name="entityID">The ID of the entity</param>
+        /// <returns>The Jobject containing the information requested.</returns>
+        JObject GetReadAccessAzureToken (string entityID);
+
+        /// <summary>
         /// Method for querying information using spatial and classification criteria
         /// </summary>
         /// <param name="polygon">The polygon used to limit the search</param>
@@ -104,6 +111,21 @@ namespace IndexECPlugin.Source.Helpers
             {
 
             string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "/" + entityID;
+
+            JObject jsonResponse = JObject.Parse(m_httpResponseGetter.GetHttpResponse(url));
+            JArray array = jsonResponse["instances"] as JArray;
+
+            return array.First as JObject;
+            }
+
+        /// <summary>
+        /// Method for querying the ReadAccessAzureToken of a single entity
+        /// </summary>
+        /// <param name="entityID">The ID of the entity</param>
+        /// <returns>The Jobject containing the information requested.</returns>
+        public JObject GetReadAccessAzureToken (string entityID)
+            {
+            string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "/" + entityID + IndexConstants.RdsReadAccessAzureTokenUrlEnd;
 
             JObject jsonResponse = JObject.Parse(m_httpResponseGetter.GetHttpResponse(url));
             JArray array = jsonResponse["instances"] as JArray;
@@ -206,7 +228,7 @@ namespace IndexECPlugin.Source.Helpers
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     using ( HttpResponseMessage response = client.GetAsync(url).Result )
                         {
-                        if ( response.IsSuccessStatusCode )
+                        if ( response.IsSuccessStatusCode && response.RequestMessage.RequestUri.OriginalString.Contains(url) )
                             {
                             using ( HttpContent content = response.Content )
                                 {
@@ -215,7 +237,14 @@ namespace IndexECPlugin.Source.Helpers
                             }
                         else
                             {
-                            throw new OperationFailedException("Reality Data Server returned an error : " + response.ReasonPhrase);
+                            if ( !response.IsSuccessStatusCode )
+                                {
+                                throw new OperationFailedException("Reality Data Server returned an error : " + response.ReasonPhrase);
+                                }
+                            else
+                                {
+                                throw new OperationFailedException("Reality Data Server returned an error.");
+                                }
                             }
                         }
                     }

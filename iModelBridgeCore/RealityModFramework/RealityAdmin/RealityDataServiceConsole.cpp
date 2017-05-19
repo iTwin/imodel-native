@@ -186,10 +186,10 @@ RealityDataConsole::RealityDataConsole() :
     m_realityDataProperties.push_back("-Finish-");
 
     m_visibilityOptions = bvector<Utf8String>();
-    m_visibilityOptions.push_back("PUBLIC");
+    //m_visibilityOptions.push_back("PUBLIC");
+    m_visibilityOptions.push_back("ENTERPRISE");
     m_visibilityOptions.push_back("PRIVATE");
     m_visibilityOptions.push_back("PERMISSION");
-    m_visibilityOptions.push_back("ENTERPRISE");
 
     m_classificationOptions = bvector<Utf8String>();
     m_classificationOptions.push_back("Model");
@@ -359,6 +359,25 @@ void RealityDataConsole::PrintResults(bvector<Utf8String> results)
     for (size_t i = 0; i < results.size(); ++i)
         {
         DisplayInfo(Utf8PrintfString("%5d \t %s\n", (i + 1), results[i]));
+        }
+    }
+
+void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> results)
+    {
+    std::stringstream index;
+    Utf8String fullOption;
+    DisplayInfo("Index \t Value\n");
+    std::string str;
+    size_t j = 0;
+    for(bmap<Utf8String, bvector<Utf8String>>::iterator iter = results.begin(); iter != results.end(); ++iter)
+        {
+        Utf8String key = iter->first;
+        DisplayInfo(Utf8PrintfString("\t\t%s\n", key), DisplayOption::Question);
+        for (size_t i = 0; i < results[key].size(); ++i)
+            {
+            DisplayInfo(Utf8PrintfString("%5d \t %s\n", (j + 1), results[key][i]));
+            ++j;
+            }
         }
     }
 
@@ -567,6 +586,8 @@ void RealityDataConsole::ListRoots()
     if (m_projectFilter.length() > 0)
         organizationReq.SetProject(m_projectFilter);
 
+    organizationReq.SortBy(RealityDataField::OwnedBy, true);
+
     RawServerResponse organizationResponse = RawServerResponse();
     organizationResponse.status = RequestStatus::OK;
     bvector<RealityDataPtr> organizationVec = bvector<RealityDataPtr>();
@@ -577,13 +598,30 @@ void RealityDataConsole::ListRoots()
         partialVec = RealityDataService::Request(organizationReq, organizationResponse);
         organizationVec.insert(organizationVec.end(), partialVec.begin(), partialVec.end());
         }
-    bvector<Utf8String> nodes = bvector<Utf8String>();
+    bmap<Utf8String, bvector<Utf8String>> nodes = bmap<Utf8String, bvector<Utf8String>>();
+    bvector<Utf8String> subvec = bvector<Utf8String>();
+    Utf8String owner;
+    if(organizationVec.size() > 0)
+        owner = organizationVec[0]->GetOwner();
 
     Utf8String schema = RealityDataService::GetSchemaName();
+    int position = 0;
     for (RealityDataPtr rData : organizationVec)
         {
-        nodes.push_back(Utf8PrintfString("%-30s  %-22s (%s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier(), rData->GetTotalSize()));
+        if(owner != rData->GetOwner())
+            {
+            nodes.Insert(owner, subvec);
+            subvec.clear();
+            owner = rData->GetOwner();
+            }
+
+        subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier(), rData->GetTotalSize()));
+
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
+
+        position++;
+        if(position == organizationVec.size())
+            nodes.Insert(owner, subvec);
         }
 
     PrintResults(nodes);
@@ -1263,7 +1301,7 @@ void RealityDataConsole::Relationships()
 
     DisplayInfo("Projects attached to this RealityData\n\n");
     for (RealityDataProjectRelationshipPtr entity : entities)
-        DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetProjectId()));
+        DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetRelatedId()));
     }
 
 void RealityDataConsole::CreateRD()
