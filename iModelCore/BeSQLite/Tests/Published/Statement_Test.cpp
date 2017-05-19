@@ -2,10 +2,14 @@
 |
 |  $Source: Tests/Published/Statement_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
+#include "BeSQLite/ChangeSet.h"
+#include <vector>
+#include <limits>
+#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 * Creating a new Db for the test
@@ -378,3 +382,28 @@ TEST(StatementTests, InVirtualSet)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "InVirtualSet with binding an empty virtual set: " << db.GetLastError().c_str();
     ASSERT_EQ(0, stmt.GetValueInt(0)) << "InVirtualSet with binding an empty virtual set";
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST(StatementTests, GetTableType)
+{
+    initBeSQLiteLib ();
+    Db db;
+    createDB (L"getvalue.db", db);
+
+    Statement stat1;
+    DbResult result = stat1.Prepare (db, "SELECT * FROM linestyles");
+    EXPECT_EQ (result, BE_SQLITE_OK);
+    EXPECT_TRUE (stat1.IsPrepared ());
+
+    Utf8String decType = Utf8String (stat1.GetColumnDeclaredType (0));
+    printf (" dectype  %s", decType.c_str ());
+    EXPECT_STREQ ("NUMERIC", stat1.GetColumnDeclaredType (0));
+    EXPECT_STREQ ("TEXT", stat1.GetColumnDeclaredType (1));
+
+    Utf8String coltab = Utf8String (stat1.GetColumnTableName (0));
+    EXPECT_STREQ ("linestyles", stat1.GetColumnTableName (0));
+}
+
