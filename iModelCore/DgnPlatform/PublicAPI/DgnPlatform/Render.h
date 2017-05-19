@@ -1611,7 +1611,7 @@ namespace Quantization
 
     inline bool IsInRange(double quantizedPos)
         {
-        return abs(quantizedPos) < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
+        return quantizedPos >= 0.0 && quantizedPos < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
         }
 
     constexpr double QuantizeDouble(double pos, double origin, double scale)
