@@ -254,6 +254,41 @@ TEST_F(SchemaVersionConversionTests, SchemaWithOldUnitSpecifications)
     ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
     }
 
+// Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
+TEST_F(SchemaVersionConversionTests, SchemaWithIsUnitSystemSchema_Attribute)
+    {
+    Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <IsUnitSystemSchema xmlns="Unit_Attributes.01.00" />
+        <Mixed_UnitSystem xmlns="Unit_Attributes.01.00" />
+        <SI_UnitSystem xmlns="Unit_Attributes.01.00" />
+        <US_UnitSystem xmlns="Unit_Attributes.01.00" />
+        <ECClass typeName="TestClass" isDomainClass="True">
+            <ECProperty propertyName="Length" typeName="double">
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                        <DimensionName>L</DimensionName>
+                        <UnitName>FOOT</UnitName>
+                        <AllowableUnits />
+                    </UnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    validateUnitsInConvertedSchema(*schema, *originalSchema);
+    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
+    }
+
 //TEST_F(SchemaVersionConversionTests, OpenPlantSchema)
 //    {
 //    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
