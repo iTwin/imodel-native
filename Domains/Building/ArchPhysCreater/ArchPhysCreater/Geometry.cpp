@@ -162,7 +162,7 @@ BentleyStatus GeometricTools::CreateDoorGeometry(ArchitecturalPhysical::DoorPtr 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreateWindowGeometry(ArchitecturalPhysical::WindowPtr window, BuildingPhysical::BuildingPhysicalModelR model)
+BentleyStatus GeometricTools::CreateWindowGeometry(ArchitecturalPhysical::ArchitecturalBaseElementPtr window, BuildingPhysical::BuildingPhysicalModelR model)
     {
     Dgn::DgnDbR db = model.GetDgnDb();
     Dgn::DgnModelId modelId = model.GetModelId();
@@ -237,3 +237,81 @@ BentleyStatus GeometricTools::CreateWindowGeometry(ArchitecturalPhysical::Window
 
     return BentleyStatus::SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreateGeometry(ArchitecturalPhysical::ArchitecturalBaseElementPtr element, BuildingPhysical::BuildingPhysicalModelR model)
+    {
+    Dgn::DgnDbR db = model.GetDgnDb();
+    Dgn::DgnModelId modelId = model.GetModelId();
+    Dgn::DgnCategoryId    categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, element->GetElementClass()->GetName().c_str());
+
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*element);
+    if (!builder.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    // Append geometry/params for tile casing
+
+    builder->Append(categoryId);
+
+    Dgn::Render::GeometryParams params;
+    params.SetCategoryId(categoryId);
+    //params.SetSubCategoryId(windowFraneCategoryId);
+    // params.SetMaterialId(ToyTileMaterial::QueryColoredPlasticMaterialId(db));
+    params.SetLineColor(Dgn::ColorDef::DarkGrey());
+    params.SetFillColor(Dgn::ColorDef::DarkGrey());
+    builder->Append(params);
+
+    // Units are in Meters. Window Frame would be about 75mm x 150mm
+
+    double frameDepth = 0.150;
+    double frameWidth = 0.075;
+    double openingWidth = 0.9;
+    double openingHeight = 2.150;
+
+    CreateFrameGeometry(builder, model, frameDepth, frameWidth, openingHeight, openingWidth, true);
+
+    double panelWidth = openingWidth;
+    double panelThickness = 0.035;
+    double panelBaseOffset = 0.035;
+    double panelFaceOffset = frameDepth / 2.0 - (panelThickness / 2.0);
+
+    // Create the Panel
+
+//    builder->Append(windowPanelCategoryId);
+
+//    params.SetCategoryId(windowCategoryId);
+//    params.SetSubCategoryId(windowPanelCategoryId);
+    Dgn::ColorDef color(255, 255, 255, 100);
+    params.SetLineColor(color);
+    params.SetFillColor(color);
+    builder->Append(params);
+
+
+    DPoint3d points[4];
+    points[0] = DPoint3d::From(0.0, panelFaceOffset, 0.0);
+    points[1] = DPoint3d::From(panelWidth, panelFaceOffset, 0.0);
+    points[2] = DPoint3d::From(panelWidth, panelFaceOffset + panelThickness, 0.0);
+    points[3] = DPoint3d::From(0.0, panelFaceOffset + panelThickness, 0.0);
+
+    DVec3d vec = DVec3d::From(0.0, 0.0, openingHeight);
+
+    CurveVectorPtr shape = CurveVector::CreateLinear(points, _countof(points), CurveVector::BOUNDARY_TYPE_Outer, true);
+    if (!shape.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    ISolidPrimitivePtr panel = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(shape, vec, true));
+
+    if (!panel.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    builder->Append(*panel);
+
+    if (BentleyStatus::SUCCESS != builder->Finish(*element))
+        return  BentleyStatus::BSIERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+

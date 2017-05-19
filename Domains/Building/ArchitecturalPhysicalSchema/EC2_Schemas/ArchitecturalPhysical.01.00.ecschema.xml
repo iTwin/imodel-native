@@ -1592,14 +1592,164 @@
     <ECClass typeName="TendonAnchor" description="(From IFC) Class : IfcTendonAnchor" displayLabel="Tendon Anchor" isDomainClass="True">
         <BaseClass>ReinforcingElement</BaseClass>
     </ECClass>
-    <ECClass typeName="Wall" description="(From IFC) Class : IfcWall" isDomainClass="True">
+    <ECClass typeName="Wall" description="Wall" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
+        <ECProperty propertyName="LeftGrossArea" typeName="double" description="Gross Area at the left side of the wall" displayLabel="Left Gross Area">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <UnitName>METRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CenterGrossArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Center Gross Area">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <UnitName>METRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CenterLength" typeName="double" description="length along the centerline of the wall" displayLabel="Center Length">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <UnitName>METRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Height" typeName="double" description="Height of the wall">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <UnitName>METRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LeftLength" typeName="double" description="length along the left side of the wall" displayLabel="Left Length">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <UnitName>METRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RightGrossArea" typeName="double" description="Gross Area at the right side of the wall" displayLabel="Right Gross Area">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <UnitName>METRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RightLength" typeName="double" description="length along the Right side of the wall">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <UnitName>METRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Width" typeName="double" description="Width of the wall">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <UnitName>METRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CenterNetArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Center Net Area">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <UnitName>METRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LeftNetArea" typeName="double" description="Net Area at the left side of the wall" displayLabel="Left Net Area">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <UnitName>METRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RightNetArea" typeName="double" description="Net Area at the right side of the wall" displayLabel="Right Net Area">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L2</DimensionName>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <UnitName>METRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="GrossVolume" typeName="double" description="Gross Volume at the of the wall" displayLabel="Gross Volume">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L3</DimensionName>
+                    <KindOfQuantityName>VOLUME</KindOfQuantityName>
+                    <UnitName>METRE_CUBED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NetVolume" typeName="double" description="Net Volume at the of the wall" displayLabel="Net Volume">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L3</DimensionName>
+                    <KindOfQuantityName>VOLUME</KindOfQuantityName>
+                    <UnitName>METRE_CUBED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FireRating" typeName="double" description="Fire Rating " displayLabel="Fire Rating" />
+        <ECProperty propertyName="SpaceBounding" typeName="boolean" description="Is the wall a bounding area of a space" displayLabel="Space Bounding" />
+        <ECProperty propertyName="Keynote" typeName="string" />
+        <ECProperty propertyName="Phase" typeName="string" />
+        <ECProperty propertyName="IsExternal" typeName="boolean" description="True is the wall is on the exterior of a building" displayLabel="Is External" />
+        <ECProperty propertyName="IsBelowGrade" typeName="boolean" description="True is the wall is on the below ground level" displayLabel="Is Below Grade" />
+        <ECProperty propertyName="AcousticRating" typeName="double" description="Acoustic Rating (STC)" displayLabel="Acoustic Rating (STC)" />
+        <ECProperty propertyName="StructuralFunction" typeName="string" displayLabel="Structural Function" />
+        <ECProperty propertyName="HeatTransferCoefficient" typeName="double" displayLabel="Heat Transfer Coefficient (U)" />
+        <ECProperty propertyName="ThermalResistance" typeName="double" displayLabel="Thermal Resistance (R)" />
     </ECClass>
     <ECClass typeName="WallStandardCase" description="(From IFC) Class : IfcWallStandardCase" displayLabel="Standard Wall" isDomainClass="True">
         <BaseClass>Wall</BaseClass>
     </ECClass>
     <ECClass typeName="WallType" description="(From IFC) Class : IfcWallType" displayLabel="Wall Type" isDomainClass="True">
         <BaseClass>BuildingElementType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
         <ECProperty propertyName="PredefinedType" typeName="int" description="(From IFC) Enumeration : IfcWallTypeEnum" displayLabel="Predefined Type">
             <ECCustomAttributes>
                 <StandardValues xmlns="EditorCustomAttributes.01.00">
@@ -1753,6 +1903,7 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TypeDescription" typeName="string" displayLabel="Type Description" />
+        <ECProperty propertyName="Phase" typeName="string" />
     </ECClass>
     <ECClass typeName="WindowType" displayLabel="Window Type" isDomainClass="True">
         <BaseClass>BuildingElementType</BaseClass>

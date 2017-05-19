@@ -34,7 +34,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ArchitecturalBaseElement : Dgn::PhysicalElement
         // static Dgn::Render::GeometryParams GetMagnetMaterialParams(Dgn::DgnDbR, Dgn::DgnCategoryId);
 
     public:
-        ARCHITECTURAL_PHYSICAL_EXPORT static ArchitecturalBaseElementPtr           Create(Utf8CP,  BuildingPhysical::BuildingPhysicalModelR);
+        ARCHITECTURAL_PHYSICAL_EXPORT static ArchitecturalPhysical::ArchitecturalBaseElementPtr           Create(Utf8StringCR,  BuildingPhysical::BuildingPhysicalModelR);
         ARCHITECTURAL_PHYSICAL_EXPORT static ArchitecturalBaseElementPtr           Create(CreateParams const& params);
         ARCHITECTURAL_PHYSICAL_EXPORT static ECN::IECInstancePtr                   AddClassificationAspect (BuildingPhysical::BuildingPhysicalModelR model, ArchitecturalBaseElementPtr element) {return AddAspect( model, element, BC_CLASS_Classification); }
         ARCHITECTURAL_PHYSICAL_EXPORT static ECN::IECInstancePtr                   AddManufacturerAspect(BuildingPhysical::BuildingPhysicalModelR model, ArchitecturalBaseElementPtr element) { return AddAspect(model, element, BC_CLASS_Manufacturer); }

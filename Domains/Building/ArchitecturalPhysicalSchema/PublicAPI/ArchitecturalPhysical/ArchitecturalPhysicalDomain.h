@@ -67,6 +67,13 @@ struct  ArchitecturalPhysicalCategory : NonCopyableClass
 
         //! Get the DgnSubCategoryId for a Door frame
         ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnSubCategoryId QueryBuildingPhysicalWindowFrameSubCategoryId(Dgn::DgnDbR);
+
+        //! Get the DgnSubCategoryId for a Door frame
+        ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCategoryId QueryBuildingPhysicalWallCategoryId(Dgn::DgnDbR db);
+
+        //! Get the DgnSubCategoryId for a Door frame
+        ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCategoryId QueryBuildingPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName );
+
     };
 
 

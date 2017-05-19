@@ -16,6 +16,56 @@ HANDLER_DEFINE_MEMBERS(DoorTypeHandler)
 HANDLER_DEFINE_MEMBERS(ArchitecturalBaseElementHandler)
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+ArchitecturalPhysical::ArchitecturalBaseElementPtr ArchitecturalBaseElement::Create(Utf8StringCR className, BuildingPhysical::BuildingPhysicalModelR model)
+    {
+
+    DgnDbR db = model.GetDgnDb();
+    DgnModelId modelId = model.GetModelId();
+
+    // Find the class
+
+    ECN::ECClassCP buildingClass = model.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME, className.c_str());
+
+    if (nullptr == buildingClass)
+        return nullptr;
+
+    ECN::ECClassId classId = buildingClass->GetId();
+
+    Dgn::ElementHandlerP elmHandler = dgn_ElementHandler::Element::FindHandler(db, classId);
+    if (NULL == elmHandler)
+        return nullptr;
+
+
+    DgnCategoryId categoryId = ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, className.c_str());
+
+    Dgn::GeometricElement3d::CreateParams params(db, modelId, classId, categoryId);
+
+  //  ArchitecturalPhysical::ArchitecturalBaseElementHandler handler = ArchitecturalPhysical::ArchitecturalBaseElementHandler::GetHandler();
+
+    Dgn::DgnElementPtr element = elmHandler->Create(params);
+
+    ArchitecturalPhysical::ArchitecturalBaseElementPtr buildingElement = dynamic_pointer_cast<ArchitecturalPhysical::ArchitecturalBaseElement>(element);
+
+
+    auto geomSource = buildingElement->ToGeometrySourceP();
+
+    if (nullptr == geomSource)
+        return nullptr;
+
+    geomSource->SetCategoryId(categoryId);
+
+
+    //ArchitecturalBaseElementPtr buildingElement = new ArchitecturalBaseElement();
+
+ //   return buildingElement;
+
+    return buildingElement;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems

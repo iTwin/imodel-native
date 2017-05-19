@@ -53,6 +53,8 @@
 #define AP_CLASS_DoorType                                   "DoorType"
 #define AP_CLASS_Window                                     "Window"
 #define AP_CLASS_WindowType                                 "WindowType"
+#define AP_CLASS_Wall                                       "Wall"
+#define AP_CLASS_WallType                                   "WallType"
 #define AP_CLASS_ArchitecturalBaseElement                   "ArchitecturalBaseElement"
 
 //-----------------------------------------------------------------------------------------
@@ -94,6 +96,10 @@ ARCHITECTURAL_PHYSICAL_TYPEDEFS(Window)
 ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(Window)
 ARCHITECTURAL_PHYSICAL_TYPEDEFS(WindowType)
 ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(WindowType)
+ARCHITECTURAL_PHYSICAL_TYPEDEFS(WallType)
+ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(WallType)
+ARCHITECTURAL_PHYSICAL_TYPEDEFS(Wall)
+ARCHITECTURAL_PHYSICAL_REFCOUNTED_TYPEDEFS(Wall)
 
 /*PLANNING_TYPEDEFS(Calendar)
 PLANNING_TYPEDEFS(Activity)

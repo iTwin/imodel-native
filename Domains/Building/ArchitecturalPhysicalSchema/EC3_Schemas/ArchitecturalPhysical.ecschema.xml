@@ -627,17 +627,46 @@
     <ECEntityClass typeName="TendonAnchor" description="(From IFC) Class : IfcTendonAnchor" displayLabel="Tendon Anchor">
         <BaseClass>ReinforcingElement</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="Wall" description="(From IFC) Class : IfcWall">
+    <ECEntityClass typeName="Wall" description="Wall">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="LeftGrossArea" typeName="double" description="Gross Area at the left side of the wall" displayLabel="Left Gross Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="CenterGrossArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Center Gross Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="CenterLength" typeName="double" description="length along the centerline of the wall" displayLabel="Center Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LeftLength" typeName="double" description="length along the left side of the wall" displayLabel="Left Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RightGrossArea" typeName="double" description="Gross Area at the right side of the wall" displayLabel="Right Gross Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="RightLength" typeName="double" description="length along the Right side of the wall" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CenterNetArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Center Net Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="LeftNetArea" typeName="double" description="Net Area at the left side of the wall" displayLabel="Left Net Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="RightNetArea" typeName="double" description="Net Area at the right side of the wall" displayLabel="Right Net Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="GrossVolume" typeName="double" description="Gross Volume at the of the wall" displayLabel="Gross Volume" kindOfQuantity="VOLUME"/>
+        <ECProperty propertyName="NetVolume" typeName="double" description="Net Volume at the of the wall" displayLabel="Net Volume" kindOfQuantity="VOLUME"/>
+        <ECProperty propertyName="FireRating" typeName="double" description="Fire Rating " displayLabel="Fire Rating"/>
+        <ECProperty propertyName="SpaceBounding" typeName="boolean" description="Is the wall a bounding area of a space" displayLabel="Space Bounding"/>
+        <ECProperty propertyName="Keynote" typeName="string"/>
+        <ECProperty propertyName="Phase" typeName="string"/>
+        <ECProperty propertyName="IsExternal" typeName="boolean" description="True is the wall is on the exterior of a building" displayLabel="Is External"/>
+        <ECProperty propertyName="IsBelowGrade" typeName="boolean" description="True is the wall is on the below ground level" displayLabel="Is Below Grade"/>
+        <ECProperty propertyName="AcousticRating" typeName="double" description="Acoustic Rating (STC)" displayLabel="Acoustic Rating (STC)"/>
+        <ECProperty propertyName="StructuralFunction" typeName="string" displayLabel="Structural Function"/>
+        <ECProperty propertyName="HeatTransferCoefficient" typeName="double" displayLabel="Heat Transfer Coefficient (U)"/>
+        <ECProperty propertyName="ThermalResistance" typeName="double" displayLabel="Thermal Resistance (R)"/>
     </ECEntityClass>
     <ECEntityClass typeName="WallStandardCase" description="(From IFC) Class : IfcWallStandardCase" displayLabel="Standard Wall">
         <BaseClass>Wall</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="WallType" description="(From IFC) Class : IfcWallType" displayLabel="Wall Type">
         <BaseClass>BuildingElementType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="PredefinedType" typeName="WallType_PredefinedType" description="(From IFC) Enumeration : IfcWallTypeEnum" displayLabel="Predefined Type"/>
     </ECEntityClass>
-    <ECEntityClass typeName="Window" description="(From IFC) Class : IfcWindow">
+    <ECEntityClass typeName="Window" description="Window">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -660,9 +689,9 @@
         <ECProperty propertyName="Height" typeName="double" description="Standard height of the door" kindOfQuantity="LENGTH">
             <ECCustomAttributes>
                 <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>200</Standard>
-                    <Name>Door Properties (Door Type)</Name>
-                    <DisplayLabel>Door Properties (Door Type)</DisplayLabel>
+                    <Standard>100</Standard>
+                    <Name>Window Frame Properties (Window Type)</Name>
+                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
                 </Category>
             </ECCustomAttributes>
         </ECProperty>
@@ -672,9 +701,9 @@
         <ECProperty propertyName="Width" typeName="double" description="Standard Width of the door" kindOfQuantity="LENGTH">
             <ECCustomAttributes>
                 <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>200</Standard>
-                    <Name>Door Properties (Door Type)</Name>
-                    <DisplayLabel>Door Properties (Door Type)</DisplayLabel>
+                    <Standard>100</Standard>
+                    <Name>Window Frame Properties (Window Type)</Name>
+                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
                 </Category>
             </ECCustomAttributes>
         </ECProperty>
@@ -683,13 +712,14 @@
             <ECCustomAttributes>
                 <Category xmlns="EditorCustomAttributes.01.03">
                     <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
+                    <Name>Window Frame Properties (Window Type)</Name>
+                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
                 </Category>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="FrontOffset" typeName="double" description="Offset into the wall for the window frame" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="TypeDescription" typeName="string" displayLabel="Type Description"/>
+        <ECProperty propertyName="Phase" typeName="string"/>
     </ECEntityClass>
     <ECEntityClass typeName="WindowType" displayLabel="Window Type">
         <BaseClass>BuildingElementType</BaseClass>
@@ -698,9 +728,11 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <KindOfQuantity typeName="AREA" displayLabel="AREA" persistenceUnit="SQ.MM(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="AREA_SQ__x002E__M" displayLabel="AREA_SQ.M" persistenceUnit="SQ.M(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="DIAMETER" displayLabel="DIAMETER" persistenceUnit="MM(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="FORCE" displayLabel="FORCE" persistenceUnit="N(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="LENGTH_MM" displayLabel="LENGTH_MM" persistenceUnit="MM(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="PRESSURE" displayLabel="PRESSURE" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="VOLUME" displayLabel="VOLUME" persistenceUnit="CUB.M(DefaultReal)" relativeError="0.0001"/>
 </ECSchema>

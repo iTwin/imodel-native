@@ -71,14 +71,14 @@ BentleyStatus ArchPhysCreator::ParseCommandLine(int argc, WCharP argv[])
         }
 
     // validate input arg
-    BeFileName::GetCwd(currentDirectory);
+   // _wgetcwd(currentDirectory);
 
     // validate output arg
-    BeFileName outputFileNameDefaults(currentDirectory);
-    outputFileNameDefaults.AppendExtension(L"bim");
+ //   BeFileName outputFileNameDefaults;
+ //   outputFileNameDefaults.AppendExtension(L"bim");
 
     m_outputFileName = BeFileName(outputFileNameArg.c_str());
-    m_outputFileName.SupplyDefaultNameParts(outputFileNameDefaults);
+ //   m_outputFileName.SupplyDefaultNameParts(outputFileNameDefaults);
 
     if (m_outputFileName.DoesPathExist() && !m_overwriteExistingOutputFile)
         {
@@ -115,6 +115,8 @@ Dgn::CategorySelectorPtr ArchPhysCreator::CreateCategorySelector(Dgn::Definition
     // we know that we can safely choose any name.
     auto categorySelector = new Dgn::CategorySelector(model, "Default");
     categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorCategoryId(model.GetDgnDb()));
+    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(model.GetDgnDb()));
+    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWallCategoryId(model.GetDgnDb()));
     return categorySelector;
     }
 
@@ -268,73 +270,171 @@ Dgn::DgnViewId ArchPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP n
 BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysicalModelR physicalModel, BuildingPhysical::BuildingTypeDefinitionModelR typeModel)
     {
 
-    for (int i = 0; i < 100; i++)
+    ECN::ECClassCP baseClass = physicalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME, AP_CLASS_ArchitecturalBaseElement);
+
+    ECN::ECDerivedClassesList classList =  baseClass->GetDerivedClasses();
+
+    int i = 0;
+
+    for each (ECN::ECClassP var in classList)
         {
 
-        ArchitecturalPhysical::DoorPtr door = DoorTools::CreateDoor ( physicalModel, i + 1 );
-        ECN::ECValue doubleValue;
-
-        Dgn::DgnDbStatus status = door->SetPropertyValue("OverallWidth", 250.0);
-        status = door->SetPropertyValue("OverallHeight", 250.0);
-
+        ArchitecturalPhysical::ArchitecturalBaseElementPtr buildingElement = ArchitecturalPhysical::ArchitecturalBaseElement::Create(var->GetName(), physicalModel);
         Dgn::Placement3d placement;
 
-        placement.GetOriginR() = DPoint3d::From(5.0 * i, 0.0, 0.0);
+        placement.GetOriginR() = DPoint3d::From(5.0 * i, 8.0, 8.0);
 
-        status = door->SetPlacement(placement);
+        Dgn::DgnDbStatus status = buildingElement->SetPlacement(placement);
 
-        GeometricTools::CreateDoorGeometry(door, physicalModel);
+        GeometricTools::CreateGeometry(buildingElement, physicalModel);
+
+        ECN::IECInstancePtr instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect(physicalModel, buildingElement);
 
         ECN::ECValue value;
 
-        ECN::IECInstancePtr instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddManufacturerAspect(physicalModel, door);
-
-        value.SetWCharCP(L"ACME");
-
-        instance->SetValue("Manufacturer", value);
-
-        value.SetWCharCP(L"SN-12345");
-
-        instance->SetValue("ModelNumber", value);
-
-        instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect (physicalModel, door);
-
-        value.SetWCharCP(L"10-10-10");
+        value.SetWCharCP(L"40-10-10");
 
         instance->SetValue("OmniClass", value);
 
-        Dgn::DgnElementCPtr element = door->Insert( &status );
-        
-        if ( Dgn::DgnDbStatus::Success != status )
-            return BentleyStatus::ERROR;
+        for each (ECN::ECPropertyP prop in var->GetProperties())
+            {
+            if ( nullptr == prop )
+                continue;
 
-//        element->GetCode();
+            Utf8String typeName = prop->GetTypeName();
 
-//        ArchitecturalPhysical::DoorPtr door1 = ArchitecturalPhysical::ArchitecturalBaseElement::QueryByCodeValue<ArchitecturalPhysical::Door> (physicalModel, "D001");
+            if (typeName == "double")
+                {
+                ECN::ECValue doubleValue;
 
-//        Dgn::CodeSpec::CreateCode ( ( physicalModel.GetDgnDb(), BIS_CODESPEC_SpatialCategory, categoryName, nameSpace);
+                doubleValue.SetDouble((i+1) * 10.0);
+                buildingElement->SetPropertyValue(prop->GetName().c_str(), doubleValue);
+                }
+            else if (typeName == "string")
+                {
+                ECN::ECValue stringValue;
 
-        ArchitecturalPhysical::WindowPtr window = DoorTools::CreateWindow1(physicalModel, i + 1);
+                stringValue.SetWCharCP(L"String Value");
+                buildingElement->SetPropertyValue ( prop->GetName().c_str(), stringValue);
+                }
+            }
 
-        Dgn::Placement3d windowPlacement;
-
-        windowPlacement.GetOriginR() = DPoint3d::From(5.0 * i, 4.0, 4.0);
-
-        status = window->SetPlacement(windowPlacement);
-
-        GeometricTools::CreateWindowGeometry(window, physicalModel);
-
-        instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect(physicalModel, window);
-
-        value.SetWCharCP(L"20-10-10");
-
-        instance->SetValue("OmniClass", value);
-
-        window->Insert(&status);
+        buildingElement->Insert(&status);
 
         if (Dgn::DgnDbStatus::Success != status)
             return BentleyStatus::ERROR;
+
+        i++;
+
         }
+
+
+//    for (int i = 0; i < 100; i++)
+//        {
+//
+//        ArchitecturalPhysical::DoorPtr door = DoorTools::CreateDoor ( physicalModel, i + 1 );
+//        ECN::ECValue doubleValue;
+//
+//        Dgn::DgnDbStatus status = door->SetPropertyValue("OverallWidth", 250.0);
+//        status = door->SetPropertyValue("OverallHeight", 250.0);
+//
+//        Dgn::Placement3d placement;
+//
+//        placement.GetOriginR() = DPoint3d::From(5.0 * i, 0.0, 0.0);
+//
+//        status = door->SetPlacement(placement);
+//
+//        GeometricTools::CreateDoorGeometry(door, physicalModel);
+//
+//        ECN::ECValue value;
+//
+//        ECN::IECInstancePtr instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddManufacturerAspect(physicalModel, door);
+//
+//        value.SetWCharCP(L"ACME");
+//
+//        instance->SetValue("Manufacturer", value);
+//
+//        value.SetWCharCP(L"SN-12345");
+//
+//        instance->SetValue("ModelNumber", value);
+//
+//        instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect (physicalModel, door);
+//
+//        value.SetWCharCP(L"10-10-10");
+//
+//        instance->SetValue("OmniClass", value);
+//
+//        Dgn::DgnElementCPtr element = door->Insert( &status );
+//        
+//        if ( Dgn::DgnDbStatus::Success != status )
+//            return BentleyStatus::ERROR;
+//
+////        element->GetCode();
+//
+////        ArchitecturalPhysical::DoorPtr door1 = ArchitecturalPhysical::ArchitecturalBaseElement::QueryByCodeValue<ArchitecturalPhysical::Door> (physicalModel, "D001");
+//
+////        Dgn::CodeSpec::CreateCode ( ( physicalModel.GetDgnDb(), BIS_CODESPEC_SpatialCategory, categoryName, nameSpace);
+//
+//        ArchitecturalPhysical::WindowPtr window = DoorTools::CreateWindow1(physicalModel, i + 1);
+//
+//        Dgn::Placement3d windowPlacement;
+//
+//        windowPlacement.GetOriginR() = DPoint3d::From(5.0 * i, 4.0, 4.0);
+//
+//        status = window->SetPlacement(windowPlacement);
+//
+//        GeometricTools::CreateWindowGeometry(window, physicalModel);
+//
+//        instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect(physicalModel, window);
+//
+//        value.SetWCharCP(L"20-10-10");
+//
+//        instance->SetValue("OmniClass", value);
+//
+//        window->Insert(&status);
+//
+//        if (Dgn::DgnDbStatus::Success != status)
+//            return BentleyStatus::ERROR;
+//
+//        ArchitecturalPhysical::ArchitecturalBaseElementPtr buildingElement = ArchitecturalPhysical::ArchitecturalBaseElement::Create("Wall", physicalModel);
+//
+//        windowPlacement.GetOriginR() = DPoint3d::From(5.0 * i, 8.0, 8.0);
+//
+//        status = buildingElement->SetPlacement(windowPlacement);
+//
+//        GeometricTools::CreateWindowGeometry(buildingElement, physicalModel);
+//
+//        instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect(physicalModel, buildingElement);
+//
+//        value.SetWCharCP(L"40-10-10");
+//
+//        instance->SetValue("OmniClass", value);
+//
+//        buildingElement->Insert(&status);
+//
+//        if (Dgn::DgnDbStatus::Success != status)
+//            return BentleyStatus::ERROR;
+//
+//        buildingElement = ArchitecturalPhysical::ArchitecturalBaseElement::Create("Casework", physicalModel);
+//
+//        windowPlacement.GetOriginR() = DPoint3d::From(5.0 * i, 12.0, 8.0);
+//
+//        status = buildingElement->SetPlacement(windowPlacement);
+//
+//        GeometricTools::CreateWindowGeometry(buildingElement, physicalModel);
+//
+//        instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect(physicalModel, buildingElement);
+//
+//        value.SetWCharCP(L"50-10-10");
+//
+//        instance->SetValue("OmniClass", value);
+//
+//        buildingElement->Insert(&status);
+//
+//        if (Dgn::DgnDbStatus::Success != status)
+//            return BentleyStatus::ERROR;
+//
+//        }
 
     return BentleyStatus::SUCCESS;
     }

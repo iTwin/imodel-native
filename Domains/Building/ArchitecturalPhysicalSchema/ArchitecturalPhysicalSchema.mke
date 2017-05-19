@@ -49,7 +49,7 @@ $(o)Door$(oext) : $(_MakeFilePath)Door.cpp ${MultiCompileDepends} $(appPublicApi
 
 $(o)Window$(oext) : $(_MakeFilePath)Window.cpp ${MultiCompileDepends} $(appPublicApi)Window.h
 
-#$(o)Shot$(oext) : $(_MakeFilePath)Shot.cpp ${MultiCompileDepends} $(appPublicApi)Shot.h
+$(o)Wall$(oext) : $(_MakeFilePath)Wall.cpp ${MultiCompileDepends} $(appPublicApi)wall.h
 
 #$(o)XmlWriter$(oext) : $(_MakeFilePath)XmlWriter.cpp ${MultiCompileDepends} $(appPublicApi)XmlWriter.h
 

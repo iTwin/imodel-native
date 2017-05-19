@@ -21,6 +21,8 @@ ArchitecturalPhysicalDomain::ArchitecturalPhysicalDomain() : DgnDomain(BENTLEY_A
     RegisterHandler(DoorTypeHandler::GetHandler());
     RegisterHandler(WindowHandler::GetHandler());
     RegisterHandler(WindowTypeHandler::GetHandler());    
+    RegisterHandler(WallHandler::GetHandler());
+    RegisterHandler(WallTypeHandler::GetHandler());
     }
 
 
@@ -69,6 +71,8 @@ void ArchitecturalPhysicalCategory::InsertDomainCategories(DgnDbR db)
     Dgn::DgnCategoryId    windowCategoryId      = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Windows, ColorDef::White());
     Dgn::DgnSubCategoryId windowFrameCategoryId = InsertSubCategory(db, windowCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame, ColorDef::White());
     Dgn::DgnSubCategoryId windowPanelCategoryId = InsertSubCategory(db, windowCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel, ColorDef::DarkGrey());
+
+    Dgn::DgnCategoryId    wallCategoryId = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Walls, ColorDef::White());
     }
 
 //---------------------------------------------------------------------------------------
@@ -151,6 +155,34 @@ DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowFrame
     DgnSubCategoryId windowFrameCategoryId = DgnSubCategory::QuerySubCategoryId(db, DgnSubCategory::CreateCode(db, QueryBuildingPhysicalWindowCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame));
     return windowFrameCategoryId;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWallCategoryId(DgnDbR db)
+    {
+    return DgnCategory::QueryCategoryId(db, SpatialCategory::CreateCode(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Walls, BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName)
+    {
+    Dgn::DgnCategoryId id =  DgnCategory::QueryCategoryId(db, SpatialCategory::CreateCode(db, categoryName, BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME));
+
+    // Create it if is does not exist.
+
+    if (!id.IsValid())
+        {
+        id = InsertCategory(db, categoryName, ColorDef::White());
+        }
+    return id;
+    }
+
+
+
 
 
 END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE

@@ -13,3 +13,4 @@
 #include "ArchitecturalPhysicalDomain.h"
 #include "Door.h"
 #include "Window.h"
+#include "Wall.h"
