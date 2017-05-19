@@ -118,9 +118,9 @@ double MagnitudeSquared () const;
 double MaxAbs () const;
 
 //! bitwise equality test
-bool FVec3d::IsEqual (FVec3dCR range1) const;
+bool IsEqual (FVec3dCR range1) const;
 //! toleranced equality test.
-bool FVec3d::IsEqual (FVec3dCR other, double tolerance) const;
+bool IsEqual (FVec3dCR other, double tolerance) const;
 
 
 //! return true 3D angle between vectors.   Because there is no clear "up" direction, this is 0 or positive, and less than 180 degrees.
