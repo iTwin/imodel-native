@@ -32,20 +32,13 @@
 #if defined (USE_GTEST)
 
     #if !defined (BETEST_NO_INCLUDE_GTEST)
-        #if (_MSC_VER >= 1600) // 1600 => VC10
-            #define GTEST_USE_OWN_TR1_TUPLE 0
-        #endif
-
-        #ifndef UNICODE
-            #define UNICODE 1
-            #define _UNICODE 1
-        #endif
-        #include <gtest/gtest.h>
-        #include <gmock/gmock.h>
-
+    #ifndef UNICODE
+        #define UNICODE 1
+        #define _UNICODE 1
     #endif
-
-
+    #include <gtest/gtest.h>
+    #include <gmock/gmock.h>
+    #endif
 
 #else
 
@@ -119,7 +112,10 @@ BEGIN_BENTLEY_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct BeTest
 {
+#if defined (__unix__)
     static bool s_loop;
+#endif
+
 ///@name Platform-specific up-calls
 ///@{
 
@@ -198,9 +194,6 @@ struct IFailureHandler
     virtual void _OnFailureHandled() = 0;
     };
 
-// Call this to set the failure handler
-BENTLEYDLL_EXPORT static void SetIFailureHandler (IFailureHandler&);
-
 // Call this only from BeGTestExe.cpp!
 BENTLEYDLL_EXPORT static void SetRunningUnderGtest ();
 
@@ -240,11 +233,13 @@ BENTLEYDLL_EXPORT static void SetBeAssertListener (T_BeAssertListener*);
 //! @return the name of a test or "" if no test is running
 static Utf8CP GetNameOfCurrentTest()
     {
-#if defined (USE_GTEST)
+#if defined (USE_GTEST) 
+#if !defined(BETEST_NO_INCLUDE_GTEST)
     ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
     if (nullptr == tinfo)
         return "";
     return tinfo->name();
+#endif
 #else
     return GetNameOfCurrentTestInternal();
 #endif
@@ -255,10 +250,12 @@ static Utf8CP GetNameOfCurrentTest()
 static Utf8CP GetNameOfCurrentTestCase()
     {
 #if defined (USE_GTEST)
+#if !defined(BETEST_NO_INCLUDE_GTEST)
     ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
     if (nullptr == tinfo)
         return "";
     return tinfo->test_case_name();
+#endif
 #else
     return GetNameOfCurrentTestCaseInternal();
 #endif
@@ -271,21 +268,6 @@ BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestCaseInternal();
 
 
 //! Get name of currently running test case
-
-///@}
-
-///@name Ignore list parsing utilities
-///@{
-
-//! Each line of the input file is expected to be either a \#comment or a test name, optionally followed by a \#comment
-//! The format of the returned string is: test_name1:test_name2:...
-BENTLEYDLL_EXPORT static void ReadTestList (Utf8String& contents, FILE* fp);
-
-//! Get the entries all files in the specified directory tree
-BENTLEYDLL_EXPORT static void LoadTestList (Utf8String& contents, BeFileName const& ignoreDir);
-
-//! Get the entries all files in the "Ignore" directory tree as tests to be ignored and files in the "Filter" directory as tests to be run
-BENTLEYDLL_EXPORT static void LoadFilters (Utf8String& toignore, Utf8String& torun);
 
 ///@}
 
@@ -309,6 +291,9 @@ enum LogPriority
 BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP message);
 
 #if !defined (USE_GTEST)
+
+private:
+BENTLEYDLL_EXPORT static void SetIFailureHandler (IFailureHandler&);
 
 ///@name Test case setup/teardown
 ///@{
@@ -431,14 +416,8 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
     BENTLEYDLL_EXPORT static void SetBreakOnFailure (bool);
     //! Check if BeTest should throw an (unhandled) exception when a test fails
     BENTLEYDLL_EXPORT static bool GetBreakOnFailure ();
-    //! Specify which tests to run and which to ignore.
-    BENTLEYDLL_EXPORT static void SetRunFilters (bvector<Utf8String> const& toignore, bvector<Utf8String> const& torun);
-    //! Should this test be run?
-    BENTLEYDLL_EXPORT static bool ShouldRunTest (CharCP fullTestName);
 
     private:
-        static bvector<Utf8String>         s_runList;
-        static bvector<Utf8String>         s_ignoreList;
         static bset<Utf8String>            s_failedTests;
         static size_t                      s_errorCount;
         static bool                        s_breakOnFailure;
@@ -465,7 +444,29 @@ public:
 
 #else
 
+///@name Ignore list parsing utilities
+///@{
+
+//! Each line of the input file is expected to be either a \#comment or a test name, optionally followed by a \#comment
+//! The format of the returned string is: test_name1:test_name2:...
+BENTLEYDLL_EXPORT static void ReadTestList (Utf8String& contents, FILE* fp);
+
+//! Get the entries all files in the specified directory tree
+BENTLEYDLL_EXPORT static void LoadTestList (Utf8String& contents, BeFileName const& ignoreDir);
+
+//! Get the entries all files in the "Ignore" directory tree as tests to be ignored and files in the "Filter" directory as tests to be run
+BENTLEYDLL_EXPORT static void LoadFilters (Utf8String& toignore, Utf8String& torun);
+
+///@}
+
+typedef std::function<void(wchar_t const*)> T_AssertionFailureHandler;
+
+BENTLEYDLL_EXPORT static void SetAssertionFailureHandler(T_AssertionFailureHandler const& f);
+
 #endif //!defined (USE_GTEST)
+
+//! Indicate that the test has failed. This helper function may be called by libraries that do not link with gtest.
+BENTLEYDLL_EXPORT static void Fail(WCharCP msg = L"");
 
 };
 

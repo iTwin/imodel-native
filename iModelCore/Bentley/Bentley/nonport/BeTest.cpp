@@ -29,7 +29,7 @@
 #include <exception>
 #include <signal.h>
 #include <map>
-#define BETEST_NO_INCLUDE_GTEST
+#define BETEST_NO_INCLUDE_GTEST // there's no point in including gtest.h, since Bentley.dll does not link with gtest
 #include <Bentley/BeTest.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeThread.h>
@@ -37,6 +37,12 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/DateTime.h>
 #include <Logging/bentleylogging.h>
+
+#if !defined (USE_GTEST)
+    #if defined(BENTLEYCONFIG_OS_LINUX) || defined(BENTLEYCONFIG_OS_APPLE_MACOS) || (defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT))
+        #error USE_GTEST is not defined, but this platform uses gtest!
+    #endif
+#endif
 
 USING_NAMESPACE_BENTLEY
 
@@ -48,57 +54,17 @@ static bvector<BeTest::T_BeAssertListener*>     s_assertListeners;              
 static bool                                     s_failOnAssert[(int)BeAssertFunctions::AssertType::TypeCount]; // MT: Problem! If one thread sets this, it will affect assertions that fail on other threads. *** WIP_MT make this thread-local?
 static bool                                     s_runningUnderGtest;                // indicates that we are running under gtest. MT: set only during initialization 
 static bool                                     s_hadAssert;
+static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
+#if defined (__unix__)
+bool BeTest::s_loop = true;
+#endif
+#if defined (USE_GTEST)
+static BeTest::T_AssertionFailureHandler        s_assertionFailureHandler;
+#else
 static bool                                     s_hadAssertOnAnotherThread;         // MT: s_bentleyCS
 static Utf8String                               s_currentTestCaseName;              // MT: set only when we run a test, which is always in the main thread
 static Utf8String                               s_currentTestName;                  //  "       "
-static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
-bool BeTest::s_loop = true;
-
-static std::map<Utf8String, BeTest::TestCaseInfo*>* s_testCases;                    // MT: s_testCases is populated at code load time (by static constructors), so there is no danger of a race
-
-/*---------------------------------------------------------------------------------**//**
-* Default handler for test test and assertion failures. Handles failures by throwing 
-* an exception. This stragey works on all platforms but may not be optimal for some,
-* such as gtest.
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct BeTestThrowFailureHandler : BeTest::IFailureHandler
-    {
-    private:
-    static bool s_disableThrows; 
-
-    void ThrowException (WCharCP msg) THROW_SPECIFIER(CharCP)
-        {
-        if (!s_runningUnderGtest)
-            {
-            // Ignore BeAssert failures that occur when we are unwinding an assertion failure or a test failure. 
-            // Note that throwing while unwinding an exception will terminate the process!
-            if (s_disableThrows)
-                return;
-            s_disableThrows = true; // I rely on the test runner to call _OnFailureHandled to allow me clear this flag.
-            }
-#ifdef BENTLEY_WINRT
-        if (nullptr != s_test_failure_jmp_buf_to_use)
-            longjmp(*s_test_failure_jmp_buf_to_use, 101);
-        else
-            BeTest::IncrementErrorCountAndEnableThrows();
-#else
-        throw "failure";
 #endif
-        }
-
-    public:
-    virtual void _OnAssertionFailure (WCharCP msg) THROW_SPECIFIER(CharCP) {ThrowException(msg);}
-    virtual void _OnUnexpectedResult (WCharCP msg) THROW_SPECIFIER(CharCP) {ThrowException(msg);}
-    virtual void _OnFailureHandled() {s_disableThrows=false;}
-    };
-bool BeTestThrowFailureHandler::s_disableThrows;
-static BeTestThrowFailureHandler                s_defaultFailureHandler;
-static BeTest::IFailureHandler*                 s_IFailureHandler = &s_defaultFailureHandler;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      01/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeTest::SetIFailureHandler (IFailureHandler& h) {s_IFailureHandler=&h;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      01/2013
@@ -340,6 +306,14 @@ void            BeTest::SetBeAssertListener (T_BeAssertListener* l)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::SetAssertionFailureHandler(T_AssertionFailureHandler const& f)
+    {
+    s_assertionFailureHandler = f;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
 static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType atype)
     {
     FOR_EACH(BeTest::T_BeAssertListener* listener, s_assertListeners)
@@ -374,12 +348,15 @@ static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsi
 
     BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->error (assertionFailure.c_str());
 
+#ifdef USE_GTEST
+    s_assertionFailureHandler(assertionFailure.c_str());
+#else
     if (BeTest::GetBreakOnFailure())
         {
         BeTest::BreakInDebugger ("BeAssert", "ASSERT!");
         }
 
-    if (!s_runningUnderGtest && BeThreadUtilities::GetCurrentThreadId () != s_mainThreadId)
+    if (BeThreadUtilities::GetCurrentThreadId () != s_mainThreadId)
         {
         BeMutexHolder holder (s_bentleyCS);
         s_hadAssertOnAnotherThread = true;
@@ -387,6 +364,7 @@ static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsi
         }
 
     s_IFailureHandler->_OnAssertionFailure (assertionFailure.c_str());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -417,6 +395,9 @@ uintptr_t pReserved
 
     BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->error(parameterFailure.c_str());
 
+#ifdef USE_GTEST
+    s_assertionFailureHandler(parameterFailure.c_str());
+#else
     if (BeTest::GetBreakOnFailure())
         {
         BeTest::BreakInDebugger("BeAssert", "onInvalidParameter");
@@ -430,6 +411,7 @@ uintptr_t pReserved
         }
 
     s_IFailureHandler->_OnAssertionFailure(parameterFailure.c_str());
+#endif
     }
 #endif
 
@@ -514,6 +496,8 @@ void BeTest::Uninitialize ()
 //#endif
     }
 
+#if defined(USE_GTEST)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -572,53 +556,58 @@ void BeTest::LoadFilters (Utf8String& toignore, Utf8String& torun)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool doesFilterApply (bvector<Utf8String> const& filters, CharCP testFullName)
+void BeTest::Fail(WCharCP msg)
     {
-    FOR_EACH(Utf8String const& filter, filters)
+    s_assertionFailureHandler(msg);
+    }
+
+#else
+
+static std::map<Utf8String, BeTest::TestCaseInfo*>* s_testCases;                    // MT: s_testCases is populated at code load time (by static constructors), so there is no danger of a race
+
+/*---------------------------------------------------------------------------------**//**
+* Default handler for test test and assertion failures. Handles failures by throwing 
+* an exception. This stragey works on all platforms but may not be optimal for some,
+* such as gtest.
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BeTestThrowFailureHandler : BeTest::IFailureHandler
+    {
+    private:
+    static bool s_disableThrows; 
+
+    void ThrowException (WCharCP msg) THROW_SPECIFIER(CharCP)
         {
-        std::regex re (filter.c_str());
-        if (std::regex_match (testFullName, testFullName+strlen(testFullName), re))
-            return true;
-        } 
-    return false;
-    }
+        if (!s_runningUnderGtest)
+            {
+            // Ignore BeAssert failures that occur when we are unwinding an assertion failure or a test failure. 
+            // Note that throwing while unwinding an exception will terminate the process!
+            if (s_disableThrows)
+                return;
+            s_disableThrows = true; // I rely on the test runner to call _OnFailureHandled to allow me clear this flag.
+            }
+#ifdef BENTLEY_WINRT
+        if (nullptr != s_test_failure_jmp_buf_to_use)
+            longjmp(*s_test_failure_jmp_buf_to_use, 101);
+        else
+            BeTest::IncrementErrorCountAndEnableThrows();
+#else
+        throw "failure";
+#endif
+        }
+
+    public:
+    virtual void _OnAssertionFailure (WCharCP msg) THROW_SPECIFIER(CharCP) {ThrowException(msg);}
+    virtual void _OnUnexpectedResult (WCharCP msg) THROW_SPECIFIER(CharCP) {ThrowException(msg);}
+    virtual void _OnFailureHandled() {s_disableThrows=false;}
+    };
+bool BeTestThrowFailureHandler::s_disableThrows;
+static BeTestThrowFailureHandler                s_defaultFailureHandler;
+static BeTest::IFailureHandler*                 s_IFailureHandler = &s_defaultFailureHandler;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
+* @bsimethod                                    sam.wilson                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BeTest::ShouldRunTest (CharCP fullTestName)
-    {
-    CharCP dot = strchr (fullTestName, '.');
-    if (dot != nullptr && 0==strncmp (dot+1, "DISABLED_", 9))
-        return false;
-
-    bool doRun = s_runList.empty() || doesFilterApply (s_runList, fullTestName);
-
-    bool doIgnore = !s_ignoreList.empty() && doesFilterApply (s_ignoreList, fullTestName);
-
-    return doRun && !doIgnore;
-    }
-
-struct FromFilterToRegex
-{
-void operator () (Utf8String& str)
-    {
-    str.ReplaceAll ("\r", "");
-    str.ReplaceAll (".", "\\.");
-    str.ReplaceAll ("*", ".*");
-    }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeTest::SetRunFilters (bvector<Utf8String> const& toignore, bvector<Utf8String> const& torun)
-    {
-    s_ignoreList = toignore;
-    s_runList = torun;
-    std::for_each (s_ignoreList.begin(), s_ignoreList.end(), FromFilterToRegex());
-    std::for_each (s_runList.begin(), s_runList.end(), FromFilterToRegex());
-    }
+void BeTest::SetIFailureHandler (IFailureHandler& h) {s_IFailureHandler=&h;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
@@ -852,100 +841,9 @@ BeTest::ExpectedResult& BeTest::ExpectedResult::operator<< (WString const& msg)
     return *this;
     }
 
-#if defined (EXPERIMENT_COMMENT_OFF)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion ( bool  v):   m_ivalue(v), m_type(TYPE_BOOL)    {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion ( int8_t v):   m_ivalue(v), m_type(INTEGRAL)    {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion (uint8_t v):   m_ivalue(v), m_type(UINTEGRAL)   {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion ( int16_t v):   m_ivalue(v), m_type(INTEGRAL)    {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion (uint16_t v):   m_ivalue(v), m_type(UINTEGRAL)   {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion ( int32_t v):   m_ivalue(v), m_type(INTEGRAL)    {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion (uint32_t v):   m_ivalue(v), m_type(UINTEGRAL)   {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion ( int64_t v):   m_ivalue(v), m_type(INTEGRAL)    {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion (uint64_t v):   m_ivalue(v), m_type(UINTEGRAL)   {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion (double v):   m_dvalue(v), m_type(DOUBLE) {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion (void const* v):m_pvalue((void*)v), m_type(VOIDSTAR) {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion (CharCP v):   m_pvalue((void*)v), m_type(CHARCP) {;}
-BeTest::PrimitiveValueUnion::PrimitiveValueUnion (WCharCP v):  m_pvalue((void*)v), m_type(WCHARCP) {;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeTest::PrimitiveValueUnion BeTest::PrimitiveValueUnion::PromoteTo (Type t) const
-    {
-    if (m_type == t)
-        return *this;
-
-    switch (m_type)
-        {
-        case INTEGRAL: case UINTEGRAL:
-            switch (t)
-                {
-                case DOUBLE:    return PrimitiveValueUnion ((double)m_ivalue);
-                case VOIDSTAR:  return PrimitiveValueUnion ((void*) m_ivalue);
-                }
-            break;    
-        }
-    BeAssert (false && "Invalid conversion");
-    return PrimitiveValueUnion (false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeTest::PrimitiveValueUnion::operator==(PrimitiveValueUnion const& rhs) const
-    {
-    if (m_type == DOUBLE || rhs.m_type == DOUBLE)
-        return PromoteTo(DOUBLE).m_dvalue == rhs.PromoteTo(DOUBLE).m_dvalue;
-
-    if (m_type == VOIDSTAR || rhs.m_type == VOIDSTAR)
-        return PromoteTo(VOIDSTAR).m_pvalue == rhs.PromoteTo(VOIDSTAR).m_pvalue;
-
-    switch (m_type)
-        {
-        case CHARCP: return 0==strcmp((CharCP)m_pvalue, (CharCP)rhs.m_pvalue); 
-        case WCHARCP: return 0==wcscmp((WCharCP)m_pvalue, (WCharCP)rhs.m_pvalue); 
-        }
-
-    return m_ivalue == rhs.m_ivalue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeTest::PrimitiveValueUnion::ToString () const
-    {
-    char buf[64];
-    switch (m_type)
-        {
-        case CHARCP:    return (CharCP) m_pvalue;
-        case WCHARCP:   return Utf8String ((WCharCP)m_pvalue);
-        case DOUBLE:    sprintf (buf, "%lf", m_dvalue); return buf;
-        case VOIDSTAR:  sprintf (buf, "%p",  m_pvalue); return buf;
-        case TYPE_BOOL: return m_ivalue? "true": "false";
-        }
-    sprintf (buf, (m_type == UINTEGRAL)? "%x": "%d", m_ivalue);
-    return buf;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeTest::ExpectedResult BeTest::CheckResultEQ (PrimitiveValueUnion const& a, PrimitiveValueUnion const& x, bool expectEq, CharCP aexp, CharCP xexp, CharCP file, uint32_t ln, bool fatal)
-    {
-    if ((a == x) == expectEq)
-        return ExpectedResult (true,"","",file,ln,fatal);
-    return ExpectedResult (false, a.ToString().c_str(), x.ToString().c_str(), expectEq, aexp, xexp, file, ln, fatal);
-    }
-#endif //defined (EXPERIMENT_COMMENT_OFF)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String>             BeTest::s_runList;
-bvector<Utf8String>             BeTest::s_ignoreList;
 bset<Utf8String>                BeTest::s_failedTests;
 size_t                          BeTest::s_errorCount;
 bool                            BeTest::s_breakOnFailure;
@@ -1004,45 +902,6 @@ Utf8CP BeTest::GetNameOfCurrentTestInternal()
     {
     return s_currentTestName.c_str();
     }
-
-#ifdef XX_BETEST_HAS_SEH
-
-#define BE_TEST_SEH_TRY                 __try{
-#define BE_TEST_SEH_EXCEPT(CLEANUP)          } __except(ExpFilter(GetExceptionInformation(), GetExceptionCode()))  {    CLEANUP   }
-
-// Exception filter (used to show exception call-stack)
-static LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD dwExpCode)
-    {
-    if (dwExpCode != EXCEPTION_BREAKPOINT)
-        {
-        #if defined (WIP_BETEST)
-        StackWalker sw;
-        sw.ShowCallstack(GetCurrentThread(), pExp->ContextRecord);
-        #else
-        LOG_ERROR ("--- EXCEPTION ---\n");
-        #endif
-        return EXCEPTION_EXECUTE_HANDLER;
-        }
-    else
-        return EXCEPTION_CONTINUE_SEARCH;
-    }
-
-#else
-
-#define BE_TEST_SEH_TRY            
-#define BE_TEST_SEH_EXCEPT(CLEANUP)
-
-#endif
-
-#ifdef BENTLEY_WINRT
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeTest::SetFailureJmpbuf(void* jmpbufptr)
-    {
-    s_test_failure_jmp_buf_to_use = (jmp_buf*)(jmpbufptr);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
@@ -1212,6 +1071,26 @@ void BeTest::TearDownTestCase(Utf8CP tcname)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::Fail(WCharCP msg)
+    {
+    s_IFailureHandler->_OnUnexpectedResult(msg);
+    }
+
+#ifdef BENTLEY_WINRT
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::SetFailureJmpbuf(void* jmpbufptr)
+    {
+    s_test_failure_jmp_buf_to_use = (jmp_buf*)(jmpbufptr);
+    }
+#endif
+
+#endif
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void* BeTest::Host::InvokeP (char const* f, void* a)            {return _InvokeP (f, a);}
@@ -1258,3 +1137,31 @@ void PerformanceResultRecorder::WriteResults(Utf8CP testcaseName, Utf8CP testNam
     fclose(logFile);
 }
 
+#ifdef XX_BETEST_HAS_SEH
+
+#define BE_TEST_SEH_TRY                 __try{
+#define BE_TEST_SEH_EXCEPT(CLEANUP)          } __except(ExpFilter(GetExceptionInformation(), GetExceptionCode()))  {    CLEANUP   }
+
+// Exception filter (used to show exception call-stack)
+static LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD dwExpCode)
+    {
+    if (dwExpCode != EXCEPTION_BREAKPOINT)
+        {
+        #if defined (WIP_BETEST)
+        StackWalker sw;
+        sw.ShowCallstack(GetCurrentThread(), pExp->ContextRecord);
+        #else
+        LOG_ERROR ("--- EXCEPTION ---\n");
+        #endif
+        return EXCEPTION_EXECUTE_HANDLER;
+        }
+    else
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+#else
+
+#define BE_TEST_SEH_TRY            
+#define BE_TEST_SEH_EXCEPT(CLEANUP)
+
+#endif
