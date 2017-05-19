@@ -71,34 +71,16 @@ always:
 
 %else
     
-    # Copy to avoid problems with symblinks.
     appDir = $[@dir $(GTEST_EXE)]
-    appDirectory        = $[@basename ${appDir}]
-    copyFromDirectory   = $(OutputRootDir)Product/
-    copyToDirectory     = $(OutputRootDir)ProductCopy/
-
-    %if defined (BMAKE_DELETE_ALL_TARGETS)
-        always:
-            $(rmdirRecursiveCmd) $(copyToDirectory)$(appDirectory)
-    %else
-        always:
-            !~@mkdir $(copyToDirectory)
-            rsync -rLptgoD $(copyFromDirectory)${appDirectory} $(copyToDirectory)
-    %endif
-
-    exeName = $(copyToDirectory)${appDirectory}/$[@basename $(GTEST_EXE)]
+    MAKE_PRODUCT_COPY_PRODUCT_NAME=$[@basename ${appDir}]
+    %include $(SharedMki)makeProductCopy.mki
+    exeName = $(MAKE_PRODUCT_COPY_DIR)$[@basename $(GTEST_EXE)]
 
     $(ResultsCapture) : $(exeName)
         >$(ResultsCapture)
         $(exeName)
         <
-        %if $(TARGET_PLATFORM) == "Linux"
-        ~@putenv LD_LIBRARY_PATH=/usr/local/lib:$(copyToDirectory)${appDirectory}
-        %endif
         -$(exeName) >> $(ResultsCapture) 2>&1
-        %if $(TARGET_PLATFORM) == "Linux"
-        ~@putenv LD_LIBRARY_PATH=/usr/local/lib
-        %endif
 
 %endif
 
