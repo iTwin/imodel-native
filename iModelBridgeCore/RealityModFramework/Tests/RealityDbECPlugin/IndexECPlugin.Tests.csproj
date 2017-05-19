@@ -104,6 +104,7 @@
     <Compile Include="Tests\DataExtractorTests.cs" />
     <Compile Include="Tests\Helpers\DbConnectionHelperTests.cs" />
     <Compile Include="Tests\Helpers\DBGeometryHelpersTests.cs" />
+    <Compile Include="Tests\Helpers\DownloadReportHelperTests.cs" />
     <Compile Include="Tests\Helpers\ECQueryConverterTests.cs" />
     <Compile Include="Tests\Helpers\ECToSQLMapTests.cs" />
     <Compile Include="Tests\Helpers\SourceStringMapTests.cs" />
