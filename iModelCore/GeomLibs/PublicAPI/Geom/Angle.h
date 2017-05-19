@@ -92,6 +92,9 @@ public:
     //! Medium angle used in toleranced angle comparisons.
     GEOMDLLIMPEXP static double MediumAngle();
 
+    //! Small angle for use with floats . .
+    GEOMDLLIMPEXP static double SmallFloatRadians();
+
     //! constant {PI}
     GEOMDLLIMPEXP static double Pi();
     static Angle AnglePi() {return Angle(Pi());}
