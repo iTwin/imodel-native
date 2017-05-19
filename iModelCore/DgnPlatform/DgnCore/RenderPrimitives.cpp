@@ -371,13 +371,21 @@ Render::TextureP DisplayParams::ResolveTexture(DgnDbR db, Render::System const& 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d Mesh::GetPoint(uint32_t index) const
+    {
+    return Points().Unquantize(index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange3d Mesh::GetTriangleRange(TriangleCR triangle) const
     {
-    return DRange3d::From(m_points.Unquantize(triangle[0]),
-                          m_points.Unquantize(triangle[1]),
-                          m_points.Unquantize(triangle[2]));
+    return DRange3d::From(GetPoint(triangle[0]),
+                          GetPoint(triangle[1]),
+                          GetPoint(triangle[2]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -385,9 +393,9 @@ DRange3d Mesh::GetTriangleRange(TriangleCR triangle) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DVec3d Mesh::GetTriangleNormal(TriangleCR triangle) const
     {
-    return DVec3d::FromNormalizedCrossProductToPoints(m_points.Unquantize(triangle[0]),
-                                                      m_points.Unquantize(triangle[1]),
-                                                      m_points.Unquantize(triangle[2]));
+    return DVec3d::FromNormalizedCrossProductToPoints(GetPoint(triangle[0]),
+                                                      GetPoint(triangle[1]),
+                                                      GetPoint(triangle[2]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -565,7 +573,7 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QPoint3dListCR vertices)
+template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QVertex3dListCR vertices)
     {
     // Don't allocate the indices until we have non-uniform values
     if (table.empty())
@@ -591,12 +599,12 @@ template<typename T, typename U> static void insertVertexAttribute(bvector<uint1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(QPoint3dCR point, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
+uint32_t Mesh::AddVertex(QVertex3dCR vert, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
     {
-    auto index = static_cast<uint32_t>(m_points.size());
+    auto index = static_cast<uint32_t>(m_verts.size());
 
-    m_points.push_back(point);
-    m_features.Add(feature, m_points.size());
+    m_verts.Add(vert);
+    m_features.Add(feature, m_verts.size());
 
     if (nullptr != normal)
         m_normals.push_back(*normal);
@@ -604,7 +612,7 @@ uint32_t Mesh::AddVertex(QPoint3dCR point, QPoint3dCP normal, DPoint2dCP param, 
     if (nullptr != param)
         m_uvParams.push_back(toFPoint2d(*param));
     else
-        insertVertexAttribute(m_colors, m_colorTable, fillColor, m_points);
+        insertVertexAttribute(m_colors, m_colorTable, fillColor, m_verts);
 
     return index;
     }
@@ -666,8 +674,10 @@ void Mesh::Features::ToFeatureIndex(FeatureIndex& index) const
 DRange3d Mesh::GetRange() const
     {
     DRange3d range = DRange3d::NullRange();
-    for (auto const& fpoint : m_points)
-        range.Extend(DPoint3d::FromXYZ(fpoint.x, fpoint.y, fpoint.z));
+    auto const& points = Points();
+    size_t nPoints = points.size();
+    for (size_t i = 0; i < nPoints; i++)
+        range.Extend(points.Unquantize(i));
 
     return range;
     }
@@ -762,9 +772,31 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     BeAssert(lhs.m_normalValid == rhs.m_normalValid);
     BeAssert(lhs.m_paramValid == rhs.m_paramValid);
 
-    COMPARE_VALUES(lhs.m_point.x, rhs.m_point.x);
-    COMPARE_VALUES(lhs.m_point.y, rhs.m_point.y);
-    COMPARE_VALUES(lhs.m_point.z, rhs.m_point.z);
+    if (lhs.m_position.IsQuantized())
+        {
+        if (!rhs.m_position.IsQuantized())
+            return false;
+
+        auto const& lpos = lhs.m_position.GetQPoint3d();
+        auto const& rpos = rhs.m_position.GetQPoint3d();
+
+        COMPARE_VALUES(lpos.x, rpos.x);
+        COMPARE_VALUES(lpos.y, rpos.y);
+        COMPARE_VALUES(lpos.z, rpos.z);
+        }
+    else
+        {
+        if (rhs.m_position.IsQuantized())
+            return true;
+
+        auto const& lpos = lhs.m_position.GetFPoint3d();
+        auto const& rpos = rhs.m_position.GetFPoint3d();
+
+        // ###TODO: May want to use a tolerance here; if so must be relative to range...
+        COMPARE_VALUES(lpos.x, rpos.x);
+        COMPARE_VALUES(lpos.y, rpos.y);
+        COMPARE_VALUES(lpos.z, rpos.z);
+        }
 
     COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
@@ -795,7 +827,7 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 VertexKey::VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal, DPoint2dCP param)
-    : m_point(point, qParams), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
+    : m_position(point, qParams), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
     {
     if (m_normalValid)
         m_normal = QPoint3d(*normal, s_normalQParams);
@@ -864,7 +896,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
 
         if (patternMap.IsValid())
             {
-            BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
+            BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
             if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
             }
@@ -873,12 +905,12 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points[i], feature, fillColor, m_mesh->Points().GetParams(), haveNormals ? &visitor.Normal()[i] : nullptr, haveParams ? &params[i] : nullptr);
+        VertexKey vertex(points[i], feature, fillColor, m_mesh->Verts().GetParams(), haveNormals ? &visitor.Normal()[i] : nullptr, haveParams ? &params[i] : nullptr);
         newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
-    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
-    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Verts().size());
+    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Verts().size());
 
     AddTriangle(newTriangle);
     }
@@ -892,7 +924,7 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, feature, fillColor, m_mesh->Points().GetParams());
+        VertexKey vertex(point, feature, fillColor, m_mesh->Verts().GetParams());
         newPolyline.GetIndices().push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
 
@@ -914,10 +946,10 @@ void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialI
 uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
     {
     // Avoid doing lookup twice - once to find existing, again to add if not present
-    auto index = static_cast<uint32_t>(m_mesh->Points().size());
+    auto index = static_cast<uint32_t>(m_mesh->Verts().size());
     auto insertPair = verts.Insert(vertex, index);
     if (insertPair.second)
-        m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
+        m_mesh->AddVertex(vertex.m_position, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
 
     return insertPair.first->second;
     }
@@ -1443,7 +1475,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
     double vertexTolerance = tolerance * ToleranceRatio::Vertex();
     double facetAreaTolerance = tolerance * tolerance * ToleranceRatio::FacetArea();
 
-    QPoint3d::Params qParams = m_geometries.ComputeQuantizationParams();
+    DRange3d range = m_geometries.ComputeRange();
     bmap<MeshMergeKey, MeshBuilderPtr> builderMap;
     for (auto const& geom : m_geometries)
         {
@@ -1464,7 +1496,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, qParams);
+                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, range);
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1484,7 +1516,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, qParams);
+                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, range);
 
                 uint32_t fillColor = displayParams->GetFillColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
@@ -1494,8 +1526,14 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
         }
 
     for (auto& builder : builderMap)
-        if (!builder.second->GetMesh()->IsEmpty())
-            meshes.push_back(builder.second->GetMesh());
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (!mesh->IsEmpty())
+            {
+            mesh->Close();
+            meshes.push_back(mesh);
+            }
+        }
 
     return meshes;
     }
@@ -2378,14 +2416,30 @@ void GeometryListBuilder::ReInitialize(TransformCR localToWorld, TransformCR acc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-QPoint3d::Params GeometryList::ComputeQuantizationParams() const
+DRange3d GeometryList::ComputeRange() const
     {
-    // ###TODO_ELEMENT_TILE: As elsewhere, point primitives are going to be a problem here...
     DRange3d range = DRange3d::NullRange();
     for (auto const& geom : *this)
         range.Extend(geom->GetTileRange());
 
-    return QPoint3d::Params(range);
+    return range;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void QVertex3dList::Requantize()
+    {
+    if (IsFullyQuantized())
+        return;
+
+    m_qpoints.Requantize(QPoint3d::Params(m_range));
+    m_qpoints.reserve(m_qpoints.size() + m_fpoints.size());
+
+    for (auto const& fpt : m_fpoints)
+        m_qpoints.Add(DPoint3d::From(fpt));
+
+    m_fpoints.clear();
     }
 
 

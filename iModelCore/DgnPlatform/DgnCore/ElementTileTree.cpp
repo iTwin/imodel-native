@@ -1279,7 +1279,6 @@ private:
     size_t              m_geometryCount = 0;
     FeatureTable        m_featureTable;
     DRange3d            m_contentRange = DRange3d::NullRange();
-    QPoint3d::Params    m_qParams;
     bool                m_maxGeometryCountExceeded = false;
 
     static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
@@ -1316,8 +1315,7 @@ public:
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
   : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_vertexTolerance(m_tolerance*ToleranceRatio::Vertex()),
     m_facetAreaTolerance(m_tolerance*ToleranceRatio::FacetArea()), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext),
-    m_featureTable(nullptr != tile.GetRoot().GetRenderSystem() ? tile.GetRoot().GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile),
-    m_qParams(m_tileRange)
+    m_featureTable(nullptr != tile.GetRoot().GetRenderSystem() ? tile.GetRoot().GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile)
     {
     //
     }
@@ -1331,7 +1329,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
     if (m_builderMap.end() != found)
         return *found->second;
 
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_qParams);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -1591,8 +1589,14 @@ MeshList MeshGenerator::GetMeshes()
     {
     MeshList meshes;
     for (auto& builder : m_builderMap)
-        if (!builder.second->GetMesh()->IsEmpty())
-            meshes.push_back(builder.second->GetMesh());
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (!mesh->IsEmpty())
+            {
+            mesh->Close();
+            meshes.push_back(mesh);
+            }
+        }
 
     meshes.m_features = std::move(m_featureTable);
     return meshes;

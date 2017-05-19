@@ -1605,21 +1605,38 @@ struct FeatureIndex
 //! Common operations for QPoint2d and QPoint3d
 namespace Quantization
 {
-    static constexpr double RangeScale() { return static_cast<double>(0xffff); }
+    constexpr double RangeScale() { return static_cast<double>(0xffff); }
 
-    static constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
+    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
 
-    static constexpr uint16_t Quantize(double pos, double origin, double scale)
+    constexpr bool IsInRange(double quantizedPos)
         {
-        return static_cast<uint16_t>(0.5 + (pos - origin) * scale);
+        return quantizedPos < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
         }
 
-    static constexpr double Unquantize(uint16_t pos, double origin, double scale)
+    constexpr double QuantizeDouble(double pos, double origin, double scale)
+        {
+        return 0.5 + (pos - origin) * scale;
+        }
+
+    constexpr bool IsQuantizable(double pos, double origin, double scale)
+        {
+        return IsInRange(QuantizeDouble(pos, origin, scale));
+        }
+
+    inline uint16_t Quantize(double pos, double origin, double scale)
+        {
+        double qpos = QuantizeDouble(pos, origin, scale);
+        BeAssert(IsInRange(qpos));
+        return static_cast<uint16_t>(qpos);
+        }
+
+    constexpr double Unquantize(uint16_t pos, double origin, double scale)
         {
         return 0.0 == scale ? origin : origin + pos/scale;
         }
 
-    static constexpr double UnquantizeAboutCenter(uint16_t pos, double origin, double scale)
+    constexpr double UnquantizeAboutCenter(uint16_t pos, double origin, double scale)
         {
         return 0.0 == scale ? 0.0 : (static_cast<double>(pos) - 0x7fff) * (pos/scale);
         }
@@ -1640,6 +1657,17 @@ namespace Quantization
         void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
         DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
         DVec UnquantizeAsVector(size_t index) const { BeAssert(index < size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
+
+        void Requantize(Params const& params)
+            {
+            for (auto& qpt : *this)
+                {
+                auto dpt = qpt.Unquantize(m_params);
+                qpt = T(dpt, params);
+                }
+
+            m_params = params;
+            }
     private:
         Params  m_params;
     };
@@ -1692,6 +1720,13 @@ struct QPoint3d
         y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
         z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
         }
+    QPoint3d(FPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
+    QPoint3d(FPoint3dCR pt, ParamsCR params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
+        }
 
     //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
     DPoint3d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
@@ -1712,6 +1747,11 @@ struct QPoint3d
             Quantization::UnquantizeAboutCenter(x, params.origin.x, params.scale.x),
             Quantization::UnquantizeAboutCenter(y, params.origin.y, params.scale.y),
             Quantization::UnquantizeAboutCenter(z, params.origin.z, params.scale.z));
+        }
+
+    FPoint3d Unquantize32(ParamsCR params) const
+        {
+        return FPoint3d::From(Unquantize(params));
         }
 
     bool operator==(QPoint3dCR rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
