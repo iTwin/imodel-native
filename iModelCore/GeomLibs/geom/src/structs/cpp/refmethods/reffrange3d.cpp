@@ -434,7 +434,7 @@ double FRange3d::DistanceSquaredTo (FRange3dCR other) const
         + DistanceSquaredBetweenIntervals (low.z, high.z, other.low.z, other.high.z);
     }
 
-double FRange3d::IsSmallDistance (double x, bool nullRangeResult = true) const
+bool FRange3d::IsSmallDistance (double a, bool nullRangeResult) const
     {
     if (IsNull ())
         return nullRangeResult;
@@ -445,7 +445,7 @@ double FRange3d::IsSmallDistance (double x, bool nullRangeResult = true) const
 +----------------------------------------------------------------------*/
 bool FRange3d::IsAlmostZeroX () const {return IsSmallDistance (high.x - low.x);}
 bool FRange3d::IsAlmostZeroY () const {return IsSmallDistance (high.y - low.y);}
-bool FRange3d::IsAlmostZeroZ () const {return IsSmallDistance (fabs (high.z - low.z);}
+bool FRange3d::IsAlmostZeroZ () const {return IsSmallDistance (high.z - low.z);}
 bool FRange3d::IsAlmostZeroXYZ () const {return IsSmallDistance (DoubleOps::MaxAbs (high.x - low.x, high.y - low.y, high.z - low.z));}
 
 

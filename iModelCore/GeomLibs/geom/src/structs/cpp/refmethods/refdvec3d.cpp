@@ -8,9 +8,70 @@
 #include <bsibasegeomPCH.h>
 BEGIN_BENTLEY_NAMESPACE
 
+template<typename T>
+struct VectorProducts
+{
+DVec3d crossVector;
+double crossMag;
+double dot;
+VectorProducts (T const &vector0, T const &vector1)
+    {
+    crossVector = DVec3d::FromCrossProduct (vector0, vector1);
+    dot = vector0.DotProduct (vector1);
+    crossMag = crossVector.Magnitude ();
+    }
+void ForcePositive ()
+    {
+    crossMag = fabs (crossMag);
+    dot      = fabs (dot);
+    }
+// return dot product of vector the crossVector. (And inlining will handle float/double matchup)
+template <typename T1>
+double DotWithVectorCross (T1 const &vector)
+    {
+    return vector.x * crossVector.x + vector.y * crossVector.y + vector.z * crossVector.z;
+    }
+};
 
+template<typename T>
+struct VectorProductsXY
+{
+double cross;
+double dot;
+VectorProductsXY (T const &vector0, T const &vector1)
+    {
+    cross = vector0.CrossProductXY (vector1);
+    dot = vector0.DotProductXY (vector1);
+    }
+void ForcePositive ()
+    {
+    cross    = fabs (cross);
+    dot      = fabs (dot);
+    }
+};
+
+// Goal: do all internal computations double (i.e intermediate cross products are always DVec3d)
 struct GeometryTemplates
 {
+template <typename VectorType>
+static DVec3d SumOf (VectorType const & vector0, VectorType const &vector1, double s1)
+    {
+    DVec3d result;
+    result.x = vector0.x + vector1.x *s1;
+    result.y = vector0.y + vector1.y *s1;
+    result.z = vector0.z + vector1.z *s1;
+    return result;
+    }
+
+
+template<typename VectorType>
+static bool IsPerpendicularTo (VectorType const &vector0, VectorType const &vector1, double eps)
+    {
+    double      aa = vector0.DotProduct (vector0);
+    double      bb = vector1.DotProduct (vector1);
+    double      ab = vector0.DotProduct (vector1);
+    return  ab * ab <= eps * eps * aa * bb;
+    }
 template<typename ArgType, typename ResultType>
 static inline ResultType FromStartEnd (ArgType const &start, ArgType const &end)
     {
@@ -41,6 +102,84 @@ static inline ResultType CrossProduct(ArgType x0, ArgType y0, ArgType z0, ArgTyp
                 z0 * x1 - x0 * z1,
                 x0 * y1 - y0 * x1
                 );
+    }
+
+template<typename VectorType>
+static double RadiansTo (VectorType const &vector0, VectorType const &vector1)
+    {
+    VectorProducts<VectorType> p (vector0, vector1);
+    return  atan2 (p.crossMag, p.dot);
+    }
+
+template<typename ArgType, typename ResultType>
+static inline ResultType DotProductXY (ArgType x0, ArgType y0, ArgType x1, ArgType y1)
+    {
+    return x0 * x1 + y0 * y1;
+    }
+
+template<typename ArgType, typename ResultType>
+static inline ResultType CrossProductXY (ArgType x0, ArgType y0, ArgType x1, ArgType y1)
+    {
+    return x0 * y1 - y0 * x1;
+    }
+
+template<typename VectorType, typename VectorType1>
+static double SignedRadiansTo (VectorType const &vector0, VectorType const &vector1, VectorType1 const &vectorW)
+    {
+    VectorProducts<VectorType> p (vector0, vector1);
+    double theta = atan2 (p.crossMag, p.dot);
+
+    if (p.DotWithVectorCross<VectorType1> (vectorW) < 0.0)
+        return  -theta;
+    else
+        return  theta;
+    }
+
+template<typename VectorType>
+static double PlanarRadiansTo (VectorType const &vector0, VectorType const &vector1, VectorType const &planeNormal)
+    {
+    double      square = planeNormal.DotProduct (planeNormal);
+    if (square == 0.0)
+        return 0.0;
+
+    double factor = 1.0 / square;
+
+    auto projection0 = SumOf<VectorType> (vector0, planeNormal, - vector0.DotProduct (planeNormal) * factor);
+    auto projection1 = SumOf<VectorType> (vector1, planeNormal, - vector1.DotProduct (planeNormal) * factor);
+    return  SignedRadiansTo<DVec3d, VectorType> (projection0, projection1, planeNormal);
+    }
+
+
+template<typename VectorType>
+static double SmallerUnorientedRadiansTo (VectorType const &vector0, VectorType const &vector1)
+    {
+    VectorProducts<VectorType> p (vector0, vector1);
+    p.ForcePositive ();
+    return p.crossMag < p.dot ? atan2 (p.crossMag,p.dot) : atan2 (p.dot,p.crossMag);
+    }
+
+template<typename VectorType>
+static double SmallerUnorientedRadiansToXY (VectorType const &vector0, VectorType const &vector1)
+    {
+    VectorProductsXY<VectorType> p (vector0, vector1);
+    p.ForcePositive ();
+    return p.cross < p.dot ? atan2 (p.cross,p.dot) : atan2 (p.dot,p.cross);
+    }
+
+
+//! return (signed) angle from this vector to the other, as viewed in xy direction.
+template<typename VectorType>
+static double RadiansToXY (VectorType const &vector0, VectorType const &vector1)
+    {
+    VectorProductsXY<VectorType> p (vector0, vector1);
+    return atan2 (p.cross,p.dot);
+    }
+
+template<typename VectorType>
+static double RadiansFromPerpendicular (VectorType const &vector0, VectorType const &vector1)
+    {
+    VectorProducts<VectorType> p (vector0, vector1);
+    return  atan2 (fabs (p.dot), p.crossMag);
     }
 
 };
@@ -474,6 +613,17 @@ DVec3dCR vector1
     return DVec3d::FromCrossProduct (vector0.x, vector0.y, vector0.z, vector1.x, vector1.y, vector1.z);
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+DVec3d DVec3d::FromCrossProduct
+(
+FVec3dCR vector0,
+FVec3dCR vector1
+)
+    {
+    return DVec3d::FromCrossProduct (vector0.x, vector0.y, vector0.z, vector1.x, vector1.y, vector1.z);
+    }
 
 
 
@@ -1111,15 +1261,6 @@ DPoint3dCR origin
 
 
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-static void crossAndDot(DVec3dCR vector0, DVec3dCR vector1, DVec3dR crossVector, double &crossMag, double &dot)
-    {
-    crossVector.CrossProduct (vector0, vector1);
-    crossMag   = crossVector.Magnitude ();
-    dot     = vector0.DotProduct (vector1);
-    }
 
 /*-----------------------------------------------------------------*//**
 * @description Returns the angle between two vectors.  This angle is between 0 and
@@ -1135,10 +1276,7 @@ double DVec3d::AngleTo
 DVec3dCR vector2
 ) const
     {
-    double cross, dot;
-    DVec3d crossVector;
-    crossAndDot (*this, vector2, crossVector, cross, dot);
-    return  Angle::Atan2 (cross, dot);
+    return GeometryTemplates::RadiansTo (*this, vector2);
     }
 
 /*-----------------------------------------------------------------*//**
@@ -1155,10 +1293,7 @@ double DVec3d::SmallerUnorientedAngleTo
 DVec3dCR vector2
 ) const
     {
-    double cross, dot;
-    DVec3d crossVector;
-    crossAndDot (*this, vector2, crossVector, cross, dot);
-    return  Angle::Atan2 (cross, fabs (dot));
+    return GeometryTemplates::SmallerUnorientedRadiansTo (*this, vector2);
     }
 
 /*-----------------------------------------------------------------*//**
@@ -1173,10 +1308,7 @@ double DVec3d::AngleFromPerpendicular
 DVec3dCR vector2
 ) const
     {
-    double cross, dot;
-    DVec3d crossVector;
-    crossAndDot (*this, vector2, crossVector, cross, dot);
-    return  Angle::Atan2 (fabs (dot), cross);
+    return GeometryTemplates::RadiansFromPerpendicular (*this, vector2);
     }
 
 /*-----------------------------------------------------------------*//**
@@ -1295,17 +1427,9 @@ DVec3dCR vector1
 * @return The angle between vectors.
 * @bsimethod                            EarlinLutz      03/03
 +----------------------------------------------------------------------*/
-double DVec3d::AngleToXY
-(
-
-DVec3dCR vector2
-
-) const
+double DVec3d::AngleToXY (DVec3dCR vector2) const
     {
-    double cross, dot;
-    cross = this->CrossProductXY (vector2);
-    dot     = this->DotProductXY (vector2);
-    return  Angle::Atan2 (cross, dot);
+    return GeometryTemplates::RadiansToXY (*this, vector2);
     }
 
 
@@ -1318,17 +1442,9 @@ DVec3dCR vector2
 * @return The angle between vectors.
 * @bsimethod                            EarlinLutz      03/03
 +----------------------------------------------------------------------*/
-double DVec3d::SmallerUnorientedAngleToXY
-(
-
-DVec3dCR vector2
-
-) const
+double DVec3d::SmallerUnorientedAngleToXY (DVec3dCR vector2) const
     {
-    double cross, dot;
-    cross = this->CrossProductXY (vector2);
-    dot     = this->DotProductXY (vector2);
-    return  Angle::Atan2 (fabs (cross), fabs(dot));
+    return GeometryTemplates::SmallerUnorientedRadiansToXY (*this, vector2);
     }
 
 
@@ -1397,15 +1513,7 @@ DVec3dCR vector2,
 DVec3dCR orientationVector
 ) const
     {
-    DVec3d   crossProd;
-    double cross, dot, theta;
-    crossAndDot (*this, vector2, crossProd, cross, dot);
-    theta   = Angle::Atan2 (cross, dot);
-
-    if (crossProd.DotProduct (orientationVector) < 0.0)
-        return  -theta;
-    else
-        return  theta;
+    return GeometryTemplates::SignedRadiansTo (*this, vector2, orientationVector);
     }
 
 
@@ -1424,23 +1532,7 @@ DVec3dCR vector2,
 DVec3dCR planeNormal
 ) const
     {
-    DVec3d      projection1, projection2;
-    double      square = planeNormal.DotProduct (planeNormal);
-    double      projectionFactor1, projectionFactor2;
-    double      factor;
-
-    if (square == 0.0)
-        return 0.0;
-
-    factor = 1.0 / square;
-
-    projectionFactor1 = - this->DotProduct (planeNormal) * factor;
-    projectionFactor2 = - vector2.DotProduct (planeNormal) * factor;
-
-    projection1.SumOf (*this, planeNormal, projectionFactor1);
-    projection2.SumOf (vector2, planeNormal, projectionFactor2);
-
-    return  projection1.SignedAngleTo (projection2, planeNormal);
+    return GeometryTemplates::PlanarRadiansTo (*this, vector2, planeNormal);
     }
 
 
@@ -1835,12 +1927,8 @@ DVec3dCR vector2
 
 ) const
     {
-    double      aa = this->DotProduct (*this);
-    double      bb = vector2.DotProduct (vector2);
-    double      ab = this->DotProduct (vector2);
-    double      eps = Angle::SmallAngle(); /* small angle tolerance (in radians) */
-
-    return  ab * ab <= eps * eps * aa * bb;
+    double e = Angle::SmallAngle ();
+    return GeometryTemplates::IsPerpendicularTo (*this, vector2, e);
     }
 
 

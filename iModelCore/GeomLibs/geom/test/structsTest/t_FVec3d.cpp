@@ -107,3 +107,23 @@ TEST(FVec3d,OperatorOverload)
         "operator double * vector"
         );
     }
+
+template <typename T>
+void TestVectorParallel ()
+    {
+    // verify behavior of IsParallelTo () with opposite vectors
+    auto plusZ = T::UnitZ ();
+    auto negZ = -1.0 * plusZ;
+    auto plusX = T::UnitX ();
+    Check::True (plusZ.IsParallelTo (negZ));
+    Check::True (plusZ.IsParallelTo (plusZ));
+    Check::False (plusZ.IsPositiveParallelTo (negZ));
+    Check::False(plusZ.IsParallelTo (plusX));
+    Check::True(plusZ.IsPerpendicularTo (plusX));
+    }
+
+TEST(FVec3d,ParallelAndPositiveParallel)
+    {
+    TestVectorParallel <DVec3d> ();
+    TestVectorParallel <FVec3d> ();
+    }
