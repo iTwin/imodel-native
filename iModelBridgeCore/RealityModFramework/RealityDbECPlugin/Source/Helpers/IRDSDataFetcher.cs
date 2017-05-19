@@ -228,7 +228,7 @@ namespace IndexECPlugin.Source.Helpers
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     using ( HttpResponseMessage response = client.GetAsync(url).Result )
                         {
-                        if ( response.IsSuccessStatusCode )
+                        if ( response.IsSuccessStatusCode && response.RequestMessage.RequestUri.OriginalString.Contains(url) )
                             {
                             using ( HttpContent content = response.Content )
                                 {
@@ -237,7 +237,14 @@ namespace IndexECPlugin.Source.Helpers
                             }
                         else
                             {
-                            throw new OperationFailedException("Reality Data Server returned an error : " + response.ReasonPhrase);
+                            if ( !response.IsSuccessStatusCode )
+                                {
+                                throw new OperationFailedException("Reality Data Server returned an error : " + response.ReasonPhrase);
+                                }
+                            else
+                                {
+                                throw new OperationFailedException("Reality Data Server returned an error.");
+                                }
                             }
                         }
                     }
