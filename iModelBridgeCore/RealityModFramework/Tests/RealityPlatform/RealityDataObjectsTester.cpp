@@ -16,6 +16,8 @@
 #include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPlatform/RealityConversionTools.h>
 
+#include <algorithm>
+
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //=====================================================================================
@@ -648,7 +650,34 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
 
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, SpatialEntityConstructorWithParams)
+    {
+    bvector<GeoPoint2d> inputfootPrint;
+    inputfootPrint.push_back(GeoPoint2d::From(12.5, 45.8));
+    inputfootPrint.push_back(GeoPoint2d::From(12.5, 46.8));
+    inputfootPrint.push_back(GeoPoint2d::From(13.5, 46.8));
+    inputfootPrint.push_back(GeoPoint2d::From(13.5, 45.8));
+    inputfootPrint.push_back(GeoPoint2d::From(12.5, 45.8));
+    auto creationTime = DateTime(2017,02,27);
+    SpatialEntityPtr mySpatialEntity = SpatialEntity::Create("MyIdentifier", creationTime, "13.4x15.4", inputfootPrint, "MyName" , "9999");
 
+    EXPECT_STREQ(mySpatialEntity->GetIdentifier().c_str(), "MyIdentifier");
+    EXPECT_TRUE(DateTime::Compare(mySpatialEntity->GetDate(), creationTime) == DateTime::CompareResult::Equals);
+    EXPECT_STREQ(mySpatialEntity->GetResolution().c_str(), "13.4x15.4");
+    EXPECT_NEAR(mySpatialEntity->GetResolutionValue(), 14.36, 0.01);
+    EXPECT_STREQ(mySpatialEntity->GetName().c_str(), "MyName");
+
+    auto outputFootPrint = mySpatialEntity->GetFootprint();
+    EXPECT_TRUE(std::equal(inputfootPrint.begin(), inputfootPrint.end(), outputFootPrint.begin(), [](GeoPoint2d left, GeoPoint2d right)
+        {
+        if (left.latitude == right.latitude && left.longitude == right.longitude)
+            return true;
+        return false;
+        }));
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017
@@ -1248,3 +1277,34 @@ INSTANTIATE_TEST_CASE_P(Default, RealityDataBaseVisibility, testing::Values(
     visibilityTag_state {RealityDataBase::Visibility::ENTERPRISE, "ENTERPRISE", SUCCESS},
     visibilityTag_state {RealityDataBase::Visibility::UNDEFINED_VISIBILITY, "UNDEFINED", SUCCESS}
 ));
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, SpatialEntityThumbnailBase)
+    {
+    auto thumbnailUnderTest = SpatialEntityThumbnail::Create();
+
+    EXPECT_TRUE(thumbnailUnderTest->IsEmpty());
+
+    thumbnailUnderTest->SetProvenance("MyProvenance");
+    EXPECT_FALSE(thumbnailUnderTest->IsEmpty());
+    EXPECT_STREQ(thumbnailUnderTest->GetProvenance().c_str(), "MyProvenance");
+
+    thumbnailUnderTest->SetFormat("superJPEG");
+    EXPECT_STREQ(thumbnailUnderTest->GetFormat().c_str(), "superJPEG");
+
+    thumbnailUnderTest->SetWidth(555);
+    EXPECT_EQ(thumbnailUnderTest->GetWidth(), 555);
+
+    thumbnailUnderTest->SetHeight(666);
+    EXPECT_EQ(thumbnailUnderTest->GetHeight(), 666);
+
+    auto inputData = bvector<Byte>({static_cast<Byte>(1), static_cast<Byte>(1), static_cast<Byte>(2), static_cast<Byte>(3)});
+    thumbnailUnderTest->SetData(inputData);
+    auto outputData = thumbnailUnderTest->GetData();
+    EXPECT_TRUE(std::equal(inputData.begin(), inputData.end(), outputData.begin()));
+
+    thumbnailUnderTest->SetGenerationDetails("MyGenerationDetails");
+    EXPECT_STREQ(thumbnailUnderTest->GetGenerationDetails().c_str(), "MyGenerationDetails");
+    }

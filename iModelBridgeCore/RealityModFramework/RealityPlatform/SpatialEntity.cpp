@@ -223,7 +223,7 @@ bool SpatialEntityThumbnail::IsEmpty() const { return m_isEmpty; }
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityThumbnail::SpatialEntityThumbnail() : m_isEmpty(false)
+SpatialEntityThumbnail::SpatialEntityThumbnail() : m_isEmpty(true)
     {
     m_width = 0;
     m_height = 0;
