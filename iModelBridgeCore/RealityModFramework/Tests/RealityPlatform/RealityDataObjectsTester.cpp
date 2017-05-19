@@ -24,7 +24,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 class RealityDataObjectTestFixture : public testing::Test
     {
     public:
-            WCharCP GetDirectory()
+        WCharCP GetDirectory()
             {
             WChar exePath[MAX_PATH];
             GetModuleFileNameW(NULL, exePath, MAX_PATH);
@@ -36,8 +36,36 @@ class RealityDataObjectTestFixture : public testing::Test
             BeFileName testPath(exeDir);
             return testPath;
             }
+
+        static Json::Value s_SampleRealityDataFolderJSON;
+
+        static Json::Value GetSampleRealityDataFolderJSON()
+            {
+            Utf8CP jsonString = "{"
+                "\"instances\": ["
+                "{"
+                "\"instanceId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene\","
+                "\"schemaName\": \"S3MX\","
+                "\"className\": \"Folder\","
+                "\"properties\": {"
+                "\"Name\": \"Scene\","
+                "\"RealityDataId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10\","
+                "\"ParentFolderId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/\""
+                "},"
+                "\"eTag\": \"agKs8UGYbn244uJSSjBZp+nt8wo=\""
+                "}"
+                "]"
+                "}";
+
+
+            // Parse.
+            Json::Value root(Json::objectValue);
+            Json::Reader::Parse(jsonString, root);
+            return root["instances"][0];
+            }
     };
 
+Json::Value RealityDataObjectTestFixture::s_SampleRealityDataFolderJSON = GetSampleRealityDataFolderJSON();
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017
 //-------------------------------------------------------------------------------------
@@ -88,28 +116,28 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
     mySpatialEntity->SetName("NameOfItem");
     EXPECT_STREQ(mySpatialEntity->GetName().c_str(), "NameOfItem");
 
-    mySpatialEntity->SetResolution("13.4x15.4"); 
+    mySpatialEntity->SetResolution("13.4x15.4");
     EXPECT_STREQ(mySpatialEntity->GetResolution().c_str(), "13.4x15.4");
     EXPECT_NEAR(mySpatialEntity->GetResolutionValue(), 14.36, 0.01);
 
-    mySpatialEntity->SetProvider("Provider1"); 
+    mySpatialEntity->SetProvider("Provider1");
     EXPECT_STREQ(mySpatialEntity->GetProvider().c_str(), "Provider1");
-    mySpatialEntity->SetProviderName("ProviderName1"); 
+    mySpatialEntity->SetProviderName("ProviderName1");
     EXPECT_STREQ(mySpatialEntity->GetProviderName().c_str(), "ProviderName1");
-    mySpatialEntity->SetDataType("tif;jpg"); 
+    mySpatialEntity->SetDataType("tif;jpg");
     EXPECT_STREQ(mySpatialEntity->GetDataType().c_str(), "tif;jpg");
-    mySpatialEntity->SetClassification(SpatialEntity::Classification::MODEL); 
+    mySpatialEntity->SetClassification(SpatialEntity::Classification::MODEL);
     ASSERT_TRUE(mySpatialEntity->GetClassification() == SpatialEntity::Classification::MODEL);
     ASSERT_STRCASEEQ(mySpatialEntity->GetClassificationTag().c_str(), "Model");
-    mySpatialEntity->SetDataset("MyDataset1"); 
+    mySpatialEntity->SetDataset("MyDataset1");
     EXPECT_STREQ(mySpatialEntity->GetDataset().c_str(), "MyDataset1");
-    mySpatialEntity->SetThumbnailURL("http:\\example.com\thumbnail.jpg"); 
+    mySpatialEntity->SetThumbnailURL("http:\\example.com\thumbnail.jpg");
     EXPECT_STREQ(mySpatialEntity->GetThumbnailURL().c_str(), "http:\\example.com\thumbnail.jpg");
-    mySpatialEntity->SetThumbnailLoginKey("BentleyCONNECT"); 
+    mySpatialEntity->SetThumbnailLoginKey("BentleyCONNECT");
     EXPECT_STREQ(mySpatialEntity->GetThumbnailLoginKey().c_str(), "BentleyCONNECT");
-    mySpatialEntity->SetApproximateFileSize(123765473); 
+    mySpatialEntity->SetApproximateFileSize(123765473);
     EXPECT_TRUE(mySpatialEntity->GetApproximateFileSize() == 123765473);
-    mySpatialEntity->SetDate(DateTime(2017,02,27)); 
+    mySpatialEntity->SetDate(DateTime(2017,02,27));
     EXPECT_TRUE(mySpatialEntity->GetDate().IsValid());
     EXPECT_TRUE(mySpatialEntity->GetDate() == DateTime(2017,02,27));
 
@@ -120,9 +148,9 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
     myFootprint.push_back(GeoPoint2d::From(13.5, 45.8));
     myFootprint.push_back(GeoPoint2d::From(12.5, 45.8));
 
-    mySpatialEntity->SetFootprint(myFootprint); 
+    mySpatialEntity->SetFootprint(myFootprint);
     EXPECT_TRUE(mySpatialEntity->GetFootprint().size() == 5);
-    mySpatialEntity->SetApproximateFootprint(true); 
+    mySpatialEntity->SetApproximateFootprint(true);
     EXPECT_TRUE(mySpatialEntity->HasApproximateFootprint());
 
     myRange = mySpatialEntity->GetFootprintExtent();
@@ -138,16 +166,16 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
 
     EXPECT_TRUE(mySpatialEntity->GetDataSourceCount() == 0);
 
-    mySpatialEntity->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt"); 
+    mySpatialEntity->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
     EXPECT_STREQ(mySpatialEntity->GetDescription().c_str(), "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
-    mySpatialEntity->SetAccuracy("2.34"); 
+    mySpatialEntity->SetAccuracy("2.34");
     EXPECT_STREQ(mySpatialEntity->GetAccuracy().c_str(), "2.34");
-    mySpatialEntity->SetVisibilityByTag("ENTERPRISE"); 
+    mySpatialEntity->SetVisibilityByTag("ENTERPRISE");
     EXPECT_STREQ(mySpatialEntity->GetVisibilityTag().c_str(), "ENTERPRISE"); // Default is preset
 
     EXPECT_TRUE(mySpatialEntity->GetMetadataCP() == NULL);
 
-    mySpatialEntity->SetOcclusion(23.45); 
+    mySpatialEntity->SetOcclusion(23.45);
     EXPECT_NEAR(mySpatialEntity->GetOcclusion(), 23.45, 0.00001);
     }
 
@@ -209,7 +237,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityMetadataBasicTest)
 
     mySpatialEntityMetadata->SetId("MyID");
     EXPECT_STREQ(mySpatialEntityMetadata->GetId().c_str(), "MyID");
-    
+
     mySpatialEntityMetadata->SetDisplayStyle("MyDisplayStyle");
     EXPECT_STREQ(mySpatialEntityMetadata->GetDisplayStyle().c_str(), "MyDisplayStyle");
     }
@@ -405,7 +433,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityServerBasicTest)
     EXPECT_TRUE(!mySpatialEntityServer->GetLastCheck().IsValid());
     EXPECT_TRUE(!mySpatialEntityServer->GetLastTimeOnline().IsValid());
     EXPECT_TRUE(mySpatialEntityServer->GetLatency() == 0.0);
-    EXPECT_STREQ(mySpatialEntityServer->GetState() .c_str(), "");
+    EXPECT_STREQ(mySpatialEntityServer->GetState().c_str(), "");
     EXPECT_TRUE(!mySpatialEntityServer->IsStreamed());
     EXPECT_STREQ(mySpatialEntityServer->GetLoginKey().c_str(), "");
     EXPECT_STREQ(mySpatialEntityServer->GetLoginMethod().c_str(), "");
@@ -487,7 +515,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityServerCreateFromURLAndName)
     ASSERT_STREQ(mySpatialEntityServer->GetName().c_str(), "MyServerName");
     ASSERT_TRUE(mySpatialEntityServer->IsOnline());
     ASSERT_FALSE(mySpatialEntityServer->IsStreamed());
-    ASSERT_STREQ(mySpatialEntityServer->GetProtocol().c_str() , "http");
+    ASSERT_STREQ(mySpatialEntityServer->GetProtocol().c_str(), "http");
     }
 
 //-------------------------------------------------------------------------------------
@@ -507,9 +535,9 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityServerCreateFromURLOnly)
     ASSERT_FALSE(mySpatialEntityServer->IsStreamed());
     ASSERT_STREQ(mySpatialEntityServer->GetProtocol().c_str(), "http");
     ASSERT_TRUE(DateTime::Compare(mySpatialEntityServer->GetLastCheck(), date) == DateTime::CompareResult::LaterThan ||
-        DateTime::Compare(mySpatialEntityServer->GetLastCheck(), date) == DateTime::CompareResult::Equals);
+                DateTime::Compare(mySpatialEntityServer->GetLastCheck(), date) == DateTime::CompareResult::Equals);
     ASSERT_TRUE(DateTime::Compare(mySpatialEntityServer->GetLastTimeOnline(), date) == DateTime::CompareResult::LaterThan ||
-        DateTime::Compare(mySpatialEntityServer->GetLastTimeOnline(), date) == DateTime::CompareResult::Equals);
+                DateTime::Compare(mySpatialEntityServer->GetLastTimeOnline(), date) == DateTime::CompareResult::Equals);
     }
 
 //-------------------------------------------------------------------------------------
@@ -521,16 +549,16 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
 
     mySpatialEntity->SetIdentifier("f28fdab2-c369-4913-b18a-fbe541af635c");
     mySpatialEntity->SetName("NameOfItem");
-    mySpatialEntity->SetResolution("13.4x15.4"); 
-    mySpatialEntity->SetProvider("Provider1"); 
-    mySpatialEntity->SetProviderName("ProviderName1"); 
-    mySpatialEntity->SetDataType("tif;jpg"); 
-    mySpatialEntity->SetClassification(SpatialEntity::Classification::MODEL); 
-    mySpatialEntity->SetDataset("MyDataset1"); 
-    mySpatialEntity->SetThumbnailURL("http:\\example.com\thumbnail.jpg"); 
-    mySpatialEntity->SetThumbnailLoginKey("BentleyCONNECT"); 
-    mySpatialEntity->SetApproximateFileSize(123765473); 
-    mySpatialEntity->SetDate(DateTime(2017,02,27)); 
+    mySpatialEntity->SetResolution("13.4x15.4");
+    mySpatialEntity->SetProvider("Provider1");
+    mySpatialEntity->SetProviderName("ProviderName1");
+    mySpatialEntity->SetDataType("tif;jpg");
+    mySpatialEntity->SetClassification(SpatialEntity::Classification::MODEL);
+    mySpatialEntity->SetDataset("MyDataset1");
+    mySpatialEntity->SetThumbnailURL("http:\\example.com\thumbnail.jpg");
+    mySpatialEntity->SetThumbnailLoginKey("BentleyCONNECT");
+    mySpatialEntity->SetApproximateFileSize(123765473);
+    mySpatialEntity->SetDate(DateTime(2017,02,27));
 
     bvector<GeoPoint2d> myFootprint;
     myFootprint.push_back(GeoPoint2d::From(12.5, 45.8));
@@ -539,8 +567,8 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
     myFootprint.push_back(GeoPoint2d::From(13.5, 45.8));
     myFootprint.push_back(GeoPoint2d::From(12.5, 45.8));
 
-    mySpatialEntity->SetFootprint(myFootprint); 
-    mySpatialEntity->SetApproximateFootprint(true); 
+    mySpatialEntity->SetFootprint(myFootprint);
+    mySpatialEntity->SetApproximateFootprint(true);
 
     DRange2d myRange = mySpatialEntity->GetFootprintExtent();
     EXPECT_TRUE(myRange.low.x == 12.5);
@@ -548,11 +576,11 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
     EXPECT_TRUE(myRange.low.y == 45.8);
     EXPECT_TRUE(myRange.high.y == 46.8);
 
-    mySpatialEntity->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt"); 
-    mySpatialEntity->SetAccuracy("2.34"); 
-    mySpatialEntity->SetVisibilityByTag("ENTERPRISE"); 
+    mySpatialEntity->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
+    mySpatialEntity->SetAccuracy("2.34");
+    mySpatialEntity->SetVisibilityByTag("ENTERPRISE");
 
-    mySpatialEntity->SetOcclusion(23.45); 
+    mySpatialEntity->SetOcclusion(23.45);
 
 
 
@@ -574,7 +602,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
     mySpatialEntityDataSource->SetGreenBandSize(321);
     mySpatialEntityDataSource->SetBlueBandSize(453);
     mySpatialEntityDataSource->SetPanchromaticBandSize(2345);
-    
+
     // Create a server.
     SpatialEntityServerPtr mySpatialEntityServer = SpatialEntityServer::Create();
     mySpatialEntityServer->SetProtocol("http");
@@ -595,7 +623,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
     // Add server to data source
     mySpatialEntityDataSource->SetServer(mySpatialEntityServer.get());
     ASSERT_TRUE(mySpatialEntityDataSource->GetServerCP() != NULL);
-    
+
     // Add the first spatial data source
     mySpatialEntity->AddDataSource(*mySpatialEntityDataSource);
     EXPECT_TRUE(mySpatialEntity->GetDataSourceCount() == 1);
@@ -679,25 +707,25 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetName("NameOfItem");
     EXPECT_STREQ(myRealityData->GetName().c_str(), "NameOfItem");
 
-    myRealityData->SetResolution("13.4x15.4"); 
+    myRealityData->SetResolution("13.4x15.4");
     EXPECT_STREQ(myRealityData->GetResolution().c_str(), "13.4x15.4");
     EXPECT_NEAR(myRealityData->GetResolutionValue(), 14.36, 0.01);
 
 
-    myRealityData->SetRealityDataType("3mx"); 
+    myRealityData->SetRealityDataType("3mx");
     EXPECT_STREQ(myRealityData->GetRealityDataType().c_str(), "3mx");
-    myRealityData->SetStreamed(false); 
+    myRealityData->SetStreamed(false);
     ASSERT_TRUE(myRealityData->IsStreamed() == false);
-    myRealityData->SetClassification(RealityData::Classification::MODEL); 
+    myRealityData->SetClassification(RealityData::Classification::MODEL);
     ASSERT_TRUE(myRealityData->GetClassification() == RealityData::Classification::MODEL);
     ASSERT_STRCASEEQ(myRealityData->GetClassificationTag().c_str(), "Model");
-    myRealityData->SetDataset("MyDataset1"); 
+    myRealityData->SetDataset("MyDataset1");
     EXPECT_STREQ(myRealityData->GetDataset().c_str(), "MyDataset1");
-    myRealityData->SetThumbnailDocument("thumbnail.jpg"); 
+    myRealityData->SetThumbnailDocument("thumbnail.jpg");
     EXPECT_STREQ(myRealityData->GetThumbnailDocument().c_str(), "thumbnail.jpg");
-    myRealityData->SetTotalSize(123765473); 
+    myRealityData->SetTotalSize(123765473);
     EXPECT_TRUE(myRealityData->GetTotalSize() == 123765473);
-    myRealityData->SetCreationDateTime(DateTime(2017,02,27)); 
+    myRealityData->SetCreationDateTime(DateTime(2017,02,27));
     EXPECT_TRUE(myRealityData->GetCreationDateTime().IsValid());
     EXPECT_TRUE(myRealityData->GetCreationDateTime() == DateTime(2017,02,27));
 
@@ -708,9 +736,9 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myFootprint.push_back(GeoPoint2d::From(13.5, 45.8));
     myFootprint.push_back(GeoPoint2d::From(12.5, 45.8));
 
-    myRealityData->SetFootprint(myFootprint); 
+    myRealityData->SetFootprint(myFootprint);
     EXPECT_TRUE(myRealityData->GetFootprint().size() == 5);
-    myRealityData->SetApproximateFootprint(true); 
+    myRealityData->SetApproximateFootprint(true);
     EXPECT_TRUE(myRealityData->HasApproximateFootprint());
 
     myRange = myRealityData->GetFootprintExtent();
@@ -729,22 +757,22 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
 
     myRealityData->SetOrganizationId("2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
     EXPECT_STREQ(myRealityData->GetOrganizationId().c_str(), "2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
-    myRealityData->SetContainerName("167b96ea-52eb-46c0-9865-8b7e5913bb29"); 
+    myRealityData->SetContainerName("167b96ea-52eb-46c0-9865-8b7e5913bb29");
     EXPECT_STREQ(myRealityData->GetContainerName().c_str(), "167b96ea-52eb-46c0-9865-8b7e5913bb29");
-    myRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt"); 
+    myRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
     EXPECT_STREQ(myRealityData->GetDescription().c_str(), "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
-    myRealityData->SetRootDocument("./RootDocument"); 
+    myRealityData->SetRootDocument("./RootDocument");
     EXPECT_STREQ(myRealityData->GetRootDocument().c_str(), "./RootDocument");
-    myRealityData->SetAccuracy("2.34"); 
+    myRealityData->SetAccuracy("2.34");
     EXPECT_STREQ(myRealityData->GetAccuracy().c_str(), "2.34");
-    myRealityData->SetVisibilityByTag("ENTERPRISE"); 
+    myRealityData->SetVisibilityByTag("ENTERPRISE");
     EXPECT_STREQ(myRealityData->GetVisibilityTag().c_str(), "ENTERPRISE"); // Default is preset
-    myRealityData->SetListable(false); 
+    myRealityData->SetListable(false);
     EXPECT_TRUE(!myRealityData->IsListable());
-    myRealityData->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b"); 
+    myRealityData->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
 
-    myRealityData->SetMetadataUrl("http:\\www.bidon.com\\AgoodURL.html"); 
+    myRealityData->SetMetadataUrl("http:\\www.bidon.com\\AgoodURL.html");
     EXPECT_STREQ(myRealityData->GetMetadataUrl().c_str(), "http:\\www.bidon.com\\AgoodURL.html");
 
     myRealityData->SetUltimateId("uId");
@@ -753,17 +781,17 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetUltimateSite("http:\\www.bidon.com\\AgoodURL.html");
     EXPECT_STREQ(myRealityData->GetUltimateSite().c_str(), "http:\\www.bidon.com\\AgoodURL.html");
 
-    myRealityData->SetCopyright("Owned by Pinocchio"); 
+    myRealityData->SetCopyright("Owned by Pinocchio");
     EXPECT_STREQ(myRealityData->GetCopyright().c_str(), "Owned by Pinocchio");
 
-    myRealityData->SetTermsOfUse("Use with permisison of Tinkerbell"); 
+    myRealityData->SetTermsOfUse("Use with permisison of Tinkerbell");
     EXPECT_STREQ(myRealityData->GetTermsOfUse().c_str(), "Use with permisison of Tinkerbell");
 
     myRealityData->SetModifiedDateTime(DateTime(2017, 02, 27));
     EXPECT_TRUE(myRealityData->GetModifiedDateTime().IsValid());
     EXPECT_TRUE(myRealityData->GetModifiedDateTime() == DateTime(2017, 02, 27));
 
-    myRealityData->SetGroup("MyGroup1"); 
+    myRealityData->SetGroup("MyGroup1");
     EXPECT_STREQ(myRealityData->GetGroup().c_str(), "MyGroup1");
     }
 
@@ -881,41 +909,41 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
     {
 
     Utf8CP jsonString = "{"
-                          "\"instances\": [" 
-                            "{"
-                            "\"instanceId\": \"14812\","
-                            "\"schemaName\" : \"RealityModeling\","
-                            "\"className\" : \"RealityDataDocument\","
-                            "\"properties\" : {"
-                                  "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"Name\" : \"Production_Helsinki_3MX_ok.3mx\","
-                                  "\"Id\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/Production_Helsinki_3MX_ok.3mx\","
-                                  "\"FolderId\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/\","
-                                  "\"AccessUrl\" : \"https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file\","
-                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"ContentType\" : \"3mx\","
-                                  "\"Size\" : \"1399\""
-                               " },"
-                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-                           "},"
-                            "{"
-                            "\"instanceId\": \"14813\","
-                            "\"schemaName\" : \"RealityModeling\","
-                            "\"className\" : \"RealityDataDocument\","
-                            "\"properties\" : {"
-                                  "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"Name\" : \"Marseille.3mx\","
-                                  "\"Id\" : \"TBD\","
-                                  "\"FolderId\" : \"\","
-                                  "\"AccessUrl\" : \"?????\","
-                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"ContentType\" : \"3mx\","
-                                  "\"Size\" : \"\""
-                               " },"
-                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-                           "}"
-                       " ]"
-                     " }";
+        "\"instances\": ["
+        "{"
+        "\"instanceId\": \"14812\","
+        "\"schemaName\" : \"RealityModeling\","
+        "\"className\" : \"RealityDataDocument\","
+        "\"properties\" : {"
+        "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"Name\" : \"Production_Helsinki_3MX_ok.3mx\","
+        "\"Id\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/Production_Helsinki_3MX_ok.3mx\","
+        "\"FolderId\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/\","
+        "\"AccessUrl\" : \"https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file\","
+        "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"ContentType\" : \"3mx\","
+        "\"Size\" : \"1399\""
+        " },"
+        " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+        "},"
+        "{"
+        "\"instanceId\": \"14813\","
+        "\"schemaName\" : \"RealityModeling\","
+        "\"className\" : \"RealityDataDocument\","
+        "\"properties\" : {"
+        "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"Name\" : \"Marseille.3mx\","
+        "\"Id\" : \"TBD\","
+        "\"FolderId\" : \"\","
+        "\"AccessUrl\" : \"?????\","
+        "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"ContentType\" : \"3mx\","
+        "\"Size\" : \"\""
+        " },"
+        " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+        "}"
+        " ]"
+        " }";
     // Parse.
     Json::Value root(Json::objectValue);
     ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
@@ -1037,36 +1065,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentSetIdFromDataFolder)
 //-------------------------------------------------------------------------------------
 TEST_F(RealityDataObjectTestFixture, RealityDataFolderBasicTest)
     {
-
-    Utf8CP jsonString = "{"
-                          "\"instances\": ["
-                            "{"
-                              "\"instanceId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene\","
-                              "\"schemaName\": \"S3MX\","
-                              "\"className\": \"Folder\","
-                              "\"properties\": {"
-                                "\"Name\": \"Scene\","
-                                "\"RealityDataId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10\","
-                                "\"ParentFolderId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/\""
-                              "},"
-                              "\"eTag\": \"agKs8UGYbn244uJSSjBZp+nt8wo=\""
-                            "}"
-                          "]"
-                        "}";
-
-
-    // Parse.
-    Json::Value root(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
-
-    // Instances must be a root node.
-    ASSERT_TRUE(root.isMember("instances"));
-
-    // Loop through all data and get required informations.
-    const Json::Value instance = root["instances"][0];
-    ASSERT_TRUE(instance.isMember("properties"));
-
-    RealityDataFolderPtr myFolder = RealityDataFolder::Create(instance);
+    RealityDataFolderPtr myFolder = RealityDataFolder::Create(s_SampleRealityDataFolderJSON);
 
     EXPECT_STREQ(myFolder->GetName().c_str(), "Scene");
     EXPECT_STREQ(myFolder->GetParentId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/");
@@ -1079,37 +1078,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataFolderBasicTest)
 //-------------------------------------------------------------------------------------
 TEST_F(RealityDataObjectTestFixture, RealityDataFolderSetIdFromString)
     {
+    RealityDataFolderPtr myFolder = RealityDataFolder::Create(s_SampleRealityDataFolderJSON);
 
-    Utf8CP jsonString = "{"
-        "\"instances\": ["
-        "{"
-        "\"instanceId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene\","
-        "\"schemaName\": \"S3MX\","
-        "\"className\": \"Folder\","
-        "\"properties\": {"
-        "\"Name\": \"Scene\","
-        "\"RealityDataId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10\","
-        "\"ParentFolderId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/\""
-        "},"
-        "\"eTag\": \"agKs8UGYbn244uJSSjBZp+nt8wo=\""
-        "}"
-        "]"
-        "}";
-
-
-    // Parse.
-    Json::Value root(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
-
-    // Instances must be a root node.
-    ASSERT_TRUE(root.isMember("instances"));
-
-    // Loop through all data and get required informations.
-    const Json::Value instance = root["instances"][0];
-    ASSERT_TRUE(instance.isMember("properties"));
-
-    RealityDataFolderPtr myFolder = RealityDataFolder::Create(instance);
-    
     myFolder->SetId("43a4a51a-bfd3-4271-a9d9-21db56becf10");
     EXPECT_STREQ(myFolder->GetId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56becf10");
     }
@@ -1119,37 +1089,162 @@ TEST_F(RealityDataObjectTestFixture, RealityDataFolderSetIdFromString)
 //-------------------------------------------------------------------------------------
 TEST_F(RealityDataObjectTestFixture, RealityDataFolderSetIdFromFolderIdAndName)
     {
+    RealityDataFolderPtr myFolder = RealityDataFolder::Create(s_SampleRealityDataFolderJSON);
 
-    Utf8CP jsonString = "{"
-        "\"instances\": ["
-        "{"
-        "\"instanceId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene\","
-        "\"schemaName\": \"S3MX\","
-        "\"className\": \"Folder\","
-        "\"properties\": {"
-        "\"Name\": \"Scene\","
-        "\"RealityDataId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10\","
-        "\"ParentFolderId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/\""
-        "},"
-        "\"eTag\": \"agKs8UGYbn244uJSSjBZp+nt8wo=\""
-        "}"
-        "]"
-        "}";
-
-
-    // Parse.
-    Json::Value root(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
-
-    // Instances must be a root node.
-    ASSERT_TRUE(root.isMember("instances"));
-
-    // Loop through all data and get required informations.
-    const Json::Value instance = root["instances"][0];
-    ASSERT_TRUE(instance.isMember("properties"));
-
-    RealityDataFolderPtr myFolder = RealityDataFolder::Create(instance);
-
-    myFolder->SetId("43a4a51a-bfd3-4271-a9d9-21db56becf10");
-    EXPECT_STREQ(myFolder->GetId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    myFolder->SetId("2523b4ee-4641-46a6-82a8-f26134f3b099", "43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(myFolder->GetId().c_str(), "2523b4ee-4641-46a6-82a8-f26134f3b099~2F43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(myFolder->GetName().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(myFolder->GetParentId().c_str(), "2523b4ee-4641-46a6-82a8-f26134f3b099");
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataFolderSetIdFromRealityDataFolderAndName)
+    {
+    RealityDataFolderPtr seedFolder = RealityDataFolder::Create(s_SampleRealityDataFolderJSON);
+    seedFolder->SetId("6deb80b6-ec28-410e-8857-a33f4d0f74df");
+    RealityDataFolderPtr folderUnderTest = RealityDataFolder::Create(s_SampleRealityDataFolderJSON);
+
+    folderUnderTest->SetId(*seedFolder, "43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(folderUnderTest->GetId().c_str(), "6deb80b6-ec28-410e-8857-a33f4d0f74df~2F43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(folderUnderTest->GetName().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(folderUnderTest->GetParentId().c_str(), "6deb80b6-ec28-410e-8857-a33f4d0f74df");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataFolderSetRealityDataId)
+    {
+    RealityDataFolderPtr folderUnderTest = RealityDataFolder::Create(s_SampleRealityDataFolderJSON);
+
+    folderUnderTest->SetRealityDataId("43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    EXPECT_STREQ(folderUnderTest->GetRealityDataId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56becf10");
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsiclass                         Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+struct classificationTag_state
+    {
+    RealityDataBase::Classification classificationTag;
+    Utf8CP classificationName;
+    StatusInt status;
+
+    friend std::ostream& operator<<(std::ostream& os, const classificationTag_state& obj)
+        {
+        return os
+            << "Tag: " << obj.classificationTag
+            << " name: " << obj.classificationName
+            << " status: " << obj.status;
+        }
+    };
+
+//-------------------------------------------------------------------------------------
+// @bsiclass                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+struct RealityDataBaseClassification : testing::Test, ::testing::WithParamInterface<classificationTag_state>
+    {
+
+    };
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_P(RealityDataBaseClassification, ConversionNameToEnum)
+    {
+    RealityDataBase::Classification returnedClassification(RealityDataBase::Classification::MODEL);
+    StatusInt status = RealityDataBase::GetClassificationFromTag(returnedClassification, GetParam().classificationName);
+
+    EXPECT_TRUE(status == GetParam().status);
+    EXPECT_TRUE(returnedClassification == GetParam().classificationTag);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_P(RealityDataBaseClassification, ConversionEnumToName)
+    {
+    auto returnedClassification = RealityDataBase::GetTagFromClassification(GetParam().classificationTag);
+
+    EXPECT_STREQ(returnedClassification.c_str(), GetParam().classificationName);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataBaseClassification, BadConversion)
+    {
+    RealityDataBase::Classification returnedClassification(RealityDataBase::Classification::MODEL);
+    StatusInt status = RealityDataBase::GetClassificationFromTag(returnedClassification, "NotARealTag");
+
+    EXPECT_TRUE(status == ERROR);
+    }
+
+//=====================================================================================
+//! @bsimethod                          Remi.Charbonneau                        05/2017
+//=====================================================================================
+INSTANTIATE_TEST_CASE_P(Default, RealityDataBaseClassification, testing::Values(
+    classificationTag_state {RealityDataBase::Classification::MODEL, "Model", SUCCESS},
+    classificationTag_state {RealityDataBase::Classification::TERRAIN, "Terrain", SUCCESS},
+    classificationTag_state {RealityDataBase::Classification::IMAGERY, "Imagery", SUCCESS},
+    classificationTag_state {RealityDataBase::Classification::PINNED, "Pinned", SUCCESS},
+    classificationTag_state {RealityDataBase::Classification::UNDEFINED_CLASSIF, "Undefined", SUCCESS}
+));
+
+struct visibilityTag_state
+    {
+    RealityDataBase::Visibility visibilityTag;
+    Utf8CP visibilityName;
+    StatusInt status;
+
+    friend std::ostream& operator<<(std::ostream& os, const visibilityTag_state& obj)
+        {
+        return os
+            << "Tag: " << obj.visibilityTag
+            << " name: " << obj.visibilityName
+            << " status: " << obj.status;
+        }
+    };
+
+//-------------------------------------------------------------------------------------
+// @bsiclass                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+struct RealityDataBaseVisibility : testing::Test, ::testing::WithParamInterface<visibilityTag_state>
+    {
+
+    };
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_P(RealityDataBaseVisibility, ConversionNameToEnum)
+    {
+    RealityDataBase::Visibility returnedVisibility(RealityDataBase::Visibility::ENTERPRISE);
+    StatusInt status = RealityDataBase::GetVisibilityFromTag(returnedVisibility, GetParam().visibilityName);
+
+    EXPECT_TRUE(status == GetParam().status);
+    EXPECT_TRUE(returnedVisibility == GetParam().visibilityTag);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_P(RealityDataBaseVisibility, ConversionEnumToName)
+    {
+    auto returnedClassification = RealityDataBase::GetTagFromVisibility(GetParam().visibilityTag);
+
+    EXPECT_STREQ(returnedClassification.c_str(), GetParam().visibilityName);
+    }
+
+//=====================================================================================
+//! @bsimethod                          Remi.Charbonneau                        05/2017
+//=====================================================================================
+INSTANTIATE_TEST_CASE_P(Default, RealityDataBaseVisibility, testing::Values(
+    visibilityTag_state {RealityDataBase::Visibility::PRIVATE, "PRIVATE", SUCCESS},
+    visibilityTag_state {RealityDataBase::Visibility::PERMISSION, "PERMISSION", SUCCESS},
+    visibilityTag_state {RealityDataBase::Visibility::ENTERPRISE, "ENTERPRISE", SUCCESS},
+    visibilityTag_state {RealityDataBase::Visibility::UNDEFINED_VISIBILITY, "UNDEFINED", SUCCESS}
+));

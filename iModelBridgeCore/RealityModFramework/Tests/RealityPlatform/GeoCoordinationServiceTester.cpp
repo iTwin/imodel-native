@@ -473,7 +473,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsRequestGood
             })";
     }));
 
-    auto request = SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d>(), Classification::Imagery);
+    auto request = SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d>(), RealityDataBase::Classification::IMAGERY);
     auto rawResponse = RawServerResponse();
 
     auto spatialEntities = GeoCoordinationService::Request(request, rawResponse);
@@ -538,7 +538,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsRequestNotL
     }));
 
 
-    auto request = SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d>(), Classification::Imagery);
+    auto request = SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d>(), RealityDataBase::Classification::IMAGERY);
     auto rawResponse = RawServerResponse();
 
     // request only 1 page so that we can request the next one.
@@ -571,7 +571,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsRequestBad)
         response.status = RequestStatus::BADREQ;
     }));
 
-    auto request = SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d>(), Classification::Imagery);
+    auto request = SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d>(), RealityDataBase::Classification::IMAGERY);
     auto rawResponse = RawServerResponse();
 
     auto spatialEntities = GeoCoordinationService::Request(request, rawResponse);

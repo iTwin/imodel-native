@@ -281,16 +281,7 @@ RealityDataBase::Classification RealityDataBase::GetClassification() const { ret
 void RealityDataBase::SetClassification(Classification classification) { m_classification = classification; }
 Utf8String RealityDataBase::GetClassificationTag() const
     {
-    if (Classification::MODEL == m_classification)
-        return "Model";
-    else if (Classification::TERRAIN == m_classification)
-        return "Terrain";
-    else if (Classification::IMAGERY == m_classification)
-        return "Imagery";
-    else if (Classification::PINNED == m_classification)
-        return "Pinned";
-
-    return "Undefined";   
+    return GetTagFromClassification(m_classification);
     }
 
 //-------------------------------------------------------------------------------------
@@ -331,7 +322,7 @@ Utf8String RealityDataBase::GetTagFromClassification(RealityDataBase::Classifica
     else if (Classification::PINNED == classification)
         return "Pinned";
 
-    return "UNDEFINED";
+    return "Undefined";
 }
 
 //-------------------------------------------------------------------------------------
