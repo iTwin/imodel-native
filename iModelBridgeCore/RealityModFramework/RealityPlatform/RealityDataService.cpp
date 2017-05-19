@@ -335,7 +335,7 @@ void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
 void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
     }
 
 //=====================================================================================
@@ -344,7 +344,7 @@ void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestString
 void RealityDataProjectRelationshipByRealityDataIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=RealityDataId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RealityDataId+eq+'%s'", m_encodedId));
     }
 
 //=====================================================================================
@@ -819,7 +819,7 @@ void RealityDataListByOrganizationPagedRequest::_PrepareHttpRequestStringAndPayl
 void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
 
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
@@ -841,7 +841,7 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
 void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=RealityDataId+eq+'%s'", m_id));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RealityDataId+eq+'%s'", m_id));
 
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
@@ -1005,7 +1005,7 @@ RealityDataRelationshipCreateRequest::RealityDataRelationshipCreateRequest(Utf8S
     m_validRequestString = false;
 
     m_requestType = HttpRequestType::POST_Request;
-    m_requestPayload = "{\"instance\":{\"className\": \"RealityDataProjectRelationship\",\"schemaName\":\"S3MX\", \"properties\": { \"ProjectId\" : \"";
+    m_requestPayload = "{\"instance\":{\"className\": \"RealityDataRelationship\",\"schemaName\":\"S3MX\", \"properties\": { \"RelationType\" : \"CONNECT-Project\", \"RelatedId\" : \"";
     m_requestPayload.append(projectId);
     m_requestPayload.append("\", \"RealityDataId\": \"");
     m_requestPayload.append(m_id);
@@ -1018,7 +1018,7 @@ RealityDataRelationshipCreateRequest::RealityDataRelationshipCreateRequest(Utf8S
 void RealityDataRelationshipCreateRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/RealityDataProjectRelationship");
+    m_httpRequestString.append("/RealityDataRelationship");
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
@@ -1041,7 +1041,7 @@ RealityDataRelationshipDelete::RealityDataRelationshipDelete(Utf8String realityD
 void RealityDataRelationshipDelete::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/RealityDataProjectRelationship/");
+    m_httpRequestString.append("/RealityDataRelationship/");
     m_httpRequestString.append(m_encodedId);
     m_httpRequestString.append("~2F");
     m_httpRequestString.append(m_projectId);
