@@ -939,6 +939,7 @@ namespace IndexECPlugin.Source.Helpers
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(subAPIRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi&rds"));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>(IndexConstants.PRExtendedDataName, true));
 
             var queriedSpatialEntities = m_executeQuery(queryModule, connection, query, null);
 
