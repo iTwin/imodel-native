@@ -115,14 +115,14 @@ void SpatialEntityWithDetailsSpatialRequest::_PrepareHttpRequestStringAndPayload
         if (m_informationSourceFilter > 0)
             {
             m_httpRequestString.append("Classification+in+[");
-            if (m_informationSourceFilter & Classification::Imagery)
-                m_httpRequestString.append("'Imagery',");
-            if (m_informationSourceFilter & Classification::Terrain)
-                m_httpRequestString.append("'Terrain',");
-            if (m_informationSourceFilter & Classification::Model)
-                m_httpRequestString.append("'Model',");
-            if (m_informationSourceFilter & Classification::Pinned)
-                m_httpRequestString.append("'Pinned',");
+            if (m_informationSourceFilter & RealityDataBase::Classification::IMAGERY)
+                m_httpRequestString.append(Utf8PrintfString("'%s',", GeoCoordinationService::s_ImageryKey));
+            if (m_informationSourceFilter & RealityDataBase::Classification::TERRAIN)
+                m_httpRequestString.append(Utf8PrintfString("'%s',", GeoCoordinationService::s_TerrainKey));
+            if (m_informationSourceFilter & RealityDataBase::Classification::MODEL)
+                m_httpRequestString.append(Utf8PrintfString("'%s',", GeoCoordinationService::s_ModelKey));
+            if (m_informationSourceFilter & RealityDataBase::Classification::PINNED)
+                m_httpRequestString.append(Utf8PrintfString("'%s',", GeoCoordinationService::s_PinnedKey));
             m_httpRequestString = m_httpRequestString.substr(0, m_httpRequestString.size() - 1); //remove comma
             m_httpRequestString.append("]&");
             }

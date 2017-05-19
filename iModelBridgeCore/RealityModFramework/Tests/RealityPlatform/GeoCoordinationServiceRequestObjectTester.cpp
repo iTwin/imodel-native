@@ -102,13 +102,13 @@ class GeoCoordinationServiceRequestsFixture : public testing::Test
             if (classification > 0)
                 {
                 classificationString.append("Classification+in+[");
-                if (classification & Classification::Imagery)
+                if (classification & RealityDataBase::Classification::IMAGERY)
                     classificationString.append("'Imagery',");
-                if (classification & Classification::Terrain)
+                if (classification & RealityDataBase::Classification::TERRAIN)
                     classificationString.append("'Terrain',");
-                if (classification & Classification::Model)
+                if (classification & RealityDataBase::Classification::MODEL)
                     classificationString.append("'Model',");
-                if (classification & Classification::Pinned)
+                if (classification & RealityDataBase::Classification::PINNED)
                     classificationString.append("'Pinned',");
                 classificationString = classificationString.substr(0, classificationString.size() - 1); //remove comma
                 classificationString.append("]");
