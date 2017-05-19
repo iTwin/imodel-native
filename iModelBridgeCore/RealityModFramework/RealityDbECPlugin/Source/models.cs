@@ -18,7 +18,6 @@ using RealityPackageNet;
 using System.Data;
 using Bentley.ECObjects;
 using Bentley.Exceptions;
-using Microsoft.ServiceBus.Messaging;
 
 namespace IndexECPlugin.Source
     {
