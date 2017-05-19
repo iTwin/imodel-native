@@ -129,7 +129,7 @@ static double SignedRadiansTo (VectorType const &vector0, VectorType const &vect
     VectorProducts<VectorType> p (vector0, vector1);
     double theta = atan2 (p.crossMag, p.dot);
 
-    if (p.DotWithVectorCross<VectorType1> (vectorW) < 0.0)
+    if (p.template DotWithVectorCross<VectorType1> (vectorW) < 0.0)
         return  -theta;
     else
         return  theta;
