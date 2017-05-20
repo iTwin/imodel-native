@@ -323,6 +323,7 @@ class ECRelationshipClass(object):
         struct_str += self.get_upper_name() + '_BUFFER \n'
         struct_str += '    {\n'
         struct_str += '    bmap<WString, bool> IsSet;\n'
+        struct_str += '    WString ObjectId;\n'
         for ecproperty in self.get_properties():
             if ecproperty.should_be_excluded:
                 continue
@@ -354,6 +355,10 @@ class ECRelationshipClass(object):
         enum_str = "typedef enum\n"
         enum_str += "    {\n"
         enum_count = 1
+        #add the objectid
+        enum_str += "    {0}_BUFF_{1:30} = {2}, /**< \\b {3}. */\n".format(self.get_upper_name(), "OBJECTID", enum_count, "ObjectId (generated property for instance id) ")
+        enum_count += 1
+        #add other properties
         for ecproperty in self.get_properties():
             if ecproperty.should_be_excluded:
                 continue
