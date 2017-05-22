@@ -23,7 +23,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct SMVolumeSegment {
     SMVolumeSegment() { volume = 0; }
-    std::vector<double> VolumeRanges; // vector of abcissa couples (min-max) 
+    bvector<double> VolumeRanges; // vector of abcissa couples (min-max) 
     double volume; // the integrated volume (sum of volume ranges)
     };
 
@@ -83,9 +83,13 @@ class IScalableMeshAnalysis abstract : public RefCountedBase
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr anotherMesh, double resolution, ISMGridVolume& grid) = 0;
 
     public:
-        // Compute Volume between the 3SM and a given polygon, returns different values
+        // Compute Volume between the 3SM and a given polygon
+        // returns different values (fill, cut, per grid node values) in the ISMGridVolume object
         BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid) {
             return _ComputeDiscreteVolume(polygon, resolution, grid); }
+
+        // Compute Volume difference with another 3SM in a polygon restriction
+        // returns different values (fill, cut, per grid node values) in the ISMGridVolume object
         BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr anotherMesh, double resolution, ISMGridVolume& grid) {
             return _ComputeDiscreteVolume(polygon, anotherMesh, resolution, grid);
             }
