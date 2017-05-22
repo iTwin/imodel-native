@@ -484,7 +484,7 @@
 
     <Part Name="RunGtest" DeferType="RunUnitTests" 
         BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" 
-        BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/WSClient-Gtest/WSClientTest" 
+        BentleyBuildMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest" 
         OnlyPlatforms="x86,x64,MacOs*,Linux*"
         >
         <SubProduct ProductName="WSClient-Gtest" />
