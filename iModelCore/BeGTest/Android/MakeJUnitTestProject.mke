@@ -2,7 +2,7 @@
 #
 #     $Source: Android/MakeJUnitTestProject.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
@@ -48,11 +48,6 @@ collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
 unitTestsDir = $(collectionProduct)Objects/
 inputSoDir = $(collectionProduct)Libs/
 
-%ifdef SHARED_LIBRARIES
-    __ANDROIDJUNITTEST_SHARED_LIBRARIES__ = $[@subst "," " " $(SHARED_LIBRARIES)]
-    shared_libraries_full_path = $[@realpath $[@addsuffix $(shlibext) $[@addprefix $(inputSoDir)$(shlibprefix), $(__ANDROIDJUNITTEST_SHARED_LIBRARIES__)]]]
-%endif
-
 %if defined (BMAKE_DELETE_ALL_TARGETS)
     always:
         $(rmdirRecursiveCmd) $(outputDir)
@@ -64,16 +59,15 @@ inputSoDir = $(collectionProduct)Libs/
         !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcRoot)bsicommon/PublicSDK
 %endif
 
-%ifdef USE_STATIC_LIBRARIES
-# ***TRICKY: We copy in order to eliminate dups
-always:
-    ~mkdir $(outputDir)/libs
-    CopyWithSymlinks.py     $(collectionProduct)Libs $(outputDir)libs
-    CopyWithSymlinks.py     $(BuildContext)SubParts/Libs $(outputDir)libs
+%ifdef CREATE_STATIC_LIBRARIES
+    # ***TRICKY: We copy in order to eliminate dups
+    always:
+        ~mkdir $(outputDir)/libs
+        CopyWithSymlinks.py $(collectionProduct)Libs $(outputDir)libs
+        CopyWithSymlinks.py $(BuildContext)SubParts/Libs $(outputDir)libs
 
-static_libraries_full_path = $[@realpath $[@wildcard $(outputDir)libs/*$(stlibext)]]
+    static_libraries_full_path = $[@realpath $[@wildcard $(outputDir)libs/*$(stlibext)]]
 %endif
-
 
 #/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_
 #           project - contains both the application under test it's unit tests
@@ -171,9 +165,6 @@ DLM_OBJECT_FILES   + $[@wildcard $(outputDir)*JniTest$(oext)]
 DLM_OBJECT_FILES   + $[@wildcard $(unitTestsDir)/*$(oext)]
 %ifdef static_libraries_full_path
     DLM_OBJECT_FILES   + $(static_libraries_full_path)
-%endif
-%ifdef shared_libraries_full_path
-    LINKER_LIBRARIES   = $(shared_libraries_full_path)
 %endif
 %ifdef static_libraries_full_path
     LINKER_LIBRARIES   = $(BENTLEY_ANDROID_LINK_OpenGLLibraries)  
