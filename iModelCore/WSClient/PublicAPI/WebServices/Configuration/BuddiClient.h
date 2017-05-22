@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Configuration/BuddiClient.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,6 +17,7 @@
 #include <WebServices/Configuration/BuddiError.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+USING_NAMESPACE_BENTLEY_HTTP
 
 typedef std::shared_ptr<struct IBuddiClient> IBuddiClientPtr;
 typedef AsyncResult<bvector<struct BuddiRegion>, BuddiError> BuddiRegionsResult;
