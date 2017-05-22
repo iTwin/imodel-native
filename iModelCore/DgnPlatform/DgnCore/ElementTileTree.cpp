@@ -1487,7 +1487,6 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 +---------------+---------------+---------------+---------------+---------------+------*/
 Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
     {
-#if defined(ETT_CLIP_STROKES)
     // Might be more efficient to modify input in-place.
     Strokes output(*input.m_displayParams, input.m_disjoint);
     output.m_strokes.reserve(input.m_strokes.size());
@@ -1511,12 +1510,21 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
             auto nextPt = points[i];
             bool contained = m_tileRange.IsContained(nextPt);
             State nextState = contained ? kInside : (kInside == prevState ? kCrossedOutside : kOutside);
+            if (kOutside == nextState && kOutside == prevState)
+                {
+                // The endpoints of a segment may lie outside of the range, but intersect it...
+                double unused1, unused2;
+                DSegment3d unused3;
+                DSegment3d segment = DSegment3d::From(prevPt, nextPt);
+                if (m_tileRange.IntersectBounded(unused1, unused2, unused3, segment))
+                    nextState = kCrossedOutside;
+                }
+
             if (kOutside != nextState)
                 {
                 if (kOutside == prevState)
                     {
                     // back inside - start a new line string...
-                    BeAssert(kInside == nextState);
                     output.m_strokes.resize(output.m_strokes.size()+1);
                     output.m_strokes.back().push_back(prevPt);
                     }
@@ -1533,9 +1541,6 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
         }
 
     return output;
-#else
-    return input;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
