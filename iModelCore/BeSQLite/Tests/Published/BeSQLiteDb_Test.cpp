@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
 #include "BeSQLite/ChangeSet.h"
-
 #include <vector>
 #include <limits>
+#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Db
@@ -987,3 +987,83 @@ TEST_F(BeSQLiteDbTests, RealUpdateTest)
     changeSet.Free();
     m_db.CloseDb();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, GetColumn)
+{
+    SetupDb (L"test1.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("TestTable1", "id NUMERIC, name TEXT")) << "Creating table failed.";
+    EXPECT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("INSERT INTO TestTable1 Values(1, 'test')"));
+
+    bvector<Utf8String> buff;
+    bool res1= m_db.GetColumns (buff ,"TestTable1");
+    EXPECT_EQ (res1, true);
+
+    bool IdStatus = false;
+    IdStatus = buff[0].Equals(Utf8String ("id"));
+    EXPECT_EQ (IdStatus, true);
+
+    bool nameStatus = false;
+    nameStatus = buff[1].Equals(Utf8String ("name"));
+    EXPECT_EQ (nameStatus, true);
+
+    EXPECT_EQ (BE_SQLITE_OK, m_db.AbandonChanges ());
+    m_db.CloseDb ();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, SaveCreationDate)
+{
+    bool result=false;
+    SetupDb (L"test2.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    BentleyB0200::DateTime currentDate = BentleyB0200::DateTime::GetCurrentTimeUtc ();
+    EXPECT_EQ (BE_SQLITE_OK, m_db.SaveCreationDate ());
+   
+    BentleyB0200::DateTime newDate;
+    EXPECT_EQ(BE_SQLITE_ROW, m_db.QueryCreationDate(newDate));
+
+    if ( (newDate.GetYear()==currentDate.GetYear()) && (newDate.GetMonth()==currentDate.GetMonth()) && (newDate.GetDay () == currentDate.GetDay ()) && (newDate.GetHour()==currentDate.GetHour()) && (newDate.GetMinute()==currentDate.GetMinute()) && (newDate.GetSecond()==currentDate.GetSecond()) )
+    {
+        result=true;
+    }
+    EXPECT_TRUE (result);
+
+    EXPECT_EQ (BE_SQLITE_OK, m_db.UpgradeBeSQLiteProfile ());
+
+    m_db.CloseDb ();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, AddColumnToTable)
+{
+    SetupDb (L"test1.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("TestTable2", "id NUMERIC, name TEXT")) << "Creating table failed.";
+    EXPECT_EQ (BE_SQLITE_OK, m_db.AddColumnToTable ("TestTable2", "TitleId", "INTEGER"));
+
+    bvector<Utf8String> buff;
+    bool res1 = m_db.GetColumns (buff, "TestTable2");
+    EXPECT_EQ (res1, true);
+
+    bool IdStatus = false;
+    IdStatus = buff[2].Equals (Utf8String ("TitleId"));
+    EXPECT_EQ (IdStatus, true);
+
+    EXPECT_EQ (BE_SQLITE_OK, m_db.CreateIndex("newInd", "TestTable2",true,"id",nullptr));
+
+    m_db.CloseDb ();
+}
+
+
+
