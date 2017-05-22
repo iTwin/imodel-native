@@ -55,6 +55,7 @@ struct NullContext : ViewContext
         void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override {}
         void _AddBSplineSurface(MSBsplineSurfaceCR surface) override {}
         void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
+        void _AddTriMesh(Render::TriMeshArgsCR) override { }
         void _AddBody(IBRepEntityCR) override {}
         void _AddTextString(TextStringCR text) override {}
         void _AddTextString2d(TextStringCR text, double zDepth) override {}

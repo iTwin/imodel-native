@@ -167,7 +167,7 @@ private:
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
     void InitTolerance();
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) override;
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     double _GetMaximumSize() const override;
     void _Invalidate() override;

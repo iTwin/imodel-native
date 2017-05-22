@@ -273,7 +273,7 @@ namespace Attachment
 
         bool _HasChildren() const override {return false;}
         ChildTiles const* _GetChildren(bool create) const override {return nullptr;}
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return nullptr;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys = nullptr) override {return nullptr;}
         void _DrawGraphics(TileTree::DrawArgsR args) const override;
 
         TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
@@ -298,7 +298,7 @@ namespace Attachment
         Tile(Tree&, TileTree::QuadTree::TileId id, Tile const* parent);
         TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new Tile(GetTree(), id, this);}
         Tree& GetTree() const {return (Tree&) m_root;}
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetTree()._ConstructTileResource(*this), *this, loads);}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys = nullptr) override {return new Loader(GetTree()._ConstructTileResource(*this), *this, loads);}
     };
 
     DEFINE_REF_COUNTED_PTR(Tree)
