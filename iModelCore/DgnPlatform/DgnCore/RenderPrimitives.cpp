@@ -422,123 +422,12 @@ bool Mesh::HasNonPlanarNormals() const
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdges::MeshEdges(MeshCR mesh)
-    {
-    struct  PointComparator
-        {
-        bool operator()(QPoint3dCR lhs, QPoint3dCR rhs) const
-            {
-            COMPARE_VALUES(lhs.x, rhs.x);
-            COMPARE_VALUES(lhs.y, rhs.y);
-            return lhs.z < rhs.z; 
-            }
-        };
-
-    struct  PointMap : bmap<QPoint3d, uint32_t, PointComparator> 
-        {
-        uint32_t    m_next = 0;
-
-        uint32_t GetIndex(QPoint3dCR point)
-            {
-            auto insertPair = Insert(point, m_next);
-            if (insertPair.second)
-                m_next++;
-
-            return insertPair.first->second;
-            }
-        };
-
-
-    struct  EdgeInfo
-        {
-        bool        m_visible;
-        uint32_t    m_faceCount;
-        uint32_t    m_faceIndices[2];
-        MeshEdge    m_edge;
-
-        EdgeInfo () { }
-        EdgeInfo(bool visible, uint32_t faceIndex, MeshEdgeCR edge) : m_visible(visible), m_faceCount(1), m_edge(edge) { m_faceIndices[0] = faceIndex; }
-
-        void AddFace(bool visible, uint32_t faceIndex)
-            {
-            if (m_faceCount < 2)
-                {
-                m_visible |= visible;
-                m_faceIndices[m_faceCount++] = faceIndex;
-                }
-            }
-        };
-    
-    PointMap                    pointMap;
-    bmap<MeshEdge, EdgeInfo>    edgeMap;
-    TriangleList const&         triangles = mesh.Triangles();
-    bvector<DPoint3d>           triangleNormals(triangles.size());
-    QPoint3dListCR              points = mesh.Points();
-
-    for (uint32_t triangleIndex = 0; triangleIndex < triangles.size(); triangleIndex++)
-        {
-        auto const&   triangle = triangles[triangleIndex];
-        for (size_t j=0; j<3; j++)
-            {
-            MeshEdge        meshEdge(triangle[j], triangle[(j+1)%3]);
-            EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleIndex, meshEdge);
-            MeshEdge        pointMapEdge(pointMap.GetIndex(points[meshEdge.m_indices[0]]), 
-                                         pointMap.GetIndex(points[meshEdge.m_indices[1]]));
-
-            auto            insertPair = edgeMap.Insert(pointMapEdge, edgeInfo);
-
-            if (!insertPair.second)
-                insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
-            }
-
-        triangleNormals[triangleIndex] = mesh.GetTriangleNormal(triangle);
-        }
-    
-
-    for (auto& edge : edgeMap)
-        {
-        if (edge.second.m_visible)    
-            {
-            m_visible.push_back(edge.second.m_edge);
-            }
-        else
-            {
-            if (2 == edge.second.m_faceCount)
-                {
-                DPoint3d const&  normal0 = triangleNormals[edge.second.m_faceIndices[0]];
-                DPoint3d const&  normal1 = triangleNormals[edge.second.m_faceIndices[1]];
-
-                if (!normal0.IsParallelTo(normal1))
-                    {
-                    // Potential silhouettes.
-                    m_silhouette.push_back(edge.second.m_edge);
-                    m_silhouetteNormals0.Add(normal0);
-                    m_silhouetteNormals1.Add(normal1);
-                    }
-                }
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdgesPtr    Mesh::GetEdges() const
-    {
-    if (!m_edges.IsValid())
-        m_edges = new MeshEdges(*this);;
-
-    return m_edges;
-    }
 
      
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db)
+void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db, DRange3dCR tileRange)
     {
     bool haveMesh = !Triangles().empty();
     bool havePolyline = !haveMesh && !Polylines().empty();
@@ -554,12 +443,14 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
             (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back (thisGraphic);
 
-        if (args.m_visibleEdgesArgs.Init(*this) &&
+        MeshEdgesPtr    edges = GetEdges(tileRange, MeshEdgeCreationOptions());
+
+        if (args.m_visibleEdgesArgs.Init(*this, tileRange) &&
             (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back(thisGraphic);
 
-        if (args.m_invisibleEdgesArgs.Init(*this) &&
-            (thisGraphic = system._CreateInvisibleEdges(args.m_invisibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+        if (args.m_invisibleEdgesArgs.Init(*this, tileRange) &&
+            (thisGraphic = system._CreateSilhouetteEdges(args.m_invisibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back(thisGraphic);
         }
     else                           
@@ -1547,7 +1438,7 @@ void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Rende
     GetMeshGraphicsArgs     args;
 
     for (auto const& mesh : meshes)
-        mesh->GetGraphics (graphics, system, args, m_dgndb);
+        mesh->GetGraphics (graphics, system, args, m_dgndb, m_tileRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1791,17 +1682,17 @@ void MeshArgs::Clear()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
+bool  ElementMeshEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     {
-    m_meshEdges = mesh.GetEdges();
+    MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
     m_pointParams = mesh.Points().GetParams();
 
-    if (m_meshEdges->m_visible.empty())
+    if (!meshEdges.IsValid() || meshEdges->m_visible.empty())
         return false;
 
     m_points    = mesh.Points().data();
-    m_edges     = m_meshEdges->m_visible.data();
-    m_numEdges  = m_meshEdges->m_visible.size();
+    m_edges     = meshEdges->m_visible.data();
+    m_numEdges  = meshEdges->m_visible.size();
     
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
@@ -1812,19 +1703,19 @@ bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderSilhouetteEdgeArgs::Init(MeshCR mesh)
+bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     {
-    m_meshEdges = mesh.GetEdges();
+    MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
     m_pointParams = mesh.Points().GetParams();
 
-    if (m_meshEdges->m_silhouette.empty())
+    if (!meshEdges.IsValid() || meshEdges->m_silhouette.empty())
         return false;
 
     m_points    = mesh.Points().data();
-    m_normals0  = m_meshEdges->m_silhouetteNormals0.data();
-    m_normals1  = m_meshEdges->m_silhouetteNormals1.data();
-    m_edges     = m_meshEdges->m_silhouette.data();
-    m_numEdges  = m_meshEdges->m_silhouette.size();
+    m_normals0  = meshEdges->m_silhouetteNormals0.data();
+    m_normals1  = meshEdges->m_silhouetteNormals1.data();
+    m_edges     = meshEdges->m_silhouette.data();
+    m_numEdges  = meshEdges->m_silhouette.size();
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
 

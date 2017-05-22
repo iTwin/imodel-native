@@ -854,3 +854,36 @@ bool MeshEdge::operator < (MeshEdge const& rhs) const
     return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, FPoint3dCP points)
+    {
+    if (meshEdges.m_visible.empty())
+        return false;
+
+    m_points    = points;
+    m_edges     = meshEdges.m_visible.data();
+    m_numEdges  = meshEdges.m_visible.size();
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges, FPoint3dCP points)
+    {
+    if (meshEdges.m_silhouette.empty())
+        return false;
+
+    m_points    = points;
+    m_edges     = meshEdges.m_silhouette.data();
+    m_numEdges  = meshEdges.m_silhouette.size();
+    m_normals0  = meshEdges.m_silhouetteNormals0.data();
+    m_normals1  = meshEdges.m_silhouetteNormals1.data();
+
+    return true;
+    }
+

@@ -880,7 +880,7 @@ BentleyStatus Loader::_LoadTile()
     bvector<Render::GraphicPtr>     graphics;
 
     for (auto const& mesh : geometry.Meshes())
-        mesh->GetGraphics (graphics, system, args, root.GetDgnDb());
+        mesh->GetGraphics (graphics, system, args, root.GetDgnDb(), tile.GetRange());
 
     if (!graphics.empty())
         {
