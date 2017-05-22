@@ -14,7 +14,9 @@
 
 BEGIN_BENTLEY_NAMESPACE
 /**
-3d point coordinates.
+3d vector coordinates.
+
+Note that in addition to the methods here FPoint3d and FVec3d have a full set of operator overloads.
 
 @ingroup GROUP_Geometry
 */
@@ -76,11 +78,11 @@ static FVec3d FromOne();
 
 
 //! @description unit X vector
-static DVec3d UnitX (){return DVec3d::From (1,0,0);}
+static FVec3d UnitX (){return FVec3d::From (1,0,0);}
 //! @description unit Y vector
-static DVec3d UnitY() { return DVec3d::From(0, 1, 0);}
+static FVec3d UnitY() { return FVec3d::From(0, 1, 0);}
 //! @description unit Z vector
-static DVec3d UnitZ() { return DVec3d::From (0, 0, 1);}
+static FVec3d UnitZ() { return FVec3d::From (0, 0, 1);}
 
 //! @description Returns the unnormalized (full length) DVec3d between start and end.
 //! @param [in] start start point
@@ -96,25 +98,48 @@ static ValidatedFVec3d FromStartEndNormalized (FPoint3dCR start, FPoint3dCR end)
 //! Unit vector from start towards end.  This is valid if the (pre normalized) length is at least DoubleOps::SmallMetricDistance
 static ValidatedFVec3d FromStartEndNormalized (DPoint3dCR start, DPoint3dCR end);
 
-//! Swap contents of instance, other.
-//! @param [in,out] other second point.
-void Swap (FVec3dR other);
-
-//! Dot product, using FLOAT ONLY (no promotion to double for higher accuracy sums)
-float FDotProduct (FVec3dCR other) const;
-//! Cross prodcut, using FLOAT ONLY (no promotion to double for higher accuracy sums)
-FVec3d FCrossProduct (FVec3dCR other) const;
-
-//! Dot product, promoting components to double and accumulating as double
+//! Dot product
 double DotProduct (FVec3dCR other) const;
-//! Cross product, promoting components to double and accumulating as double
-FVec3d CrossProduct (FVec3dCR other) const;
+//! Cross product
+static FVec3d FromCrossProduct (FVec3dCR vector0, FVec3dCR vector1);
+
+//! Dot product, using only XY parts
+double DotProductXY (FVec3dCR other) const;
+//! Cross product, using only XY parts
+double CrossProductXY (FVec3dCR other) const;
+
 
 //! Vector magnitude, promoting components to double and accumulating as double
 double Magnitude () const;
 //! Squared vector magnitude, promoting components to double and accumulating as double
 double MagnitudeSquared () const;
 
+//! maximum absolute value among x,y,z parts.
+double MaxAbs () const;
+
+//! bitwise equality test
+bool IsEqual (FVec3dCR range1) const;
+//! toleranced equality test.
+bool IsEqual (FVec3dCR other, double tolerance) const;
+
+
+//! return true 3D angle between vectors.   Because there is no clear "up" direction, this is 0 or positive, and less than 180 degrees.
+Angle AngleTo (FVec3dCR other) const;
+//! return (signed) angle from this vector to the other, as viewed in xy direction.
+Angle AngleToXY (FVec3dCR other) const;
+//! return (signed) angle from this vector to the other, as measured in the plane perpendicular to the planeUpVector
+Angle PlanarAngleTo (FVec3dCR other, FVec3dCR planeUpVector) const;
+//! return the (signed) angle from this vector to the other.  This is a full 3D angle in the plane of the two vectors, with the
+//! orientationVector selecting which side is positive.
+Angle SignedAngleTo (FVec3dCR other, FVec3dCR orientationVector) const;
+//! return the smaller angle between the vectors extended in both directions.  This is no larger than 90 degrees.
+Angle SmallerUnorientedAngleTo (FVec3dCR other) const;
+//! return the absolute difference of the angle the vectors are away from perpendicular.
+Angle AngleFromPerpendicular (FVec3dCR other) const;
+//! Test for parallel vectors.
+bool IsParallelTo (FVec3dCR other) const;
+bool IsPositiveParallelTo (FVec3dCR other) const;
+bool IsPerpendicularTo (FVec3dCR other) const;
 #endif // __cplusplus
 
 };

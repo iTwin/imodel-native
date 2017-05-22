@@ -107,3 +107,47 @@ TEST(FVec3d,OperatorOverload)
         "operator double * vector"
         );
     }
+
+template <typename T>
+void TestVectorParallel ()
+    {
+    // verify behavior of IsParallelTo () with opposite vectors
+    auto plusZ = T::UnitZ ();
+    auto negZ = -1.0 * plusZ;
+    auto plusX = T::UnitX ();
+    Check::True (plusZ.IsParallelTo (negZ));
+    Check::True (plusZ.IsParallelTo (plusZ));
+    Check::False (plusZ.IsPositiveParallelTo (negZ));
+    Check::False(plusZ.IsParallelTo (plusX));
+    Check::True(plusZ.IsPerpendicularTo (plusX));
+    }
+
+TEST(FVec3d,ParallelAndPositiveParallel)
+    {
+    TestVectorParallel <DVec3d> ();
+    TestVectorParallel <FVec3d> ();
+    }
+
+TEST(FVec3d, DotCrossProduct) 
+    {
+    auto point0F = FPoint3d::From (2.0,3.0,5.0);
+    auto point1F = FPoint3d::From (11.0,13.0,17.0);
+    auto point2F = FPoint3d::From (5.0,6.0,-1.0);
+    auto point3F = FPoint3d::From (10.0,8.0,11.0);
+    auto point0D = DPoint3d::From (point0F);
+    auto point1D = DPoint3d::From (point1F);
+    auto point2D = DPoint3d::From (point2F);
+    auto point3D = DPoint3d::From (point3F);
+    auto vector01F = point1F - point0F;
+    auto vector01D = point1D - point0D;
+    auto vector23F = point3F - point2F;
+    auto vector23D = point3D - point2D;
+    Check::Exact(DVec3d::From(FVec3d::FromStartEnd(point0D, point1D)) , DVec3d::FromStartEnd(point0D, point1D));
+    Check::Exact(DVec3d::From(FVec3d::FromStartEnd(point0F, point1F)) , DVec3d::FromStartEnd(point0D, point1D));
+    Check::Exact(DVec3d::From(FVec3d::FromStartEndNormalized(point0D, point1D)) , DVec3d::FromStartEndNormalize(point0D, point1D));
+    Check::Exact(DVec3d::From(FVec3d::FromStartEndNormalized(point0F, point1F)) , DVec3d::FromStartEndNormalize(point0D, point1D));
+    Check::ExactDouble(vector01F.DotProduct(vector23F) , vector01D.DotProduct(vector23D));
+    Check::ExactDouble(vector01F.DotProductXY(vector23F) , vector01D.DotProductXY(vector23D));
+    Check::ExactDouble(vector01F.CrossProductXY(vector23F) , vector01D.CrossProductXY(vector23D));
+    Check::Exact(DVec3d::From(FVec3d::FromCrossProduct(vector01F, vector23F)) , DVec3d::FromCrossProduct(vector01D, vector23D));
+    }

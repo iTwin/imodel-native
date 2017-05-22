@@ -580,6 +580,8 @@ static GEOMDLLIMPEXP double ChebyshevPoint (size_t i, size_t n);
 public: static GEOMDLLIMPEXP double SmallCoordinateRelTol ();
 //! Return a distance (1.0e-6) that is essentially zero for typical metric calculation.
 public: static GEOMDLLIMPEXP double SmallMetricDistance ();
+//! Relative tolerance for coordinate tests with floats.  This is 2.0e-6.
+public: static GEOMDLLIMPEXP double FloatCoordinateRelTol ();
 };
 
 

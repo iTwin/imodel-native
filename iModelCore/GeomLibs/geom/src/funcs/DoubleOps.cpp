@@ -12,8 +12,10 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 static double s_smallCoordinateRelTol = 1.0e-10;
 static double s_smallMetricDistance = 1.0e-6;
+static double s_floatCoordinateRelTol = 2.0e-6;
 double DoubleOps::SmallCoordinateRelTol () {return s_smallCoordinateRelTol;}
 double DoubleOps::SmallMetricDistance () {return s_smallMetricDistance;}
+double DoubleOps::FloatCoordinateRelTol () {return s_floatCoordinateRelTol;}
 
 double DoubleOps::DeterminantXYXY (double x0, double y0, double x1, double y1)
     {

@@ -98,9 +98,6 @@ TEST(FPoint3d, SumOf)
     Check::Exact(DPoint3d::FromSumOf(originD0, (rotation * DVec3d::From(vector0.x, vector0.y, vector0.z))),
                  DPoint3d::From(FPoint3d::FromMultiply(originF0, rotation, vector0)), "Rotation * point");
 
-    // Farhad -- you can test lots and lots of FPoint3d methods (SumOf, FromSumOf, FromMultiply) .. with just originD, vector0, vector1, vector2, and this transform
-    // You'll need a few more points for Distance and others that have multiple FPoint3d inputs.
-
     Check::Exact(DPoint3d::From(FPoint3d::FromShift(originF0, scale0, scale1, scale2)),
                  DPoint3d::FromShift(originD0, scale0, scale1, scale2));
 
@@ -158,14 +155,34 @@ TEST(FPoint3d, SumOf)
     Check::Exact(DPoint3d::From(fpoint), dpoint);
 
     //Is Instance in sector
-    /*fpoint.Init(3, 3, 0);
-    FPoint3d fpointTest = FPoint3d::From(10, 10, 0);
-    FPoint3d limit0 = FPoint3d::From(4, 5, 0);
-    FPoint3d limit1 = FPoint3d::From(5, 3, 0);
-    Check::True(fpoint.IsPointInCCWector(fpointTest, limit0, limit1, DVec3d::From(0, 0, 1)));
+    
+    FPoint3d origin = FPoint3d::From (0.0, 0.0, 0.0);
+    FPoint3d target0 = FPoint3d::From (1.0, 0.0, 0.0);
+    FPoint3d target1 = FPoint3d::From (0.0, 1.0, 0.0);
+    FPoint3d testpoint0 = FPoint3d::From (0.0, 2.0, 0.0);
+    DPoint3d dtestpoint0 = DPoint3d::From (testpoint0);
+    FPoint3d testpoint1 = FPoint3d::From (-1.0, -1.0, 0.0);
+    DPoint3d dtestpoint1 = DPoint3d::From(testpoint1);
+    DVec3d upVector = DVec3d::From(0.0, 1.0, 0.0);
+    Check::True(testpoint0.IsPointInCCWector(origin, target0, target1, upVector) ==
+                dtestpoint0.IsPointInCCWector(DPoint3d::From(origin), DPoint3d::From(target0), DPoint3d::From(target1), upVector));
+    Check::True(testpoint1.IsPointInCCWector(origin, target0, target1, upVector) ==
+                dtestpoint1.IsPointInCCWector(DPoint3d::From(origin), DPoint3d::From(target0), DPoint3d::From(target1), upVector));
+    
+    FPoint3d fptest0 = FPoint3d::From(2, 2, 0);
+    DPoint3d dptest0 = DPoint3d::From(fptest0);
+    Check::True(
+        Check::True(fpoint.IsPointInSmallerSector(FPoint3d::From(0, 0, 0), FPoint3d::From(0, 3, 0), FPoint3d::From(1, -3, 0))) ==
+        Check::True(dpoint.IsPointInSmallerSector(DPoint3d::From(FPoint3d::From(0, 0, 0)), DPoint3d::From(FPoint3d::From(0, 3, 0)), DPoint3d::From(FPoint3d::From(1, -3, 0))))
+    );
+    fptest0.Init(2, 2, 0);
+    dptest0 = DPoint3d::From(fptest0);
+    Check::True(
+        Check::False(fpoint.IsPointInSmallerSector(FPoint3d::From(0, 0, 0), FPoint3d::From(0, 3, 0), FPoint3d::From(-1, -3, 0))) ==
+        Check::False(dpoint.IsPointInSmallerSector(DPoint3d::From(FPoint3d::From(0, 0, 0)), DPoint3d::From(FPoint3d::From(0, 3, 0)), DPoint3d::From(FPoint3d::From(-1, -3, 0))))
+    );
 
-    Check::True(fpoint.IsPointInSmallerSector(FPoint3d::From(2, 2, 0), FPoint3d::From(0, 3, 0), FPoint3d::From(3, 0, 0)));
-*/
+
     //Equal AlmostEqual
     bvector<FPoint3d> left = { originF0, originF1, originF2 };
     bvector<FPoint3d> right = { FPoint3d::From(originD0), FPoint3d::From(originD1), FPoint3d::From(originD2) };
@@ -215,6 +232,7 @@ TEST(FPoint3d, SumOf)
     originD0.XyzOf(pnt4d);
 
     Check::Exact(DPoint3d::From(originF0), originD0);
+    
 
     //init
     FPoint3d fpnt;

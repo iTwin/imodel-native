@@ -25,6 +25,7 @@ static double msGeomConst_smallAngle       = 1.0e-12;
 static double msGeomConst_smallAngleDegrees = 180.0e-12 / PI;
 #endif
 static double msGeomConst_tinyAngle       = 1.0e-15;
+static double msGeomConst_smallFloatRadians   = 2.0e-6;
 
 #define FIX_MIN(value, min)          if (value < min) min = value
 #define FIX_MAX(value, max)          if (value > max) max = value
@@ -208,6 +209,7 @@ double Angle::TwoPi ()      {return msGeomConst_2pi;}
 double Angle::Pi    ()      {return msGeomConst_pi;}
 double Angle::PiOver2   ()  {return msGeomConst_piOver2;}
 double Angle::SmallAngle () {return msGeomConst_smallAngle;}
+double Angle::SmallFloatRadians () {return msGeomConst_smallFloatRadians;}
 double Angle::TinyAngle () {return msGeomConst_tinyAngle;}
 double Angle::MediumAngle () {return msGeomConst_mediumAngle;}
 

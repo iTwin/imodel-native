@@ -440,6 +440,11 @@ static DVec3d FromStartEnd (DPoint4dCR start, DPoint4dCR end);
 //! @param [in] vector1 second vector
 static DVec3d FromCrossProduct  (DVec3dCR vector0, DVec3dCR vector1);
 
+//! @description return the cross product of vectors
+//! @param [in] vector0 first vector
+//! @param [in] vector1 second vector
+static DVec3d FromCrossProduct  (FVec3dCR vector0, FVec3dCR vector1);
+
 //! @description Returns the (vector) cross product of two vectors.
 //! @param [in] vector1 The first vector
 //! @param [in] vector2 The second vector
