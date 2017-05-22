@@ -108,7 +108,7 @@
   <!-- Only/ExcludePlatforms attributes should be used only in this section -->
 
   <!-- *** GTEST - runs on Windows, Linux, MaxOS *** -->
-  <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Units-Gtest/UnitsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+  <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Units-Gtest -dGTEST_NAME=UnitsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
     <SubProduct ProductName="Units-Gtest" />
     <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     <Bindings>
