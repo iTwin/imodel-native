@@ -241,6 +241,7 @@ TEST(FormattingTest, PhysValues)
 
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units
+
     BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRD");
     BEU::UnitRegistry::Instance().AddSynonym("YRD", "YARD");
     BEU::UnitCP yardUOM = BEU::UnitRegistry::Instance().LookupUnit("YARD");
@@ -257,7 +258,9 @@ TEST(FormattingTest, PhysValues)
     BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnit("M");
     // creating several quantites of various kinds using two different constructors:
     //  one with the Uint Name and another with the pointer to a Unit definition
+    BEU::UnitCP defUom = BEU::UnitRegistry::Instance().GetPlatformLengthUnit();
 
+    LOG.infov("Default Platform Units is %s", defUom->GetName());
 
     BEU::Quantity const len = BEU::Quantity(22.7, *metrUOM);
 
