@@ -1651,6 +1651,21 @@ namespace Quantization
 
         explicit QPointList(Params const& params) : m_params(params) { }
         explicit QPointList(Range const& range ) : QPointList(Params(range)) { }
+        QPointList() { }
+        QPointList(QPointList const& src) : bvector<T>(src), m_params(src.m_params) { }
+        QPointList(QPointList&& src) : bvector<T>(std::move(src)), m_params(src.m_params) { }
+
+        void Assign(QPoint3dCP points, size_t nPoints, Params const& params)
+            {
+            m_params = params;
+            assign(points, points+nPoints);
+            }
+
+        void Reset(Params const& params)
+            {
+            m_params = params;
+            clear();
+            }
 
         Params const& GetParams() const { return m_params; }
 
@@ -1707,6 +1722,9 @@ struct QPoint3d
             {
             return Params(DRange3d::From(DPoint3d::FromXYZ(-1.0,-1.0,-1.0), DPoint3d::FromXYZ(1.0,1.0,1.0)));
             }
+
+        DPoint3dCR GetOrigin() const { return origin; }
+        DPoint3dCR GetScale() const { return scale; }
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
@@ -1749,6 +1767,7 @@ struct QPoint3d
             Quantization::UnquantizeAboutCenter(z, params.origin.z, params.scale.z));
         }
 
+    //! Decode this QPoint3d into a FPoint3d using the same params from which the QPoint3d was created.
     FPoint3d Unquantize32(ParamsCR params) const
         {
         return FPoint3d::From(Unquantize(params));
@@ -1784,6 +1803,9 @@ struct QPoint2d
             scale.x = Quantization::ComputeScale(diagonal.x);
             scale.y = Quantization::ComputeScale(diagonal.y);
             }
+
+    DPoint2dCR GetOrigin() const { return origin; }
+    DPoint2dCR GetScale() const { return scale; }
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);

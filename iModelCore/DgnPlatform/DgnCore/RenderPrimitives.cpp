@@ -2434,7 +2434,7 @@ void QVertex3dList::Requantize()
         return;
 
     m_qpoints.Requantize(QPoint3d::Params(m_range));
-    m_qpoints.reserve(m_qpoints.size() + m_fpoints.size());
+    m_qpoints.reserve(size());
 
     for (auto const& fpt : m_fpoints)
         m_qpoints.Add(DPoint3d::From(fpt));

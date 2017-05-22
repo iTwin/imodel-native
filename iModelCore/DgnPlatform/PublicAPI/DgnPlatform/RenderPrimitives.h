@@ -325,6 +325,8 @@ struct MeshEdges : RefCountedBase
 };
 
 //=======================================================================================
+//! Represents a possibly-quantized position. Used during mesh generation.
+//! See QVertex3dList.
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct QVertex3d
@@ -373,6 +375,13 @@ public:
 };
 
 //=======================================================================================
+//! A list of possibly-quantized positions. When mesh generation begins, we typically
+//! know a range that will contain most of the mesh's vertices, but vertices of triangles
+//! which only partially intersect that range must also be included. Vertices within the
+//! initial range are quantized to that range; vertices outside of it are stored directly,
+//! and used to extend the initial range.
+//! After mesh generation completes, the entire list is requantized to the actual range
+//! if necessary.
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct QVertex3dList
@@ -402,12 +411,15 @@ public:
             }
         }
 
+    //! If any unquantized vertices exist, requantize. IsFullyQuantized() returns true after this operation.
     DGNPLATFORM_EXPORT void Requantize();
     bool IsFullyQuantized() const { return m_fpoints.empty(); }
     QPoint3dListCR GetQuantizedPoints() const { BeAssert(IsFullyQuantized()); return m_qpoints; }
     QPoint3d::ParamsCR GetParams() const { return m_qpoints.GetParams(); }
     bool empty() const { return m_fpoints.empty() && m_qpoints.empty(); }
     size_t size() const { return m_fpoints.size() + m_qpoints.size(); }
+
+    //! Returns the accumulated range, which may be larger than the initial range passed to the constructor.
     DRange3dCR GetRange() const { return m_range; }
 };
 
