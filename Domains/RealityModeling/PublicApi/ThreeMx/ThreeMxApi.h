@@ -65,7 +65,7 @@ protected:
     bvector<int32_t> m_indices;
     Dgn::Render::GraphicPtr m_graphic;
 
-    Dgn::Render::TriMeshArgs CreateTriMeshArgs() const;
+    Dgn::Render::TriMeshArgs CreateTriMeshArgs(Dgn::Render::TextureP texture, FPoint2d const* textureUV) const;
 
 public:
     Geometry() {}

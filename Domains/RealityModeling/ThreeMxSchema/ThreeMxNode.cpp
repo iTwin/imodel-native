@@ -161,7 +161,7 @@ Render::QPoint3dList Geometry::CreateParams::QuantizeNormals() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TriMeshArgs Geometry::CreateTriMeshArgs() const
+Render::TriMeshArgs Geometry::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
     {
     TriMeshArgs trimesh;
     trimesh.m_numIndices = (int32_t) m_indices.size();
@@ -169,7 +169,9 @@ Render::TriMeshArgs Geometry::CreateTriMeshArgs() const
     trimesh.m_numPoints = (int32_t) m_points.size();
     trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
     trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
-    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();;
+    trimesh.m_textureUV = textureUV;
+    trimesh.m_pointParams = m_points.GetParams();
+    trimesh.m_texture = texture;
 
     return trimesh;
     }
@@ -180,7 +182,7 @@ Render::TriMeshArgs Geometry::CreateTriMeshArgs() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr Geometry::GetPolyface() const
     {
-    TriMeshArgs trimesh = CreateTriMeshArgs();
+    TriMeshArgs trimesh = CreateTriMeshArgs(nullptr, nullptr);
     return trimesh.ToPolyface();
     }
 
@@ -207,7 +209,7 @@ Geometry::Geometry(CreateParams const& args, SceneR scene)
     if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
         return;
 
-    auto trimesh = CreateTriMeshArgs();
+    auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
     GraphicParams gfParams = GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0, GraphicParams::LinePixels::Solid);
     m_graphic = scene.GetRenderSystem()->_CreateTriMesh(trimesh, scene.GetDgnDb(), gfParams);
     }
