@@ -1649,18 +1649,27 @@ namespace Quantization
         typedef typename T::T_DPoint DPoint;
         typedef typename T::T_DVec DVec;
 
+        //! Construct an empty list to be quantized by the specified params
         explicit QPointList(Params const& params) : m_params(params) { }
+        //! Construct an empty list to be quantized to the specified range
         explicit QPointList(Range const& range ) : QPointList(Params(range)) { }
         QPointList() { }
+        //! Construct a copy of another list
         QPointList(QPointList const& src) : bvector<T>(src), m_params(src.m_params) { }
+        //! Move-construct a copy of another list
         QPointList(QPointList&& src) : bvector<T>(std::move(src)), m_params(src.m_params) { }
 
+        QPointList& operator=(QPointList const& src) { Assign(src.data(), src.size(), src.m_params); return *this; }
+        QPointList& operator=(QPointList&& src) { this->swap(src); m_params = src.m_params; return *this; }
+
+        //! Replace the contents of this list with the specified points, quantized to the specified params
         void Assign(QPoint3dCP points, size_t nPoints, Params const& params)
             {
             m_params = params;
             assign(points, points+nPoints);
             }
 
+        //! Empty this list and change its quantization parameters
         void Reset(Params const& params)
             {
             m_params = params;
@@ -1669,10 +1678,14 @@ namespace Quantization
 
         Params const& GetParams() const { return m_params; }
 
+        //! Quantize the specified point and add it to this list
         void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
+        //! Return the unquantized point at the specified index.
         DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
+        //! Return the point at the specified index, unquantized as a vector type.
         DVec UnquantizeAsVector(size_t index) const { BeAssert(index < size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
 
+        //! Requantize all the points in this list to the new parameters, and update the list's parameters.
         void Requantize(Params const& params)
             {
             for (auto& qpt : *this)
