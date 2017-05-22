@@ -166,7 +166,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     else
         m_range.Extend (*range);
 
-    m_points = QPoint3dList(m_range);
+    m_points.Reset(QPoint3d::Params(m_range));
     m_tolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
     }
 
