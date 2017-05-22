@@ -172,7 +172,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TileLoaderPtr Tile::Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loadState) 
+TileTree::TileLoaderPtr Tile::Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loadState, Dgn::Render::SystemP renderSys) 
     {                                                                        
     return Loader::Create(*this, loadState);
     }
@@ -280,7 +280,7 @@ void Root::LoadRootTile(DRange3dCR tileRange)
 #define LOAD_ASYNCH_ROOT
 #ifdef LOAD_ASYNCH_ROOT
     // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final diaplay).
-    auto result = _RequestTile(*m_rootTile, nullptr);
+    auto result = _RequestTile(*m_rootTile, nullptr, nullptr);
     result.wait();
 #endif
     }

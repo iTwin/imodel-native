@@ -101,7 +101,7 @@ protected:
         WmsTile& GetWmsTile() { return static_cast<WmsTile&>(*m_tile); }
         };
 
-    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr) override;
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
 
     root_type const& GetSource() const { return static_cast<root_type const&>(m_root); }
     root_type& GetSourceR() { return static_cast<root_type&>(m_root); }

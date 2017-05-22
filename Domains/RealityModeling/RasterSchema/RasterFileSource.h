@@ -68,7 +68,7 @@ public:
 
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override { return new RasterTileLoader(*this, loads, ""); }
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override { return new RasterTileLoader(*this, loads, ""); }
 };
 
 END_BENTLEY_RASTER_NAMESPACE
