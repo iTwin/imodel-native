@@ -1904,10 +1904,10 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     // [0] [1]
     // [2] [3]
     DPoint3dCP pts = corners.m_pts;
-    QPoint3d::Params qParams(DRange3d::From(pts, 4));
+    rasterTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, 4));
     QPoint3d vertex[4];
     for (uint32_t i = 0; i < 4; ++i)
-        vertex[i] = QPoint3d(pts[i], qParams);
+        vertex[i] = QPoint3d(pts[i], rasterTile.m_pointParams);
 
     rasterTile.m_points = vertex;
     rasterTile.m_numPoints = 4;
