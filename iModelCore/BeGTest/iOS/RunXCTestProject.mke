@@ -2,7 +2,7 @@
 #
 #     $Source: iOS/RunXCTestProject.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -15,7 +15,13 @@
     %error Define XCTEST_PRODUCT as the name of the Product in the output directory that contains BeTestiOS.xcodeproj for the specified test suite.
 %endif
 
-XCODEPROJ=$(OutputRootDir)Product/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
+%ifdef CREATE_STATIC_LIBRARIES
+    ProductBaseDir = $(OutputRootDir)../Product/
+%else
+    ProductBaseDir = $(OutputRootDir)Product/
+%endif
+
+XCODEPROJ=$(OutputRootDir)$(ProductBaseDir)/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
 
 %ifndef XCTEST_LOGFILE_NAME
     XCTEST_LOGFILE_NAME=$(XCTEST_PRODUCT).log

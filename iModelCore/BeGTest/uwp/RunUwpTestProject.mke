@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #     $Source: uwp/RunUwpTestProject.mke $
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 
 # Running of UWP tests is currently opt-in.
@@ -73,7 +73,13 @@ ArchName = Win32
     ArchName = x64
 %endif
 
-TestBundle = $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/AppPackages/BeTestTest1/BeTestTest1_1.0.0.0_$(ArchName)$(FlavorName)_Test/BeTestTest1_1.0.0.0_$(ArchName)$(FlavorName).appx
+%ifdef CREATE_STATIC_LIBRARIES
+    ProductBaseDir = $(OutputRootDir)../Product/
+%else
+    ProductBaseDir = $(OutputRootDir)Product/
+%endif
+
+TestBundle = $(OutputRootDir)$(ProductBaseDir)/$(UWPTEST_PRODUCT)/AppPackages/BeTestTest1/BeTestTest1_1.0.0.0_$(ArchName)$(FlavorName)_Test/BeTestTest1_1.0.0.0_$(ArchName)$(FlavorName).appx
 
 %ifnofile $(TestBundle)
     %error Indicated test library file '$(TestBundle)' does not exist. Please check the value of UWPTEST_PRODUCT ('$(UWPTEST_PRODUCT)').
