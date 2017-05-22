@@ -257,7 +257,7 @@ class ECClass(object):
         get_request_str += "        {\n"
         get_request_str += "        LP{0}{1}BUFFER bufToFill = new {0}{1}BUFFER;\n"\
             .format(self.__api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
-        get_request_str += "        {0}_BufferStuffer(bufToFill, instance.GetProperties());\n".format(self.get_name())
+        get_request_str += "        {0}_BufferStuffer(bufToFill, instance.GetObjectId(), instance.GetProperties());\n".format(self.get_name())
         get_request_str += "        buf->lItems.push_back(bufToFill);\n"
         get_request_str += "        }\n\n"
         get_request_str += "    buf->lCount = buf->lItems.size();\n"
@@ -508,7 +508,8 @@ class ECClass(object):
             .format(self.__api.get_api_name())
         get_request_str += "    LP{0}{1}BUFFER {2}Buf = new {0}{1}BUFFER;\n" \
             .format(self.__api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
-        get_request_str += "    {0}_BufferStuffer({1}Buf, (*result.GetValue().GetInstances().begin()).GetProperties());\n\n"\
+        get_request_str += "    WSObjectsReader::Instance instance = (*result.GetValue().GetInstances().begin());\n "            
+        get_request_str += "   {0}_BufferStuffer({1}Buf, instance.GetObjectId(), instance.GetProperties());\n\n"\
             .format(self.get_name(), self.get_lower_name())
         get_request_str += "    {0}BUFFER* buf = ({0}BUFFER*) calloc(1, sizeof({0}BUFFER));\n".format(self.__api.get_api_acronym())
         get_request_str += "    if (buf == nullptr)\n"
@@ -794,12 +795,20 @@ class ECClass(object):
         accessor_str += "    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) buf->lItems[index];\n" \
             .format(self.__api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
 
+        if (property_type == 'string'):
+            accessor_str += "    if ({0}_BUFF_{1} == bufferProperty)\n".format(self.get_upper_name(),"OBJECTID")
+            accessor_str += "       {\n"                    
+            accessor_str += "       BeStringUtilities::Wcsncpy(str, strLength, {0}Buf->{1}.c_str());\n".format(self.get_lower_name(), "ObjectId")
+            accessor_str += "       return {0};\n".format("SUCCESS")
+            accessor_str += "       }\n\n"
+        
         is_first_property = True
         for ecproperty in self.get_properties():
             if ecproperty.should_be_excluded:
                 continue
             if ecproperty.type == property_type or \
                     (ecproperty.type == 'string' and property_type == 'StringLength'):
+
                 if is_first_property:
                     accessor_str += "    if ({0}_BUFF_{1} == bufferProperty)\n".format(self.get_upper_name(),
                                                                                        ecproperty.name.upper())
@@ -883,6 +892,7 @@ class ECClass(object):
         struct_str += self.get_upper_name() + '_BUFFER \n'
         struct_str += '    {\n'
         struct_str += '    bmap<WString, bool> IsSet;\n'
+        struct_str += '    WString ObjectId;\n'
         for ecproperty in self.get_properties():
             if ecproperty.should_be_excluded:
                 continue
@@ -913,6 +923,10 @@ class ECClass(object):
         enum_str = "typedef enum\n"
         enum_str += "    {\n"
         enum_count = 1
+        #add the objectid
+        enum_str += "    {0}_BUFF_{1:30} = {2}, /**< \\b {3}. */\n".format(self.get_upper_name(), "OBJECTID", enum_count, "ObjectId (generated property for instance id) ")
+        enum_count += 1
+        #add other properties
         for ecproperty in self.get_properties():
             if ecproperty.should_be_excluded:
                 continue
@@ -930,6 +944,7 @@ class ECClass(object):
         stuffer_str = "void {0}_BufferStuffer\n".format(self.get_name())
         stuffer_str += "(\n"
         stuffer_str += "LP{0}{1}BUFFER {2}Buf,\n".format(self.__api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
+        stuffer_str += "ObjectIdCR objectId,\n"
         stuffer_str += "RapidJsonValueCR properties\n"
         stuffer_str += ")"
         return stuffer_str
@@ -946,6 +961,7 @@ class ECClass(object):
     def get_buffer_stuffer_function_implementation(self):
         stuffer_str = self.__get_buffer_stuffer_function_def() + '\n'
         stuffer_str += "    {\n"
+        stuffer_str += "    {0}Buf->ObjectId = WString(objectId.GetRemoteId().c_str(), true);\n".format(self.get_lower_name())
         for ecproperty in self.get_properties():
             if ecproperty.should_be_excluded:
                 continue
