@@ -42,6 +42,10 @@
     #if defined(BENTLEYCONFIG_OS_LINUX) || defined(BENTLEYCONFIG_OS_APPLE_MACOS) || (defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT))
         #error USE_GTEST is not defined, but this platform uses gtest!
     #endif
+#else
+    #if defined(BENTLEYCONFIG_OS_ANDROID) || defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_WINRT)
+        #error USE_GTEST is defined, but this platform does not use gtest!
+    #endif
 #endif
 
 USING_NAMESPACE_BENTLEY
@@ -493,7 +497,11 @@ void BeTest::Uninitialize ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::Fail(WCharCP msg)
     {
+#ifdef USE_GTEST
     s_assertionFailureHandler(msg);
+#else
+    s_IFailureHandler->_OnUnexpectedResult (msg);
+#endif
     }
 
 #if defined(USE_GTEST)
