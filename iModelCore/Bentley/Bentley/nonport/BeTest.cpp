@@ -306,14 +306,6 @@ void            BeTest::SetBeAssertListener (T_BeAssertListener* l)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeTest::SetAssertionFailureHandler(T_AssertionFailureHandler const& f)
-    {
-    s_assertionFailureHandler = f;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
 static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType atype)
     {
     FOR_EACH(BeTest::T_BeAssertListener* listener, s_assertListeners)
@@ -496,6 +488,14 @@ void BeTest::Uninitialize ()
 //#endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::Fail(WCharCP msg)
+    {
+    s_assertionFailureHandler(msg);
+    }
+
 #if defined(USE_GTEST)
 
 /*---------------------------------------------------------------------------------**//**
@@ -556,9 +556,9 @@ void BeTest::LoadFilters (Utf8String& toignore, Utf8String& torun)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeTest::Fail(WCharCP msg)
+void BeTest::SetAssertionFailureHandler(T_AssertionFailureHandler const& f)
     {
-    s_assertionFailureHandler(msg);
+    s_assertionFailureHandler = f;
     }
 
 #else
