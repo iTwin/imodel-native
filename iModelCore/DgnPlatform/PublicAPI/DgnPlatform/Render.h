@@ -1929,8 +1929,8 @@ struct MeshEdges : RefCountedBase
 {
     bvector<MeshEdge>           m_visible;
     bvector<MeshEdge>           m_silhouette;
-    bvector<FPoint3d>           m_silhouetteNormals0;
-    bvector<FPoint3d>           m_silhouetteNormals1;
+    QPoint3dList                m_silhouetteNormals0 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
+    QPoint3dList                m_silhouetteNormals1 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
 
     MeshEdges() {}
     DGNPLATFORM_EXPORT MeshEdges(TriMeshArgsCR triMesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeCreationOptions);
@@ -1949,7 +1949,7 @@ struct MeshEdgeArgs
     ColorIndex                  m_colors;
     QPoint3d::Params            m_pointParams;
 
-    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, FPoint3dCP points);
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
 
 }; 
 
@@ -1962,7 +1962,7 @@ struct SilhouetteEdgeArgs   : MeshEdgeArgs
     QPoint3dCP                  m_normals0;
     QPoint3dCP                  m_normals1;
 
-    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, FPoint3dCP points);
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
 
 };  
 

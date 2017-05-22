@@ -858,14 +858,15 @@ bool MeshEdge::operator < (MeshEdge const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, FPoint3dCP points)
+bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR qparams)
     {
     if (meshEdges.m_visible.empty())
         return false;
 
-    m_points    = points;
-    m_edges     = meshEdges.m_visible.data();
-    m_numEdges  = meshEdges.m_visible.size();
+    m_points        = points;
+    m_pointParams   = qparams;
+    m_edges         = meshEdges.m_visible.data();
+    m_numEdges      = meshEdges.m_visible.size();
 
     return true;
     }
@@ -873,16 +874,17 @@ bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, FPoint3dCP points)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges, FPoint3dCP points)
+bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR params)
     {
     if (meshEdges.m_silhouette.empty())
         return false;
 
-    m_points    = points;
-    m_edges     = meshEdges.m_silhouette.data();
-    m_numEdges  = meshEdges.m_silhouette.size();
-    m_normals0  = meshEdges.m_silhouetteNormals0.data();
-    m_normals1  = meshEdges.m_silhouetteNormals1.data();
+    m_points        = points;
+    m_pointParams   = params;
+    m_edges         = meshEdges.m_silhouette.data();
+    m_numEdges      = meshEdges.m_silhouette.size();
+    m_normals0      = meshEdges.m_silhouetteNormals0.data();
+    m_normals1      = meshEdges.m_silhouetteNormals1.data();
 
     return true;
     }
