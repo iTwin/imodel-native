@@ -8,7 +8,7 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "BuildingCommonDefinitions.h"
+#include <BuildingCommon/BuildingCommonDefinitions.h>
 
 BEGIN_BENTLEY_BUILDING_COMMON_NAMESPACE
 
