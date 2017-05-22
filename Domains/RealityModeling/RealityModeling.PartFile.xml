@@ -158,7 +158,7 @@
         <SubPart PartName="DataCaptureUnitTests-Published"/>
     </Part>
 
-    <Part Name="RunGtestDatacapture" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-DataCapture-Tests/DataCaptureTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DataCaptureTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtestDatacapture" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-DataCapture-Tests -dGTEST_NAME=DataCaptureTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DataCaptureTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-DataCapture-Tests" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
@@ -209,7 +209,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/RealityModeling-Gtest/RealityModelingTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModelingTests" OnlyPlatforms="x86,x64,MacOs*,Linux*" WipPartEnable="PhotoPlanner">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealityModeling-Gtest -dGTEST_NAME=RealityModelingTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModelingTests" OnlyPlatforms="x86,x64,MacOs*,Linux*" WipPartEnable="PhotoPlanner">
         <SubProduct ProductName="RealityModeling-Gtest" />
         <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
     </Part>
