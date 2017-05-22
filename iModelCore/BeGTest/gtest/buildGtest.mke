@@ -105,7 +105,7 @@ LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(collectionProduct)Obj
     GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
 
     # Windows-specific stuff
-    GUNITTEST_LIBS      + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) ws2_32$(libext) user32.lib jsrt.lib
+    GUNITTEST_LIBS      + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) ws2_32$(libext) user32.lib jsrt.lib ole32.lib
 
 %endif
 
