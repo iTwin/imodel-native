@@ -7,16 +7,21 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-%ifndef GTEST_EXE
-    %error Define GTEST_EXE to identify the test runner executable that should be run
+%ifndef GTEST_PRODUCT
+    %error Define GTEST_PRODUCT to identify the test executable as a path relative to the Product directory, e.g., -dGTEST_PRODUCT=BeSQLite-Gtest/BeSQLiteTest
+%endif
+
+%ifndef GTEST_NAME
+    GTEST_NAME = $(GTEST_PROJECT)
 %endif
 
 %ifndef GTEST_OUTPUT_DIR
-    GTEST_OUTPUT_DIR=$(OutputRootDir)build/RunGtest/$[@basename $(GTEST_EXE)]/
+    GTEST_OUTPUT_DIR=$(OutputRootDir)build/RunGtest/${GTEST_PRODUCT}/$(GTEST_NAME)
 %endif
 
 %ifndef GTEST_LOGFILE_NAME
-    GTEST_LOGFILE_NAME=$[@basename $(GTEST_EXE)].log
+    GTEST_LOGFILE_NAME=$(GTEST_NAME).log
+    #GTEST_LOGFILE_NAME=${GTEST_PRODUCT}/$(GTEST_NAME).log
 %endif
 
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
@@ -31,6 +36,12 @@ runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 
 LogDir=$(runDir)logs/
 ResultsCapture=$(LogDir)test.log
+
+MAKE_PRODUCT_COPY_PRODUCT_NAME = $(GTEST_PRODUCT)
+
+%include $(SharedMki)makeProductCopy.mki
+
+exeName = ${MAKE_PRODUCT_COPY_DIR}/$(GTEST_NAME)
 
 always:
     !~@mkdir ${GTEST_OUTPUT_DIR}
@@ -50,7 +61,6 @@ always:
 %if defined (winNT) 
     
     testName = $[@basename $(exeName)]
-    exeName = $[@realpath $(GTEST_EXE)]
 
     %if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
         RunPrefix=start "$(testName)" \/WAIT \/MIN
@@ -71,11 +81,6 @@ always:
 
 %else
     
-    appDir = $[@dir $(GTEST_EXE)]
-    MAKE_PRODUCT_COPY_PRODUCT_NAME=$[@basename ${appDir}]
-    %include $(SharedMki)makeProductCopy.mki
-    exeName = $(MAKE_PRODUCT_COPY_DIR)$[@basename $(GTEST_EXE)]
-
     $(ResultsCapture) : $(exeName)
         >$(ResultsCapture)
         $(exeName)

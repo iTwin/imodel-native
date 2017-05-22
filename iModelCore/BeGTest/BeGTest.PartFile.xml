@@ -101,10 +101,13 @@
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="GtestProduct">
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
         <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
         <ProductDirectory Name="Assets" Path="Assets-g"/>
         <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
     </ProductDirectoryList>
