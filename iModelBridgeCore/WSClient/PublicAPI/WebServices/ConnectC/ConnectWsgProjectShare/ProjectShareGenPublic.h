@@ -53,6 +53,7 @@ CWSCCDATABUFHANDLE* fileBuffer
 * \param[in] RootFile
 * \param[in] DeletedTimeStamp
 * \param[in] DownloadAccess
+* \param[in] folderHasContentBuffer
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
 CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateFile
@@ -174,6 +175,7 @@ CWSCCDATABUFHANDLE* folderBuffer
 * \param[in] Description
 * \param[in] IsAutomatedPublishingFolder
 * \param[in] DeletedTimeStamp
+* \param[in] folderHasContentBuffer
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
 CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateFolder
