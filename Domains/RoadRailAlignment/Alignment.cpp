@@ -313,7 +313,7 @@ HorizontalAlignmentPtr HorizontalAlignment::Create(AlignmentCR alignment, CurveV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorCR HorizontalAlignment::GetGeometry() const
+CurveVectorPtr HorizontalAlignment::GetGeometry() const
     {
     ECValue val;
     if (DgnDbStatus::Success != GetPropertyValue(val, BRRA_PROP_HorizontalAlignment_HorizontalGeometry))
@@ -323,7 +323,7 @@ CurveVectorCR HorizontalAlignment::GetGeometry() const
 
     BeAssert(val.IsIGeometry());
 
-    return *val.GetIGeometry()->GetAsCurveVector();
+    return val.GetIGeometry ()->GetAsCurveVector ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -385,7 +385,7 @@ VerticalAlignmentCPtr VerticalAlignment::InsertAsMainVertical(Dgn::DgnDbStatus* 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorCR VerticalAlignment::GetGeometry() const
+CurveVectorPtr VerticalAlignment::GetGeometry() const
     {
     ECValue val;
     if (DgnDbStatus::Success != GetPropertyValue(val, BRRA_PROP_VerticalAlignment_VerticalGeometry))
@@ -395,7 +395,7 @@ CurveVectorCR VerticalAlignment::GetGeometry() const
 
     BeAssert(val.IsIGeometry());
 
-    return *val.GetIGeometry()->GetAsCurveVector();
+    return val.GetIGeometry()->GetAsCurveVector();
     }
 
 /*---------------------------------------------------------------------------------**//**

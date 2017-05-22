@@ -92,7 +92,7 @@ public:
     DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(HorizontalAlignment)
     ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentPtr Create(AlignmentCR alignment, CurveVectorR horizontalGeometry);
 
-    ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const;
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetGeometry() const;
     ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
 
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr Insert(Dgn::DgnDbStatus* stat = nullptr);
@@ -122,7 +122,7 @@ public:
 
     ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr InsertAsMainVertical(Dgn::DgnDbStatus* stat = nullptr);
 
-    ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const;
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetGeometry() const;
     ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
 
     AlignmentCR GetAlignment() const { return *Alignment::Get(GetDgnDb(), GetModel()->GetModeledElementId()); }
