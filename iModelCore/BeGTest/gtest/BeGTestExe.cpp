@@ -282,15 +282,6 @@ void initializeSqlangLocalization(BeGTestHost* hostP)
         BeSQLite::L10N::Initialize(frameworkSqlang);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct GtestFailureHandler : BeTest::IFailureHandler
-    {
-    virtual void _OnAssertionFailure (WCharCP msg) THROW_SPECIFIER(CharCP) {FAIL() << msg;}
-    virtual void _OnUnexpectedResult (WCharCP msg) THROW_SPECIFIER(CharCP) {FAIL() << msg;}
-    virtual void _OnFailureHandled() {}
-    };
 #if defined(BENTLEY_WIN32)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Farhad.Kabir                    07/2017
@@ -376,8 +367,7 @@ int main(int argc, char **argv)
     //  Configure the test runner
     BeTest::SetRunningUnderGtest();
 
-    GtestFailureHandler gtestFailureHandler;
-    BeTest::SetIFailureHandler(gtestFailureHandler);
+    BeTest::SetAssertionFailureHandler([](WCharCP msg) {FAIL() << msg;});
 
     if (::testing::GTEST_FLAG(filter).empty() || ::testing::GTEST_FLAG(filter) == "*")
         { // use ignore lists if the user did not specify any filters on the command line

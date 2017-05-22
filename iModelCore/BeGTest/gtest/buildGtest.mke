@@ -35,7 +35,13 @@ progName     = $(TEST_NAME)
 progNameExe  = $(progName)$(exeext)
 o            = $(OutputRootDir)build/$(TEST_NAME)/
 
-collectionProduct = $(OutputRootDir)Product/${TEST_COLLECTION_PRODUCT}/
+%ifdef CREATE_STATIC_LIBRARIES
+    ProductDir = $(OutputRootDir)../Product/
+%else
+    ProductDir = $(OutputRootDir)Product/
+%endif
+
+collectionProduct = $(ProductDir)${TEST_COLLECTION_PRODUCT}/
 
 %ifdef BMAKE_DELETE_ALL_TARGETS    
 always:
@@ -74,21 +80,33 @@ $(o)BeGTestExe$(oext)   : $(baseDir)BeGTestExe.cpp $(BuildContext)PublicAPI/Bent
 # -----------------------------------------------------
 
 #   Link the unit tests themselves
-LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(collectionProduct)Objects/*$(oext)] $[@wildcard $(collectionProduct)Libs/*$(stlibext)]
+LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(collectionProduct)Objects/*$(oext)]
 
-#   Satisfy the link requirements of the unit tests
-GUNITTEST_LIBS       + $[@wildcard $(collectionProduct)Libs/*$(libext)]
+%ifdef __unix
 
-#   Satisfy the link requirements of begtest itself
-GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
+    # Roll up all .a files in both SubParts/Libs and $(collectionProduct)Libs into a single thin archive
 
-%if ($(TARGET_PLATFORM)=="MacOS") || ($(TARGET_PLATFORM)=="Linux")
-    # Also grab static libraries on this platform for gtest and gmock symbols.
-    GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)]
-%endif
+    THIN_ARCHIVE_ADDITIONAL_LIBS_DIR = $(collectionProduct)Libs
 
-%if $(TARGET_PLATFORM)=="Windows"
-    GUNITTEST_LIBS   + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) ws2_32$(libext) user32.lib jsrt.lib
+    %include $(SharedMki)rollUpSubPartsLibsThin.mki
+
+    LOCAL_GUNITTEST_OBJS + $(THIN_ARCHIVE_PATH)
+
+
+%else
+
+    #   Link the unit tests themselves
+    LOCAL_GUNITTEST_OBJS + $[@wildcard $(collectionProduct)Libs/*$(stlibext)]
+
+    #   Satisfy the link requirements of the unit tests
+    GUNITTEST_LIBS       + $[@wildcard $(collectionProduct)Libs/*$(libext)]
+
+    #   Satisfy the link requirements of begtest itself
+    GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
+
+    # Windows-specific stuff
+    GUNITTEST_LIBS      + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) ws2_32$(libext) user32.lib jsrt.lib
+
 %endif
 
 GUNITTEST_OUT       = $(o)
