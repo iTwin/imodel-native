@@ -825,3 +825,20 @@ double x2,  // x coordinate at point 3,4
 double y2,   // y coordinate at point 4,5
 double h    // z distance for extrusion
 );
+
+// Create a typical transform for testing.
+// All selects "0" is an identity.
+// Defaults produce a general rigid rotation around a point near the origin.
+// Translate * Rotate * Scale
+Transform CreateTestTransform
+(
+double translateX = 1.0,
+double translateY = 2.0,
+double translateZ = 3.0,
+double yawDegrees = 10.0,
+double pitchDegrees = 5.0,
+double rollDegrees = -12.0,
+double xScaleFactor = 1.0,
+double yScaleFactor = 1.0,
+double zScaleFactor = 1.0
+);
