@@ -171,7 +171,7 @@
 
     <Part Name="iModelHubClient-Library-Android" BentleyBuildMakeFile="iModelHubClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>
@@ -230,7 +230,7 @@
     </Part>
     <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
@@ -410,6 +410,7 @@
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="WSClientTestAssets" />
         <SubPart PartName="WSClientTestsL10N" />
+        <SubPart PartName="DgnClientFxLibrary-JNI" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
