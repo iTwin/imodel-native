@@ -670,7 +670,7 @@ BentleyStatus   PSolidGeom::CreateCurveFromMSBsplineCurve2d (PK_CURVE_t* curveP,
                 {
                 *pNewVertex++ = *pOldVertex++;
                 *pNewVertex++ = *pOldVertex++;
-                *pOldVertex++; // skip z
+                ++pOldVertex; // skip z
                 *pNewVertex++ = *pOldVertex++; // weight
                 }
             }
@@ -680,7 +680,7 @@ BentleyStatus   PSolidGeom::CreateCurveFromMSBsplineCurve2d (PK_CURVE_t* curveP,
                 {
                 *pNewVertex++ = *pOldVertex++;
                 *pNewVertex++ = *pOldVertex++;
-                *pOldVertex++; // skip z
+                ++pOldVertex; // skip z
                 }
             }
 

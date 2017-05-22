@@ -232,7 +232,7 @@ public:
             int parentClass, childClass;
             jmdlEmbeddedIntArray_getInt (m_pEntityClassArray, &parentClass, parentIndex);
             jmdlEmbeddedIntArray_getInt (m_pEntityClassArray, &childClass,  childIndex);
-            printf (" (%hs:%3d,%hs:%3d,%hs)\n",
+            printf (" (%s:%3d,%s:%3d,%s)\n",
                         tokenToString (parentClass), parentIndex,
                         tokenToString (childClass), childIndex,
                         tokenToString (sense));
@@ -244,7 +244,7 @@ public:
         int index = jmdlEmbeddedIntArray_getCount (m_pEntityClassArray);
         jmdlEmbeddedIntArray_addInt (m_pEntityClassArray, eClass);
         if (s_debug >= 10)
-            printf (" %3d:%hs\n", index, tokenToString (eClass));
+            printf (" %3d:%s\n", index, tokenToString (eClass));
         return index;
         }
 

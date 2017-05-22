@@ -146,6 +146,7 @@ public:
 
     bool WantShowCurrent() const { return 0 != (m_flags & SHOW_CURRENT); }
     bool WantShowTarget() const { return 0 != (m_flags & SHOW_TARGET); }
+    bool WantShowBoth() const { return WantShowCurrent() && WantShowTarget(); }
 
     void    _CreateTerrain(TerrainContextR context) override;
 
@@ -154,7 +155,7 @@ public:
     DGNPLATFORM_EXPORT void SetSymbology(ComparisonSymbologyOverrides overrides) { m_symbology = overrides; }
 
     //! Constructors
-    DGNPLATFORM_EXPORT RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonData const& data, unsigned int flags, ComparisonSymbologyOverrides const & symb=ComparisonSymbologyOverrides()) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_flags(flags) { }
+    DGNPLATFORM_EXPORT RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonData const& data, unsigned int flags, ComparisonSymbologyOverrides const & symb=ComparisonSymbologyOverrides()) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_flags(flags), m_visitingTransientElements(false) { }
 };
 
 END_BENTLEY_DGN_NAMESPACE
