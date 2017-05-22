@@ -6,9 +6,1109 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-
+#include <Bentley/BeTextFile.h>
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+struct DataTable final : NonCopyableClass
+    {
+    struct Value final
+        {
+        enum class Type : int
+            {
+            Integer = 1,
+            Float = 2,
+            Text = 3,
+            Blob = 4,
+            Null = 5,
+            };
+        private:
+            Type m_type;
+            size_t m_size;
+            union
+                {
+                int64_t m_i64;
+                double m_flt;
+                void* m_buff;
+                };
+
+            void Copy(const void* blob, size_t n, Type type)
+                {
+                SetNull();
+                if (blob == nullptr || n == 0)
+                    return;
+
+                m_size = n;
+                if (type == Type::Text)
+                    n = n + 1;
+
+                m_buff = malloc(n);
+                BeAssert(m_buff != nullptr);
+                memcpy(m_buff, blob, (int) n);
+
+                m_type = type;
+                }
+            void CopyObject(Value const& rhs)
+                {
+                if (rhs.IsText())
+                    SetValue(rhs.GetText());
+
+                if (rhs.IsBlob())
+                    SetValue(rhs.GetBlob(), rhs.GetSize());
+
+                if (rhs.IsInteger())
+                    SetValue(rhs.GetInteger());
+
+                if (rhs.IsFloat())
+                    SetValue(rhs.GetFloat());
+
+                SetNull();
+                }
+            void MoveObject(Value & rhs)
+                {
+                if (rhs.IsText() || rhs.IsBlob())
+                    m_buff = rhs.m_buff;
+
+                if (rhs.IsInteger())
+                    m_i64 = rhs.m_i64;
+
+                if (rhs.IsFloat())
+                    m_flt = rhs.m_flt;
+
+                m_size = rhs.m_size;
+                m_type = rhs.m_type;
+                rhs.m_type = Type::Null;
+                rhs.m_buff = nullptr;
+                }
+        public:
+            Value() :m_i64(0), m_size(0), m_type(Type::Null) {}
+            Value(Value const& rhs)
+                {
+                CopyObject(rhs);
+                }
+            Value(Value && rhs)
+                {
+                MoveObject(rhs);
+                }
+            Value& operator =(Value const& rhs)
+                {
+                if (this != &rhs)
+                    CopyObject(rhs);
+
+                return *this;
+                }
+            Value& operator =(Value && rhs)
+                {
+                if (this != &rhs)
+                    MoveObject(rhs);
+
+                return *this;
+                }
+            bool Equals(Value const& rhs) const
+                {
+                if (rhs.GetType() != GetType())
+                    return false;
+
+                if (IsInteger())
+                    return GetInteger() == rhs.GetInteger();
+
+                if (IsFloat())
+                    return IsFloat() == rhs.IsFloat();
+
+                if (IsText())
+                    return strcmp(rhs.GetText(), GetText()) == 0;
+
+                if (IsBlob())
+                    {
+                    if (rhs.GetSize() != GetSize())
+                        return false;
+
+                    if (rhs.GetSize() == 0)
+                        return true;
+
+                    return memcpy(rhs.GetBlob(), GetBlob(), GetSize()) == 0;
+                    }
+
+                BeAssert(false);
+                return false;
+                }
+            bool EqualsI(Value const& rhs) const
+                {
+                if (rhs.GetType() != GetType())
+                    return false;
+
+                if (IsInteger())
+                    return GetInteger() == rhs.GetInteger();
+
+                if (IsFloat())
+                    return IsFloat() == rhs.IsFloat();
+                
+                if (IsText())
+                    return strcmpi(rhs.GetText(), GetText()) == 0;
+
+                if (IsBlob())
+                    {
+                    if (rhs.GetSize() != GetSize())
+                        return false;
+
+                    if (rhs.GetSize() == 0)
+                        return true;
+
+                    return memcpy(rhs.GetBlob(), GetBlob(), GetSize()) == 0;
+                    }
+
+                BeAssert(false);
+                return false;
+                }
+            bool operator == (Value const& rhs) const
+                {
+                return Equals(rhs);
+                }
+            bool operator != (Value const& rhs) const
+                {
+                return !Equals(rhs);
+                }
+
+            bool IsNull() const { return m_type == Type::Null; }
+            bool IsBlob() const { return m_type == Type::Blob; }
+            bool IsText() const { return m_type == Type::Text; }
+            bool IsInteger() const { return m_type == Type::Integer; }
+            bool IsFloat() const { return m_type == Type::Float; }
+            void SetNull()
+                {
+                if (IsNull())
+                    return;
+                if (IsBlob() || IsText())
+                    {
+                    if (m_buff != nullptr)
+                        free(m_buff);
+                    }
+                m_type = Type::Null;
+                m_size = 0;
+                m_buff = nullptr;
+                }
+            void SetValue(int64_t i)
+                {
+                if (!IsInteger())
+                    SetNull();
+
+                m_i64 = i;
+                m_type = Type::Integer;
+                m_size = sizeof(int64_t);
+                }
+            void SetValue(double i)
+                {
+                if (!IsFloat())
+                    SetNull();
+
+                m_flt = i;
+                m_type = Type::Float;
+                m_size = sizeof(double);
+                }
+            void SetValue(Utf8CP str)
+                {
+                Copy((void*) str, strlen(str) + 1, Type::Text);
+                }
+            void SetValue(const void* blob, size_t n)
+                {
+                Copy(blob, n, Type::Blob);
+                }
+            int64_t GetInteger() const { BeAssert(IsInteger()); return m_i64; }
+            double GetFloat() const { BeAssert(IsFloat()); return m_flt; }
+            void* GetBlob() const { BeAssert(IsBlob()); return m_buff; }
+            Utf8CP GetText() const { BeAssert(IsText()); return (Utf8CP) m_buff; }
+            size_t GetSize() const { return m_size; }
+            Type GetType() const { return m_type; }
+            Utf8String ToString() const
+                {
+                Utf8String str;
+                switch (GetType())
+                    {
+                    case Type::Blob:
+                        str.append("..."); break;
+                    case Type::Float:
+                        str.Sprintf("%f", GetFloat()); break;
+                    case Type::Integer:
+                        str.Sprintf("%d", GetInteger()); break;
+                    case Type::Null:
+                        str = "(null)"; break;
+                    case Type::Text:
+                        str = GetText(); break;
+                    }
+                return str;
+                }
+        };
+    struct Column final : NonCopyableClass
+        {
+        friend struct DataTable;
+        private:
+            Value::Type m_type;
+            Utf8String m_name;
+            DataTable const& m_table;
+            size_t m_index;
+        protected:
+            Column(DataTable const& table, size_t index, Utf8CP name)
+                :m_table(table), m_name(name), m_type(Value::Type::Blob), m_index(index)
+                {}
+            Column(DataTable const& table, size_t index, Utf8CP name, Value::Type type)
+                :m_table(table), m_name(name), m_type(type), m_index(index)
+                {}
+
+        public:
+            DataTable const& GetTable() const { return m_table; }
+            Utf8CP GetName() const { return m_name.c_str(); }
+            Value::Type GetType() const { return m_type; }
+            size_t GetIndex() const { return m_index; }
+        };
+    struct Row final : NonCopyableClass
+        {
+        friend struct DataTable;
+        private:
+            size_t m_index;
+            std::vector<Value> m_values;
+            DataTable const & m_table;
+
+        protected:
+            Row(DataTable const& table, size_t index)
+                :m_table(table), m_index(index)
+                {
+                m_values.reserve(table.GetColumnCount());
+                for (int i = 0; i < table.GetColumnCount(); i++)
+                    m_values.push_back(Value());
+                m_values.capacity();
+                }
+        public:
+            Value& GetValueR(size_t columnIndex)
+                {
+                return m_values[columnIndex];
+                }
+            Value const& GetValue(size_t columnIndex) const
+                {
+                return m_values[columnIndex];
+                }
+            Value& GetValueR(Column const& column)
+                {
+                return GetValueR(column.GetIndex());
+                }
+            Value const& GetValue(Column const& column) const
+                {
+                return GetValue(column.GetIndex());
+                }
+            void SetValue(Column const& column, Value&& value)
+                {
+                m_values[column.GetIndex()] = std::move(value);
+                }
+            void SetValue(Column const& column, Value const& value)
+                {
+                m_values[column.GetIndex()] = value;
+                }
+            Utf8String ToString() const
+                {
+                Utf8String str;
+                for (size_t i = 0; i < m_table.GetColumnCount(); i++)
+                    {
+                    Column const& column = m_table.GetColumn(i);
+                    Value const& v = GetValue(i);
+                    if (i != 0)
+                        str.append(", ");
+
+                     str.append(column.GetName()).append("=").append(v.ToString());
+                    }
+
+                return str;
+                }
+        };
+
+    private:
+        std::vector<std::unique_ptr<Column>> m_columns;
+        std::vector<std::unique_ptr<Row>> m_rows;
+        bool m_lock;
+        Utf8String m_name;
+    public:
+        DataTable()
+            :m_lock(false)
+            {}
+        DataTable(Utf8CP name)
+            :m_lock(false), m_name(name)
+            {}
+        void LockDefinition()
+            {
+            m_lock = true;
+            }
+        void SetName(Utf8CP name) { m_name = name; }
+        Utf8CP GetName() const { return m_name.c_str(); }
+        bool IsDefinitionLocked() const { return m_lock; }
+        size_t GetRowCount() const { return m_rows.size(); }
+        size_t GetColumnCount() const { return m_columns.size(); }
+        Column const& GetColumn(size_t index) const { return *m_columns[index]; }
+        Row const& GetRow(size_t index) const { return *m_rows[index]; }
+        Row & GetRowR(size_t index) const { return *m_rows[index]; }
+        void ClearRows() { return m_rows.clear(); }
+        void Reset() { ClearRows(); m_columns.clear(); m_lock = false; }
+        Column const& AddColumn(Utf8CP name, Value::Type type)
+            {
+            Column* col = nullptr;
+            if (m_lock)
+                {
+                BeAssert(false && "Table is locked down and cannot accept any changes");
+                return *col;
+                }
+
+            col = new Column(*this, m_columns.size(), name, type);
+            m_columns.push_back(std::unique_ptr<Column>(col));
+            return *col;
+            }
+        Column const& AddColumn(Utf8CP name)
+            {
+            return AddColumn(name, Value::Type::Blob);
+            }
+        Row& NewRow()
+            {
+            Row* row = nullptr;
+            if (!m_lock)
+                {
+                BeAssert(false && "Call LocalDefinition() first before calling this api");
+                return *row;
+                }
+
+            row = new Row(*this, m_rows.size());
+            m_rows.push_back(std::unique_ptr<Row>(row));
+            return *row;
+            }
+    };
+
+struct CSVAdaptor
+    {
+    private:
+        static Utf8Char PreviousChar(Utf8CP current, Utf8CP bof)
+            {
+            if ((current - 1) >= bof)
+                return *(current - 1);
+
+            return *bof;
+            }
+        static Utf8Char NextChar(Utf8CP current)
+            {
+            if (*current == '\0')
+                return *current;
+
+            return *(current + 1);
+            }
+        static BentleyStatus ParseField(DataTable& table, Utf8CP begin, Utf8CP end, int line, int field)
+            {
+            Utf8String v(begin, end);
+            v.Trim();
+            if (line == 1)
+                {
+                table.AddColumn(v.c_str());
+                return SUCCESS;
+                }
+
+            if (!table.IsDefinitionLocked())
+                table.LockDefinition();
+
+            if (table.GetColumnCount() < field)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+            const int rowId = line - 1;
+            DataTable::Row* row = nullptr;
+            if (table.GetRowCount() < rowId)//0 < 1  1< 1
+                row = &table.NewRow();
+            else
+                row = &table.GetRowR(rowId - 1);//2-2=0
+
+            if (v.EndsWithI("(null)") || v.empty())
+                return SUCCESS;
+
+            Utf8CP c = v.c_str();
+            while (*c != '\0')
+                if (!isdigit(*c++))break;
+
+            double d;
+            if (*c == '\0')
+                {
+                int64_t i64;
+                sscanf(v.c_str(), "%" SCNd64, &i64);
+                row->GetValueR(field - 1).SetValue(i64);
+                }
+            else  if (sscanf(v.c_str(), "%lf", &d) == 1)
+                {
+                row->GetValueR(field - 1).SetValue(d);
+                }
+            else
+                {
+                row->GetValueR(field - 1).SetValue(v.c_str());
+                }
+
+            return SUCCESS;
+            }
+        static BentleyStatus ParseLine(DataTable& table, Utf8CP begin, Utf8CP end, int line)
+            {
+            Utf8CP cur = begin;
+            Utf8CP fstart = cur;
+            Utf8CP fend = cur;
+            int field = 0;
+            enum class State
+                {
+                Start,
+                QuotedBegin,
+                QuotedEnd,
+                End
+                };
+
+            State state = State::Start;
+            while (cur != end)
+                {
+                if (*cur == '"')
+                    {
+                    if (state == State::Start)
+                        {
+                        fstart = cur + 1;
+                        fend = cur + 1;
+                        state = State::QuotedBegin;
+                        }
+                    else if (state == State::QuotedBegin)
+                        {
+                        if (NextChar(cur) == '"')
+                            cur++;
+                        else
+                            {
+                            fend = cur;
+                            state = State::QuotedEnd;
+                            }
+                        }
+                    else if (state == State::QuotedEnd)
+                        {
+                        BeAssert(false);
+                        return ERROR;
+                        }
+                    }
+
+                if (*cur == ',' && state != State::QuotedBegin)
+                    {
+                    if (state == State::QuotedEnd)
+                        {
+                        if (ParseField(table, fstart, fend, line, ++field) != SUCCESS) return ERROR;
+                        }
+                    else if (state == State::Start)
+                        {
+                        if (ParseField(table, fstart, cur, line, ++field) != SUCCESS) return ERROR;
+                        }
+                    fstart = cur + 1;
+                    fend = cur + 1;
+                    state = State::Start;
+                    }
+
+                cur++;
+                }
+
+            if (state == State::QuotedBegin)
+                return ERROR;
+
+            else if (state == State::Start && fstart != cur)
+                {
+                if (ParseField(table, fstart, cur, line, ++field) != SUCCESS) return ERROR;
+                }
+            else if (state == State::QuotedEnd)
+                {
+                if (ParseField(table, fstart, fend, line, ++field) != SUCCESS) return ERROR;
+                }
+
+            return SUCCESS;
+            }
+    public:
+        static void Fill(Utf8StringR toCSVBuffer, DataTable const& fromDataTable)
+            {
+            //https://www.ietf.org/rfc/rfc4180.txt
+            const Utf8CP CSV_EOL = "\r\n";
+            const Utf8CP CSV_DELIMITER = ", ";
+            const Utf8CP CSV_NULL = "(null)";
+            const Utf8CP CSV_STRING_DELIMITER = "\"";
+
+            for (size_t i = 0; i < fromDataTable.GetColumnCount(); i++)
+                {
+                if (i != 0)
+                    toCSVBuffer.append(CSV_DELIMITER);
+
+                toCSVBuffer.append(fromDataTable.GetColumn(i).GetName());
+                }
+
+            toCSVBuffer.append(CSV_EOL);
+            Utf8String cell;
+            for (size_t r = 0; r < fromDataTable.GetRowCount(); r++)
+                {
+                DataTable::Row const& row = fromDataTable.GetRow(r);
+                for (size_t c = 0; c < fromDataTable.GetColumnCount(); c++)
+                    {
+                    if (c != 0)
+                        toCSVBuffer.append(CSV_DELIMITER);
+
+                    DataTable::Value const& value = row.GetValue(c);
+                    switch (value.GetType())
+                        {
+                            case DataTable::Value::Type::Blob:
+                                BeAssert(false);
+                                break;
+                            case DataTable::Value::Type::Float:
+                                cell.Sprintf("%lf", value.GetFloat());
+                                toCSVBuffer.append(cell);
+                                break;
+                            case DataTable::Value::Type::Integer:
+                                cell.Sprintf("%" PRId64 "", value.GetInteger());
+                                toCSVBuffer.append(cell);
+                                break;
+                            case DataTable::Value::Type::Null:
+                                toCSVBuffer.append(CSV_NULL);
+                                break;
+                            case DataTable::Value::Type::Text:
+                            {
+                            Utf8CP c = value.GetText();
+                            bool hasEscapeChar = false;
+                            while (*c != '\0' && !hasEscapeChar)
+                                {
+                                if (isspace((int) (*c)) || *c == ',' || *c == '"')
+                                    hasEscapeChar = true;
+
+                                c++;
+                                }
+
+                            if (hasEscapeChar)
+                                toCSVBuffer.append(CSV_STRING_DELIMITER).append(value.GetText()).append(CSV_STRING_DELIMITER);
+                            else
+                                toCSVBuffer.append(value.GetText());
+
+                            break;
+                            }
+                        }
+                    }
+
+                toCSVBuffer.append(CSV_EOL);
+                }
+            }
+        static BentleyStatus Fill(DataTable& toDataTable, Utf8CP fromCSVBuffer)
+            {
+            const Utf8Char CSV_EOF = '\0';
+            Utf8CP cur = fromCSVBuffer;
+            Utf8CP start = cur;
+            int line = 0;
+
+            while (*cur != CSV_EOF)
+                {
+                if (*cur == '\n')
+                    {
+                    if (PreviousChar(cur, fromCSVBuffer) == '\r')
+                        {
+                        if (ParseLine(toDataTable, start, cur - 1, ++line) != SUCCESS)return ERROR;
+                        }
+                    else
+                        {
+                        if (ParseLine(toDataTable, start, cur, ++line) != SUCCESS)return ERROR;
+                        }
+
+                    start = ++cur;
+                    }
+                else
+                    ++cur;
+                }
+
+            if (start != cur)
+                {
+                return ParseLine(toDataTable, start, cur - 1, ++line);
+                }
+
+            return SUCCESS;
+            }
+
+    };
+
+struct SqlAdaptor final
+    {
+    static void Fill(DataTable& table, Statement& stmt, Utf8CP tableName)
+        {
+        for (int i = 0; i < stmt.GetColumnCount(); i++)
+            table.AddColumn(stmt.GetColumnName(i));
+
+        table.LockDefinition();
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            DataTable::Row& row = table.NewRow();
+            for (int i = 0; i < stmt.GetColumnCount(); i++)
+                {
+                switch (stmt.GetColumnType(i))
+                    {
+                        case DbValueType::BlobVal:
+                            row.GetValueR(table.GetColumn(i)).SetValue(stmt.GetValueBlob(i), (size_t) stmt.GetColumnBytes(i)); break;
+                        case DbValueType::FloatVal:
+                            row.GetValueR(table.GetColumn(i)).SetValue(stmt.GetValueDouble(i)); break;
+                        case DbValueType::IntegerVal:
+                            row.GetValueR(table.GetColumn(i)).SetValue(stmt.GetValueDouble(i)); break;
+                        case DbValueType::NullVal:
+                            row.GetValueR(table.GetColumn(i)).SetNull(); break;
+                        case DbValueType::TextVal:
+                            row.GetValueR(table.GetColumn(i)).SetValue(stmt.GetValueText(i)); break;
+                    }
+                }
+            }
+        }
+
+    static BentleyStatus Fill(DbCR db, DataTable const& table)
+        {
+        if (!table.IsDefinitionLocked())
+            return ERROR;
+
+        if (Utf8String::IsNullOrEmpty(table.GetName()))
+            return ERROR;
+
+        if (table.GetColumnCount() > 0)
+            return ERROR;
+
+        Utf8String createTableSQL = "CREATE TABLE [";
+        createTableSQL.append(table.GetName()).append("] (Id INTEGER PRIMARY KEY");
+        for (int i = 0; i < table.GetColumnCount(); i++)
+            {
+            createTableSQL.append(",");
+            createTableSQL.append(table.GetColumn(i).GetName());
+            }
+
+        createTableSQL.append(")");
+        if (db.ExecuteSql(createTableSQL.c_str()) != BE_SQLITE_OK)
+            {
+            return ERROR;
+            }
+
+        Utf8String insertSQL = "INSERT INTO [";
+        Utf8String valuesSQL = "VALUES (null";
+        insertSQL.append(table.GetName()).append("] (Id");
+        for (int i = 0; i < table.GetColumnCount(); i++)
+            {
+            insertSQL.append(",");
+            insertSQL.append(table.GetColumn(i).GetName());
+            valuesSQL.append(",?");
+            }
+
+        insertSQL.append(")").append(valuesSQL).append(")");
+        Statement stmt;
+        stmt.Prepare(db, insertSQL.c_str());
+        for (size_t r; r < table.GetRowCount(); r++)
+            {
+            stmt.Reset();
+            stmt.ClearBindings();
+            DataTable::Row const& row = table.GetRow(r);
+            for (int c; c < table.GetColumnCount(); c++)
+                {
+                DataTable::Value const& v = row.GetValue(c);
+                switch (v.GetType())
+                    {
+                        case DataTable::Value::Type::Blob:
+                            stmt.BindBlob(c, v.GetBlob(), (int)v.GetSize(), Statement::MakeCopy::No); break;
+                        case DataTable::Value::Type::Float:
+                            stmt.BindDouble(c, v.GetFloat()); break;
+                        case DataTable::Value::Type::Integer:
+                            stmt.BindInt64(c, v.GetInteger()); break;
+                        case DataTable::Value::Type::Text:
+                            stmt.BindText(c, v.GetText(), Statement::MakeCopy::No); break;
+                    }
+                }
+            if (stmt.Step() != BE_SQLITE_DONE)
+                return ERROR;
+            }
+
+        return SUCCESS;
+        }
+    };
+
+struct DataFacetComparer
+    {
+    private:
+        DataTable m_baseLine;
+        DataTable m_current;
+        BeFileName m_dataFile;
+        ECDbCR m_ecdb;
+        Utf8String m_dataFolder;
+        Utf8String m_test;
+
+    private:
+        virtual Utf8CP GetSQL() const = 0;
+        virtual Utf8CP GetDataSetId() const = 0;
+        Utf8String GetDataFilePath() const
+            {
+            Utf8String str;
+            str.append(m_dataFolder).append("/").append(m_test).append(".").append(GetDataSetId()).append(".csv");
+            return str;
+            }
+        BentleyStatus ReadFromDb(DataTable& table)
+            {
+            Statement stmt;
+            if (stmt.Prepare(m_ecdb, GetSQL()) != BE_SQLITE_OK)
+                return ERROR;
+
+            SqlAdaptor::Fill(table, stmt, nullptr);
+            return SUCCESS;
+            }
+        BentleyStatus WriteFile(Utf8StringCR content, bool overrideFile)
+            {
+            BeFileName file(GetDataFilePath());
+            if (file.DoesPathExist())
+                {
+                if (!overrideFile)
+                    return ERROR;
+
+                if (file.BeDeleteFile() != BeFileNameStatus::Success)
+                    return ERROR;
+                }
+            BeFile o;
+            if (o.Create(file.GetNameUtf8(), true) != BeFileStatus::Success)
+                return ERROR;
+
+            uint32_t bytesWritten;
+            if (o.Write(&bytesWritten, content.c_str(), (uint32_t) content.size()) != BeFileStatus::Success)
+                return ERROR;
+
+            o.Flush();
+            return o.Close() != BeFileStatus::Success ? ERROR : SUCCESS;
+            }
+        BentleyStatus ReadFile(Utf8StringR content, Utf8StringCR path)
+            {
+            BeFileName bf(path);
+            if (!bf.DoesPathExist())
+                return ERROR;
+
+            BeFile file;
+            if (file.Open(bf.GetNameUtf8(), BeFileAccess::Read) != BeFileStatus::Success)
+                return ERROR;
+
+            ByteStream bs;
+            if (file.ReadEntireFile(bs) != BeFileStatus::Success)
+                return ERROR;
+
+            content.clear();
+            content.reserve(bs.GetSize());
+            for (auto itor = bs.begin(); itor != bs.end(); ++itor)
+                content.push_back((Utf8Char) (*itor));
+
+            return SUCCESS;
+            }
+        BentleyStatus ReadFromFile(DataTable& table)
+            {
+            Utf8String content;
+            if (ReadFile(content, GetDataFilePath()) != SUCCESS)
+                return ERROR;
+
+            return CSVAdaptor::Fill(table, content.c_str());
+            }
+        DataTable const& GetCurrent() const { return m_current; }
+        DataTable const& GetBaseline() const { return m_baseLine; }
+
+    public:
+        DataFacetComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            :m_ecdb(ecdb), m_dataFolder(directory), m_test(test)
+            {}
+        BentleyStatus Init()
+            {
+            m_baseLine.Reset();
+            m_current.Reset();
+            if (ReadFromDb(m_baseLine) != SUCCESS)
+                return ERROR;
+
+            return ReadFromFile(m_current);
+            }
+        BentleyStatus WriteBaselineToDisk()
+            {
+            m_baseLine.Reset();
+            if (ReadFromDb(m_baseLine) != SUCCESS)
+                return ERROR;
+
+            Utf8String csvBuffer;
+            CSVAdaptor::Fill(csvBuffer, m_baseLine);
+            return WriteFile(csvBuffer, true);
+            }
+        void Assert()
+            {
+            ASSERT_EQ(SUCCESS, Init());
+            ASSERT_TRUE(GetCurrent().IsDefinitionLocked()) << "DataTable/Current was not loaded correctly -> " << GetDataSetId();
+            ASSERT_TRUE(GetBaseline().IsDefinitionLocked()) << "DataTable/Baseline was not loaded correctly -> " << GetDataSetId();
+            ASSERT_EQ(GetBaseline().GetColumnCount(), GetCurrent().GetColumnCount()) << "Column must match -> " << GetDataSetId();
+            ASSERT_EQ(GetBaseline().GetRowCount(), GetCurrent().GetRowCount()) << "Row must match -> " << GetDataSetId();
+            const size_t maxColumns = MIN(GetBaseline().GetColumnCount(), GetCurrent().GetColumnCount());
+            const size_t maxRows = MIN(GetBaseline().GetRowCount(), GetCurrent().GetRowCount());
+            for (size_t row = 0; row < maxRows; ++row)
+                {
+                DataTable::Row const& currentRow = GetCurrent().GetRow(row);
+                DataTable::Row const& baselineRow = GetBaseline().GetRow(row);
+                ASSERT_STREQ(baselineRow.ToString().c_str(), currentRow.ToString().c_str());
+                for (size_t col = 0; col < maxColumns; ++col)
+                    {
+                    DataTable::Value const& currentValue = currentRow.GetValue(col);
+                    DataTable::Value const& baselineValue = baselineRow.GetValue(col);
+                    ASSERT_EQ(baselineValue.GetType(), currentValue.GetType());
+                    switch (baselineValue.GetType())
+                        {
+                            case DataTable::Value::Type::Text:
+                            {
+                            ASSERT_STREQ(baselineValue.GetText(), currentValue.GetText())
+                                << "BaseLine:" << baselineRow.ToString().c_str() << ", Current: " << currentRow.ToString().c_str();
+                            break;
+                            }
+                            case DataTable::Value::Type::Float:
+                            {
+                            ASSERT_EQ(baselineValue.GetFloat(), currentValue.GetFloat())
+                                << "BaseLine:" << baselineRow.ToString().c_str() << ", Current: " << currentRow.ToString().c_str();
+                            break;
+                            }
+                            case DataTable::Value::Type::Integer:
+                            {
+                            ASSERT_EQ(baselineValue.GetInteger(), currentValue.GetInteger())
+                                << "BaseLine:" << baselineRow.ToString().c_str() << ", Current: " << currentRow.ToString().c_str();
+                            break;
+                            }
+                            case DataTable::Value::Type::Blob:
+                            {
+                            ASSERT_TRUE(false);
+                            }
+                        }
+                    }
+                }
+            }
+    };
+
+struct PropertyMapComparer : DataFacetComparer
+    {
+    private:
+        virtual Utf8CP GetDataSetId()  const override { return "PropertyMap"; }
+        virtual Utf8CP GetSQL() const override
+            {
+            return R"(
+                SELECT [S].[Name] [Schema], 
+                        [CL].[Name] [Class], 
+                        [PP].[AccessString], 
+                        [T].[Name] [Table], 
+                        [C].[Name] [Column]
+                FROM   [ec_ClassMap] [CM]
+                        INNER JOIN [ec_PropertyMap] [PM] ON [PM].[ClassId] = [CM].[ClassId]
+                        INNER JOIN [ec_PropertyPath] [PP] ON [PP].[Id] = [PM].[PropertyPathId]
+                        INNER JOIN [ec_Class] [CL] ON [CL].[Id] = [PM].[ClassId]
+                        INNER JOIN [ec_Schema] [S] ON [S].[Id] = [CL].[SchemaId]
+                        INNER JOIN [ec_Column] [C] ON [C].[Id] = [PM].[ColumnId]
+                        INNER JOIN [ec_Table] [T] ON [T].[Id] = [C].[TableId]
+                ORDER  BY [PM].[Id];)";
+            }
+    public:
+        PropertyMapComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            : DataFacetComparer(ecdb, test, directory)
+            {}
+        };
+
+struct TableComparer : DataFacetComparer
+    {
+    private:
+        virtual Utf8CP GetDataSetId()  const override { return "Table"; }
+        virtual Utf8CP GetSQL() const override
+            {
+            return R"(
+                SELECT [T].[Name], 
+                       CASE [T].[Type] WHEN 0 THEN 'Primary' WHEN 1 THEN 'Joined' WHEN 2 THEN 'Existing' WHEN 3 THEN 'Overflow' ELSE '<err>' END [Type], 
+                       CASE [T].[IsVirtual] WHEN 0 THEN 'False' WHEN 1 THEN 'True' ELSE '<err>' END [IsVirtual], 
+                       [TP].[Name] [ParentTable], 
+                       [S].[Name] [ExclusiveRootSchema], 
+                       [C].[Name] [ExclusiveRootClass]
+                FROM   [ec_Table] [T]
+                       LEFT JOIN [ec_Table] [TP] ON [TP].[Id] = [T].[ParentTableId]
+                       LEFT JOIN [ec_Class] [C] ON [C].[Id] = [T].[ExclusiveRootClassId]
+                       LEFT JOIN [ec_Schema] [S] ON [S].[Id] = [C].[SchemaId]
+                ORDER  BY [T].[Name];)";
+            }
+    public:
+        TableComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            : DataFacetComparer(ecdb, test, directory)
+            {}
+    };
+
+struct IndexComparer : DataFacetComparer
+    {
+    private:
+        virtual Utf8CP GetDataSetId()  const override { return "Index"; }
+        virtual Utf8CP GetSQL() const override
+            {
+            return R"(
+                SELECT [I].[Name] [Index], 
+                       [T].[Name] [Table], 
+                       CASE [IsUnique] WHEN 0 THEN 'False' WHEN 1 THEN 'True' END [IsUnique], 
+                       CASE [AddNotNullWhereExp] WHEN 0 THEN 'False' WHEN 1 THEN 'True' END [AddNotNullWhereExp], 
+                       CASE [IsAutoGenerated] WHEN 0 THEN 'False' WHEN 1 THEN 'True' END [IsAutoGenerated], 
+                       CASE [AppliesToSubclassesIfPartial] WHEN 0 THEN 'False' WHEN 1 THEN 'True' END [AppliesToSubclassesIfPartial], 
+                       [S].[Name] [RootSchema], 
+                       [C].[Name] [RootClass],
+                       (SELECT GROUP_CONCAT(C.Name, ', ') from ec_IndexColumn IC INNER JOIN ec_Column C ON C.Id = IC.ColumnId WHERE IC.IndexId=I.Id ORDER BY C.Name) Columns                 
+                FROM   [ec_Index] [I]
+                       INNER JOIN [ec_Table] [T] ON [T].[Id] = [I].[TableId]
+                       LEFT OUTER JOIN [ec_Class] [C] ON [C].[Id] = [I].[ClassId]
+                       LEFT OUTER JOIN [ec_Schema] [S] ON [S].[Id] = [C].[SchemaId];
+                ORDER BY T.Name, I.Name)";
+            }
+    public:
+        IndexComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            : DataFacetComparer(ecdb, test, directory)
+            {}
+    };
+
+struct ColumnComparer : DataFacetComparer
+    {
+    private:
+        virtual Utf8CP GetDataSetId()  const override { return "Column"; }
+        virtual Utf8CP GetSQL() const override
+            {
+            return  R"(
+                SELECT [T].[Name] [Table], 
+                        [C].[Name] [Column], 
+                        CASE [C].[Type] WHEN 0 THEN 'Any' WHEN 1 THEN 'Boolean' WHEN 2 THEN 'Blob' WHEN 3 THEN 'TimeStamp' WHEN 4 THEN 'Real' WHEN 5 THEN 'Integer' WHEN 6 THEN 'Text' ELSE '<err>' END [Type], 
+                        CASE [C].[IsVirtual] WHEN 0 THEN 'False' WHEN 1 THEN 'True' ELSE '<err>' END [IsVirtual], 
+                        [Ordinal], 
+                        CASE [C].[NotNullConstraint] WHEN 1 THEN 'True' WHEN 0 THEN 'False' ELSE '<err>' END [NotNullConstraint], 
+                        CASE [C].[UniqueConstraint] WHEN 1 THEN 'True' WHEN 0 THEN 'False' ELSE '<err>' END [UniqueConstraint], 
+                        [CheckConstraint], 
+                        [DefaultConstraint], 
+                        CASE [CollationConstraint] WHEN 0 THEN 'Unset' WHEN 1 THEN 'Binary' WHEN 2 THEN 'NoCase' WHEN 3 THEN 'RTrim' ELSE '<err>' END CollationConstraint, 
+                        [OrdinalInPrimaryKey], 
+                        (SELECT GROUP_CONCAT ([Name], ' | ')
+                FROM   (SELECT [] [Value], 
+                                [:1] [Name]
+                        FROM   (VALUES (1, 'ECInstanceId')
+                                UNION
+                                VALUES (2, 'ECClassId')
+                                UNION
+                                VALUES (4, 'SourceECInstanceId')
+                                UNION
+                                VALUES (8, 'SourceECClassId')
+                                UNION
+                                VALUES (16, 'TargetECInstanceId')
+                                UNION
+                                VALUES (32, 'TargetECClassId')
+                                UNION
+                                VALUES (64, 'DataColumn')
+                                UNION
+                                VALUES (128, 'SharedDataColumn')
+                                UNION
+                                VALUES (256, 'RelECClassId')))
+                WHERE  [Value] | [ColumnKind] = [ColumnKind]) [ColumnKind]
+                FROM   [ec_Column] [C]
+                        INNER JOIN [ec_Table] [T] ON [T].[Id] = [C].[TableId]
+                ORDER  BY [C].[TableId],
+                            [C].[Id];)";
+            }
+    public:
+        ColumnComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            : DataFacetComparer(ecdb, test, directory)
+            {}
+
+    };
+struct ComparerContext
+    {
+    private:
+        static Utf8String GetBaselineFolder()
+            {
+            return "C:/TEMP/BaseLines/";
+            //BeFileName ecdbPath;
+            //BeTest::GetHost().GetDocumentsRoot(ecdbPath);
+            //ecdbPath.AppendToPath(WString("Baselines", BentleyCharEncoding::Utf8).c_str());
+            //return ecdbPath.GetNameUtf8();
+            }
+
+        std::vector< std::unique_ptr<DataFacetComparer>> m_comparers;
+    public:
+        ComparerContext(ECDbCR ecdb, Utf8CP test)
+            {
+            m_comparers.push_back(std::unique_ptr<DataFacetComparer>(new ColumnComparer(ecdb, test, GetBaselineFolder().c_str())));
+            m_comparers.push_back(std::unique_ptr<DataFacetComparer>(new IndexComparer(ecdb, test, GetBaselineFolder().c_str())));
+            m_comparers.push_back(std::unique_ptr<DataFacetComparer>(new TableComparer(ecdb, test, GetBaselineFolder().c_str())));
+            m_comparers.push_back(std::unique_ptr<DataFacetComparer>(new PropertyMapComparer(ecdb, test, GetBaselineFolder().c_str())));
+            }
+        BentleyStatus CreateBaseline()
+            {
+            for (auto& v : m_comparers)
+                if (v->WriteBaselineToDisk() != SUCCESS)
+                    return ERROR;
+
+            return SUCCESS;
+            }
+
+        void Assert()
+            {
+            for (auto& v : m_comparers)
+                v->Assert();
+            }
+    };
+
+//TEST_F(DbMappingTestFixture, CSV123)
+//    {
+//
+//    ECDbCR ecdb = SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
+//        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+//            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+//            <ECEntityClass typeName="Base_Abstract_OwnTable" modifier="Abstract">
+//                <ECProperty propertyName="Prop1" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Sub_Of_Base_Abstract_OwnTable">
+//                <BaseClass>Base_Abstract_OwnTable</BaseClass>
+//                <ECProperty propertyName="Prop2" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Base_OwnTable">
+//                <ECProperty propertyName="Prop1" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Sub_Of_Base_OwnTable">
+//                <BaseClass>Base_OwnTable</BaseClass>
+//                <ECProperty propertyName="Prop2" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Base_Abstract_NoSubclass_OwnTable" modifier="Abstract">
+//                <ECProperty propertyName="Prop1" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Base_Abstract_NoSubclass_TPH" modifier="Abstract">
+//                <ECCustomAttributes>
+//                    <ClassMap xlmns="ECDbMap.02.00">
+//                        <MapStrategy>TablePerHierarchy</MapStrategy>
+//                    </ClassMap>
+//                </ECCustomAttributes>
+//                <ECProperty propertyName="Prop2" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Base_Abstract_TPH" modifier="Abstract">
+//                <ECCustomAttributes>
+//                    <ClassMap xlmns="ECDbMap.02.00">
+//                        <MapStrategy>TablePerHierarchy</MapStrategy>
+//                    </ClassMap>
+//                </ECCustomAttributes>
+//                <ECProperty propertyName="Prop1" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Sub_Of_Base_Abstract_TPH">
+//                <BaseClass>Base_Abstract_TPH</BaseClass>
+//                <ECProperty propertyName="Prop2" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Base_NoSubclass_TPH">
+//                <ECCustomAttributes>
+//                    <ClassMap xlmns="ECDbMap.02.00">
+//                        <MapStrategy>TablePerHierarchy</MapStrategy>
+//                    </ClassMap>
+//                </ECCustomAttributes>
+//                <ECProperty propertyName="Prop1" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Base_TPH">
+//                <ECCustomAttributes>
+//                    <ClassMap xlmns="ECDbMap.02.00">
+//                        <MapStrategy>TablePerHierarchy</MapStrategy>
+//                    </ClassMap>
+//                </ECCustomAttributes>
+//                <ECProperty propertyName="Prop1" typeName="string" />
+//            </ECEntityClass>
+//            <ECEntityClass typeName="Sub_Of_Base_TPH">
+//                <BaseClass>Base_TPH</BaseClass>
+//                <ECProperty propertyName="Prop2" typeName="string" />
+//            </ECEntityClass>
+//            </ECSchema>)xml"));
+//    ASSERT_TRUE(ecdb.IsDbOpen());
+//    ComparerContext ctx(ecdb,"Test1");
+//    //ctx.CreateBaseline();
+//    ctx.Assert();
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
