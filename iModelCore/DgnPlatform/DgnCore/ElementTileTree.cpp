@@ -1090,11 +1090,13 @@ void Root::AddCachedGeometry(GeometryList&& geometry, DgnElementId elementId, do
     if (!WantCacheGeometry(rangeDiagSq))
         return;
 
-    for (auto& geom : geometry)
-        geom->SetInCache(true);
-
     BeMutexHolder lock(m_mutex);
-    m_geomLists.Insert(elementId, std::move(geometry));
+    auto pair = m_geomLists.Insert(elementId, std::move(geometry));
+    if (pair.second)
+        {
+        for (auto& geom : pair.first->second)
+            geom->SetInCache(true);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1485,6 +1487,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 +---------------+---------------+---------------+---------------+---------------+------*/
 Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
     {
+#if defined(ETT_CLIP_STROKES)
     // Might be more efficient to modify input in-place.
     Strokes output(*input.m_displayParams, input.m_disjoint);
     output.m_strokes.reserve(input.m_strokes.size());
@@ -1530,6 +1533,9 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
         }
 
     return output;
+#else
+    return input;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
