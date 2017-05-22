@@ -70,6 +70,35 @@ static Utf8String                               s_currentTestCaseName;          
 static Utf8String                               s_currentTestName;                  //  "       "
 #endif
 
+#ifdef XX_BETEST_HAS_SEH
+
+#define BE_TEST_SEH_TRY                 __try{
+#define BE_TEST_SEH_EXCEPT(CLEANUP)          } __except(ExpFilter(GetExceptionInformation(), GetExceptionCode()))  {    CLEANUP   }
+
+// Exception filter (used to show exception call-stack)
+static LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD dwExpCode)
+    {
+    if (dwExpCode != EXCEPTION_BREAKPOINT)
+        {
+        #if defined (WIP_BETEST)
+        StackWalker sw;
+        sw.ShowCallstack(GetCurrentThread(), pExp->ContextRecord);
+        #else
+        LOG_ERROR ("--- EXCEPTION ---\n");
+        #endif
+        return EXCEPTION_EXECUTE_HANDLER;
+        }
+    else
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+#else
+
+#define BE_TEST_SEH_TRY            
+#define BE_TEST_SEH_EXCEPT(CLEANUP)
+
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -308,110 +337,6 @@ void            BeTest::SetBeAssertListener (T_BeAssertListener* l)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType atype)
-    {
-    FOR_EACH(BeTest::T_BeAssertListener* listener, s_assertListeners)
-        listener (_Message, _File, _Line, atype);
-
-    bool failOnAssert;
-        {
-        BeMutexHolder holder (s_bentleyCS);
-        failOnAssert = s_failOnAssert[(int)atype];
-        }
-
-    if (!failOnAssert)
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->infov (L"Ignoring assert %ls at %ls:%d\n", _Message, _File, _Line);
-        return;
-        }
-
-    WString assertionFailure;
-    assertionFailure.append (_File);
-
-    wchar_t buf[64];
-    BeStringUtilities::Snwprintf (buf, L"(%d): ", _Line);
-    assertionFailure.append (buf);
-
-    assertionFailure.append(getAssertTypeDesc(atype));
-
-    BeStringUtilities::Snwprintf(buf, L" (%d): ", atype);
-    assertionFailure.append(buf);
-
-    assertionFailure.append(_Message);
-    assertionFailure.append(L" ");
-
-    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->error (assertionFailure.c_str());
-
-#ifdef USE_GTEST
-    s_assertionFailureHandler(assertionFailure.c_str());
-#else
-    if (BeTest::GetBreakOnFailure())
-        {
-        BeTest::BreakInDebugger ("BeAssert", "ASSERT!");
-        }
-
-    if (BeThreadUtilities::GetCurrentThreadId () != s_mainThreadId)
-        {
-        BeMutexHolder holder (s_bentleyCS);
-        s_hadAssertOnAnotherThread = true;
-        return;
-        }
-
-    s_IFailureHandler->_OnAssertionFailure (assertionFailure.c_str());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEY_WIN32)// || defined (BENTLEY_WINRT)
-static void onInvalidParameter
-(
-const wchar_t * expression,
-const wchar_t * function,
-const wchar_t * file,
-unsigned int line,
-uintptr_t pReserved
-)
-    {
-    WString parameterFailure;
-    if (expression != nullptr)
-        {
-        parameterFailure.assign (expression);
-        parameterFailure.append(L": ");
-        parameterFailure.append(function);
-        parameterFailure.append(L" ");
-        parameterFailure.append(file);
-        wchar_t buf[64];
-        BeStringUtilities::Snwprintf(buf, L" %d", line);
-        parameterFailure.append(buf);
-        }
-
-    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->error(parameterFailure.c_str());
-
-#ifdef USE_GTEST
-    s_assertionFailureHandler(parameterFailure.c_str());
-#else
-    if (BeTest::GetBreakOnFailure())
-        {
-        BeTest::BreakInDebugger("BeAssert", "onInvalidParameter");
-        }
-
-    if (!s_runningUnderGtest && BeThreadUtilities::GetCurrentThreadId() != s_mainThreadId)
-        {
-        BeMutexHolder holder(s_bentleyCS);
-        s_hadAssertOnAnotherThread = true;
-        return;
-        }
-
-    s_IFailureHandler->_OnAssertionFailure(parameterFailure.c_str());
-#endif
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeTest::Host&  BeTest::GetHost () {return *s_host;}
@@ -429,7 +354,7 @@ void BeTest::Initialize (Host& host)
     s_failOnAssert[(int)BeAssertFunctions::AssertType::Data] = false;
 
     s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    BeAssertFunctions::SetBeTestAssertHandler(beTestAssertionFailureHandler);   // steals asserthandler and prevents any else from overriding it!
+    BeAssertFunctions::SetBeTestAssertHandler(AssertionFailureHandler);   // steals asserthandler and prevents any else from overriding it!
 
     static bool s_initialized = false;
     if (s_initialized)
@@ -448,21 +373,14 @@ void BeTest::Initialize (Host& host)
     _set_abort_behavior (0,_CALL_REPORTFAULT);
     SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX);
 
-    _set_invalid_parameter_handler(onInvalidParameter);
+    _set_invalid_parameter_handler(OnInvalidParameter);
 
 #elif defined (BENTLEY_WINRT)
 
-    //RoInitialize(RO_INIT_MULTITHREADED);
-
-    // We do this to cause asserts to always output to a message box.  Without this the gtest process will abort without giving the developer the opportunity to 
+    // We do this to cause asserts to always output to a message box.  Without this the process will abort without giving the developer the opportunity to 
     // attach with a debugger and analyze the situation.
     _set_error_mode(_OUT_TO_STDERR);
 
-    // Suppress exception pop-ups.
-    //_set_abort_behavior(0, _CALL_REPORTFAULT);
-    //SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-
-    //_set_invalid_parameter_handler(onInvalidParameter);
 #elif defined (__unix__)
 
     // no special set-up required
@@ -490,18 +408,6 @@ void BeTest::Uninitialize ()
 //#if defined (BENTLEY_WINRT)
 //RoUninitialize();
 //#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeTest::Fail(WCharCP msg)
-    {
-#ifdef USE_GTEST
-    s_assertionFailureHandler(msg);
-#else
-    s_IFailureHandler->_OnUnexpectedResult (msg);
-#endif
     }
 
 #if defined(USE_GTEST)
@@ -1078,14 +984,6 @@ void BeTest::TearDownTestCase(Utf8CP tcname)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeTest::Fail(WCharCP msg)
-    {
-    s_IFailureHandler->_OnUnexpectedResult(msg);
-    }
-
 #ifdef BENTLEY_WINRT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
@@ -1097,6 +995,122 @@ void BeTest::SetFailureJmpbuf(void* jmpbufptr)
 #endif
 
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::AssertionFailureHandler (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType atype)
+    {
+    FOR_EACH(BeTest::T_BeAssertListener* listener, s_assertListeners)
+        listener (_Message, _File, _Line, atype);
+
+    bool failOnAssert;
+        {
+        BeMutexHolder holder (s_bentleyCS);
+        failOnAssert = s_failOnAssert[(int)atype];
+        }
+
+    if (!failOnAssert)
+        {
+        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->infov (L"Ignoring assert %ls at %ls:%d\n", _Message, _File, _Line);
+        return;
+        }
+
+    WString assertionFailure;
+    assertionFailure.append (_File);
+
+    wchar_t buf[64];
+    BeStringUtilities::Snwprintf (buf, L"(%d): ", _Line);
+    assertionFailure.append (buf);
+
+    assertionFailure.append(getAssertTypeDesc(atype));
+
+    BeStringUtilities::Snwprintf(buf, L" (%d): ", atype);
+    assertionFailure.append(buf);
+
+    assertionFailure.append(_Message);
+    assertionFailure.append(L" ");
+
+    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->error (assertionFailure.c_str());
+
+#ifdef USE_GTEST
+    s_assertionFailureHandler(assertionFailure.c_str());
+#else
+    if (BeTest::GetBreakOnFailure())
+        {
+        BeTest::BreakInDebugger ("BeAssert", "ASSERT!");
+        }
+
+    if (BeThreadUtilities::GetCurrentThreadId () != s_mainThreadId)
+        {
+        BeMutexHolder holder (s_bentleyCS);
+        s_hadAssertOnAnotherThread = true;
+        return;
+        }
+
+    s_IFailureHandler->_OnAssertionFailure (assertionFailure.c_str());
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (BENTLEY_WIN32)// || defined (BENTLEY_WINRT)
+void BeTest::OnInvalidParameter
+(
+const wchar_t * expression,
+const wchar_t * function,
+const wchar_t * file,
+unsigned int line,
+uintptr_t pReserved
+)
+    {
+    WString parameterFailure;
+    if (expression != nullptr)
+        {
+        parameterFailure.assign (expression);
+        parameterFailure.append(L": ");
+        parameterFailure.append(function);
+        parameterFailure.append(L" ");
+        parameterFailure.append(file);
+        wchar_t buf[64];
+        BeStringUtilities::Snwprintf(buf, L" %d", line);
+        parameterFailure.append(buf);
+        }
+
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->error(parameterFailure.c_str());
+
+#ifdef USE_GTEST
+    s_assertionFailureHandler(parameterFailure.c_str());
+#else
+    if (BeTest::GetBreakOnFailure())
+        {
+        BeTest::BreakInDebugger("BeAssert", "onInvalidParameter");
+        }
+
+    if (!s_runningUnderGtest && BeThreadUtilities::GetCurrentThreadId() != s_mainThreadId)
+        {
+        BeMutexHolder holder(s_bentleyCS);
+        s_hadAssertOnAnotherThread = true;
+        return;
+        }
+
+    s_IFailureHandler->_OnAssertionFailure(parameterFailure.c_str());
+#endif
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::Fail(WCharCP msg)
+    {
+#ifdef USE_GTEST
+    s_assertionFailureHandler(msg);
+#else
+    s_IFailureHandler->_OnUnexpectedResult (msg);
+#endif
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2012
@@ -1145,31 +1159,3 @@ void PerformanceResultRecorder::WriteResults(Utf8CP testcaseName, Utf8CP testNam
     fclose(logFile);
 }
 
-#ifdef XX_BETEST_HAS_SEH
-
-#define BE_TEST_SEH_TRY                 __try{
-#define BE_TEST_SEH_EXCEPT(CLEANUP)          } __except(ExpFilter(GetExceptionInformation(), GetExceptionCode()))  {    CLEANUP   }
-
-// Exception filter (used to show exception call-stack)
-static LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD dwExpCode)
-    {
-    if (dwExpCode != EXCEPTION_BREAKPOINT)
-        {
-        #if defined (WIP_BETEST)
-        StackWalker sw;
-        sw.ShowCallstack(GetCurrentThread(), pExp->ContextRecord);
-        #else
-        LOG_ERROR ("--- EXCEPTION ---\n");
-        #endif
-        return EXCEPTION_EXECUTE_HANDLER;
-        }
-    else
-        return EXCEPTION_CONTINUE_SEARCH;
-    }
-
-#else
-
-#define BE_TEST_SEH_TRY            
-#define BE_TEST_SEH_EXCEPT(CLEANUP)
-
-#endif

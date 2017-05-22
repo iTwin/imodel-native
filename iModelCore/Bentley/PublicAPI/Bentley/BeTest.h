@@ -71,8 +71,8 @@
     #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)                   \
         struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                \
         {                                                                                   \
-            BentleyApi::CharCP  GetTestCaseNameA () const override { return #testCaseName; }         \
-            BentleyApi::CharCP  GetTestNameA ()     const override { return #testName; }             \
+            BentleyApi::CharCP  GetTestCaseNameA () const override { return #testCaseName; }\
+            BentleyApi::CharCP  GetTestNameA ()     const override { return #testName; }    \
             virtual void TestBody () override;                                              \
             static BeTest::TestCaseInfo* s_superClassTestCaseInfo;                          \
         };                                                                                  \
@@ -80,12 +80,9 @@
     extern "C" EXPORT_ATTRIBUTE int BETEST_TEST_RUNNER_FUNC(testCaseName,testName) ()       \
         {                                                                                   \
         size_t e = BeTest::GetErrorCount();                                                 \
-        if (BeTest::ShouldRunTest (#testCaseName "." #testName))                            \
-            {                                                                               \
-            BeTest::SetNameOfCurrentTestInternal(#testCaseName,#testName);                  \
-            BETEST_TEST_CLASS_NAME(testCaseName,testName) t;                                \
-            t.Run();                                                                        \
-            }                                                                               \
+        BeTest::SetNameOfCurrentTestInternal(#testCaseName,#testName);                      \
+        BETEST_TEST_CLASS_NAME(testCaseName,testName) t;                                    \
+        t.Run();                                                                            \
         return BeTest::GetErrorCount() > e;                                                 \
         }                                                                                   \
     void BETEST_TEST_CLASS_NAME(testCaseName,testName) :: TestBody ()
@@ -115,6 +112,12 @@ struct BeTest
 #if defined (__unix__)
     static bool s_loop;
 #endif
+
+#ifdef _WIN32
+    static void BeTest::OnInvalidParameter(const wchar_t * expression, const wchar_t * function, const wchar_t * file, unsigned int line, uintptr_t pReserved);
+#endif
+
+static void AssertionFailureHandler (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType atype);
 
 ///@name Platform-specific up-calls
 ///@{
@@ -301,6 +304,7 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
 private:
 BENTLEYDLL_EXPORT static void SetIFailureHandler (IFailureHandler&);
 
+public:
 ///@name Test case setup/teardown
 ///@{
 BENTLEYDLL_EXPORT static TestCaseInfo* RegisterTestCase(Utf8CP, T_SetUpFunc, T_TearDownFunc);
