@@ -228,6 +228,11 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetr
     CallStatus status = ConnectWebServicesClientC_ReadProject_V4 (api, instanceId, &project);
     ASSERT_TRUE (status == SUCCESS);
 
+    wchar_t stringBuf[4096];
+    status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_V4_BUFF_OBJECTID, 0, 4096, stringBuf);
+    ASSERT_TRUE(status == SUCCESS);
+    ASSERT_STREQ(stringBuf, instanceId);
+
     status = ConnectWebServicesClientC_DataBufferFree (api, project);
     ASSERT_TRUE (status == SUCCESS);
 
