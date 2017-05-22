@@ -454,7 +454,7 @@ struct Publish3mxScene : Scene
     using Scene::Scene;
 
     TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp=Image::BottomUp::No) const override {return new Publish3mxTexture(source, bottomUp);}
-    GeometryPtr _CreateGeometry(Geometry::CreateParams const& args) override {return new Publish3mxGeometry(args, *this);}
+    GeometryPtr _CreateGeometry(Geometry::CreateParams const& args, DRange3dCR tileRange) override {return new Publish3mxGeometry(args, *this);}
 };
 typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
 

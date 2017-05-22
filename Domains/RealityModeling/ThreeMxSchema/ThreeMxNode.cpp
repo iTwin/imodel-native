@@ -191,7 +191,7 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
 * Geometry is only valid for that Render::System
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Geometry::Geometry(CreateParams const& args, SceneR scene)
+Geometry::Geometry(CreateParams const& args, SceneR scene, DRange3dCR tileRange)
     {
     // After we create a Render::Graphic, we only need the points/indices/normals for picking.
     // To save memory, only store them if the model is locatable.
@@ -211,7 +211,13 @@ Geometry::Geometry(CreateParams const& args, SceneR scene)
 
     auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
     GraphicParams gfParams = GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0, GraphicParams::LinePixels::Solid);
-    m_graphic = scene.GetRenderSystem()->_CreateTriMesh(trimesh, scene.GetDgnDb(), gfParams);
+
+#define GENERATE_REALITY_MODEL_EDGES
+#ifdef GENERATE_REALITY_MODEL_EDGES
+    m_graphics = scene.GetRenderSystem()->_CreateTriMeshAndEdges(trimesh, scene.GetDgnDb(), gfParams, tileRange, MeshEdgeCreationOptions(true, false, false, 0.0));
+#else
+    m_graphics.push_back(_CreateTriMesh(trimesh, scene.GetDgnDb(), gfParams));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,8 +225,8 @@ Geometry::Geometry(CreateParams const& args, SceneR scene)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Geometry::Draw(DrawArgsR args)
     {
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
+    if (!m_graphics.empty())
+        args.m_graphics.Add(m_graphics);
     }
 
 /*---------------------------------------------------------------------------------**//**
