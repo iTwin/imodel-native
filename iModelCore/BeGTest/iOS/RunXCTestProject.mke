@@ -21,7 +21,7 @@
     ProductBaseDir = $(OutputRootDir)Product/
 %endif
 
-XCODEPROJ=$(OutputRootDir)$(ProductBaseDir)/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
+XCODEPROJ=$(ProductBaseDir)$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
 
 %ifndef XCTEST_LOGFILE_NAME
     XCTEST_LOGFILE_NAME=$(XCTEST_PRODUCT).log
