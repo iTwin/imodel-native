@@ -22,6 +22,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct SMVolumeSegment {
+    SMVolumeSegment() { volume = 0; }
     std::vector<double> VolumeRanges; // vector of abcissa couples (min-max) 
     double volume; // the integrated volume (sum of volume ranges)
     };

@@ -24,6 +24,20 @@ ScalableMeshAnalysis* ScalableMeshAnalysis::Create(IScalableMesh* scMesh)
     return new ScalableMeshAnalysis(scMesh);
     }
 
+bool _CreatePolyfaceFromPoints(const bvector<DPoint3d>& polygon, PolyfaceHeaderPtr polyface)
+    {
+    // Create the Polyface for intersections and queries
+    ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polygon));
+    CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
+    IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+    facetOptions->SetNormalsRequired(false);
+    facetOptions->SetMaxPerFace(3);
+    IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(*facetOptions);
+    polyfaceBuilder->AddRegion(*curveVectorPtr);
+    polyface = polyfaceBuilder->GetClientMeshPtr();
+    return (polyface != nullptr);
+    }
+
 void ScalableMeshAnalysis::_CreateFillVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction)
     {
     // store the first border to consider
@@ -153,7 +167,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     auto draping1 = m_scmPtr->GetDTMInterface()->GetDTMDraping();
 
     bool *intersected = new bool[m_xSize*m_ySize];
-    SMVolumeSegment *Segments = grid.m_VolSegments;
+    //SMVolumeSegment *Segments = grid.m_VolSegments;
 
     double tolerance = std::numeric_limits<double>::min(); // intersection tolerance - SNU TODO
     double zsource = range.low.z - tolerance; // be sure to start under the range
@@ -165,9 +179,11 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         {
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
+
         for (int j = 0; j < m_ySize; j++)
             {
             intersected[i*m_ySize + j] = false;
+
             double y = range.low.y + m_yStep * j;
             DPoint3d source = DPoint3d::From(x, y, zsource);
             bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits;
@@ -202,7 +218,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
                         if (aSegment.VolumeRanges.size() > 0)
                             {
-                            Segments[i*m_ySize + j] = aSegment;
+                            grid.m_VolSegments[i*m_ySize + j] = aSegment;
                             intersected[i*m_ySize + j] = true;
                             }
                         }
@@ -218,8 +234,12 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         for (int j = 0; j < m_ySize; j++)
             {
             if (intersected[i*m_ySize + j] != true)
+                {
+                SMVolumeSegment emptySegment;
+                grid.m_VolSegments[i*m_ySize + j] = emptySegment;
                 continue;
-            SMVolumeSegment &segment = Segments[i*m_ySize + j];
+                }
+            SMVolumeSegment &segment = grid.m_VolSegments[i*m_ySize + j];
             for (int k = 0; k < segment.VolumeRanges.size() - 1; k += 2)
                 {
                 double deltaZ = segment.VolumeRanges[k + 1] - segment.VolumeRanges[k];
@@ -239,8 +259,113 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     return DTMStatusInt::DTM_SUCCESS;
     }
 
-DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr anotherMesh, double resolution, ISMGridVolume& grid)
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr diffMesh, double resolution, ISMGridVolume& grid)
     {
+    if (polygon.size() < 3)
+        return DTMStatusInt::DTM_ERROR; // invalid region
+    if (diffMesh == nullptr)
+        return DTMStatusInt::DTM_ERROR; // invalid mesh
+
+    DRange3d rangeMesh; // extend of the scalable mesh
+    m_scmPtr->GetRange(rangeMesh);
+
+    IScalableMeshPtr diffMesh2;
+    DRange3d rangeMesh2; // extend of the second scalable mesh
+    diffMesh2->GetRange(rangeMesh2);
+
+    DRange3d rangeInter;
+    rangeInter.IntersectionOf(rangeMesh, rangeMesh2);
+
+    DRange3d rangeRegion; // Extend of the polygon region - extended to mesh Z
+    DPoint3d P1 = polygon[0]; P1.z = rangeInter.low.z;  // keep only xy
+    DPoint3d P2 = polygon[1]; P2.z = rangeInter.high.z;
+    rangeRegion = DRange3d::From(P1, P2);
+    for (auto point : polygon)
+        rangeRegion.Extend(point);
+    rangeRegion.low.z = rangeInter.low.z;
+    rangeRegion.high.z = rangeInter.high.z;
+
+    // Initialize the grid volume structure
+    if (!grid.InitFrom(resolution, rangeInter, rangeRegion))
+        return DTMStatusInt::DTM_ERROR; // could not initialize grid
+
+    DRange3d range = grid.m_range; // the intersection range (mesh inter region)
+    int m_xSize, m_ySize;
+    grid.GetGridSize(m_xSize, m_ySize);
+
+    // Create the Polyface for intersections and queries
+    ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polygon));
+    CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
+    IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+    facetOptions->SetNormalsRequired(false);
+    facetOptions->SetMaxPerFace(3);
+    IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(*facetOptions);
+    polyfaceBuilder->AddRegion(*curveVectorPtr);
+    PolyfaceHeaderPtr polyface = polyfaceBuilder->GetClientMeshPtr();
+
+    auto draping1 = m_scmPtr->GetDTMInterface()->GetDTMDraping();
+    auto draping2 = diffMesh2->GetDTMInterface()->GetDTMDraping();
+
+    bool *intersected = new bool[m_xSize*m_ySize];
+    SMVolumeSegment *Segments = grid.m_VolSegments;
+
+    double tolerance = std::numeric_limits<double>::min(); // intersection tolerance - SNU TODO
+    double zsource = range.low.z - tolerance; // be sure to start under the range
+    double m_xStep = grid.m_resolution;
+    double m_yStep = grid.m_resolution;
+
+#pragma omp parallel for
+    for (int i = 0; i < m_xSize; i++)
+        {
+        double x = range.low.x + m_xStep * i;
+        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
+        for (int j = 0; j < m_ySize; j++)
+            {
+            intersected[i*m_ySize + j] = false;
+            double y = range.low.y + m_yStep * j;
+            DPoint3d source = DPoint3d::From(x, y, zsource);
+            bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits;
+            bool bret = draping1->IntersectRay(Hits, grid.m_direction, source);
+
+            if (bret && Hits.size() > 0)
+                {
+                DPoint3d source_local = source;// -DVec3d::From(grid.m_center);
+                auto classif = curveVectorPtr->PointInOnOutXY(source_local);
+                if (classif == CurveVector::InOutClassification::INOUT_In) // we are inside the restriction
+                    {
+                    DRay3d ray = DRay3d::FromOriginAndVector(source_local, grid.m_direction);
+                    DPoint3d polyHit; polyHit.Zero();
+
+                    bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits2;
+                    bret = draping2->IntersectRay(Hits2, grid.m_direction, source);
+                    if (bret && Hits2.size() > 0)
+                        {
+                        //inverse the normals of the second hits, and merge them in the main hit list
+                        for (auto hit2 : Hits2)
+                            {
+                            if (hit2.hasNormal)
+                                hit2.normal = -1.0 * hit2.normal;
+                            Hits.push_back(hit2);
+                            }
+                        // re-order the complete hit list
+                        DTMIntersectionCompare Comparator;
+                        std::sort(Hits.begin(), Hits.end(), Comparator); // sort by ray fraction
+
+                        SMVolumeSegment aSegment;
+                        _CreateFillVolumeRanges(aSegment, Hits, source, grid.m_direction);
+                        _CreateCutVolumeRanges(aSegment, Hits, source, grid.m_direction);
+
+                        if (aSegment.VolumeRanges.size() > 0)
+                            {
+                            Segments[i*m_ySize + j] = aSegment;
+                            intersected[i*m_ySize + j] = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
 
     return DTMStatusInt::DTM_SUCCESS;
     }
