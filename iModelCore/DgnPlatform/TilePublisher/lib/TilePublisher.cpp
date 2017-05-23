@@ -130,7 +130,8 @@ void BatchTableBuilder::InitUncategorizedCategory()
     // This is dumb. See OfficeBuilding.dgn - cells have no level in V8, which translates to 'Uncategorized' (2d and 3d variants) in DgnDb
     // We don't want to create an 'Uncategorized' assembly if its children belong to a real category.
     // We only can detect this because for whatever reason, "Uncategorized" is not a localized string.
-    DgnCode code = m_is3d ? SpatialCategory::CreateCode(m_db, "Uncategorized") : DrawingCategory::CreateCode(m_db.GetDictionaryModel(), "Uncategorized");;
+    DefinitionModelR dictionary = m_db.GetDictionaryModel();
+    DgnCode code = m_is3d ? SpatialCategory::CreateCode(dictionary, "Uncategorized") : DrawingCategory::CreateCode(dictionary, "Uncategorized");
     m_uncategorized = DgnCategory::QueryCategoryId(m_db, code);
     }
 

@@ -1,13 +1,13 @@
+
 /*--------------------------------------------------------------------------------------+
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnColors_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnTrueColor.h>
-#include <DgnPlatform/ColorUtil.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
+#include <DgnPlatform/ColorBook.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Umar.Hayat   09/15
@@ -17,114 +17,53 @@ struct DgnColorTests : public DgnDbTestFixture
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
+* @bsimethod                                    Shaun.Sewall                    05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnColorTests, TrueColors)
+TEST_F(DgnColorTests, ColorBook)
     {
     SetupSeedProject();
     DgnDbR db = GetDgnDb();
+    DefinitionModelR dictionary = db.GetDictionaryModel();
 
-    DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));
-    EXPECT_TRUE(color1.Insert().IsValid());
-    DgnTrueColorId colorId = color1.GetColorId();
-    EXPECT_TRUE(colorId.IsValid());
+    ColorBook colorBook(dictionary, "TestBook1");
+    ASSERT_TRUE(colorBook.Insert().IsValid());
 
-    DgnTrueColor color2(DgnTrueColor::CreateParams(db, ColorDef(2, 3, 33), "Color2"));
-    EXPECT_TRUE(color2.Insert().IsValid());
-    auto colorId2 = color2.GetColorId();
-    EXPECT_TRUE(colorId2.IsValid());
+    ColorDef color1(255, 254, 253);
+    ColorDef color2(2, 3, 33);
+    ColorDef color3(2, 3, 33); // It is legal to have two colors with the same RGB value
+    ColorDef color4(4, 4, 44);
+    ColorDef color5(55, 5, 55);
+    ColorDef color6(6, 6, 66);
 
-    // It is legal to have two colors with the same RGB value
-    DgnTrueColor color3(DgnTrueColor::CreateParams(db, ColorDef(2,3,33), "Color3"));
-    EXPECT_TRUE(color3.Insert().IsValid());
-    auto colorId3 = color3.GetColorId();
-    EXPECT_TRUE(colorId3.IsValid());
+    colorBook.AddColor("Color1", color1);
+    colorBook.AddColor("Color2", color2);
+    colorBook.AddColor("Color3", color3);
+    colorBook.AddColor("Color4", color4);
+    colorBook.AddColor("Color Five", color5);
+    colorBook.AddColor("6", color6);
 
-    // It is not legal to have two colors with the same book+color name
-    DgnTrueColor color3_dup(DgnTrueColor::CreateParams(db, ColorDef(2,3,33), "Color3"));
-    EXPECT_FALSE(color3_dup.Insert().IsValid());
+    ASSERT_TRUE(colorBook.Update().IsValid());
 
-    DgnTrueColor color1_dup(DgnTrueColor::CreateParams(db, ColorDef(5,54,3), "TestName1", "TestBook1"));
-    EXPECT_FALSE(color1_dup.Insert().IsValid());
+    ASSERT_EQ(color1, colorBook.GetColor("Color1"));
+    ASSERT_EQ(color2, colorBook.GetColor("Color2"));
+    ASSERT_EQ(color3, colorBook.GetColor("Color3"));
+    ASSERT_EQ(color4, colorBook.GetColor("Color4"));
+    ASSERT_EQ(color5, colorBook.GetColor("Color Five"));
+    ASSERT_EQ(color6, colorBook.GetColor("6"));
 
-    DgnTrueColor color4(DgnTrueColor::CreateParams(db, ColorDef(4,3,33), "Color4"));
-    EXPECT_TRUE(color4.Insert().IsValid());
-    auto colorId4 = color4.GetColorId();
-    EXPECT_TRUE(colorId4.IsValid());
-
-    // Color count in TestBook1
-    EXPECT_EQ(1, DgnTrueColor::QueryCount(db, "TestBook1"));
-
-    EXPECT_EQ(4, DgnTrueColor::QueryCount(db));
-
-    int i=0;
-    for (auto& it : DgnTrueColor::MakeIterator(db))
+    int colorCount = 0;
+    for (Utf8StringCR colorName : colorBook.GetColorNames())
         {
-        if (it.GetId() == color1.GetColorId())
-            {
-            ++i;
-            EXPECT_TRUE(it.GetColorDef() == color1.GetColorDef());
-            EXPECT_TRUE(it.GetName() == color1.GetName());
-            EXPECT_TRUE(it.GetBook() == color1.GetBook());
-            }
-        else if (it.GetId() == color2.GetColorId())
-            {
-            ++i;
-            EXPECT_TRUE(it.GetColorDef() == color2.GetColorDef());
-            EXPECT_TRUE(it.GetName() == color2.GetName());
-            EXPECT_TRUE(it.GetBook() == color2.GetBook());
-            }
-        else if (it.GetId() == color3.GetColorId())
-            {
-            ++i;
-            EXPECT_TRUE(it.GetColorDef() == color3.GetColorDef());
-            EXPECT_TRUE(it.GetName() == color3.GetName());
-            EXPECT_TRUE(it.GetBook() == color3.GetBook());
-            }
-        else if (it.GetId() == color4.GetColorId())
-            {
-            ++i;
-            EXPECT_TRUE(it.GetColorDef() == color4.GetColorDef());
-            EXPECT_TRUE(it.GetName() == color4.GetName());
-            EXPECT_TRUE(it.GetBook() == color4.GetBook());
-            }
-        else
-            EXPECT_TRUE(false); // too many entries in iterator
+        ColorDef color = colorBook.GetColor(colorName.c_str());
+        ASSERT_NE(0, color.GetValue());
+        ++colorCount;
         }
+    ASSERT_EQ(6, colorCount);
 
-    EXPECT_TRUE(4 == i);
-
-    DgnTrueColorId matchingColorId = DgnTrueColor::FindMatchingColor(color1.GetColorDef(), db);
-    EXPECT_TRUE(matchingColorId.IsValid());
-    EXPECT_TRUE(color1.GetColorId() == matchingColorId);
-
-    DgnTrueColorCPtr toFind = DgnTrueColor::Get(db, colorId);
-    EXPECT_TRUE(toFind.IsValid());
-    EXPECT_TRUE(toFind->GetColorId() == color1.GetColorId());
-    EXPECT_TRUE(toFind->GetColorDef() == color1.GetColorDef());
-    EXPECT_TRUE(toFind->GetName() == color1.GetName());
-    EXPECT_TRUE(toFind->GetBook() == color1.GetBook());
-
-    toFind = DgnTrueColor::QueryColorByName(db, "TestName1", "TestBook1");
-    EXPECT_TRUE(toFind.IsValid());
-    EXPECT_TRUE(toFind->GetColorId() == color1.GetColorId());
-    EXPECT_TRUE(toFind->GetColorDef() == color1.GetColorDef());
-    EXPECT_TRUE(toFind->GetName() == color1.GetName());
-    EXPECT_TRUE(toFind->GetBook() == color1.GetBook());
-
-    // No match Case
-    EXPECT_FALSE(DgnTrueColor::FindMatchingColor(ColorDef(120, 120, 120), db).IsValid());
-    // Color with same definition
-    EXPECT_TRUE(DgnTrueColor::FindMatchingColor(ColorDef(2, 3, 33), db).IsValid());
-
-    // Cannot update or delete
-    DgnTrueColorCPtr cpColor4 = DgnTrueColor::Get(db, colorId4);
-    ASSERT_TRUE(cpColor4.IsValid());
-    EXPECT_EQ(DgnDbStatus::DeletionProhibited, cpColor4->Delete());
-    auto pColor4 = cpColor4->MakeCopy<DgnTrueColor>();
-    DgnDbStatus updateStat;
-    EXPECT_FALSE(pColor4->Update(&updateStat).IsValid());
-    EXPECT_EQ(DgnDbStatus::WrongElement, updateStat);
+    ASSERT_STREQ("Color1", colorBook.FindColorName(color1).c_str());
+    ASSERT_STREQ("Color4", colorBook.FindColorName(color4).c_str());
+    ASSERT_STREQ("6", colorBook.FindColorName(color6).c_str());
+    ASSERT_TRUE(colorBook.FindColorName(ColorDef(19, 19, 19)).empty());
     }
 
 #define VERIFY_HSV_TO_RGB(R,G,B ,H,S,V) { \
@@ -188,6 +127,7 @@ TEST_F(DgnColorTests, RGB_TO_HSV)
     // Gray
     VERIFY_RGB_TO_HSV(/*RGB*/128, 128, 128,/*HSV*/0, 0, 50);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -207,6 +147,7 @@ TEST_F(DgnColorTests, ToRgbFactor)
     ASSERT_TRUE(0 == rgbf.green);
     ASSERT_TRUE(0 == rgbf.blue);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -229,6 +170,7 @@ TEST_F(DgnColorTests, FromRgbFactor)
     ASSERT_TRUE(255 == cc.GetGreen());
     ASSERT_TRUE(255 == cc.GetBlue());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -248,6 +190,7 @@ TEST_F(DgnColorTests, ToFloatRgb)
     ASSERT_TRUE(0 == fp.y);
     ASSERT_TRUE(0 == fp.z);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -270,6 +213,7 @@ TEST_F(DgnColorTests, FromFloatRgb)
     ASSERT_TRUE(255 == cc.GetGreen());
     ASSERT_TRUE(255 == cc.GetBlue());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/

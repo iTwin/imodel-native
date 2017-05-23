@@ -893,9 +893,7 @@ void DgnElements::Destroy()
     {
     BeMutexHolder _v_v(m_mutex);
     m_tree->Destroy();
-    m_stmts.Empty();
-    m_classInfos.clear();
-    ClearUpdaterCache();
+    ClearECCaches();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1150,7 +1148,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId,  bool makePersistent) const
     {
     enum Column : int {ClassId=0,ModelId=1,CodeSpec=2,CodeScope=3,CodeValue=4,UserLabel=5,ParentId=6,ParentRelClassId=7,FederationGuid=8,JsonProps=9};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeSpecId,CodeScope,CodeValue,UserLabel,ParentId,ParentRelECClassId,FederationGuid,JsonProperties FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeSpecId,CodeScopeId,CodeValue,UserLabel,ParentId,ParentRelECClassId,FederationGuid,JsonProperties FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1158,7 +1156,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId,  bool makePersis
         return nullptr;
 
     DgnCode code;
-    code.From(stmt->GetValueId<CodeSpecId>(Column::CodeSpec), stmt->GetValueText(Column::CodeValue), stmt->GetValueText(Column::CodeScope));
+    code.From(stmt->GetValueId<CodeSpecId>(Column::CodeSpec), stmt->GetValueId<DgnElementId>(Column::CodeScope), stmt->GetValueText(Column::CodeValue));
 
     DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
@@ -1248,24 +1246,14 @@ Utf8CP ElementIteratorEntry::GetUserLabel() const {return m_statement->GetValueT
 DateTime ElementIteratorEntry::GetLastModifyTime() const {return m_statement->GetValueDateTime(7);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::InitNextId()
-    {
-    if (!m_nextAvailableId.IsValid())
-        m_nextAvailableId = DgnElementId(m_dgndb, BIS_TABLE(BIS_CLASS_Element), "Id");
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
     if (!element.m_flags.m_preassignedId)
         {
-        InitNextId();
-        m_nextAvailableId.UseNext(m_dgndb);
-        element.m_elementId = m_nextAvailableId; 
+        if (BE_SQLITE_OK != m_dgndb.GetElementIdSequence().GetNextValue(element.m_elementId))
+            return nullptr;
         }
 
     if (DgnDbStatus::Success != (stat = element._OnInsert()))
@@ -1501,10 +1489,6 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
 
     DgnElementCR element = *el;
 
-    // Get the next available id now, before we perform any deletes, so if we delete and then undo the last element we don't reuse its id.
-    // Otherwise, we may mistake a new element as being a modification to a deleted element in a changeset.
-    InitNextId(); 
-
     DgnDbStatus stat = element._OnDelete();
     if (DgnDbStatus::Success != stat)
         return stat;
@@ -1537,31 +1521,31 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnElements::QueryElementIdByCode(DgnCode const& code) const
+DgnElementId DgnElements::QueryElementIdByCode(DgnCodeCR code) const
     {
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
 
-    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetValue(), code.GetScope());
+    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetScopeElementId(), code.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::QueryElementIdByCode(Utf8CP codeSpec, Utf8StringCR value, Utf8StringCR nameSpace) const
+DgnElementId DgnElements::QueryElementIdByCode(Utf8CP codeSpec, DgnElementId scopeElementId, Utf8StringCR value) const
     {
-    return QueryElementIdByCode(GetDgnDb().CodeSpecs().QueryCodeSpecId(codeSpec), value, nameSpace);
+    return QueryElementIdByCode(GetDgnDb().CodeSpecs().QueryCodeSpecId(codeSpec), scopeElementId, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::QueryElementIdByCode(CodeSpecId codeSpec, Utf8StringCR value, Utf8StringCR nameSpace) const
+DgnElementId DgnElements::QueryElementIdByCode(CodeSpecId codeSpec, DgnElementId scopeElementId, Utf8StringCR value) const
     {
-    CachedStatementPtr statement=GetStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE CodeValue=? AND CodeSpecId=? AND CodeScope=? LIMIT 1");
-    statement->BindText(1, value, Statement::MakeCopy::No);
-    statement->BindId(2, codeSpec);
-    statement->BindText(3, nameSpace, Statement::MakeCopy::No);
+    CachedStatementPtr statement=GetStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE CodeSpecId=? AND CodeScopeId=? AND CodeValue=? LIMIT 1");
+    statement->BindId(1, codeSpec);
+    statement->BindId(2, scopeElementId);
+    statement->BindText(3, value, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }
 

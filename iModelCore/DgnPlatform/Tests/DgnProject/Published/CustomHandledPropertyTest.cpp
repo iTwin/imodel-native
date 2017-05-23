@@ -81,9 +81,10 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
         checkValue1.Clear();
 
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(cspindex, ECN::ECValue(1)));
-        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(cspindex, ECN::ECValue(code.GetValue().c_str())));
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(cspindex, ECN::ECValue(code.GetValue().c_str())));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(cspindex, ECN::ECValue(m_db->Elements().GetRootSubjectId())));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, cspindex));
-        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(m_db->Elements().GetRootSubjectId())));
         checkValue1.Clear();
 
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(cvindex, ECN::ECValue(1)));
@@ -121,7 +122,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
      checkValue1.Clear();
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
-     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(m_db->Elements().GetRootSubjectId())));
      checkValue1.Clear();
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("TestCode")));
@@ -148,9 +149,9 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, csindex));
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
     checkValue1.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(cspindex, ECN::ECValue(code.GetValue().c_str())));
+    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(cspindex, ECN::ECValue(m_db->Elements().GetDictionaryPartitionId())));
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
-    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(m_db->Elements().GetDictionaryPartitionId())));
     checkValue1.Clear();
     ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(cvindex, ECN::ECValue("NewTestCode")));
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
@@ -180,7 +181,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
     checkValue1.Clear();
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
-    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(m_db->Elements().GetDictionaryPartitionId())));
     checkValue1.Clear();
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("NewTestCode")));
@@ -913,7 +914,7 @@ TEST_F(GetSetCustomHandledProprty, GeometryPart)
     DgnGeometryPartId existingPartId;
     if (true)
     {
-    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, DgnGeometryPart::CreateCode(GetDgnDb(), "GeomPart", "Test"));
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(m_db->GetDictionaryModel(), "Test-GeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, false);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));

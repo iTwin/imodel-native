@@ -111,13 +111,13 @@ struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReader : BeSQLite::ChangeStrea
 private:
     DgnDbCR m_dgndb; // Used only for debugging
     BeFileName m_pathname;
-    BeSQLite::DbSchemaChangeSet m_dbSchemaChanges;
+    Utf8String m_prefix;
 
     BeSQLite::LzmaDecoder m_lzmaDecoder;
     BeSQLite::BeFileLzmaInStream* m_inLzmaFileStream;
     
     BeSQLite::DbResult StartInput();
-    BeSQLite::DbResult ReadDbSchemaChanges();
+    BeSQLite::DbResult ReadPrefix();
     void FinishInput();
     
     DGNPLATFORM_EXPORT BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
@@ -125,11 +125,13 @@ private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter) override;
 
 public:
-    RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : m_pathname(pathname), m_dgndb(dgndb), m_inLzmaFileStream(nullptr) {}
+    RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : m_pathname(pathname), m_dgndb(dgndb), m_inLzmaFileStream(nullptr), m_prefix("") {}
 
-    BeSQLite::DbResult GetDbSchemaChanges(BeSQLite::DbSchemaChangeSetR schemaChanges);
+    Utf8StringCR GetPrefix(BeSQLite::DbResult& result);
 
-    ~RevisionChangesFileReader() {}
+    BeSQLite::DbResult GetSchemaChanges(bool& containsSchemaChanges, BeSQLite::DbSchemaChangeSetR dbSchemaChanges);
+
+    ~RevisionChangesFileReader() { _Reset(); }
 };
 
 //=======================================================================================
@@ -154,6 +156,8 @@ struct RevisionManager : NonCopyableClass
 friend struct TxnManager;
 friend struct RevisionChangesFileReader;
 friend struct ApplyRevisionChangeSet;
+friend struct DgnDb;
+friend struct DgnDomains;
 
 private:
     DgnDbR m_dgndb;
@@ -178,14 +182,19 @@ private:
     RevisionStatus DeleteCurrentRevisionEndTxnId();
 
     DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId);
-    
+    RevisionStatus DoMergeRevision(DgnRevisionCR revision);
+
+    BeSQLite::DbResult SaveContainsSchemaChanges();
+    BeSQLite::DbResult ClearContainsSchemaChanges();
+    bool QueryContainsSchemaChanges() const;
+
     static BeSQLite::ChangeSet::ConflictResolution ConflictHandler(DgnDbCR dgndb, BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 public:
     //! Constructor
     RevisionManager(DgnDbR dgndb);
 
     //! Destructor
-    ~RevisionManager();
+    ~RevisionManager() {}
 
     //! Get the DgnDb for this RevisionManager
     DgnDbR GetDgnDb() { return m_dgndb; }

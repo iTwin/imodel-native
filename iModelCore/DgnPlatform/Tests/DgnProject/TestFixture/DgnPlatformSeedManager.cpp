@@ -76,8 +76,15 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
         DgnDbTestUtils::InsertCameraView(*model, info.viewName.c_str());
 
     if (info.options.testDomain)
-        EXPECT_EQ(BE_SQLITE_OK, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
+        {
+        // Flush any un-committed or committed transactions before importing the schema
+        db->SaveChanges();
+        db->Revisions().StartCreateRevision();
+        db->Revisions().FinishCreateRevision();
 
+        EXPECT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
+        }
+        
     db->SaveSettings();
     db->SaveChanges();
     return info;

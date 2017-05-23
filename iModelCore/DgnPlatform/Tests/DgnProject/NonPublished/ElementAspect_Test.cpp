@@ -429,7 +429,9 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
         TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
 
         //Create aspect
-        codeSpec1Id = Create("CodeSpec1")->GetCodeSpecId();
+        CodeSpecPtr codeSpec1 = Create("CodeSpec1");
+        ASSERT_TRUE(codeSpec1.IsValid());
+        codeSpec1Id = codeSpec1->GetCodeSpecId();
         static DgnElement::AppData::Key s_appDataKey1;
 
         DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(codeSpec1Id, "TestExtKey");
@@ -437,7 +439,7 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
 
         //Add aspect 
         tempEl->AddAppData(s_appDataKey1, extkeyAspect.get());
-        tempEl->SetCode(DgnCode(codeSpec1Id, "TestCode", ""));
+        tempEl->SetCode(codeSpec1->CreateCode("TestCode"));
         DgnElement::UniqueAspect::SetAspect(*tempEl, *TestUniqueAspect::Create("Initial Value"));
 
         //Insert Elements and aspects should be added
@@ -457,7 +459,7 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
         DgnDbTestFixture::OpenDb(db2, destinationFile, DgnDb::OpenMode::ReadWrite, true);
         ASSERT_TRUE(db2.IsValid());
         auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
-        ASSERT_TRUE(BE_SQLITE_OK == status);
+        ASSERT_TRUE(SchemaStatus::Success == status);
 
         DgnImportContext importContext(*m_db, *db2);
         DgnDbStatus stat;

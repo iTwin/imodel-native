@@ -108,8 +108,8 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
     std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
 
-    const auto argCount = args.size();
-    if (argCount != 1 && argCount != 2)
+    const size_t argCount = args.size();
+    if (argCount == 0 || argCount > 3)
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -121,22 +121,26 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    Utf8String const& firstArg = args[0];
     //default mode: read-only
     Db::OpenMode openMode = Db::OpenMode::Readonly;
-    size_t filePathIndex = 0;
-    bool isReadWrite = false;
-    if ((isReadWrite = firstArg.EqualsI(READWRITE_SWITCH)) || firstArg.EqualsI(READONLY_SWITCH))
-        {
-        if (isReadWrite)
-            openMode = Db::OpenMode::ReadWrite;
+    bool openAsECDb = false;
 
-        filePathIndex = 1;
+    const size_t switchCount = argCount - 1;
+    if (switchCount > 0)
+        {
+        for (size_t i = 0; i < switchCount; i++)
+            {
+            Utf8String const& arg = args[i];
+
+            if (arg.EqualsI(READWRITE_SWITCH))
+                openMode = Db::OpenMode::ReadWrite;
+            else if (arg.EqualsI("asecdb"))
+                openAsECDb = true;
+            }
         }
 
-
     BeFileName filePath;
-    filePath.SetNameUtf8(args[filePathIndex].c_str());
+    filePath.SetNameUtf8(args[argCount - 1].c_str());
     filePath.Trim(L"\"");
     if (!filePath.DoesPathExist())
         {
@@ -164,7 +168,8 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    if (profileInfos.find(SessionFile::ProfileInfo::Type::DgnDb) != profileInfos.end())
+    const bool isBimFile = profileInfos.find(SessionFile::ProfileInfo::Type::DgnDb) != profileInfos.end();
+    if (isBimFile && !openAsECDb)
         {
         sqliteFile->GetHandleR().CloseDb();
 
@@ -190,7 +195,10 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
             {
             session.SetFile(std::move(ecdbFile));
-            BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+            if (isBimFile)
+                BimConsole::WriteLine("Opened BIM file as ECDb file '%s' in %s mode. This can damage the file as BIM validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
+            else
+                BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
             return;
             }
 
@@ -1728,7 +1736,7 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
         }
 
     ECDbCR ecdb = *session.GetFile().GetECDbHandle();
-    ECClassCP rootClass = ecdb.Schemas().GetClass(parsedRootClassName[0], parsedRootClassName[1], ResolveSchema::AutoDetect);
+    ECClassCP rootClass = ecdb.Schemas().GetClass(parsedRootClassName[0], parsedRootClassName[1], SchemaLookupMode::AutoDetect);
     if (rootClass == nullptr || !rootClass->IsEntityClass())
         {
         BimConsole::WriteErrorLine("Root class %s is not an entity class or does not exist in the current file.", rootClass->GetFullName());

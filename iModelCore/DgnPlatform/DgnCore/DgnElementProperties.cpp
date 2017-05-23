@@ -463,16 +463,15 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);
             }
-        Utf8String codeName(v.GetUtf8CP());
+        DgnElementId codeScopeElementId = v.GetNavigationInfo().GetId<DgnElementId>();
 
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeValue) || (v.IsNull() && !Utf8String::IsNullOrEmpty(codeName.c_str())) ||
-            (!v.IsNull() && 0 == strlen(v.GetUtf8CP())))
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeValue) || (!v.IsNull() && 0 == strlen(v.GetUtf8CP())))
             {
             stat = DgnDbStatus::InvalidName;
             return CreateParams(db, DgnModelId(), classId);
             }
 
-        code.From(codeSpecId, v.GetUtf8CP(), codeName);
+        code.From(codeSpecId, codeScopeElementId, v.GetUtf8CP());
         }
 
     DgnElement::CreateParams params(db, modelId, classId, code);
@@ -923,8 +922,10 @@ void DgnElements::AutoHandledPropertyUpdaterCache::_GetPropertiesToBind(bvector<
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::ClearUpdaterCache()
+void DgnElements::ClearECCaches()
     {
+    m_stmts.Empty();
+    m_classInfos.clear();
     m_updaterCache.Clear();
     }
 

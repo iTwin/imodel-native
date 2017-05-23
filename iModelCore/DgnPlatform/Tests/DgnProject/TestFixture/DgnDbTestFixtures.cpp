@@ -77,7 +77,7 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
     m_defaultModelId = m_db->Models().QuerySubModelId(physicalPartitionCode);
     ASSERT_TRUE(m_defaultModelId.IsValid());
 
-    m_defaultCategoryId = DgnCategory::QueryCategoryId(GetDgnDb(), SpatialCategory::CreateCode(GetDgnDb(), s_seedFileInfo.categoryName));
+    m_defaultCategoryId = SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), s_seedFileInfo.categoryName);
     ASSERT_TRUE(m_defaultCategoryId.IsValid());
 
     m_db->SaveChanges();
@@ -242,4 +242,14 @@ PhysicalModelPtr DgnDbTestFixture::GetDefaultPhysicalModel()
     PhysicalModelPtr model = GetDgnDb().Models().Get<PhysicalModel>(m_defaultModelId);
     BeAssert(model.IsValid());
     return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                   05/17
+//---------------------------------------------------------------------------------------
+void DgnDbTestFixture::FlushLocalChanges()
+    {
+    m_db->SaveChanges();
+    m_db->Revisions().StartCreateRevision();
+    m_db->Revisions().FinishCreateRevision();
     }

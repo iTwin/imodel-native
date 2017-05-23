@@ -346,6 +346,9 @@ public:
     //! Create a DgnCode for a DrawingCategory given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return CodeSpec::CreateCode(BIS_CODESPEC_DrawingCategory, scope, name);}
 
+    //! Looks up the DgnCategoryId of a DrawingCategory by model and name
+    static DgnCategoryId QueryCategoryId(DefinitionModelCR model, Utf8StringCR name) {return T_Super::QueryCategoryId(model.GetDgnDb(), CreateCode(model, name));}
+
     //! Construct a new DrawingCategory
     DrawingCategory(DefinitionModelR model, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name)))
         {
@@ -388,13 +391,18 @@ protected:
     explicit SpatialCategory(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Creates a Code given a SpatialCategory name.
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8StringCR categoryName, Utf8StringCR nameSpace="");
+    //! Create a DgnCode for a SpatialCategory given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return CodeSpec::CreateCode(BIS_CODESPEC_SpatialCategory, scope, name);}
+
+    //! Looks up the DgnCategoryId of a SpatialCategory by model and name
+    static DgnCategoryId QueryCategoryId(DefinitionModelCR model, Utf8StringCR name) {return T_Super::QueryCategoryId(model.GetDgnDb(), CreateCode(model, name));}
 
     //! Construct a new SpatialCategory
-    DGNPLATFORM_EXPORT SpatialCategory(DgnDbR db, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="");
-    //! Construct a new SpatialCategory
-    DGNPLATFORM_EXPORT SpatialCategory(DgnDbR db, DgnCodeCR code, Rank rank=Rank::User, Utf8StringCR descr="");
+    SpatialCategory(DefinitionModelR model, Utf8StringCR name, Rank rank=Rank::User, Utf8StringCR descr="") : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name)))
+        {
+        m_rank = rank;
+        m_descr = descr;
+        }
 
     //! Inserts this SpatialCategory into the DgnDb and initializes its default sub-category with the specified appearance.
     //! @param[in] appearance The appearance associated with the default sub-category

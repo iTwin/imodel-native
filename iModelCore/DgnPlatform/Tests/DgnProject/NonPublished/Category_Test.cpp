@@ -52,7 +52,7 @@ struct CategoryTests : public DgnDbTestFixture
             {
             EXPECT_STREQ(subcat->GetSubCategoryName().c_str(), other.GetSubCategoryName().c_str());
             EXPECT_EQ(subcat->GetCategoryId(), other.GetCategoryId());
-            EXPECT_EQ(subcat->GetCode().GetScope(), other.GetCode().GetScope());
+            EXPECT_EQ(subcat->GetCode().GetScopeElementId(), other.GetCode().GetScopeElementId());
             EXPECT_EQ(subcat->GetDescription(), other.GetDescription());
             EXPECT_TRUE(subcat->GetAppearance().IsEqual(other.GetAppearance()));
             }
@@ -72,7 +72,8 @@ TEST_F (CategoryTests, InsertCategory)
     Utf8CP cat_name = "Test Category";
     Utf8CP cat_desc = "This is a test category.";
 
-    SpatialCategory category(*m_db, cat_name, DgnCategory::Rank::Domain, cat_desc);
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+    SpatialCategory category(dictionary, cat_name, DgnCategory::Rank::Domain, cat_desc);
 
     //Appearence properties.
     uint32_t weight = 10;
@@ -96,7 +97,7 @@ TEST_F (CategoryTests, InsertCategory)
     EXPECT_FALSE (pCategory->IsUserCategory ());
     CompareCategories(*pCategory, category);
 
-    DgnCategoryId id = DgnCategory::QueryCategoryId(*m_db, SpatialCategory::CreateCode(*m_db, cat_name));
+    DgnCategoryId id = SpatialCategory::QueryCategoryId(dictionary, cat_name);
     EXPECT_TRUE (id.IsValid ());
     EXPECT_EQ(id, category.GetCategoryId());
     EXPECT_EQ(id, pCategory->GetCategoryId());
@@ -108,7 +109,7 @@ TEST_F (CategoryTests, InsertCategory)
     Utf8CP cat2_name = "Test Category 2";
     Utf8CP cat2_desc = "This is test category 2.";
 
-    SpatialCategory category2(*m_db, cat2_name, DgnCategory::Rank::System, cat2_desc);
+    SpatialCategory category2(dictionary, cat2_name, DgnCategory::Rank::System, cat2_desc);
     SpatialCategoryCPtr pCategory2 = category2.Insert(appearence);
     ASSERT_TRUE(pCategory2.IsValid());
 
@@ -116,7 +117,7 @@ TEST_F (CategoryTests, InsertCategory)
     Utf8CP cat3_name = "Test Category 3";
     Utf8CP cat3_desc = "This is test category 3.";
 
-    SpatialCategory category3(*m_db, cat3_name, DgnCategory::Rank::User, cat3_desc);
+    SpatialCategory category3(dictionary, cat3_name, DgnCategory::Rank::User, cat3_desc);
     SpatialCategoryCPtr pCategory3 = category3.Insert(appearence);
     ASSERT_TRUE(pCategory3.IsValid());
 
@@ -124,7 +125,7 @@ TEST_F (CategoryTests, InsertCategory)
     Utf8CP cat4_name = "Test Category 4";
     Utf8CP cat4_desc = "This is test category 4.";
 
-    DrawingCategory category4(m_db->GetDictionaryModel(), cat4_name, DgnCategory::Rank::User, cat4_desc);
+    DrawingCategory category4(dictionary, cat4_name, DgnCategory::Rank::User, cat4_desc);
     DrawingCategoryCPtr pCategory4 = category4.Insert(appearence);
     ASSERT_TRUE(pCategory4.IsValid());
 
@@ -191,7 +192,8 @@ TEST_F (CategoryTests, DeleteCategory)
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+    SpatialCategory category(dictionary, name, DgnCategory::Rank::Domain, desc);
 
     //Appearence properties.
     uint32_t weight = 10;
@@ -208,13 +210,13 @@ TEST_F (CategoryTests, DeleteCategory)
     //Inserts a category
     DgnCategoryCPtr pCat = category.Insert(appearence);
     ASSERT_TRUE(pCat.IsValid());
-    DgnCategoryId id = DgnCategory::QueryCategoryId(*m_db, SpatialCategory::CreateCode(*m_db, name));
+    DgnCategoryId id = SpatialCategory::QueryCategoryId(dictionary, name);
     EXPECT_TRUE(id.IsValid());
 
     // Deletion of a category is not supported.
     DgnDbStatus dlt = pCat->Delete();
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, dlt);
-    DgnCategoryId id1 = DgnCategory::QueryCategoryId(*m_db, SpatialCategory::CreateCode(*m_db, name));
+    DgnCategoryId id1 = SpatialCategory::QueryCategoryId(dictionary, name);
     EXPECT_TRUE(id1.IsValid());
     }
 
@@ -230,7 +232,8 @@ TEST_F (CategoryTests, UpdateCategory)
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+    SpatialCategory category(dictionary, name, DgnCategory::Rank::Domain, desc);
 
     //Appearence properties.
     uint32_t weight = 10;
@@ -327,7 +330,8 @@ TEST_F (CategoryTests, InsertSubCategory)
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+    SpatialCategory category(dictionary, name, DgnCategory::Rank::Domain, desc);
 
     //Appearence properties.
     uint32_t weight = 10;
@@ -437,10 +441,11 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     SetupSeedProject();
     DgnDbR db = *m_db;
 
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    SpatialCategory cat1(dictionary, "Cat1", DgnCategory::Rank::Domain);
     DgnSubCategory::Appearance app;
-    SpatialCategory cat1(db, "Cat1", DgnCategory::Rank::Domain);
     ASSERT_TRUE(cat1.Insert(app).IsValid());
-    SpatialCategory cat2(db, "Cat2", DgnCategory::Rank::Domain);
+    SpatialCategory cat2(dictionary, "Cat2", DgnCategory::Rank::Domain);
     ASSERT_TRUE(cat2.Insert(app).IsValid());
     DgnCategoryId cat1Id = cat1.GetCategoryId(),
                   cat2Id = cat2.GetCategoryId();
@@ -485,7 +490,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // require valid parent category
     DgnSubCategory noParent(DgnSubCategory::CreateParams(db, DgnCategoryId(), "NoParent", app, "Sub-category requires valid parent category"));
     EXPECT_TRUE(noParent.Insert(&status).IsNull());
-    EXPECT_EQ(status, DgnDbStatus::InvalidName); // InvalidName because parent ID used to generate code.
+    EXPECT_NE(status, DgnDbStatus::Success);
 
     DgnSubCategory subcat2A(DgnSubCategory::CreateParams(db, cat2Id, "2A", app));
     DgnSubCategoryCPtr cpSubcat2A = subcat2A.Insert();
@@ -551,7 +556,7 @@ TEST_F (CategoryTests, DeleteSubCategory)
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
+    SpatialCategory category(m_db->GetDictionaryModel(), name, DgnCategory::Rank::Domain, desc);
 
     //Inserts a category.
     DgnSubCategory::Appearance appearence;
@@ -588,7 +593,7 @@ TEST_F (CategoryTests, QueryByElementId)
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
+    SpatialCategory category(m_db->GetDictionaryModel(), name, DgnCategory::Rank::Domain, desc);
     DgnSubCategory::Appearance appearence;
 
     //Inserts a category
@@ -650,7 +655,7 @@ TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
     DgnCategoryId categoryId;
     DgnCode  sub2code;
     {
-    SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
+    SpatialCategory category(m_db->GetDictionaryModel(), name, DgnCategory::Rank::Domain, desc);
 
     //Appearence properties.
     uint32_t weight = 10;

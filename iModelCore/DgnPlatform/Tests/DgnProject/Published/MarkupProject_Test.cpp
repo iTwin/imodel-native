@@ -56,7 +56,7 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     // Create a redline model
     DgnDbStatus createStatus = DgnDbStatus::Success;
-    auto redline = Redline::Create(&createStatus, *mproject->GetRedlineListModel(), Redline::CreateCode(*mproject, "Redline 1"));
+    auto redline = Redline::Create(&createStatus, *mproject->GetRedlineListModel(), "Redline 1");
     ASSERT_TRUE(redline.IsValid());
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
     ASSERT_TRUE(redline->Insert(&createStatus).IsValid());

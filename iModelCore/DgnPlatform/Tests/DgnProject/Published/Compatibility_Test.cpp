@@ -39,7 +39,7 @@ struct CompatibilityTests : public DgnDbTestFixture
     static Utf8String GetDrawingName(int index) {return Utf8PrintfString(BIS_CLASS_Drawing "%" PRIi32, index);}
     static Utf8String GetDrawingGraphicName(int index) {return Utf8PrintfString(BIS_CLASS_DrawingGraphic "%" PRIi32, index);}
     static Utf8String GetSheetName(int index) {return Utf8PrintfString(BIS_CLASS_Sheet "%" PRIi32, index);}
-    static Utf8String BuildWhereModelIdEquals(DgnModelId modelId) {return Utf8PrintfString("WHERE Model.Id=%" PRIi64, modelId.GetValue());}
+    static Utf8String BuildWhereModelIdEquals(DgnModelId modelId) {return Utf8PrintfString("WHERE Model.Id=%" PRIu64, modelId.GetValue());}
 
     static void SetUpTestCase();
     void SetUpFromBaselineCopy(Utf8CP, Utf8CP, DbResult);
@@ -136,7 +136,7 @@ TEST_F(CompatibilityTests, ModifyCurrent)
 // This unit test runs the "Modify" and "Insert" tests using the current DgnPlatform against saved baselines of the DgnDb file format.
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-TEST_F(CompatibilityTests, ModifyBaseline)
+TEST_F(CompatibilityTests, DISABLED_ModifyBaseline) // Must disable this test in the "Holdouts" branch
     {
     SetUpFromBaselineCopy("2-0-1-36", TEST_NAME, BE_SQLITE_OK);
 
@@ -218,7 +218,7 @@ void CompatibilityTests::InsertDrawingCategory()
 //---------------------------------------------------------------------------------------
 DgnCategoryId CompatibilityTests::GetSpatialCategoryId()
     {
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(GetDgnDb(), SpatialCategory::CreateCode(GetDgnDb(), GetSpatialCategoryName()));
+    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), GetSpatialCategoryName());
     BeAssert(categoryId.IsValid());
     return categoryId;
     }
@@ -401,7 +401,7 @@ void CompatibilityTests::ModifyElementCode(DgnDbR db, DgnElementId elementId)
     ASSERT_TRUE(element.IsValid());
     ASSERT_FALSE(element->GetUserProperties(json_inserted()).isNull());
     DgnCode oldCode = element->GetCode();
-    DgnCode newCode(oldCode.GetCodeSpecId(), oldCode.GetValue() + "Updated", oldCode.GetScope());
+    DgnCode newCode(oldCode.GetCodeSpecId(), oldCode.GetScopeElementId(), oldCode.GetValue() + "Updated");
     element->SetCode(newCode);
     element->SetUserProperties(json_updated(), DateTime::GetCurrentTime().ToString());
     ASSERT_TRUE(element->Update().IsValid());
@@ -831,7 +831,8 @@ GenericGroupCPtr CompatibilityTests::GetSpatialLocationGroup(SubjectCR subject)
 void CompatibilityTests::ImportFunctionalSchema()
     {
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    ASSERT_EQ(BE_SQLITE_OK, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb()));
+    FlushLocalChanges(); // Flush any un-committed or committed transactions before importing the schema
+    ASSERT_EQ(SchemaStatus::Success, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -879,12 +880,10 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
 
     if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
         {
-        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
-        openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
+        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly));
         DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
         ASSERT_EQ(BE_SQLITE_OK, openStatus);
         ASSERT_TRUE(db.IsValid());
-        ASSERT_EQ(BE_SQLITE_OK, db->Domains().ImportSchemas());
         ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges("SchemaUpgrade"));
         db->CloseDb();
         }
@@ -1007,7 +1006,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Category", ECN::ECValue(categoryId)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
                 //Creating Element of the specified instance
@@ -1059,7 +1058,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
                 ASSERT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
 
@@ -1134,7 +1133,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(drawingModel->GetModelId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
                 //Creating Element of the specified instance
@@ -1198,7 +1197,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                     }
 
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
 
@@ -1259,7 +1258,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(model_id)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
                 //Creating Element of the specified instance
@@ -1312,7 +1311,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(DgnModel::RepositoryModelId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Parent", ECN::ECValue(rootSubject->GetElementId())));
 
@@ -1434,12 +1433,10 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
             {
             DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
-            openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
+            openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
             DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
             ASSERT_EQ(BE_SQLITE_OK, openStatus);
             ASSERT_TRUE(db.IsValid());
-            ASSERT_EQ(BE_SQLITE_OK, db->Domains().ImportSchemas());
-            ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges("SchemaUpgrade"));
             db->CloseDb();
             }
 

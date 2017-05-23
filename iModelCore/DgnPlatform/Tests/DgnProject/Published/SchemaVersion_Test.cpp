@@ -10,133 +10,131 @@
 USING_NAMESPACE_BENTLEY_EC
 
 #define SCHEMA_VERSION_TEST_SCHEMA_NAME "SchemaVersionTest"
-#define SCHEMA_VERSION_TEST_CLASS_NAME "SchemaVersionTestElement"
+#define TEST_ELEMENT_CLASS_NAME "TestElement"
+#define ANOTHER_TEST_ELEMENT_CLASS_NAME "AnotherTestElement"
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(SchemaVersionTestElement)
-DEFINE_REF_COUNTED_PTR(SchemaVersionTestElement)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TestElement)
+DEFINE_REF_COUNTED_PTR(TestElement)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AnotherTestElement)
+DEFINE_REF_COUNTED_PTR(AnotherTestElement)
 
 // Turn this on for debugging.
-#define DUMP_REVISION 1
+// #define DUMP_REVISION 1
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DgnCore"))
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   03/17
 //=======================================================================================
-struct SchemaVersionTestElement : Dgn::PhysicalElement
+struct TestElement : Dgn::PhysicalElement
 {
-friend struct SchemaVersionTestElementHandler;
+friend struct TestElementHandler;
 
-DGNELEMENT_DECLARE_MEMBERS(SCHEMA_VERSION_TEST_CLASS_NAME, Dgn::PhysicalElement)
+DGNELEMENT_DECLARE_MEMBERS(TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement)
 public:
-    SchemaVersionTestElement(CreateParams const& params) : Dgn::PhysicalElement(params)
+    TestElement(CreateParams const& params) : Dgn::PhysicalElement(params)
         {}
 
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetClassId(SCHEMA_VERSION_TEST_SCHEMA_NAME, SCHEMA_VERSION_TEST_CLASS_NAME)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetClassId(SCHEMA_VERSION_TEST_SCHEMA_NAME, TEST_ELEMENT_CLASS_NAME)); }
 
-    static SchemaVersionTestElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId, DgnCode code = DgnCode())
+    static TestElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId, DgnCode code = DgnCode())
         {
-        return new SchemaVersionTestElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId, Placement3d(), code));
+        return new TestElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId, Placement3d(), code));
         }
-
-    SchemaVersionTestElementCPtr Insert(DgnDbStatus* stat = nullptr)
-        {
-        return GetDgnDb().Elements().Insert<SchemaVersionTestElement>(*this, stat);
-        }
-
-    SchemaVersionTestElementCPtr Update(DgnDbStatus* stat = nullptr)
-        {
-        return GetDgnDb().Elements().Update<SchemaVersionTestElement>(*this, stat);
-        }
-
-    static SchemaVersionTestElementCPtr Get(DgnDbCR dgndb, Dgn::DgnElementId elementId)
-        {
-        return dgndb.Elements().Get<SchemaVersionTestElement>(elementId);
-        }
-
-    static SchemaVersionTestElementPtr GetForEdit(DgnDbR dgndb, Dgn::DgnElementId elementId)
-        {
-        return dgndb.Elements().GetForEdit<SchemaVersionTestElement>(elementId);
-        }
-
-    void SetProperty(Utf8CP propertyName, int propertyValue)
-        {
-        DgnDbStatus status = SetPropertyValue(propertyName, propertyValue);
-        BeAssert(status == DgnDbStatus::Success);
-        }
-
-    void SetProperty(Utf8CP propertyName, Utf8CP propertyValue)
-        {
-        DgnDbStatus status = SetPropertyValue(propertyName, propertyValue);
-        BeAssert(status == DgnDbStatus::Success);
-        }
-
-    int GetProperty(Utf8CP propertyName)
-        {
-        return GetPropertyValueInt32(propertyName);
-        }
-
 };
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   03/17
 //=======================================================================================
-struct SchemaVersionTestElementHandler : Dgn::dgn_ElementHandler::Physical
+struct AnotherTestElement : Dgn::PhysicalElement
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(SCHEMA_VERSION_TEST_CLASS_NAME, SchemaVersionTestElement, SchemaVersionTestElementHandler, Dgn::dgn_ElementHandler::Physical, )
+    friend struct AnotherTestElementHandler;
+
+    DGNELEMENT_DECLARE_MEMBERS(ANOTHER_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement)
+    public:
+        AnotherTestElement(CreateParams const& params) : Dgn::PhysicalElement(params)
+            {}
+
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetClassId(SCHEMA_VERSION_TEST_SCHEMA_NAME, ANOTHER_TEST_ELEMENT_CLASS_NAME)); }
+
+        static AnotherTestElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId, DgnCode code = DgnCode())
+            {
+            return new AnotherTestElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId, Placement3d(), code));
+            }
+    };
+
+
+//=======================================================================================
+// @bsiclass                                                 Ramanujam.Raman   03/17
+//=======================================================================================
+struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
+    };
+
+//=======================================================================================
+// @bsiclass                                                 Ramanujam.Raman   03/17
+//=======================================================================================
+struct AnotherTestElementHandler : Dgn::dgn_ElementHandler::Physical
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(ANOTHER_TEST_ELEMENT_CLASS_NAME, AnotherTestElement, AnotherTestElementHandler, Dgn::dgn_ElementHandler::Physical, )
     };
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   03/17
 //=======================================================================================
 struct SchemaVersionTestDomain : DgnDomain
-    {
-    DOMAIN_DECLARE_MEMBERS(SchemaVersionTestDomain, )
-    private:
-        BeFileName m_relativePath;
+{
+DOMAIN_DECLARE_MEMBERS(SchemaVersionTestDomain, )
+private:
+    BeFileName m_relativePath;
 
-        WCharCP _GetSchemaRelativePath() const override { return m_relativePath.GetName(); }
-        void _OnSchemaImported(DgnDbR db) const override
-            {
-            PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(db, "OnSchemaImportedPartition");
-            BeAssert(model.IsValid());
+    WCharCP _GetSchemaRelativePath() const override { return m_relativePath.GetName(); }
+    void _OnSchemaImported(DgnDbR db) const override
+        {
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(db, "OnSchemaImportedPartition");
+        BeAssert(model.IsValid());
 
-            DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "SchemaVersionTestCategory");
-            BeAssert(categoryId.IsValid());
+        DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "SchemaVersionTestCategory");
+        BeAssert(categoryId.IsValid());
 
-            DgnCode code = CreateCode(db, "OnSchemaImportedElement");
+        DgnCode code = CreateCode(db, "OnSchemaImportedElement");
             
-            SchemaVersionTestElementPtr el = SchemaVersionTestElement::Create(*model, categoryId, code);
-            SchemaVersionTestElementCPtr cEl = el->Insert();
-            BeAssert(cEl.IsValid());
-            }
+        TestElementPtr el = TestElement::Create(*model, categoryId, code);
+        TestElementCPtr cEl = db.Elements().Insert<TestElement>(*el);
+        BeAssert(cEl.IsValid());
+        }
 
-    public:
-        SchemaVersionTestDomain() : DgnDomain(SCHEMA_VERSION_TEST_SCHEMA_NAME, "Version Test Domain", 1)
-            {
-            RegisterHandler(SchemaVersionTestElementHandler::GetHandler());
-            }
+public:
+    SchemaVersionTestDomain() : DgnDomain(SCHEMA_VERSION_TEST_SCHEMA_NAME, "Version Test Domain", 1)
+        {
+        }
 
-        void SetVersion(Utf8CP version)
-            {
-            m_relativePath.SetNameUtf8(Utf8PrintfString("ECSchemas\\" SCHEMA_VERSION_TEST_SCHEMA_NAME ".%s.ecschema.xml", version));
-            }
+    void ClearHandlers()
+        {
+        m_handlers.clear();
+        }
 
-        static void Register(Utf8CP version, DgnDomain::Required isRequired, DgnDomain::Readonly isReadonly)
-            {
-            SchemaVersionTestDomain::GetDomain().SetVersion(version);
-            DgnDomains::RegisterDomain(SchemaVersionTestDomain::GetDomain(), isRequired, isReadonly);
-            }
+    void SetVersion(Utf8CP version)
+        {
+        m_relativePath.SetNameUtf8(Utf8PrintfString("ECSchemas\\" SCHEMA_VERSION_TEST_SCHEMA_NAME ".%s.ecschema.xml", version));
+        }
 
-        static DgnCode CreateCode(DgnDbR dgndb, Utf8StringCR value)
-            {
-            return CodeSpec::CreateCode(dgndb, "SchemaVersionTest", value);
-            }
+    static void Register(Utf8CP version, DgnDomain::Required isRequired, DgnDomain::Readonly isReadonly)
+        {
+        SchemaVersionTestDomain::GetDomain().SetVersion(version);
+        DgnDomains::RegisterDomain(SchemaVersionTestDomain::GetDomain(), isRequired, isReadonly);
+        }
 
-    };
+    static DgnCode CreateCode(DgnDbR dgndb, Utf8StringCR value)
+        {
+        return CodeSpec::CreateCode(dgndb, "SchemaVersionTest", value);
+        }
+};
 
 DOMAIN_DEFINE_MEMBERS(SchemaVersionTestDomain)
-HANDLER_DEFINE_MEMBERS(SchemaVersionTestElementHandler)
+HANDLER_DEFINE_MEMBERS(TestElementHandler)
+HANDLER_DEFINE_MEMBERS(AnotherTestElementHandler)
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   03/17
@@ -168,11 +166,10 @@ struct SchemaVersionTestFixture : public DgnDbTestFixture
         db->SaveChanges();
         }
 
-    SchemaVersionTestElementPtr CreateElement()
+    void TearDown() override
         {
-        PhysicalModelPtr model = GetDefaultPhysicalModel();
-        DgnCategoryId categoryId = GetDefaultCategoryId();
-        return SchemaVersionTestElement::Create(*model, categoryId);
+        SchemaVersionTestDomain::GetDomain().ClearHandlers();
+        DgnDbTestFixture::TearDown();
         }
 
     void BackupTestFile()
@@ -236,6 +233,10 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     SetupSeedProject();
     BeFileName fileName = m_db->GetFileName();
     SaveDb();
+    
+    // Flush any local changes to allow importing schemas
+    CreateRevision();
+
     CloseDb();
 
     DbResult result = BE_SQLITE_OK;
@@ -245,6 +246,7 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     * Reopen Db after optional registration - BE_SQLITE_OK, schemas are not imported
     */
     SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::No, DgnDomain::Readonly::No);
+    SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
@@ -259,16 +261,11 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
 
     /*
-    * Reopen Db after read-write registration with EnableSchemaUpgrade flag - BE_SQLITE_OK, schemas can be manually imported 
+    * Reopen Db after read-write registration with UpgradeDomain flag - schemas are imported now
     */
     SchemaVersionTestDomain::GetDomain().SetRequired(DgnDomain::Required::Yes);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaUpgrade::Yes));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
-    EXPECT_FALSE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
-    EXPECT_FALSE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
-
-    // Import domain schema
-    SchemaVersionTestDomain::GetDomain().ImportSchema(*m_db);
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
     EXPECT_TRUE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
 
@@ -289,9 +286,9 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
     EXPECT_TRUE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
 
-    SchemaVersionTestElementPtr el = CreateElement();
-    el->SetProperty("IntegerProperty1", 1);
-    SchemaVersionTestElementCPtr cEl = el->Insert(&status);
+    TestElementPtr el = TestElement::Create(*GetDefaultPhysicalModel(), GetDefaultCategoryId());
+    el->SetPropertyValue("IntegerProperty1", 1);
+    TestElementCPtr cEl = m_db->Elements().Insert<TestElement>(*el, &status);
     EXPECT_TRUE(cEl.IsValid());
 
     elId = cEl->GetElementId();
@@ -308,16 +305,16 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
 
-    el = CreateElement();
-    el->SetProperty("IntegerProperty1", 1);
-    cEl = el->Insert(&status);
+    el = TestElement::Create(*GetDefaultPhysicalModel(), GetDefaultCategoryId());
+    el->SetPropertyValue("IntegerProperty1", 1);
+    cEl = m_db->Elements().Insert<TestElement>(*el, &status);
     EXPECT_FALSE(cEl.IsValid());
     EXPECT_TRUE(status == DgnDbStatus::ReadOnlyDomain);
 
-    el = SchemaVersionTestElement::GetForEdit(*m_db, elId);
+    el = m_db->Elements().GetForEdit<TestElement>(elId);
     EXPECT_TRUE(el.IsValid());
-    el->SetProperty("IntegerProperty1", 2);
-    cEl = el->Update(&status);
+    el->SetPropertyValue("IntegerProperty1", 2);
+    cEl = m_db->Elements().Update<TestElement>(*el, &status);
     EXPECT_FALSE(cEl.IsValid());
     EXPECT_TRUE(status == DgnDbStatus::ReadOnlyDomain);
 
@@ -362,17 +359,23 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
      */
     SetupSeedProject();
     BeFileName fileName = m_db->GetFileName();
+
+    // Flush any local changes to allow importing schemas
+    CreateRevision();
+
     SaveDb();
 
     SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaUpgrade::Yes));
+    SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
-    EXPECT_FALSE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
-
-    SchemaVersionTestDomain::GetDomain().ImportSchema(*m_db);
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
 
     SchemaVersionTestDomain::GetDomain().SetReadonly(DgnDomain::Readonly::No);
+
+    // Flush any local changes to allow importing schemas
+    CreateRevision();
+
     SaveDb();
 
     BackupTestFile();
@@ -420,7 +423,7 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaTooOld);
     BeTest::SetFailOnAssert(false);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaUpgrade::Yes));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly)));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaTooOld);
     BeTest::SetFailOnAssert(true);
 
@@ -429,9 +432,7 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaUpgrade::Yes));
-    EXPECT_TRUE(result == BE_SQLITE_OK);
-    result = m_db->Domains().ImportSchemas();
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     SaveDb();
     CloseDb();
@@ -445,9 +446,7 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaUpgrade::Yes));
-    EXPECT_TRUE(result == BE_SQLITE_OK);
-    result = m_db->Domains().ImportSchemas();
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     SaveDb();
     CloseDb();
@@ -475,16 +474,17 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
 
     /* Create revision with schema import */
     SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::No, DgnDomain::Readonly::No);
+    SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
 
-    result = SchemaVersionTestDomain::GetDomain().ImportSchema(*m_db);
-    EXPECT_EQ(BE_SQLITE_OK, result);
+    SchemaStatus schemaStatus = SchemaVersionTestDomain::GetDomain().ImportSchema(*m_db);
+    EXPECT_EQ(SchemaStatus::Success, schemaStatus);
     
-    testProperty = m_db->Schemas().GetClass(SchemaVersionTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty3");
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty3");
     EXPECT_TRUE(testProperty != nullptr);
-    testProperty = m_db->Schemas().GetClass(SchemaVersionTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
     EXPECT_TRUE(testProperty == nullptr);
 
     SaveDb();
@@ -493,16 +493,14 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     EXPECT_TRUE(revision1->ContainsSchemaChanges(*m_db));
 
     DumpRevision(*revision1, "Revision 1");
+    CloseDb();
 
     /* Create revision with schema upgrade */
     SchemaVersionTestDomain::GetDomain().SetVersion("02.03.02");
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaUpgrade::Yes));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
 
-    result = m_db->Domains().ImportSchemas();
-    EXPECT_EQ(BE_SQLITE_OK, result);
-
-    testProperty = m_db->Schemas().GetClass(SchemaVersionTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
     EXPECT_TRUE(testProperty != nullptr);
 
     SaveDb();
@@ -511,6 +509,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     EXPECT_TRUE(revision2->ContainsSchemaChanges(*m_db));
 
     DumpRevision(*revision2, "Revision 2");
+    CloseDb();
 
     /* Restore baseline */
     RestoreTestFile();
@@ -519,28 +518,168 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     SchemaVersionTestDomain::GetDomain().SetVersion("02.02.02");
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
-
     EXPECT_FALSE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
+    CloseDb();
 
     /* Merge revision with schema import and validate */
-    status = m_db->Revisions().MergeRevision(*revision1);
-    ASSERT_TRUE(status == RevisionStatus::Success);
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision1)));
+    EXPECT_TRUE(m_db.IsValid());
 
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
-
-    testProperty = m_db->Schemas().GetClass(SchemaVersionTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty3");
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty3");
     EXPECT_TRUE(testProperty != nullptr);
-    testProperty = m_db->Schemas().GetClass(SchemaVersionTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
     EXPECT_TRUE(testProperty == nullptr);
 
-    /* Merge revision with schema upgrade and validate */
-    status = m_db->Revisions().MergeRevision(*revision2);
-    ASSERT_TRUE(status == RevisionStatus::Success);
+    testProperty = nullptr;
+    CloseDb();
 
-    testProperty = m_db->Schemas().GetClass(SchemaVersionTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty3");
+    /* Merge revision with schema upgrade and validate */
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision2)));
+    EXPECT_TRUE(m_db.IsValid());
+
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty3");
     EXPECT_TRUE(testProperty != nullptr);
-    testProperty = m_db->Schemas().GetClass(SchemaVersionTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
     EXPECT_TRUE(testProperty != nullptr);
+    
+    CloseDb();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaVersionTestFixture, IncompatibleUpgrade)
+    {
+    /* Setup baseline */
+    SetupSeedProject();
+    SaveDb();
+    DgnRevisionPtr revision0 = CreateRevision();
+    EXPECT_TRUE(revision0.IsValid());
+    BeFileName fileName = m_db->GetFileName();
+    BackupTestFile();
 
+    /* Create revision with initial schema and instance */
+    DbResult result;
+    SchemaVersionTestDomain::Register("02.02.03", DgnDomain::Required::No, DgnDomain::Readonly::No);
+    SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
+    SchemaVersionTestDomain::GetDomain().RegisterHandler(AnotherTestElementHandler::GetHandler());
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    SchemaStatus schemaStatus = SchemaVersionTestDomain::GetDomain().ImportSchema(*m_db);
+    EXPECT_EQ(SchemaStatus::Success, schemaStatus);
+    EXPECT_TRUE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
+
+    TestElementPtr el = TestElement::Create(*GetDefaultPhysicalModel(), GetDefaultCategoryId());
+    el->SetPropertyValue("IntegerProperty1", 1);
+    el->SetPropertyValue("IntegerProperty2", 2);
+    DgnDbStatus status;
+    TestElementCPtr cEl = m_db->Elements().Insert<TestElement>(*el, &status);
+    EXPECT_TRUE(cEl.IsValid());
+    DgnElementId elId = cEl->GetElementId();
+
+    AnotherTestElementPtr elA = AnotherTestElement::Create(*GetDefaultPhysicalModel(), GetDefaultCategoryId());
+    elA->SetPropertyValue("IntegerProperty5", 5);
+    AnotherTestElementCPtr cElA = m_db->Elements().Insert<AnotherTestElement>(*elA, &status);
+    EXPECT_TRUE(cElA.IsValid());
+    DgnElementId elIdA = cElA->GetElementId();
+
+    SaveDb();
+    DgnRevisionPtr revision1 = CreateRevision();
+    DumpRevision(*revision1, "Revision 1");
+    el = nullptr;
+    cEl = nullptr;
+    elA = nullptr;
+    cElA = nullptr;
+    CloseDb();
+    m_db = nullptr;
+
+    /* Upgrade schema with incompatible changes (property and class deleted) */
+    SchemaVersionTestDomain::GetDomain().SetVersion("02.02.04");
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly)));
+    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeFailed);
+    EXPECT_TRUE(!m_db.IsValid());
+
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::IncompatibleAlso)));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Validate that instances with deleted classes are flushed
+    el = m_db->Elements().GetForEdit<TestElement>(elId);
+    EXPECT_TRUE(el.IsValid());
+    elA = m_db->Elements().GetForEdit<AnotherTestElement>(elIdA);
+    EXPECT_FALSE(elA.IsValid());
+
+    // Validate that class has been flushed
+    ECPropertyCP testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty1");
+    EXPECT_TRUE(testProperty == nullptr);
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("StringProperty1");
+    EXPECT_TRUE(testProperty != nullptr);
+    ECClassCP anotherTestClass = m_db->Schemas().GetClass(AnotherTestElement::QueryClassId(*m_db));
+    EXPECT_TRUE(anotherTestClass == nullptr);
+
+    // Create a new instance
+    TestElementPtr el2 = TestElement::Create(*GetDefaultPhysicalModel(), GetDefaultCategoryId());
+    el2->SetPropertyValue("StringProperty1", "Test");
+    TestElementCPtr cEl2 = m_db->Elements().Insert<TestElement>(*el2, &status);
+    EXPECT_TRUE(cEl2.IsValid());
+    DgnElementId elId2 = cEl2->GetElementId();
+
+    SaveDb();
+    DgnRevisionPtr revision2 = CreateRevision();
+    DumpRevision(*revision2, "Revision 2");
+    el = nullptr;
+    el2 = nullptr;
+    cEl2 = nullptr;
+    elA = nullptr;
+    CloseDb();
+
+    /* Test merging of revisions */
+    RestoreTestFile();
+
+    SchemaVersionTestDomain::GetDomain().SetVersion("02.02.03");
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision1)));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty1");
+    EXPECT_TRUE(testProperty != nullptr);
+
+    el = m_db->Elements().GetForEdit<TestElement>(elId);
+    EXPECT_TRUE(el.IsValid());
+
+    testProperty = m_db->Schemas().GetClass(AnotherTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty5");
+    EXPECT_TRUE(testProperty != nullptr);
+
+    elA = m_db->Elements().GetForEdit<AnotherTestElement>(elIdA);
+    EXPECT_TRUE(elA.IsValid());
+
+    el = nullptr;
+    elA = nullptr;
+    CloseDb();
+
+    SchemaVersionTestDomain::GetDomain().ClearHandlers();
+    SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
+
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision2)));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty1");
+    EXPECT_TRUE(testProperty == nullptr);
+    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("StringProperty1");
+    EXPECT_TRUE(testProperty != nullptr);
+    anotherTestClass = m_db->Schemas().GetClass(AnotherTestElement::QueryClassId(*m_db));
+    EXPECT_TRUE(anotherTestClass == nullptr);
+
+    el = m_db->Elements().GetForEdit<TestElement>(elId);
+    EXPECT_TRUE(el.IsValid());
+    el2 = m_db->Elements().GetForEdit<TestElement>(elId2);
+    EXPECT_TRUE(el2.IsValid());
+    elA = m_db->Elements().GetForEdit<AnotherTestElement>(elIdA);
+    EXPECT_FALSE(elA.IsValid());
+
+    el = nullptr;
+    el2 = nullptr;
+    cEl2 = nullptr;
+    elA = nullptr;
+    CloseDb();
+    }

@@ -275,6 +275,8 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     DgnDomains::RegisterDomain(GenericDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
     _SupplyProductName(m_productName);
+    
+    m_developmentPhase = _SupplyDevelopmentPhase();
 
     BeAssert(NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
@@ -376,12 +378,27 @@ DgnPlatformLib::Host::GeoCoordinationAdmin& DgnPlatformLib::Host::_SupplyGeoCoor
     path.AppendToPath(L"DgnGeoCoord");
     return *DgnGeoCoordinationAdmin::Create(path);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      07/14
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandler* h)
     {
     BeAssertFunctions::SetBeAssertHandler(h);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Ramanujam.Raman   04/17
+//---------------------------------------------------------------------------------------
+DevelopmentPhase DgnPlatformLib::Host::_SupplyDevelopmentPhase()
+    {
+#if defined(PRG_BETABUILD)
+    return DevelopmentPhase::Beta;
+#elif defined(PRG_CERTIFIEDBUILD)
+    return DevelopmentPhase::Certified;
+#else 
+    return DevelopmentPhase::Development;
+#endif
     }
 
 void DgnProgressMeter::AddTasks(uint32_t numTasksToAdd) {_AddTasks(numTasksToAdd);}
