@@ -57,23 +57,21 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
     typedef std::vector<PropertyMap const*>::const_iterator const_iterator;
     private:
         ClassMap const& m_classMap;
-        std::vector<PropertyMap const*> m_directDecendentList; //! contain direct decedents in order.
-        std::map<Utf8CP, RefCountedPtr<PropertyMap>, CompareIUtf8Ascii> m_map; //! contain all propertymap owned by the container
-        bool m_readonly;
+        std::vector<PropertyMap const*> m_topLevelPropMapsOrdered;
+        std::map<Utf8CP, RefCountedPtr<PropertyMap>, CompareIUtf8Ascii> m_byAccessString;
 
     private:
         BentleyStatus _AcceptVisitor(IPropertyMapVisitor const&)  const override;
 
     public:
-        explicit PropertyMapContainer(ClassMap const& classMap) :m_classMap(classMap), m_readonly(false) {}
+        explicit PropertyMapContainer(ClassMap const& classMap) :m_classMap(classMap) {}
         ~PropertyMapContainer() {}
 
-        ClassMap const& GetClassMap() const { return m_classMap; }
         BentleyStatus Insert(RefCountedPtr<PropertyMap> propertyMap, size_t position = std::numeric_limits<size_t>::max());
         PropertyMap const* Find(Utf8CP accessString) const;
-        const_iterator begin() const { return m_directDecendentList.begin(); }
-        const_iterator end() const { return m_directDecendentList.end(); }
-        bool empty() const { return m_directDecendentList.empty(); }
+        size_t Size() const { return m_topLevelPropMapsOrdered.size(); }
+        const_iterator begin() const { return m_topLevelPropMapsOrdered.begin(); }
+        const_iterator end() const { return m_topLevelPropMapsOrdered.end(); }
     };
 
 //=======================================================================================
@@ -457,7 +455,6 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         public:
             ~RelECClassIdPropertyMap() {}
             ECN::ECClassId GetDefaultClassId() const { return m_defaultClassId; }
-            bool IsVirtual() const { return GetColumn().GetPersistenceType() == PersistenceType::Virtual; }
         };
 
     private:

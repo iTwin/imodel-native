@@ -11,6 +11,8 @@
 #include "ECSqlTypeInfo.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+
 //forward declarations of referenced Exp classes
 struct ParameterExp;
 struct ValueExp;

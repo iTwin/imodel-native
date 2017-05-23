@@ -17,6 +17,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct DbMap;
 
+/* ----------------Required Refactor--------------------------------------
+struct ClassMap
+    {};
+struct IRelationshipClassMap
+    {};
+struct ForeignKeyRelationshipClassMap :ClassMap, IRelationshipClassMap
+    {};
+struct SingleTableClassMap :ClassMap
+    {};
+struct EntityClassMap :SingleTableClassMap
+    {};
+struct LinkTableRelationshipClassMap :SingleTableClassMap, IRelationshipClassMap
+    {};
+*/
+
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
 //+===============+===============+===============+===============+===============+======
@@ -56,11 +72,19 @@ typedef RefCountedPtr<ClassMap> ClassMapPtr;
 typedef ClassMap const& ClassMapCR;
 typedef ClassMap const* ClassMapCP;
 
+enum ObjectState
+    {
+    Persisted, //loaded from disk
+    Modified, // loaded from disk but modified
+    New //new object not yet persisted to disk
+    };
 //=======================================================================================
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
 struct ClassMap : RefCountedBase
     {
+    friend struct ClassMapFactory;
+
     public:
         enum class Type
             {
@@ -73,7 +97,7 @@ struct ClassMap : RefCountedBase
         enum class PropertyMapInheritanceMode
             {
             NotInherited, //!< indicates that base property map is not inherited, but created from scratch
-            Clone //! inherited property maps are cloned from the base class property map
+            Clone //! inherited property maps areGet cloned from the base class property map
             };
 
         struct TablePerHierarchyHelper final
@@ -91,6 +115,19 @@ struct ClassMap : RefCountedBase
             ECN::ECClassId DetermineTphRootClassId() const { return m_classMap.GetPrimaryTable().GetExclusiveRootECClassId(); }
             ECN::ECClassId DetermineParentOfJoinedTableECClassId() const;
 
+            };
+
+        struct UpdatableViewInfo final
+            {
+        private:
+            Utf8String m_viewName;
+
+        public:
+            UpdatableViewInfo() {}
+            explicit UpdatableViewInfo(Utf8StringCR viewName) : m_viewName(viewName) {}
+
+            Utf8StringCR GetViewName() const { return m_viewName; }
+            bool HasView() const { return !m_viewName.empty(); }
             };
 
     protected:
@@ -116,19 +153,23 @@ struct ClassMap : RefCountedBase
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
         PropertyMapContainer m_propertyMaps;
         mutable std::vector<DbTable*> m_tables;
+        UpdatableViewInfo m_updatableViewInfo;
         mutable std::unique_ptr<ClassMapColumnFactory> m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
-        bool m_isDirty;
         bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
+        ObjectState m_state;
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
-
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
 
         PropertyMapInheritanceMode GetPropertyMapInheritanceMode() const { return GetPropertyMapInheritanceMode(m_mapStrategyExtInfo); }
 
+        ClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, Type::Class, ecClass, mapStrat) {}
+        ClassMap(ECDb const&ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat, UpdatableViewInfo const& updatableViewInfo) : ClassMap(ecdb, Type::Class, ecClass, mapStrat, updatableViewInfo) {}
+
     protected:
-        ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
- 
+        ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
+        ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
+
         virtual ClassMappingStatus _Map(ClassMappingContext&);
         ClassMappingStatus DoMapPart1(ClassMappingContext&);
         ClassMappingStatus DoMapPart2(ClassMappingContext&);
@@ -137,7 +178,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
 
         void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
-        void AddTable(DbTable& newTable) { m_tables.push_back(&newTable); }
+        void AddTable(DbTable& newTable) { BeAssert(std::find(begin(m_tables), end(m_tables), &newTable) == end(m_tables)); m_tables.push_back(&newTable); }
 
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
@@ -146,24 +187,64 @@ struct ClassMap : RefCountedBase
 
     public:
         virtual ~ClassMap() {}
-
-        static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(ecdb, Type::Class, ecClass, mapStrategy, setIsDirty); }
-
+        ObjectState GetState() const { return m_state; }
         template<typename TClassMap>
         TClassMap const& GetAs() const { BeAssert(dynamic_cast<TClassMap const*> (this) != nullptr); return *static_cast<TClassMap const*>(this); }
-
         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
         ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
         ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
         Type GetType() const { return m_type; }
-        bool IsDirty() const { return m_isDirty; }
-        ClassMapColumnFactory const& GetColumnFactory(bool refresh = false) const;
+        ClassMapColumnFactory const& GetColumnFactory() const;
         std::vector<DbTable*>& GetTables() const { return m_tables; }
-        DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
-        DbTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
+        DbTable& GetPrimaryTable() const 
+            { 
+            DbTable* nulltable = nullptr;
+            if (GetType() == Type::RelationshipEndTable)
+                return *m_tables.front();
+
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing)
+                    {
+                    return *table;
+                    }
+                }
+
+            BeAssert(false);
+            return *nulltable;
+            }
+
+        DbTable& GetJoinedOrPrimaryTable() const 
+            {
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Joined)
+                    {
+                    return *table;
+                    }
+                }
+
+            return GetPrimaryTable();
+            }
+
+        DbTable* GetOverflowTable() const
+            {
+            for (DbTable* table : GetTables())
+                {
+                if (table->GetType() == DbTable::Type::Overflow)
+                    {
+                    return table;
+                    }
+                }
+
+            return nullptr;
+            }
+
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
+        UpdatableViewInfo const& GetUpdatableViewInfo() const { return m_updatableViewInfo; }
+
         //! Returns the class maps of the classes derived from this class map's class.
         //! @return Derived classes class maps
         std::vector<ClassMap const*> GetDerivedClassMaps() const;
@@ -175,17 +256,16 @@ struct ClassMap : RefCountedBase
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
         DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
-        Utf8String GetUpdatableViewName() const;
         DbTable const* ExpectingSingleTable() const;
-
+        BentleyStatus SetOverflowTable(DbTable& overflowTable);
         //! Called when loading an existing class map from the ECDb file 
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
         //! Called during schema import when creating the class map from the imported ECClass 
         ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
-        BentleyStatus Save(DbMapSaveContext&);
+        BentleyStatus Save(SchemaImportContext&, DbMapSaveContext&);
         BentleyStatus Update();
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
-        void DeleteColumnFactory() const { m_columnFactory = nullptr; }
+        //void DeleteColumnFactory() const { m_columnFactory = nullptr; }
         //! Rules:
         //! If MapStrategy != TPH: NotInherited
         //! Else: Clone
@@ -203,16 +283,17 @@ struct ClassMap : RefCountedBase
 //+===============+===============+===============+===============+===============+======
 struct NotMappedClassMap final : public ClassMap
     {
+    friend struct ClassMapFactory;
+
 private:
-    NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy, setIsDirty) {}
+    NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy) {}
+    NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const&) : NotMappedClassMap(ecdb, ecClass, mapStrategy) {}
 
     ClassMappingStatus _Map(ClassMappingContext&) override;
     BentleyStatus _Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) override;
 
 public:
     ~NotMappedClassMap() {}
-
-    static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new NotMappedClassMap(ecdb, ecClass, mapStrategy, setIsDirty); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

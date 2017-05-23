@@ -16,91 +16,178 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ClassMap;
 struct RelationshipClassEndTableMap;
 struct PropertyMap;
+struct SingleColumnDataPropertyMap;
 
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
-//ColumnMapping Steps for ECSchema Import/Update
-//1. For none TPH/SharedColumn is not documented here.
-//2. For TPH/SharedColumn Algorithm is as following
-//    a. Find deepest derived classes of the ECClass that is about to be mapped called it X int a list DL<ClassMap>.
-//    b. Find all the mixins that is implemented by X or one of its derived Classes and put it in map LM<MixIN,ClassMap>
-//    c. Remove any mixin from LM if its implemented by DL.
-//    d. Any mixin that is not resolved into a classMap
-//    a. Find an implementation of Mixin by tranversing its derive classes until we find a ClassMap that implements it and is int the same table as X.
-//    b. For MixIn in LM that is not resolved by previous step traverse its baseClasses until we find a baseClass that has a implementation in same table as X.
-//    e. Find all the relationships that will be stored in same table as X and has X as end point of the relationship. Store it in list RM
-//    c. Go over each ClassMap in DL and add its property map to a map CM<AccessString,DbColumn>
-//    d. Go over each MixIn map and add property map for mixin to CM.
-//    e. Go over each EndTable relationship ClassMap in RM and add its ECInstanceId,ECClassId propertyMap in CM that is map to same table as X.
-//    f. return CM.
 //===============+===============+===============+===============+===============+======
-struct ClassMapColumnFactory final : NonCopyableClass
+struct ColumnMaps
     {
-    private: 
-        //Find list of columns with access string that cannot be used by current classmap
-        struct UsedColumnFinder final
-            {
-            typedef std::map<Utf8String, DbColumn const*> ColumnMap;
-            private:
-                std::set<ClassMap const*> m_deepestClassMapped;//Set of deepest classmap in traversed hierarchy.
-                std::set<ECN::ECEntityClassCP> m_mixins; //Set of identitifed mixin during traversing class hierarchy
-                std::set<ECN::ECClassCP> m_primaryHierarchy; //Set of classes that is part of pirmary hierarchy that is already traversed.
-                std::map<ECN::ECClassId,RelationshipClassEndTableMap const*> m_endTableRelationship; //Final list of relationship for the context class
-                std::map<ECN::ECEntityClassCP, ClassMap const*> m_mixinImpls; // Final list of mixIn classes implementation
-                std::set<DbTable const*> m_contextMapTableSet; //fast cache for context class tables
-                ClassMap const& m_classMap; //Context Class for which to find used columns
+    typedef std::unique_ptr<ColumnMaps> Ptr;
+    private:
+        bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> m_maps;
+        bset< DbColumn const*> n_columns;
+        bset< Utf8CP, CompareIUtf8Ascii> m_newMappedColumns;
+        bset<Utf8String, CompareIUtf8Ascii> m_strings;
 
-                UsedColumnFinder(ClassMap const& classMap);
-                ClassMap const* GetClassMap(ECN::ECClassCR) const;
-                bool IsMappedIntoContextClassMapTables(ClassMap const&) const;
-                bool IsMappedIntoContextClassMapTables(PropertyMap const&) const;
-                BentleyStatus ResolveMixins();
-                ClassMap const* ResolveMixin(ECN::ECClassCR);
-                void ResolveBaseMixin(ECN::ECClassCR currentClass);
-                BentleyStatus TraverseClassHierarchy(ECN::ECClassCR, ClassMap const*);
-                BentleyStatus FindRelationshipEndTableMaps(ECN::ECClassId classId);
-                BentleyStatus Execute(ColumnMap&);
-                BentleyStatus QueryRelevantMixIns();
-            public:
-                static BentleyStatus Find(ColumnMap&, ClassMap const&);
-            };
-
-
-        ClassMap const& m_classMap;
-        mutable std::map<Utf8String, std::set<DbColumn const*>, CompareIUtf8Ascii> m_usedColumnMap;
-        mutable std::set<DbColumn const*> m_usedColumnSet;
-        bool m_usesSharedColumnStrategy;
-        mutable std::vector<ClassMap const*> m_compoundFilter;
-                
-        void Initialize() const;
-
-        ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
-        BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId, int retryCount) const;
-
-        DbColumn* CreateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR accessString) const;
-        DbColumn* ApplyDefaultStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR accessString) const;
-        DbColumn* ApplySharedColumnStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&) const;
-
-        bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
-        bool IsColumnInUseByClassMap(DbColumn const& column) const;
-        bool IsCompatible(DbColumn const& avaliableColumn, DbColumn::Type type, DbColumn::CreateParams const& param) const;
-
-        void AddColumnToCache(DbColumn const&, Utf8StringCR) const;
-        void SetupCompoundFilter(bset<const ClassMap*> const* additionalFilter) const;
-        void RemoveCompoundFilter() const;
-
-        DbTable& GetTable() const;
-        ECDbCR GetECDb() const;
+    private:
+        void Assert(Utf8CP accessString) const { BeAssert(m_maps.find(accessString) == m_maps.end()); }
+        Utf8CP Copy(Utf8CP);
 
     public:
-        explicit ClassMapColumnFactory(ClassMap const& classMap);
-        //This function either creates a column or grabs an existing column
-        DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
-        void Refresh() const { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
-        void Debug() const;
-        //! Estimate Maximum number of columns required.
-        static int MaxColumnsRequiredToPersistAProperty(ECN::ECPropertyCR ecProperty);
+        ColumnMaps() {}
+        ~ColumnMaps() {}
+        bool IsNew(Utf8CP accessString) const { return m_newMappedColumns.find(accessString) != m_newMappedColumns.end(); }
+        bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> const& GetEntries() const { return m_maps; }
+        bset< Utf8CP, CompareIUtf8Ascii>  const& GetNewlyAddedAccessStrings() const { return m_newMappedColumns; }
+        bool IsColumnInUsed(DbColumn const& column) const;
+        void Insert(Utf8CP accessString, DbColumn const& column, bool newlyMappedColumn = false);
+        void Insert(SingleColumnDataPropertyMap const& propertyMap);
+        DbColumn * FindP(Utf8CP accessString) const
+            {
+            auto itor = m_maps.find(accessString);
+            if (itor != m_maps.end())
+                return const_cast<DbColumn*>(itor->second);
+
+            return nullptr;
+            }
+
+    };
+
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+struct ColumnMapContext
+    {
+    enum class Filter
+        {
+        InheritedAndLocal = 1,
+        DerivedAndLocal = 2,
+        Full = 3
+        };
+    private:
+        enum class RelationshpFilter
+            {
+            Direct,
+            All
+            };
+
+        static BentleyStatus QueryLocalColumnMaps(ColumnMaps&, ClassMap const&);
+        static BentleyStatus QueryInheritedColumnMaps(ColumnMaps&, ClassMap const&);
+        static BentleyStatus QueryDerivedColumnMaps(ColumnMaps&, ClassMap const&);
+        static BentleyStatus QueryEndTableRelationshipMaps(ColumnMaps&, ClassMap const&, RelationshpFilter);
+        static BentleyStatus QueryMixinColumnMaps(ColumnMaps&, ClassMap const&, std::vector<ECN::ECClassCP> const*);
+        static BentleyStatus FindMixins(std::vector<ECN::ECClassCP>&, ECDbCR, ECN::ECClassId);
+        static ClassMap const*  FindMixinImplementation(ECDbCR, ECN::ECClassCR, DbTableId, ECN::ECClassId);
+        static void AppendRelationshipColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap, ECN::ECClassId relationshipClassId);
+
+        ColumnMapContext();
+        static BentleyStatus Query(ColumnMaps&, ClassMap const&, Filter, ClassMap const* base);
+
+    public:
+        static BentleyStatus Query(ColumnMaps&, ClassMap const&, Filter);
+
     };
 
 
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+struct ClassMapColumnFactory : NonCopyableClass
+    {
+    public:
+        struct ColumnResolutionScope
+            {
+            protected:
+                ClassMap const& m_classMap;
+
+            private:
+                ColumnMaps m_columnMaps;
+                bool m_init = false;
+
+                virtual void _Fill(ColumnMaps&) = 0;
+
+            public:
+                explicit ColumnResolutionScope(ClassMap const&);
+                virtual ~ColumnResolutionScope();
+
+                ClassMap const& GetClassMap() const { return m_classMap; }
+                ColumnMaps& GetColumnMaps();
+            };
+        
+    private:
+        ClassMap const& m_classMap;
+        mutable DbTable* m_primaryOrJoinedTable = nullptr;
+        mutable DbTable* m_overflowTable = nullptr;
+        bool m_useSharedColumnStrategy = false;
+        Nullable<uint32_t> m_maxSharedColumnCount;
+        mutable bool m_areSharedColumnsReserved = false;
+        mutable ColumnResolutionScope* m_columnResolutionScope = nullptr;
+
+        DbTable* GetEffectiveTable() const;
+        DbTable* GetOrCreateOverflowTable() const;
+        DbColumn* ReuseOrCreateSharedColumn() const;
+        bool IsColumnInUse(DbColumn const& column) const;
+        ColumnMaps* GetColumnMaps() const;
+        ECDbCR GetECDb() const;
+        DbColumn* RegisterColumnMap(Utf8CP accessString, DbColumn* column) const;
+        bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
+        DbColumn* AllocateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8CP) const;
+        DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8CP) const;
+
+        static uint32_t MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
+
+    public:
+        explicit ClassMapColumnFactory(ClassMap const& classMap);
+        ~ClassMapColumnFactory() {};
+        bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
+        void ReserveSharedColumns(Utf8StringCR propertyName) const;
+        void ReserveSharedColumns(uint32_t columnsRequired) const;
+        void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }
+        DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8CP accessString) const;
+    };
+
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+struct ImportColumnResolutionScope final : ClassMapColumnFactory::ColumnResolutionScope
+    {
+    private:
+        void _Fill(ColumnMaps&) override;
+
+    public:
+        explicit ImportColumnResolutionScope(ClassMap const& classMap) : ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
+        ~ImportColumnResolutionScope() {}
+
+    };
+
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+struct UpdateColumnResolutionScope final : public  ClassMapColumnFactory::ColumnResolutionScope
+    {
+    private:
+        void _Fill(ColumnMaps&) override;
+
+    public:
+        explicit UpdateColumnResolutionScope(ClassMap const& classMap) : ClassMapColumnFactory::ColumnResolutionScope(classMap) {}
+        ~UpdateColumnResolutionScope() {}
+    };
+
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+struct EndTableRelationshipColumnResolutionScope final : public  ClassMapColumnFactory::ColumnResolutionScope
+    {
+    private:
+        std::vector<ClassMap const*> m_relevantMaps;
+
+        void _Fill(ColumnMaps&) override;
+
+    public:
+        EndTableRelationshipColumnResolutionScope(ClassMap const& classMap, std::vector<ClassMap const*> classMaps)
+            : ClassMapColumnFactory::ColumnResolutionScope(classMap), m_relevantMaps(classMaps) {}
+
+        ~EndTableRelationshipColumnResolutionScope() {}
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

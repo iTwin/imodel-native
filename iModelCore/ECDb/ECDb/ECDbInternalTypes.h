@@ -14,8 +14,6 @@
 #include "ECDbLogger.h"
 #include <type_traits>
 
-//#define ECSQLPREPAREDSTATEMENT_REFACTOR 1
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define LOG (ECDbLogger::Get())
@@ -32,79 +30,6 @@ enum class ECSqlType
     Delete
     };
 
-//*** ECSQL / SQL Operators ***
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      04/2013
-//+===============+===============+===============+===============+===============+======
-enum class BinarySqlOperator
-    {
-    Plus,
-    Minus,
-    Divide,
-    Multiply,
-    Modulo,
-    ShiftLeft,
-    ShiftRight,
-    BitwiseOr,
-    BitwiseAnd,
-    BitwiseXOr,
-    Concat
-    };
-
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      03/2013
-//+===============+===============+===============+===============+===============+======
-enum class BooleanSqlOperator
-    {
-    EqualTo,
-    NotEqualTo,
-    LessThan,
-    LessThanOrEqualTo,
-    GreaterThan,
-    GreaterThanOrEqualTo,
-    Is,
-    IsNot,
-    In,
-    NotIn,
-    Between,
-    NotBetween,
-    Like,
-    NotLike,
-    Or,
-    And,
-    Match,
-    NotMatch
-    };
-
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      04/2013
-//+===============+===============+===============+===============+===============+======
-enum class UnarySqlOperator
-    {
-    Minus,
-    Plus,
-    BitwiseNot
-    };
-
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      05/2013
-//+===============+===============+===============+===============+===============+======
-enum class SqlCompareListType
-    {
-    All,
-    Any,
-    Some
-    };
-
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      03/2013
-//+===============+===============+===============+===============+===============+======
-enum class SqlSetQuantifier
-    {
-    NotSpecified,
-    Distinct,
-    All,
-    };
 
 typedef BeInt64Id ECContainerId;
 typedef BeInt64Id ECRelationshipConstraintId;

@@ -18,8 +18,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullptr;
 
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
@@ -287,19 +285,6 @@ IECSqlPreparedStatement& ECSqlStatement::Impl::CreatePreparedStatement(ECDbCR ec
 
     return *m_preparedStatement;
     }
-#else
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Impl::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsql)
-    {
-    // NB: This mutex is protecting some bmap in the schema cache. Move it there?
-    BeMutexHolder lock(ctx.GetECDb().GetECDbImplR().GetMutex());
-    Diagnostics diag(ecsql, GetPrepareDiagnosticsLogger(), true);
-    return ECSqlStatementBase::_Prepare(ctx, ecsql);
-    }
-
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle      03/2014

@@ -10,7 +10,6 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************** ECSqlBinder **************************
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
@@ -23,33 +22,6 @@ ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo
         }
     }
 
-#else
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
-ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& nameGen, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
-    : m_preparedStatement(*ctx.GetECSqlStatementR().GetPreparedStatementP()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
-    {
-    for (int i = 0; i < mappedSqlParameterCount; i++)
-        {
-        m_mappedSqlParameterNames.push_back(nameGen.GetNextName());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      08/2013
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
-    {
-    if (m_onBindEventHandlers == nullptr)
-        m_onBindEventHandlers = std::unique_ptr<std::vector<IECSqlBinder*>>(new std::vector<IECSqlBinder*>());
-
-    BeAssert(std::find(m_onBindEventHandlers->begin(), m_onBindEventHandlers->end(), &binder) == m_onBindEventHandlers->end());
-
-    m_onBindEventHandlers->push_back(&binder);
-    return ECSqlStatus::Success;
-    }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
@@ -206,6 +178,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
             return true;
         }
 
+    ClassMap const& classMap = propMap.GetClassMap();
     switch (propMap.GetType())
         {
             case PropertyMap::Type::ConstraintECClassId:
@@ -214,12 +187,23 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
             if (nullptr != ConstraintECClassIdJoinInfo::RequiresJoinTo(constraintClassIdPropMap, true /*ignoreVirtualColumnCheck*/))
                 return true;
 
-            BeAssert(propMap.GetClassMap().GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
-            return constraintClassIdPropMap.IsVirtual(propMap.GetClassMap().GetJoinedTable());
+            BeAssert(classMap.GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
+            DbTable const& contextTable = classMap.GetJoinedOrPrimaryTable();
+            if (!classMap.GetUpdatableViewInfo().HasView() && contextTable.GetPersistenceType() == PersistenceType::Virtual)
+                return true; //if table is virtual and there is no alternative table to use this is a noop.
+
+            ConstraintECClassIdPropertyMap::PerTableIdPropertyMap const* contextConstraintClassIdPropMap = constraintClassIdPropMap.FindDataPropertyMap(contextTable);
+            BeAssert(contextConstraintClassIdPropMap != nullptr);
+            return contextConstraintClassIdPropMap->GetColumn().GetPersistenceType() == PersistenceType::Virtual;
             }
             case PropertyMap::Type::NavigationRelECClassId:
-                return propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().IsVirtual();
+            {
+            DbColumn const& col = propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetColumn();
+            if (!classMap.GetUpdatableViewInfo().HasView() && col.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+                return true;
 
+            return col.GetPersistenceType() == PersistenceType::Virtual;
+            }
             default:
                 return false;
         }
@@ -275,148 +259,6 @@ int ECSqlParameterMap::GetIndexForName(Utf8StringCR ecsqlParameterName) const
         return -1;
     }
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan          10/2015
-//---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8StringCR parameterName)
-    {
-    BeAssert(ecsqlParameterIndex != 0);
-    if (ecsqlParameterIndex == 0)
-        return nullptr;
-
-    ECSqlBinder* binderExist = nullptr;
-    if (!parameterName.empty() && TryGetBinder(binderExist, parameterName))
-        {
-        BeAssert(false && "Binder with name already exist");
-        return nullptr;
-        }
-
-    m_binders.insert(m_binders.begin() + (ecsqlParameterIndex - 1), &binder);
-    for (auto& binder : m_nameToIndexMapping)
-        {
-        if (binder.second >= ecsqlParameterIndex)
-            {
-            binder.second = binder.second + 1;
-            }
-        }
-
-    if (!parameterName.empty())
-        m_nameToIndexMapping[parameterName] = ecsqlParameterIndex;
-
-    return &binder;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan          10/2015
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
-    {
-    ECSqlPrepareContext::JoinedTableInfo const* joinInfo = ctx.GetJoinedTableInfo();
-    if (joinInfo == nullptr)
-        return ECSqlStatus::Success;
-
-    ParentOfJoinedTableECSqlStatement* joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParentOfJoinedTableECSqlStatement();
-    if (joinedTableStmt == nullptr)
-        return ECSqlStatus::Success;
-
-    auto& baseParameterMap = joinedTableStmt->GetPreparedStatementP()->GetParameterMapR();
-    ECSqlPrepareContext::JoinedTableInfo::ParameterSet const& primaryMap = joinInfo->GetParameterMap().GetPrimary();
-    if (!primaryMap.Empty())
-        {
-        for (size_t oi = primaryMap.First(); oi <= primaryMap.Last(); oi++)
-            {
-            ECSqlPrepareContext::JoinedTableInfo::Parameter const* param = primaryMap.Find(oi);
-            if (ECSqlPrepareContext::JoinedTableInfo::Parameter const* orignalParam = param->GetOrignalParameter())
-                {
-                ECSqlBinder* binder = nullptr;
-                if (param->IsShared())
-                    {
-                    ECSqlBinder* cbinder = nullptr;
-                    if (param->IsNamed())
-                        {
-                        if (!baseParameterMap.TryGetBinder(binder, param->GetName()))
-                            {
-                            BeAssert(false && "Programmer Error: Failed to find named parameter in base");
-                            return ECSqlStatus::Error;
-                            }
-
-                        if (!TryGetBinder(cbinder, param->GetName()))
-                            {
-                            BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
-                            return ECSqlStatus::Error;
-                            }
-
-                        ECSqlStatus st = cbinder->SetOnBindEventHandler(*binder);
-                        if (st != ECSqlStatus::Success)
-                            return st;
-                        }
-                    else
-                        {
-                        ECSqlStatus st = baseParameterMap.TryGetBinder(binder, (int) (param->GetIndex()));
-                        if (st != ECSqlStatus::Success)
-                            {
-                            BeAssert(false && "Programmer Error: Parameter order is not correct.");
-                            return st;
-                            }
-
-                        st = TryGetBinder(cbinder, (int) (orignalParam->GetIndex()));
-                        if (st != ECSqlStatus::Success)
-                            {
-                            BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
-                            return st;
-                            }
-
-                        st = cbinder->SetOnBindEventHandler(*binder);
-                        if (st != ECSqlStatus::Success)
-                            return st;
-                        }
-                    }
-                else
-                    {
-                    ECSqlStatus st = baseParameterMap.TryGetBinder(binder, (int) (param->GetIndex()));
-                    if (st != ECSqlStatus::Success)
-                        {
-                        BeAssert(false && "Programmer Error: Parameter order is not correct.");
-                        return st;
-                        }
-
-                    AddProxyBinder((int) (orignalParam->GetIndex()), *binder, orignalParam->GetName());
-                    }
-                }
-            }
-        }
-
-    auto& orignalMap = joinInfo->GetParameterMap().GetOrignal();
-    if (!orignalMap.Empty())
-        {
-        for (auto oi = orignalMap.First(); oi <= orignalMap.Last(); oi++)
-            {
-            ECSqlPrepareContext::JoinedTableInfo::Parameter const* param = orignalMap.Find(oi);
-            if (param == nullptr || !param->IsNamed())
-                continue;
-
-            ECSqlBinder* abinder = nullptr;
-            ECSqlBinder* bbinder = nullptr;
-
-            baseParameterMap.TryGetBinder(abinder, param->GetName());
-            TryGetBinder(bbinder, param->GetName());
-
-            if (abinder == nullptr && bbinder == nullptr)
-                {
-                BeAssert(false && "Binding is not valid for joined table");
-                return ECSqlStatus::Error;
-                }
-            if (abinder != nullptr && bbinder == nullptr)
-                AddProxyBinder((int) (param->GetIndex()), *abinder, param->GetName());
-            }
-        }
-
-    return ECSqlStatus::Success;
-    }
-
-#endif
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
@@ -449,32 +291,6 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
     //insert name to index mapping. 
     if (parameterExp.IsNamedParameter())
         m_nameToIndexMapping[parameterExp.GetParameterName()] = parameterExp.GetParameterIndex();
-
-    return binderP;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddInternalECInstanceIdBinder(ECSqlPrepareContext& ctx)
-    {
-    ECSqlBinder::SqlParamNameGenerator paramNameGen(ctx, ECSQLSYS_SQLPARAM_Id);
-    std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, ECSqlTypeInfo(ECN::PRIMITIVETYPE_Long), paramNameGen);
-    if (binder == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    ECSqlBinder* binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
-    m_ownedBinders.push_back(std::move(binder));
-    m_internalECInstanceIdBinder = binderP;
-
-    if (binderP->HasToCallOnBeforeStep())
-        m_bindersToCallOnStep.push_back(binderP);
-
-    if (binderP->HasToCallOnClearBindings())
-        m_bindersToCallOnClearBindings.push_back(binderP);
 
     return binderP;
     }

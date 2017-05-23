@@ -150,17 +150,17 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP i
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
-    return ImportSchemas(schemas, false, schemaImportToken);
+    return ImportSchemas(schemas, SchemaImportOptions::None, schemaImportToken);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, SchemaImportToken const* schemaImportToken) const
+BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* schemaImportToken) const
     {
-    PERFLOG_START("ECDb", "ECSchema import");
+    PERFLOG_START("ECDb", "Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
-    SchemaImportContext ctx(doNotFailSchemaValidationForLegacyIssues);
+    SchemaImportContext ctx(options);
     const BentleyStatus stat = DoImportSchemas(ctx, schemas, schemaImportToken);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::ImportSchemas");
     m_ecdb.ClearECDbCache();
@@ -181,7 +181,6 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
         return ERROR;
         }
 
-
     if (m_ecdb.IsReadonly())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. ECDb file is read-only.");
@@ -196,23 +195,20 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
 
     BeMutexHolder lock(m_mutex);
 
-    if (ViewGenerator::DropECClassViews(GetECDb()) != SUCCESS)
+    bvector<ECSchemaCP> schemasToMap;
+    if (SUCCESS != PersistSchemas(ctx, schemasToMap, schemas))
         return ERROR;
 
-    if (ViewGenerator::DropUpdatableViews(GetECDb()) != SUCCESS)
-        return ERROR;
-
-    if (SUCCESS != PersistSchemas(ctx, schemas))
-        return ERROR;
-
-    SchemaCompareContext& compareContext = ctx.GetECSchemaCompareContext();
-    if (compareContext.HasNoSchemasToImport())
+    if (schemasToMap.empty())
         return SUCCESS;
 
-    if (SUCCESS != compareContext.ReloadContextECSchemas(*this))
+    if (SUCCESS != ViewGenerator::DropECClassViews(GetECDb()))
         return ERROR;
 
-    if (SUCCESS != GetDbMap().MapSchemas(ctx))
+    if (SUCCESS != ViewGenerator::DropUpdatableViews(GetECDb()))
+        return ERROR;
+
+    if (SUCCESS != GetDbMap().MapSchemas(ctx, schemasToMap))
         return ERROR;
 
     return ViewGenerator::CreateUpdatableViews(GetECDb());
@@ -221,7 +217,7 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvector<ECSchemaCP> const& schemas) const
+BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECSchemaCP> const& schemas) const
     {
     bvector<ECSchemaCP> schemasToImport;
     for (ECSchemaCP schema : schemas)
@@ -305,29 +301,16 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
         }
 
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
-    bvector<ECSchemaCP> dependencyOrderedPrimarySchemas;
+    bvector<ECSchemaCP> primarySchemasOrderedByDependencies;
     for (ECSchemaCP schema : primarySchemas)
-        BuildDependencyOrderedSchemaList(dependencyOrderedPrimarySchemas, schema);
+        BuildDependencyOrderedSchemaList(primarySchemasOrderedByDependencies, schema);
 
     primarySchemas.clear(); // Just make sure no one tries to use it anymore
-
-    const bool isValid = SchemaValidator::ValidateSchemas(m_ecdb.GetECDbImplR().GetIssueReporter(), dependencyOrderedPrimarySchemas, context.DoNotFailSchemaValidationForLegacyIssues());
-    if (!isValid)
-        return ERROR;
-
-    SchemaCompareContext& schemaPrepareContext = context.GetECSchemaCompareContext();
-    if (schemaPrepareContext.Prepare(*this, dependencyOrderedPrimarySchemas) != SUCCESS)
-        return ERROR;
-
-    SchemaWriter schemaWriter(m_ecdb);
+    
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
-    for (ECSchemaCP schema : schemaPrepareContext.GetImportingSchemas())
-        {
-        if (SUCCESS != schemaWriter.Import(schemaPrepareContext, *schema))
-            return ERROR;
-        }
 
-    return DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb);
+    SchemaWriter schemaWriter(m_ecdb, context);
+    return schemaWriter.ImportSchemas(schemasToMap, primarySchemasOrderedByDependencies);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -370,11 +353,11 @@ bool SchemaManager::ContainsSchema(Utf8CP schemaName)  const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP SchemaManager::GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema) const
+ECClassCP SchemaManager::GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode) const
     {
     BeMutexHolder lock(m_mutex);
 
-    const ECClassId id = GetClassId(schemaNameOrAlias, className, resolveSchema);
+    const ECClassId id = GetClassId(schemaNameOrAlias, className, mode);
     return GetClass(id);
     }
 
@@ -391,11 +374,11 @@ ECClassCP SchemaManager::GetClass(ECClassId ecClassId) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId SchemaManager::GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema) const
+ECClassId SchemaManager::GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode) const
     {
     BeMutexHolder lock(m_mutex);
 
-    return GetReader().GetClassId(schemaNameOrAlias, className, resolveSchema);
+    return GetReader().GetClassId(schemaNameOrAlias, className, mode);
     }
 
 //---------------------------------------------------------------------------------------

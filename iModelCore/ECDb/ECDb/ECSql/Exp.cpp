@@ -26,7 +26,7 @@ void Exp::FindRecursive(std::vector<Exp const*>& expList, Exp::Type ofType) cons
     if (GetType() == ofType)
         expList.push_back(this);
 
-    for (Exp const* child : m_children)
+    for (Exp const* child : m_derivedTables)
         child->FindRecursive(expList, ofType);
     }
 
@@ -38,7 +38,7 @@ void Exp::FindInDirectDecendents(std::vector<Exp const*>& expList, Exp::Type ofT
     if (GetType() == ofType)
         expList.push_back(this);
 
-    for (Exp const* child : m_children)
+    for (Exp const* child : m_derivedTables)
         {
         if (child->GetType() == ofType)
             expList.push_back(this);
@@ -80,9 +80,9 @@ size_t Exp::AddChild(std::unique_ptr<Exp> child)
     {
     BeAssert(child != nullptr);
     child->m_parent = this;
-    m_children.m_collection.push_back(std::move(child));
+    m_derivedTables.m_collection.push_back(std::move(child));
     //return index of added child
-    return m_children.size() - 1;
+    return m_derivedTables.size() - 1;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ BentleyStatus Exp::FinalizeParsing(ECSqlParseContext& ctx)
             }
         }
 
-    for (Exp* child : m_children)
+    for (Exp* child : m_derivedTables)
         {
         if (SUCCESS != child->FinalizeParsing(ctx))
             return ERROR;
@@ -332,7 +332,7 @@ BentleyStatus PropertyPath::TryParseQualifiedPath(PropertyPath& resolvedProperty
         resolvedPropertyPath.Push(propertyName);
         }
 
-    ECClassCP targetClass = ecdb.Schemas().GetClass(schemaName, className, ResolveSchema::AutoDetect);
+    ECClassCP targetClass = ecdb.Schemas().GetClass(schemaName, className, SchemaLookupMode::AutoDetect);
     if (targetClass == nullptr)
         {
         BeAssert(false && "Failed to find ECClass");

@@ -18,12 +18,21 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
-    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
-    m_isDirty(setIsDirty), m_tphHelper(nullptr), m_propertyMaps(*this), m_columnFactory(nullptr)
+ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy)
+    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_propertyMaps(*this), m_state(ObjectState::New)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
-        m_tphHelper = std::unique_ptr<TablePerHierarchyHelper>(new TablePerHierarchyHelper(*this));
+        m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Ramanujam.Raman                06/2012
+//---------------------------------------------------------------------------------------
+ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
+    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_updatableViewInfo(updatableViewInfo), m_propertyMaps(*this), m_state(ObjectState::New)
+    {
+    if (m_mapStrategyExtInfo.IsTablePerHierarchy())
+        m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
     }
 
 
@@ -73,14 +82,24 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
                 needsToCreateTable = true;
                 }
             else
-                AddTable(tphBaseClassMap->GetJoinedTable());
+                AddTable(tphBaseClassMap->GetJoinedOrPrimaryTable());
+            }
+
+        for (DbTable const* table : GetTables())
+            {
+            DbTable::LinkNode const* overflowTableNode = table->GetLinkNode().FindOverflowTable();
+            if (overflowTableNode != nullptr)
+                {
+                AddTable(overflowTableNode->GetTableR());
+                break;
+                }
             }
         }
 
     if (needsToCreateTable)
         {
         const bool isExclusiveRootClassOfTable = DetermineIsExclusiveRootClassOfTable(ctx.GetClassMappingInfo());
-        DbTable* table = TableMapper::FindOrCreateTable(GetDbMap().GetDbSchemaR(), ctx.GetClassMappingInfo().GetTableName(), tableType,
+        DbTable* table = TableMapper::FindOrCreateTable(GetDbMap().GetDbSchemaR(), ctx.GetClassMappingInfo().GetTableName(), tableType, ctx.GetClassMappingInfo().GetMapStrategy(),
                                                         ctx.GetClassMappingInfo().MapsToVirtualTable(), ctx.GetClassMappingInfo().GetECInstanceIdColumnName(),
                                                         isExclusiveRootClassOfTable ? ctx.GetClassMappingInfo().GetClass().GetId() : ECClassId(),
                                                         primaryTable);
@@ -90,6 +109,7 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
         AddTable(*table);
         }
 
+    
     if (SUCCESS != MapSystemColumns())
         return ClassMappingStatus::Error;
 
@@ -140,6 +160,7 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
     {
+    ImportColumnResolutionScope columnResolutionScope(*this);
     ClassMappingStatus stat = MapProperties(ctx);
     if (stat != ClassMappingStatus::Success)
         return stat;
@@ -163,16 +184,16 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
         return ClassMappingStatus::Error;
         }
 
-    DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedTable();
-    if (&baseClassMapJoinedTable == &GetJoinedTable())
+    DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedOrPrimaryTable();
+    if (&baseClassMapJoinedTable == &GetJoinedOrPrimaryTable())
         return ClassMappingStatus::Success;
 
-    DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* foreignKeyColumn = GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECInstanceId);
     PRECONDITION(primaryKeyColumn != nullptr, ClassMappingStatus::Error);
     PRECONDITION(foreignKeyColumn != nullptr, ClassMappingStatus::Error);
     bool createFKConstraint = true;
-    for (DbConstraint const* constraint : GetJoinedTable().GetConstraints())
+    for (DbConstraint const* constraint : GetJoinedOrPrimaryTable().GetConstraints())
         {
         if (constraint->GetType() != DbConstraint::Type::ForeignKey)
             continue;
@@ -188,7 +209,7 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
 
     if (createFKConstraint)
         {
-        if (GetJoinedTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
+        if (GetJoinedOrPrimaryTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
             return ClassMappingStatus::Error;
         }
 
@@ -364,7 +385,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            DbTable const& table = GetJoinedTable();
+            DbTable const& table = GetJoinedOrPrimaryTable();
             GetColumnsPropertyMapVisitor columnVisitor(table);
             propertyMap->AcceptVisitor(columnVisitor);
             if (table.GetPersistenceType() == PersistenceType::Physical && columnVisitor.GetVirtualColumnCount() > 0)
@@ -399,7 +420,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
             }
 
-        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
+        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedOrPrimaryTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
                                                                       totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
             {
             return ERROR;
@@ -412,9 +433,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                           07/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
+BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& ctx)
     {
-    if (!m_isDirty || ctx.IsAlreadySaved(*this))
+    if (ctx.IsAlreadySaved(*this) || !importCtx.ClassMapNeedsSaving(m_ecClass.GetId()))
         return SUCCESS;
 
     ctx.BeginSaving(*this);
@@ -429,7 +450,7 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
                 return ERROR;
                 }
 
-            if (SUCCESS != baseClassMap->Save(ctx))
+            if (SUCCESS != baseClassMap->Save(importCtx, ctx))
                 return ERROR;
             }
         }
@@ -449,8 +470,8 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
             return ERROR;
         }
 
-    m_isDirty = false;
     ctx.EndSaving(*this);
+    m_state = ObjectState::Persisted;
     return SUCCESS;
     }
 
@@ -459,9 +480,10 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx)
     {
-    std::set<DbTable*> tables;
+    m_state = ObjectState::Persisted;
+    std::set<DbTable*> primaryTables;
     std::set<DbTable*> joinedTables;
-
+    std::set<DbTable*> overflowTables;
     if (!dbLoadCtx.HasMappedProperties())
         {
         SetTable(*const_cast<DbTable*>(GetDbMap().GetDbSchema().GetNullTable()));
@@ -475,17 +497,22 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
             {
             if (column->GetTable().GetType() == DbTable::Type::Joined)
                 joinedTables.insert(&column->GetTableR());
+            else if (column->GetTable().GetType() == DbTable::Type::Overflow)
+                overflowTables.insert(&column->GetTableR());
             else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId))
                 {
-                tables.insert(&column->GetTableR());
+                primaryTables.insert(&column->GetTableR());
                 }
             }
         }
-
-    for (DbTable* table : tables)
+    //Orderly add the tables
+    for (DbTable* table : primaryTables)
         AddTable(*table);
 
     for (DbTable* table : joinedTables)
+        AddTable(*table);
+
+    for (DbTable* table : overflowTables)
         AddTable(*table);
 
     BeAssert(!GetTables().empty());
@@ -592,8 +619,10 @@ BentleyStatus ClassMap::Update()
     {
     if (!m_failedToLoadProperties.empty())
         {
-        GetColumnFactory(true);
-        //GetColumnFactory().Update(true);
+        BeAssert(m_state == ObjectState::Persisted);
+        m_state = ObjectState::Modified;
+
+        UpdateColumnResolutionScope columnResolutionScope(*this);
         for (ECPropertyCP property : m_failedToLoadProperties)
             {
             PropertyMap const* propMap = ClassMapper::MapProperty(*this, *property);
@@ -702,7 +731,56 @@ BentleyStatus ClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR
     tableName.append("_").append(ecclass.GetName());
     return SUCCESS;
     }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       04 / 2017
+//------------------------------------------------------------------------------------------
+BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
+    {
+    if (GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy)
+        {
+        BeAssert(GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
+        return ERROR;
+        }
 
+    ECInstanceIdPropertyMap* ecInstanceIdPropertyMap = const_cast<ECInstanceIdPropertyMap*>(GetECInstanceIdPropertyMap());
+    ECClassIdPropertyMap* ecClassIdPropertyMap = const_cast<ECClassIdPropertyMap*>(GetECClassIdPropertyMap());
+
+    if (ecInstanceIdPropertyMap == nullptr || ecClassIdPropertyMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    //!Overflow is delay created which mean system property map are not upto day
+    AddTable(overflowTable);
+
+    DbColumn const* ecInstanceIdColumn = overflowTable.FindFirst(DbColumn::Kind::ECInstanceId);
+    if (ecInstanceIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    DbColumn const* ecClassIdColumn = overflowTable.FindFirst(DbColumn::Kind::ECClassId);
+    if (ecClassIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+
+    if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecInstanceIdPropertyMap, *ecInstanceIdColumn) == ERROR)
+        return ERROR;
+
+    if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecClassIdPropertyMap, *ecClassIdColumn) == ERROR)
+        return ERROR;
+    
+    for (ClassMapCP derviedClassMap : GetDerivedClassMaps())
+        if (derviedClassMap)
+            const_cast<ClassMap*>(derviedClassMap)->SetOverflowTable(overflowTable);
+
+    return SUCCESS;
+    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       10 / 2016
 //------------------------------------------------------------------------------------------
@@ -718,14 +796,14 @@ BentleyStatus ClassMap::MapSystemColumns()
 
     for (DbTable const* table : GetTables())
         {
-        DbColumn const* ecInstanceIdColumn = table->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        DbColumn const* ecInstanceIdColumn = table->FindFirst(DbColumn::Kind::ECInstanceId);
         if (ecInstanceIdColumn == nullptr)
             {
             BeAssert(false);
             return ERROR;
             }
 
-        DbColumn const* ecClassIdColumn = table->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+        DbColumn const* ecClassIdColumn = table->FindFirst(DbColumn::Kind::ECClassId);
         if (ecClassIdColumn == nullptr)
             {
             BeAssert(false);
@@ -774,48 +852,39 @@ BentleyStatus ClassMap::MapSystemColumns()
 //static
 BentleyStatus ClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
     {
-    tablePrefix.clear();
-
     ECSchemaCR schema = ecclass.GetSchema();
     ECDbSchemaMap customSchemaMap;
 
     if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
         {
-        if (SUCCESS != customSchemaMap.TryGetTablePrefix(tablePrefix))
+        Nullable<Utf8String> tablePrefixFromCA;
+        if (SUCCESS != customSchemaMap.TryGetTablePrefix(tablePrefixFromCA))
             return ERROR;
+
+        if (!tablePrefixFromCA.IsNull())
+            {
+            tablePrefix.assign(tablePrefixFromCA.Value());
+            BeAssert(!tablePrefix.empty() && "tablePrefixFromCA is null also if it contains an empty string");
+            return SUCCESS;
+            }
         }
 
-    if (tablePrefix.empty())
-        {
-        Utf8StringCR alias = schema.GetAlias();
-        if (!alias.empty())
-            tablePrefix = alias;
-        else
-            tablePrefix = schema.GetName();
-        }
+    Utf8StringCR alias = schema.GetAlias();
+    if (!alias.empty())
+        tablePrefix = alias;
+    else
+        tablePrefix = schema.GetName();
 
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                    12/2015
-//---------------------------------------------------------------------------------------
-Utf8String ClassMap::GetUpdatableViewName() const
-    {
-    Utf8String name;
-    name.Sprintf("_%s_%s", GetClass().GetSchema().GetAlias().c_str(), GetClass().GetName().c_str());
-    return name;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMapColumnFactory const& ClassMap::GetColumnFactory(bool refresh) const
+ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
     {
     if (m_columnFactory == nullptr)
         m_columnFactory = std::make_unique<ClassMapColumnFactory>(*this);
-    else if (refresh)
-        m_columnFactory->Refresh();
 
     return *m_columnFactory;
     }
@@ -829,7 +898,7 @@ DbTable const* ClassMap::ExpectingSingleTable() const
     if (GetTables().size() != 1)
         return nullptr;
 
-    return &GetJoinedTable();
+    return &GetJoinedOrPrimaryTable();
     }
 
 //---------------------------------------------------------------------------------------

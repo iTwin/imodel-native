@@ -9,6 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECObjects/ECObjectsAPI.h>
 #include "ECDbInternalTypes.h"
+#include "Nullable.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -103,10 +104,10 @@ struct ECDbSchemaMap final
     public:
         ECDbSchemaMap() : m_schema(nullptr), m_ca(nullptr) {}
         //! Tries to get the value of the TablePrefix property in the SchemaMap.
-        //! @param[out] tablePrefix Table prefix. It remains unchanged, if the TablePrefix property wasn't set in the SchemaMap.
+        //! @param[out] tablePrefix Table prefix. IsNull() is true, if the TablePrefix property wasn't set in the SchemaMap.
         //! @return SUCCESS if TablePrefix was set or unset in the SchemaMap. ERROR if TablePrefix didn't have a valid value,
         //! e.g. didn't comply to the naming conventions for table names.
-        BentleyStatus TryGetTablePrefix(Utf8StringR tablePrefix) const;
+        BentleyStatus TryGetTablePrefix(Nullable<Utf8String>& tablePrefix) const;
     };
 
 //=======================================================================================    
@@ -131,17 +132,17 @@ struct ECDbClassMap final
         bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
 
         //! Tries to get the value of the MapStrategy property from the ClassMap.
-        //! @param[out] mapStrategy MapStrategy. It remains unchanged, if the MapStrategy property wasn't set in the ClassMap.
+        //! @param[out] mapStrategy MapStrategy. IsNull() is true, if the MapStrategy property wasn't set in the ClassMap.
         //! @return SUCCESS if MapStrategy was set or unset in the ClassMap. ERROR otherwise
-        BentleyStatus TryGetMapStrategy(Utf8String& mapStrategy) const;
+        BentleyStatus TryGetMapStrategy(Nullable<Utf8String>& mapStrategy) const;
         //! Tries to get the value of the TableName property in the ClassMap.
-        //! @param[out] tableName Table name. It remains unchanged, if the TableName property wasn't set in the ClassMap.
+        //! @param[out] tableName Table name. IsNull() is true, if the TableName property wasn't set in the ClassMap.
         //! @return ECOBJECTSTATUS_Success if TableName was set or unset in the ClassMap, ERROR otherwise
-        BentleyStatus TryGetTableName(Utf8String& tableName) const;
+        BentleyStatus TryGetTableName(Nullable<Utf8String>& tableName) const;
         //! Tries to get the value of the ECInstanceIdColumn property from the ClassMap.
-        //! @param[out] ecInstanceIdColumnName Name of the ECInstanceId column. It remains unchanged, if the ECInstanceIdColumn property wasn't set in the ClassMap.
+        //! @param[out] ecInstanceIdColumnName Name of the ECInstanceId column. IsNull() is true, if the ECInstanceIdColumn property wasn't set in the ClassMap.
         //! @return ECOBJECTSTATUS_Success if ECInstanceIdColumn was set or unset in the ClassMap, ERROR otherwise
-        BentleyStatus TryGetECInstanceIdColumn(Utf8String& ecInstanceIdColumnName) const;
+        BentleyStatus TryGetECInstanceIdColumn(Nullable<Utf8String>& ecInstanceIdColumnName) const;
     };
 
 //=======================================================================================    
@@ -165,21 +166,14 @@ struct ShareColumns final
         bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
 
         //! Tries to get the value of the ApplyToSubclassesOnly property from the ShareColumns custom attribute.
-        //! @param[out] applyToSubclassesOnly ApplyToSubclassesOnly flag. It remains unchanged, if the ApplyToSubclassesOnly property wasn't set.
+        //! @param[out] applyToSubclassesOnly ApplyToSubclassesOnly flag. IsNull() is true, if the ApplyToSubclassesOnly property wasn't set.
         //! @return ECOBJECTSTATUS_Success if ApplyToSubclassesOnly was set or unset in the ShareColumns custom attribute, ERROR otherwise
-        BentleyStatus TryGetApplyToSubclassesOnly(bool& applyToSubclassesOnly) const;
+        BentleyStatus TryGetApplyToSubclassesOnly(Nullable<bool>& applyToSubclassesOnly) const;
 
-        //! Tries to get the value of the SharedColumnCount property from the ShareColumns custom attribute.
-        //! The SharedColumnCount includes the overflow column.
-        //! @param[out] sharedColumnCount Number of shared columns to use. It remains unchanged, if the SharedColumnCount property wasn't set.
-        //! @return ECOBJECTSTATUS_Success if SharedColumnCount was set or unset in the ShareColumns custom attribute, ERROR otherwise
-        BentleyStatus TryGetSharedColumnCount(int& sharedColumnCount) const;
-
-        //! Tries to get the value of the SharedColumnCountPerOverflowTable property in the ShareColumns custom attribute.
-        //! @param[out] sharedColumnCountPerOverflowTable Number of shared columns of each overflow table. It remains unchanged, if the SharedColumnCountPerOverflowTable property wasn't set.
-        //! @return ECOBJECTSTATUS_Success if SharedColumnCountPerOverflowTable was set or unset in the ShareColumns custom attribute, ERROR otherwise
-        BentleyStatus TryGetSharedColumnCountPerOverflowTable(int& sharedColumnCountPerOverflowTable) const;
-
+        //! Tries to get the value of the MaxSharedColumnsBeforeOverflow property from the ShareColumns custom attribute.
+        //! @param[out] maxSharedColumnsBeforeOverflow Maximum number of shared columns to use before creating an overflow table. IsNull() is true, if the MaxSharedColumnsBeforeOverflow property wasn't set.
+        //! @return ECOBJECTSTATUS_Success if MaxSharedColumnsBeforeOverflow was set or unset in the ShareColumns custom attribute, ERROR otherwise
+        BentleyStatus TryGetMaxSharedColumnsBeforeOverflow(Nullable<uint32_t>& maxSharedColumnsBeforeOverflow) const;
     };
 
 //=======================================================================================    
@@ -201,24 +195,24 @@ struct DbIndexList final
             friend struct DbIndexList;
 
             private:
-                Utf8String m_name;
-                bool m_isUnique;
-                Utf8String m_whereClause;
+                Nullable<Utf8String> m_name;
+                Nullable<bool> m_isUnique;
+                Nullable<Utf8String> m_whereClause;
                 bvector<Utf8String> m_properties;
 
-                DbIndex(Utf8CP name, bool isUnique = false, Utf8CP whereClause = nullptr) : m_name(name), m_isUnique(isUnique), m_whereClause(whereClause) {}
+                DbIndex(Nullable<Utf8String> const& name, Nullable<bool> isUnique, Nullable<Utf8String> const& whereClause) : m_name(name), m_isUnique(isUnique), m_whereClause(whereClause) {}
                 void AddProperty(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
 
             public:
                 //! Gets the index name.
-                //! @return Index name or nullptr if not set (This indicates that the name of the index should be auto-generated)
-                Utf8CP GetName() const { return m_name.c_str(); }
+                //! @return Index name. (If IsNull, it indicates that the name of the index should be auto-generated)
+                Nullable<Utf8String> const& GetName() const { return m_name; }
                 //! Gets a value indicating whether the index is a unique index or not.
                 //! @return true if the index is a unique index. false otherwise
-                bool IsUnique() const { return m_isUnique; }
+                Nullable<bool> IsUnique() const { return m_isUnique; }
                 //! Gets the where clause if the index a partial index.
                 //! @return Where clause or nullptr if the index is not partial
-                Utf8CP GetWhereClause() const { return m_whereClause.c_str(); }
+                Nullable<Utf8String> const& GetWhereClause() const { return m_whereClause; }
                 //! Gets the list of property names on which the index is to be defined.
                 //! @return Properties on which the index is defined.
                 bvector<Utf8String> const& GetProperties() const { return m_properties; }
@@ -261,21 +255,21 @@ struct ECDbPropertyMap final
         ECDbPropertyMap() : m_property(nullptr), m_ca(nullptr) {}
 
         //! Tries to get the value of the ColumnName property from the PropertyMap.
-        //! @param[out] columnName Column name. It remains unchanged, if the ColumnName property wasn't set in the PropertyMap.
+        //! @param[out] columnName Column name. IsNull() is true, if the ColumnName property wasn't set in the PropertyMap.
         //! @return ECOBJECTSTATUS_Success if ColumnName was set or unset in the PropertyMap, ERROR otherwise
-        BentleyStatus TryGetColumnName(Utf8StringR columnName) const;
+        BentleyStatus TryGetColumnName(Nullable<Utf8String>& columnName) const;
         //! Tries to get the value of the IsNullable property from the PropertyMap.
-        //! @param[out] isNullable IsNullable flag. It remains unchanged, if the IsNullable property wasn't set in the PropertyMap.
+        //! @param[out] isNullable IsNullable flag. IsNull() is true, if the IsNullable property wasn't set in the PropertyMap.
         //! @return ECOBJECTSTATUS_Success if IsNullable was set or unset in the PropertyMap, ERROR otherwise
-        BentleyStatus TryGetIsNullable(bool& isNullable) const;
+        BentleyStatus TryGetIsNullable(Nullable<bool>& isNullable) const;
         //! Tries to get the value of the IsUnique property from the PropertyMap.
-        //! @param[out] isUnique IsUnique flag. It remains unchanged, if the IsUnique property wasn't set in the PropertyMap.
+        //! @param[out] isUnique IsUnique flag. IsNull() is true, if the IsUnique property wasn't set in the PropertyMap.
         //! @return ECOBJECTSTATUS_Success if IsUnique was set or unset in the PropertyMap, ERROR otherwise
-        BentleyStatus TryGetIsUnique(bool& isUnique) const;
+        BentleyStatus TryGetIsUnique(Nullable<bool>& isUnique) const;
         //! Tries to get the value of the Collation property from the PropertyMap.
-        //! @param[out] collation Collation. It remains unchanged, if the Collation property wasn't set in the PropertyMap.
+        //! @param[out] collation Collation. IsNull() is true, if the Collation property wasn't set in the PropertyMap.
         //! @return ECOBJECTSTATUS_Success if Collation was set or unset in the PropertyMap, ERROR otherwise
-        BentleyStatus TryGetCollation(Utf8StringR collation) const;
+        BentleyStatus TryGetCollation(Nullable<Utf8String>& collation) const;
     };
 
 
@@ -299,20 +293,26 @@ struct ECDbLinkTableRelationshipMap final
 
         //! Tries to get the value of the SourceECInstanceId property from the LinkTableRelationshipMap.
         //! @param[out] sourceECInstanceIdColumnName Name of column to which SourceECInstanceId is mapped to. 
-        //! It remains unchanged, if the SourceECInstanceId property wasn't set in the LinkTableRelationshipMap.
+        //! IsNull() is true, if the SourceECInstanceId property wasn't set in the LinkTableRelationshipMap.
         //! @return ECOBJECTSTATUS_Success if SourceECInstanceId was set or unset in the LinkTableRelationshipMap, ERROR otherwise
-        BentleyStatus TryGetSourceECInstanceIdColumn(Utf8StringR sourceECInstanceIdColumnName) const;
+        BentleyStatus TryGetSourceECInstanceIdColumn(Nullable<Utf8String>& sourceECInstanceIdColumnName) const;
 
         //! Tries to get the value of the TargetECInstanceId property from the LinkTableRelationshipMap.
         //! @param[out] targetECInstanceIdColumnName Name of column to which TargetECInstanceId is mapped to. 
-        //! It remains unchanged, if the TargetECInstanceId property wasn't set in the LinkTableRelationshipMap.
+        //! IsNull() is true, if the TargetECInstanceId property wasn't set in the LinkTableRelationshipMap.
         //! @return ECOBJECTSTATUS_Success if TargetECInstanceId was set or unset in the LinkTableRelationshipMap, ERROR otherwise
-        BentleyStatus TryGetTargetECInstanceIdColumn(Utf8StringR targetECInstanceIdColumnName) const;
+        BentleyStatus TryGetTargetECInstanceIdColumn(Nullable<Utf8String>& targetECInstanceIdColumnName) const;
+
+        //! Tries to get the value of the CreateForeignKeyConstraints property from the LinkTableRelationshipMap.
+        //! @param[out] createForeignKeyConstraints CreateForeignKeyConstraints flag. IsNull() is true, if the CreateForeignKeyConstraints property wasn't set in the LinkTableRelationshipMap.
+        //! @return ECOBJECTSTATUS_Success if CreateForeignKeyConstraints was set or unset in the LinkTableRelationshipMap, ERROR otherwise
+        BentleyStatus TryGetCreateForeignKeyConstraints(Nullable<bool>& createForeignKeyConstraints) const;
 
         //! Tries to get the value of the AllowDuplicateRelationships property from the LinkTableRelationshipMap.
-        //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. It remains unchanged, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
+        //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. IsNull() is true, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
         //! @return ECOBJECTSTATUS_Success if AllowDuplicateRelationships was set or unset in the LinkTableRelationshipMap, ERROR otherwise
-        BentleyStatus TryGetAllowDuplicateRelationships(bool& allowDuplicateRelationships) const;
+        BentleyStatus TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationships) const;
+
     };
 
 //=======================================================================================    
@@ -334,16 +334,16 @@ struct ECDbForeignKeyConstraint final
         ECDbForeignKeyConstraint() : m_relClass(nullptr), m_ca(nullptr) {}
 
         //! Tries to get the value of the OnDeleteAction property from the ForeignKeyConstraint.
-        //! @param[out] onDeleteAction OnDelete action.  @p onDeleteAction remains unchanged, if the OnDeleteAction property 
+        //! @param[out] onDeleteAction OnDelete action. IsNull() is true, if the OnDeleteAction property 
         //! wasn't set in the ForeignKeyConstraint.
         //! @return ECOBJECTSTATUS_Success if OnDeleteAction was set or unset in the ForeignKeyConstraint, ERROR otherwise
-        BentleyStatus TryGetOnDeleteAction(Utf8StringR onDeleteAction) const;
+        BentleyStatus TryGetOnDeleteAction(Nullable<Utf8String>& onDeleteAction) const;
 
         //! Tries to get the value of the OnUpdateAction property from the ForeignKeyConstraint.
-        //! @param[out] onUpdateAction OnUpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
+        //! @param[out] onUpdateAction OnUpdate action. IsNull() is true, if the OnUpdateAction property 
         //! wasn't set in the ForeignKeyConstraint.
         //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyConstraint, ERROR otherwise
-        BentleyStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
+        BentleyStatus TryGetOnUpdateAction(Nullable<Utf8String>& onUpdateAction) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

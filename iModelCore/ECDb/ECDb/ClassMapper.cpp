@@ -36,13 +36,17 @@ PropertyMap* ClassMapper::LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR 
 //+===============+===============+===============+===============+===============+======
 PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     {
-    RefCountedPtr<PropertyMap> propertyMap;
     if (m_classMap.GetPropertyMaps().Find(property.GetName().c_str()))
         {
         BeAssert(false && "PropertyMap already exist. This should have been caught before");
         return nullptr;
         }
 
+    const bool useColumnReservation = (m_classMap.GetColumnFactory().UsesSharedColumnStrategy() && !m_loadContext);
+    if (useColumnReservation)
+        m_classMap.GetColumnFactory().ReserveSharedColumns(property.GetName());
+
+    RefCountedPtr<PropertyMap> propertyMap = nullptr;
     if (auto typedProperty = property.GetAsPrimitiveProperty())
         propertyMap = MapPrimitiveProperty(*typedProperty, nullptr);
     else if (auto typedProperty = property.GetAsPrimitiveArrayProperty())
@@ -62,6 +66,9 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     if (propertyMap == nullptr)
         return nullptr;
 
+    if (useColumnReservation)
+        m_classMap.GetColumnFactory().ReleaseSharedColumnReservation();
+
     if (m_classMap.GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
         {
         BeAssert(false && "Failed to insert property map");
@@ -77,7 +84,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
 BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecInstanceIdColumns;
-    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECInstanceId);
     if (ecInstanceIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
@@ -102,7 +109,7 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
 BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecClassIdColumns;
-    DbColumn const* ecClassIdColumn = classMap.GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* ecClassIdColumn = classMap.GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECClassId);
     if (ecClassIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
@@ -149,7 +156,9 @@ RelationshipConstraintMap const& ClassMapper::GetConstraintMap(ECN::NavigationEC
 //static 
 BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams& params, ClassMap const& classMap, PrimitiveECPropertyCR ecProp, Utf8StringCR accessString)
     {
+    //return information whether the col name originates from the PropertyMap CA or whether a default name was used
     Utf8String columnName;
+    bool colNameIsFromPropertyMapCA = false;
     bool isNullable = true;
     bool isUnique = false;
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Unset;
@@ -165,40 +174,54 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
             return ERROR;
             }
 
-        if (SUCCESS != customPropMap.TryGetColumnName(columnName))
+        Nullable<Utf8String> colNameFromCA;
+        if (SUCCESS != customPropMap.TryGetColumnName(colNameFromCA))
             {
             BeAssert(false);
             return ERROR;
             }
 
-        if (!columnName.empty() && classMap.GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
+        colNameIsFromPropertyMapCA = !colNameFromCA.IsNull();
+        if (!colNameFromCA.IsNull() && classMap.GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
             {
+            BeAssert(!colNameFromCA.Value().empty());
             issues.Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with a value for 'ColumnName'. Only ECClasses with map strategy 'ExistingTable' may specify a column name.",
                                                           ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
             return ERROR;
             }
 
-        if (SUCCESS != customPropMap.TryGetIsNullable(isNullable))
+        if (!colNameFromCA.IsNull())
+            columnName.assign(colNameFromCA.Value());
+
+        Nullable<bool> isNullableFromCA;
+        if (SUCCESS != customPropMap.TryGetIsNullable(isNullableFromCA))
             return ERROR;
 
-        if (SUCCESS != customPropMap.TryGetIsUnique(isUnique))
+        if (!isNullableFromCA.IsNull())
+            isNullable = isNullableFromCA.Value();
+
+        Nullable<bool> isUniqueFromCA;
+        if (SUCCESS != customPropMap.TryGetIsUnique(isUniqueFromCA))
             return ERROR;
 
-        Utf8String collationStr;
+        if (!isUniqueFromCA.IsNull())
+            isUnique = isUniqueFromCA.Value();
+
+        Nullable<Utf8String> collationStr;
         if (SUCCESS != customPropMap.TryGetCollation(collationStr))
             return ERROR;
 
-        if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr))
+        if (!collationStr.IsNull())
             {
-            issues.Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s",
-                                                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
-                                                          collationStr.c_str());
-            return ERROR;
+            if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr.Value()))
+                {
+                issues.Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s",
+                              ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), collationStr.Value().c_str());
+                return ERROR;
+                }
             }
         }
 
-    //return information whether the col name originates from the PropertyMap CA or whether a default name was used
-    const bool colNameIsFromPropertyMapCA = !columnName.empty();
 
     if (!colNameIsFromPropertyMapCA)
         columnName.assign(DbColumn::CreateParams::ColumnNameFromAccessString(accessString));
@@ -242,7 +265,7 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
     else
         {
         const DbColumn::Type colType = PrimitivePropertyMap::DetermineColumnDataType(property.GetType());
-        column = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, createParams, accessString);
+        column = m_classMap.GetColumnFactory().Allocate(property, colType, createParams, accessString.c_str());
         if (column == nullptr)
             return nullptr;
         }
@@ -284,7 +307,7 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
         {
         DbColumn::CreateParams coordColParams;
         coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointX, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point2dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointX);
+        x = m_classMap.GetColumnFactory().Allocate(property, Point2dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, (accessString + "." ECDBSYS_PROP_PointX).c_str());
         if (x == nullptr)
             {
             BeAssert(false);
@@ -294,7 +317,7 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
 
         DbColumn::CreateParams yColParams;
         coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointY, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point2dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointY);
+        y = m_classMap.GetColumnFactory().Allocate(property, Point2dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, (accessString + "." ECDBSYS_PROP_PointY).c_str());
         if (x == nullptr)
             {
             BeAssert(false);
@@ -347,7 +370,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
         {
         DbColumn::CreateParams coordColParams;
         coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointX, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointX);
+        x = m_classMap.GetColumnFactory().Allocate(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, (accessString + "." ECDBSYS_PROP_PointX).c_str());
         if (x == nullptr)
             {
             BeAssert(false);
@@ -355,7 +378,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
 
         coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointY, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointY);
+        y = m_classMap.GetColumnFactory().Allocate(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, (accessString + "." ECDBSYS_PROP_PointY).c_str());
         if (y == nullptr)
             {
             BeAssert(false);
@@ -363,7 +386,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
 
         coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointZ, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        z = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointZ);
+        z = m_classMap.GetColumnFactory().Allocate(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, (accessString + "." ECDBSYS_PROP_PointZ).c_str());
         if (z == nullptr)
             {
             BeAssert(false);
@@ -398,7 +421,7 @@ RefCountedPtr<PrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(
     else
         {
         Utf8String colName = DbColumn::CreateParams::ColumnNameFromAccessString(accessString);
-        column = m_classMap.GetColumnFactory().AllocateDataColumn(property, PrimitiveArrayPropertyMap::COLUMN_DATATYPE, DbColumn::CreateParams(colName), accessString);
+        column = m_classMap.GetColumnFactory().Allocate(property, PrimitiveArrayPropertyMap::COLUMN_DATATYPE, DbColumn::CreateParams(colName), accessString.c_str());
         if (column == nullptr)
             return nullptr;
         }
@@ -430,7 +453,7 @@ RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::S
     else
         {
         Utf8String colName = DbColumn::CreateParams::ColumnNameFromAccessString(accessString);
-        column = m_classMap.GetColumnFactory().AllocateDataColumn(property, StructArrayPropertyMap::COLUMN_DATATYPE, DbColumn::CreateParams(colName), accessString);
+        column = m_classMap.GetColumnFactory().Allocate(property, StructArrayPropertyMap::COLUMN_DATATYPE, DbColumn::CreateParams(colName), accessString.c_str());
         if (column == nullptr)
             return nullptr;
         }
@@ -454,23 +477,17 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
     std::vector<DbColumn const*> const* columns;
     columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDBSYS_PROP_NavPropId));
     if (columns == nullptr || columns->size() != 1)
-        {
         return nullptr;
-        }
 
     id = columns->front();
     columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDBSYS_PROP_NavPropRelECClassId));
     if (columns == nullptr || columns->size() != 1)
-        {
         return nullptr;
-        }
 
     relClassId = columns->front();
 
     if (SUCCESS != propertyMap->SetMembers(*id, *relClassId, property.GetRelationshipClass()->GetId()))
-        {
         return nullptr;
-        }
 
     return propertyMap;
     }
@@ -554,8 +571,8 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
         (foreignEnd == ECRelationshipEnd_Target && navDirection == ECRelatedInstanceDirection::Forward))
         {
         Utf8CP constraintEndName = foreignEnd == ECRelationshipEnd_Source ? "Source" : "Target";
-        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map NavigationECProperty '%s.%s'. "
-                                                                   "NavigationECProperties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
+        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map Navigation property '%s.%s'. "
+                                                                   "Navigation properties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
                                                                    "The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
                                                                    navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str(), constraintEndName,
                                                                    endTableRelClassMap.GetClass().GetFullName(), constraintEndName);
@@ -564,16 +581,16 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
 
     ClassMap const& classMap = propertyMap.GetClassMap();
 
-    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
-    SingleColumnDataPropertyMap const* relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
-
-    if ((idProp == nullptr || relECClassIdProp == nullptr) && !classMap.IsMappedToSingleTable())
-        {
-        idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap.GetJoinedTable());
-        relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable());
-        }
+    SingleColumnDataPropertyMap const* idProp = GetConstraintMap(*navigationProperty, endTableRelClassMap, NavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindDataPropertyMap(classMap);
+    SingleColumnDataPropertyMap const* relECClassIdProp = endTableRelClassMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap);
 
     if (idProp == nullptr || relECClassIdProp == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (idProp->GetTable().GetId() !=relECClassIdProp->GetTable().GetId())
         {
         BeAssert(false);
         return ERROR;

@@ -40,8 +40,8 @@ struct PerformanceRegularVsOverflowTestFixture : ECDbTestFixture
     void RunBlobTest(Utf8String stringValues[], Scenario, bool getReadTime);
     void SetUpTestDb(Utf8String seedDbName, Utf8CP schemaXml, Utf8String destFileName);
 
-    void RunIntegerTestSpecifiedSchema(int intValues[], size_t propertiesCount, int sharedColumnsCount, bool getReadTime);
-    void SetUpDbWithSpecifiedSchema(Utf8String seedDbName, size_t propertiesCount, int sharedColumnsCount);
+    void RunIntegerTestSpecifiedSchema(int intValues[], size_t propertiesCount, int maxSharedColumnsBeforeOverflow, bool getReadTime);
+    void SetUpDbWithSpecifiedSchema(Utf8String seedDbName, size_t propertiesCount, int maxSharedColumnsBeforeOverflow);
     void GetECSqlStatements(Utf8StringR insertECSql, Utf8StringR selectECSql);
 
     void ReopenECDb();
@@ -468,7 +468,7 @@ void PerformanceRegularVsOverflowTestFixture::RunBlobTest(Utf8String stringValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowTestFixture::RunIntegerTestSpecifiedSchema(int intValues[], size_t propertiesCount, int sharedColumnsCount, bool getReadTime)
+void PerformanceRegularVsOverflowTestFixture::RunIntegerTestSpecifiedSchema(int intValues[], size_t propertiesCount, int maxSharedColumnsBeforeOverflow, bool getReadTime)
     {
     Utf8String insertECSql;
     Utf8String selectECSql;
@@ -497,7 +497,7 @@ void PerformanceRegularVsOverflowTestFixture::RunIntegerTestSpecifiedSchema(int 
     statement.Finalize();
 
     Utf8String testDescription;
-    testDescription.Sprintf("Insert_IntProps [SharedColumns : %d] [PropertiesCount : %d]", sharedColumnsCount, propertiesCount);
+    testDescription.Sprintf("Insert_IntProps [MaxSharedColumnsBeforeOverflow : %d] [PropertiesCount : %d]", maxSharedColumnsBeforeOverflow, propertiesCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
 
     ReopenECDb();
@@ -543,7 +543,7 @@ void PerformanceRegularVsOverflowTestFixture::RunIntegerTestSpecifiedSchema(int 
         timer.Stop();
         statement.Finalize();
 
-        testDescription.Sprintf("Read_IntProps [SharedColumns : %d] [PropertiesCount : %d]", sharedColumnsCount, propertiesCount);
+        testDescription.Sprintf("Read_IntProps [MaxSharedColumnsBeforeOverflow : %d] [PropertiesCount : %d]", maxSharedColumnsBeforeOverflow, propertiesCount);
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_insertCount, testDescription.c_str());
         }
     }
@@ -793,7 +793,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, IntegerPerformance_VaryPropertie
 
     Utf8String dbName;
 
-    // varing properties count from [0-60]
+    // varying properties count from [0-60]
     // all properties mapping to physical Columns
     for (int propertyCount = 1; propertyCount <= 60; propertyCount++)
         {
@@ -874,10 +874,10 @@ void PerformanceRegularVsOverflowTestFixture::SetUpTestDb(Utf8String seedDbName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8String seedDbName, size_t propertiesCount, int sharedColumnsCount)
+void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8String seedDbName, size_t propertiesCount, int maxSharedColumnsBeforeOverflow)
     {
     Utf8String seedFileName;
-    seedFileName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties_seed%d.ecdb", sharedColumnsCount, propertiesCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
+    seedFileName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties_seed%d.ecdb", maxSharedColumnsBeforeOverflow, propertiesCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
     BeFileName seedFilePath = BuildECDbPath(seedFileName.c_str());
 
@@ -897,7 +897,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
         ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
         readContext->AddSchema(*testSchema);
 
-        if (sharedColumnsCount > 0)
+        if (maxSharedColumnsBeforeOverflow > 0)
             {
             readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
             SchemaKey ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
@@ -912,7 +912,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
 
             StandaloneECInstancePtr sharedColumnCA = ecdbMapSchema->GetClassCP("ShareColumns")->GetDefaultStandaloneEnabler()->CreateInstance();
             ASSERT_TRUE(sharedColumnCA != nullptr);
-            ASSERT_TRUE(sharedColumnCA->SetValue("SharedColumnCount", ECValue(sharedColumnsCount)) == ECObjectsStatus::Success);
+            ASSERT_TRUE(sharedColumnCA->SetValue("MaxSharedColumnsBeforeOverflow", ECValue(maxSharedColumnsBeforeOverflow)) == ECObjectsStatus::Success);
             ASSERT_TRUE(testClass->SetCustomAttribute(*sharedColumnCA) == ECObjectsStatus::Success);
             }
 

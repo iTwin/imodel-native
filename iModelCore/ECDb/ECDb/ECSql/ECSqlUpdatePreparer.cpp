@@ -20,50 +20,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
     BeAssert(exp.IsComplete());
+
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
-    
-    ECSqlStatus stat = CheckForReadonlyProperties(ctx, exp);
-    if (stat != ECSqlStatus::Success)
-        return stat;
+    NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
-
-    SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
-    if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()))
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_ECInstanceId " is not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify auto-generated " ECDBSYS_PROP_ECInstanceId "s.");
-        return ECSqlStatus::InvalidECSql;
-        }
-
-    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    if (auto info = ctx.GetJoinedTableInfo())
-        {
-        if (info->HasParentOfJoinedTableECSql() && info->HasJoinedTableECSql())
-            {
-            ParentOfJoinedTableECSqlStatement* parentOfJoinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->CreateParentOfJoinedTableECSqlStatement(classMap.GetClass().GetId());
-            ECSqlStatus status = parentOfJoinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql(), ctx.GetWriteToken());
-            if (status != ECSqlStatus::Success)
-                {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. Could not prepare the subset of the ECSQL that targets the primary table: %s.", exp.ToECSql().c_str(), info->GetParentOfJoinedTableECSql());
-                return ECSqlStatus::InvalidECSql;
-                }
-            }
-        }
-#endif
-    if (classMap.IsRelationshipClassMap())
-        {
-        if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) ||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECClassId())||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
-            {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
-            return ECSqlStatus::InvalidECSql;
-            }
-        }
-
-    NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
 
     // UPDATE clause
     nativeSqlBuilder.Append("UPDATE ");
@@ -92,13 +53,12 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (i != 0)
             nativeSqlBuilder.AppendComma();
 
-        nativeSqlBuilder.Append(propertyListSnippets[i]).Append(BooleanSqlOperator::EqualTo).Append(valueListSnippets[i]);
+        nativeSqlBuilder.Append(propertyListSnippets[i]).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(valueListSnippets[i]);
         }
 
     if (sqlSnippets.m_propertyNamesNativeSqlSnippets.empty())
         ctx.SetNativeStatementIsNoop(true);
 
-    //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
     NativeSqlBuilder topLevelWhereClause;
     if (auto whereClauseExp = exp.GetWhereClauseExp())
         {
@@ -107,46 +67,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (!status.IsSuccess())
             return status;
 
-        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete.
-        auto const & currentClassMap = classMap;
-        if (!currentClassMap.IsMappedToSingleTable())
-            {
-            auto& primaryTable = currentClassMap.GetPrimaryTable();
-            auto& secondaryTable = currentClassMap.GetJoinedTable();
-
-            auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
-            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&primaryTable) != tableBeenAccessed.end());
-            bool referencedJoinedTable = (tableBeenAccessed.find(&secondaryTable) != tableBeenAccessed.end());
-            if (!referencedRootOfJoinedTable && referencedJoinedTable)
-                {
-                //do not modifiy where
-                topLevelWhereClause = whereClause;
-                }
-            else
-                {
-                auto joinedTableId = secondaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-                auto parentOfjoinedTableId = primaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-                NativeSqlBuilder snippet;
-                snippet.AppendFormatted(
-                    "WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s]=[%s].[%s] %s)",
-                    joinedTableId->GetName().c_str(),
-                    primaryTable.GetName().c_str(),
-                    parentOfjoinedTableId->GetName().c_str(),
-                    primaryTable.GetName().c_str(),
-                    secondaryTable.GetName().c_str(),
-                    secondaryTable.GetName().c_str(),
-                    joinedTableId->GetName().c_str(),
-                    primaryTable.GetName().c_str(),
-                    parentOfjoinedTableId->GetName().c_str(),
-                    whereClause.ToString()
-                    );
-                
-                //topLevelWhereClause.GetParameterIndexMappings()
-                topLevelWhereClause = snippet;
-                }
-            }
-        else
-            topLevelWhereClause = whereClause;
+        topLevelWhereClause = whereClause;
         }
 
     if (!topLevelWhereClause.IsEmpty())
@@ -157,38 +78,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         {
         // WHERE clause
         Utf8String systemWhereClause;
-        DbTable const* table = &classMap.GetPrimaryTable();
-        DbColumn const& classIdColumn = table->GetECClassIdColumn();
-
-        if (classIdColumn.GetPersistenceType() == PersistenceType::Physical)
-            {
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-            if (ctx.IsParentOfJoinedTable())
-                {
-                auto joinedTableClass = ctx.GetECDb().Schemas().GetClass(ctx.GetJoinedTableClassId());
-                auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*joinedTableClass);
-                if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    classIdColumn,
-                    exp.GetClassNameExp()->IsPolymorphic()))
-                    return ECSqlStatus::Error;
-                }
-            else if (ctx.GetJoinedTableInfo() != nullptr  && !ctx.GetJoinedTableInfo()->HasJoinedTableECSql())
-                {
-                auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(ctx.GetJoinedTableInfo()->GetClass());
-                if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    classIdColumn,
-                    exp.GetClassNameExp()->IsPolymorphic()))
-                    return ECSqlStatus::Error;
-                }
-            else
-#endif
-                {
-                if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                    classIdColumn,
-                    exp.GetClassNameExp()->IsPolymorphic()))
-                    return ECSqlStatus::Error;
-                }
-            }
+        if (ECSqlStatus::Success != ECSqlExpPreparer::GenerateECClassIdFilter(systemWhereClause, *classNameExp))
+            return ECSqlStatus::Error;
 
         if (!systemWhereClause.empty())
             {
@@ -203,34 +94,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
     ctx.PopScope();
     return status;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                         05/2016
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
-    {
-    OptionsExp const* optionsExp = ctx.GetCurrentScope().GetOptions();
-    if (optionsExp != nullptr && optionsExp->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
-        return ECSqlStatus::Success;
-
-    for (Exp const* expr : exp.GetAssignmentListExp()->GetChildren())
-        {
-        AssignmentExp const* assignmentExp = static_cast<AssignmentExp const*>(expr);        
-        if (!assignmentExp->GetPropertyNameExp()->IsPropertyRef())
-            {
-            ECPropertyCR prop = assignmentExp->GetPropertyNameExp()->GetPropertyMap().GetProperty();
-
-            if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
-                {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
-                                                                        prop.GetName().c_str(), exp.ToECSql().c_str());
-                return ECSqlStatus::InvalidECSql;
-                }
-            }
-        }
-
-    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

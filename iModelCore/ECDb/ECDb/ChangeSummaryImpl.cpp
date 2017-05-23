@@ -80,13 +80,13 @@ void TableMap::InitColumnIndexByName()
 //---------------------------------------------------------------------------------------
 void TableMap::InitSystemColumnMaps()
     {
-    DbColumn const* instanceIdColumn = m_dbTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* instanceIdColumn = m_dbTable->FindFirst(DbColumn::Kind::ECInstanceId);
     Utf8StringCR instanceIdColumnName = instanceIdColumn->GetName();
     int instanceIdColumnIndex = GetColumnIndexByName(instanceIdColumnName);
     BeAssert(instanceIdColumnIndex >= 0);
     m_instanceIdColumnMap = ColumnMap(instanceIdColumnName, instanceIdColumnIndex);
 
-    DbColumn const* classIdColumn = m_dbTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* classIdColumn = m_dbTable->FindFirst(DbColumn::Kind::ECClassId);
     if (classIdColumn->GetPersistenceType() != PersistenceType::Virtual)
         {
         Utf8StringCR classIdColumnName = classIdColumn->GetName();
@@ -141,7 +141,7 @@ ECClassId TableMap::QueryClassId() const
         " (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECInstanceId "=" SQLVAL_DbColumn_Kind_ECInstanceId ")");
     BeAssert(stmt.IsValid());
 
-    stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName, Statement::MakeCopy::No);
 
     DbResult result = stmt->Step();
     if (result != BE_SQLITE_ROW)
@@ -502,7 +502,7 @@ void InstancesTable::Insert(ECClassId classId, ECInstanceId instanceId, DbOpcode
     m_instancesTableInsert.BindId(2, instanceId);
     m_instancesTableInsert.BindInt(3, (int) dbOpcode);
     m_instancesTableInsert.BindInt(4, indirect);
-    m_instancesTableInsert.BindText(5, tableName.c_str(), Statement::MakeCopy::No);
+    m_instancesTableInsert.BindText(5, tableName, Statement::MakeCopy::No);
 
     DbResult result = m_instancesTableInsert.Step();
     BeAssert(result == BE_SQLITE_DONE);
@@ -620,7 +620,7 @@ ECClassId InstancesTable::QueryClassId(Utf8StringCR tableName, ECInstanceId inst
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql.c_str());
     BeAssert(stmt.IsValid());
 
-    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(1, tableName, Statement::MakeCopy::No);
     stmt->BindId(2, instanceId);
 
     DbResult result = stmt->Step();

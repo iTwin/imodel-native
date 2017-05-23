@@ -113,7 +113,7 @@ void NestedStructArrayTestSchemaHelper::setProductsValues(StandaloneECInstancePt
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::EC::ECDbR ecdb)
+void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::EC::ECDbCR ecdb)
     {
     //Create Instances of ContactDetails class
     ECClassCP contactDetails = ecdb.Schemas().GetClass("ECSqlStatementTests", "ContactDetails");

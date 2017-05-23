@@ -8,7 +8,7 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <ECDb/SchemaManager.h>
-#include "BeBriefcaseBasedIdSequence.h"
+#include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include "ProfileManager.h"
 #include "IssueReporter.h"
 
@@ -48,29 +48,40 @@ struct IdSequences final : NonCopyableClass
 public:
     //the numbers are the indexes into the sequence vector of SequenceManager. So they
     //must match the order of the names in the name vector passed in the ctor
-    static const uint32_t ECInstanceId = 0;
-    static const uint32_t ECSchemaId = 1;
-    static const uint32_t ECClassId = 2;
-    static const uint32_t ECPropertyId = 3;
-    static const uint32_t ECEnumId = 4;
-    static const uint32_t KoqId = 5;
-    static const uint32_t TableId = 6;
-    static const uint32_t ColumnId = 7;
-    static const uint32_t IndexId = 8;
-    static const uint32_t PropertyPathId = 9;
+    enum class Key : uint32_t
+        {
+        InstanceId = 0,
+        SchemaId = 1,
+        SchemaReferenceId,
+        ClassId,
+        ClassHasBaseClassesId,
+        PropertyId,
+        PropertyPathId,
+        RelationshipConstraintId,
+        RelationshipConstraintClassId,
+        CustomAttributeId,
+        EnumId,
+        KoqId,
+        PropertyMapId,
+        TableId,
+        ColumnId,
+        IndexId,
+        IndexColumnId
+        };
 
 private:
     BeBriefcaseBasedIdSequenceManager m_sequenceManager;
 
 public:
     explicit IdSequences(ECDbR ecdb) : 
-        m_sequenceManager(ecdb, {"ec_ecinstanceidsequence", "ec_ecschemaidsequence","ec_ecclassidsequence",
-                                 "ec_ecpropertyidsequence","ec_ecenumidsequence","ec_kindofquantityidsequence", 
-                                 "ec_tableidsequence","ec_columnidsequence", "ec_indexidsequence", 
-                                 "ec_propertypathidsequence"})
+        m_sequenceManager(ecdb, {"ec_instanceidsequence", "ec_schemaidsequence","ec_schemarefidsequence", "ec_classidsequence","ec_classhasbaseclassesidsequence",
+                                 "ec_propertyidsequence","ec_propertypathidsequence", 
+                                "ec_relconstraintidsequence", "ec_relconstraintclassidsequence",
+                                "ec_customattributeidsequence", "ec_enumidsequence","ec_koqidsequence", "ec_propertymapidsequence",
+                                 "ec_tableidsequence","ec_columnidsequence", "ec_indexidsequence", "ec_indexcolumnidsequence"})
         {}
 
-    BeBriefcaseBasedIdSequence const& GetSequence(uint32_t key) const { return m_sequenceManager.GetSequence(key); }
+    BeBriefcaseBasedIdSequence const& GetSequence(Key key) const { return m_sequenceManager.GetSequence(Enum::Convert<Key, uint32_t>(key)); }
     BeBriefcaseBasedIdSequenceManager const& GetManager() const { return m_sequenceManager; }
     };
 
@@ -180,7 +191,7 @@ public:
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
     ECDb::Settings const& GetSettings() const { return m_settings.GetSettings(); }
 
-    BeBriefcaseBasedIdSequence const& GetSequence(uint32_t sequenceIndex) const { return m_idSequences.GetSequence(sequenceIndex); }
+    BeBriefcaseBasedIdSequence const& GetSequence(IdSequences::Key sequenceKey) const { return m_idSequences.GetSequence(sequenceKey); }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.

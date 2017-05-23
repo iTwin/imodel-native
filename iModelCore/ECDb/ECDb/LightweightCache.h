@@ -11,25 +11,33 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct StorageDescription;
 
+//======================================================================================
+// @bsiclass                                                 Affan.Khan         09/2014
+//======================================================================================
 struct LightweightCache final: NonCopyableClass
     {
     public:
-        enum class RelationshipEnd : int
+        enum class RelationshipEnd
             {
-            None = 0,
             Source = 1,
             Target = 2,
             Both = Source | Target
             };
-        enum class RelationshipType : int
+
+        enum class RelationshipType
             {
             Link = 0,
             Source = (int) MapStrategy::ForeignKeyRelationshipInSourceTable,
             Target = (int) MapStrategy::ForeignKeyRelationshipInTargetTable,
             };
-        struct CompareDbTableById {bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }};
+
+        struct CompareDbTableById
+            {
+            bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }
+            };
+
         typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
-        typedef bmap < DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
+        typedef bmap<DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
         typedef bmap<DbTable const*, RelationshipTypeByClassId, CompareDbTableById> RelationshipPerTable;
 
     private:
@@ -41,13 +49,14 @@ struct LightweightCache final: NonCopyableClass
         mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
         mutable RelationshipPerTable m_relationshipPerTable;
         mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
+        mutable bmap<ECN::ECClassId, bset<ECN::ECClassId>> m_contraintClassDirectRelationships;
 
         ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId)  const;
         bset<DbTable const*> const& LoadTablesForClassId(ECN::ECClassId) const;
         std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const&) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadRelationshipConstraintClasses(ECN::ECClassId relationshipId) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
-
+        
     public:
         explicit LightweightCache(ECDb const&);
         ~LightweightCache() {}
@@ -57,7 +66,8 @@ struct LightweightCache final: NonCopyableClass
         //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
         //@remarks: AnyClass constraints are ignored.
         bmap<ECN::ECClassId, RelationshipEnd> const& GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const;
-        bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
+        bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClassesForConstraintClass(ECN::ECClassId constraintId) const;
+        bset<ECN::ECClassId> const& GetDirectRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
 
         //For a end table relationship class map, the storage description provides horizontal partitions
         //For the end table's constraint classes - not for the relationship itself.
@@ -99,7 +109,7 @@ struct Partition final
 //! Represents storage description for a given class map and its derived classes for polymorphic queries
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct StorageDescription final: NonCopyableClass
+struct StorageDescription final : NonCopyableClass
     {
     private:
         ECN::ECClassId m_classId;
@@ -121,10 +131,6 @@ struct StorageDescription final: NonCopyableClass
 
         std::vector<Partition> const& GetVerticalPartitions() const { return m_verticalPartitions; }
 
-        //! Returns nullptr, if more than one non-virtual partitions exist.
-        //! If polymorphic is true or has no non-virtual partitions, gets root horizontal partition.
-        //! If has a single non-virtual partition returns that.
-        Partition const* GetHorizontalPartition(bool polymorphic) const;
         Partition const& GetRootHorizontalPartition() const;
         Partition const* GetVerticalPartition(DbTable const&) const;
         Partition const* GetHorizontalPartition(DbTable const&) const;
@@ -135,9 +141,6 @@ struct StorageDescription final: NonCopyableClass
         bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId() const { return m_classId; }
-        //Uses ec_cache_ClassHiearchy instead of creating ORed or ANDed ECClassId clauses
-        //This is mainly used for SELECT/UPDATE/DELETE but not indexes which does not support subquery
-        BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias = nullptr) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

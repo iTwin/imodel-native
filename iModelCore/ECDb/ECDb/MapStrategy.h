@@ -52,8 +52,7 @@ struct TablePerHierarchyInfo final
     private:
         bool m_isValid = false;
         ShareColumnsMode m_shareColumnsMode = ShareColumnsMode::No;
-        int m_sharedColumnCount = -1;
-        int m_sharedColumnCountPerOverflowTable = -1;
+        Nullable<uint32_t> m_maxSharedColumnsBeforeOverflow;
         JoinedTableInfo m_joinedTableInfo = JoinedTableInfo::None;
 
         BentleyStatus DetermineSharedColumnsInfo(ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
@@ -62,8 +61,8 @@ struct TablePerHierarchyInfo final
     public:
         TablePerHierarchyInfo() : TablePerHierarchyInfo(false) {}
         explicit TablePerHierarchyInfo(bool isValid) : m_isValid(isValid) {}
-        TablePerHierarchyInfo(ShareColumnsMode shareColumnsMode, int sharedColumnCount, int sharedColumnCountPerOverflowTable, JoinedTableInfo joinedTableInfo)
-            : m_isValid(true), m_shareColumnsMode(shareColumnsMode), m_sharedColumnCount(sharedColumnCount), m_sharedColumnCountPerOverflowTable(sharedColumnCountPerOverflowTable), m_joinedTableInfo(joinedTableInfo)
+        TablePerHierarchyInfo(ShareColumnsMode shareColumnsMode, Nullable<uint32_t> maxSharedColumnsBeforeOverflow, JoinedTableInfo joinedTableInfo)
+            : m_isValid(true), m_shareColumnsMode(shareColumnsMode), m_maxSharedColumnsBeforeOverflow(maxSharedColumnsBeforeOverflow), m_joinedTableInfo(joinedTableInfo)
             {}
 
         BentleyStatus Initialize(ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
@@ -71,8 +70,7 @@ struct TablePerHierarchyInfo final
         //!@return true if the respective MapStrategy is TablePerHierarchy. false if MapStrategy is not TablePerHierarchy
         bool IsValid() const { return m_isValid; }
         ShareColumnsMode GetShareColumnsMode() const { return m_shareColumnsMode; }
-        int GetSharedColumnCount() const { return m_sharedColumnCount; }
-        int GetSharedColumnCountPerOverflowTable() const { return m_sharedColumnCountPerOverflowTable; }
+        Nullable<uint32_t> GetMaxSharedColumnsBeforeOverflow() const { return m_maxSharedColumnsBeforeOverflow; }
         JoinedTableInfo GetJoinedTableInfo() const { return m_joinedTableInfo; }
     };
 

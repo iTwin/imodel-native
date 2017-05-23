@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <Formatting/FormattingApi.h>
+#include <rapidjson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -107,16 +108,16 @@ ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, ECSchemaId schemaId, Ut
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
-ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema)
+ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, Utf8CP schemaNameOrAlias, Utf8CP className, SchemaLookupMode lookupMode)
     {
     Utf8CP sql = nullptr;
-    switch (resolveSchema)
+    switch (lookupMode)
         {
-            case ResolveSchema::BySchemaName:
+            case SchemaLookupMode::ByName:
                 sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Name=? AND c.Name=?";
                 break;
 
-            case ResolveSchema::BySchemaAlias:
+            case SchemaLookupMode::ByAlias:
                 sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Alias=? AND c.Name=?";
                 break;
 

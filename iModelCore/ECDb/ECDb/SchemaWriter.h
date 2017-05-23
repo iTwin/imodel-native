@@ -18,9 +18,11 @@ struct SchemaWriter final : NonCopyableClass
     {
     private:
         ECDbCR m_ecdb;
+        SchemaImportContext& m_ctx;
         CustomAttributeValidator m_customAttributeValidator;
         std::set<ECN::ECSchemaId> m_majorChangesAllowedForSchemas;
 
+        BentleyStatus ImportSchema(SchemaCompareContext&, ECN::ECSchemaCR);
         BentleyStatus ImportClass(ECN::ECClassCR);
         BentleyStatus ImportEnumeration(ECN::ECEnumerationCR);
         BentleyStatus ImportKindOfQuantity(ECN::KindOfQuantityCR);
@@ -66,16 +68,20 @@ struct SchemaWriter final : NonCopyableClass
         bool IsMajorChangeAllowedForSchema(ECN::ECSchemaId id) const { return m_majorChangesAllowedForSchemas.find(id) != m_majorChangesAllowedForSchemas.end(); }
         bool IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty) const;
 
+        BentleyStatus ValidateSchemasPreImport(bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies) const;
+        BentleyStatus ValidateSchemasPostImport() const;
+
         IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
     public:
-        explicit SchemaWriter(ECDbCR ecdb) : m_ecdb(ecdb)
+        explicit SchemaWriter(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_ctx(ctx)
             {
             m_customAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
             m_customAttributeValidator.Reject("ECDbMap:*");
             }
 
-        BentleyStatus Import(SchemaCompareContext&, ECN::ECSchemaCR);
+        BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

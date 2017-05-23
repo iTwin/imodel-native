@@ -115,47 +115,6 @@ NativeSqlBuilder& NativeSqlBuilder::Append(Utf8CP classIdentifier, Utf8CP identi
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append(BinarySqlOperator op)
-    {
-    //No difference of operator in ECSQL and SQLite SQL
-    return Append(ExpHelper::ToSql(op));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append(BooleanSqlOperator op)
-    {
-    //No difference of operator in ECSQL and SQLite SQL
-    return Append(ExpHelper::ToSql(op));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append(SqlSetQuantifier setQuantifier)
-    {
-    //No difference of operator in ECSQL and SQLite SQL
-    if (setQuantifier == SqlSetQuantifier::NotSpecified)
-        return *this;
-
-    Utf8CP selectionTypeStr = ExpHelper::ToSql(setQuantifier);
-    Append(selectionTypeStr);
-    return *this;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append(UnarySqlOperator op)
-    {
-    //No difference of operator in ECSQL and SQLite SQL
-    return Append(ExpHelper::ToSql(op));
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    08/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 NativeSqlBuilder& NativeSqlBuilder::AppendFormatted(Utf8CP format, ...)

@@ -40,7 +40,7 @@ private:
     ~ClassMappingInfoFactory ();
 
 public:
-    static std::unique_ptr<ClassMappingInfo> Create(ClassMappingStatus&, ECDb const&, ECN::ECClassCR);
+    static std::unique_ptr<ClassMappingInfo> Create(ClassMappingStatus&, SchemaImportContext&, ECDb const&, ECN::ECClassCR);
     };
 
 struct IndexMappingInfo;
@@ -53,31 +53,30 @@ typedef RefCountedPtr<IndexMappingInfo> IndexMappingInfoPtr;
 //+===============+===============+===============+===============+===============+======
 struct ClassMappingInfo : NonCopyableClass
 {
-private:
-    Utf8String m_tableName;
-    Utf8String m_ecInstanceIdColumnName;
-    std::vector<IndexMappingInfoPtr> m_dbIndexes;
-    bool m_mapsToVirtualTable;
-    ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
-
 protected:
     ECDb const& m_ecdb;
     ECN::ECClassCR m_ecClass;
     MapStrategyExtendedInfo m_mapStrategyExtInfo;
 
-    ClassMap const* m_tphBaseClassMap;
+    ClassMap const* m_tphBaseClassMap = nullptr;
 
 private:
-    ClassMappingStatus EvaluateMapStrategy();
-    virtual ClassMappingStatus _EvaluateMapStrategy();
+    Utf8String m_tableName;
+    Utf8String m_ecInstanceIdColumnName;
+    std::vector<IndexMappingInfoPtr> m_dbIndexes;
+    bool m_mapsToVirtualTable = false;
+    ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
+
+    ClassMappingStatus EvaluateMapStrategy(SchemaImportContext&);
+    virtual ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&);
 
     ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
 protected:
-    virtual BentleyStatus _InitializeFromSchema();
+    virtual BentleyStatus _InitializeFromSchema(SchemaImportContext&);
 
-    BentleyStatus EvaluateTablePerHierarchyMapStrategy(ClassMap const& baseClassMap, ClassMappingCACache const&);
+    BentleyStatus EvaluateTablePerHierarchyMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap, ClassMappingCACache const&);
     bool ValidateTablePerHierarchyChildStrategy(MapStrategyExtendedInfo const& baseStrategy, ClassMappingCACache const&) const;
     BentleyStatus AssignMapStrategy(ClassMappingCACache const&);
 
@@ -88,7 +87,7 @@ public:
     ClassMappingInfo(ECDb const&, ECN::ECClassCR);
     virtual ~ClassMappingInfo() {}
 
-    ClassMappingStatus Initialize();
+    ClassMappingStatus Initialize(SchemaImportContext&);
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
@@ -113,14 +112,12 @@ public:
         private:
             ECN::ECRelationshipEnd m_fkEnd;
             bool m_useECInstanceIdAsFk;
-            bool m_isPhysicalFk;
-            ForeignKeyDbConstraint::ActionType m_onDeleteAction;
-            ForeignKeyDbConstraint::ActionType m_onUpdateAction;
+            bool m_isPhysicalFk = false;
+            ForeignKeyDbConstraint::ActionType m_onDeleteAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
+            ForeignKeyDbConstraint::ActionType m_onUpdateAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
 
         public:
-            FkMappingInfo(ECN::ECRelationshipEnd fkEnd, bool usePkAsFk)
-                : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk), m_isPhysicalFk(false), m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified)
-                {}
+            FkMappingInfo(ECN::ECRelationshipEnd fkEnd, bool usePkAsFk) : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk) {}
 
             FkMappingInfo(ECN::ECRelationshipEnd fkEnd, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction, bool usePkAsFk)
                 : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk), m_isPhysicalFk(true), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
@@ -136,46 +133,46 @@ public:
     struct LinkTableMappingInfo final : NonCopyableClass
         {
     private:
-        Utf8String m_sourceIdColumnName;
-        Utf8String m_targetIdColumnName;
-        bool m_allowDuplicateRelationships;
+        Nullable<Utf8String> m_sourceIdColumnName;
+        Nullable<Utf8String> m_targetIdColumnName;
+        bool m_createForeignKeyConstraints = true;
+        bool m_allowDuplicateRelationships = false;
     
     public:
-        LinkTableMappingInfo() : LinkTableMappingInfo(false) {}
-        LinkTableMappingInfo(bool allowDuplicateRelationships) : m_allowDuplicateRelationships(allowDuplicateRelationships) {}
-        LinkTableMappingInfo(Utf8StringCR sourceIdColname, Utf8StringCR targetIdColName, bool allowDuplicateRelationships)
-            : m_sourceIdColumnName(sourceIdColname), m_targetIdColumnName(targetIdColName), m_allowDuplicateRelationships(allowDuplicateRelationships)
-            {}
+        LinkTableMappingInfo() {}
+        LinkTableMappingInfo(Nullable<Utf8String> const& sourceIdColname, Nullable<Utf8String> const& targetIdColName, Nullable<bool> createForeignKeyConstraints, Nullable<bool> allowDuplicateRelationships)
+            : m_sourceIdColumnName(sourceIdColname), m_targetIdColumnName(targetIdColName)
+            {
+            if (!createForeignKeyConstraints.IsNull())
+                m_createForeignKeyConstraints = createForeignKeyConstraints.Value();
 
-        Utf8StringCR GetSourceIdColumnName() const { return m_sourceIdColumnName; }
-        Utf8StringCR GetTargetIdColumnName() const { return m_targetIdColumnName; }
+            if (!allowDuplicateRelationships.IsNull())
+                m_allowDuplicateRelationships = allowDuplicateRelationships.Value();
+            }
+
+        Nullable<Utf8String> const& GetSourceIdColumnName() const { return m_sourceIdColumnName; }
+        Nullable<Utf8String> const& GetTargetIdColumnName() const { return m_targetIdColumnName; }
+        bool GetCreateForeignKeyConstraintsFlag() const { return m_createForeignKeyConstraints; }
         bool AllowDuplicateRelationships() const { return m_allowDuplicateRelationships; }
         };
 private:
-    bool m_isRootClass;
+    bool m_isRootClass = false;
     std::unique_ptr<FkMappingInfo> m_fkMappingInfo;
     std::unique_ptr<LinkTableMappingInfo> m_linkTableMappingInfo;
     std::set<DbTable const*> m_sourceTables;
     std::set<DbTable const*> m_targetTables;
 
-    BentleyStatus _InitializeFromSchema() override;
-    ClassMappingStatus _EvaluateMapStrategy() override;
+    BentleyStatus _InitializeFromSchema(SchemaImportContext&) override;
+    ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&) override;
 
-    BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
-    BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
 
-    bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
-
-    bool RequiresLinkTable() const;
-    BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&) const;
-
-    std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
+    std::set<DbTable const*> GetTablesFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
 
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) 
-        : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()),
-        m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) 
-        {}
+        : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()) {}
 
     ~RelationshipMappingInfo() {}
 
@@ -186,6 +183,11 @@ public:
     LinkTableMappingInfo const* GetLinkTableMappingInfo() const { BeAssert(IsRootClass() && m_linkTableMappingInfo != nullptr); return m_linkTableMappingInfo.get(); }
     std::set<DbTable const*> const& GetSourceTables() const { BeAssert(IsRootClass()); return m_sourceTables; }
     std::set<DbTable const*> const& GetTargetTables() const { BeAssert(IsRootClass()); return m_targetTables;}
+
+    //! Determines whether the specified ECRelationship requires to be mapped to a link table.
+    static bool RequiresLinkTableMapping(ECN::ECRelationshipClassCR, bool considerLinkTableRelationshipMapCA = true);
+    static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
+
     };
 
 
@@ -195,29 +197,28 @@ public:
 struct IndexMappingInfo final : RefCountedBase
     {
     private:
-        Utf8String m_name;
-        bool m_isUnique;
+        Nullable<Utf8String> m_name;
+        bool m_isUnique = false;
         std::vector<Utf8String> m_properties;
         bool m_addPropsAreNotNullWhereExp;
 
-        IndexMappingInfo(Utf8CP name, bool isUnique, std::vector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
-            : m_name(name), m_isUnique(isUnique), m_properties(properties), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
+        IndexMappingInfo(Nullable<Utf8String> const& name, Nullable<bool> isUnique, std::vector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
+            : m_name(name), m_isUnique(isUnique.IsNull() ? false : isUnique.Value()), m_properties(properties), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
             {}
 
-        IndexMappingInfo(Utf8CP name, bool isUnique, bvector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
-            : m_name(name), m_isUnique(isUnique), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
+        IndexMappingInfo(Nullable<Utf8String> const& name, Nullable<bool> isUnique, bvector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
+            : m_name(name), m_isUnique(isUnique.IsNull() ? false : isUnique.Value()), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
             {
             m_properties.insert(m_properties.begin(), properties.begin(), properties.end());
             }
 
-        IndexMappingInfo(Utf8CP name, IndexMappingInfo const& rhs) : m_name(name), m_isUnique(rhs.m_isUnique), m_properties(rhs.m_properties), m_addPropsAreNotNullWhereExp(rhs.m_addPropsAreNotNullWhereExp) {}
+        IndexMappingInfo(Nullable<Utf8String> const& name, IndexMappingInfo const& rhs) : m_name(name), m_isUnique(rhs.m_isUnique), m_properties(rhs.m_properties), m_addPropsAreNotNullWhereExp(rhs.m_addPropsAreNotNullWhereExp) {}
 
     public:
-        static IndexMappingInfoPtr Clone(Utf8CP name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }
-        //pass nullptr to DbIndexList if ecClass doesn't have the DbIndexList CA. 
-        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>& , ECDbCR, ECN::ECClassCR, DbIndexList const&);
+        static IndexMappingInfoPtr Clone(Nullable<Utf8String> const& name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }
+        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>&, ECDbCR, ECN::ECClassCR, DbIndexList const&);
 
-        Utf8CP GetName() const { return m_name.c_str(); }
+        Nullable<Utf8String> const& GetName() const { return m_name; }
         bool GetIsUnique() const { return m_isUnique; }
         std::vector<Utf8String> const& GetProperties() const { return m_properties; }
         bool IsAddPropsAreNotNullWhereExp() const { return m_addPropsAreNotNullWhereExp; }
