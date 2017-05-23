@@ -81,7 +81,7 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Controller::_CreateScene(RenderContextR context)
+BentleyStatus Controller::_CreateScene(SceneContextR context)
     {
     auto status = T_Super::_CreateScene(context);
     if (WantShowTarget())

@@ -123,7 +123,7 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
+BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
@@ -183,8 +183,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
     if (!m_allRootsLoaded)
         {
         // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
-        // ###TODO_ELEMENT_TILE: UpdatePlan is on RenderListContext...
-        auto const& plan = static_cast<RenderListContext&>(context).GetUpdatePlan().GetQuery();
+        auto const& plan = context.GetUpdatePlan().GetQuery();
         uint64_t endTime = plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
 
         // Create as many tile trees as we can within the allotted time...

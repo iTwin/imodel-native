@@ -845,7 +845,7 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::DrawInView(RenderContextR context)
+void Root::DrawInView(SceneContextR context)
     {
     if (!GetRootTile().IsValid())
         {

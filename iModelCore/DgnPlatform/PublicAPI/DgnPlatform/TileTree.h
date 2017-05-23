@@ -361,7 +361,7 @@ public:
     //! @note Tiles which should be drawn but which are not yet available will be scheduled for progressive display.
     //! @note During the traversal, previously loaded but now unused tiles are purged if they are expired.
     //! @note This method must be called from the client thread
-    void DrawInView(RenderContextR context);
+    void DrawInView(SceneContextR context);
 
     //! Perform a pick operation on the contents of this tree
     DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP);

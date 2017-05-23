@@ -901,7 +901,7 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController2d::_CreateScene(RenderContextR context)
+BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
     if (m_root.IsNull())
         {
@@ -947,7 +947,7 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TemplateViewController3d::_CreateScene(RenderContextR context)
+BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
     {
     if (m_root.IsNull())
         {

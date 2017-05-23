@@ -143,7 +143,7 @@ protected:
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual GeometricModelP _GetTargetModel() const = 0;
-    virtual BentleyStatus _CreateScene(RenderContextR context) = 0;
+    virtual BentleyStatus _CreateScene(SceneContextR context) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
 
@@ -553,7 +553,7 @@ protected:
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
@@ -626,7 +626,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
 protected:
     TileTree::RootPtr   m_root;
 
-    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
@@ -804,7 +804,7 @@ protected:
     bool _Allow3dManipulations() const override {return true;}
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
-    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
 
 public:
     TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}
