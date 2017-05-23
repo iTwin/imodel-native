@@ -7,9 +7,10 @@
 
 #ifndef HRARASTER
 #ifndef VANCOUVER_API
-
+#define HRFRASTERFILE ImagePP::HRFRasterFile
 #define HRARASTER ImagePP::HRARaster
 #else
+#define HRFRASTERFILE HRFRasterFile
 #define HRARASTER HRARaster
 #endif
 #endif

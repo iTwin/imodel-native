@@ -39,9 +39,7 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
             }        
 
         virtual void _SetTextureGenerator(IScalableMeshTextureGeneratorPtr& textureGenerator)
-            {            
-            assert(m_textureGeneratorPtr == nullptr);
-
+            { 
             m_textureGeneratorPtr = textureGenerator;        
             }
 

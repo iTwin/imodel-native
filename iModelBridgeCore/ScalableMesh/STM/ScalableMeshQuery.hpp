@@ -1844,7 +1844,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform)
-    : ScalableMeshNode(nodePtr), m_reprojectionTransform(reprojectionTransform)
+    : ScalableMeshNode(nodePtr)
     {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -1860,7 +1860,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMesh)
-    : ScalableMeshNode(nodePtr), m_reprojectionTransform(scalableMesh->GetReprojectionTransform()), m_scalableMeshP(scalableMesh)
+    : ScalableMeshNode(nodePtr), m_scalableMeshP(scalableMesh)
 {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -1909,7 +1909,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
     }
 
 template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( IScalableMeshDisplayCacheManager* mgr ) const
-    {
+    {    
 	if (m_node->GetNbPoints() == 0) return true;
 
     if (!m_cachedDisplayMeshData.IsValid()) return false;
@@ -1957,6 +1957,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClip
     if (clipsToShow.empty() || m_node->GetNbPoints() == 0) return true;
 
     assert(IsLoaded() == true);
+
     
     bvector<uint64_t> appliedClips;
     for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)

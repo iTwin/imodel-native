@@ -1467,8 +1467,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
             mutable RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
-            bvector<ClipVectorPtr>                                          m_clipVectors;
-            Transform m_reprojectionTransform;
+            bvector<ClipVectorPtr>                                          m_clipVectors;            
             const IScalableMesh* m_scalableMeshP;
 
 

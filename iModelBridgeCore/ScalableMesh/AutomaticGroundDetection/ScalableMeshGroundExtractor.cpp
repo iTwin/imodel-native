@@ -408,9 +408,8 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
             if (0 == currentTextureName.GetExtension().CompareToI(L"jpg") || 
                 0 == currentTextureName.GetExtension().CompareToI(L"itiff64"))
 #else
-            WChar bufferPath[100];
-            if (0 == currentTextureName.GetExtension(bufferPath).CompareToI(L"jpg") || 
-                0 == currentTextureName.GetExtension(bufferPath).CompareToI(L"itiff64"))
+            if (0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"jpg") || 
+                0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"itiff64"))
 #endif
                 {
                 IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            

@@ -290,6 +290,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override;
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override;
+        virtual IScalableMeshAnalysisPtr    _GetMeshAnalysisInterface() override;
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override;        
@@ -333,7 +334,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
 #ifdef VANCOUVER_API
-        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override;
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override;
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
@@ -463,6 +464,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override;
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override { return nullptr; };
+        virtual IScalableMeshAnalysisPtr    _GetMeshAnalysisInterface() override { return nullptr; };
 
         const GeoCoords::GCS&          _GetGCS() const override;
         StatusInt                      _SetGCS(const GeoCoords::GCS& sourceGCS) override;
@@ -542,7 +544,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return ERROR;
             }
 #ifdef VANCOUVER_API
-        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override
             {
             return ERROR;
             }

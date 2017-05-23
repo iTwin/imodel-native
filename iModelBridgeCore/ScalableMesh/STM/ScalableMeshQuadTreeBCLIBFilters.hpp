@@ -293,18 +293,25 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                                     size_t numSubNodes) const
 
     {
+
     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
 
     // Compute the number of points in sub-nodes
     size_t totalNumberOfPoints = 0;
+	bvector<bvector<DPoint3d>> polylines;
+	bvector<DTMFeatureType> types;
     for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
         {
         if (subNodes[indexNodes] != NULL)
             {
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
             totalNumberOfPoints += subNodePointsPtr->size();
+
+			HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
+
+			subMeshNode->ReadFeatureDefinitions(polylines, types);
             }
         }
 
@@ -385,6 +392,36 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         parentPointsPtr = 0;
         pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
+		if (polylines.size() > 0)
+		{
+			bvector<DTMFeatureType> newTypes;
+			bvector<DTMFeatureType> otherNewTypes;
+			bvector<bvector<DPoint3d>> newLines;
+			MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
+			{
+				if (!IsVoidFeature((ISMStore::FeatureType)types[i]))
+				{
+					newLines.push_back(vec);
+					newTypes.push_back(types[i]);
+					return false;
+				}
+				else return true;
+			},
+				[&otherNewTypes](const bvector<DPoint3d>& vec)
+			{
+				otherNewTypes.push_back(DTMFeatureType::DrapeVoid);
+			});
+			otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
+			polylines.insert(polylines.end(), newLines.begin(), newLines.end());
+			types = otherNewTypes;
+			SimplifyPolylines(polylines);
+		}
+
+		for (auto& polyline : polylines)
+		{
+			DRange3d extent2 = DRange3d::From(polyline);
+			pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent2);
+		}
     if (pParentMeshNode->m_nodeHeader.m_arePoints3d)
         {
         pParentMeshNode->GetMesher3d()->Mesh(pParentMeshNode);

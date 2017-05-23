@@ -61,14 +61,14 @@ template <class DATATYPE, class EXTENT>  size_t SMStreamedSourceStore<DATATYPE, 
 
     //DRange2d nodeExtent2d = DRange2d::From(m_nodeHeader->m_contentExtentDefined ? m_nodeHeader->m_contentExtent : m_nodeHeader->m_nodeExtent);
     DRange2d nodeExtent2d = DRange2d::From(m_nodeHeader->m_nodeExtent);
-/*
+
     double unitsPerPixelX = (nodeExtent2d.high.x - nodeExtent2d.low.x) / 256;
     double unitsPerPixelY = (nodeExtent2d.high.y - nodeExtent2d.low.y) / 256;
     nodeExtent2d.low.x -= 5 * unitsPerPixelX;
     nodeExtent2d.low.y -= 5 * unitsPerPixelY;
     nodeExtent2d.high.x += 5 * unitsPerPixelX;
     nodeExtent2d.high.y += 5 * unitsPerPixelY;
-*/
+
     bvector<uint8_t> tex;
     RasterUtilities::CopyFromArea(tex, 256, 256, nodeExtent2d, &(m_nodeHeader)->m_textureResolution, *m_source);
     //assert(tex.size() <= maxCountData);

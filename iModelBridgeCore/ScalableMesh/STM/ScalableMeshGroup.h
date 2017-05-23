@@ -162,6 +162,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override { return nullptr; }
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override { return nullptr; }
+        virtual IScalableMeshAnalysisPtr    _GetMeshAnalysisInterface() override { return nullptr; }
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override { return ERROR; }
@@ -198,7 +199,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
 #ifdef VANCOUVER_API
-        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCR targetCS, DgnModelRefP dgnModel) override;
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override;
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
