@@ -199,6 +199,46 @@ TEST_F(RealityConversionTestFixture, JsonToEnterpriseStat)
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                        Remi.Charbonneau                           05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat)
+{
+	RealityDataEnterpriseStat stat;
+	StatusInt status = RealityConversionTools::JsonToEnterpriseStat("BadlyformatedJSONString", stat);
+	ASSERT_EQ(ERROR, status);
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                        Remi.Charbonneau                           05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat2)
+{
+	RealityDataEnterpriseStat stat;
+	StatusInt status = RealityConversionTools::JsonToEnterpriseStat(R"({ "notInstances": { "child": "value" }})", stat);
+	ASSERT_EQ(ERROR, status);
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                        Remi.Charbonneau                           05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat3)
+{
+	RealityDataEnterpriseStat stat;
+	StatusInt status = RealityConversionTools::JsonToEnterpriseStat(R"(
+		{
+			"instances": [
+				{
+					"Notproperties": {
+						"Id": "myid"
+					}
+				}
+			]
+		}
+		)", stat);
+	ASSERT_EQ(ERROR, status);
+}
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            04/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToRealityData)
