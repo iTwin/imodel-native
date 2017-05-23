@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/BeDirectoryIterator.h>
-#include <Bentley/Desktop/FileSystem.h>
 #include <BeXml/BeXml.h>
 
 #include <RealityPlatform/SpatialEntity.h>
@@ -46,7 +45,7 @@ SpatialEntityHandlerStatus SpatialEntityClient::DownloadContent(Utf8CP outputDir
     {
         // Find temp directory.
         BeFileName tempDirPath;
-        Desktop::FileSystem::BeGetTempPath(tempDirPath);
+        BeFileName::BeGetTempPath(tempDirPath);
         if (!tempDirPath.IsEmpty())
         {
             tempDirPath.AppendToPath(L"Bentley\\ConceptStationApp\\.RealityData\\SpatialEntity\\");
