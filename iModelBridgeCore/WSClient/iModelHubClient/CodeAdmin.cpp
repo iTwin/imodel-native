@@ -99,7 +99,7 @@ DgnCode CodeAdmin::_ReserveNextCodeInSequence(DgnElementCR element, CodeSpecCR c
         return DgnCode();
         }
 
-    auto generatedCode = DgnCode(templateResult.GetCodeSpecId(), generatedValue, templateResult.GetScope());
+    auto generatedCode = DgnCode(templateResult.GetCodeSpecId(), codeSpec.GetScopeElementId(element), generatedValue);
 
     // Reserve code
     DgnDbStatus result = this->_ReserveCode(element, generatedCode);
