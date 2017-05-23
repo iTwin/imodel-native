@@ -234,7 +234,6 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
-    RequestAbort(true);
     m_noQuery = exclusive;
     m_special.m_always = newSet; // NB: copies values
     SetFeatureOverridesDirty();
@@ -245,7 +244,6 @@ void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusiv
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ClearAlwaysDrawn()
     {
-    RequestAbort(true);
     m_special.m_always.clear();
     m_noQuery = false;
     SetFeatureOverridesDirty();
@@ -256,7 +254,6 @@ void ViewController::ClearAlwaysDrawn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
-    RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
     SetFeatureOverridesDirty();
     }
@@ -266,7 +263,6 @@ void ViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ClearNeverDrawn()
     {
-    RequestAbort(true);
     m_special.m_never.clear();
     SetFeatureOverridesDirty();
     }
@@ -313,7 +309,6 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     if (onOff == models.Contains(modelId))
         return;
 
-    RequestAbort(true);
     if (onOff)
         {
         models.insert(modelId);
@@ -333,22 +328,6 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 void SpatialViewController::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
-    RequestAbort(true);
-
-    // Category stuff is baked into the tiles (for now) - throw them away
-    // ###TODO_ELEMENT_TILES: If we were informed about the delta in the set of viewed categories, we could throw away only those tiles affected.
-    m_roots.clear();
-    m_allRootsLoaded = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::RequestAbort(bool wait)
-    {
-    // ###TODO_ELEMENT_TILE: This is generally called when the criteria defining the scene have changed. e.g., we turned off a category or changed the sets of always/never drawn elemets.
-    // In tile-based rendering we will want to invalidate tiles - though we'd probably also like to change how these criteria are defined and applied.
-    DgnDb::VerifyClientThread();
     }
 
 /*---------------------------------------------------------------------------------**//**

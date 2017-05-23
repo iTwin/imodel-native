@@ -173,7 +173,6 @@ void ViewController::_StoreState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::InvalidateScene()
     {
-    RequestAbort(false); 
     BeMutexHolder lock(m_mutex);
     m_readyScene = nullptr;
     }
@@ -997,7 +996,6 @@ DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
     if (m_viewedModelId == viewedModelId)
         return DgnDbStatus::Success;
 
-    RequestAbort(true);
     m_viewedModelId = viewedModelId;
     GeometricModel3dP model = GetViewedModel();
     if (!model || !model->IsTemplate())

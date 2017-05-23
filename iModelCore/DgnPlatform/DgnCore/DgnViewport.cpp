@@ -25,9 +25,6 @@ void DgnViewport::SuspendViewport()
     if (m_renderTarget.IsValid())
         RenderQueue().WaitForIdle();
 
-    if (m_viewController.IsValid())
-        m_viewController->RequestAbort(true);
-
     SetRenderTarget(nullptr);
     }
 

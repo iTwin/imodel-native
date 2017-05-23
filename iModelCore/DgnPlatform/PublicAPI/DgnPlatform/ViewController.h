@@ -408,9 +408,6 @@ public:
 
     //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
-
-    //! Requests that any active or pending scene queries for this view be canceled, optionally not returning until the request is satisfied
-    DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
 };
 
 //=======================================================================================
@@ -562,7 +559,7 @@ protected:
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
     DGNPLATFORM_EXPORT SpatialViewController(SpatialViewDefinitionCR definition);
-    ~SpatialViewController() {RequestAbort(true);}
+    ~SpatialViewController() {}
 
     void LoadSkyBox(Render::SystemCR system);
     Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
