@@ -63,7 +63,7 @@
         <ECProperty propertyName="ResolutionInMeters" typeName="string" />
 
         <!-- [Optional] This string value can have 1 of those four states [PRIVATE, PUBLIC, PERMISSION, ENTERPRISE] -->
-        <!--PUBLIC -> Visible for everyone either from the enterprise or foreign to the enterprise regardless of any other access rights -->
+        <!--FUTURE --- DO NOT USE: PUBLIC -> Visible for everyone either from the enterprise or foreign to the enterprise regardless of any other access rights -->
         <!--ENTERPRISE ->  Visible for everyone either from the enterprise regardless of any other access rights-->
         <!--PERMISSION -> Normal mode. Data is accessible for everyone part of the enterprise that possess the access right 'RDS_USE' either through a corporate role or through project-based access definitions OR if the user is the owner of the reality data -->
         <!--PRIVATE -> Data accessible only by the owner -->
