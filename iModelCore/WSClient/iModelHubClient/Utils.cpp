@@ -319,8 +319,8 @@ bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR stateValue, BeS
 //---------------------------------------------------------------------------------------
 bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId)
     {
-    BeInt64Id               codeSpecId;
-    Utf8String              scope = "";
+    CodeSpecId codeSpecId;
+    Utf8String scopeElementString;
 
     if (!serverJson.HasMember(ServerSchema::Property::CodeSpecId) || !serverJson.HasMember(ServerSchema::Property::CodeScope) ||
         !serverJson.HasMember(ServerSchema::Property::Values) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
@@ -328,7 +328,7 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
         return false;
 
     if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
-        !StringFromJson(scope, serverJson[ServerSchema::Property::CodeScope]) ||
+        !StringFromJson(scopeElementString, serverJson[ServerSchema::Property::CodeScope]) ||
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
         !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::State], briefcaseId))
         return false;
@@ -336,12 +336,16 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
     auto values = serverJson[ServerSchema::Property::Values].GetArray();
     if (0 == values.Size())
         return false;
-
+    
+    DgnElementId scopeElementId;
+    if (BentleyStatus::SUCCESS != BeInt64Id::FromString(scopeElementId, scopeElementString.c_str()))
+        return false;
+    
     for (auto it = values.begin(); it != values.end(); ++it)
         {
         Utf8String value = "";
         StringFromJson(value, *it);
-        codeSet.insert(DgnCode(CodeSpecId(codeSpecId.GetValue()), value, scope));
+        codeSet.insert(DgnCode(codeSpecId, scopeElementId, value));
         }
 
     return true;
@@ -352,9 +356,9 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
 //---------------------------------------------------------------------------------------
 bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId)
     {
-    BeInt64Id      codeSpecId;
-    Utf8String     scope = "";
-    Utf8String     value = "";
+    CodeSpecId codeSpecId;
+    Utf8String scopeElementString;
+    Utf8String value;
 
     if (!serverJson.HasMember(ServerSchema::Property::CodeSpecId) || !serverJson.HasMember(ServerSchema::Property::CodeScope) ||
         !serverJson.HasMember(ServerSchema::Property::Value) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
@@ -362,14 +366,17 @@ bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeSt
         return false;
 
     if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
-        !StringFromJson(scope, serverJson[ServerSchema::Property::CodeScope]) ||
+        !StringFromJson(scopeElementString, serverJson[ServerSchema::Property::CodeScope]) ||
         !StringFromJson(value, serverJson[ServerSchema::Property::Value]) ||
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
         !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::State], briefcaseId))
         return false;
 
-    code = DgnCode(CodeSpecId(codeSpecId.GetValue()), value, scope);
-    
+    DgnElementId scopeElementId;
+    if (BentleyStatus::SUCCESS != BeInt64Id::FromString(scopeElementId, scopeElementString.c_str()))
+        return false;
+
+    code = DgnCode(codeSpecId, scopeElementId, value);
     return true;
     }
 
@@ -385,11 +392,10 @@ rapidjson::Document ToRapidJson(JsonValueCR source)
     return target;
     }
 
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId)
+void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, DgnCodeCR dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId)
     {
     DgnCodeInfo&      info = *codeInfos.insert(DgnCodeInfo(dgnCode)).first;
     
