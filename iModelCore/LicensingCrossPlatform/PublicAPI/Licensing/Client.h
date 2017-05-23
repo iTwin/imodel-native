@@ -10,6 +10,8 @@
 
 #include <Licensing/Licensing.h>
 
+#include <BeSQLite/BeSQLite.h>
+
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+

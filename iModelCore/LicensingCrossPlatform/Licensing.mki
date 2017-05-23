@@ -11,10 +11,20 @@
 Headers =
 Headers + $(PublicApiDir)Licensing.h
 Headers + $(PublicApiDir)Client.h
+Headers + $(PublicApiDir)Utils/SCVWritter.h
+Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
+Headers + $(SourceDir)UsageDb.h
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
 #---------------------------------------------------------------------------------------+
 $(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)SCVWritter$(oext)                : $(SourceDir)Utils/SCVWritter.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)InMemoryJsonLocalState$(oext)    : $(SourceDir)Utils/InMemoryJsonLocalState.cpp $(Headers) ${MultiCompileDepends}
+
 
 %include MultiCppCompileGo.mki

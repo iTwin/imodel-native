@@ -8,10 +8,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Licensing\Client.cpp" />
+    <ClCompile Include="Licensing\UsageDb.cpp" />
+    <ClCompile Include="Licensing\Utils\InMemoryJsonLocalState.cpp" />
+    <ClCompile Include="Licensing\Utils\SCVWritter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Licensing\UsageDb.h" />
     <ClInclude Include="PublicAPI\Licensing\Client.h" />
     <ClInclude Include="PublicAPI\Licensing\Licensing.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\InMemoryJsonLocalState.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\SCVWritter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DeliverPublicAPI.mke" />

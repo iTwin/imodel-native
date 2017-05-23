@@ -21,12 +21,24 @@
     <ClCompile Include="Published\ClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\UsageDbTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SCVWritterTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\TestsHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Published\ClientTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\UsageDbTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\SCVWritterTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -8,11 +8,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Published\ClientTests.cpp" />
+    <ClCompile Include="Published\SCVWritterTests.cpp" />
     <ClCompile Include="Published\TestsHelper.cpp" />
+    <ClCompile Include="Published\UsageDbTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\ClientTests.h" />
+    <ClInclude Include="Published\SCVWritterTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
+    <ClInclude Include="Published\UsageDbTests.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
