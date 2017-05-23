@@ -71,16 +71,20 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() const;
     REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8StringCR realityDataId);
     
+    //! The project id that is linked with reality data.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRelatedId() const;
+    REALITYDATAPLATFORM_EXPORT void SetRelatedId(Utf8StringCR relatedId);
 
     //! The project id that is linked with reality data.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProjectId() const;
-    REALITYDATAPLATFORM_EXPORT void SetProjectId(Utf8StringCR projectId);
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRelationType() const;
+    REALITYDATAPLATFORM_EXPORT void SetRelationType(Utf8StringCR relationType);
     
 private:
     REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationship(Json::Value jsonInstance);
     REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationship();
     Utf8String m_realityDataId;
-    Utf8String m_projectId;
+    Utf8String m_relatedId;
+    Utf8String m_relationType;
     }; 
 
 
@@ -203,7 +207,7 @@ public:
     enum Visibility
         {
         UNDEFINED_VISIBILITY = 0x00,
-        PUBLIC = 0x01,
+        //PUBLIC = 0x01,
         ENTERPRISE = 0x02,
         PERMISSION = 0x04,
         PRIVATE = 0x08

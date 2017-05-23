@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ namespace IndexECPlugin.Source.QueryProviders
         {
         Tuple<string, JObject> m_jsonCache;
         IRDSDataFetcher m_rdsDataFetcher;
-
+        bool m_packageRequest;
         /// <summary>
         /// RdsAPIQueryProvider constructor
         /// </summary>
@@ -32,6 +33,7 @@ namespace IndexECPlugin.Source.QueryProviders
             :base(query, querySettings, cacheManager, schema, DataSource.RDS)
             {
             m_rdsDataFetcher = rdsDataFetcher;
+            m_packageRequest = (query.ExtendedData.ContainsKey(IndexConstants.PRExtendedDataName) && (bool) query.ExtendedData[IndexConstants.PRExtendedDataName]);
             }
 
         /// <summary>
@@ -46,6 +48,7 @@ namespace IndexECPlugin.Source.QueryProviders
             : base(query, querySettings, dbQuerier, schema, DataSource.RDS, false)
             {
             m_rdsDataFetcher = new RDSDataFetcher(new RdsHttpResponseGetter(base64token));
+            m_packageRequest = (query.ExtendedData.ContainsKey("PackageRequest") && (bool) query.ExtendedData["PackageRequest"] == true);
             }
 
         /// <summary>
@@ -74,7 +77,21 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance.InstanceId = properties.TryToGetString("Id");
             instance["Id"].StringValue = instance.InstanceId;
-            instance["Footprint"].StringValue = properties.TryToGetString("Footprint");
+
+            JObject footprint = properties["Footprint"] as JObject;
+            if ( footprint != null )
+                {
+                JArray coordinates = footprint["Coordinates"] as JArray;
+                if ( coordinates != null )
+                    {
+                    string footprintStr = ExtractFootprintFromRds(coordinates);
+                    if ( footprintStr != null )
+                        {
+                        instance["Footprint"].StringValue = footprintStr;
+                        }
+                    }
+                }
+
             //instance["ApproximateFootprint"]
             instance["Name"].StringValue = properties.TryToGetString("Name");
             instance["Description"].StringValue = properties.TryToGetString("Description");
@@ -153,7 +170,21 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance.InstanceId = sourceID;
             instance["Id"].StringValue = sourceID;
-            instance["Footprint"].StringValue = properties.TryToGetString("Footprint");
+
+            JObject footprint = properties["Footprint"] as JObject;
+            if ( footprint != null )
+                {
+                JArray coordinates = footprint["Coordinates"] as JArray;
+                if ( coordinates != null )
+                    {
+                    string footprintStr = ExtractFootprintFromRds(coordinates);
+                    if ( footprintStr != null )
+                        {
+                        instance["Footprint"].StringValue = footprintStr;
+                        }
+                    }
+                }
+
             //instance["ApproximateFootprint"]
             instance["Name"].StringValue = properties.TryToGetString("Name");
             instance["DataSourceTypesAvailable"].StringValue = properties.TryToGetString("Type");
@@ -247,12 +278,6 @@ namespace IndexECPlugin.Source.QueryProviders
             instance.InstanceId = sourceID;
             instance["Id"].StringValue = sourceID;
 
-            string rootDocument = properties.TryToGetString("RootDocument");
-            if ( !String.IsNullOrWhiteSpace(rootDocument) )
-                {
-                instance["MainURL"].StringValue = m_rdsDataFetcher.RdsUrlBase + IndexConstants.RdsDocumentClass + sourceID + "~2f" + rootDocument.Replace("/", "~2f");
-                }
-
             //ParameterizedURL
             //CompoundType
             //LocationInCompound
@@ -268,11 +293,39 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["FileSize"].NativeValue = filesize;
                 }
 
+            bool streamed = true;
+
             if ( properties["Streamed"] != null )
                 {
-                instance["Streamed"].NativeValue = properties.Value<bool>("Streamed");
+                streamed = properties.Value<bool>("Streamed");
+                instance["Streamed"].NativeValue = streamed;
                 }
 
+            string visibility = properties.TryToGetString("Visibility");
+
+            if ( m_packageRequest && visibility == "PUBLIC" && !streamed )
+                {
+                JObject jsonRAAT = m_rdsDataFetcher.GetReadAccessAzureToken(sourceID);
+
+                JObject propertiesRAAT = jsonRAAT["properties"] as JObject;
+                if ( propertiesRAAT == null )
+                    {
+                    throw new OperationFailedException("The instance doesn't have any properties");
+                    }
+                string url = propertiesRAAT.TryToGetString("Url");
+                if(!String.IsNullOrWhiteSpace(url))
+                    {
+                    instance["MainURL"].StringValue = url;
+                    }
+                }
+            else
+                {
+                string rootDocument = properties.TryToGetString("RootDocument");
+                if ( !String.IsNullOrWhiteSpace(rootDocument) )
+                    {
+                    instance["MainURL"].StringValue = m_rdsDataFetcher.RdsUrlBase + IndexConstants.RdsDocumentClass + sourceID + "~2f" + rootDocument.Replace("/", "~2f");
+                    }
+                }
             //Metadata
 
             return instance;
@@ -370,6 +423,32 @@ namespace IndexECPlugin.Source.QueryProviders
                 json = m_jsonCache.Item2;
                 }
             return json;
+            }
+
+        private string ExtractFootprintFromRds (JArray coordinates)
+            {
+            try
+                {
+                using ( StringWriter stringWriter = new StringWriter() )
+                    {
+                    stringWriter.Write("{\"points\":[");
+                    List<string> coordList = new List<string>();
+                    foreach ( JObject coordinate in coordinates )
+                        {
+                        double lon = coordinate["Long"].Value<double>();
+                        double lat = coordinate["Lat"].Value<double>();
+                        coordList.Add("[" + lon + "," + lat + "]");
+                        }
+                    stringWriter.Write(String.Join(",", coordList));
+                    stringWriter.Write("],\"coordinate_system\":\"4326\"}");
+                    return stringWriter.ToString();
+                    }
+                }
+            catch ( Exception )
+                {
+                //The footprint is malformed. We'll set it to null.
+                return null;
+                }
             }
 
         }

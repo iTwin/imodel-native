@@ -21,51 +21,140 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 class RealityConversionTestFixture : public testing::Test
     {
     public:
-    
+        static Utf8CP s_SpatialEntityJSONString;
+        static Utf8CP s_EnterpriseStatJSONString;
+        static Utf8CP s_RealityDataJSONString;
     };
+
+
+Utf8CP RealityConversionTestFixture::s_SpatialEntityJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "14812",
+                "schemaName": "RealityModeling",
+                "className": "SpatialEntityWithDetailsView",
+                "properties": {
+                    "Id": "14812",
+                    "Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
+                    "Name": "N38W093",
+                    "Description": null,
+                    "ContactInformation": null,
+                    "Keywords": null,
+                    "Legal": "Data available from the U.S. Geological Survey",
+                    "ProcessingDescription": null,
+                    "DataSourceType": "hgt",
+                    "AccuracyResolutionDensity": null,
+                    "Date": "2005-07-05T00:00:00",
+                    "Classification": "Terrain",
+                    "FileSize": "7066",
+                    "SpatialDataSourceId": "14812",
+                    "ResolutionInMeters": "24.2x30.922",
+                    "DataProvider": "USGS",
+                    "DataProviderName": "USGS",
+                    "ThumbnailURL": null,
+                    "MetadataURL": null,
+                    "RawMetadataURL": null,
+                    "RawMetadataFormat": null,
+                    "SubAPI": null
+                },
+                "eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
+            }
+        ]
+    }
+        )";
+
+Utf8CP RealityConversionTestFixture::s_EnterpriseStatJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "",
+                "schemaName": "S3MX",
+                "className": "EnterpriseStat",
+                "properties": {
+                    "TotalSize": 235892929,
+                    "NumberOfRealityData": 1425,
+                    "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                    "UltimateId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                    "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9"
+                },
+                "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+            }
+        ]
+    }
+    )";
+
+Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                "schemaName": "S3MX",
+                "className": "RealityData",
+                "properties": {
+                    "Id": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                    "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                    "ContainerName": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                    "Name": "Helsinki",
+                    "Dataset": "Geogratis",
+                    "Group": "TestGroup",
+                    "Description": "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
+                    "RootDocument": "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx",
+                    "Size": 1036657,
+                    "Classification": "Terrain",
+                    "Streamed": false,
+                    "Type": "3mx",
+                    "Footprint": {
+                        "Coordinates": [
+                            {
+                                "Long": 24.7828757,
+                                "Lat": 59.9224887
+                            },
+                            {
+                                "Long": 25.2544848,
+                                "Lat": 59.9224887
+                            },
+                            {
+                                "Long": 25.2544848,
+                                "Lat": 60.2978389
+                            },
+                            {
+                                "Long": 24.7828757,
+                                "Lat": 60.2978389
+                            },
+                            {
+                                "Long": 24.7828757,
+                                "Lat": 59.9224887
+                            }
+                        ]
+                    },
+                    "ThumbnailDocument": "Helsinki/thumbnail.jpg",
+                    "MetadataUrl": "www.bigTest.com",
+                    "UltimateId": "uId",
+                    "UltimateSite": "www.bigTest.com/1",
+                    "Copyright": "Copyright goes here",
+                    "TermsOfUse": "And the terms go here",
+                    "AccuracyInMeters": "16.147",
+                    "ResolutionInMeters": "13.45x16.34",
+                    "Visibility": "PRIVATE",
+                    "Listable": true,
+                    "ModifiedTimestamp": "2017-02-01T22:26:06.4138132Z",
+                    "CreatedTimestamp": "2017-02-01T22:26:06.4138132Z",
+                    "OwnedBy": "francis.boily@bentley.com"
+                },
+                "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
+            }
+        ]
+    }
+    )";
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToSpatialEntity1)
     {
-    Utf8CP jsonString = "{"
-                         "\"instances\": [ "
-                            "{"
-                            " \"instanceId\": \"14812\","
-                            " \"schemaName\" : \"RealityModeling\","
-                            " \"className\" : \"SpatialEntityWithDetailsView\","
-                            " \"properties\" : {"
-                                " \"Id\": \"14812\","
-                                " \"Footprint\" : \"{ \\\"points\\\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \\\"coordinate_system\\\" : \\\"4326\\\" }\","
-                                " \"Name\" : \"N38W093\","
-                                " \"Description\" : null,"
-                                " \"ContactInformation\" : null,"
-                                " \"Keywords\" : null,"
-                                " \"Legal\" : \"Data available from the U.S. Geological Survey\","
-                                "  \"ProcessingDescription\" : null,"
-                                " \"DataSourceType\" : \"hgt\","
-                                " \"AccuracyResolutionDensity\" : null,"
-                                " \"Date\" : \"2005-07-05T00:00:00\","
-                                " \"Classification\" : \"Terrain\","
-                                " \"FileSize\" : \"7066\","
-                                " \"SpatialDataSourceId\" : \"14812\","
-                                " \"ResolutionInMeters\" : \"24.2x30.922\","
-                                " \"DataProvider\" : \"USGS\","
-                                " \"DataProviderName\" : \"USGS\","
-                                " \"ThumbnailURL\" : null,"
-                                " \"MetadataURL\" : null,"
-                                " \"RawMetadataURL\" : null,"
-                                " \"RawMetadataFormat\" : null,"
-                                " \"SubAPI\" : null"
-                                " },"
-                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-                            " }"
-                            " ]"
-                        " }";
-
     bvector<SpatialEntityPtr> spatialVector = bvector<SpatialEntityPtr>();
-    StatusInt status = RealityConversionTools::JsonToSpatialEntity(jsonString, &spatialVector);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntity(s_SpatialEntityJSONString, &spatialVector);
     ASSERT_EQ(SUCCESS, status);
     ASSERT_EQ(spatialVector.size(), 1);
     SpatialEntityPtr spatialData = spatialVector[0];
@@ -99,26 +188,8 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntity1)
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToEnterpriseStat)
     {
-    Utf8CP jsonString = "{"
-                        "\"instances\": ["
-                            "{"
-                            "\"instanceId\": \"\","
-                            "\"schemaName\" : \"S3MX\","
-                            "\"className\" : \"EnterpriseStat\","
-                            "\"properties\" : {"
-                                "\"TotalSize\": 235892929,"
-                                "\"NumberOfRealityData\" : 1425,"
-                                "\"OrganizationId\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\","
-                                "\"UltimateId\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\","
-                                "\"UltimateSite\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\""
-                                "},"
-                            "\"eTag\" : \"\\\"ifZwDzBbgEqb8b0Z62MNmrQTysQ=\\\"\""
-                            "}"
-                        "]"
-                        "}";
-
     RealityDataEnterpriseStat stat;
-    StatusInt status = RealityConversionTools::JsonToEnterpriseStat(jsonString, stat);
+    StatusInt status = RealityConversionTools::JsonToEnterpriseStat(s_EnterpriseStatJSONString, stat);
     ASSERT_EQ(SUCCESS, status);
     ASSERT_EQ(stat.GetNbRealityData(), 1425);
     ASSERT_EQ(stat.GetTotalSizeKB(), 235892929);
@@ -132,47 +203,8 @@ TEST_F(RealityConversionTestFixture, JsonToEnterpriseStat)
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToRealityData)
     {
-    Utf8CP jsonString = "{"
-                        "\"instances\": [ "
-                            "{"
-                            "\"instanceId\": \"af3c43a9-1797-4765-a7c3-6f1cd6706fa9\","
-                            "\"schemaName\" : \"S3MX\","
-                            "\"className\" : \"RealityData\","
-                            "\"properties\" : {"
-                                "\"Id\": \"af3c43a9-1797-4765-a7c3-6f1cd6706fa9\","
-                                "\"OrganizationId\" : \"e82a584b-9fae-409f-9581-fd154f7b9ef9\","
-                                "\"ContainerName\" : \"af3c43a9-1797-4765-a7c3-6f1cd6706fa9\","
-                                "\"Name\" : \"Helsinki\","
-                                "\"Dataset\" : \"Geogratis\","
-                                "\"Group\" : \"TestGroup\","
-                                "\"Description\" : \"Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.\","
-                                "\"RootDocument\" : \"Helsinki/Scene/Production_Helsinki_3MX_ok.3mx\","
-                                "\"Size\" : 1036657,"
-                                "\"Classification\" : \"Terrain\","
-                                "\"Streamed\" : false,"
-                                "\"Type\" : \"3mx\","
-                                "\"Footprint\" : { \"Coordinates\" : [{\"Long\":24.7828757, \"Lat\":59.9224887},{\"Long\":25.2544848, \"Lat\":59.9224887},{\"Long\":25.2544848, \"Lat\":60.2978389},{\"Long\":24.7828757, \"Lat\":60.2978389},{\"Long\":24.7828757, \"Lat\":59.9224887}]},"
-                                "\"ThumbnailDocument\" : \"Helsinki/thumbnail.jpg\","
-                                "\"MetadataUrl\" : \"www.bigTest.com\","
-                                "\"UltimateId\" : \"uId\","
-                                "\"UltimateSite\" : \"www.bigTest.com/1\","
-                                "\"Copyright\" : \"Copyright goes here\","
-                                "\"TermsOfUse\" : \"And the terms go here\","
-                                "\"AccuracyInMeters\" : \"16.147\","
-                                "\"ResolutionInMeters\" : \"13.45x16.34\","
-                                "\"Visibility\" : \"PRIVATE\","
-                                "\"Listable\" : true,"
-                                "\"ModifiedTimestamp\" : \"2017-02-01T22:26:06.4138132Z\","
-                                "\"CreatedTimestamp\" : \"2017-02-01T22:26:06.4138132Z\","
-                                "\"OwnedBy\" : \"francis.boily@bentley.com\""
-                                "},"
-                            "\"eTag\": \"\\\"bVDdVT+8j6HTmIo7PNaqVcyYyLw=\\\"\""
-                            "}"
-                        " ]"
-                        " }";
-
     bvector<RealityDataPtr> realityVector = bvector<RealityDataPtr>();
-    StatusInt status = RealityConversionTools::JsonToRealityData(jsonString, &realityVector);
+    StatusInt status = RealityConversionTools::JsonToRealityData(s_RealityDataJSONString, &realityVector);
     ASSERT_EQ(SUCCESS, status);
     ASSERT_EQ(realityVector.size(), 1);
     RealityDataPtr realityData = realityVector[0];

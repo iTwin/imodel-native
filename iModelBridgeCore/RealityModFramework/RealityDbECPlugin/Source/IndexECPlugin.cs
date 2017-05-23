@@ -679,7 +679,8 @@ namespace IndexECPlugin.Source
                             throw new UserFriendlyException("A download report insertion must contain a file");
                             }
 
-                        DownloadReportHelper.InsertInDatabase(streamBackedDescriptor.Stream, instance.InstanceId, ConnectionString);
+                        SqlDbConnectionCreator sqlDbConnectionCreator = new SqlDbConnectionCreator();
+                        DownloadReportHelper.InsertInDatabase(streamBackedDescriptor.Stream, instance.InstanceId, ConnectionString, sqlDbConnectionCreator);
                         return;
 
                     default:

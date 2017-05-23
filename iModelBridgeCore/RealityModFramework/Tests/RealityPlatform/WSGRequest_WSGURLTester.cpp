@@ -10,7 +10,7 @@ TEST(WSGURLBase, ConstructorWithURL)
     {
     auto wsgUrlToTest = WSGURL("https://myserver.com/watch?=uniqueID");
     EXPECT_TRUE(wsgUrlToTest.GetRequestType() == WSGURL::HttpRequestType::GET_Request);
-    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://");
+    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com/watch?=uniqueID");
     EXPECT_TRUE(wsgUrlToTest.GetInterface() == WSGURL::WSGInterface::Repositories);
     EXPECT_STREQ(wsgUrlToTest.GetServerName().c_str(), "");
     EXPECT_STREQ(wsgUrlToTest.GetVersion().c_str(), "");

@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 //    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
     properties.Insert(RealityDataField::OwnedBy, "Jean-Philippe.Pons@bentley.com");
 
-    properties.Insert(RealityDataField::Visibility, "PUBLIC");
+    properties.Insert(RealityDataField::Visibility, "ENTERPRISE");
 
     BeFileName fName = BeFileName("D:/RealityModFrameworkFolder/prod");
 #endif
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     properties.Insert(RealityDataField::Type, "3SM");
     properties.Insert(RealityDataField::OwnedBy, "Cyril.Novel@bentley.com");
 
-    properties.Insert(RealityDataField::Visibility, "PUBLIC");
+    properties.Insert(RealityDataField::Visibility, "ENTERPRISE");
     BeFileName fName = BeFileName("C:/Helsinki");
 #endif
 

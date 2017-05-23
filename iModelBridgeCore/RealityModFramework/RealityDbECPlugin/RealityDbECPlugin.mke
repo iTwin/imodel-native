@@ -142,6 +142,7 @@ ASSEMBLY_VERSION = 1.0.0.0
 ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
+            $(baseDir)Source/AssemblyProperties.cs \
             $(baseDir)Source/Helpers/DataReadingHelper.cs \
 			$(baseDir)Source/Helpers/DbConnectionCreator.cs \
             $(baseDir)Source/Helpers/DbConnectionHelper.cs \

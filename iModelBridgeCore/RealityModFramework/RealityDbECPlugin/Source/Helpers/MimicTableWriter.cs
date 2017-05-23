@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/MimicTableWriter.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -178,7 +178,7 @@ namespace IndexECPlugin.Source.Helpers
                                 }
                             else
                                 {
-                                string WKT = DbGeometryHelpers.CreateWktPolygonString(DbGeometryHelpers.CreatePolygonModelFromJson(propValue.StringValue).points);
+                                string WKT = DbGeometryHelpers.CreateWktPolygonString(DbGeometryHelpers.CreatePolygonModelFromJson(propValue.StringValue).Points);
                                 BBox bbox = DbGeometryHelpers.ExtractBboxFromWKTPolygon(WKT);
 
                                 row.Add(prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].StringValue, bbox.minX);

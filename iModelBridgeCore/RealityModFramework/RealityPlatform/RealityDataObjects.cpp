@@ -22,8 +22,10 @@ RealityDataProjectRelationship::RealityDataProjectRelationship(Json::Value jsonI
         {
         if (jsonInstance["properties"].isMember("RealityDataId") && !jsonInstance["properties"]["RealityDataId"].isNull())
             m_realityDataId = jsonInstance["properties"]["RealityDataId"].asCString();
-        if (jsonInstance["properties"].isMember("ProjectId") && !jsonInstance["properties"]["ProjectId"].isNull())
-            m_projectId = jsonInstance["properties"]["ProjectId"].asCString();
+        if (jsonInstance["properties"].isMember("RelatedId") && !jsonInstance["properties"]["RelatedId"].isNull())
+            m_relatedId = jsonInstance["properties"]["RelatedId"].asCString();
+        if (jsonInstance["properties"].isMember("RelationType") && !jsonInstance["properties"]["RelationType"].isNull())
+            m_relationType = jsonInstance["properties"]["RelationType"].asCString();
         }
     }
 
@@ -50,17 +52,32 @@ void RealityDataProjectRelationship::SetRealityDataId(Utf8StringCR realityDataId
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
-Utf8StringCR RealityDataProjectRelationship::GetProjectId() const { return m_projectId; }
+Utf8StringCR RealityDataProjectRelationship::GetRelatedId() const { return m_relatedId; }
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-void RealityDataProjectRelationship::SetProjectId(Utf8StringCR projectId)  
-{ 
+void RealityDataProjectRelationship::SetRelatedId(Utf8StringCR relatedId)
+    { 
     // Project id may comply with some naming rules ... check?
-    m_projectId = projectId; 
-}
+    m_relatedId = relatedId;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
+Utf8StringCR RealityDataProjectRelationship::GetRelationType() const { return m_relationType; }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataProjectRelationship::SetRelationType(Utf8StringCR relationType)
+    {   
+    // Project id may comply with some naming rules ... check?
+    m_relationType = relationType;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
@@ -170,6 +187,8 @@ RealityDataFolder::RealityDataFolder(Json::Value jsonInstance)
     {
     if (jsonInstance.isMember("properties"))
         {
+        if (jsonInstance["properties"].isMember("Id") && !jsonInstance["properties"]["Id"].isNull())
+            m_id = jsonInstance["properties"]["Id"].asCString();
         if (jsonInstance["properties"].isMember("Name") && !jsonInstance["properties"]["Name"].isNull())
             m_name = jsonInstance["properties"]["Name"].asCString();
         if (jsonInstance["properties"].isMember("RealityDataId") && !jsonInstance["properties"]["RealityDataId"].isNull())
@@ -262,16 +281,7 @@ RealityDataBase::Classification RealityDataBase::GetClassification() const { ret
 void RealityDataBase::SetClassification(Classification classification) { m_classification = classification; }
 Utf8String RealityDataBase::GetClassificationTag() const
     {
-    if (Classification::MODEL == m_classification)
-        return "Model";
-    else if (Classification::TERRAIN == m_classification)
-        return "Terrain";
-    else if (Classification::IMAGERY == m_classification)
-        return "Imagery";
-    else if (Classification::PINNED == m_classification)
-        return "Pinned";
-
-    return "Undefined";   
+    return GetTagFromClassification(m_classification);
     }
 
 //-------------------------------------------------------------------------------------
@@ -304,15 +314,15 @@ StatusInt RealityDataBase::GetClassificationFromTag(RealityDataBase::Classificat
 Utf8String RealityDataBase::GetTagFromClassification(RealityDataBase::Classification classification)
 {
     if (Classification::MODEL == classification)
-        return "PUBLIC";
+        return "Model";
     else if (Classification::TERRAIN == classification)
-        return "ENTERPRISE";
+        return "Terrain";
     else if (Classification::IMAGERY == classification)
-        return "PERMISSION";
+        return "Imagery";
     else if (Classification::PINNED == classification)
-        return "PRIVATE";
+        return "Pinned";
 
-    return "UNDEFINED";
+    return "Undefined";
 }
 
 //-------------------------------------------------------------------------------------
@@ -524,9 +534,9 @@ Utf8String RealityDataBase::GetVisibilityTag() const
 StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& returnedVisibility, Utf8CP visibilityTag)
     {
     Utf8String tag(visibilityTag);
-    if (tag == "PUBLIC")
+    /*if (tag == "PUBLIC")
         returnedVisibility = Visibility::PUBLIC;
-    else if (tag == "ENTERPRISE")
+    else*/ if (tag == "ENTERPRISE")
         returnedVisibility = Visibility::ENTERPRISE;
     else if (tag == "PERMISSION")
         returnedVisibility = Visibility::PERMISSION;
@@ -546,9 +556,9 @@ StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& ret
 //-------------------------------------------------------------------------------------
 Utf8String RealityDataBase::GetTagFromVisibility(RealityDataBase::Visibility visibility)
     {
-    if (Visibility::PUBLIC == visibility)
+    /*if (Visibility::PUBLIC == visibility)
         return "PUBLIC";
-    else if (Visibility::ENTERPRISE == visibility)
+    else*/ if (Visibility::ENTERPRISE == visibility)
         return "ENTERPRISE";
     else if (Visibility::PERMISSION == visibility)
         return "PERMISSION";

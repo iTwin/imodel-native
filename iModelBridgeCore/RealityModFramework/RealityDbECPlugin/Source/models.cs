@@ -16,6 +16,8 @@ using System.Text;
 using System.Threading.Tasks;
 using RealityPackageNet;
 using System.Data;
+using Bentley.ECObjects;
+using Bentley.Exceptions;
 
 namespace IndexECPlugin.Source
     {
@@ -27,21 +29,33 @@ namespace IndexECPlugin.Source
     /// </summary>
     public class PolygonModel
         {
+        private List<Double[]> m_points;
+
         /// <summary>
         /// TO BE DONE
         /// </summary>
-        public PolygonModel ()
+        public PolygonModel (List<Double[]> points)
             {
-            points = new List<Double[]>();
+            Points = points;
             }
 
         /// <summary>
         /// TO BE DONE
         /// </summary>
-        public List<double[]> points
+        public List<double[]> Points
             {
-            get;
-            set;
+            get
+                {
+                return m_points;
+                }
+            set
+                {
+                if ( !isListOfPointsValid(value) )
+                    {
+                    throw new ArgumentException("The polygon format is not valid.");
+                    }
+                m_points = value;
+                }
             }
         /// <summary>
         /// TO BE DONE
@@ -50,6 +64,28 @@ namespace IndexECPlugin.Source
             {
             get;
             set;
+            }
+
+        private static bool isListOfPointsValid (List<Double[]> listOfPoints)
+            {
+            bool isValid = true;
+            int numberOfPoints = listOfPoints.Count();
+
+            if ( numberOfPoints < 3 )
+                {
+                isValid = false;
+                }
+            else
+                {
+                bool polygonIsClosed = listOfPoints.Last()[0] == listOfPoints.First()[0] &&
+                                       listOfPoints.Last()[1] == listOfPoints.First()[1];
+
+                if ( numberOfPoints == 3 && polygonIsClosed )
+                    {
+                    isValid = false;
+                    }
+                }
+            return isValid;
             }
         }
 
@@ -404,7 +440,7 @@ namespace IndexECPlugin.Source
             get;
             set;
             }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -605,7 +641,7 @@ namespace IndexECPlugin.Source
             {
             get;
             set;
-            }    
+            }
         }
 
     /// <summary>
