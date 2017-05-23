@@ -168,6 +168,8 @@ private:
     BentleyStatus EvaluateLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
     BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
 
+    BentleyStatus FailIfConstraintClassIsNotMapped() const;
+
     std::set<DbTable const*> GetTablesFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
 
 public:

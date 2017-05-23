@@ -185,6 +185,9 @@
         <ECArrayProperty propertyName="P2D_Array" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="P3D_Array" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded"/>
+        <ECNavigationProperty propertyName="P" relationshipName="PSAHasP_N1" direction="Forward" />
+        <ECNavigationProperty propertyName="Parent" relationshipName="PSAHasPSA_1N" direction="Backward" />
+        <ECNavigationProperty propertyName="Partner" relationshipName="PSAHasPSA_11" direction="Backward" />
     </ECEntityClass>
     <ECRelationshipClass typeName="PSAHasPSA_1N" strength="referencing" modifier="Sealed">
 		<ECCustomAttributes>
@@ -328,6 +331,8 @@
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="S" typeName="string"/>
+        <ECNavigationProperty propertyName="PSA1" relationshipName="PSAHasTHBase_0N" direction="Backward" />
+        <ECNavigationProperty propertyName="PSA2" relationshipName="PSAHasOnlyTHBase_0N" direction="Backward" />
     </ECEntityClass>
     <ECRelationshipClass typeName="PSAHasOnlyTHBase_0N" strength="referencing" modifier="Sealed">
 		<ECCustomAttributes>

@@ -227,7 +227,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
         }
 
     //Create a fast hash set of in-memory column list;
-    const std::vector<DbColumn const*> columns = table.FindAll( PersistenceType::Physical);
+    const std::vector<DbColumn const*> columns = table.FindAll(PersistenceType::Physical);
 
     std::vector<DbColumn const*> newColumns;
     //compute new columns;
@@ -260,6 +260,12 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
         BeAssert(&table == &columnToAdd->GetTable());
         //Limitation of ADD COLUMN http://www.sqlite.org/lang_altertable.html
         
+        if (columnToAdd->IsOnlyColumnOfPrimaryKeyConstraint())
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to add column (%s) as primary column for an existing table.", columnToAdd->GetName().c_str());
+            return ERROR;
+            }
+
         Utf8String ddl(alterDdlTemplate);
         if (SUCCESS != AppendColumnDdl(ddl, *columnToAdd))
             return ERROR;
@@ -267,9 +273,13 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
         //append FK constraints, if defined for this column
         for (DbConstraint const* constraint : table.GetConstraints())
             {
-            if (constraint->GetType() != DbConstraint::Type::ForeignKey)
-                continue;
+            if (constraint->GetType() == DbConstraint::Type::PrimaryKey)
+                {
+                ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to add column (%s) as primary column for an existing table.", ddl.c_str());
+                return ERROR;
+                }
 
+            BeAssert(constraint->GetType() == DbConstraint::Type::ForeignKey);
             ForeignKeyDbConstraint const* fkConstraint = static_cast<ForeignKeyDbConstraint const*> (constraint);
             if (!fkConstraint->IsValid())
                 return ERROR;

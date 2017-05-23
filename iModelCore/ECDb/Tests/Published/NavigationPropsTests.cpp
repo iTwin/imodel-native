@@ -310,6 +310,9 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
               </ECSchema>)xml"));
 
     ASSERT_TRUE(ecdb.IsDbOpen());
+
+    AssertColumnNames(ecdb, "ts_HasNavPropsWithRelECClassId", {"Id","ECClassId","Name","CodeSpecId","CodeSpecRelECClassId","CodeScopeId","CodeScopeRelECClassId","LastMod"});
+    AssertColumnNames(ecdb, "ts_HasNavPropsWithoutRelECClassId", {"Id","ECClassId","Name","CodeSpecId","CodeScopeId","LastMod"});
     }
 
 //---------------------------------------------------------------------------------------

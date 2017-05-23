@@ -144,23 +144,24 @@ struct ECDbExpressionSymbolContextTests : ECDbSymbolProviderTests
     virtual Utf8String GetTestSchemaXMLString() const
         {
         return
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-            "    <ECEntityClass typeName=\"ClassA\" displayLabel=\"Class A\">"
-            "        <ECProperty propertyName=\"label\" typeName=\"string\" />"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName=\"ClassB\" displayLabel=\"Class B\" >"
-            "        <ECProperty propertyName=\"label\" typeName=\"string\" />"
-            "    </ECEntityClass>"
-            "    <ECRelationshipClass typeName=\"Rel\" strength=\"referencing\" strengthDirection=\"forward\" modifier='Sealed'>"
-            "        <Source cardinality=\"(0,1)\" roleLabel=\"A has B\" polymorphic=\"True\">"
-            "           <Class class=\"ClassA\" />"
-            "        </Source>"
-            "        <Target cardinality=\"(0,N)\" roleLabel=\"B belongs to A\" polymorphic=\"True\">"
-            "           <Class class=\"ClassB\" />"
-            "        </Target>"
-            "    </ECRelationshipClass>"
-            "</ECSchema>";
+            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="test" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="ClassA" displayLabel="Class A">
+                    <ECProperty propertyName="label" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="ClassB" displayLabel="Class B" >
+                    <ECProperty propertyName="label" typeName="string" />
+                    <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" strength="referencing" strengthDirection="forward" modifier="Sealed">
+                    <Source multiplicity="(0..1)" roleLabel="A has B" polymorphic="True">
+                       <Class class="ClassA" />
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="B belongs to A" polymorphic="True">
+                       <Class class="ClassB" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
         }
     
     /*---------------------------------------------------------------------------------**//**
@@ -430,16 +431,17 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
     {
     Utf8CP differentSchemaXml = ""
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"DifferentSchema\" nameSpacePrefix=\"test2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "    <ECSchemaReference name=\"TestSchema\" version=\"01.00\" prefix=\"test\" />"
+        "<ECSchema schemaName=\"DifferentSchema\" alias=\"test2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+        "    <ECSchemaReference name=\"TestSchema\" version=\"01.00\" alias=\"test\" />"
         "    <ECEntityClass typeName=\"DifferentClassB\" displayLabel=\"Different Class B\">"
         "        <ECProperty propertyName=\"label\" typeName=\"string\" />"
+        "        <ECNavigationProperty propertyName=\"A\" relationshipName=\"DifferentRelationship\" direction=\"Backward\"/>"
         "    </ECEntityClass>"
         "    <ECRelationshipClass typeName=\"DifferentRelationship\" strength=\"referencing\" strengthDirection=\"forward\" modifier='Sealed'>"
-        "        <Source cardinality=\"(0,1)\" roleLabel=\"A has B\" polymorphic=\"True\">"
+        "        <Source multiplicity=\"(0..1)\" roleLabel=\"A has B\" polymorphic=\"True\">"
         "           <Class class=\"test:ClassA\" />"
         "        </Source>"
-        "        <Target cardinality=\"(0,N)\" roleLabel=\"B belongs to A\" polymorphic=\"True\">"
+        "        <Target multiplicity=\"(0..*)\" roleLabel=\"B belongs to A\" polymorphic=\"True\">"
         "           <Class class=\"DifferentClassB\" />"
         "        </Target>"
         "    </ECRelationshipClass>"
@@ -487,22 +489,26 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
         "<ECSchema schemaName=\"DifferentSchema\" nameSpacePrefix=\"test2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.00\" prefix=\"bcs\" />"
         "    <ECSchemaReference name=\"TestSchema\" version=\"01.00\" prefix=\"test\" />"
+        "    <ECEntityClass typeName=\"SubA\" >"
+        "        <BaseClass>test:ClassA</BaseClass>"
+        "        <ECNavigationProperty propertyName=\"C\" relationshipName=\"CHasSubA\" direction=\"Backward\"/>"
+        "    </ECEntityClass >"
         "    <ECEntityClass typeName=\"ClassC\" displayLabel=\"Class With Calculated Property\">"
         "        <ECProperty propertyName=\"label\" typeName=\"string\">"
         "            <ECCustomAttributes>"
         "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.00\">"
-        "                    <ECExpression>this.GetRelatedInstance(\"CHasA:0:ClassA\").label</ECExpression>"
+        "                    <ECExpression>this.GetRelatedInstance(\"CHasSubA:0:SubA\").label</ECExpression>"
         "                    <FailureValue>Unknown</FailureValue>"
         "                </CalculatedECPropertySpecification>"
         "            </ECCustomAttributes>"
         "        </ECProperty>"
         "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName=\"CHasA\" strength=\"referencing\" strengthDirection=\"forward\" modifier='Sealed'>"
+        "    <ECRelationshipClass typeName=\"CHasSubA\" strength=\"referencing\" strengthDirection=\"forward\" modifier='Sealed'>"
         "        <Source cardinality=\"(0,1)\" roleLabel=\"C has A\" polymorphic=\"True\">"
         "           <Class class=\"ClassC\" />"
         "        </Source>"
         "        <Target cardinality=\"(0,N)\" roleLabel=\"A belongs to C\" polymorphic=\"True\">"
-        "           <Class class=\"test:ClassA\" />"
+        "           <Class class=\"SubA\" />"
         "        </Target>"
         "    </ECRelationshipClass>"
         "</ECSchema>";
@@ -513,9 +519,9 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
     GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
 
-    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("DifferentSchema", "SubA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-    instanceA->SetValue("label", ECValue("ClassA Label"));
+    instanceA->SetValue("label", ECValue("SubA Label"));
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
     ECClassCP classC = GetECDb().Schemas().GetClass("DifferentSchema", "ClassC");
@@ -523,7 +529,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     ECInstanceInserter(GetECDb(), *classC, nullptr).Insert(*instanceC);
 
     ECSqlStatement insertStmt;
-    insertStmt.Prepare(GetECDb(), "INSERT INTO [test2].[CHasA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    insertStmt.Prepare(GetECDb(), "INSERT INTO [test2].[CHasSubA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     insertStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     insertStmt.BindId(2, classC->GetId());
     insertStmt.BindText(3, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -548,7 +554,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
 
     ECValue v;
     selectedInstanceC->GetValue(v, "label");
-    EXPECT_STREQ("ClassA Label", v.GetUtf8CP());
+    EXPECT_STREQ("SubA Label", v.GetUtf8CP());
     }
 
 //---------------------------------------------------------------------------------------

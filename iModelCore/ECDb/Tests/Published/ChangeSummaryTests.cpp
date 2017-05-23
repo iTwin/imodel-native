@@ -834,6 +834,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
         ChangeSummary after inserting relationships:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
+        0:1;StartupCompany:Employee:175;Update;No
+                Company.Id;NULL;2
         0:1;StartupCompany:EmployeeCompany:1099511627845;Insert;No
                 SourceECClassId;NULL;StartupCompany:Employee:1099511627843
                 SourceECInstanceId;NULL;0:1
@@ -845,7 +847,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
                 TargetECInstanceId;NULL;0:4
     */
-    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, employeeKey.GetInstanceId(), "StartupCompany", "Employee", DbOpcode::Update));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
@@ -904,6 +907,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
         ChangeSummary after updating (deleting and inserting different) relationships:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
+        0:1;StartupCompany:Employee:175;Update;No
+                Company.Id;2;3
         0:6;StartupCompany:EmployeeHardware:1099511627847;Delete;No
                 SourceECClassId;StartupCompany:Employee:1099511627843;NULL
                 SourceECInstanceId;0:1;NULL
@@ -920,8 +925,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 TargetECClassId;StartupCompany:Company:1099511627836;StartupCompany:Company:1099511627836
                 TargetECInstanceId;0:2;0:3
     */
-    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(employeeCompanyKey.GetInstanceId() == employeeCompanyKey2.GetInstanceId());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, employeeKey.GetInstanceId(), "StartupCompany", "Employee", DbOpcode::Update));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));

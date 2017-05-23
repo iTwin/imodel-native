@@ -556,6 +556,13 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
         return ERROR;
         }
 
+    if (relClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+        {
+        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s'. Its NavigationECProperty '%s' refers to a relationship that has the 'NotMapped' strategy. Therefore its dependencies must have that strategy as well.",
+                                                                   navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str());
+        return ERROR;
+        }
+
     if (relClassMap->GetType() == ClassMap::Type::RelationshipLinkTable)
         {
         ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",

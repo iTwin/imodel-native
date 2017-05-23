@@ -1575,6 +1575,8 @@ TEST_F(JoinedTableTestFixture, SelfJoinRelationships)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='A' typeName='long'/>"
         "        <ECProperty propertyName='B' typeName='string'/>"
+        "        <ECNavigationProperty propertyName ='Partner' relationshipName = 'FooHasFoo' direction='Backward' />"
+        "        <ECNavigationProperty propertyName ='Parent' relationshipName = 'FooHasManyFoo' direction='Backward' />"
         "    </ECEntityClass>"
         "   <ECEntityClass typeName='Goo' >"
         "        <BaseClass>Foo</BaseClass>"
@@ -1732,6 +1734,8 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
         "        <BaseClass>Foo</BaseClass>"
         "        <ECProperty propertyName='C' typeName='long'/>"
         "        <ECProperty propertyName='D' typeName='string'/>"
+        "        <ECNavigationProperty propertyName='Foo1' relationshipName='FooHasGoo' direction='Backward'/>"
+        "        <ECNavigationProperty propertyName='Foo2' relationshipName='FooHasManyGoo' direction='Backward'/>"
         "    </ECEntityClass>"
         "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
         "    <Source multiplicity='(0..1)' roleLabel='references' polymorphic='True'>"
@@ -1903,6 +1907,8 @@ TEST_F(JoinedTableTestFixture, RelationshipBetweenSubClasses)
         "        <BaseClass>Boo</BaseClass>"
         "        <ECProperty propertyName='G' typeName='long'/>"
         "        <ECProperty propertyName='H' typeName='string'/>"
+        "        <ECNavigationProperty propertyName='Goo1' relationshipName='GooHasRoo' direction='Backward'/>"
+        "        <ECNavigationProperty propertyName='Goo2' relationshipName='GooHasManyRoo' direction='Backward'/>"
         "    </ECEntityClass>"
         "    <ECRelationshipClass typeName='GooHasRoo'  strength='referencing' modifier='Sealed'>"
         "    <Source multiplicity='(0..1)' roleLabel='references' polymorphic='True'>"
@@ -2066,6 +2072,8 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass)
         "   <ECEntityClass typeName='Roo' >"
         "        <ECProperty propertyName='E' typeName='long'/>"
         "        <ECProperty propertyName='F' typeName='string'/>"
+        "        <ECNavigationProperty propertyName='Foo1' relationshipName='FooHasRoo' direction='Backward'/>"
+        "        <ECNavigationProperty propertyName='Foo2' relationshipName='FooHasManyRoo' direction='Backward'/>"
         "    </ECEntityClass>"
         "    <ECRelationshipClass typeName='FooHasRoo' strength='referencing' modifier='Sealed'>"
         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
@@ -2219,6 +2227,8 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass1)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='A' typeName='long'/>"
         "        <ECProperty propertyName='B' typeName='string'/>"
+        "        <ECNavigationProperty propertyName='Roo1' relationshipName='RooHasFoo' direction='Backward'/>"
+        "        <ECNavigationProperty propertyName='Roo2' relationshipName='RooHasManyFoo' direction='Backward'/>"
         "    </ECEntityClass>"
         "   <ECEntityClass typeName='Goo' >"
         "        <BaseClass>Foo</BaseClass>"
@@ -2403,6 +2413,8 @@ TEST_F(JoinedTableTestFixture, PolymorphicRelationshipWithStandAloneClass)
         "   <ECEntityClass typeName='Body'>"
         "        <ECProperty propertyName='Body_L' typeName='long'/>"
         "        <ECProperty propertyName='Body_S' typeName='string'/>"
+        "        <ECNavigationProperty propertyName='Face1' relationshipName='IFaceHasBody' direction='Backward'/>"
+        "        <ECNavigationProperty propertyName='Face2' relationshipName='IFaceHasManyBody' direction='Backward'/>"
         "    </ECEntityClass>"
         "    <ECRelationshipClass typeName='IFaceHasBody' strength='referencing' modifier='Sealed'>"
         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
@@ -2574,6 +2586,7 @@ TEST_F(JoinedTableTestFixture, DropFKConstraintForSharedColumnForSubClasses)
                         "        <BaseClass>B1Sub</BaseClass>"
                         "        <ECProperty propertyName='B1SubSubName' typeName='string' />"
                         "        <ECProperty propertyName='AId' typeName='long' />"
+                        "        <ECNavigationProperty propertyName='A' relationshipName='Rel1' direction='Backward'/>"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel1' strength='embedding' modifier='Sealed'>"
                         "      <ECCustomAttributes>"
@@ -2644,10 +2657,12 @@ TEST_F(JoinedTableTestFixture, VerifyONDeleteRestrictWithJoinedTable)
                         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
                         "     </ECCustomAttributes>"
                         "        <ECProperty propertyName='B_prop' typeName='string' />"
+                        "        <ECNavigationProperty propertyName='A1' relationshipName='AOwnsB' direction='Backward'/>"
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='B1'>"
                         "        <BaseClass>B</BaseClass>"
                         "        <ECProperty propertyName='B1_prop' typeName='string' />"
+                        "        <ECNavigationProperty propertyName='A2' relationshipName='AOwnsB1' direction='Backward'/>"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='AOwnsB' strength='embedding' modifier='Sealed'>"
                         "      <ECCustomAttributes>"
@@ -2691,7 +2706,7 @@ TEST_F(JoinedTableTestFixture, VerifyONDeleteRestrictWithJoinedTable)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(sourceKey));
     statement.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.B VALUES('B1')"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.B(B_Prop) VALUES('B1')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey));
     statement.Finalize();
 
@@ -3166,3 +3181,4 @@ TEST_F(JoinedTableTestFixture, JoinedTableForClassesWithoutBusinessProperties)
     }
 
 END_ECDBUNITTESTS_NAMESPACE
+

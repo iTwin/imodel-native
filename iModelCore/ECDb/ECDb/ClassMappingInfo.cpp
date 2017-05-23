@@ -747,37 +747,6 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportContext& ctx)
     {
-    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-
-    std::vector<ECClass const*> sourceClasses, targetClasses;
-    for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(relClass->GetId()))
-        {
-        const LightweightCache::RelationshipEnd end = kvPair.second;
-        ECClassCP constraintClass = m_ecdb.Schemas().GetClass(kvPair.first);
-        if (constraintClass == nullptr)
-            {
-            BeAssert(false);
-            return ClassMappingStatus::Error;
-            }
-
-        ClassMap const* constraintClassMap = GetDbMap().GetClassMap(*constraintClass);
-        BeAssert(constraintClassMap != nullptr);
-        if (constraintClassMap == nullptr || constraintClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
-            {
-            LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "The source or target constraint contains at least one ECClass which is not mapped. Therefore the ECRelationshipClass is not mapped either.");
-            m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-            return ClassMappingStatus::Success;
-            }
-
-        if (Enum::Contains(end, LightweightCache::RelationshipEnd::Source))
-            sourceClasses.push_back(constraintClass);
-        else
-            {
-            BeAssert(Enum::Contains(end, LightweightCache::RelationshipEnd::Target));
-            targetClasses.push_back(constraintClass);
-            }
-        }
-
     ClassMappingCACache const* caCache = ctx.GetClassMappingCACache(m_ecClass);
     if (caCache == nullptr)
         {
@@ -847,6 +816,9 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
             return ClassMappingStatus::Error;
             }
 
+        if (SUCCESS != FailIfConstraintClassIsNotMapped())
+            return ClassMappingStatus::Error;
+
         return ClassMappingStatus::Success;
         }
 
@@ -856,6 +828,9 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
         return ClassMappingStatus::Success;
         }
+
+    if (SUCCESS != FailIfConstraintClassIsNotMapped())
+        return ClassMappingStatus::Error;
 
     if (m_linkTableMappingInfo != nullptr)
         return EvaluateLinkTableStrategy(ctx, *caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
@@ -985,6 +960,37 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportCo
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                    05/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipMappingInfo::FailIfConstraintClassIsNotMapped() const
+    {
+    for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(m_ecClass.GetId()))
+        {
+        const LightweightCache::RelationshipEnd end = kvPair.second;
+        ECClassCP constraintClass = m_ecdb.Schemas().GetClass(kvPair.first);
+        if (constraintClass == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        ClassMap const* constraintClassMap = GetDbMap().GetClassMap(*constraintClass);
+        BeAssert(constraintClassMap != nullptr);
+        if (constraintClassMap == nullptr || constraintClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+            {
+            Issues().Report("Failed to map ECRelationshipclass '%s'. The source or target constraint contains at least one ECClass which is not mapped. Mark the ECRelationshipClass with the 'NotMapped' strategy as well.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            /*
+            LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "The source or target constraint contains at least one ECClass which is not mapped. Therefore the ECRelationshipClass is not mapped either.");
+            m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
+            return ClassMappingStatus::Success;*/
+            }
+        }
+
+    return SUCCESS;
+    }
 
 
 //---------------------------------------------------------------------------------------

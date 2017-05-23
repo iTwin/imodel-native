@@ -990,6 +990,9 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
         for (ECPropertyCP prop : constraintClass->GetProperties())
             {
             NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+            if (navProp == singleNavProperty)
+                continue; //this case can occur if multiple constraint class inherit the same nav prop 
+
             if (navProp != nullptr && navProp->GetRelationshipClass() == &relClass && navProp->GetDirection() == expectedDirection)
                 {
                 if (singleNavProperty == nullptr)

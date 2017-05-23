@@ -27,6 +27,8 @@
         <ECProperty propertyName="ReleaseDate" typeName="string" readOnly="false"/>
         <ECProperty propertyName="ShipCity" typeName="string" readOnly="false"/>
         <ECProperty propertyName="ShipPostalCode" typeName="string" readOnly="false"/>
+        <ECNavigationProperty propertyName="Customer" relationshipName="CustomerHasOrder" direction="Backward"/>
+        <ECNavigationProperty propertyName="Employee" relationshipName="EmployeeHasOrder" direction="Backward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="CustomerHasOrder" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has filed">
@@ -62,6 +64,7 @@
         <ECProperty propertyName="City" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Country" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Phone" typeName="long" readOnly="false"/>
+        <ECNavigationProperty propertyName="Product" relationshipName="ProductHasSupplier" direction="Backward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="ProductHasSupplier" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source multiplicity="(0..1)" roleLabel="has" polymorphic="true">

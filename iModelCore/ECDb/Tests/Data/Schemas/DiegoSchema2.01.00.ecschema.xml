@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="DiegoSchema2" alias="ds2" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="DiegoSchema1" version="01.00" alias="ds1"/>
-    <ECEntityClass typeName="GeometricModel">
-        <BaseClass>ds1:DataSetModel</BaseClass>
-        <ECProperty propertyName="Name" typeName="string"/>
-    </ECEntityClass>
-</ECSchema>

@@ -1006,6 +1006,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='B' modifier='None'>"
         "        <ECProperty propertyName='BProp' typeName='int' />"
+        "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
         "    </ECEntityClass>"
         "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
         "        <ECCustomAttributes>"
@@ -1021,6 +1022,56 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>", false, "ECRelationshipClass with FK mapping must not have a ClassMap CA unless it has MapStrategy NotMapped"));
+
+    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                         "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                         "    <ECEntityClass typeName='A' modifier='None'>"
+                                         "        <ECProperty propertyName='AProp' typeName='int' />"
+                                         "    </ECEntityClass>"
+                                         "    <ECEntityClass typeName='B' modifier='None'>"
+                                         "        <ECProperty propertyName='BProp' typeName='int' />"
+                                         "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                                         "    </ECEntityClass>"
+                                         "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                         "        <ECCustomAttributes>"
+                                         "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                         "                <MapStrategy>NotMapped</MapStrategy>"
+                                         "            </ClassMap>"
+                                         "        </ECCustomAttributes>"
+                                         "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                                         "           <Class class='A' />"
+                                         "       </Source>"
+                                         "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                         "           <Class class='B' />"
+                                         "       </Target>"
+                                         "     </ECRelationshipClass>"
+                                         "</ECSchema>", false, "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped only if nav prop class has it too"));
+
+    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                         "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                         "    <ECEntityClass typeName='A' modifier='None'>"
+                                         "        <ECProperty propertyName='AProp' typeName='int' />"
+                                         "    </ECEntityClass>"
+                                         "    <ECEntityClass typeName='B' modifier='None'>"
+                                         "        <ECCustomAttributes>"
+                                         "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                         "                <MapStrategy>NotMapped</MapStrategy>"
+                                         "            </ClassMap>"
+                                         "        </ECCustomAttributes>"
+                                         "        <ECProperty propertyName='BProp' typeName='int' />"
+                                         "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                                         "    </ECEntityClass>"
+                                         "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                         "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                                         "           <Class class='A' />"
+                                         "       </Source>"
+                                         "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                         "           <Class class='B' />"
+                                         "       </Target>"
+                                         "     </ECRelationshipClass>"
+                                         "</ECSchema>", false, "ECRelationshipClass with FK mapping if constraint class has NotMapped strategy"));
 
     AssertSchemaImport(invalidSchemas, "notmappedcatests.ecdb");
 
@@ -1310,67 +1361,42 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                  "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                                  "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                  "    <ECEntityClass typeName='A' modifier='None'>"
-                                                  "        <ECProperty propertyName='AProp' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='B' modifier='None'>"
-                                                  "        <ECProperty propertyName='BProp' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
-                                                  "        <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>NotMapped</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "        </ECCustomAttributes>"
-                                                  "       <Source cardinality='(0,1)' polymorphic='True'>"
-                                                  "           <Class class='A' />"
-                                                  "       </Source>"
-                                                  "       <Target cardinality='(0,N)' polymorphic='True'>"
-                                                  "           <Class class='B' />"
-                                                  "       </Target>"
-                                                  "     </ECRelationshipClass>"
-                                                  "</ECSchema>", true, "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped"),
-                       "notmappedcatests.ecdb");
+                "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                "    <ECEntityClass typeName='A' modifier='None'>"
+                "        <ECProperty propertyName='AProp' typeName='int' />"
+                "    </ECEntityClass>"
+                "    <ECEntityClass typeName='B' modifier='None'>"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                "                <MapStrategy>NotMapped</MapStrategy>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName='BProp' typeName='int' />"
+                "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                "    </ECEntityClass>"
+                "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                "                <MapStrategy>NotMapped</MapStrategy>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                "           <Class class='A' />"
+                "       </Source>"
+                "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                "           <Class class='B' />"
+                "       </Target>"
+                "     </ECRelationshipClass>"
+                "</ECSchema>", true, "Both rel and nav prop class have NotMapped strategy"), "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
 
     MapStrategyInfo mapStrategy;
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Rel")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
-    }
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "B")->GetId()));
+    ASSERT_EQ((int) MapStrategyInfo::Strategy::NotMapped, (int) mapStrategy.m_strategy);
 
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                  "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                                  "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                  "    <ECEntityClass typeName='A' modifier='None'>"
-                                                  "        <ECProperty propertyName='AProp' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='B' modifier='None'>"
-                                                  "        <ECProperty propertyName='BProp' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
-                                                  "        <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>NotMapped</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "        </ECCustomAttributes>"
-                                                  "       <Source cardinality='(0,1)' polymorphic='True'>"
-                                                  "           <Class class='A' />"
-                                                  "       </Source>"
-                                                  "       <Target cardinality='(0,N)' polymorphic='True'>"
-                                                  "           <Class class='B' />"
-                                                  "       </Target>"
-                                                  "     </ECRelationshipClass>"
-                                                  "</ECSchema>", true, "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped"),
-                       "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
-    MapStrategyInfo mapStrategy;
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Rel")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
+    ASSERT_EQ((int) MapStrategyInfo::Strategy::NotMapped, (int) mapStrategy.m_strategy);
     }
 
     }
@@ -1905,6 +1931,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "    </ECEntityClass>"
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
+                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
                                    "    </ECEntityClass>"
                                    "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                                    "        <ECCustomAttributes>"
@@ -1929,6 +1956,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "    </ECEntityClass>"
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
+                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
                                    "    </ECEntityClass>"
                                    "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
                                    "        <ECCustomAttributes>"
@@ -1953,6 +1981,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "    </ECEntityClass>"
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
+                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
                                    "    </ECEntityClass>"
                                    "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='holding'>"
                                    "        <ECCustomAttributes>"
@@ -4457,12 +4486,12 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
     }
 
     /*----------------------------------------------------------------------------------------------------------------------------------
-    Existing table already contains column with appropriate name required by the relationship to map i.e FK_t_FooHasGoo
+    Existing table already contains column with appropriate name required by the relationship to map i.e FooId
     ----------------------------------------------------------------------------------------------------------------------------------*/
     {
     SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb");
 
-    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, FK_t_FooHasGoo INTEGER");
+    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, FooId INTEGER");
     ASSERT_TRUE(GetECDb().TableExists("TestTable"));
     GetECDb().SaveChanges();
 
@@ -4481,6 +4510,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "   <ECNavigationProperty propertyName='Foo' relationshipName='FooHasGoo' direction='Backward'/>"
         "</ECEntityClass>"
         "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
@@ -4535,6 +4565,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "   <ECNavigationProperty propertyName='Foo' relationshipName='FooHasGoo' direction='Backward'/>"
         "</ECEntityClass>"
         "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
@@ -4551,50 +4582,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
     ASSERT_FALSE(asserted);
     }
 
-    //Mapping Class containing Navigation property to existing table
-    {
-    SetupECDb("existingtablenavproperty.ecdb");
-
-    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, navPropId INTEGER");
-    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
-    GetECDb().SaveChanges();
-
-    SchemaItem testItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "<ECEntityClass typeName='Foo' modifier='None' >"
-        "   <ECProperty propertyName='FooProp' typeName='int' />"
-        "</ECEntityClass>"
-        "<ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>ExistingTable</MapStrategy>"
-        "                <TableName>TestTable</TableName>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "   <ECProperty propertyName='GooProp' typeName='int' />"
-        "   <ECNavigationProperty propertyName = 'navProp' relationshipName = 'FooHasManyGoo' direction = 'backward' />"
-        "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasManyGoo' modifier='Sealed' strength='referencing'>"
-        "    <Source cardinality='(0,1)' polymorphic='false'>"
-        "      <Class class = 'Foo' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='false'>"
-        "      <Class class = 'Goo' />"
-        "    </Target>"
-        "</ECRelationshipClass>"
-        "</ECSchema>", true, "reusing existing column for navigation property is expected to succeed");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), testItem);
-    ASSERT_FALSE(asserted);
-
-    assertECSql("SELECT COUNT(*) FROM t.Goo", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
-    assertECSql("INSERT INTO t.Goo (GooProp, navProp) VALUES(1, 1)", GetECDb());
-    assertECSql("UPDATE ONLY t.Goo SET navProp=2", GetECDb());
-    assertECSql("DELETE FROM t.Goo", GetECDb());
-    }
+    
 
     //Cardinality implying NotNull or FK Column should not be allowed to map to existing table.
     {
@@ -4654,6 +4642,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
                 "</ECEntityClass>"
                 "<ECEntityClass typeName='Goo' modifier='None' >"
                 "   <ECProperty propertyName='GooProp' typeName='int' />"
+                "   <ECNavigationProperty propertyName='Foo' relationshipName='FooHasGoo' direction='Backward'/>"
                 "</ECEntityClass>"
                 "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
                 "        <ECCustomAttributes>"
@@ -4674,7 +4663,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
             ASSERT_FALSE(asserted);
 
             Statement sqlstmt;
-            ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FK_ts_FooHasGoo'"));
+            ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FooId'"));
             ASSERT_EQ(BE_SQLITE_ROW, sqlstmt.Step());
             ASSERT_EQ(0, sqlstmt.GetValueInt(0));
             }
@@ -4697,6 +4686,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
                 "<ECEntityClass typeName='Child' modifier='None' >"
                 "   <BaseClass>Parent</BaseClass>"
                 "   <ECProperty propertyName='ChildAProp' typeName='int' />"
+                "   <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChild' direction='Backward'/>"
                 "</ECEntityClass>"
                 "<ECRelationshipClass typeName='ParentHasChild' modifier='Sealed' strength='referencing'>"
                 "        <ECCustomAttributes>"
@@ -4717,8 +4707,8 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
             ASSERT_FALSE(asserted);
 
             Statement sqlstmt;
-            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FK_ts_ParentHasChild'"));
-            ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
+            ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='ParentId'"));
+            ASSERT_EQ(BE_SQLITE_ROW, sqlstmt.Step());
             ASSERT_EQ(0, sqlstmt.GetValueInt(0));
             }
     }
@@ -4739,6 +4729,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraintForRelationshipClassId)
         "</ECEntityClass>"
         "<ECEntityClass typeName='Goo' modifier='None' >"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "   <ECNavigationProperty propertyName='Foo' relationshipName='FooHasGoo' direction='Backward'/>"
         "</ECEntityClass>"
         "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "    <Source multiplicity='(0..1)' polymorphic='false' roleLabel='Foo'>"
@@ -4756,7 +4747,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraintForRelationshipClassId)
     ASSERT_FALSE(asserted);
 
     Statement sqlstmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='RelECClassId_ts_FooHasGoo'"));
+    ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FooRelECClassId'"));
     ASSERT_EQ(BE_SQLITE_ROW, sqlstmt.Step());
     ASSERT_EQ(0, sqlstmt.GetValueInt(0));
     }
@@ -5163,42 +5154,6 @@ TEST_F(DbMappingTestFixture, ECClassIdAsVirtualColumn)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT IsVirtual FROM ec_Column WHERE Name='ECClassId' AND TableId = (SELECT Id FROM ec_Table WHERE Name='ts_Product')"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
     ASSERT_EQ(1, sqlstmt.GetValueInt(0));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Maha Nasir                     10/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, NotMappedCAForFKRelationships)
-    {
-    SchemaItem testItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "<ECEntityClass typeName='Foo' modifier='None' >"
-        "   <ECProperty propertyName='FooProp' typeName='int' />"
-        "</ECEntityClass>"
-        "<ECEntityClass typeName='Goo' modifier='None' >"
-        "   <ECProperty propertyName='GooProp' typeName='int' />"
-        "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>NotMapped</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..1)' polymorphic='true' roleLabel='Foo'>"
-        "      <Class class = 'Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic='true' roleLabel='Goo'>"
-        "      <Class class = 'Goo' />"
-        "    </Target>"
-        "</ECRelationshipClass>"
-        "</ECSchema>", true, "Mapping strategy NotMapped can be applied to FK ECRelationship. ");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "NotMappedCAForFKRelationships.ecdb");
-    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -9143,51 +9098,6 @@ TEST_F(DbMappingTestFixture, ImportECSchemaWithSameVersionAndSameContentTwice)
     }
 
 
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema()
-    {
-    ECSchemaPtr testSchema = nullptr;
-    ECSchema::CreateSchema(testSchema, "test", "t", 1, 0, 0);
-    ECEntityClassP fooClass = nullptr;
-    testSchema->CreateEntityClass(fooClass, "Foo");
-    PrimitiveECPropertyP prop = nullptr;
-    fooClass->CreatePrimitiveProperty(prop, "Name", PRIMITIVETYPE_String);
-
-    ECEntityClassP gooClass = nullptr;
-    testSchema->CreateEntityClass(gooClass, "Goo");
-    prop = nullptr;
-    gooClass->CreatePrimitiveProperty(prop, "Price", PRIMITIVETYPE_Double);
-
-    ECRelationshipClassP oneToManyRelClass = nullptr;
-    testSchema->CreateRelationshipClass(oneToManyRelClass, "FooHasGoo");
-    oneToManyRelClass->SetStrength(StrengthType::Holding);
-    oneToManyRelClass->GetSource().AddClass(*fooClass);
-    oneToManyRelClass->GetSource().SetRoleLabel("FooHasGoo");
-    oneToManyRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    oneToManyRelClass->GetTarget().AddClass(*gooClass);
-    oneToManyRelClass->GetTarget().SetRoleLabel("FooHasGoo (Reversed)");
-    oneToManyRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
-
-    ECRelationshipClassP manyToManyRelClass = nullptr;
-    testSchema->CreateRelationshipClass(manyToManyRelClass, "RelFooGoo");
-    manyToManyRelClass->SetStrength(StrengthType::Referencing);
-    manyToManyRelClass->GetSource().AddClass(*fooClass);
-    manyToManyRelClass->GetSource().SetRoleLabel("RelFooGoo");
-    manyToManyRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
-    manyToManyRelClass->GetTarget().AddClass(*gooClass);
-    manyToManyRelClass->GetTarget().SetRoleLabel("RelFooGoo (Reversed)");
-    manyToManyRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
-
-    auto schemaCache = ECSchemaCache::Create();
-    schemaCache->AddSchema(*testSchema);
-
-    return schemaCache;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -9220,13 +9130,25 @@ TEST_F(DbMappingTestFixture, ImportSchemaAgainstExistingTableWithoutECInstanceId
     //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (Name TEXT)"));
 
-    ECSchemaCachePtr testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema();
-    //now import test schema where the table already exists for the ECClass. This is expected to fail.
-    BeTest::SetFailOnAssert(false);
-    {
-    ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
-    }
-    BeTest::SetFailOnAssert(true);
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Foo" >
+                       <ECProperty propertyName="Name" typeName="string"/>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Goo" >
+                       <ECProperty propertyName="Price" typeName="double"/>
+                       <ECNavigationProperty propertyName="Foo" relationshipName="FooHasGoo" direction="Backward"/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="FooHasGoo" modifier="Sealed" strength="Referencing" >
+                       <Source multiplicity="(0..1)" polymorphic="true" roleLabel="references">
+                            <Class class="Foo"/>
+                       </Source>
+                       <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
+                            <Class class="Goo"/>
+                       </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false));
+    ASSERT_FALSE(asserted);
 
     EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Name")) << "Existing column is expected to still be in the table after ImportSchemas.";
     EXPECT_FALSE(ecdb.ColumnExists("t_Foo", "ECInstanceId")) << "ECInstanceId column not expected to be in the table after ImportSchemas as ImportSchemas is not expected to modify existing tables.";
@@ -9242,9 +9164,25 @@ TEST_F(DbMappingTestFixture, ImportSchemaAgainstExistingTableWithECInstanceIdCol
     //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (Id INTEGER PRIMARY KEY, Name TEXT)"));
 
-    ECSchemaCachePtr testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema();
-    //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Foo" >
+                       <ECProperty propertyName="Name" typeName="string"/>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Goo" >
+                       <ECProperty propertyName="Price" typeName="double"/>
+                       <ECNavigationProperty propertyName="Foo" relationshipName="FooHasGoo" direction="Backward"/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="FooHasGoo" modifier="Sealed" strength="Referencing" >
+                       <Source multiplicity="(0..1)" polymorphic="true" roleLabel="references">
+                            <Class class="Foo"/>
+                       </Source>
+                       <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
+                            <Class class="Goo"/>
+                       </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"));
+    ASSERT_FALSE(asserted);
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     AssertImportedSchema(ecdb, "test", "Foo", "Name");
@@ -9264,16 +9202,40 @@ TEST_F(DbMappingTestFixture, ImportSchemaWithRelationshipAgainstExistingTable)
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (Id INTEGER PRIMARY KEY, Name TEXT)"));
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Goo (Id INTEGER PRIMARY KEY, Price REAL)"));
 
-    ECSchemaCachePtr testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema();
-    //now import test schema where the table already exists for the ECClass
-    //missing link tables are created if true is passed for createTables
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Foo" >
+                       <ECProperty propertyName="Name" typeName="string"/>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Goo" >
+                       <ECProperty propertyName="Price" typeName="double"/>
+                       <ECNavigationProperty propertyName="Foo" relationshipName="FooHasGoo" direction="Backward"/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="FooHasGoo" modifier="Sealed" strength="Referencing" >
+                       <Source multiplicity="(0..1)" polymorphic="true" roleLabel="references">
+                            <Class class="Foo"/>
+                       </Source>
+                       <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
+                            <Class class="Goo"/>
+                       </Target>
+                     </ECRelationshipClass>
+                    <ECRelationshipClass typeName="FooHasGooLinkTable" modifier="Sealed" strength="Referencing" >
+                       <Source multiplicity="(0..*)" polymorphic="true" roleLabel="references">
+                            <Class class="Goo"/>
+                       </Source>
+                       <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
+                            <Class class="Goo"/>
+                       </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"));
+    ASSERT_FALSE(asserted);
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Id")) << "Existing column is expected to still be in the table after ImportSchemas.";
     EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Price")) << "Existing column is expected to still be in the table after ImportSchemas.";
-    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "FK_t_FooHasGoo")) << "FK_t_FooHasGoo column not expected to be in the table after ImportSchemas as ImportSchemas is not expected to modify existing tables.";
-    EXPECT_TRUE(ecdb.TableExists("t_RelFooGoo")) << "Existence of Link table not as expected.";
+    //WIP: Not sure whether this should be like this or whether existing able should not be modified by a schema import
+    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "FooId"));
+    EXPECT_TRUE(ecdb.TableExists("t_FooHasGooLinkTable"));
     }
 
 
@@ -9629,7 +9591,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     //baseClass
     Utf8CP tblAsset = "sc_Asset";
     EXPECT_TRUE(db.TableExists(tblAsset));
-    EXPECT_EQ(35, getColumnCount(db, tblAsset));
+    EXPECT_EQ(34, getColumnCount(db, tblAsset));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Id"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "ECClassId"));
 
@@ -9657,8 +9619,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Breadth"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Length"));
     //relation keys
-    EXPECT_TRUE(db.ColumnExists(tblAsset, "FK_stco_EmployeePhone"));
-    EXPECT_TRUE(db.ColumnExists(tblAsset, "FK_stco_EmployeeFurniture"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "EmployeeId"));
 
     EXPECT_TRUE(db.ColumnExists(tblAsset, "HasWarranty"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "IsCompanyProperty"));
@@ -9694,7 +9655,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "FullName"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "EmployeeType"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "EmployeeRecordKey"));
-    EXPECT_TRUE(db.ColumnExists(tblEmployee, "FK_stco_EmployeeCompany"));
+    EXPECT_TRUE(db.ColumnExists(tblEmployee, "CompanyId"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "Certifications"));
 
     //========================[sc_Company]=======================================================
@@ -9710,14 +9671,6 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
 
     //======================== EmployeeCertifications========================================
     EXPECT_FALSE(db.TableExists("sc_EmployeeCertification")) << "struct don't get a table";
-
-    //========================[sc_Widget]========================================================
-    Utf8CP tblWidget = "sc_Widget";
-    EXPECT_TRUE(db.TableExists(tblWidget));
-    EXPECT_EQ(3, getColumnCount(db, tblWidget));
-
-    EXPECT_TRUE(db.ColumnExists(tblWidget, "Id"));
-    EXPECT_TRUE(db.ColumnExists(tblWidget, "stringOfWidget"));
 
     //========================[sc_Project]=======================================================
     Utf8CP tblProject = "sc_Project";
@@ -9742,7 +9695,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     //struct/arrays mapped to table
     EXPECT_TRUE(db.ColumnExists(tblProject, "TeamMemberList"));  //int array
                                                                  //relation
-    EXPECT_TRUE(db.ColumnExists(tblProject, "FK_stco_CompanyProject"));
+    EXPECT_TRUE(db.ColumnExists(tblProject, "CompanyId"));
 
     //========================[sc_Building]======================================================
     Utf8CP tblBuilding = "sc_Building";
@@ -9767,7 +9720,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     //========================[sc_BuildingFloor]=================================================
     Utf8CP tblBuildingFloor = "sc_BuildingFloor";
     EXPECT_TRUE(db.TableExists(tblBuildingFloor));
-    EXPECT_EQ(8, getColumnCount(db, tblBuildingFloor));
+    EXPECT_EQ(7, getColumnCount(db, tblBuildingFloor));
 
     EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "Id"));
     //It must not have ECClassId to differentiate each row to see which class it belong to.
@@ -9779,8 +9732,6 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "Area"));
     EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "FloorCode"));
     EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "RecordKey"));
-    //relation
-    EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "FK_stco_BuildingFloorRelationship"));
 
     //========================[sc_Cubicle]=================================================
     Utf8CP tblCubicle = "sc_Cubicle";
@@ -9803,7 +9754,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     //array    
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "OccupiedBy"));
     //relation
-    EXPECT_TRUE(db.ColumnExists(tblCubicle, "FK_stco_FloorCubicle"));
+    EXPECT_TRUE(db.ColumnExists(tblCubicle, "FloorId"));
 
     //========================AnglesStruct======================================================
     EXPECT_FALSE(db.TableExists("sc_AnglesStruct")) << "structs are not mapped to any tables";
@@ -9852,15 +9803,12 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     //========================[sc_Bar]===========================================================
     Utf8CP tblBar = "sc_Bar";
     EXPECT_TRUE(db.TableExists(tblBar));
-    EXPECT_EQ(4, getColumnCount(db, tblBar));
+    EXPECT_EQ(2, getColumnCount(db, tblBar));
     EXPECT_TRUE(db.ColumnExists(tblBar, "Id"));
     //This a TablePerHieracrchy
     EXPECT_FALSE(db.ColumnExists(tblBar, "ECClassId"));
     //Local properties
     EXPECT_TRUE(db.ColumnExists(tblBar, "stringBar"));
-    //Relations
-    EXPECT_TRUE(db.ColumnExists(tblBar, "FK_stco_Foo_has_Bars"));
-    EXPECT_TRUE(db.ColumnExists(tblBar, "FK_stco_Foo_has_Bars_hint"));
 
     //========================[sc_Foo]===========================================================
     Utf8CP tblFoo = "sc_Foo";
@@ -9894,11 +9842,6 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblFoo, "anglesFoo_Theta"));
 
     GetECDb().CloseDb();
-
-    SetupECDb("IntegrityCheck.ecdb", BeFileName(L"IntegrityCheck.01.00.ecschema.xml"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    Utf8String actualDdl = RetrieveDdl(GetECDb(), "ic_TargetBase");
-    ASSERT_STRCASEEQ("CREATE TABLE [ic_TargetBase]([Id] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [FK_ic_SourceToTarget_Embedding] INTEGER NOT NULL, FOREIGN KEY([FK_ic_SourceToTarget_Embedding]) REFERENCES [ic_SourceBase]([Id]) ON DELETE CASCADE ON UPDATE NO ACTION)", actualDdl.c_str());
     }
 
 //---------------------------------------------------------------------------------------

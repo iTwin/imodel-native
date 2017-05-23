@@ -712,6 +712,8 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='ClassC' >"
         "        <ECProperty propertyName='P3' typeName='int' />"
+        "        <ECNavigationProperty propertyName='A1' relationshipName='RelationshipClassA' direction='Backward'/>"
+        "        <ECNavigationProperty propertyName='A2' relationshipName='RelationshipClassB' direction='Backward'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='ClassD' >"
         "        <ECProperty propertyName='P4' typeName='int' />"
@@ -869,17 +871,17 @@ TEST_F(ECSqlAdapterTestFixture, FindECInstancesFromSelectWithMultipleClasses)
     ECDb& ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
 
     bvector<IECInstancePtr> instances;
-    ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Foo"));
+    ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Company"));
     ASSERT_EQ(3, (int) instances.size());
     IECInstancePtr sourceInstance = instances[0];
 
     instances.clear();
-    ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Bar"));
+    ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Project"));
     ASSERT_EQ(3, (int) instances.size());
     IECInstancePtr targetInstance = instances[0];
 
-    ECRelationshipClassCP relClass = ecdb.Schemas().GetClass("StartupCompany", "Foo_has_Bars")->GetRelationshipClassCP();
-    ASSERT_TRUE(relClass != nullptr) << "Could not find relationship class Foo_has_Bars in test schema";
+    ECRelationshipClassCP relClass = ecdb.Schemas().GetClass("StartupCompany", "CompanyProject")->GetRelationshipClassCP();
+    ASSERT_TRUE(relClass != nullptr) << "Could not find relationship class EmployeeHardware in test schema";
 
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
@@ -893,7 +895,7 @@ TEST_F(ECSqlAdapterTestFixture, FindECInstancesFromSelectWithMultipleClasses)
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*relationshipInstance));
 
     ECSqlStatement ecStatement;
-    ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(ecdb, "SELECT c0.intFoo, c1.stringBar from [StartupCompany].[Foo] c0 join [StartupCompany].[Bar] c1 using [StartupCompany].[Foo_has_Bars]"));
+    ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(ecdb, "SELECT c0.Name, c1.ProjectName from [StartupCompany].[Company] c0 join [StartupCompany].[Project] c1 using StartupCompany.CompanyProject"));
 
     ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
     int rows = 0;
@@ -912,13 +914,13 @@ TEST_F(ECSqlAdapterTestFixture, FindECInstancesFromSelectWithMultipleClasses)
     ecStatement.Reset();
 
     rows = 0;
-    ECClassCP ecClass = ecdb.Schemas().GetClass("StartupCompany", "Bar");
+    ECClassCP ecClass = ecdb.Schemas().GetClass("StartupCompany", "Project");
     ASSERT_TRUE(ecClass != nullptr) << "ECDbTestSchemaManager::GetClassP returned null";
     while (ecStatement.Step() == BE_SQLITE_ROW)
         {
         resultInstance = dataAdapter.GetInstance(ecClass->GetId());
         ASSERT_TRUE(resultInstance.IsValid());
-        ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "stringBar"));
+        ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "ProjectName"));
         ASSERT_FALSE(v.IsNull());
         rows++;
         }

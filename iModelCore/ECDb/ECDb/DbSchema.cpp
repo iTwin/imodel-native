@@ -2155,12 +2155,8 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableNa
         {
         if (table->GetType() != tableType)
             {
-            std::function<Utf8CP(bool)> toStr = [] (bool val) { return val ? "true" : "false"; };
-            LOG.warningv("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
-                         "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
-                         tableName.c_str(),
-                         toStr(tableType == DbTable::Type::Existing), toStr(!table->IsOwnedByECDb()));
-            BeAssert(false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
+            dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report("Table %s already used by another ECClass for a different mapping type.", tableName.c_str());
+            return nullptr;
             }
 
         if (table->HasExclusiveRootECClass())
