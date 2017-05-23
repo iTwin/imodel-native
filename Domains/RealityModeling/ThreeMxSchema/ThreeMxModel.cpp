@@ -283,6 +283,7 @@ BentleyStatus ThreeMxModel::GeolocateFromSceneFile()
     return stat;
     }
 
+#ifdef NOT_NOW_OBSOLETE
 BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/16
@@ -592,7 +593,6 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
 
-#if defined(WIP_TILETREE_PUBLISH)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

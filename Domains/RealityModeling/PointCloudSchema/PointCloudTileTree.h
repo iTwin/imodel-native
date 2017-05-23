@@ -81,7 +81,7 @@ public:
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }
 
     BentleyStatus Read (TileTree::StreamBuffer& streamBuffer);
-    BentleyStatus AddGraphics ();
+    BentleyStatus AddGraphics (Dgn::Render::SystemP renderSys);
 
     double GetTolerance() const         { return m_tolerance; }
 

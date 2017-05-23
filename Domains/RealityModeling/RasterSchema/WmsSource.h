@@ -92,7 +92,7 @@ protected:
         Http::Credentials m_credentials;
         Http::Credentials m_proxyCredentials;
 
-        WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
+        WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileLoader(url, tile, loads, tile._GetTileCacheKey(), renderSys) {}
         virtual ~WmsTileLoader() {}
 
         folly::Future<BentleyStatus> _GetFromSource() override;

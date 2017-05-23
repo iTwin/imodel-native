@@ -118,7 +118,7 @@ void Node::_PickGraphics(PickArgsR args, int depth) const
 //----------------------------------------------------------------------------------------
 TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
-    return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads);
+    return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -143,7 +143,7 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
 * Geometry is only valid for that Render::System
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Geometry::Geometry(TriMeshArgs const& args, SceneR scene, DRange3dCR tileRange)
+Geometry::Geometry(TriMeshArgs const& args, SceneR scene, DRange3dCR tileRange, Dgn::Render::SystemP renderSys)
     {
     // After we create a Render::Graphic, we only need the points/indices/normals for picking.
     // To save memory, only store them if the model is locatable.
@@ -162,16 +162,15 @@ Geometry::Geometry(TriMeshArgs const& args, SceneR scene, DRange3dCR tileRange)
             }
         }
 
-    if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
+    if (nullptr == renderSys || !args.m_texture.IsValid())
         return;
 
     GraphicParams gfParams = GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0, GraphicParams::LinePixels::Solid);
 
-#define GENERATE_REALITY_MODEL_EDGES
 #ifdef GENERATE_REALITY_MODEL_EDGES
-    m_graphics = scene.GetRenderSystem()->_CreateTriMeshAndEdges(args, scene.GetDgnDb(), gfParams, tileRange, MeshEdgeCreationOptions(true, false, false, 0.0));
+    m_graphics = renderSys->_CreateTriMeshAndEdges(args, scene.GetDgnDb(), gfParams, tileRange, MeshEdgeCreationOptions(true, false, false, 0.0));
 #else
-    m_graphics.push_back(_CreateTriMesh(args, scene.GetDgnDb(), gfParams));
+    m_graphics.push_back(renderSys->_CreateTriMesh(args, scene.GetDgnDb(), gfParams));
 #endif
     }
 
