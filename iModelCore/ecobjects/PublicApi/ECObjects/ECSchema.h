@@ -1007,6 +1007,9 @@ public:
     //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist
     //! the ECSchema as is, GetStoredMaxOccurs can be called as a workaround until the max occurs issue has been resolved.
     uint32_t GetStoredMaxOccurs () const {return m_maxOccurs;}
+
+    //! Indicates if the stored max occurs is unbound
+    bool IsStoredMaxOccursUnbounded() const { return m_maxOccurs == UINT_MAX; }
    };
 
 //=======================================================================================
@@ -2026,6 +2029,10 @@ public:
     //! @param[in]  upperLimit  must be greater than or equal to lowerLimit and greater than 0
     RelationshipMultiplicity(uint32_t lowerLimit, uint32_t upperLimit) : m_lowerLimit(lowerLimit), m_upperLimit(upperLimit)
         { BeAssert(lowerLimit <= upperLimit); BeAssert(upperLimit > 0); }
+
+    //! Constructor where upper limit is set to Unbounded
+    //! @param[in]  lowerLimit  must be less than or equal to upperLimit and greater than or equal to 0
+    RelationshipMultiplicity(uint32_t lowerLimit) : RelationshipMultiplicity(lowerLimit, UINT_MAX) {}
 
     //! Returns the lower limit of the multiplicity
     uint32_t GetLowerLimit() const {return m_lowerLimit;}

@@ -647,18 +647,36 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, R
             return ecValue.SetPoint3d(point3d);
             }
             case PRIMITIVETYPE_Integer:
-                if (!jsonValue.IsInt())
-                    return ERROR;
-
+            {
+            if (jsonValue.IsInt())
                 return ecValue.SetInteger(jsonValue.GetInt());
 
-            case PRIMITIVETYPE_Long:
-                // Int64 values need to be serialized as strings to allow use in JavaScript
-                if (!jsonValue.IsString())
-                    return ERROR;
+            if (jsonValue.IsUint())
+                return ecValue.SetInteger((int) jsonValue.GetUint());
 
+            return ERROR;
+            }
+
+            case PRIMITIVETYPE_Long:
+            {
+            if (jsonValue.IsInt64())
+                return ecValue.SetLong(jsonValue.GetInt64());
+
+            if (jsonValue.IsUint64())
+                return ecValue.SetLong((int64_t) jsonValue.GetUint64());
+
+            if (jsonValue.IsInt())
+                return ecValue.SetLong(jsonValue.GetInt());
+
+            if (jsonValue.IsUint())
+                return ecValue.SetLong(jsonValue.GetUint());
+
+            // Int64 values can be represented in JSON as base64 string (to be compatible with JavaScript)
+            if (jsonValue.IsString())
                 return ecValue.SetLong(Int64FromJson(jsonValue));
 
+            return ERROR;
+            }
             case PRIMITIVETYPE_Double:
                 if (!jsonValue.IsNumber())
                     return ERROR;
@@ -777,6 +795,7 @@ BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, 
         if (SUCCESS != ECPrimitiveValueFromJson(primitiveValue, jsonValue[i], primType))
             {
             returnStatus = ERROR;
+            LogJsonParseError(jsonValue[i], instance.GetClass(), accessString);
             continue;
             }
 
@@ -820,17 +839,19 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
         ECPropertyP propertyP = currentClass.GetPropertyP(propertyName);
         if (nullptr == propertyP)
             {
+            LOG.errorv("Failed to create ECInstance from JSON: Property '%s' not found in ECClass '%s'.", propertyName, currentClass.GetFullName());
             status = ERROR;
             continue;
             }
 
-        Utf8String accessString = (0 == currentAccessString[0]) ? propertyName : currentAccessString + "." + propertyName;
+        Utf8String accessString = currentAccessString.empty() ? propertyName : currentAccessString + "." + propertyName;
         if (propertyP->GetIsPrimitive())
             {
             ECValue ecValue;
             if (SUCCESS != ECPrimitiveValueFromJson(ecValue, it->value, propertyP->GetAsPrimitiveProperty()->GetType()))
                 {
                 status = ERROR;
+                LogJsonParseError(it->value, instance.GetClass(), accessString);
                 continue;
                 }
 
@@ -864,6 +885,7 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
             if (!json.IsObject() || !json.HasMember(ECINSTANCE_ID_ATTRIBUTE))
                 {
                 status = ERROR;
+                LogJsonParseError(json, instance.GetClass(), accessString);
                 continue;
                 }
 
@@ -871,6 +893,7 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
             if (navId == INT64_C(0))
                 {
                 status = ERROR;
+                LogJsonParseError(json, instance.GetClass(), accessString);
                 continue;
                 }
 
@@ -878,20 +901,29 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
             if (!json.HasMember(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
+                    {
                     status = ERROR;
+                    LogJsonParseError(json, instance.GetClass(), accessString);
+                    }
                 }
             else
                 {
                 const uint64_t relClassId = (uint64_t) Int64FromJson(json[ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE], INT64_C(0));
                 if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
+                    {
                     status = ERROR;
+                    LogJsonParseError(json, instance.GetClass(), accessString);
+                    }
                 }
 
             if (SUCCESS == status)
                 {
                 const ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
                 if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
+                    {
                     status = ERROR;
+                    LogJsonParseError(json, instance.GetClass(), accessString);
+                    }
                 }
 
             continue;
@@ -899,6 +931,20 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
         }
 
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//---------------------------------------------------------------------------------------
+void ECRapidJsonUtilities::LogJsonParseError(RapidJsonValueCR json, ECClassCR ecClass, Utf8StringCR propAccessString)
+    {
+    if (!LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+        return;
+
+    rapidjson::StringBuffer jsonStrBuf;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStrBuf);
+    json.Accept(writer);
+    LOG.errorv("Failed to convert JSON '%s' to an ECValue for property '%s' in ECClass '%s'.", jsonStrBuf.GetString(), propAccessString.c_str(), ecClass.GetFullName());
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
