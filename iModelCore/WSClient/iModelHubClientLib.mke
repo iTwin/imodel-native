@@ -90,4 +90,4 @@ LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(libext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(libext)
 
-%include $(sharedMki)LinkLibrary.mki    
+%include $(sharedMki)linkLibrary.mki    
