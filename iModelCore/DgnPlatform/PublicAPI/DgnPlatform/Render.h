@@ -263,6 +263,7 @@ struct Task : RefCounted<NonCopyableClass>
         RenderFrame,
         RenderTile,
         ResetTarget,
+        SetHiliteSet,
     };
 
     //! The outcome of the processing of a Task.
@@ -2318,7 +2319,6 @@ struct FeatureSymbologyOverrides
 
         ColorDef        m_color;
         uint32_t        m_weight;
-        bool            m_hilited;
         struct
             {
             uint32_t        m_rgb:1;
@@ -2327,7 +2327,7 @@ struct FeatureSymbologyOverrides
             }           m_flags;
     public:
         Appearance() { Init(); }
-        void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = 0; m_hilited=false; }
+        void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = 0;  }
         void InitFrom(DgnSubCategory::Override const& ovr);
 
         //! Override transparency
@@ -2356,8 +2356,6 @@ struct FeatureSymbologyOverrides
         double GetTransparency() const { return (255 - GetAlpha()) / 255.0; }
         //! Get the line weight override
         uint32_t GetWeight() const { return m_weight; }
-        //! Returns whether the feature is highlighted
-        bool IsHilited() const { return m_hilited; }
 
         //! Returns true if any aspect of symbology is overridden.
         bool OverridesSymbology() const { return OverridesAlpha() || OverridesRgb() || OverridesWeight(); }
@@ -2374,7 +2372,6 @@ struct FeatureSymbologyOverrides
 
     DgnElementIdSet                     m_alwaysDrawn;
     DgnElementIdSet                     m_neverDrawn;
-    DgnElementIdSet                     m_hilited;
     bmap<DgnElementId, Appearance>      m_elementOverrides; // for any element for which at least one aspect of symbology is overridden
     DgnSubCategoryIdSet                 m_visibleSubCategories;
     bmap<DgnSubCategoryId, Appearance>  m_subcategoryOverrides;
@@ -2647,6 +2644,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
+    virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
     virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     DGNVIEW_EXPORT virtual void _QueueReset();

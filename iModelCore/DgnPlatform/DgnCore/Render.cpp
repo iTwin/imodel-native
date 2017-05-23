@@ -253,7 +253,7 @@ void DgnViewport::SetRenderTarget(Target* newTarget)
 
     // Feature symbology is per-Target - will need to be updated for new Target (now, or possibly later if newTarget=nullptr)
     if (m_viewController.IsValid())
-        m_viewController->SetFeatureSymbologyDirty();
+        m_viewController->SetFeatureOverridesDirty();
 
     m_sync.InvalidateFirstDrawComplete();
     }
@@ -642,9 +642,6 @@ void ViewController::_AddFeatureOverrides(FeatureSymbologyOverrides& overrides) 
     auto vp = m_vp;
     if (nullptr == vp)
         return;
-
-    for (auto const& hiliteId : GetDgnDb().Elements().GetSelectionSet())
-        overrides.m_hilited.insert(hiliteId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -680,9 +677,6 @@ FeatureSymbologyOverrides::Appearance FeatureSymbologyOverrides::Appearance::Ext
 
     if (m_flags.m_weight && !app.m_flags.m_weight)
         app.SetWeight(GetWeight());
-
-    if (m_hilited)
-        app.m_hilited = true;
 
     return app;
     }
@@ -733,9 +727,6 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
         haveElemOverrides = m_elementOverrides.end() != elemIter;
         if (haveElemOverrides)
             app = elemIter->second;
-
-        if (m_hilited.end() != m_hilited.find(elemId))
-            app.m_hilited = true;
         }
 
     auto subcatId = feat.GetSubCategoryId();

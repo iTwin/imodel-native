@@ -237,7 +237,7 @@ void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusiv
     RequestAbort(true);
     m_noQuery = exclusive;
     m_special.m_always = newSet; // NB: copies values
-    SetFeatureSymbologyDirty();
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -248,7 +248,7 @@ void ViewController::ClearAlwaysDrawn()
     RequestAbort(true);
     m_special.m_always.clear();
     m_noQuery = false;
-    SetFeatureSymbologyDirty();
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,7 +258,7 @@ void ViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
-    SetFeatureSymbologyDirty();
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,7 +268,7 @@ void ViewController::ClearNeverDrawn()
     {
     RequestAbort(true);
     m_special.m_never.clear();
-    SetFeatureSymbologyDirty();
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,7 +281,7 @@ void ViewController::SetViewFlags(Render::ViewFlags newFlags)
               || oldFlags.ShowDimensions() != newFlags.ShowDimensions()
               || oldFlags.ShowPatterns() != newFlags.ShowPatterns();
     if (dirty)
-        SetFeatureSymbologyDirty();
+        SetFeatureOverridesDirty();
 
     m_definition->GetDisplayStyle().SetViewFlags(newFlags);
     }
@@ -292,7 +292,7 @@ void ViewController::SetViewFlags(Render::ViewFlags newFlags)
 void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
     {
     m_definition->GetDisplayStyle().DropSubCategoryOverride(id);
-    SetFeatureSymbologyDirty();
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -301,7 +301,7 @@ void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
 void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
     {
     m_definition->GetDisplayStyle().OverrideSubCategory(id, ovr);
-    SetFeatureSymbologyDirty();
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**

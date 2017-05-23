@@ -164,8 +164,8 @@ public:
         return new Controller(view, data, show, symb);
         }
 
-    void SetShow(Show show) { m_show = show; SetFeatureSymbologyDirty(); }
-    void SetSymbology(SymbologyCR symb) { m_symbology = symb; SetFeatureSymbologyDirty(); }
+    void SetShow(Show show) { m_show = show; SetFeatureOverridesDirty(); }
+    void SetSymbology(SymbologyCR symb) { m_symbology = symb; SetFeatureOverridesDirty(); }
 
     bool WantShowCurrent() const { return 0 != (m_show & kShowCurrent); }
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }

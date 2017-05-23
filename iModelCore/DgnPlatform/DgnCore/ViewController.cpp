@@ -126,14 +126,14 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
     GetViewDefinitionR().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
-    SetFeatureSymbologyDirty();
+    SetFeatureOverridesDirty();
     _OnCategoryChange(onOff);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
+ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>()), m_selectionSetDirty(!m_dgndb.Elements().GetSelectionSet().empty())
     {
     DgnElementId acsId = def.GetAuxiliaryCoordinateSystemId();
 
