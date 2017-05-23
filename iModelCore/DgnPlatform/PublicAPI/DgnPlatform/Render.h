@@ -1603,23 +1603,271 @@ struct FeatureIndex
     void Reset() { *this = FeatureIndex(); }
 };
 
+//! Common operations for QPoint2d and QPoint3d
+namespace Quantization
+{
+    constexpr double RangeScale() { return static_cast<double>(0xffff); }
+
+    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
+
+    inline bool IsInRange(double quantizedPos)
+        {
+        return quantizedPos >= 0.0 && quantizedPos < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
+        }
+
+    constexpr double QuantizeDouble(double pos, double origin, double scale)
+        {
+        return 0.5 + (pos - origin) * scale;
+        }
+
+    inline bool IsQuantizable(double pos, double origin, double scale)
+        {
+        return IsInRange(QuantizeDouble(pos, origin, scale));
+        }
+
+    inline uint16_t Quantize(double pos, double origin, double scale)
+        {
+        double qpos = QuantizeDouble(pos, origin, scale);
+        BeAssert(IsInRange(qpos));
+        return static_cast<uint16_t>(qpos);
+        }
+
+    constexpr double Unquantize(uint16_t pos, double origin, double scale)
+        {
+        return 0.0 == scale ? origin : origin + pos/scale;
+        }
+
+    constexpr double UnquantizeAboutCenter(uint16_t pos, double origin, double scale)
+        {
+        return 0.0 == scale ? 0.0 : (static_cast<double>(pos) - 0x7fff) * (pos/scale);
+        }
+
+    template<typename T> class QPointList : public bvector<T>
+    {
+    public:
+        typedef typename T::Params Params;
+        typedef typename T::T_Range Range;
+        typedef typename T::T_DPoint DPoint;
+        typedef typename T::T_DVec DVec;
+
+        //! Construct an empty list to be quantized by the specified params
+        explicit QPointList(Params const& params) : m_params(params) { }
+        //! Construct an empty list to be quantized to the specified range
+        explicit QPointList(Range const& range ) : QPointList(Params(range)) { }
+        QPointList() { }
+        //! Construct a copy of another list
+        QPointList(QPointList const& src) : bvector<T>(src), m_params(src.m_params) { }
+        //! Move-construct a copy of another list
+        QPointList(QPointList&& src) : bvector<T>(std::move(src)), m_params(src.m_params) { }
+
+        QPointList& operator=(QPointList const& src) { Assign(src.data(), src.size(), src.m_params); return *this; }
+        QPointList& operator=(QPointList&& src) { this->swap(src); m_params = src.m_params; return *this; }
+
+        //! Replace the contents of this list with the specified points, quantized to the specified params
+        void Assign(QPoint3dCP points, size_t nPoints, Params const& params)
+            {
+            m_params = params;
+            assign(points, points+nPoints);
+            }
+
+        //! Empty this list and change its quantization parameters
+        void Reset(Params const& params)
+            {
+            m_params = params;
+            clear();
+            }
+
+        Params const& GetParams() const { return m_params; }
+
+        //! Quantize the specified point and add it to this list
+        void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
+        //! Return the unquantized point at the specified index.
+        DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
+        //! Return the point at the specified index, unquantized as a vector type.
+        DVec UnquantizeAsVector(size_t index) const { BeAssert(index < size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
+
+        //! Requantize all the points in this list to the new parameters, and update the list's parameters.
+        void Requantize(Params const& params)
+            {
+            for (auto& qpt : *this)
+                {
+                auto dpt = qpt.Unquantize(m_params);
+                qpt = T(dpt, params);
+                }
+
+            m_params = params;
+            }
+    private:
+        Params  m_params;
+    };
+}
+
+//=======================================================================================
+//! Represents a DPoint3d quantized within some known range to a triplet of 16-bit
+//! integers. This is a lossy compression technique.
+//! known range.
+// @bsistruct                                                   Ray.Bentley     01/2017
+//=======================================================================================
+struct QPoint3d
+{
+    using T_Range = DRange3d;
+    using T_DPoint = DPoint3d;
+    using T_DVec = DVec3d;
+
+    uint16_t x, y, z;
+
+    //! Describes the range associated with a QPoint3d.
+    struct Params
+    {
+        DPoint3d    origin;
+        DPoint3d    scale;
+
+        Params() : Params(DRange3d::NullRange()) { }
+        explicit Params(DRange3dCR range) : origin(range.low)
+            {
+            DVec3d diagonal = range.DiagonalVector();
+            scale.x = Quantization::ComputeScale(diagonal.x);
+            scale.y = Quantization::ComputeScale(diagonal.y);
+            scale.z = Quantization::ComputeScale(diagonal.z);
+            }
+
+        //! Create params suitable for quantizing points with components in the range [-1.0,1.0].
+        static Params FromNormalizedRange()
+            {
+            return Params(DRange3d::From(DPoint3d::FromXYZ(-1.0,-1.0,-1.0), DPoint3d::FromXYZ(1.0,1.0,1.0)));
+            }
+
+        DPoint3dCR GetOrigin() const { return origin; }
+        DPoint3dCR GetScale() const { return scale; }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+
+    QPoint3d() { }
+    QPoint3d(uint16_t x_, uint16_t y_, uint16_t z_) : x(x_), y(y_), z(z_) { }
+    QPoint3d(DPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
+    QPoint3d(DPoint3dCR pt, ParamsCR params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
+        }
+    QPoint3d(FPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
+    QPoint3d(FPoint3dCR pt, ParamsCR params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
+        }
+
+    //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
+    DPoint3d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+
+    //! Decode this QPoint3d into a DVec3d using the same params from which the QPoint3d was created.
+    DVec3d UnquantizeAsVector(ParamsCR params) const
+        {
+        return DVec3d::From(
+            Quantization::Unquantize(x, params.origin.x, params.scale.x),
+            Quantization::Unquantize(y, params.origin.y, params.scale.y),
+            Quantization::Unquantize(z, params.origin.z, params.scale.z));
+        }
+
+    //! Decode this QPoint3d into an FPoint3d, with the center of the original range translated to (0,0,0).
+    FPoint3d UnquantizeAboutCenter(ParamsCR params) const
+        {
+        return FPoint3d::From(
+            Quantization::UnquantizeAboutCenter(x, params.origin.x, params.scale.x),
+            Quantization::UnquantizeAboutCenter(y, params.origin.y, params.scale.y),
+            Quantization::UnquantizeAboutCenter(z, params.origin.z, params.scale.z));
+        }
+
+    //! Decode this QPoint3d into a FPoint3d using the same params from which the QPoint3d was created.
+    FPoint3d Unquantize32(ParamsCR params) const
+        {
+        return FPoint3d::From(Unquantize(params));
+        }
+
+    bool operator==(QPoint3dCR rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
+    bool operator!=(QPoint3dCR rhs) const { return !(*this == rhs); }
+};
+
+//=======================================================================================
+//! Represents a DPoint2d quantized within some known range to a pair of 16-bit integers.
+//! This is a lossy compression technique.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct QPoint2d
+{
+    using T_Range = DRange2d;
+    using T_DPoint = DPoint2d;
+    using T_DVec = DVec2d;
+
+    uint16_t x, y;
+
+    //! Describes the range associated with a QPoint2d.
+    struct Params
+    {
+        DPoint2d    origin;
+        DPoint2d    scale;
+
+        Params() : Params(DRange2d::NullRange()) { }
+        explicit Params(DRange2dCR range) : origin(range.low)
+            {
+            DVec2d diagonal = range.IsNull() ? DVec2d::From(0, 0) : DVec2d::FromStartEnd(range.low, range.high);
+            scale.x = Quantization::ComputeScale(diagonal.x);
+            scale.y = Quantization::ComputeScale(diagonal.y);
+            }
+
+    DPoint2dCR GetOrigin() const { return origin; }
+    DPoint2dCR GetScale() const { return scale; }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+
+    QPoint2d() { }
+    QPoint2d(DPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
+    QPoint2d(DPoint2dCR pt, ParamsCR params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        }
+
+    //! Decode this QPoint2d into a DPoint2d using the same params from which the QPoint2d was created.
+    DPoint2d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+
+    //! Decode this QPoint2d into a DVec2d using the same params from which the QPoint2d was created.
+    DVec2d UnquantizeAsVector(ParamsCR params) const
+        {
+        return DVec2d::From(
+            Quantization::Unquantize(x, params.origin.x, params.scale.x),
+            Quantization::Unquantize(y, params.origin.y, params.scale.y));
+        }
+};
+
+typedef Quantization::QPointList<QPoint2d> QPoint2dList;
+typedef Quantization::QPointList<QPoint3d> QPoint3dList;
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint3dList)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint2dList)
+
 //=======================================================================================
 //! Information needed to draw a triangle mesh
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
 struct TriMeshArgs
 {
-    int32_t         m_numIndices = 0;
-    int32_t const*  m_vertIndex = nullptr;
-    int32_t         m_numPoints = 0;
-    FPoint3d const* m_points= nullptr;
-    FPoint3d const* m_normals= nullptr;
-    FPoint2d const* m_textureUV= nullptr;
-    uint8_t const*  m_edgeFlags = nullptr;
-    TexturePtr      m_texture;
-    int32_t         m_flags = 0; // don't generate normals
-    ColorIndex      m_colors;
-    FeatureIndex    m_features;
+    int32_t             m_numIndices = 0;
+    int32_t const*      m_vertIndex = nullptr;
+    int32_t             m_numPoints = 0;
+    QPoint3dCP          m_points= nullptr;
+    QPoint3dCP          m_normals= nullptr; // Quantized using QPoint3d::Params::FromNormalizedRange()
+    FPoint2d const*     m_textureUV= nullptr;
+    uint8_t const*      m_edgeFlags = nullptr;
+    TexturePtr          m_texture;
+    int32_t             m_flags = 0; // don't generate normals
+    ColorIndex          m_colors;
+    FeatureIndex        m_features;
+    QPoint3d::Params    m_pointParams;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
@@ -1638,24 +1886,20 @@ struct IndexedPolylineArgs
 
         Polyline() { }
         Polyline(uint32_t const* indices, uint32_t numIndices) : m_vertIndex(indices), m_numIndices(numIndices) { }
-
-        DGNPLATFORM_EXPORT void ToPoints(bvector<DPoint3d>& points, FPoint3d const* verts) const;
     };
 
-    FPoint3d const*     m_points = nullptr;
+    QPoint3dCP          m_points = nullptr;
     Polyline const*     m_lines = nullptr;
     uint32_t            m_numPoints = 0;
     uint32_t            m_numLines = 0;
     ColorIndex          m_colors;
     FeatureIndex        m_features;
+    QPoint3d::Params    m_pointParams;
     bool                m_disjoint = false;
 
     IndexedPolylineArgs() { }
-    IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)
-        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines) { }
-
-    void PolylineToPoints(bvector<DPoint3d>& points, Polyline const& polyline) const { polyline.ToPoints(points, m_points); }
-    bvector<DPoint3d> PolylineToPoints(Polyline const& polyline) const { bvector<DPoint3d> pts; PolylineToPoints(pts, polyline); return pts; }
+    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams)
+        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams) { }
 };
 
 //=======================================================================================
@@ -1686,8 +1930,8 @@ struct MeshEdges : RefCountedBase
 {
     bvector<MeshEdge>           m_visible;
     bvector<MeshEdge>           m_silhouette;
-    bvector<FPoint3d>           m_silhouetteNormals0;
-    bvector<FPoint3d>           m_silhouetteNormals1;
+    QPoint3dList                m_silhouetteNormals0 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
+    QPoint3dList                m_silhouetteNormals1 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
 
     MeshEdges() {}
     DGNPLATFORM_EXPORT MeshEdges(TriMeshArgsCR triMesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeCreationOptions);
@@ -1701,12 +1945,12 @@ struct MeshEdgeArgs
 {
     MeshEdgeCP                  m_edges;
     uint32_t                    m_numEdges;
-    FPoint3d const*             m_points = nullptr;
+    QPoint3dCP                  m_points = nullptr;
     FeatureIndex                m_features;
     ColorIndex                  m_colors;
+    QPoint3d::Params            m_pointParams;
 
-
-    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, FPoint3dCP points);
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
 
 }; 
 
@@ -1716,42 +1960,26 @@ struct MeshEdgeArgs
 struct SilhouetteEdgeArgs   : MeshEdgeArgs
 {
     // two normals per edge - define the triangle normals for silhouette calculation.
-    FPoint3d const*             m_normals0;
-    FPoint3d const*             m_normals1;
+    QPoint3dCP                  m_normals0;
+    QPoint3dCP                  m_normals1;
 
-    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, FPoint3dCP points);
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
 
 };  
-
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     01/2017
-//=======================================================================================
-struct QuantizedPoint
-{
-    uint16_t                    m_x;
-    uint16_t                    m_y;
-    uint16_t                    m_z;
-
-    QuantizedPoint() { };
-    DGNPLATFORM_EXPORT QuantizedPoint(DRange3dCR range, DPoint3dCR value);
-    DGNPLATFORM_EXPORT DPoint3d Unquantized(DRange3dCR range) const;
-    DGNPLATFORM_EXPORT FPoint3d UnquantizedAboutCenter(DRange3dCR range) const;
-};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct PointCloudArgs
 {
-    QuantizedPoint const*       m_points;
-    ByteCP                      m_colors;
-    DRange3d                    m_range;
-    int32_t                     m_numPoints;
+    QPoint3dCP          m_points;
+    ByteCP              m_colors;
+    QPoint3d::Params    m_qParams;
+    int32_t             m_numPoints;
 
-    PointCloudArgs() : PointCloudArgs(DRange3d::NullRange(), 0, nullptr, nullptr) { }
-    PointCloudArgs(DRange3dCR range, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)
-        : m_points(points), m_colors(colors), m_range(range), m_numPoints(numPoints) { }
+    PointCloudArgs() : PointCloudArgs(QPoint3d::Params(DRange3d::NullRange()), 0, nullptr, nullptr) { }
+    PointCloudArgs(QPoint3d::Params qParams, int32_t numPoints, QPoint3dCP points, ByteCP colors)
+        : m_points(points), m_colors(colors), m_qParams(qParams), m_numPoints(numPoints) { }
 };
 
 

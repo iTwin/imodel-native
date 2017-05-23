@@ -1090,11 +1090,13 @@ void Root::AddCachedGeometry(GeometryList&& geometry, DgnElementId elementId, do
     if (!WantCacheGeometry(rangeDiagSq))
         return;
 
-    for (auto& geom : geometry)
-        geom->SetInCache(true);
-
     BeMutexHolder lock(m_mutex);
-    m_geomLists.Insert(elementId, std::move(geometry));
+    auto pair = m_geomLists.Insert(elementId, std::move(geometry));
+    if (pair.second)
+        {
+        for (auto& geom : pair.first->second)
+            geom->SetInCache(true);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1268,18 +1270,18 @@ struct MeshGenerator
 private:
     typedef bmap<MeshMergeKey, MeshBuilderPtr> BuilderMap;
 
-    TileCR          m_tile;
-    GeometryOptions m_options;
-    double          m_tolerance;
-    double          m_vertexTolerance;
-    double          m_facetAreaTolerance;
-    BuilderMap      m_builderMap;
-    DRange3d        m_tileRange;
-    LoadContextCR   m_loadContext;
-    size_t          m_geometryCount = 0;
-    FeatureTable    m_featureTable;
-    DRange3d        m_contentRange = DRange3d::NullRange();
-    bool            m_maxGeometryCountExceeded = false;
+    TileCR              m_tile;
+    GeometryOptions     m_options;
+    double              m_tolerance;
+    double              m_vertexTolerance;
+    double              m_facetAreaTolerance;
+    BuilderMap          m_builderMap;
+    DRange3d            m_tileRange;
+    LoadContextCR       m_loadContext;
+    size_t              m_geometryCount = 0;
+    FeatureTable        m_featureTable;
+    DRange3d            m_contentRange = DRange3d::NullRange();
+    bool                m_maxGeometryCountExceeded = false;
 
     static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
@@ -1329,7 +1331,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
     if (m_builderMap.end() != found)
         return *found->second;
 
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -1508,12 +1510,21 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
             auto nextPt = points[i];
             bool contained = m_tileRange.IsContained(nextPt);
             State nextState = contained ? kInside : (kInside == prevState ? kCrossedOutside : kOutside);
+            if (kOutside == nextState && kOutside == prevState)
+                {
+                // The endpoints of a segment may lie outside of the range, but intersect it...
+                double unused1, unused2;
+                DSegment3d unused3;
+                DSegment3d segment = DSegment3d::From(prevPt, nextPt);
+                if (m_tileRange.IntersectBounded(unused1, unused2, unused3, segment))
+                    nextState = kCrossedOutside;
+                }
+
             if (kOutside != nextState)
                 {
                 if (kOutside == prevState)
                     {
                     // back inside - start a new line string...
-                    BeAssert(kInside == nextState);
                     output.m_strokes.resize(output.m_strokes.size()+1);
                     output.m_strokes.back().push_back(prevPt);
                     }
@@ -1589,8 +1600,14 @@ MeshList MeshGenerator::GetMeshes()
     {
     MeshList meshes;
     for (auto& builder : m_builderMap)
-        if (!builder.second->GetMesh()->IsEmpty())
-            meshes.push_back(builder.second->GetMesh());
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (!mesh->IsEmpty())
+            {
+            mesh->Close();
+            meshes.push_back(mesh);
+            }
+        }
 
     meshes.m_features = std::move(m_featureTable);
     return meshes;

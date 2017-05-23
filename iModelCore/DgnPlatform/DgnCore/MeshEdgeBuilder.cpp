@@ -22,7 +22,7 @@ private:
 
     struct  PointComparator 
         {
-        bool operator()(FPoint3d const& lhs, FPoint3d const& rhs) const
+        bool operator()(QPoint3dCR lhs, QPoint3dCR rhs) const
             {
             COMPARE_VALUES(lhs.x, rhs.x);
             COMPARE_VALUES(lhs.y, rhs.y);
@@ -30,14 +30,14 @@ private:
             }
         };
 
-    struct  PointMap : bmap<FPoint3d, uint32_t, PointComparator> 
+    struct  PointMap : bmap<QPoint3d, uint32_t, PointComparator> 
         {
         PointMap(DRange3dCR range) : m_range(range) { }
 
         uint32_t        m_next = 0;
         DRange3dCR      m_range;
 
-        uint32_t GetIndex(FPoint3d point)
+        uint32_t GetIndex(QPoint3d point)
             {
             auto insertPair = Insert(point, m_next);
             if (insertPair.second)
@@ -80,18 +80,18 @@ MeshEdgesBuilder (MeshCR mesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR o
     {
     PointMap                    pointMap(tileRange);
     TriangleList const&         triangles = mesh.Triangles();
-    bvector<FPoint3d> const&    points = mesh.Points();
+    QPoint3dListCR              points = mesh.Points();
     bool                        anyHidden = false;
 
     for (uint32_t triangleIndex = 0; triangleIndex < triangles.size(); triangleIndex++)
         {
-        auto const&   triangle = triangles.at(triangleIndex);
+        auto const&   triangle = triangles[triangleIndex];
         for (size_t j=0; j<3; j++)
             {
             MeshEdge        meshEdge(triangle.m_indices[j], triangle.m_indices[(j+1)%3]);
             EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleIndex, meshEdge);
-            MeshEdge        pointMapEdge(pointMap.GetIndex(points.at(meshEdge.m_indices[0])), 
-                                         pointMap.GetIndex(points.at(meshEdge.m_indices[1])));
+            MeshEdge        pointMapEdge(pointMap.GetIndex(points[meshEdge.m_indices[0]]), 
+                                         pointMap.GetIndex(points[meshEdge.m_indices[1]]));
             auto            insertPair = m_edgeMap.Insert(pointMapEdge, edgeInfo);
 
             if (!insertPair.second)
@@ -102,8 +102,9 @@ MeshEdgesBuilder (MeshCR mesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR o
 
         m_triangleNormals.push_back (FPoint3d::From(mesh.GetTriangleNormal(triangle)));
         }
+
     if (!anyHidden)
-        CalculateEdgeVisibility (&mesh.Points().front(), tileRange);
+        CalculateEdgeVisibility (&mesh.Points().front(), tileRange, mesh.Points().GetParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,15 +134,22 @@ MeshEdgesBuilder (TriMeshArgsCR args, DRange3dCR tileRange, MeshEdgeCreationOpti
                 insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
             }
 
-        m_triangleNormals.push_back (FPoint3d::From (DVec3d::FromNormalizedCrossProductToPoints(DPoint3d::From(args.m_points[triIndex[0]]), DPoint3d::From(args.m_points[triIndex[1]]), DPoint3d::From(args.m_points[triIndex[2]]))));
+        DPoint3d dpts[3] =
+            {
+            args.m_points[triIndex[0]].Unquantize(args.m_pointParams),
+            args.m_points[triIndex[1]].Unquantize(args.m_pointParams),
+            args.m_points[triIndex[2]].Unquantize(args.m_pointParams)
+            };
+
+        m_triangleNormals.push_back(FPoint3d::From(DVec3d::FromNormalizedCrossProductToPoints(dpts[0], dpts[1], dpts[2])));
         }
-    CalculateEdgeVisibility (args.m_points, tileRange);
+    CalculateEdgeVisibility (args.m_points, tileRange, args.m_pointParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CalculateEdgeVisibility(FPoint3d const* points, DRange3dCR tileRange)
+void CalculateEdgeVisibility(QPoint3dCP points, DRange3dCR tileRange, QPoint3d::ParamsCR qparams)
     {
     if (m_options.m_generateAllEdges)
         return;
@@ -151,20 +159,20 @@ void CalculateEdgeVisibility(FPoint3d const* points, DRange3dCR tileRange)
     // If there is no visibility indication in the mesh, infer from the mesh geometry.
     for (auto& edge : m_edgeMap)
         {
-        FPoint3d const&  point0  = points[edge.second.m_edge.m_indices[0]];
-        FPoint3d const&  point1  = points[edge.second.m_edge.m_indices[1]];
+        DPoint3d const&  point0  = points[edge.second.m_edge.m_indices[0]].Unquantize(qparams);
+        DPoint3d const&  point1  = points[edge.second.m_edge.m_indices[1]].Unquantize(qparams);
         static bool s_hideSheetEdges = true; // Possibly an option (for reality mesh tile edges??).
 
-        if (!tileRange.IsContained(DPoint3d::From(point0)) &&
-            !tileRange.IsContained(DPoint3d::From(point1)))
+        if (!tileRange.IsContained(point0) &&
+            !tileRange.IsContained(point1))
             {
             // An edge that is outside the tile should never be displayed. (avoid incorrect sheet edge detection on triangles overlapping tile boundary).
             edge.second.m_visible = false;
             }
         else if (2 == edge.second.m_faceCount)
             {
-            FPoint3d const&  normal0 = m_triangleNormals.at(edge.second.m_faceIndices[0]);
-            FPoint3d const&  normal1 = m_triangleNormals.at(edge.second.m_faceIndices[1]);
+            FPoint3d const&  normal0 = m_triangleNormals[edge.second.m_faceIndices[0]];
+            FPoint3d const&  normal1 = m_triangleNormals[edge.second.m_faceIndices[1]];
 
             if (fabs(DPoint3d::From(normal0).DotProduct(DPoint3d::From(normal1))) > minEdgeDot)
                 edge.second.m_visible = false;
@@ -192,15 +200,15 @@ void BuildEdges (MeshEdgesR edges) const
             {
             if (2 == edge.second.m_faceCount)
                 {
-                FPoint3d const&  normal0 = m_triangleNormals.at(edge.second.m_faceIndices[0]);
-                FPoint3d const&  normal1 = m_triangleNormals.at(edge.second.m_faceIndices[1]);
+                FPoint3d const&  normal0 = m_triangleNormals[edge.second.m_faceIndices[0]];
+                FPoint3d const&  normal1 = m_triangleNormals[edge.second.m_faceIndices[1]];
 
                 if (!DPoint3d::From(normal0).IsParallelTo(DPoint3d::From(normal1)))
                     {
                     // Potential silhouettes.
                     edges.m_silhouette.push_back(edge.second.m_edge);
-                    edges.m_silhouetteNormals0.push_back(normal0);
-                    edges.m_silhouetteNormals1.push_back(normal1);
+                    edges.m_silhouetteNormals0.Add(DPoint3d::From(normal0));
+                    edges.m_silhouetteNormals1.Add(DPoint3d::From(normal1));
                     }
                 }
             }
