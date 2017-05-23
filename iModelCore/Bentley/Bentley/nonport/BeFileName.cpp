@@ -31,10 +31,6 @@
     #include <utime.h>
     #include <dlfcn.h>
     #include <unistd.h>
-    #if defined (ANDROID)
-        #define S_IREAD S_IRUSR
-        #define S_IWRITE S_IWUSR
-    #endif
 #else
     #error unknown compiler
 #endif
@@ -1720,7 +1716,7 @@ bool BeFileName::IsFileReadOnly(WCharCP fileName)
     if (0 != stat(Utf8String(fileName).c_str(), &info))
         return false;
 
-    return (info.st_mode & S_IWRITE) == 0;
+    return (info.st_mode & S_IWUSR) == 0;
 
 #else
 #error unknown runtime
@@ -1767,12 +1763,17 @@ BeFileNameStatus BeFileName::SetFileReadOnly(WCharCP fileName, bool readOnly)
 
     mode_t mode = statbuf.st_mode;
 
-    if (readOnly)
-        mode &= ~S_IWRITE;
-    else
-        mode |=  S_IWRITE;
+    mode_t wmask = (S_IWUSR|S_IWGRP|S_IWOTH);
 
-    chmod(ufilename.c_str(), mode);
+    if (readOnly)
+        mode &= ~wmask;
+    else
+        mode |=  wmask;
+
+    if (0 != chmod(ufilename.c_str(), mode))
+        return BeFileNameStatus::UnknownError;
+
+    BeAssert(readOnly == IsFileReadOnly(fileName));
     return BeFileNameStatus::Success;
 
 #else
