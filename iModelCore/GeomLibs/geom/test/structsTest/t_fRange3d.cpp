@@ -6,7 +6,7 @@ TEST(FRange3d, RangeDistance)
     auto point0F = FPoint3d::From(3.0, 3.0, 8.0);
     auto point1F = FPoint3d::From(18.0, 13.0, 10.0);
     auto point0D = DPoint3d::From(point0F);
-    auto point1D = DPoint3d::From(point1F);
+    //auto point1D = DPoint3d::From(point1F);
 
    // Check::ExactRange(DRange3d::From(point0F), DRange3d::From(FRange3d::From(point0D)));    --error here
     Check::ExactRange(DRange3d::From(point0D), DRange3d::From(FRange3d::From(point0F)));
@@ -46,8 +46,8 @@ TEST(FRange3d, RangeDistance)
 
     auto point2F = FPoint3d::From(-3.0, -3.0, -8.0);
     auto point3F = FPoint3d::From(-18.0, -13.0, -10.0);
-    auto point2D = DPoint3d::From(point2F);
-    auto point3D = DPoint3d::From(point3F);
+    //auto point2D = DPoint3d::From(point2F);
+    //auto point3D = DPoint3d::From(point3F);
     auto range23F = FRange3d::From(point2F, point3F);
     auto range23D = DRange3d::From(range23F);
     Check::ExactDouble(range01D.DistanceSquaredTo(range23D), range01F.DistanceSquaredTo(range23F));
