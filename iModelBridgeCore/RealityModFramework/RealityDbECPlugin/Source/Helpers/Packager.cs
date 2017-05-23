@@ -748,7 +748,7 @@ namespace IndexECPlugin.Source.Helpers
                 SelectedStyle = requestedEntity.SelectedStyle,
                 SelectedFormat = requestedEntity.SelectedFormat,
                 Legal = (wmsServer.GetPropertyValue("Legal") == null || wmsServer.GetPropertyValue("Legal").IsNull) ? null : wmsServer.GetPropertyValue("Legal").StringValue,
-                Footprint = model.points
+                Footprint = model.Points
             };
 
             // Create WmsSource.
@@ -939,6 +939,7 @@ namespace IndexECPlugin.Source.Helpers
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(subAPIRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi&rds"));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>(IndexConstants.PRExtendedDataName, true));
 
             var queriedSpatialEntities = m_executeQuery(queryModule, connection, query, null);
 
@@ -1063,7 +1064,7 @@ namespace IndexECPlugin.Source.Helpers
             double minY = double.MaxValue;
             double maxY = double.MinValue;
 
-            foreach ( Double[] point in polyModel.points )
+            foreach ( Double[] point in polyModel.Points )
                 {
                 minX = Math.Min(minX, point[0]);
                 maxX = Math.Max(maxX, point[0]);
@@ -1243,7 +1244,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="connectionString">The connection string.</param>
         /// <param name="schema">The schema containing the stats ECClass</param>
         /// <returns></returns>
-            public static List<IECInstance> ExtractStats(ECQuery query, string connectionString, IECSchema schema)
+            public static List<IECInstance> ExtractStats(ECQuery query, string connectionString, IECSchema schema)  //TODO: add dependancy injection here
             {
                 List<IECInstance> StatsList = new List<IECInstance>();
 
@@ -1307,7 +1308,7 @@ namespace IndexECPlugin.Source.Helpers
                 {
                     throw new UserFriendlyException("Please specify both start and end times.");
                 }
-                using (DbConnection sqlConnection = new SqlConnection(connectionString))
+                using ( DbConnection sqlConnection = new SqlConnection(connectionString) )    //TODO: use injected dependancy here
                 {
                     sqlConnection.Open();
                     using (DbCommand dbCommand = sqlConnection.CreateCommand())

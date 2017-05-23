@@ -121,7 +121,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     throw new UserFriendlyException("The polygon format is not valid.");
                     }
 
-                string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
+                string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.Points);
 
                 m_polygonDescriptor = new PolygonDescriptor
                 {
@@ -183,7 +183,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     IECPropertyValue spatialProp = instance.First(propVal => propVal.Property.IsSpatial());
                     string jsonPoly = spatialProp.StringValue;
                     PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(jsonPoly);
-                    DbGeometry instGeom = DbGeometry.FromText(DbGeometryHelpers.CreateWktPolygonString(model.points), model.coordinate_system);
+                    DbGeometry instGeom = DbGeometry.FromText(DbGeometryHelpers.CreateWktPolygonString(model.Points), model.coordinate_system);
                     if ( !instGeom.Intersects(poly) )
                         {
                         instancesToRemove.Add(instance);

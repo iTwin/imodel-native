@@ -102,8 +102,14 @@
   <ItemGroup>
     <Compile Include="Common\SetupHelpers.cs" />
     <Compile Include="Tests\DataExtractorTests.cs" />
+    <Compile Include="Tests\Helpers\DbConnectionHelperTests.cs" />
+    <Compile Include="Tests\Helpers\DBGeometryHelpersTests.cs" />
+    <Compile Include="Tests\Helpers\DownloadReportHelperTests.cs" />
     <Compile Include="Tests\Helpers\ECQueryConverterTests.cs" />
     <Compile Include="Tests\Helpers\ECToSQLMapTests.cs" />
+    <Compile Include="Tests\Helpers\SourceStringMapTests.cs" />
+    <Compile Include="Tests\Helpers\TableAliasCreatorTests.cs" />
+    <Compile Include="Tests\Helpers\TableDescriptorTests.cs" />
     <Compile Include="Tests\IndexECPluginRDSTests.cs" />
     <Compile Include="Tests\IndexECPluginUSGSTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -114,13 +120,14 @@
     <Compile Include="Tests\Helpers\MimicTableWriterTests.cs" />
     <Compile Include="Tests\Helpers\PackagerTests.cs" />
     <Compile Include="Tests\Helpers\IDbQuerierTests.cs" />
+    <Compile Include="Tests\PolygonModelTests.cs" />
     <Compile Include="Tests\SqlQueryProviderTests.cs" />
     <Compile Include="Tests\SqlServerInsertStatementBuilderTests.cs" />
     <Compile Include="Tests\USGSDataExtractorsTests.cs" />
     <Compile Include="Tests\USGSDataFetcherTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SrcRoot)\RealityModFramework\RealityDbECPlugin\IndexECPlugin.csproj">
+    <ProjectReference Include="..\..\RealityDbECPlugin\IndexECPlugin.csproj">
       <Project>{7b23aea6-9095-44d4-828e-3da7bfec58d1}</Project>
       <Name>IndexECPlugin</Name>
     </ProjectReference>

@@ -422,7 +422,7 @@ namespace IndexECPlugin.Source.Helpers
             string polygonString = m_query.ExtendedData["polygon"].ToString();
             PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(polygonString);
 
-            string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
+            string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.Points);
 
             PolygonDescriptor polyDesc = new PolygonDescriptor
             {

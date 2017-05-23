@@ -102,13 +102,13 @@ class GeoCoordinationServiceRequestsFixture : public testing::Test
             if (classification > 0)
                 {
                 classificationString.append("Classification+in+[");
-                if (classification & Classification::Imagery)
+                if (classification & RealityDataBase::Classification::IMAGERY)
                     classificationString.append("'Imagery',");
-                if (classification & Classification::Terrain)
+                if (classification & RealityDataBase::Classification::TERRAIN)
                     classificationString.append("'Terrain',");
-                if (classification & Classification::Model)
+                if (classification & RealityDataBase::Classification::MODEL)
                     classificationString.append("'Model',");
-                if (classification & Classification::Pinned)
+                if (classification & RealityDataBase::Classification::PINNED)
                     classificationString.append("'Pinned',");
                 classificationString = classificationString.substr(0, classificationString.size() - 1); //remove comma
                 classificationString.append("]");
@@ -242,7 +242,7 @@ TEST_P(SpatialEntityWithDetailsSpatialRequestFixture, SpatialEntityWithDetailsSp
 
     requestUnderTest.SetFilter(::std::tr1::get<1>(GetParam()));
     Utf8String filterString("&$filter=");
-    
+
 
     requestUnderTest.SortBy(::std::tr1::get<2>(GetParam()), ::std::tr1::get<3>(GetParam()));
 
@@ -269,7 +269,7 @@ TEST_F(GeoCoordinationServiceRequestsFixture, SpatialEntityWithDetailsSpatialReq
     {
     auto requestUnderTest = SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d>());
 
-    //default page is 25
+    //default page is 25 and start at 0
     Utf8String subStringToVerify = Utf8PrintfString("&$skip=%u&$top=%u", 0, 25);
     EXPECT_THAT(requestUnderTest.GetHttpRequestString().c_str(), HasSubstr(subStringToVerify.c_str()));
 
@@ -313,7 +313,7 @@ TEST_F(GeoCoordinationServiceRequestsFixture, SpatialEntityWithDetailsByIdReques
     auto requestString = requestUnderTest.GetHttpRequestString();
 
     ////"example.com", "99", "Dummy-Server", "VirtualModeling");
-    EXPECT_STREQ(requestString.c_str(),"https://example.com/v99/Repositories/Dummy-Server/VirtualModeling/SpatialEntityWithDetailsView/MyIdentifier1" );
+    EXPECT_STREQ(requestString.c_str(), "https://example.com/v99/Repositories/Dummy-Server/VirtualModeling/SpatialEntityWithDetailsView/MyIdentifier1");
     }
 
 TEST_F(GeoCoordinationServiceRequestsFixture, SpatialEntityByIdRequestRequestPrepareRequest)
@@ -356,3 +356,72 @@ TEST_F(GeoCoordinationServiceRequestsFixture, SpatialEntityMetadataByIdRequestPr
     EXPECT_STREQ(requestString.c_str(), "https://example.com/v99/Repositories/Dummy-Server/VirtualModeling/Metadata/MyIdentifier1");
     }
 
+TEST_F(GeoCoordinationServiceRequestsFixture, PackagePreparationRequestPrepareRequest)
+    {
+    auto pointVector = bvector<GeoPoint2d>({{0,0}, {0,1}, {1,1}, {1,0}, {0,0}});
+    auto pointStringVector = bvector<Utf8String>({{"Id1"},{"Id2"}});
+    auto requestUnderTest = PackagePreparationRequest(pointVector, pointStringVector);
+
+    auto requestString = requestUnderTest.GetHttpRequestString();
+    auto requestPayload = requestUnderTest.GetRequestPayload();
+    auto requestHeaders = requestUnderTest.GetRequestHeaders();
+
+    ////"example.com", "99", "Dummy-Server", "VirtualModeling");
+    EXPECT_STREQ(requestString.c_str(), "https://example.com/v99/Repositories/Dummy-Server/VirtualModeling/PackageRequest/");
+    EXPECT_TRUE(requestHeaders.Contains("Content-Type: application/json"));
+
+    Utf8String expectedPayload = R"({"instance":{"instanceId":null,"className":"PackageRequest","schemaName":"RealityModeling","properties":{"RequestedEntities":[)";
+    expectedPayload.append(R"({ "Id":"Id1"},{ "Id":"Id2"})");
+    expectedPayload.append(R"(],"CoordinateSystem":null,"OSM": false,"Polygon":"[)");
+    expectedPayload.append(R"([0.000000,0.000000],[0.000000,1.000000],[1.000000,1.000000],[1.000000,0.000000],[0.000000,0.000000])");
+    expectedPayload.append(R"(]"}}, "requestOptions":{"CustomOptions":{"Version":"2", "Requestor":"GeoCoordinationService", "RequestorVersion":"1.0" }}})");
+
+    EXPECT_STREQ(requestPayload.c_str(), expectedPayload.c_str());
+    }
+
+TEST_F(GeoCoordinationServiceRequestsFixture, PreparedPackageRequestPrepareRequest)
+    {
+    auto requestUnderTest = PreparedPackageRequest("MyIdentifier1");
+
+    auto requestString = requestUnderTest.GetHttpRequestString();
+
+    ////"example.com", "99", "Dummy-Server", "VirtualModeling");
+    EXPECT_STREQ(requestString.c_str(), "https://example.com/v99/Repositories/Dummy-Server/VirtualModeling/PreparedPackage/MyIdentifier1/$file");
+
+    }
+
+TEST_F(GeoCoordinationServiceRequestsFixture, DownloadReportUploadRequestPrepareRequest)
+    {
+    auto requestUnderTest = DownloadReportUploadRequest("{82e6361d-23f3-4022-90c9-784cc47cb3d3}","MyIdentifier",BeFileName("myFile.txt"));
+
+    auto requestString = requestUnderTest.GetHttpRequestString();
+
+    ////"example.com", "99", "Dummy-Server", "VirtualModeling");
+    EXPECT_STREQ(requestString.c_str(), "https://example.com/v99/Repositories/Dummy-Server/VirtualModeling/DownloadReport/{82e6361d-23f3-4022-90c9-784cc47cb3d3}/$file");
+
+    auto requestHeaders = requestUnderTest.GetRequestHeaders();
+    EXPECT_TRUE(requestHeaders.Contains("Content-Disposition : attachment; filename=\"MyIdentifier\""));
+    }
+
+
+TEST_F(GeoCoordinationServiceRequestsFixture, GeoCoordinationServiceRequestGetter)
+    {
+    auto requestUnderTest = SpatialEntityWithDetailsByIdRequest("SuperUniqueID");
+
+    ////"example.com", "99", "Dummy-Server", "VirtualModeling");
+    EXPECT_STREQ(requestUnderTest.GetServerName().c_str(), "example.com");
+    EXPECT_STREQ(requestUnderTest.GetVersion().c_str(), "99");
+    EXPECT_STREQ(requestUnderTest.GetSchema().c_str(), "VirtualModeling");
+    EXPECT_STREQ(requestUnderTest.GetRepoId().c_str(), "Dummy-Server");
+    }
+
+TEST_F(GeoCoordinationServiceRequestsFixture, GeoCoordinationServicePagedRequestGetter)
+    {
+    auto requestUnderTest = SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d>());
+
+    ////"example.com", "99", "Dummy-Server", "VirtualModeling");
+    EXPECT_STREQ(requestUnderTest.GetServerName().c_str(), "example.com");
+    EXPECT_STREQ(requestUnderTest.GetVersion().c_str(), "99");
+    EXPECT_STREQ(requestUnderTest.GetSchema().c_str(), "VirtualModeling");
+    EXPECT_STREQ(requestUnderTest.GetRepoId().c_str(), "Dummy-Server");
+    }

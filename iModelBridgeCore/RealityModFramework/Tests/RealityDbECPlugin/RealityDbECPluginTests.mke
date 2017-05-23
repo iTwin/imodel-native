@@ -81,10 +81,14 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/DataExtractorTests.cs \
             $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
+            $(baseDir)Tests/PolygonModelTests.cs \
             $(baseDir)Tests/SqlQueryProviderTests.cs \
             $(baseDir)Tests/SqlServerInsertStatementBuilderTests.cs \
             $(baseDir)Tests/USGSDataExtractorsTests.cs\
             $(baseDir)Tests/USGSDataFetcherTests.cs \
+            $(baseDir)Tests/Helpers/DbConnectionHelperTests.cs \
+            $(baseDir)Tests/Helpers/DBGeometryHelpersTests.cs \
+            $(baseDir)Tests/Helpers/DownloadReportHelperTests.cs \
             $(baseDir)Tests/Helpers/ECQueryConverterTests.cs \
             $(baseDir)Tests/Helpers/ECToSQLMapTests.cs \
             $(baseDir)Tests/Helpers/IDbQuerierTests.cs \
@@ -93,7 +97,10 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/Helpers/InstanceOverriderTests.cs \
             $(baseDir)Tests/Helpers/MimicTableWriterTests.cs \
             $(baseDir)Tests/Helpers/MimicTableAccessorTests.cs \
-            $(baseDir)Tests/Helpers/PackagerTests.cs            
+            $(baseDir)Tests/Helpers/PackagerTests.cs \
+            $(baseDir)Tests/Helpers/SourceStringMapTests.cs \
+            $(baseDir)Tests/Helpers/TableAliasCreatorTests.cs \
+            $(baseDir)Tests/Helpers/TableDescriptorTests.cs
             
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx

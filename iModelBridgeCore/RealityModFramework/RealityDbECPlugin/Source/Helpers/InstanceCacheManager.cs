@@ -279,7 +279,7 @@ namespace IndexECPlugin.Source.Helpers
                 IECPropertyValue spatialProp = instance.First(propVal => propVal.Property.IsSpatial());
                 string jsonPoly = spatialProp.StringValue;
                 PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(jsonPoly);
-                DbGeometry instGeom = DbGeometry.FromText(DbGeometryHelpers.CreateWktPolygonString(model.points), model.coordinate_system);
+                DbGeometry instGeom = DbGeometry.FromText(DbGeometryHelpers.CreateWktPolygonString(model.Points), model.coordinate_system);
                 if(!instGeom.Intersects(poly))
                     {
                     instancesToRemove.Add(instance);

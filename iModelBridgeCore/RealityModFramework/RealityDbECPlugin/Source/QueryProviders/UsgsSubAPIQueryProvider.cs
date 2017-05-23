@@ -733,7 +733,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             //We fetch beforehand the instances in the cache.
             PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(polygon);
-            string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
+            string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.Points);
 
             PolygonDescriptor polyDesc = new PolygonDescriptor
             {
