@@ -182,6 +182,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServices(
+    "UsageLoggingServices.Url",
+    "https://dev-ulas-eus2-sfc01.bentley.com/",
+    "https://qa-ulas-eus2-sfc01.bentley.com/",
+    "https://ulas.bentley.com/",
+    &s_urlRegistry
+);
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "BeXMPP",
     "dev-xmppcollab-eus.cloudapp.net",
