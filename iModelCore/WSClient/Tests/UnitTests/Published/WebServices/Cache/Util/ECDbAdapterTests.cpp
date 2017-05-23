@@ -66,7 +66,9 @@ SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
 
     auto schema = ParseSchema(R"xml(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="TestClass" />
+            <ECClass typeName="TestClass" >
+                <ECNavigationProperty propertyName="Parent" relationshipName="EmbeddingRel" direction="Backward"/>
+            </ECClass>
             <ECClass typeName="TestClass2" />
             <ECClass typeName="TestClass3" />
             <ECRelationshipClass typeName="ReferencingRel" strength="referencing">
