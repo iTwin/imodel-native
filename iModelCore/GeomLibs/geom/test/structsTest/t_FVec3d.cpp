@@ -151,3 +151,42 @@ TEST(FVec3d, DotCrossProduct)
     Check::ExactDouble(vector01F.CrossProductXY(vector23F) , vector01D.CrossProductXY(vector23D));
     Check::Exact(DVec3d::From(FVec3d::FromCrossProduct(vector01F, vector23F)) , DVec3d::FromCrossProduct(vector01D, vector23D));
     }
+
+TEST(FVec3d, Angles)
+    {
+    auto point0F = FVec3d::From(2.0, 0, 0);
+    auto point1F = FVec3d::From(-2.0, 2.0, 0);
+    auto point0D = DVec3d::From(point0F);
+    auto point1D = DVec3d::From(point1F);
+    auto planeNormF = FVec3d::From(0, 0, 1);
+    auto planeNormD = DVec3d::From(planeNormF);
+    Check::ExactDouble(point0D.AngleTo(point1D), point0F.AngleTo(point1F).Radians());
+    Check::ExactDouble(point0D.AngleToXY(point1D), point0F.AngleToXY(point1F).Radians());
+    Check::ExactDouble(point0D.AngleFromPerpendicular(point1D),  point0F.AngleFromPerpendicular(point1F).Radians());
+    Check::ExactDouble(point0D.PlanarAngleTo(point1D, planeNormD), point0F.PlanarAngleTo(point1F, planeNormF).Radians());
+    Check::ExactDouble(point0D.SignedAngleTo(point1D, planeNormD), point0F.SignedAngleTo(point1F, planeNormF).Radians());
+    //change to orientation vector
+    Check::ExactDouble(point0D.SmallerUnorientedAngleTo(point1D), point0F.SmallerUnorientedAngleTo(point1F).Radians());
+    }
+
+TEST(FVec3d, Magnitude)
+    {
+    auto point0F = FVec3d::From(2.0, 3.0, -7.0);
+    auto point1F = FVec3d::From(-2.0, 2.0, 1.0);
+    auto point0D = DVec3d::From(point0F);
+    auto point1D = DVec3d::From(point1F);
+    Check::Exact(DVec3d::From(FVec3d::From(point0D)), point0D);
+    Check::Exact(DVec3d::From(FVec3d::FromOne()), DVec3d::FromOne());
+    Check::Exact(DVec3d::From(FVec3d::FromZero()), DVec3d::FromZero());
+    Check::Exact(DVec3d::From(FVec3d::FromXY(point0D)), DVec3d::From(point0D.x, point0D.y));
+    Check::Exact(DVec3d::From(FVec3d::FromXY(point0F)), DVec3d::From(point0D.x, point0D.y));
+
+    Check::ExactDouble(point0F.MaxAbs(), point0D.MaxAbs());
+    Check::ExactDouble(point0F.Magnitude(), point0D.Magnitude());
+    Check::ExactDouble(point0F.MagnitudeSquared(), point0D.MagnitudeSquared());
+    double tol = 0.001;
+    Check::True(Check::False(point0F.IsEqual(point1F)) == Check::False(point0D.IsEqual(point1D)));
+    auto tpointF = FVec3d::From(2.0, 3.1, -7.0);
+    auto tpointD = DVec3d::From(tpointF);
+    Check::True(Check::False(point0F.IsEqual(tpointF, tol)) == Check::False(point0D.IsEqual(tpointD,tol)));
+    }
