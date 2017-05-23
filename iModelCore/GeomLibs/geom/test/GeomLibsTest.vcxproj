@@ -209,6 +209,8 @@
     <ClCompile Include="structsTest\t_DVec2d.cpp" />
     <ClCompile Include="structsTest\t_dvec3d.cpp" />
     <ClCompile Include="structsTest\t_FPoint3d.cpp" />
+    <ClCompile Include="structsTest\t_fRange3d.cpp" />
+    <ClCompile Include="structsTest\t_FVec3d.cpp" />
     <ClCompile Include="structsTest\t_irishPolygons.cpp" />
     <ClCompile Include="structsTest\t_operators.cpp" />
     <ClCompile Include="structsTest\t_Polynomial.cpp" />

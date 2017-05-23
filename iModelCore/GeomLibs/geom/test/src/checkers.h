@@ -269,6 +269,8 @@ static bool NearZero (double a, char const*pName = NULL, double refValue = 0.0);
 static bool ExactDouble (double a, double b, char const*pName = nullptr);
 //! Test if {a} is exactly equal to be in all components xyz
 static bool Exact (DPoint3dCR a, DPoint3dCR b, char const*pString = nullptr);
+//! Test if {a} is exactly equal to be in all components xyz
+static bool ExactRange (DRange3dCR a, DRange3dCR b, char const*pString = nullptr);
 
 //! Test if {a} is near b.
 static bool Near (double a, double b, char const*pName = NULL, double refValue = 0.0);

@@ -266,7 +266,7 @@ double FRange3d::Volume () const
         return false;
     return DiagonalVector().MagnitudeSquared ();
     }
-double FRange3d::AreAllSidesLongerThan (double a)
+bool FRange3d::AreAllSidesLongerThan (double a)
     {
     if (IsNull())
         return false;

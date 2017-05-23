@@ -344,5 +344,11 @@
     <ClCompile Include="structsTest\t_FPoint3d.cpp">
       <Filter>Source Files\StructsTest</Filter>
     </ClCompile>
+    <ClCompile Include="structsTest\t_FVec3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_fRange3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -359,6 +359,11 @@ bool Check::Exact (DPoint3dCR a, DPoint3dCR b, char const*pString)
     return false;
     }
 
+bool Check::ExactRange (DRange3dCR a, DRange3dCR b, char const*pString)
+    {
+    return Check::Exact(a.low, b.low, pString) &&
+           Check::Exact(a.high, b.high, pString);
+    }
 
 bool Check::Near (double a, double b, char const*pString, double refValue)
     {

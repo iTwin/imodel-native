@@ -125,7 +125,7 @@ public:
 
 
     bool IsSinglePoint () const;
-    double AreAllSidesLongerThan (double a);
+    bool AreAllSidesLongerThan (double a);
     bool IntersectsWith (FRange3dCR other, bool trueForExactTouch) const;
     //! test if a is a small distance relative to the size of this range.
     //! For null range, alwyas return the second arg.
