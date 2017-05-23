@@ -11,7 +11,6 @@
 #include <ostream>
 #include <Bentley/BeTextFile.h>
 #include <Bentley/BeFileName.h>
-#include <Bentley/Desktop/FileSystem.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -279,13 +278,15 @@ TEST_F(GeoCoordinationServiceRequestFixture, DownloadRequestFileNotfoundCallback
     GeoCoordinationService::Request(request, rawResponse);
 }
 
+#if 0  //Remi
 //=====================================================================================
 //! @bsimethod                                 Remi.Charbonneau              05/2017
 //=====================================================================================
 TEST_F(GeoCoordinationServiceRequestFixture, DownloadReportBadRequest)
 {
     BeFileName filename;
-    Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix");
+    BeFileName::BeGetTempPath(filename);
+//Remi    Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix");
     auto request = DownloadReportUploadRequest("randomguid", "myidentifier", filename);
 
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error Uploading DownloadReport"), _));
@@ -328,7 +329,9 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestBad)
     }));
 
     BeFileName filename;
-    if (Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix") == BeFileNameStatus::Success)
+    BeFileName::BeGetTempPath(filename);
+    //Remi if (Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix") == BeFileNameStatus::Success)
+    if(1)
         {
 
         auto request = PreparedPackageRequest("myidentifier");
@@ -360,7 +363,9 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestGood)
     }));
 
     BeFileName filename;
-    if (Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix") == BeFileNameStatus::Success)
+    BeFileName::BeGetTempPath(filename);
+//Remi    if (Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix") == BeFileNameStatus::Success)
+    if (1)
         {
 
         auto request = PreparedPackageRequest("myidentifier");
@@ -377,6 +382,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestGood)
         BeAssert("Can't create temp file");
         }
 }
+#endif
 
 //=====================================================================================
 //! @bsimethod                                 Remi.Charbonneau              05/2017
