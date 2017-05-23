@@ -1648,6 +1648,7 @@ namespace Quantization
         typedef typename T::T_Range Range;
         typedef typename T::T_DPoint DPoint;
         typedef typename T::T_DVec DVec;
+        typedef typename T::T_FPoint FPoint;
 
         //! Construct an empty list to be quantized by the specified params
         explicit QPointList(Params const& params) : m_params(params) { }
@@ -1658,9 +1659,23 @@ namespace Quantization
         QPointList(QPointList const& src) : bvector<T>(src), m_params(src.m_params) { }
         //! Move-construct a copy of another list
         QPointList(QPointList&& src) : bvector<T>(std::move(src)), m_params(src.m_params) { }
+        //! Populate a list of points quantized to the range of the input points
+        template<typename T_UnquantizedPoint> QPointList(T_UnquantizedPoint const* pts, size_t nPts) { InitFrom(pts, nPts); }
 
         QPointList& operator=(QPointList const& src) { Assign(src.data(), src.size(), src.m_params); return *this; }
         QPointList& operator=(QPointList&& src) { this->swap(src); m_params = src.m_params; return *this; }
+
+        //! Reset this list's parameters to the range of the input points, and replace its contents with the input points quantized to that range.
+        template<typename T_UnquantizedPoint> void InitFrom(T_UnquantizedPoint const* pts, size_t nPts)
+            {
+            Range range = Range::NullRange();
+            for (size_t i = 0; i < nPts; i++)
+                range.Extend(ToDPoint(pts[i]));
+
+            Reset(Params(range));
+            for (size_t i = 0; i < nPts; i++)
+                Add(pts[i]);
+            }
 
         //! Replace the contents of this list with the specified points, quantized to the specified params
         void Assign(QPoint3dCP points, size_t nPoints, Params const& params)
@@ -1680,10 +1695,14 @@ namespace Quantization
 
         //! Quantize the specified point and add it to this list
         void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
+        //! Quantize the specified point and add it to this list
+        void Add(FPoint const& fpt) { Add(ToDPoint(fpt)); }
         //! Return the unquantized point at the specified index.
         DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
         //! Return the point at the specified index, unquantized as a vector type.
         DVec UnquantizeAsVector(size_t index) const { BeAssert(index < size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
+        //! Return the point at the specified index
+        FPoint Unquantize32(size_t index) const { return ToFPoint(Unquantize(index)); }
 
         //! Requantize all the points in this list to the new parameters, and update the list's parameters.
         void Requantize(Params const& params)
@@ -1698,6 +1717,12 @@ namespace Quantization
             }
     private:
         Params  m_params;
+
+        // Because FPoint2d/3d and DPoint2d/3d interfaces have annoying differences which prevent us from writing generic code against them...
+        static FPoint ToFPoint(DPoint const& dpt) { return T::ToFPoint(dpt); }
+        static DPoint ToDPoint(FPoint const& fpt) { return T::ToDPoint(fpt); }
+        static FPoint ToFPoint(FPoint const& fpt) { return fpt; }
+        static DPoint ToDPoint(DPoint const& dpt) { return dpt; }
     };
 }
 
@@ -1712,6 +1737,10 @@ struct QPoint3d
     using T_Range = DRange3d;
     using T_DPoint = DPoint3d;
     using T_DVec = DVec3d;
+    using T_FPoint = FPoint3d;
+
+    static FPoint3d ToFPoint(DPoint3dCR dpt) { return FPoint3d::From(dpt); }
+    static DPoint3d ToDPoint(FPoint3dCR fpt) { return DPoint3d::From(fpt); }
 
     uint16_t x, y, z;
 
@@ -1752,12 +1781,7 @@ struct QPoint3d
         z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
         }
     QPoint3d(FPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
-    QPoint3d(FPoint3dCR pt, ParamsCR params)
-        {
-        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
-        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
-        z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
-        }
+    QPoint3d(FPoint3dCR pt, ParamsCR params) : QPoint3d(ToDPoint(pt), params) {} 
 
     //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
     DPoint3d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
@@ -1783,7 +1807,7 @@ struct QPoint3d
     //! Decode this QPoint3d into a FPoint3d using the same params from which the QPoint3d was created.
     FPoint3d Unquantize32(ParamsCR params) const
         {
-        return FPoint3d::From(Unquantize(params));
+        return ToFPoint(Unquantize(params));
         }
 
     bool operator==(QPoint3dCR rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
@@ -1800,6 +1824,10 @@ struct QPoint2d
     using T_Range = DRange2d;
     using T_DPoint = DPoint2d;
     using T_DVec = DVec2d;
+    using T_FPoint = FPoint2d;
+
+    static FPoint2d ToFPoint(DPoint2dCR dpt) { FPoint2d fpt; fpt.x = static_cast<float>(dpt.x); fpt.y = static_cast<float>(dpt.y); return fpt; }
+    static DPoint2d ToDPoint(FPoint2dCR fpt) { return DPoint2d::From(fpt.x, fpt.y); }
 
     uint16_t x, y;
 
@@ -1825,6 +1853,8 @@ struct QPoint2d
 
     QPoint2d() { }
     QPoint2d(DPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
+    QPoint2d(FPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
+    QPoint2d(FPoint2dCR pt, ParamsCR params) : QPoint2d(ToDPoint(pt), params) { }
     QPoint2d(DPoint2dCR pt, ParamsCR params)
         {
         x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
@@ -1833,6 +1863,12 @@ struct QPoint2d
 
     //! Decode this QPoint2d into a DPoint2d using the same params from which the QPoint2d was created.
     DPoint2d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+
+    //! Decode this QPoint2d into a FPoint2d using the same params from which the QPoint2d was created.
+    FPoint2d Unquantize32(ParamsCR params) const
+        {
+        return ToFPoint(Unquantize(params));
+        }
 
     //! Decode this QPoint2d into a DVec2d using the same params from which the QPoint2d was created.
     DVec2d UnquantizeAsVector(ParamsCR params) const
