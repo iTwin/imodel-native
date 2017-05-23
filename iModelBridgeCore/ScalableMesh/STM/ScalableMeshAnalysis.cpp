@@ -264,7 +264,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     return DTMStatusInt::DTM_SUCCESS;
     }
 
-DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr diffMesh, double resolution, ISMGridVolume& grid)
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* diffMesh, double resolution, ISMGridVolume& grid)
     {
     if (polygon.size() < 3)
         return DTMStatusInt::DTM_ERROR; // invalid region
@@ -274,9 +274,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     DRange3d rangeMesh; // extend of the scalable mesh
     m_scmPtr->GetRange(rangeMesh);
 
-    IScalableMeshPtr diffMesh2;
     DRange3d rangeMesh2; // extend of the second scalable mesh
-    diffMesh2->GetRange(rangeMesh2);
+    diffMesh->GetRange(rangeMesh2);
 
     DRange3d rangeInter;
     rangeInter.IntersectionOf(rangeMesh, rangeMesh2);
@@ -309,7 +308,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     PolyfaceHeaderPtr polyface = polyfaceBuilder->GetClientMeshPtr();
 
     auto draping1 = m_scmPtr->GetDTMInterface()->GetDTMDraping();
-    auto draping2 = diffMesh2->GetDTMInterface()->GetDTMDraping();
+    auto draping2 = diffMesh->GetDTMInterface()->GetDTMDraping();
 
     bool *intersected = new bool[m_xSize*m_ySize];
     SMVolumeSegment *Segments = grid.m_VolSegments;

@@ -80,7 +80,7 @@ class IScalableMeshAnalysis abstract : public RefCountedBase
     {
     protected:
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid) = 0;
-        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr anotherMesh, double resolution, ISMGridVolume& grid) = 0;
+        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid) = 0;
 
     public:
         // Compute Volume between the 3SM and a given polygon
@@ -90,7 +90,7 @@ class IScalableMeshAnalysis abstract : public RefCountedBase
 
         // Compute Volume difference with another 3SM in a polygon restriction
         // returns different values (fill, cut, per grid node values) in the ISMGridVolume object
-        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMeshNodePtr anotherMesh, double resolution, ISMGridVolume& grid) {
+        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid) {
             return _ComputeDiscreteVolume(polygon, anotherMesh, resolution, grid);
             }
     };
