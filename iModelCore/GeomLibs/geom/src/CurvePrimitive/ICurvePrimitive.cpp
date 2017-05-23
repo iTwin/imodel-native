@@ -399,7 +399,7 @@ CurveLocationDetailR location
             if (!allowExtension && (location.fraction > 1.0 || location.fraction < 0.0))
                 {
                 // Force it fraction and distance back to the endpoint.
-                if (signedDistance >= 0.0)
+                if (location.fraction >= 0.5)
                     location.fraction = location.componentFraction = 1.0;
                 else
                     location.fraction = location.componentFraction = 0.0;

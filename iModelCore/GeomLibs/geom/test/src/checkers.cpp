@@ -181,7 +181,7 @@ static void DoAssert (bool b, char const*pString)
     {
     if (b)
         return;
-    Check::PrintScope ();
+    Check::PrintScope (0);
     Check::Fail (pString);
     }
 
@@ -189,7 +189,7 @@ static void DoAssert (int a, int b, char const*pString)
     {
     if (a == b)
         return;
-    Check::PrintScope ();
+    Check::PrintScope (0);
     Check::Fail (pString);
     }
 
@@ -197,7 +197,7 @@ static void DoAssertP (ptrdiff_t a, ptrdiff_t b, char const*pString)
     {
     if (a == b)
         return;
-    Check::PrintScope ();
+    Check::PrintScope (0);
     Check::Fail (pString);
     }
 
@@ -205,7 +205,7 @@ static void DoAssert (size_t a, size_t b, char const*pString)
     {
     if (a == b)
         return;
-    Check::PrintScope ();
+    Check::PrintScope (0);
     Check::Fail (pString);
     }
 
@@ -214,7 +214,7 @@ static void AssertNear (double a, double b, double tol, char const*pString)
     double d = fabs (a-b);
     if (d <= tol)
         return;
-    Check::PrintScope();
+    Check::PrintScope(0);
     Check::Fail (pString);
     }
 
@@ -224,7 +224,7 @@ bool Check::LessThanOrEqual (double a, double b, char const*pString)
         return true;
     char message[2048];
     sprintf (message, "(fail %.17g <= %.17g) %s\n", a, b, pString ? pString : "");
-    Check::PrintScope ();
+    Check::PrintScope (0);
     Check::Fail (message);
     return false;
     }
@@ -338,7 +338,7 @@ bool Check::ExactDouble (double a, double b, char const*pString)
     if (a == b)
         return true;
 
-    PrintScope ();
+    PrintScope (0);
     PrintIndent (2);Print (a, "a");
     PrintIndent (2);Print (b, "b");
 
@@ -351,7 +351,7 @@ bool Check::Exact (DPoint3dCR a, DPoint3dCR b, char const*pString)
     if (a.IsEqual (b))
         return true;
 
-    PrintScope ();
+    PrintScope (0);
     PrintIndent (2);Print (a, "a");
     PrintIndent (2);Print (b, "b");
 
@@ -372,7 +372,7 @@ bool Check::Near (double a, double b, char const*pString, double refValue)
     if (d <= tol)
         return true;
 
-    PrintScope ();
+    PrintScope (0);
     PrintIndent (2);Print (a, "a");
     PrintIndent (2);Print (b, "b");
 
@@ -453,7 +453,7 @@ bool Check::Near (DPoint3dCR a, DPoint3dCR b, char const*pString, double refValu
     double d = a.Distance (b);
     if (d <= tol)
         return true;
-    Check::PrintScope ();
+    Check::PrintScope (0);
     char message[1024];
     sprintf (message, "%s Point distance (%.16g,%.16g,%.16g)(%.16g,%.16g,%.16g)",
                     pString,
@@ -586,7 +586,7 @@ bool Check::Near (DPoint4dCR a, DPoint4dCR b, char const*pString, double refValu
         {
         PrintIndent (2);Print (a, "a");
         PrintIndent (2);Print (b, "b");
-        PrintScope ();
+        PrintScope (0);
         Fail (pString);
         return false;
         }

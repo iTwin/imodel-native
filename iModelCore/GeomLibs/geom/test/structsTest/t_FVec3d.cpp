@@ -130,6 +130,7 @@ TEST(FVec3d,ParallelAndPositiveParallel)
 
 TEST(FVec3d, DotCrossProduct) 
     {
+    double refValueShift = 1.0e6;   // to force loose tolerances.
     auto point0F = FPoint3d::From (2.0,3.0,5.0);
     auto point1F = FPoint3d::From (11.0,13.0,17.0);
     auto point2F = FPoint3d::From (5.0,6.0,-1.0);
@@ -144,8 +145,8 @@ TEST(FVec3d, DotCrossProduct)
     auto vector23D = point3D - point2D;
     Check::Exact(DVec3d::From(FVec3d::FromStartEnd(point0D, point1D)) , DVec3d::FromStartEnd(point0D, point1D));
     Check::Exact(DVec3d::From(FVec3d::FromStartEnd(point0F, point1F)) , DVec3d::FromStartEnd(point0D, point1D));
-    Check::Exact(DVec3d::From(FVec3d::FromStartEndNormalized(point0D, point1D)) , DVec3d::FromStartEndNormalize(point0D, point1D));
-    Check::Exact(DVec3d::From(FVec3d::FromStartEndNormalized(point0F, point1F)) , DVec3d::FromStartEndNormalize(point0D, point1D));
+    Check::Near (DVec3d::From(FVec3d::FromStartEndNormalized(point0D, point1D)) , DVec3d::FromStartEndNormalize(point0D, point1D), "Normalize", refValueShift);
+    Check::Near (DVec3d::From(FVec3d::FromStartEndNormalized(point0F, point1F)) , DVec3d::FromStartEndNormalize(point0D, point1D), "Normalize", refValueShift);
     Check::ExactDouble(vector01F.DotProduct(vector23F) , vector01D.DotProduct(vector23D));
     Check::ExactDouble(vector01F.DotProductXY(vector23F) , vector01D.DotProductXY(vector23D));
     Check::ExactDouble(vector01F.CrossProductXY(vector23F) , vector01D.CrossProductXY(vector23D));
