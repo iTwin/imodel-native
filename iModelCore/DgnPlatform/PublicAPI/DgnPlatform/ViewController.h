@@ -546,7 +546,6 @@ protected:
     DGNPLATFORM_EXPORT void _PickTerrain(PickContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
-    DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
@@ -632,7 +631,6 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
-    DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnable) override;
 
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 

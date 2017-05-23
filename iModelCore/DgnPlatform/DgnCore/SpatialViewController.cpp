@@ -323,14 +323,6 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_OnCategoryChange(bool singleEnabled)
-    {
-    T_Super::_OnCategoryChange(singleEnabled);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SpatialViewController::ElementsQuery::TestElement(DgnElementId elId)

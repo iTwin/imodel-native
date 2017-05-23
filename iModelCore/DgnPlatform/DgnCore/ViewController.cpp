@@ -920,15 +920,6 @@ BentleyStatus ViewController2d::_CreateScene(RenderContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController2d::_OnCategoryChange(bool singleEnable)
-    {
-    // Category stuff is baked into the tiles (for now) - throw them away
-    m_root = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController2d::_DrawView(ViewContextR context)
