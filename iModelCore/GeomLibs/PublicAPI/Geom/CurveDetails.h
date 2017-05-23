@@ -883,6 +883,18 @@ GEOMDLLIMPEXP void AnnouncePoint (CurveLocationDetailCR worldDetail, KeyPointTyp
 //! Access the saved detail
 GEOMDLLIMPEXP bool GetResult (CurveLocationDetailR detail, KeyPointType &selector) const;
 };
+
+struct ConstructionHint
+{
+enum class Type
+    {
+    ThroughPoint,
+    Perpendicular,
+    Tangent
+    };
+Type m_type;
+CurveLocationDetail m_location;
+};
 #endif
 
 END_BENTLEY_GEOMETRY_NAMESPACE

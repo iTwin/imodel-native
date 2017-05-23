@@ -193,7 +193,7 @@ static void StartScope (char const *name, RotMatrixCR value);
 static void StartScope (char const *name, DPlane3dCR value);
 static void EndScope ();
 // (Small volume is always printed)
-static void PrintScope (int volume = -1);
+static void PrintScope ();
 static void PrintIndent (size_t depth);
 static void Print (char const *message);
 // print as heading for new section
