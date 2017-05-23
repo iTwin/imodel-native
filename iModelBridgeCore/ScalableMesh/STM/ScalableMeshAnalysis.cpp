@@ -45,6 +45,8 @@ void ScalableMeshAnalysis::_CreateFillVolumeRanges(SMVolumeSegment& segment, bve
     DPoint3d start; start.Zero();
     for (auto ipoint : _IPoints)
         {
+        if (ipoint.rayFraction < 0)
+            continue; // skip intersection behind ray direction
         if (ipoint.point.z < median.z) // consider only upper points
             continue;
         bool isExterior = direction.DotProduct(ipoint.normal) < 0;
@@ -73,6 +75,8 @@ void ScalableMeshAnalysis::_CreateCutVolumeRanges(SMVolumeSegment& segment, bvec
     DPoint3d start; start.Zero();
     for (auto ipoint : _IPoints)
         {
+        if (ipoint.rayFraction < 0)
+            continue; // skip intersection behind ray direction
         if (ipoint.point.z > median.z) // consider only upper points
             break;
         bool isExterior = direction.DotProduct(ipoint.normal) > 0;
@@ -101,10 +105,11 @@ bool ISMGridVolume::InitFrom(double _resolution, const DRange3d& _rangeMesh, con
         return DTMStatusInt::DTM_ERROR; // cannot compute volume, no intersection
 
     m_resolution = _resolution;
-    int gridSize = m_range.DiagonalDistanceXY() / m_resolution;
+    double maxLength = std::max(m_range.XLength(), m_range.YLength());
+    int gridSize = maxLength / m_resolution;
     if (gridSize > m_gridSizeLimit)
         {
-        m_resolution = m_range.DiagonalDistanceXY() / m_gridSizeLimit; // we limit the resolution
+        m_resolution = maxLength / m_gridSizeLimit; // we limit the resolution
         }
 
     // split the range in regular grid xy
