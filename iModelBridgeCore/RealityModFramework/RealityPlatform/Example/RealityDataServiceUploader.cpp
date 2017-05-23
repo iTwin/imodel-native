@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/Bentley.h>
-#include <Bentley/Desktop/FileSystem.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/RealityDataService.h>
@@ -79,10 +78,7 @@ int main(int argc, char *argv[])
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
     BeFileName TempPath;
-    Desktop::FileSystem::BeGetTempPath(TempPath);
-    /*BeSQLite::BeSQLiteLib::Initialize(TempPath);
-    BeSQLite::BeGuid guid(true);
-    Utf8String Id = guid.ToString();*/
+    BeFileName::BeGetTempPath(TempPath);
 
     RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, ""/*Id.ToLower()*/, propertyString, false, true, statusFunc);
     if (upload->IsValidTransfer())
