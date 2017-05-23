@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewController.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1078,6 +1078,13 @@ bool SpatialViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
 
 
 //---------------------------------------------------------------------------------------
+//  In UI thread something called alignWithGyroscope passing true for resetDeviceOrientation,
+//  so it sent a reset request to the workthread. 
+//
+//  This happens every time gyroscope mode is reenabled.  It tells OnOrientationEvent
+//  to record the next orientation event as a baseline for interpreting subsequent events
+//  in RelativeHeading mode.
+//  
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
 void ViewController::ResetDeviceOrientation()
@@ -1115,7 +1122,9 @@ bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode
 
 //---------------------------------------------------------------------------------------
 // Gyro vector convention:
-// gyrospace X,Y,Z are (respectively) DOWN, RIGHT, and TOWARDS THE EYE.
+// gyrospace X,Y,Z are (respectively) DOWN, RIGHT, and TOWARDS THE EYE (when the tablet is in
+// landscape mode with the home button to the left).  Y is always from home to the opposite end
+// of the tablet.  Z is always towards the eye.
 // (gyrospace vectors are in the absolute system of the device.  But it is not important what that is -- 
 // just so they are to the same space and their row versus column usage is clarified by the gyroByRow parameter.
 // @bsimethod                                                   Earlin.Lutz     12/2015
