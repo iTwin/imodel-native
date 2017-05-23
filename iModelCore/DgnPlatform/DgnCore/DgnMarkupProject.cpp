@@ -164,7 +164,7 @@ static void createImageCategory(DefinitionModelR model)
 //---------------------------------------------------------------------------------------
 static void createRedlineCodeSpec(DgnDbR db)
     {
-    CodeSpecPtr codeSpec = CodeSpec::Create(db, MARKUP_AUTHORITY_Redline);
+    CodeSpecPtr codeSpec = CodeSpec::Create(db, MARKUP_AUTHORITY_Redline, CodeScopeSpec::CreateModelScope());
     if (codeSpec.IsValid())
         codeSpec->Insert();
     }
@@ -176,13 +176,6 @@ void MarkupDomain::_OnSchemaImported(DgnDbR db) const
     {
     createImageCategory(db.GetDictionaryModel());
     createRedlineCodeSpec(db);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MarkupDomain::_OnDgnDbOpened(DgnDbR db) const
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -540,7 +533,12 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Step();
         }
 
-    if (BE_SQLITE_OK != MarkupDomain::GetDomain().ImportSchema(*this))
+    // Flush transaction table to be able to import markup schema
+    SaveChanges();
+    Revisions().StartCreateRevision();
+    Revisions().FinishCreateRevision();
+
+    if (SchemaStatus::Success != MarkupDomain::GetDomain().ImportSchema(*this))
         return BE_SQLITE_ERROR;
 
     SaveSettings();
@@ -909,9 +907,10 @@ ViewControllerPtr RedlineViewDefinition::_SupplyController() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR model, DgnCodeCR code)
+RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR model, Utf8StringCR name)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, outCreateStatus);
+    DgnCode code = CreateCode(model, name);
     if (!code.IsValid())
         {
         BeAssert(false && "A code is required");

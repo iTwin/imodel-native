@@ -582,6 +582,7 @@ public:
         RepositoryAdmin*        m_repositoryAdmin;
         CodeAdmin*              m_codeAdmin;
         Utf8String              m_productName;
+        DevelopmentPhase        m_developmentPhase;
         T_RegisteredDomains     m_registeredDomains;
 
     public:
@@ -632,10 +633,13 @@ public:
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
+        //! Supply the development phase of the host application
+        DGNPLATFORM_EXPORT virtual DevelopmentPhase  _SupplyDevelopmentPhase();
+
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
         virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
-
+  
         Host()
             {
             m_sessionSettingsAdmin = nullptr;
@@ -672,6 +676,7 @@ public:
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
         CodeAdmin&              GetCodeAdmin()             {return *m_codeAdmin;} 
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
+        DevelopmentPhase        GetDevelopmentPhase()      {return m_developmentPhase;}
 
         DgnProgressMeterP GetProgressMeter() {return m_progressMeter;}
         void SetProgressMeter(DgnProgressMeterP meter) {m_progressMeter=meter;}

@@ -47,9 +47,10 @@ protected:
     void RestoreTestFile();
 
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
+    void MergeSchemaRevision(DgnRevisionCR revision);
 
-    static Utf8String CodeToString(DgnCode const& code) { return Utf8PrintfString("%s:%s\n", code.GetScope().c_str(), code.GetValueCP()); }
-    static void ExpectCode(DgnCode const& code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
+    static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%" PRIu64 ":%s\n", code.GetScopeElementId().GetValue(), code.GetValueCP()); }
+    static void ExpectCode(DgnCodeCR code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
     static void ExpectCodes(DgnCodeSet const& exp, DgnCodeSet const& actual)
         {
         EXPECT_EQ(exp.size(), actual.size());
@@ -57,7 +58,7 @@ protected:
             ExpectCode(code, actual);
         }
 
-    static void DumpCode(DgnCode const& code) { printf("    %s\n", CodeToString(code).c_str()); }
+    static void DumpCode(DgnCodeCR code) { printf("    %s\n", CodeToString(code).c_str()); }
     static void DumpCodes(DgnCodeSet const& codes, Utf8StringCR msg="Codes:")
         {
 #ifdef DUMP_CODES
@@ -210,6 +211,26 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
         }
 
     return revision;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2017
+//---------------------------------------------------------------------------------------
+void RevisionTestFixture::MergeSchemaRevision(DgnRevisionCR revision)
+    {
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
+    CloseDgnDb();
+    
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revision));
+    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    m_defaultCodeSpec = m_db->CodeSpecs().GetCodeSpec(m_defaultCodeSpecId);
+    ASSERT_TRUE(m_defaultCodeSpec.IsValid());
+
+    m_defaultModel = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+    ASSERT_TRUE(m_defaultModel.IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -462,8 +483,8 @@ TEST_F(RevisionTestFixture, Codes)
     auto codeSpec = CodeSpec::Create(db, "MyCodeSpec");
     EXPECT_EQ(DgnDbStatus::Success, codeSpec->Insert());
 
-    auto cpElX1 = InsertPhysicalElementByCode(codeSpec->CreateCode("X", "1")),
-        cpElY2 = InsertPhysicalElementByCode(codeSpec->CreateCode("Y", "2")),
+    auto cpElX1 = InsertPhysicalElementByCode(codeSpec->CreateCode("X")),
+        cpElY2 = InsertPhysicalElementByCode(codeSpec->CreateCode("Y")),
         cpUncoded = InsertPhysicalElementByCode(defaultCode);
 
     ExtractCodesFromRevision(createdCodes, discardedCodes);
@@ -1332,8 +1353,11 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
 
     // Merge revision 1 (Schema changes - creating two tables)
     LOG.infov("Merging Revision 1");
-    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision1));
-    
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(RevisionStatus::MergeSchemaChangesOnOpen, m_db->Revisions().MergeRevision(*revision1));
+    BeTest::SetFailOnAssert(true);
+    MergeSchemaRevision(*revision1);
+
     ASSERT_TRUE(m_db->TableExists("TestTable1"));
     ASSERT_TRUE(m_db->TableExists("TestTable2"));
 
@@ -1354,7 +1378,10 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
 
     // Merge revision 3 (Schema changes to first table, and data changes to the second)
     LOG.infov("Merging Revision 3");
-    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision3));
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(RevisionStatus::MergeSchemaChangesOnOpen, m_db->Revisions().MergeRevision(*revision3));
+    BeTest::SetFailOnAssert(true);
+    MergeSchemaRevision(*revision3);
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Column2"));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 0)); // i.e., null value
@@ -1364,7 +1391,10 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
 
     // Merge revision 4 (Data changes to the first table, and schema changes to the other)
     LOG.infov("Merging Revision 4");
-    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision4));
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(RevisionStatus::MergeSchemaChangesOnOpen, m_db->Revisions().MergeRevision(*revision4));
+    BeTest::SetFailOnAssert(true);
+    MergeSchemaRevision(*revision4);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=2", 2));
@@ -1441,7 +1471,10 @@ TEST_F(RevisionTestFixture, ManySchemaChanges)
 
     // Merge revision 1
     LOG.infov("Merging revision containing many schema changes");
-    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision));
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(RevisionStatus::MergeSchemaChangesOnOpen, m_db->Revisions().MergeRevision(*revision));
+    BeTest::SetFailOnAssert(true);
+    MergeSchemaRevision(*revision);
 
     ASSERT_TRUE(m_db->TableExists("TestTable10"));
     ASSERT_TRUE(m_db->ColumnExists("TestTable10", "Column10"));
@@ -1481,8 +1514,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
     
     m_db->SaveChanges("Data changes");
-    RevisionStatus status = m_db->Revisions().MergeRevision(*schemaChangesRevision);
-    ASSERT_TRUE(status == RevisionStatus::Success);
+    MergeSchemaRevision(*schemaChangesRevision);
 
     /* Create new revision with just the data changes */
     DgnRevisionPtr dataChangesRevision = CreateRevision();
@@ -1503,12 +1535,11 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
 
     /* Restore baseline, and merge revisions previously created */
     RestoreTestFile();
-    status = m_db->Revisions().MergeRevision(*schemaChangesRevision);
-    ASSERT_TRUE(status == RevisionStatus::Success);
+    MergeSchemaRevision(*schemaChangesRevision);
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable", "Column2"));
 
-    status = m_db->Revisions().MergeRevision(*dataChangesRevision);
+    RevisionStatus status = m_db->Revisions().MergeRevision(*dataChangesRevision);
     ASSERT_TRUE(status == RevisionStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 1));

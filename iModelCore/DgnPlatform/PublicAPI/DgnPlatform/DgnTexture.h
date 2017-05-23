@@ -46,15 +46,15 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params, Utf8String descr="") : T_Super(params), m_descr(descr) {}
 
         //! Constructs parameters for creating a texture
-        //! @param[in] db The DgnDb in which the texture is to reside
+        //! @param[in] model The DefinitionModel in which the texture is to reside
         //! @param[in] name The name of the texture - must be unique within the DgnDb.
         //! @param[in] data The data describing the texture's appearance
         //! @param[in] descr An optional description of the texture
         //! @param[in] height the height of the image
         //! @param[in] width the width of the image
         //! @param[in] flags optional flags
-        CreateParams(DgnDbR db, Utf8StringCR name, Render::ImageSourceCR data, uint32_t width, uint32_t height, Utf8StringCR descr="", Flags flags=Flags::None) : 
-                T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, name)), m_data(data), m_width(width), m_height(height), m_flags(flags), m_descr(descr) {}
+        CreateParams(DefinitionModelR model, Utf8StringCR name, Render::ImageSourceCR data, uint32_t width, uint32_t height, Utf8StringCR descr="", Flags flags=Flags::None) : 
+                T_Super(model.GetDgnDb(), model.GetModelId(), QueryDgnClassId(model.GetDgnDb()), CreateCode(model, name)), m_data(data), m_width(width), m_height(height), m_flags(flags), m_descr(descr) {}
     };
 
 private:
@@ -96,14 +96,13 @@ public:
     DgnTextureCPtr Insert(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Insert<DgnTexture>(*this, status);} //!< Inserts the texture into the DgnDb and returns the persistent copy.
     DgnTextureCPtr Update(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Update<DgnTexture>(*this, status);} //!< Updates the texture in the DgnDb and returns the persistent copy.
 
-    // Creates a DgnCode for a texture with the specified name.
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR textureName) {return CodeSpec::CreateCode(db, BIS_CODESPEC_Texture, textureName);}
+    //! Create a DgnCode for a texture given a name that is meant to be unique within the scope of the specified DefinitionModel
+    static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_Texture, scope, name);}
 
     //! Looks up the ID of a texture by DgnCode
     DGNPLATFORM_EXPORT static DgnTextureId QueryTextureId(DgnDbR db, DgnCodeCR code);
-
-    //! Looks up the ID of a texture by name
-    static DgnTextureId QueryTextureId(DgnDbR db, Utf8StringCR textureName) {return QueryTextureId(db, CreateCode(db, textureName));}
+    //! Looks up the DgnTextureId of a texture by model and name
+    static DgnTextureId QueryTextureId(DefinitionModelCR model, Utf8StringCR name) {return QueryTextureId(model.GetDgnDb(), CreateCode(model, name));}
 
     //! Looks up a texture by ID
     static DgnTextureCPtr Get(DgnDbR db, DgnTextureId textureId) {return db.Elements().Get<DgnTexture>(textureId);}

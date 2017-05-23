@@ -65,9 +65,6 @@ public:
 
     //! Create a DgnCode for a DgnGeometryPart given a name that is meant to be unique within the scope of the specified model
     static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, scope, name);}
-    //! @private
-    //! @deprecated
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR nameSpace) {return CodeSpec::CreateCode(db, BIS_CODESPEC_GeometryPart, name, nameSpace);}
 
     //! Get the persistent Id of this DgnGeometryPart.
     //! @note Id will be invalid if not yet persisted.
@@ -93,11 +90,6 @@ public:
     //! @param[in] geomPartId The ID of the DgnGeometryPart to query
     //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
     DGNPLATFORM_EXPORT static BentleyStatus QueryGeometryPartRange(DRange3dR range, DgnDbR db, DgnGeometryPartId geomPartId);
-
-    //! Insert the ElementUsesGeometryParts relationship between an element and the geom parts it uses.
-    //! @note Most apps will not need to call this directly.
-    //! @private
-    DGNPLATFORM_EXPORT static BentleyStatus InsertElementUsesGeometryParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId);
 };
 
 namespace dgn_ElementHandler

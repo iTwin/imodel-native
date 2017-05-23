@@ -126,34 +126,6 @@ DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& ap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SpatialCategory::CreateCode(DgnDbR db, Utf8StringCR categoryName, Utf8StringCR nameSpace)
-    {
-    return CodeSpec::CreateCode(db, BIS_CODESPEC_SpatialCategory, categoryName, nameSpace);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpatialCategory::SpatialCategory(DgnDbR db, Utf8StringCR name, Rank rank, Utf8StringCR descr)
-    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name)))
-    {
-    m_rank = rank;
-    m_descr = descr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpatialCategory::SpatialCategory(DgnDbR db, DgnCodeCR code, Rank rank, Utf8StringCR descr)
-    : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), code))
-    {
-    m_rank = rank;
-    m_descr = descr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 SpatialCategoryCPtr SpatialCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
     {
     SpatialCategoryCPtr category = GetDgnDb().Elements().Insert<SpatialCategory>(*this, status);
@@ -242,9 +214,11 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
-    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, catId, name), nullptr, catId), m_data(app, descr)
+DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId categoryId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
+    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, categoryId, name), nullptr, categoryId), m_data(app, descr)
     {
+    DgnCategoryCPtr category = DgnCategory::Get(db, categoryId);
+    SetModelId(category.IsValid() ? category->GetModelId() : DgnModelId()); // A SubCategory must be in the same DefinitionModel as its parent Category
     m_parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_CategoryOwnsSubCategories);
     }
 

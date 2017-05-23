@@ -344,12 +344,12 @@ TEST_F(ViewAttachmentTest, Geom)
 TEST_F(ViewAttachmentTest, GetSetclipProperties)
 {
     // Create an attachment
-    Placement2d placement(DPoint2d::From(0, 0), AngleInDegrees(), ElementAlignedBox2d(5, 5, 5, 5));
+    Placement2d placement(DPoint2d::From(0, 0), AngleInDegrees(), ElementAlignedBox2d(5, 5, 6, 6));
     Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
     CurveVectorPtr sec1 = CurveVector::CreateRectangle(1,2,3,4, CurveVector::BOUNDARY_TYPE_Outer);
     ClipVectorPtr cliping = ClipVector::CreateFromCurveVector(*sec1,0.1,0.5);
     ASSERT_TRUE(cliping.IsValid()); 
-    ASSERT_EQ(DgnDbStatus::Success ,attachment.SetClip(*cliping));
+    attachment.SetClip(*cliping);
     ClipVectorPtr gcliping = attachment.GetClip();
     ASSERT_TRUE(gcliping->size()==cliping->size()); 
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
@@ -360,7 +360,7 @@ TEST_F(ViewAttachmentTest, GetSetclipProperties)
     ASSERT_TRUE(update.IsValid());
     ASSERT_TRUE(update->GetClip().IsNull());
     //again setclip
-    ASSERT_EQ(DgnDbStatus::Success, attachment.SetClip(*cliping));
+    attachment.SetClip(*cliping);
     update = GetDgnDb().Elements().Update(attachment);
     ASSERT_TRUE(update.IsValid());
     ASSERT_TRUE(!(update->GetClip().IsNull()));

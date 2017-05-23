@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnTexture_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -52,17 +52,18 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     {
     SetupSeedProject();
     DgnDbR db = GetDb();
+    DefinitionModelR dictionary = db.GetDictionaryModel();
 
     // Textures have names
-    DgnTexture tx1(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(ImageSource::Format::Jpeg, 2, 4), 2,4));
+    DgnTexture tx1(DgnTexture::CreateParams(dictionary, "Texture1", MakeTextureData(ImageSource::Format::Jpeg, 2, 4), 2,4));
     DgnTextureCPtr pTx1 = tx1.Insert();
     ASSERT_TRUE(pTx1.IsValid());
 
     // Names must be unique
-    DgnTexture tx1_duplicate(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(ImageSource::Format::Jpeg, 4, 8), 4, 8));
+    DgnTexture tx1_duplicate(DgnTexture::CreateParams(dictionary, "Texture1", MakeTextureData(ImageSource::Format::Jpeg, 4, 8), 4, 8));
     EXPECT_FALSE(tx1_duplicate.Insert().IsValid());
 
-    DgnTexture tx2(DgnTexture::CreateParams(db, "Texture2", MakeTextureData(ImageSource::Format::Png, 5, 5), 5,5,"this is texture 2"));
+    DgnTexture tx2(DgnTexture::CreateParams(dictionary, "Texture2", MakeTextureData(ImageSource::Format::Png, 5, 5), 5,5,"this is texture 2"));
     DgnTextureCPtr pTx2 = tx2.Insert();
     ASSERT_TRUE(pTx2.IsValid());
 
@@ -76,7 +77,7 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     Compare(*tx2Edit, tx2);
 
     tx2Edit->SetDescription("New description");
-    EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateCode(db, "Texture2Renamed")));
+    EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateCode(dictionary, "Texture2Renamed")));
     tx2Edit->SetImageSource(MakeTextureData(ImageSource::Format::Jpeg, 9, 18), 9, 18);
 
     DgnDbStatus status;
@@ -102,15 +103,15 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, pTx1->Delete());
 
     // Unnamed textures are supported
-    DgnTexture unnamed1(DgnTexture::CreateParams(db, "", MakeTextureData(ImageSource::Format::Jpeg, 2, 2), 2,2));
+    DgnTexture unnamed1(DgnTexture::CreateParams(dictionary, "", MakeTextureData(ImageSource::Format::Jpeg, 2, 2), 2,2));
     EXPECT_TRUE(unnamed1.Insert().IsValid());
 
     // Multiple unnamed textures can exist
-    DgnTexture unnamed2(DgnTexture::CreateParams(db, "", MakeTextureData(ImageSource::Format::Jpeg, 4, 4), 4,4));
+    DgnTexture unnamed2(DgnTexture::CreateParams(dictionary, "", MakeTextureData(ImageSource::Format::Jpeg, 4, 4), 4,4));
     EXPECT_TRUE(unnamed2.Insert().IsValid());
 
     // Can't query unnamed texture by name
-    EXPECT_FALSE(DgnTexture::QueryTextureId(db, "").IsValid());
+    EXPECT_FALSE(DgnTexture::QueryTextureId(dictionary, "").IsValid());
 
     // Can query unnamed textures by ID
     auto pUnnamed1 = DgnTexture::Get(db, unnamed1.GetTextureId()),

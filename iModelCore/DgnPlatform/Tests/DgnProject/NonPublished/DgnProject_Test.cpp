@@ -589,7 +589,7 @@ BentleyStatus ImportSchema(ECSchemaR ecSchema, DgnDbR project)
     {
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(ecSchema);
-    return (BE_SQLITE_OK == project.ImportSchemas(schemaList->GetSchemas())) ? SUCCESS : ERROR;
+    return (SchemaStatus::Success == project.ImportSchemas(schemaList->GetSchemas())) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -614,6 +614,10 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     ECSchemaPtr schema;
     ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext);
     ASSERT_TRUE(schema.IsValid());
+
+    // Flush any local changes before importing schemas
+    m_db->Revisions().StartCreateRevision();
+    m_db->Revisions().FinishCreateRevision();
 
     ASSERT_EQ(SUCCESS, ImportSchema(*schema, *m_db));
 
@@ -728,9 +732,9 @@ struct ElementUriTests : ::testing::Test
         return *m_codeSpec;
         }
 
-    DgnCode CreateCode(DgnDbR db, Utf8CP ns, Utf8CP elementCode)
+    DgnCode CreateCode(DgnDbR db, Utf8CP elementCode)
         {
-        return GetTestCodeSpec(db).CreateCode(elementCode, ns);
+        return GetTestCodeSpec(db).CreateCode(elementCode);
         }
 
 };
@@ -772,13 +776,13 @@ TEST_F(ElementUriTests, Test1)
 
     DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName);
     DgnModelId mid = db->Models().QuerySubModelId(physicalPartitionCode);
-    DgnCategoryId catId = DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, s_seedFileInfo.categoryName));
+    DgnCategoryId catId = SpatialCategory::QueryCategoryId(db->GetDictionaryModel(), s_seedFileInfo.categoryName);
 
     DgnElementCPtr el;
     DgnElementCPtr elNoProps;
     if (true)
         {
-        TestElementPtr testel = TestElement::Create(*db, mid, catId, CreateCode(*db, "TestNS", "E1"));
+        TestElementPtr testel = TestElement::Create(*db, mid, catId, CreateCode(*db, "E1"));
         testel->SetTestElementProperty("foo");
         el = testel->Insert();
         ASSERT_TRUE(el.IsValid());
@@ -993,6 +997,10 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(BE_SQLITE_OK, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
+    // Flush any local changes before importing schemas
+    m_db->Revisions().StartCreateRevision();
+    m_db->Revisions().FinishCreateRevision();
+
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
     ASSERT_TRUE(m_db->IsDbOpen());
     }

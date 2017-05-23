@@ -174,16 +174,23 @@ DgnDbStatus ViewAttachment::CheckValid() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ViewAttachment::GetClip() const
     {
-    return ClipVector::FromJson(Json::Value::From(GetPropertyValueString(prop_Clip())));
+    return m_jsonProperties.isMember(json_clip()) ? ClipVector::FromJson(m_jsonProperties[json_clip()]) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
+void ViewAttachment::SetClip(ClipVectorCR clipVector)
     {
-    Json::Value clipJson = clipVector.ToJson();
-    return SetPropertyValue(prop_Clip(), clipJson.ToString().c_str());
+    m_jsonProperties[json_clip()] = clipVector.ToJson();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachment::ClearClip()
+    { 
+    m_jsonProperties.removeMember(json_clip());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -22,6 +22,7 @@
 #define BIS_CODESPEC_AuxCoordSystem3d               BIS_CODESPEC(BIS_CLASS_AuxCoordSystem3d)
 #define BIS_CODESPEC_AuxCoordSystemSpatial          BIS_CODESPEC(BIS_CLASS_AuxCoordSystemSpatial)
 #define BIS_CODESPEC_CategorySelector               BIS_CODESPEC(BIS_CLASS_CategorySelector)
+#define BIS_CODESPEC_ColorBook                      BIS_CODESPEC(BIS_CLASS_ColorBook)
 #define BIS_CODESPEC_DisplayStyle                   BIS_CODESPEC(BIS_CLASS_DisplayStyle)
 #define BIS_CODESPEC_Drawing                        BIS_CODESPEC(BIS_CLASS_Drawing)
 #define BIS_CODESPEC_DrawingCategory                BIS_CODESPEC(BIS_CLASS_DrawingCategory)
@@ -42,7 +43,6 @@
 #define BIS_CODESPEC_TemplateRecipe3d               BIS_CODESPEC(BIS_CLASS_TemplateRecipe3d)
 #define BIS_CODESPEC_TextAnnotationSeed             BIS_CODESPEC(BIS_CLASS_TextAnnotationSeed)
 #define BIS_CODESPEC_Texture                        BIS_CODESPEC(BIS_CLASS_Texture)
-#define BIS_CODESPEC_TrueColor                      BIS_CODESPEC(BIS_CLASS_TrueColor)
 #define BIS_CODESPEC_ViewDefinition                 BIS_CODESPEC(BIS_CLASS_ViewDefinition)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -55,15 +55,15 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct CodeFragmentSpec : Json::Value
 {
 private:
-    BE_JSON_NAME(fixedString)
-    BE_JSON_NAME(inSequenceMask)
-    BE_JSON_NAME(maxChars)
-    BE_JSON_NAME(minChars)
-    BE_JSON_NAME(numberGap)
-    BE_JSON_NAME(prompt)
-    BE_JSON_NAME(propertyName)
-    BE_JSON_NAME(startNumber)
-    BE_JSON_NAME(type)
+    BE_JSON_NAME(fixedString);
+    BE_JSON_NAME(inSequenceMask);
+    BE_JSON_NAME(maxChars);
+    BE_JSON_NAME(minChars);
+    BE_JSON_NAME(numberGap);
+    BE_JSON_NAME(prompt);
+    BE_JSON_NAME(propertyName);
+    BE_JSON_NAME(startNumber);
+    BE_JSON_NAME(type);
 
     JsonValueCR GetValue(Utf8CP key) const {return (*this)[key];}
     void SetOrRemoveString(Utf8CP key, Utf8CP value) {if (value && *value) (*this)[key] = value; else removeMember(key);}
@@ -169,22 +169,29 @@ struct CodeScopeSpec : Json::Value
 public:
     enum class Type
     {
-        Repository = 1,
-        Model = 2,
-        ParentElement = 3,
+        Repository = 1,     //!< The Code value must be unique within (at least) the DgnDb repository
+        Model = 2,          //!< The Code value must be unique within the scope of the DgnModel
+        ParentElement = 3,  //!< The Code value must be unique among other children of the same parent element
+        RelatedElement = 4, //!< The Code value must be unique among other elements also scoped by the same element
     };
 
 private:
-    BE_JSON_NAME(type)
+    BE_JSON_NAME(type);
+    BE_JSON_NAME(relationship); // only valid for Type::RelatedElement
+    
     CodeScopeSpec(Type type=Type::Repository) {SetType(type);}
     void SetType(Type type) {(*this)[json_type()] = (int) type;}
+    void SetRelationship(Utf8CP relationship) {if (relationship && *relationship) (*this)[json_relationship()] = relationship;}
     JsonValueCR GetValue(Utf8CP key) const {return (*this)[key];}
 
 public:
     Type GetType() const {return (Type) GetValue(json_type()).asInt((int) Type::Repository);}
+    Utf8String GetRelationship() const {return GetValue(json_relationship()).asString();}
+
     static CodeScopeSpec CreateRepositoryScope() {return CodeScopeSpec(Type::Repository);}
     static CodeScopeSpec CreateModelScope() {return CodeScopeSpec(Type::Model);}
     static CodeScopeSpec CreateParentElementScope() {return CodeScopeSpec(Type::ParentElement);}
+    static CodeScopeSpec CreateRelatedElementScope(Utf8CP relationship=nullptr) {CodeScopeSpec scopeSpec(Type::RelatedElement); scopeSpec.SetRelationship(relationship); return scopeSpec;}
 };
 
 typedef bvector<CodeFragmentSpec> CodeFragmentSpecList;
@@ -220,11 +227,12 @@ public:
             m_dgndb(dgndb), m_id(id), m_name(name), m_scopeSpec(scopeSpec) {}
     };
 
-    BE_JSON_NAME(fragmentSpecs)
-    BE_JSON_NAME(registrySuffix)
-    BE_JSON_NAME(scopeSpec)
-    BE_JSON_NAME(spec)
-    BE_JSON_NAME(version)
+    BE_PROP_NAME(JsonProperties);
+    BE_JSON_NAME(fragmentSpecs);
+    BE_JSON_NAME(registrySuffix);
+    BE_JSON_NAME(scopeSpec);
+    BE_JSON_NAME(spec);
+    BE_JSON_NAME(version);
 
 private:
     DgnDbR          m_dgndb;
@@ -269,6 +277,7 @@ public:
     bool IsRepositoryScope() const {return CodeScopeSpec::Type::Repository == GetScope().GetType();}
     bool IsModelScope() const {return CodeScopeSpec::Type::Model == GetScope().GetType();}
     bool IsParentElementScope() const {return CodeScopeSpec::Type::ParentElement == GetScope().GetType();}
+    bool IsRelatedElementScope() const {return CodeScopeSpec::Type::RelatedElement == GetScope().GetType();}
 
     //! Return the DgnElementId of the scope element for the specified element.
     DGNPLATFORM_EXPORT DgnElementId GetScopeElementId(DgnElementCR element) const;
@@ -283,8 +292,6 @@ public:
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const;
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value) const;
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value, Utf8StringCR nameSpace); // WIP: Deprecate?
-    DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace) const { return DgnCode(m_codeSpecId, value, nameSpace); } // WIP: Deprecate?
 
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(DgnElementCR) const;
     DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
