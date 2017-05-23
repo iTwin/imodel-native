@@ -605,22 +605,21 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     ecSchemaPath.AppendToPath(L"Schemas");
     ecSchemaPath.AppendToPath(L"SampleDgnDbEditor.01.00.ecschema.xml");
 
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
     WString schemaPath = BeFileName::GetDirectoryName(ecSchemaPath);
     schemaContext->AddSchemaPath(schemaPath.c_str());
 
     ECSchemaPtr schema;
-    ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext));
     ASSERT_TRUE(schema.IsValid());
 
     // Flush any local changes before importing schemas
     m_db->Revisions().StartCreateRevision();
     m_db->Revisions().FinishCreateRevision();
 
-    ASSERT_EQ(SUCCESS, ImportSchema(*schema, *m_db));
-
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
+    
     ASSERT_TRUE(m_db->TableExists("sdde_ArchStoreyWithElements"));
     ASSERT_TRUE(m_db->TableExists("sdde_ArchWithHVACStorey"));
     }
