@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/NotificationPipe.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -126,6 +126,8 @@ BentleyStatus NotificationPipe::Close ()
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     closesocket (m_pipe[0]);
     closesocket (m_pipe[1]);
+    m_pipe[0] = 0;
+    m_pipe[1] = 0;
 #else
     fclose (m_writeStream);
     fclose (m_readStream);
