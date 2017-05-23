@@ -1068,6 +1068,42 @@ DPoint3dCR shoulderC,     //!< [in] second target point
 DPoint3dCR pointD     //!< [in] end point
 );
 
+//! Return a curveVector with spiral-arc-spiral transtion between two lines, subject to:
+//!<ul>
+//!<li>specified arcRadiius for central part
+//!<li>specified spiralLength for both entry and exit.
+//!<li>the spiral-to-line tangency can float along the respective straight line parts
+//!</ul>
+GEOMDLLIMPEXP static CurveVectorPtr ConstructSpiralArcSpiralTransition
+(
+DPoint3dCR xyz0,    //!< [in] PI prior to this transition
+DPoint3dCR xyz1,    //!< [in] PI for this transition
+DPoint3dCR xyz2,    //!< [in] PI after this transition
+double arcRadius,   //!< [in] radius of arc portion
+double spiralLength //!< [in] length of spiral
+);
+
+//! Construct a spiral-arc-spiral transition that is an (approximate) offset of a primary transition.
+//!<ul>
+//!<li>The offset is a constructSpiralArcSpiralTransition for a simple offset of the 3 point alignments.
+//!<li>The radius differs from the primaryRadius by (exactly) offsetDistance.
+//!<li>The spiral length is adjusted so that the tangency point for the line-to-spiral is exactly at the offset of
+//!     the corresponding line-spiral
+//!<li>specified spiralLength for both entry and exit.
+//!<li>the spiral-to-line tangency can float along the respective straight line parts
+//!<li>offsets at all distances maintain the spiral-arc-spiral structure.   Because the true "rolling ball" offset of a spiral is not
+//!    a spiral, the result is only an approximation of a true "rolling ball" offset.
+//!</ul>
+GEOMDLLIMPEXP static CurveVectorPtr ConstructSpiralArcSpiralTransitionPseudoOffset
+(
+DPoint3dCR primaryPoint0,   //!< [in] primary path PI prior to this transition
+DPoint3dCR primaryPoint1,   //!< [in] primary path PI for this transition
+DPoint3dCR primaryPoint2,   //!< [in] primary path PI after this transition
+double primaryRadius,       //!< [in] radius of primary path
+double primarySpiralLength, //!< [in] primary path spiral length
+double offsetDistance       //!< [in] offset distance.  Positive is to the left of the primary path
+);
+
 
 }; // CurveVector
 

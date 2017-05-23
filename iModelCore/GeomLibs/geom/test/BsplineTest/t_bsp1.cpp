@@ -433,6 +433,51 @@ TEST(MSBsplineSurface,TightPrincipalExtentsWeighted)
     testTightSurfaceExtents (surface);
     Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtentsWeighted");
     }
+
+TEST(MSInterpolatingCurve,EndConditions)
+    {
+    bvector<bool> truefalse {true, false};
+    for (auto &q : bvector <bvector<double>>
+                {
+                // greville-like spacing
+                bvector<double>{0, 1, 3, 6, 9, 11, 12},
+                // uniform spacing
+                bvector<double>{0, 2, 4, 6, 8, 10, 12}
+                }
+            )
+        {
+        SaveAndRestoreCheckTransform shifter (0, 20, 0);
+        bvector<DPoint3d> points;
+        for (auto x : q)
+            {
+            double theta = Angle::Pi () * (x - q[0]) / (q.back () - q.front ());
+            points.push_back (DPoint3d::From (cos (theta), sin(theta), 0.0));
+            }
+        for (bool closedCurve : truefalse)
+            {
+            for (bool colinearTangents : truefalse)
+                {
+                for (bool chordLengthTangents : truefalse)
+                    {
+                    for (bool naturalTangents : truefalse)
+                        {
+                        SaveAndRestoreCheckTransform shifter (10, 0, 0);
+                        MSInterpolationCurve curve;
+                        auto s = curve.InitFromPointsAndEndTangents (points, false, 0.0, nullptr,
+                            closedCurve, colinearTangents, chordLengthTangents, naturalTangents);
+                        if (s == SUCCESS)
+                            {
+                            auto cp = ICurvePrimitive::CreateInterpolationCurveSwapFromSource (curve);
+                            auto cp1 = ICurvePrimitive::CreateBsplineCurve (cp->GetProxyBsplineCurvePtr ());
+                            Check::SaveTransformed (*cp1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("MSInterpolatingCurve.EndConditions");
+    }
 void DrawLine (DPoint3dCR xyz0, DPoint3dCR xyz1)
     {
     Check::SaveTransformed (bvector<DPoint3d>{xyz0, xyz1});
@@ -605,110 +650,28 @@ TEST(Spiral,OffsetConstruction1)
     }
 
 
-CurveVectorPtr ConstructTransition
-(
-bvector<DPoint3d> xyz,
-double arcRadius,
-double spiralLength
-)
-   {
-    DSpiral2dBaseP spiralA = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
-    DSpiral2dBaseP spiralB = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
-    DPoint3d xyzA, xyzB, xyzC, xyzD;
-    DEllipse3d arc;
-    auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-    if (DSpiral2dBase::LineSpiralArcSpiralLineTransition (xyz[0], xyz[2], xyz[1],
-                arcRadius, spiralLength, spiralLength, *spiralA, *spiralB, 
-                xyzA, xyzB, xyzC, xyzD, arc
-                ))
-        {
-        Transform frameA = Transform::From (xyzA);
-        Transform frameB = Transform::From (xyzB);
-        auto cpA = ICurvePrimitive::CreateSpiral (*spiralA, frameA, 0.0, 1.0);
-        auto cpB = ICurvePrimitive::CreateSpiral (*spiralB, frameB, 1.0, 0.0);
-        cv->push_back (cpA);
-        cv->push_back (ICurvePrimitive::CreateArc (arc));
-        cv->push_back (cpB);
-        }
-    return cv;
-    }
-
-struct Newton_TransitionTangentFunction : FunctionRToRD
-{
-bvector<DPoint3d> &m_xyz;
-double m_radius;
-DSegment3d m_segment;
-double m_targetFraction;
-
-Newton_TransitionTangentFunction (
-bvector<DPoint3d> &xyz,     // xyz of 3 consecutive points -- shoulder in middle
-double radius,              // arc radius
-DSegment3d referenceSegment,    // segment of parent transition
-double targetFraction           // target fraction where new transiton start projects to the referenceSegment
-) : m_xyz (xyz), m_radius (radius), m_segment (referenceSegment), m_targetFraction (targetFraction)
-    {
-    }
-
-ValidatedDouble EvaluateRToR (double spiralLength)
-    {
-    auto cv = ConstructTransition (m_xyz, m_radius, spiralLength);
-    if (cv.IsValid ())
-        {
-        DPoint3d xyz0, xyz1, xyz;
-        double fraction;
-        cv->GetStartEnd (xyz0, xyz1);
-        if (m_segment.ProjectPoint (xyz, fraction, xyz0))
-            {
-            return ValidatedDouble (fraction - m_targetFraction);
-            }
-        }
-    return ValidatedDouble (0.0, false);
-    }
-bool EvaluateRToRD (double spiralLength, double &f, double &df) override
-    {
-    double step = 1.0e-4;
-    auto f0 = EvaluateRToR (spiralLength);
-    auto f1 = EvaluateRToR (spiralLength + step);
-    if (f0.IsValid () && f1.IsValid ())
-        {
-        f = f0.Value ();
-        df = (f1 - f0) / step;
-        return true;
-        }
-    return false;
-    }
-};
 
 TEST(Spiral,OffsetConstruction2)
     {
-    bvector<DPoint3d> pi0 = bvector<DPoint3d> {DPoint3d::From (0,0,0), DPoint3d::From (0,60,0), DPoint3d::From (40,110,0)};
+    bvector<DPoint3d> pi0 = bvector<DPoint3d> {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0,60,0),
+        DPoint3d::From (40,110,0),
+        DPoint3d::From (50,160,0)
+        };
     double r0 = 70.0;
     double length0 = 20.0;
-    DEllipse3d arc0;
-    DPoint3d lineTangent0;
-    ConstructTransition (pi0, r0, length0, lineTangent0, arc0);
-    bvector<DPoint3d> centers;
-    centers.push_back (arc0.center);
-    double markerSize = 1.0;
-    DSegment3d segment0 = DSegment3d::From (pi0[0], pi0[1]);
-    double fraction0;
-    DPoint3d lineTangent0A;
-    segment0.ProjectPoint (lineTangent0A, fraction0, lineTangent0);
-    for (double offsetDistance : bvector<double> {14.0, 8.0, -8.0, -15.0})
+
+    for (size_t i0 = 0; i0 + 2 < pi0.size (); i0++)
         {
-        double r1 = r0 - offsetDistance;
-        double fraction = r1 / r0;
-        double length1 = fraction * length0;
-        bvector<DPoint3d> pi1;
-        PolylineOps::OffsetLineString (pi1, pi0, offsetDistance, DVec3d::UnitZ (), false, 2.0);
-        Newton_TransitionTangentFunction function (pi1, r1, segment0, fraction0);
-        NewtonIterationsRRToRR newton (1.0e-10);
-        if (newton.RunNewton (length1, function))
+        auto primaryCV = CurveVector::ConstructSpiralArcSpiralTransition (pi0[i0], pi0[i0 + 1], pi0[i0 + 2], r0, length0);
+        Check::SaveTransformed (*primaryCV);
+        for (double offsetDistance : bvector<double> {12.0, 8.0, -6.0, -10.0})  // assymetric magnitudes to expose right-left flip
             {
-            auto cv = ConstructTransition (pi1, r1, length1);
-            Check::SaveTransformed (*cv);
+            auto offsetCV = CurveVector::ConstructSpiralArcSpiralTransitionPseudoOffset (pi0[i0], pi0[i0 + 1], pi0[i0 + 2], r0, length0, offsetDistance);
+            if (offsetCV.IsValid ())
+                Check::SaveTransformed (*offsetCV);
             }
         }
-    Check::SaveTransformedMarkers (centers, markerSize);
     Check::ClearGeometry ("Spiral.OffsetConstruction2");
     }

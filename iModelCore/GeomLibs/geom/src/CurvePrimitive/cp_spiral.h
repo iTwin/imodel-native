@@ -696,5 +696,119 @@ DPoint3dCR pointD
     }
 
 
+CurveVectorPtr CurveVector::ConstructSpiralArcSpiralTransition
+(
+DPoint3dCR xyz0,
+DPoint3dCR xyz1,
+DPoint3dCR xyz2,
+double arcRadius,
+double spiralLength
+)
+   {
+    DSpiral2dBaseP spiralA = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DSpiral2dBaseP spiralB = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DPoint3d xyzA, xyzB, xyzC, xyzD;
+    DEllipse3d arc;
+    auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    if (DSpiral2dBase::LineSpiralArcSpiralLineTransition (xyz0, xyz2, xyz1,
+                arcRadius, spiralLength, spiralLength, *spiralA, *spiralB, 
+                xyzA, xyzB, xyzC, xyzD, arc
+                ))
+        {
+        Transform frameA = Transform::From (xyzA);
+        Transform frameB = Transform::From (xyzB);
+        auto cpA = ICurvePrimitive::CreateSpiral (*spiralA, frameA, 0.0, 1.0);
+        auto cpB = ICurvePrimitive::CreateSpiral (*spiralB, frameB, 1.0, 0.0);
+        cv->push_back (cpA);
+        cv->push_back (ICurvePrimitive::CreateArc (arc));
+        cv->push_back (cpB);
+        }
+    return cv;
+    }
+
+struct Newton_TransitionTangentFunction : FunctionRToRD
+{
+DPoint3dCR m_xyz0;
+DPoint3dCR m_xyz1;
+DPoint3dCR m_xyz2;
+double m_radius;
+DPlane3d m_plane;
+
+Newton_TransitionTangentFunction (
+DPoint3dCR xyz0,      // prior point (possibly PI)
+DPoint3dCR xyz1,      // shoulder (PI) point
+DPoint3dCR xyz2,      // following point (possibly PI)
+double radius,              // arc radius
+DPlane3d plane    // plane that must contain start point.
+) : m_xyz0 (xyz0), m_xyz1 (xyz1), m_xyz2 (xyz2), m_radius (radius), m_plane(plane)
+    {
+    }
+
+ValidatedDouble EvaluateRToR (double spiralLength)
+    {
+    auto cv = CurveVector::ConstructSpiralArcSpiralTransition (m_xyz0, m_xyz1, m_xyz2, m_radius, spiralLength);
+    if (cv.IsValid ())
+        {
+        DPoint3d xyz0, xyz1;
+        cv->GetStartEnd (xyz0, xyz1);
+        return ValidatedDouble (m_plane.Evaluate (xyz0), true);
+        }
+    return ValidatedDouble (0.0, false);
+    }
+bool EvaluateRToRD (double spiralLength, double &f, double &df) override
+    {
+    double step = 1.0e-4;
+    auto f0 = EvaluateRToR (spiralLength);
+    auto f1 = EvaluateRToR (spiralLength + step);
+    if (f0.IsValid () && f1.IsValid ())
+        {
+        f = f0.Value ();
+        df = (f1 - f0) / step;
+        return true;
+        }
+    return false;
+    }
+};
+
+CurveVectorPtr CurveVector::ConstructSpiralArcSpiralTransitionPseudoOffset
+(
+DPoint3dCR primaryPoint0,
+DPoint3dCR primaryPoint1,
+DPoint3dCR primaryPoint2,
+double primaryRadius,
+double primarySpiralLength,
+double offsetDistance
+)
+    {
+    auto primaryCV = CurveVector::ConstructSpiralArcSpiralTransition (primaryPoint0, primaryPoint1, primaryPoint2,
+            primaryRadius, primarySpiralLength);
+    if (primaryCV.IsValid ())
+        {
+        DPoint3d xyz0, xyz2;
+        DVec3d tangent0, tangent2;
+        primaryCV->GetStartEnd (xyz0, xyz2, tangent0, tangent2);
+        bvector<DPoint3d> pi0, pi1;
+        pi0.push_back (primaryPoint0);
+        pi0.push_back (primaryPoint1);
+        pi0.push_back (primaryPoint2);
+        double offsetRadius = tangent0.CrossProductXY (tangent2) < 0.0 ? primaryRadius - offsetDistance : primaryRadius + offsetDistance;
+        if (offsetRadius > 0.0)
+            {
+            PolylineOps::OffsetLineString (pi1, pi0, offsetDistance, DVec3d::UnitZ (), false, 2.0);
+            if (pi1.size () == 3)
+                {
+                double offsetSpiralLength = primarySpiralLength * offsetRadius / primaryRadius;
+                Newton_TransitionTangentFunction function (pi1[0], pi1[1], pi1[2], offsetRadius, DPlane3d::FromOriginAndNormal (xyz0, tangent0));
+                NewtonIterationsRRToRR newton (1.0e-10);
+                if (newton.RunNewton (offsetSpiralLength, function))
+                    {
+                    return ConstructSpiralArcSpiralTransition (pi1[0], pi1[1], pi1[2], offsetRadius, offsetSpiralLength);
+                    }
+                }
+            }
+        }
+    return nullptr;
+    }
+
 
 //END_BENTLEY_GEOMETRY_NAMESPACE
