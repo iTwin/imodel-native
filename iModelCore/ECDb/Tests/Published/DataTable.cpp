@@ -731,12 +731,12 @@ BentleyStatus SqlAdaptor::Fill(DbCR db, DataTable const& table)
     insertSQL.append(")").append(valuesSQL).append(")");
     Statement stmt;
     stmt.Prepare(db, insertSQL.c_str());
-    for (size_t r; r < table.GetRowCount(); r++)
+    for (size_t r=0; r < table.GetRowCount(); r++)
         {
         stmt.Reset();
         stmt.ClearBindings();
         DataTable::Row const& row = table.GetRow(r);
-        for (int c; c < table.GetColumnCount(); c++)
+        for (int c=0; c < table.GetColumnCount(); c++)
             {
             DataTable::Value const& v = row.GetValue(c);
             switch (v.GetType())

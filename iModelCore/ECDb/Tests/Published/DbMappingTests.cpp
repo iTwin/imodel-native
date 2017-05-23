@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "DataTable.h"
+#include "MapContext.h"
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -243,7 +244,6 @@ struct IndexComparer : DataFacetComparer
             : DataFacetComparer(ecdb, test, directory)
             {}
     };
-
 struct ColumnComparer : DataFacetComparer
     {
     private:
@@ -330,13 +330,134 @@ struct ComparerContext
                 v->Assert();
             }
     };
-struct Map
-    {
-    };
 
-TEST_F(DbMappingTestFixture, CSV123)
+
+
+
+TEST_F(DbMappingTestFixture, SimpleTest)
     {
-   
+    ECDbCR ecdb = SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="SimpleTable" modifier="Abstract">
+                <ECProperty propertyName="Prop1" typeName="string" />
+            </ECEntityClass>
+          </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    MapContext ctx(ecdb);
+    ASSERT_TRUE_CLASSMAP_EXISTS(ctx, "TestSchema", "SimpleTable");
+    EXPECT_TRUE_CLASSMAP_EXISTS(ctx, "TestSchema", "SimpleTable");
+    ASSERT_FALSE_CLASSMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo");
+    EXPECT_FALSE_CLASSMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo");
+    ASSERT_TRUE_PROPERTYMAP_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1");
+    EXPECT_TRUE_PROPERTYMAP_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1");
+    ASSERT_FALSE_PROPERTYMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo");
+    EXPECT_FALSE_PROPERTYMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo");
+    ASSERT_TRUE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable");
+    EXPECT_TRUE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable");
+    ASSERT_FALSE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo", "ts_SimpleTableBoo");
+    EXPECT_FALSE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo", "ts_SimpleTableBoo");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable", "Prop1");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "ECInstanceId", "ts_SimpleTable", "Id");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "ECClassId", "ts_SimpleTable", "ECClassId");
+    ASSERT_FALSE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "Prop1");
+    ASSERT_FALSE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_TRUE_TABLE_EXISTS(ctx, "ts_SimpleTable");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "Prop1");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_SimpleTable", 3);
+    ASSERT_EQ_PROPERTYMAP_COUNT(ctx, "TestSchema", "SimpleTable", 3);
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_SimpleTable");
+    ASSERT_TRUE_COLUMN_IS_INTEGER(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_IS_INTEGER(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_TRUE_COLUMN_IS_TEXT(ctx, "ts_SimpleTable", "Prop1");
+    }
+
+TEST_F(DbMappingTestFixture, SimpleTree)
+    {
+    ECDbCR ecdb = SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+
+            <!-- Root center class -->
+            <ECEntityClass typeName="C" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xlmns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="C_S" typeName="string" />
+            </ECEntityClass>
+
+            <ECEntityClass typeName="CL" modifier="Abstract">
+                <ECProperty propertyName="CL_S" typeName="string" />
+            </ECEntityClass>
+
+            <ECEntityClass typeName="CR" modifier="Abstract">
+                <ECProperty propertyName="CR_S" typeName="string" />
+            </ECEntityClass>
+
+            <!-- Left Subtree -->
+            <ECEntityClass typeName="L" modifier="none">
+                <BaseClass>CL</BaseClass>
+                <ECProperty propertyName="L_S" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="LL" modifier="sealed">
+                <BaseClass>L</BaseClass>
+                <ECProperty propertyName="LL_S" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="LR" modifier="sealed">
+                <BaseClass>L</BaseClass>
+                <ECProperty propertyName="LR_S" typeName="string" />
+            </ECEntityClass>
+
+            <!-- Right Subtree -->
+            <ECEntityClass typeName="R" modifier="none">
+                <BaseClass>CR</BaseClass>
+                <ECProperty propertyName="R_S" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="RL" modifier="sealed">
+                <BaseClass>R</BaseClass>
+                <ECProperty propertyName="RL_S" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="RR" modifier="sealed">
+                <BaseClass>R</BaseClass>
+                <ECProperty propertyName="RR_S" typeName="string" />
+            </ECEntityClass>
+          </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    MapContext ctx(ecdb);
+    ASSERT_TRUE_CLASSMAP_EXISTS(ctx, "TestSchema", "SimpleTable");
+    EXPECT_TRUE_CLASSMAP_EXISTS(ctx, "TestSchema", "SimpleTable");
+    ASSERT_FALSE_CLASSMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo");
+    EXPECT_FALSE_CLASSMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo");
+    ASSERT_TRUE_PROPERTYMAP_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1");
+    EXPECT_TRUE_PROPERTYMAP_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1");
+    ASSERT_FALSE_PROPERTYMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo");
+    EXPECT_FALSE_PROPERTYMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo");
+    ASSERT_TRUE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable");
+    EXPECT_TRUE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable");
+    ASSERT_FALSE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo", "ts_SimpleTableBoo");
+    EXPECT_FALSE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo", "ts_SimpleTableBoo");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable", "Prop1");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "ECInstanceId", "ts_SimpleTable", "Id");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "ECClassId", "ts_SimpleTable", "ECClassId");
+    ASSERT_FALSE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "Prop1");
+    ASSERT_FALSE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_TRUE_TABLE_EXISTS(ctx, "ts_SimpleTable");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "Prop1");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_SimpleTable", 3);
+    ASSERT_EQ_PROPERTYMAP_COUNT(ctx, "TestSchema", "SimpleTable", 3);
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_SimpleTable");
+    ASSERT_TRUE_COLUMN_IS_INTEGER(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_IS_INTEGER(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_TRUE_COLUMN_IS_TEXT(ctx, "ts_SimpleTable", "Prop1");
     }
 
 //TEST_F(DbMappingTestFixture, CSV123)
