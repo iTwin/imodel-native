@@ -104,6 +104,16 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
                 m_gcs = gcs;
                 }
 
+            uint64_t GetSMID() const
+                {
+                return m_smID;
+                }
+
+            void SetSMID(const uint64_t& smID)
+                {
+                m_smID = smID;
+                }
+
             public:
 
             ServerLocation m_location = LOCAL;
@@ -112,6 +122,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             bool m_public = false;
             bool m_isPublishing = false;
             bool m_isGCSSet = false;
+            uint64_t   m_smID;
             Utf8String m_guid;
             Utf8String m_serverID;
             Utf8String m_url;
@@ -130,18 +141,18 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         WString m_masterFileName;
         DataSourceURL m_pathToHeaders;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
-        bvector<SMNodeGroup::Ptr> m_nodeHeaderGroups;
+        bvector<SMNodeGroupPtr> m_nodeHeaderGroups;
         map<uint32_t, Json::Value*> m_nodeHeaderCache;
         Transform m_transform;
 
-        SMNodeGroup::Ptr m_CesiumGroup;
+        SMNodeGroupPtr m_CesiumGroup;
 
     protected : 
 
 
-        SMNodeGroup::Ptr FindGroup(HPMBlockID blockID);
+        SMNodeGroupPtr FindGroup(HPMBlockID blockID);
             
-        SMNodeGroup::Ptr GetGroup(HPMBlockID blockID);
+        SMNodeGroupPtr GetGroup(HPMBlockID blockID);
             
         void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t& maxCountData) const;
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize);
@@ -154,20 +165,20 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
     public : 
     
-        SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
+        SMStreamingStore(const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
 
-        SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings);
+        SMStreamingStore(const SMStreamingSettingsPtr& settings);
 
         virtual ~SMStreamingStore();
 
 #ifdef VANCOUVER_API
-        static SMStreamingStore* Create(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary)
+        static SMStreamingStore* Create(const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary)
             {
-            return new SMStreamingStore(dataSourceManager, path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
+            return new SMStreamingStore(path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
             }
-        static SMStreamingStore* Create(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings)
+        static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings)
             {
-            return new SMStreamingStore(dataSourceManager, settings);
+            return new SMStreamingStore(settings);
             }
 #endif
 
@@ -214,6 +225,10 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
 
         virtual void CancelPreloadData() override;
+
+        virtual void Register(const uint64_t& smID) override;
+
+        virtual void Unregister(const uint64_t& smID) override;
         
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
                 
@@ -332,7 +347,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
 
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroup::Ptr nodeGroup = nullptr, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
 
         SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, bool isPublishing = false, bool compress = true);
         
@@ -369,7 +384,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     private:
         
-        SMNodeGroup::Ptr           m_nodeGroup;
+        SMNodeGroupPtr           m_nodeGroup;
         SMStoreDataType               m_dataType;
 
         uint64_t GetBlockSizeFromNodeHeader() const;

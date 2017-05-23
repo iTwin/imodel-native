@@ -197,7 +197,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         bool                            m_isInvertingClips;
         bool                            m_needsNeighbors;
         bool                            m_isCesium3DTiles;
-        double                          m_minScreenPixelsPerPoint;            
+        double                          m_minScreenPixelsPerPoint;
 
         HFCPtr<MeshIndexType>          m_scmIndexPtr;              
         HFCPtr<MeshIndexType>          m_scmTerrainIndexPtr; //Optional. Scalable Mesh representing only terrain

@@ -603,7 +603,7 @@ public:
         }
 
     void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
-    virtual void         SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup);
+    virtual void         SaveGroupedNodeHeaders(SMNodeGroupPtr pi_pGroup);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -1271,8 +1271,8 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
     friend class SMMeshIndexNode<POINT, EXTENT>;
 public:
 
-    static map<void*, int> s_allNodes;
-    static int s_lastNodeIdx;
+    //static map<void*, int> s_allNodes;
+    //static int s_lastNodeIdx;
     // Primary methods
     /**----------------------------------------------------------------------------------------------
      Constructor for this class. The split threshold is used to indicate the maximum
@@ -1399,7 +1399,7 @@ public:
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
     StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
-    StatusInt           SavePointsToCloud(DataSourceManager *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
+    StatusInt           SavePointsToCloud(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
     StatusInt           SaveMasterHeaderToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
 
 #ifdef INDEX_DUMPING_ACTIVATED    
@@ -1620,6 +1620,9 @@ protected:
        
     ISMDataStoreTypePtr<EXTENT> m_dataStore;
     std::atomic<uint64_t>       m_nextNodeID;
+
+    uint64_t                    m_smID;
+    static uint64_t             m_nextSMID;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;

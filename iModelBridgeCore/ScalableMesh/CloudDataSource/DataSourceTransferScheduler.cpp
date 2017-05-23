@@ -82,7 +82,7 @@ DataSourceTransferScheduler::DataSourceTransferScheduler(void)
 DataSourceTransferScheduler::~DataSourceTransferScheduler(void)
     {
     this->shutDown();
-    delete m_dataSourceTransferScheduler;
+    m_dataSourceTransferScheduler = nullptr;
     }
 
 

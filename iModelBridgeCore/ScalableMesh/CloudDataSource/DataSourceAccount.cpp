@@ -170,7 +170,7 @@ DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
     std::thread::id threadID = std::this_thread::get_id();
     name << threadID;
 
-    dataSourceName = name.str();
+    dataSourceName = getAccountName() + L"_thread-" + name.str();
 
     return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, created);
     }

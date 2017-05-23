@@ -603,10 +603,8 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             return ERROR;
             }
 
-        // Pip ToDo: Create manager?
-        DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
-        
-        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+       
+        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         

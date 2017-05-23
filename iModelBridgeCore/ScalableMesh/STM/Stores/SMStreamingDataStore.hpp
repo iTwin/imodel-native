@@ -94,7 +94,7 @@ template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamin
     }
 
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path, FormatType formatType)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path, FormatType formatType)
     : SMSQLiteSisterFile(nullptr),
      m_pathToHeaders(headers_path.c_str()),
      m_use_node_header_grouping(areNodeHeadersGrouped),
@@ -132,12 +132,10 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     //    }
     }
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStreamingSettingsPtr& settings)
     : SMSQLiteSisterFile(nullptr),
       m_settings(settings)
     {
-    InitializeDataSourceAccount(dataSourceManager, settings);
-
     m_transform.InitIdentity();
 
     if (m_pathToHeaders.empty())
@@ -152,7 +150,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
             }
         }
 
-    m_pathToHeaders.setSeparator(GetDataSourceAccount()->getPrefixPath().getSeparator());
+    //m_pathToHeaders.setSeparator(GetDataSourceAccount()->getPrefixPath().getSeparator());
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     //                           and do this in the Cloud API...
@@ -260,45 +258,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         assert(!"Unknown server type for streaming");
         }
 
-        //// ------------------------------------------------------------------------------------------------------------------------------
-        //{ // WSG test to extract organization ID
-        //Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
-        //assert(!tokenUtf8.empty());
-        //
-        //Utf8String sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
-        //assert(!sslCertificatePath.empty());
-        //
-        //wstring server = s_use_qa_azure ? L"qa-realitydataservices-eus.cloudapp.net" : L"dev-realitydataservices-eus.cloudapp.net";
-        //
-        //DataSourceService                       *   serviceWSG;
-        //DataSourceAccount                       *   accountWSG;
-        //DataSourceAccount::AccountIdentifier        accountIdentifier(server);
-        //DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token in this case
-        //
-        //serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
-        //if (serviceWSG == nullptr)
-        //    return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-        //
-        //accountWSG = serviceWSG->createAccount(DataSourceAccount::AccountName(L"WSGAccount"), accountIdentifier, accountKey);
-        //if (accountWSG == nullptr)
-        //    return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-        //
-        //// Set SSL Certificate and token callback first so that we can attempt connecting to RDS after setting URLs
-        //accountWSG->setAccountSSLCertificatePath(sslCertificatePath.c_str());
-        //
-        //accountWSG->setWSGTokenGetterCallback([]() -> std::string
-        //    {
-        //    return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
-        //    });
-        //
-        //accountWSG->setPrefixPath(DataSourceURL(directory.c_str()));
-        //
-        //auto* casted_account = static_cast<DataSourceAccountWSG*>(accountWSG);
-        //casted_account->setUseDirectAzureCalls(true);
-        //
-        //}
-        // Extract organisation ID test
-        // ------------------------------------------------------------------------------------------------------------------------------
+    account_name.append(L"_" + std::to_wstring(settings->GetSMID()));
 
     if ((service = dataSourceManager.getService(service_name)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
@@ -396,38 +356,38 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     {
     if (indexHeader == NULL || !m_nodeHeaderGroups.empty()) return 0;
 
-    SMNodeGroup::StrategyType groupMode = SMNodeGroup::StrategyType::NONE;
-    if (s_stream_from_grouped_store) groupMode = SMNodeGroup::StrategyType::NORMAL;
-    if (m_use_node_header_grouping && m_use_virtual_grouping) groupMode = SMNodeGroup::StrategyType::VIRTUAL;
-    if (s_stream_using_cesium_3d_tiles_format) groupMode = SMNodeGroup::StrategyType::CESIUM;
-    if (s_import_from_bim_exported_cesium_3d_tiles) groupMode = SMNodeGroup::StrategyType::BIMCESIUM;
+    SMGroupGlobalParameters::StrategyType groupMode = SMGroupGlobalParameters::StrategyType::NONE;
+    if (s_stream_from_grouped_store) groupMode = SMGroupGlobalParameters::StrategyType::NORMAL;
+    if (m_use_node_header_grouping && m_use_virtual_grouping) groupMode = SMGroupGlobalParameters::StrategyType::VIRTUAL;
+    if (s_stream_using_cesium_3d_tiles_format) groupMode = SMGroupGlobalParameters::StrategyType::CESIUM;
+    if (s_import_from_bim_exported_cesium_3d_tiles) groupMode = SMGroupGlobalParameters::StrategyType::BIMCESIUM;
     bool isGrouped = true;
     //wchar_t buffer[10000];
     //swprintf(buffer, m_masterFileName.c_str());
     //switch (groupMode)
     //    {
-    //    case SMNodeGroup::StrategyType::NONE:
+    //    case SMGroupGlobalParameters::StrategyType::NONE:
     //    {
     //    swprintf(buffer, L"MasterHeader.sscm");
     //    isGrouped = false;
     //    break;
     //    }
-    //    case SMNodeGroup::StrategyType::NORMAL:
+    //    case SMGroupGlobalParameters::StrategyType::NORMAL:
     //    {
     //    swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"");
     //    break;
     //    }
-    //    case SMNodeGroup::StrategyType::VIRTUAL:
+    //    case SMGroupGlobalParameters::StrategyType::VIRTUAL:
     //    {
     //    swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"Virtual");
     //    break;
     //    }
-    //    case SMNodeGroup::StrategyType::CESIUM:
+    //    case SMGroupGlobalParameters::StrategyType::CESIUM:
     //    {
     //    swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", L"-compressed");
     //    break;
     //    }
-    //    case SMNodeGroup::StrategyType::BIMCESIUM:
+    //    case SMGroupGlobalParameters::StrategyType::BIMCESIUM:
     //    {
     //    swprintf(buffer, L"graz/graz_AppData.json");
     //    break;
@@ -464,7 +424,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
         auto tilesetName = BEFILENAME(GetFileNameAndExtension, baseUrl);
 
-        m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
+        SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(groupMode, this->GetDataSourceAccount());
+        SMGroupCache::Ptr groupCache = SMGroupCache::Create(&m_nodeHeaderCache);
+        m_CesiumGroup = SMNodeGroup::Create(groupParameters, groupCache, rootNodeBlockID);
+        m_CesiumGroup->DeclareRoot();
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
         m_CesiumGroup->ResetNodeIDGenerator();
@@ -534,11 +497,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
             indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
             assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
-            indexHeader->m_isCesiumFormat = groupMode == SMNodeGroup::StrategyType::CESIUM;
+            indexHeader->m_isCesiumFormat = groupMode == SMGroupGlobalParameters::StrategyType::CESIUM;
 
             auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
             //auto group = this->GetGroup(HPMBlockID(rootNodeBlockID));
-            m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
+            SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(groupMode, this->GetDataSourceAccount());
+            SMGroupCache::Ptr groupCache = SMGroupCache::Create(&m_nodeHeaderCache);
+            m_CesiumGroup = SMNodeGroup::Create(groupParameters, groupCache, rootNodeBlockID);
+            m_CesiumGroup->DeclareRoot();
             m_CesiumGroup->SetURL(L"n_0.json");
             m_CesiumGroup->SetDataSourcePrefix(L"data");
 
@@ -546,7 +512,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
             short storedGroupMode = m_use_virtual_grouping;
             memcpy(&storedGroupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(storedGroupMode));
-            assert((storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
+            assert((storedGroupMode == SMGroupGlobalParameters::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
             position += sizeof(storedGroupMode);
 
             //m_nodeHeaderGroups.push_back(group);
@@ -590,7 +556,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             //    memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_numNodes));
             //    position += sizeof(group_numNodes);
 
-            //    auto group = SMNodeGroup::Ptr(new SMNodeGroup(this->GetDataSourceAccount(),
+            //    auto group = SMNodeGroupPtr(new SMNodeGroup(this->GetDataSourceAccount(),
             //                                                     (uint32_t)group_id,
             //                                                     SMNodeGroup::StrategyType(storedGroupMode),
             //                                                     group_numNodes,
@@ -1077,7 +1043,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
             //ReadNodeHeaderFromJSON(header, group->GetJsonHeader(blockID.m_integerID));
             m_CesiumGroup->DownloadNodeHeader(blockID.m_integerID);
             auto jsonHeader = m_nodeHeaderCache[blockID.m_integerID];
-            assert(jsonHeader != nullptr);
+            assert(jsonHeader != nullptr && !jsonHeader->isNull());
             ReadNodeHeaderFromJSON(header, *jsonHeader);
             }
         else
@@ -1146,7 +1112,22 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
     assert(!"No implemented yet");
     }
 
-template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
+template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & smID)
+    {
+    m_settings->SetSMID(smID);
+    InitializeDataSourceAccount(*DataSourceManager::Get(), m_settings);
+    }
+
+template<class EXTENT> void SMStreamingStore<EXTENT>::Unregister(const uint64_t & smID)
+    {
+    auto const& account = GetDataSourceAccount();
+    if (account)
+        {
+        DataSourceManager::Get()->getService(account->getServiceName())->destroyAccount(account->getAccountName());
+        }
+    }
+
+template <class EXTENT> SMNodeGroupPtr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
     {
     auto nodeIDToFind = ConvertBlockID(blockID);
     for (auto& group : m_nodeHeaderGroups)
@@ -1160,7 +1141,7 @@ template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPM
     return nullptr;
     }
 
-template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::GetGroup(HPMBlockID blockID)
+template <class EXTENT> SMNodeGroupPtr SMStreamingStore<EXTENT>::GetGroup(HPMBlockID blockID)
     {
     auto group = this->FindGroup(blockID);
     if (group == nullptr) 
@@ -1813,7 +1794,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatT
 
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroup::Ptr nodeGroup, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroupPtr nodeGroup, bool compress = true)
     : m_dataSourceAccount(dataSourceAccount),
       m_nodeHeader(nodeHeader),
       m_nodeGroup(nodeGroup),

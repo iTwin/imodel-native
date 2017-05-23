@@ -854,11 +854,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
                         
-        StatusInt           Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS);
+        StatusInt           Publish3DTiles(const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS);
 
-        StatusInt           SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
+        StatusInt           SaveMeshToCloud(const WString& path, const bool& pi_pCompress);
 
-        StatusInt           ChangeGeometricError(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
+        StatusInt           ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
         
