@@ -190,6 +190,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServices(
     &s_urlRegistry
 );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServicesLocation(
+    "UsageLoggingServices.Location.Url",
+    "https://dev-ulas-eus2-sfc01.bentley.com/api/v1/location",
+    "https://qa-ulas-eus2-sfc01.bentley.com/api/v1/location",
+    "https://ulas.bentley.com/api/v1/location",
+    &s_urlRegistry
+);
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "BeXMPP",
     "dev-xmppcollab-eus.cloudapp.net",
