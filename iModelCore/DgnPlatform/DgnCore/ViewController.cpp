@@ -903,15 +903,14 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
-    if (m_root.IsNull())
+    if (nullptr == m_root)
         {
         auto model = GetViewedModel();
         if (nullptr == model)
             return ERROR;
 
         m_root = model->GetTileTree(&context.GetTargetR().GetSystem());
-        //BeAssert(m_root.IsValid());
-        if (m_root.IsNull())
+        if (nullptr == m_root)
             return ERROR;
         }
 
@@ -949,10 +948,10 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
     {
-    if (m_root.IsNull())
+    if (nullptr == m_root)
         {
         auto model = GetViewedModel();
-        if (nullptr == model || (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())).IsNull())
+        if (nullptr == model || nullptr == (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())))
             return ERROR;
         }
 

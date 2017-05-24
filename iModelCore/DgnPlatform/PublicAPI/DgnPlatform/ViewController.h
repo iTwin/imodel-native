@@ -124,7 +124,7 @@ protected:
     ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
     Render::GraphicListPtr m_currentScene;
     Render::GraphicListPtr m_readyScene;
-    bmap<DgnModelId, TileTree::RootPtr> m_roots;
+    bmap<DgnModelId, TileTree::RootP> m_roots;
     bool m_allRootsLoaded = false;
     GridOrientationType m_gridOrientation = GridOrientationType::WorldXY;
     DPoint2d m_gridSpacing = DPoint2d::From(1.0, 1.0);
@@ -624,7 +624,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    TileTree::RootPtr   m_root;
+    TileTree::RootP m_root = nullptr;
 
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
@@ -796,7 +796,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
 
 private:
     DgnModelId m_viewedModelId;
-    TileTree::RootPtr m_root;
+    TileTree::RootP m_root = nullptr;
 
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}

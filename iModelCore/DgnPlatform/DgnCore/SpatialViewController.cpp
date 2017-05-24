@@ -159,7 +159,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
         for (auto modelId : GetViewedModels())
             {
             auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
-            TileTree::RootPtr modelRoot;
+            TileTree::RootP modelRoot;
             if (model.IsValid())
                 {
                 modelRoot = model->GetTileTree(context.GetTargetR().GetSystem());
@@ -194,7 +194,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
             if (m_roots.end() == iter)
                 {
                 auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
-                TileTree::RootPtr modelRoot;
+                TileTree::RootP modelRoot = nullptr;
                 if (model.IsValid())
                     {
                     modelRoot = model->GetTileTree(&context.GetTargetR().GetSystem());
@@ -220,7 +220,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     // Always draw all the tile trees we currently have...
     // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
     for (auto pair : m_roots)
-        if (pair.second.IsValid())
+        if (nullptr != pair.second)
             pair.second->DrawInView(context);
 
     //DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());

@@ -527,12 +527,12 @@ struct TileRequests
 {
 private:
     // NB: We use an std::map because we need each MissingNodes to maintain a stable address as we add to the map
-    typedef std::map<RootPtr, MissingNodes> Map;
+    typedef std::map<RootP, MissingNodes> Map;
 
     Map m_map;
 public:
     //! Obtain the set of missing nodes for the given tile tree.
-    MissingNodesR GetMissing(RootR root) { return m_map.insert(Map::value_type(RootPtr(&root), MissingNodes())).first->second; }
+    MissingNodesR GetMissing(RootR root) { return m_map.insert(Map::value_type(&root, MissingNodes())).first->second; }
 
     //! Request all accumulated tiles to be loaded. This operation first cancels loading of any previously-requested tiles which
     //! are not contained in this set of requests.
