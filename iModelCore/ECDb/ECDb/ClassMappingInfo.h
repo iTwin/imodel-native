@@ -64,7 +64,6 @@ private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     std::vector<IndexMappingInfoPtr> m_dbIndexes;
-    bool m_mapsToVirtualTable = false;
     ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
 
     ClassMappingStatus EvaluateMapStrategy(SchemaImportContext&);
@@ -97,8 +96,6 @@ public:
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-    //! Virtual tables are not persisted   
-    bool MapsToVirtualTable () const { return m_mapsToVirtualTable; }
     };
 
 //======================================================================================

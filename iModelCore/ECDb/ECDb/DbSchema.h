@@ -353,7 +353,8 @@ public:
         Primary = 0,
         Joined = 1, //! Derived Table cannot exist without a primary table
         Existing = 2, 
-        Overflow =3 //! Derived table cannot exist without a primary or joined table
+        Overflow = 3, //! Derived table cannot exist without a primary or joined table
+        UpdatableView = 4 //for abstract classes and mixins
         };
 
     struct LinkNode final : NonCopyableClass

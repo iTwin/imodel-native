@@ -640,7 +640,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                             <Class class="Foo"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml", true, "A class can have two navigation properties for the same relationship with different direction"),
+                   </ECSchema>)xml", false, "A class can have two navigation properties for the same relationship with different direction"),
 
         SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >

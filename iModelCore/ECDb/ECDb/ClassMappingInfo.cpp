@@ -43,7 +43,7 @@ std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(ClassMappingSt
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingInfo::ClassMappingInfo(ECDb const& ecdb, ECClassCR ecClass)
-    : m_ecdb(ecdb), m_ecClass(ecClass), m_mapsToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_tphBaseClassMap(nullptr)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_classHasCurrentTimeStampProperty(nullptr), m_tphBaseClassMap(nullptr)
     {}
 
 //---------------------------------------------------------------------------------
@@ -66,17 +66,13 @@ ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy(SchemaImportContext& ct
     if (m_tableName.empty())
         {
         // if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
-        if (SUCCESS != ClassMap::DetermineTableName(m_tableName, m_ecClass))
+        if (SUCCESS != ClassMapper::TableMapper::DetermineTableName(m_tableName, m_ecClass))
             return ClassMappingStatus::Error;
         }
 
     ClassMappingStatus stat = _EvaluateMapStrategy(ctx);
     if (stat != ClassMappingStatus::Success)
         return stat;
-
-    //! We override m_mapsToVirtualTable if TablePerHierarchy was used.
-    if (m_mapsToVirtualTable && m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)
-        m_mapsToVirtualTable = false;
 
     if (m_ecInstanceIdColumnName.empty())
         m_ecInstanceIdColumnName.assign(COL_DEFAULTNAME_Id);
@@ -118,7 +114,7 @@ ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy(SchemaImportContext& c
 
     if (baseClassMap == nullptr)
         {
-        if (m_mapsToVirtualTable) // abstract class
+        if (m_ecClass.GetClassModifier() == ECClassModifier::Abstract)
             {
             if (caCache.HasMapStrategy() && (caCache.GetStrategy() == MapStrategy::ExistingTable ||
                 caCache.GetStrategy() == MapStrategy::OwnTable))
@@ -208,7 +204,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(SchemaImpor
         if (baseClassMap.GetMapStrategy().GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::ParentOfJoinedTable)
             {
             //Joined tables are named after the class which becomes the root class of classes in the joined table
-            if (SUCCESS != ClassMap::DetermineTableName(m_tableName, m_ecClass))
+            if (SUCCESS != ClassMapper::TableMapper::DetermineTableName(m_tableName, m_ecClass))
                 return ERROR;
 
             //For classes in the joined table the id column name is determined like this:
