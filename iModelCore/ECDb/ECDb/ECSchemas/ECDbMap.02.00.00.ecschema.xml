@@ -11,8 +11,7 @@
     <ECCustomAttributeClass typeName="JoinedTablePerDirectSubclass" description="Maps subclasses and their children to a joined table. Can only be applied to classes in a hierarchy using MapStrategy TablePerHierarchy." modifier="Sealed" appliesTo="EntityClass"/>
     <ECCustomAttributeClass typeName="ShareColumns" description="Allows to share columns amongst ECProperties. Can only be applied to MapStrategy TablePerHierarchy" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
         <ECProperty propertyName="ApplyToSubclassesOnly" typeName="boolean" description="False (Default):Columns are shared for the properties of the ECClass to which this CA is applied and all its subclasses. True: Columns are not shared for this ECClass but for all of its subclasses."/>
-        <ECProperty propertyName="SharedColumnCount" typeName="int" description="Number of shared columns to use before using overflow tables (optional). Default: 0."/>
-        <ECProperty propertyName="SharedColumnCountPerOverflowTable" typeName="int" description="Number of shared columns of each overflow table (optional). If not specified, a default will be used."/>
+        <ECProperty propertyName="MaxSharedColumnsBeforeOverflow" typeName="int" description="Maximum number of shared columns to use before using an overflow table (optional). If not specified, ECDb will create as many shared columns until the table has 63 columns."/>
     </ECCustomAttributeClass>
     <ECCustomAttributeClass typeName="DbIndexList" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
         <ECStructArrayProperty propertyName="Indexes" typeName="DbIndex" description="List of indexes on properties of this class. It can be use to improve query performance or to add unique constraint." minOccurs="1" maxOccurs="unbounded"/>
@@ -32,6 +31,7 @@
     <ECCustomAttributeClass typeName="LinkTableRelationshipMap" modifier="Sealed" appliesTo="RelationshipClass">
         <ECProperty propertyName="SourceECInstanceIdColumn" typeName="string" description="Optional. If not set, a default column name will be used"/>
         <ECProperty propertyName="TargetECInstanceIdColumn" typeName="string" description="Optional. If not set, a default column name will be used"/>
+        <ECProperty propertyName="CreateForeignKeyConstraints" typeName="boolean" description="Default: true. If set to false, no foreign key constraints are created on the link table. In that case, deleting instance does not delete its relationships in the link table."/>
         <ECProperty propertyName="AllowDuplicateRelationships" typeName="boolean" description="Default: false. If set to true duplicate relationships are allowed."/>
     </ECCustomAttributeClass>
     <ECCustomAttributeClass typeName="ForeignKeyConstraint" modifier="Sealed" appliesTo="RelationshipClass">

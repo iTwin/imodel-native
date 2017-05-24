@@ -251,22 +251,10 @@ void BinaryBooleanExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
-    ctx.AppendToECSql(*GetLeftOperand()).AppendToECSql(" ").AppendToECSql(ExpHelper::ToSql(m_op)).AppendToECSql(" ");
-
-    ComputedExp const* rhs = GetRightOperand();
-    const bool rhsNeedsParens = m_op == BooleanSqlOperator::NotIn || m_op == BooleanSqlOperator::In;
-
-    if (rhsNeedsParens)
-        ctx.AppendToECSql("(");
-
-    ctx.AppendToECSql(*rhs);
-
-    if (rhsNeedsParens)
-        ctx.AppendToECSql(")");
+    ctx.AppendToECSql(*GetLeftOperand()).AppendToECSql(" ").AppendToECSql(ExpHelper::ToSql(m_op)).AppendToECSql(" ").AppendToECSql(*GetRightOperand());
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
-
     }
 
 //-----------------------------------------------------------------------------------------

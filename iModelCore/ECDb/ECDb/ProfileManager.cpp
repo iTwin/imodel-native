@@ -389,7 +389,7 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "Id INTEGER PRIMARY KEY,"
                            "RelationshipClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "RelationshipEnd INTEGER NOT NULL,"
-                           "MultiplicityLowerLimit INTEGER,"
+                           "MultiplicityLowerLimit INTEGER NOT NULL,"
                            "MultiplicityUpperLimit INTEGER,"
                            "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "RoleLabel TEXT,"
@@ -438,9 +438,9 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
                            "ShareColumnsMode INTEGER,"
-                           "SharedColumnCount INTEGER,"
-                           "SharedColumnCountPerOverflowTable INTEGER,"
-                           "JoinedTableInfo INTEGER)");
+                           "MaxSharedColumnsBeforeOverflow INTEGER,"
+                           "JoinedTableInfo INTEGER,"
+                           "UpdatableViewInfo TEXT)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

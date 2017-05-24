@@ -123,7 +123,7 @@ struct SchemaReader final
 
         ECN::ECClassCP GetClass(ECN::ECClassId) const;
         ECN::ECClassId GetClassId(ECN::ECClassCR) const;
-        ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema) const;
+        ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode) const;
 
         ECN::ECEnumerationCP GetEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
         ECN::ECEnumerationId GetEnumerationId(ECN::ECEnumerationCR) const;

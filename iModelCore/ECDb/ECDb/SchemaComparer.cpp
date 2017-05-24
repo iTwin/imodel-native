@@ -2037,12 +2037,12 @@ void ECPropertyValueChange::_WriteToString(Utf8StringR str, int currentIndex, in
     AppendEnd(str);
 
 
-    if (m_children != nullptr)
+    if (m_derivedTables != nullptr)
         {
         //AppendBegin(str, *this, currentIndex);
-        for (size_t i = 0; i < m_children->Count(); i++)
+        for (size_t i = 0; i < m_derivedTables->Count(); i++)
             {
-            m_children->At(i).WriteToString(str, currentIndex + indentSize, indentSize);
+            m_derivedTables->At(i).WriteToString(str, currentIndex + indentSize, indentSize);
             }
         //AppendEnd(str);
         }
@@ -2060,8 +2060,8 @@ bool ECPropertyValueChange::_IsEmpty() const
     if (m_value != nullptr)
         return m_value->IsEmpty();
 
-    if (m_children != nullptr)
-        return m_children->IsEmpty();
+    if (m_derivedTables != nullptr)
+        return m_derivedTables->IsEmpty();
 
     return true;
     }
@@ -2074,9 +2074,9 @@ void ECPropertyValueChange::_Optimize()
         if (m_value->IsEmpty())
             m_value = nullptr;
 
-    if (m_children != nullptr)
-        if (m_children->IsEmpty())
-            m_children = nullptr;
+    if (m_derivedTables != nullptr)
+        if (m_derivedTables->IsEmpty())
+            m_derivedTables = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2149,11 +2149,11 @@ ECPropertyValueChange::ECPropertyValueChange(ChangeState state, SystemId systemI
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECPropertyValueChange::GetFlatListOfChildren(std::vector<ECPropertyValueChange const*>& childrens) const
     {
-    if (m_children != nullptr)
+    if (m_derivedTables != nullptr)
         {
-        for (size_t i = 0; i < m_children->Count(); i++)
+        for (size_t i = 0; i < m_derivedTables->Count(); i++)
             {
-            m_children->At(i).GetFlatListOfChildren(childrens);
+            m_derivedTables->At(i).GetFlatListOfChildren(childrens);
             }
         }
     else
@@ -2175,10 +2175,10 @@ std::vector<ECPropertyValueChange const*> ECPropertyValueChange::GetFlatListOfCh
 //+---------------+---------------+---------------+---------------+---------------+------
 ECChangeArray<ECPropertyValueChange>& ECPropertyValueChange::GetChildren() const
     {
-    if (m_children == nullptr)
-        m_children = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), SystemId::PropertyValues, this, GetId(), SystemId::PropertyValue));
+    if (m_derivedTables == nullptr)
+        m_derivedTables = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), SystemId::PropertyValues, this, GetId(), SystemId::PropertyValue));
 
-    return *m_children;
+    return *m_derivedTables;
     }
 
 //---------------------------------------------------------------------------------------

@@ -156,7 +156,7 @@ ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
     if (prop.GetClass().HasId())
         {
         //If the ECClass already has an id, we can run a faster SQL to get the property id
-        BeAssert(prop.GetClass().GetId() == SchemaPersistenceHelper::GetClassId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), ResolveSchema::BySchemaName));
+        BeAssert(prop.GetClass().GetId() == SchemaPersistenceHelper::GetClassId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), SchemaLookupMode::ByName));
 
         propId = SchemaPersistenceHelper::GetPropertyId(m_ecdb, prop.GetClass().GetId(), prop.GetName().c_str());
         }
@@ -760,9 +760,10 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     Utf8CP displayLabel = stmt->IsColumnNull(1) ? nullptr : stmt->GetValueText(1);
     Utf8CP description = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
     Utf8CP alias = stmt->GetValueText(3);
-    uint32_t versionMajor = (uint32_t) stmt->GetValueInt(4);
-    uint32_t versionWrite = (uint32_t) stmt->GetValueInt(5);
-    uint32_t versionMinor = (uint32_t) stmt->GetValueInt(6);
+    //uint32_t is persisted as int64 to not lose unsigned-ness
+    uint32_t versionMajor = (uint32_t) stmt->GetValueInt64(4);
+    uint32_t versionWrite = (uint32_t) stmt->GetValueInt64(5);
+    uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(6);
     const int typesInSchema = stmt->GetValueInt(7);
 
     ECSchemaPtr schema = nullptr;
@@ -814,17 +815,17 @@ BentleyStatus SchemaReader::LoadMixinAppliesToClass(Context& ctx, ECN::ECClassCR
         return ERROR;
         }
 
-    ResolveSchema resolveSchemaName = ResolveSchema::AutoDetect;
+    SchemaLookupMode schemaLookupMode = SchemaLookupMode::AutoDetect;
     Utf8StringCP effectiveSchemaName = &appliesToSchemaAlias;
     if (appliesToSchemaAlias.empty())
         {
         effectiveSchemaName = &mixinClass.GetSchema().GetName();
-        resolveSchemaName = ResolveSchema::BySchemaName;
+        schemaLookupMode = SchemaLookupMode::ByName;
         }
 
     BeAssert(effectiveSchemaName != nullptr);
 
-    ECClassId appliesToClassId = GetClassId(*effectiveSchemaName, appliesToClassName, resolveSchemaName);
+    ECClassId appliesToClassId = GetClassId(*effectiveSchemaName, appliesToClassName, schemaLookupMode);
     if (!appliesToClassId.IsValid() || 
         //this is the important step and the mere purpose of the routine. We need to load the applies to class into memory
         //so that ECObjects can validate the mixin.
@@ -852,15 +853,15 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             Utf8String m_displayLabel;
             Utf8String m_description;
             bool m_isReadonly = false;
-            int m_primType = -1;
+            Nullable<int> m_primType;
             ECClassId m_structClassId;
             Utf8String m_extendedTypeName;
             ECEnumerationId m_enumId;
             KindOfQuantityId m_koqId;
-            uint32_t m_arrayMinOccurs = 0;
-            uint32_t m_arrayMaxOccurs = std::numeric_limits<uint32_t>::max();
+            int64_t m_arrayMinOccurs = INT64_C(0);
+            Nullable<int64_t> m_arrayMaxOccurs;
             ECClassId m_navPropRelClassId;
-            int m_navPropDirection = -1;
+            Nullable<int> m_navPropDirection;
             };
 
         static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, ECClassId classId)
@@ -898,6 +899,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 const PropertyKind kind = Enum::FromInt<PropertyKind>(stmt->GetValueInt(kindIx));
                 rowInfo.m_kind = kind;
                 rowInfo.m_name.assign(stmt->GetValueText(nameIx));
+
                 if (!stmt->IsColumnNull(displayLabelIx))
                     rowInfo.m_displayLabel.assign(stmt->GetValueText(displayLabelIx));
 
@@ -907,16 +909,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 if (!stmt->IsColumnNull(isReadonlyIx))
                     rowInfo.m_isReadonly = stmt->GetValueBoolean(isReadonlyIx);
 
-                bool primTypeIsNull = false;
-                if (stmt->IsColumnNull(primTypeIx))
-                    primTypeIsNull = true;
-                else
+                if (!stmt->IsColumnNull(primTypeIx))
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
 
                 if (!stmt->IsColumnNull(enumIdIx))
                     rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIdIx);
 
-                if (kind == PropertyKind::Primitive && primTypeIsNull && !rowInfo.m_enumId.IsValid())
+                if (kind == PropertyKind::Primitive && rowInfo.m_primType.IsNull() && !rowInfo.m_enumId.IsValid())
                     {
                     BeAssert(false && "Either PrimitiveType or EnumerationId column must not be NULL for primitive property");
                     return ERROR;
@@ -945,18 +944,21 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     return ERROR;
                     }
 
-                if (stmt->IsColumnNull(minOccursIx) || stmt->IsColumnNull(maxOccursIx))
+                if (stmt->IsColumnNull(minOccursIx))
                     {
                     if (kind == PropertyKind::PrimitiveArray || kind == PropertyKind::StructArray)
                         {
-                        BeAssert(false && "ArrayMinOccurs and ArrayMaxOccurs columns must not be NULL for array property");
+                        BeAssert(false && "ArrayMinOccurs column must not be NULL for array property");
                         return ERROR;
                         }
                     }
                 else
                     {
-                    rowInfo.m_arrayMinOccurs = (uint32_t) stmt->GetValueInt(minOccursIx);
-                    rowInfo.m_arrayMaxOccurs = (uint32_t) stmt->GetValueInt(maxOccursIx);
+                    //uint32_t are persisted as int64 to not lose the unsigned-ness.
+                    rowInfo.m_arrayMinOccurs = stmt->GetValueInt64(minOccursIx);
+                    //unbound maxOccurs is persisted as DB NULL.
+                    if (!stmt->IsColumnNull(maxOccursIx))
+                        rowInfo.m_arrayMaxOccurs = stmt->GetValueInt64(maxOccursIx);
                     }
 
                 if (stmt->IsColumnNull(navRelationshipClassId))
@@ -988,6 +990,25 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             return SUCCESS;
             }
 
+            static BentleyStatus AssignArrayBounds(ArrayECProperty& prop, RowInfo const& rowInfo)
+                {
+                //uint32_t was persisted as int64 to not lose unsigned-ness
+                if (ECObjectsStatus::Success != prop.SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs))
+                    return ERROR;
+
+                if (!rowInfo.m_arrayMaxOccurs.IsNull())
+                    {
+                    //if maxoccurs is DB NULL, it means unbound. This is the default in ArrayECProperty
+                    if (ECObjectsStatus::Success != prop.SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs.Value()))
+                        return ERROR;
+                    }
+                else
+                    {
+                    BeAssert(prop.IsStoredMaxOccursUnbounded());
+                    }
+
+                return SUCCESS;
+                }
         };
 
     std::vector<PropReaderHelper::RowInfo> rowInfos;
@@ -1001,7 +1022,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             {
                 case PropertyKind::Primitive:
                 {
-                BeAssert(rowInfo.m_primType >= 0 || rowInfo.m_enumId.IsValid());
+                BeAssert(!rowInfo.m_primType.IsNull() || rowInfo.m_enumId.IsValid());
 
                 PrimitiveECPropertyP primProp = nullptr;
 
@@ -1016,7 +1037,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     }
                 else
                     {
-                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType))
+                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
                         return ERROR;
                     }
 
@@ -1055,9 +1076,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
                 case PropertyKind::PrimitiveArray:
                 {
-                BeAssert(rowInfo.m_primType >= 0);
+                BeAssert(!rowInfo.m_primType.IsNull());
 
-                PrimitiveType primType = (PrimitiveType) rowInfo.m_primType;
+                PrimitiveType primType = (PrimitiveType) rowInfo.m_primType.Value();
 
                 PrimitiveArrayECPropertyP arrayProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, primType))
@@ -1069,8 +1090,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                         return ERROR;
                     }
 
-                arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
-                arrayProp->SetMaxOccurs(rowInfo.m_arrayMaxOccurs);
+                if (SUCCESS != PropReaderHelper::AssignArrayBounds(*arrayProp, rowInfo))
+                    return ERROR;
 
                 prop = arrayProp;
                 break;
@@ -1094,8 +1115,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, rowInfo.m_name, *structClass))
                     return ERROR;
 
-                arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
-                arrayProp->SetMaxOccurs(rowInfo.m_arrayMaxOccurs);
+                if (SUCCESS != PropReaderHelper::AssignArrayBounds(*arrayProp, rowInfo))
+                    return ERROR;
 
                 prop = arrayProp;
                 break;
@@ -1105,13 +1126,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 {
                 BeAssert(ecClass->IsEntityClass());
 
-                BeAssert(rowInfo.m_navPropRelClassId.IsValid());
+                BeAssert(rowInfo.m_navPropRelClassId.IsValid() && !rowInfo.m_navPropDirection.IsNull());
                 ECClassCP relClassRaw = GetClass(ctx, rowInfo.m_navPropRelClassId);
                 if (relClassRaw == nullptr)
                     return ERROR;
 
                 BeAssert(relClassRaw->IsRelationshipClass());
-                ECRelatedInstanceDirection direction = rowInfo.m_navPropDirection < 0 ? ECRelatedInstanceDirection::Forward : (ECRelatedInstanceDirection) rowInfo.m_navPropDirection;
+                ECRelatedInstanceDirection direction = (ECRelatedInstanceDirection) rowInfo.m_navPropDirection.Value();
                 NavigationECPropertyP navProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
                     return ERROR;
@@ -1131,6 +1152,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
         BeAssert(prop != nullptr);
         prop->SetId(rowInfo.m_id);
         prop->SetIsReadOnly(rowInfo.m_isReadonly);
+
         if (!rowInfo.m_description.empty())
             prop->SetDescription(rowInfo.m_description);
 
@@ -1237,7 +1259,7 @@ BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caCon
 BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel, AbstractConstraintClassId FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
@@ -1249,19 +1271,36 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
     if (BE_SQLITE_ROW != stmt->Step())
         return ERROR;
 
-    ECRelationshipConstraintId constraintId = stmt->GetValueId<ECRelationshipConstraintId>(0);
+    const int constraintIdIx = 0;
+    const int lowerLimitIx = 1;
+    const int upperLimitIx = 2;
+    const int isPolymorphicIx = 3;
+    const int roleLabelIx = 4;
+    const int abstractConstraintClassIdIx = 5;
+
+    ECRelationshipConstraintId constraintId = stmt->GetValueId<ECRelationshipConstraintId>(constraintIdIx);
 
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
 
-    constraint.SetMultiplicity(RelationshipMultiplicity(stmt->GetValueInt(1), stmt->GetValueInt(2)));
-    constraint.SetIsPolymorphic(stmt->GetValueBoolean(3));
+    //uint32_t was persisted as int64 to not lose signed-ness. 
+    const uint32_t multiplicityLowerLimit = (uint32_t) stmt->GetValueInt64(lowerLimitIx);
+    if (stmt->IsColumnNull(upperLimitIx))
+        {
+        //If upper limit  DB NULL, this means it is unbounded -> Use ctor that only takes lower limit
+        constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit));
+        BeAssert(constraint.GetMultiplicity().IsUpperLimitUnbounded());
+        }
+    else
+        constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit, (uint32_t) stmt->GetValueInt64(upperLimitIx)));
 
-    if (!stmt->IsColumnNull(4))
-        constraint.SetRoleLabel(stmt->GetValueText(4));
+    constraint.SetIsPolymorphic(stmt->GetValueBoolean(isPolymorphicIx));
+
+    if (!stmt->IsColumnNull(roleLabelIx))
+        constraint.SetRoleLabel(stmt->GetValueText(roleLabelIx));
 
     ECClassId abstractConstraintClassId;
-    if (!stmt->IsColumnNull(5))
-        abstractConstraintClassId = stmt->GetValueId<ECClassId>(5);
+    if (!stmt->IsColumnNull(abstractConstraintClassIdIx))
+        abstractConstraintClassId = stmt->GetValueId<ECClassId>(abstractConstraintClassIdIx);
 
     //release statement as we have read all information and so that child calls can reuse the same statement without repreparation.
     stmt = nullptr;
@@ -1328,7 +1367,7 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
     {
     if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
         {
-        BeAssert(ecClass.GetId() == GetClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName));
+        BeAssert(ecClass.GetId() == GetClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), SchemaLookupMode::ByName));
         return ecClass.GetId();
         }
 
@@ -1340,7 +1379,7 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
         classId = SchemaPersistenceHelper::GetClassId(m_ecdb, ecClass.GetSchema().GetId(), ecClass.GetName().c_str());
         }
     else
-        classId = GetClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
+        classId = GetClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), SchemaLookupMode::ByName);
 
     if (classId.IsValid())
         {
@@ -1356,7 +1395,7 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR className, ResolveSchema resolveSchema) const
+ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR className, SchemaLookupMode lookupMode) const
     {
     //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
     auto outerIt = m_classIdCache.find(schemaName);
@@ -1368,7 +1407,7 @@ ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR classNa
             return innerIt->second;
         }
 
-    ECClassId ecClassId = SchemaPersistenceHelper::GetClassId(m_ecdb, schemaName.c_str(), className.c_str(), resolveSchema);
+    ECClassId ecClassId = SchemaPersistenceHelper::GetClassId(m_ecdb, schemaName.c_str(), className.c_str(), lookupMode);
     
     //add id to cache (only if valid class id to avoid overflow of the cache)
     if (ecClassId.IsValid())

@@ -36,7 +36,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     PropertyMap const* effectivePropMap = &propMap;
     if (currentScopeECSqlType == ECSqlType::Delete)
         {
-        if (currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause) &&
+        if (currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::UsePrimaryTableForSystemPropertyResolution) &&
             propMap.IsSystem() && propMap.GetAs<SystemPropertyMap>().GetTables().size() > 1)
             {
             BeAssert(exp.GetClassRefExp()->GetType() == Exp::Type::ClassName);
@@ -44,7 +44,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 return ECSqlStatus::Error;
 
             ClassMap const& classMap = exp.GetClassRefExp()->GetAs<ClassNameExp>().GetInfo().GetMap();
-            if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
+            if (classMap.GetMapStrategy().IsTablePerHierarchy())
                 {
                 ECClassId rootClassId = classMap.GetTphHelper()->DetermineTphRootClassId();
                 BeAssert(rootClassId.IsValid());
@@ -68,7 +68,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 return PrepareRelConstraintClassIdPropMap(nativeSqlSnippets, currentScopeECSqlType, exp, effectivePropMap->GetAs<ConstraintECClassIdPropertyMap>(), classIdentifier.c_str());
 
             default:
-                PrepareDefault(nativeSqlSnippets, currentScopeECSqlType, exp, *effectivePropMap, classIdentifier.c_str());
+                PrepareDefault(nativeSqlSnippets, ctx, currentScopeECSqlType, exp, *effectivePropMap, classIdentifier.c_str());
                 return ECSqlStatus::Success;
         }
     }
@@ -79,7 +79,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 //static
 bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, ECSqlPrepareContext::ExpScope const& currentScope, PropertyMap const& propertyMap)
     {
-    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Type::All, true);
     propertyMap.AcceptVisitor(columnVisitor);
     if (columnVisitor.GetColumns().empty())
@@ -88,6 +87,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         return false;
         }
  
+    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? &propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
     const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
@@ -115,7 +115,6 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
 //static
 ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const& scope, PropertyNameExp const& exp, PropertyMap const& propMap)
     {
-    //ClassMap const& classMap = propMap.GetClassMap();
     switch (scope.GetECSqlType())
         {
             case ECSqlType::Select:
@@ -124,13 +123,14 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 
             case ECSqlType::Delete:
             {
-            if (exp.GetClassRefExp()->GetType() == Exp::Type::ClassName)
+            RangeClassRefExp const* classRefExp = exp.GetClassRefExp();
+            if (classRefExp->IsPolymorphic() && exp.GetClassRefExp()->GetType() == Exp::Type::ClassName)
                 {
-                ClassMap const& classMap = static_cast<ClassNameExp const*>(exp.GetClassRefExp())->GetInfo().GetMap();
-                StorageDescription const& desc = classMap.GetStorageDescription();
-                if (exp.GetClassRefExp()->IsPolymorphic() && desc.HierarchyMapsToMultipleTables())
+                ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
+                ClassMap::UpdatableViewInfo const& updatableViewInfo = classNameExp.GetInfo().GetMap().GetUpdatableViewInfo();
+                if (updatableViewInfo.HasView())
                     {
-                    classIdentifier.assign(classMap.GetUpdatableViewName());
+                    classIdentifier.assign(updatableViewInfo.GetViewName());
                     break;
                     }
                 }
@@ -149,7 +149,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 // @bsimethod                                    Krischan.Eberle                    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
+void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
     {
     ToSqlPropertyMapVisitor::ECSqlScope scope;
     if (ecsqlType == ECSqlType::Select)
@@ -157,8 +157,13 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     else
         scope = exp.IsLhsAssignmentOperandExpression() ? ToSqlPropertyMapVisitor::ECSqlScope::NonSelectAssignmentExp : ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp;
 
-    ToSqlPropertyMapVisitor sqlVisitor(propMap.GetClassMap().GetJoinedTable(),
-                                       scope, classIdentifier, exp.HasParentheses());
+    DbTable const* contextTable = nullptr;
+    if (ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
+        contextTable = &ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
+    else
+        contextTable = &propMap.GetClassMap().GetJoinedOrPrimaryTable();
+
+    ToSqlPropertyMapVisitor sqlVisitor(*contextTable, scope, classIdentifier, exp.HasParentheses());
 
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
@@ -217,7 +222,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
                 str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s]=[%s] LIMIT 1)",
                                     classIdColumn->GetName().c_str(),
                                     classIdColumn->GetTable().GetName().c_str(),
-                                    classIdColumn->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str(),
+                                    classIdColumn->GetTable().FindFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str(),
                                     ecInstanceIdVisitor.GetSingleColumn()->GetName().c_str());
 
                 nativeSqlSnippets.push_back(str);
@@ -275,7 +280,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 if (!propertyRef->WasToNativeSqlCalled())
                     {
                     PropertyMap const& propertyMap = referencedPropertyNameExp.GetPropertyMap();
-                    ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select, nullptr);
+                    ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select, nullptr);
                     propertyMap.AcceptVisitor(sqlVisitor);
                     NativeSqlBuilder::List snippets;
                     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())

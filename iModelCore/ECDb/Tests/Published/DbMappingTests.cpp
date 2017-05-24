@@ -69,7 +69,9 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "               <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
@@ -133,6 +135,152 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
 
     AssertSchemaImport(testItems, "invalidmapstrategycatests.ecdb");
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
+    {
+    ECDbCR ecdb = SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+
+    <ECEntityClass typeName="Base_Abstract_OwnTable" modifier="Abstract">
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sub_Of_Base_Abstract_OwnTable">
+        <BaseClass>Base_Abstract_OwnTable</BaseClass>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_OwnTable">
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sub_Of_Base_OwnTable">
+        <BaseClass>Base_OwnTable</BaseClass>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_Abstract_NoSubclass_OwnTable" modifier="Abstract">
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_Abstract_NoSubclass_TPH" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xlmns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_Abstract_TPH" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xlmns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sub_Of_Base_Abstract_TPH">
+        <BaseClass>Base_Abstract_TPH</BaseClass>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_NoSubclass_TPH">
+        <ECCustomAttributes>
+            <ClassMap xlmns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Base_TPH">
+        <ECCustomAttributes>
+            <ClassMap xlmns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sub_Of_Base_TPH">
+        <BaseClass>Base_TPH</BaseClass>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+
+    </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ASSERT_FALSE(ecdb.TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_Abstract_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "Prop1"), {ColumnInfo("ts_Base_Abstract_OwnTable","Prop1")});
+
+    AssertColumnNames(ecdb, "ts_Sub_Of_Base_Abstract_OwnTable", {"Id","Prop1","Prop2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop1"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop2"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop2")});
+
+
+
+    AssertColumnNames(ecdb, "ts_Base_OwnTable", {"Id","Prop1"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "Prop1"), {ColumnInfo("ts_Base_OwnTable","Prop1")});
+
+    AssertColumnNames(ecdb, "ts_Sub_Of_Base_OwnTable", {"Id","Prop1","Prop2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECClassId"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop1"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop2"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop2")});
+
+
+
+    ASSERT_FALSE(ecdb.TableExists("ts_Base_Abstract_NoSubclass_OwnTable")) << "is expected to be virtual";
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","ECClassId", true)});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Prop1")});
+
+
+
+    AssertColumnNames(ecdb, "ts_Base_Abstract_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Prop1")});
+
+
+
+    AssertColumnNames(ecdb, "ts_Base_Abstract_TPH", {"Id","ECClassId","Prop1","Prop2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_TPH","Prop1")});
+
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_TPH","Prop1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop2"), {ColumnInfo("ts_Base_Abstract_TPH","Prop2")});
+
+
+
+    AssertColumnNames(ecdb, "ts_Base_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_NoSubclass_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECClassId"), {ColumnInfo("ts_Base_NoSubclass_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "Prop1"), {ColumnInfo("ts_Base_NoSubclass_TPH","Prop1")});
+
+
+    AssertColumnNames(ecdb, "ts_Base_TPH", {"Id","ECClassId","Prop1","Prop2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "ECClassId"), {ColumnInfo("ts_Base_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "Prop1"), {ColumnInfo("ts_Base_TPH","Prop1")});
+
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_TPH","Id")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECClassId"), {ColumnInfo("ts_Base_TPH","ECClassId")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop1"), {ColumnInfo("ts_Base_TPH","Prop1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop2"), {ColumnInfo("ts_Base_TPH","Prop2")});
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                                   Krischan.Eberle   02/16
@@ -1262,7 +1410,7 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", true, "Combination of options JoinedTablePerDirectSubclass and ShareColumns is expected to work with strategy TablePerHierarchy"));
+                                   "</ECSchema>", true, "Combination of options JoinedTablePerDirectSubclass and ShareColumns(applytosubclassesonly) is expected to work with strategy TablePerHierarchy"));
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1277,7 +1425,7 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", true, "Combination of options JoinedTablePerDirectSubclass and ShareColumns is expected to work with strategy TablePerHierarchy"));
+                                   "</ECSchema>", false, "Combination of options JoinedTablePerDirectSubclass and ShareColumns on same class is expected to fail with strategy TablePerHierarchy"));
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1612,7 +1760,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Foo">
                                 <ECCustomAttributes>
@@ -1625,15 +1773,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "Foo");
-    ASSERT_TRUE(testClass != nullptr);
-    ECPropertyCP idProp = testClass->GetPropertyP("MyId");
-    ASSERT_TRUE(testClass != nullptr);
-    std::vector<ColumnInfo> colInfo;
-    TryGetColumnInfo(colInfo, ecdb, *idProp);
-    ASSERT_EQ(1, (int) colInfo.size());
-    ASSERT_STRCASEEQ("MyId1", colInfo[0].m_columnName.c_str());
-    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Foo", "MyId"), {ColumnInfo("ts_Foo","MyId1")});
     }
 
 
@@ -1641,7 +1781,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Base">
                                 <ECCustomAttributes>
@@ -1658,15 +1798,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "Sub");
-    ASSERT_TRUE(testClass != nullptr);
-    ECPropertyCP idProp = testClass->GetPropertyP("BaseId");
-    ASSERT_TRUE(testClass != nullptr);
-    std::vector<ColumnInfo> colInfo;
-    TryGetColumnInfo(colInfo, ecdb, *idProp);
-    ASSERT_EQ(1, (int) colInfo.size());
-    ASSERT_STRCASEEQ("BaseId1", colInfo[0].m_columnName.c_str());
-    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub", "BaseId"), {ColumnInfo("ts_Sub","BaseId1")});
     }
 
 
@@ -1674,7 +1806,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts7" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
                                 <ECProperty propertyName="Name" typeName="string" />
@@ -1699,15 +1831,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "Rel");
-    ASSERT_TRUE(testClass != nullptr);
-    ECPropertyCP idProp = testClass->GetPropertyP("MySourceId");
-    ASSERT_TRUE(testClass != nullptr);
-    std::vector<ColumnInfo> colInfo;
-    TryGetColumnInfo(colInfo, ecdb, *idProp);
-    ASSERT_EQ(1, (int) colInfo.size());
-    ASSERT_STRCASEEQ("MySourceId1", colInfo[0].m_columnName.c_str());
-    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Rel", "MySourceId"), {ColumnInfo("ts_Rel","MySourceId1")});
     }
 
 
@@ -1715,7 +1839,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
-                              <ECSchema schemaName="TestSchema" alias="ts10" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                              <ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
                                 <ECProperty propertyName="Name" typeName="string" />
@@ -1740,15 +1864,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "Rel");
-    ASSERT_TRUE(testClass != nullptr);
-    ECPropertyCP idProp = testClass->GetPropertyP("MyTargetId");
-    ASSERT_TRUE(testClass != nullptr);
-    std::vector<ColumnInfo> colInfo;
-    TryGetColumnInfo(colInfo, ecdb, *idProp);
-    ASSERT_EQ(1, (int) colInfo.size());
-    ASSERT_STRCASEEQ("MyTargetId1", colInfo[0].m_columnName.c_str());
-    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Rel", "MyTargetId"), {ColumnInfo("ts_Rel","MyTargetId1")});
     }
     }
 
@@ -1963,7 +2079,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2000,12 +2116,12 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "SharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2028,12 +2144,12 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "SharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2058,12 +2174,12 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "SharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     AssertSchemaImport(testItems, "sharedtablecatests.ecdb");
     }
@@ -2199,7 +2315,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "               <SharedColumnCount>10</SharedColumnCount>"
+        "               <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
@@ -2261,7 +2377,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, SharedColumnCount)
+TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflow)
     {
             {
             AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -2273,17 +2389,17 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
                                           "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                                           "            </ClassMap>"
                                           "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                          "              <SharedColumnCount>-3</SharedColumnCount>"
+                                          "              <MaxSharedColumnsBeforeOverflow>-3</MaxSharedColumnsBeforeOverflow>"
                                           "            </ShareColumns>"
                                           "        </ECCustomAttributes>"
                                           "       <ECProperty propertyName='P1' typeName='int' />"
                                           "   </ECEntityClass>"
-                                          "</ECSchema>", false, "SharedColumnCount must not be negative. It must be >= 1"), "sharedcolcount.ecdb");
+                                          "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow must not be negative. It must be >= 1"), "sharedcolcount.ecdb");
 
             }
 
             {
-            ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -2293,7 +2409,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "            </ClassMap>"
                 "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <SharedColumnCount>5</SharedColumnCount>"
+                "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                 "            </ShareColumns>"
                 "        </ECCustomAttributes>"
                 "       <ECProperty propertyName='P1' typeName='int' />"
@@ -2304,11 +2420,11 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
 
             std::vector<std::pair<Utf8String, int>> testItems;
             testItems.push_back(std::make_pair("ts_Parent", 3));
-            AssertColumnCount(ecdb, testItems, "SharedColumnCount");
+            AssertColumnCount(ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
             }
 
             {
-            ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -2318,7 +2434,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "            </ClassMap>"
                 "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <SharedColumnCount>5</SharedColumnCount>"
+                "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                 "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                 "            </ShareColumns>"
                 "        </ECCustomAttributes>"
@@ -2330,11 +2446,11 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
 
             std::vector<std::pair<Utf8String, int>> testItems;
             testItems.push_back(std::make_pair("ts_Parent", 3));
-            AssertColumnCount(ecdb, testItems, "SharedColumnCount");
+            AssertColumnCount(ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
             }
 
             {
-            ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2344,7 +2460,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "            </ClassMap>"
                 "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <SharedColumnCount>100</SharedColumnCount>"
+                "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
                 "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                 "            </ShareColumns>"
                 "        </ECCustomAttributes>"
@@ -2398,9 +2514,9 @@ TEST_F(DbMappingTestFixture, SharedColumnCount)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaImports)
+TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_SubsequentSchemaImports)
     {
-    ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2410,7 +2526,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaIm
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>100</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -2471,7 +2587,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaIm
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
     {
-    ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2486,7 +2602,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub1' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -2514,8 +2630,8 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub2' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
-        "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
@@ -2529,66 +2645,6 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub22' modifier='None'>"
         "        <BaseClass>Sub2</BaseClass>"
         "        <ECProperty propertyName='PropSub22_1' typeName='double' />"
-        "    </ECEntityClass>"
-
-        "    <ECEntityClass typeName='Base3' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='PropBase3_1' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub3' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
-        "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "        <BaseClass>Base3</BaseClass>"
-        "        <ECProperty propertyName='PropSub3_1' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub31' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "        <BaseClass>Sub3</BaseClass>"
-        "        <ECProperty propertyName='PropSub31_1' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub311' modifier='None'>"
-        "        <BaseClass>Sub31</BaseClass>"
-        "        <ECProperty propertyName='PropSub311_1' typeName='double' />"
-        "    </ECEntityClass>"
-
-        "    <ECEntityClass typeName='Base4' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='PropBase4_1' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub4' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "        <BaseClass>Base4</BaseClass>"
-        "        <ECProperty propertyName='PropSub4_1' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub41' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "        <BaseClass>Sub4</BaseClass>"
-        "        <ECProperty propertyName='PropSub41_1' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub411' modifier='None'>"
-        "        <BaseClass>Sub41</BaseClass>"
-        "        <ECProperty propertyName='PropSub411_1' typeName='double' />"
         "    </ECEntityClass>"
 
         "    <ECEntityClass typeName='Base5' modifier='None'>"
@@ -2609,7 +2665,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub51' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2639,7 +2695,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    <ECEntityClass typeName='Sub61' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2652,33 +2708,25 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "    </ECEntityClass>"
         "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-
+    ecdb.SaveChanges();
     std::vector<std::pair<Utf8CP, std::vector<Utf8CP>>> expectedTableLayouts {
             //Base1 hierarchy
             {"ts_Base1", {"Id", "ECClassId", "PropBase1_1", "PropSub1_1"}},
-            {"ts_Sub11", {"Base1Id", "ECClassId", "sc1"}},
-            {"ts_Sub12", {"Base1Id", "ECClassId", "sc1"}},
+            {"ts_Sub11", {"Base1Id", "ECClassId", "js1"}},
+            {"ts_Sub12", {"Base1Id", "ECClassId", "js1"}},
 
             //Base2 hierarchy
-            {"ts_Base2", {"Id", "ECClassId", "PropBase2_1", "sc1"}},
-            {"ts_Sub21", {"Base2Id", "ECClassId", "sc1"}},
-            {"ts_Sub22", {"Base2Id", "ECClassId", "sc1"}},
-
-            //Base3 hierarchy
-            {"ts_Base3", {"Id", "ECClassId", "PropBase3_1", "sc1", "sc2"}},
-            {"ts_Sub311", {"Base3Id", "ECClassId", "sc1"}},
-
-            //Base4 hierarchy
-            {"ts_Base4", {"Id", "ECClassId", "PropBase4_1", "PropSub4_1", "sc1"}},
-            {"ts_Sub411", {"Base4Id", "ECClassId", "sc1"}},
+            {"ts_Base2", {"Id", "ECClassId", "PropBase2_1", "PropSub2_1"}},
+            {"ts_Sub21", {"Base2Id", "ECClassId", "js1"}},
+            {"ts_Sub22", {"Base2Id", "ECClassId", "js1"}},
 
             //Base5 hierarchy
             {"ts_Base5", {"Id", "ECClassId", "PropBase5_1", "PropSub5_1"}},
-            {"ts_Sub51", {"Base5Id", "ECClassId", "PropSub51_1", "sc1"}},
+            {"ts_Sub51", {"Base5Id", "ECClassId", "PropSub51_1", "js1"}},
 
             //Base6 hierarchy
             {"ts_Base6", {"Id", "ECClassId", "PropBase6_1", "PropSub6_1"}},
-            {"ts_Sub61", {"Base6Id", "ECClassId", "sc1", "sc2"}},
+            {"ts_Sub61", {"Base6Id", "ECClassId", "js1", "js2"}},
 
         };
 
@@ -2710,7 +2758,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertWithNoParameters)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>0</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>0</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2879,7 +2927,7 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns2)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>3</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>3</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2954,7 +3002,7 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>3</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>3</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3110,7 +3158,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersAnd
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3656,9 +3704,9 @@ TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
+TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
     {
-    ECDbR ecdb = SetupECDb("minimumsharedcolumncount.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("MaxSharedColumnsBeforeOverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3679,7 +3727,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "    <ECEntityClass typeName='DefinitionElement' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>50</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>50</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3694,7 +3742,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "    <ECEntityClass typeName='GeometricElement2d' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3704,7 +3752,7 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "    <ECEntityClass typeName='GeometricElement3d' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -3766,22 +3814,23 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
         "        <ECProperty propertyName='Sub31Prop1' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>");
-    m_ecdb.SaveChanges();
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, secondSchema);
     ASSERT_FALSE(asserted);
+    m_ecdb.SaveChanges();
 
-    geometricElement2dExpectedColCount++;
-    geometricElement3dExpectedColCount++;
+    int geometricElement2dOverflowExpectedColCount = 3;
+    int geometricElement3dOverflowExpectedColCount = 3;
     const int sub4ExpectedColCount = 3;
 
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
     testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d_Overflow", geometricElement2dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d_Overflow", geometricElement3dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
-
     AssertColumnCount(ecdb, testItems, "after second schema import");
 
     SchemaItem thirdSchema(
@@ -3800,13 +3849,14 @@ TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
     ASSERT_FALSE(asserted);
     m_ecdb.SaveChanges();
     
-    geometricElement3dExpectedColCount++;
-
+    geometricElement3dOverflowExpectedColCount+=1;
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
     testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d_Overflow", geometricElement2dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d_Overflow", geometricElement3dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
 
     AssertColumnCount(ecdb, testItems, "after third schema import");
@@ -3882,7 +3932,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA_TableLayout)
     ASSERT_EQ(5, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8CP expectedColumnNames = "IdECClassIdP1sc1sc2";
+    Utf8CP expectedColumnNames = "IdECClassIdP1ps1ps2";
     Utf8String actualColumnNames;
     for (int i = 0; i < statement.GetColumnCount(); i++)
         {
@@ -3968,7 +4018,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                         "            </ClassMap>"
                         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                        "              <SharedColumnCount>4</SharedColumnCount>"
+                        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
                         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                         "            </ShareColumns>"
                         "        </ECCustomAttributes>"
@@ -4015,7 +4065,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
     ASSERT_EQ(expectedColCount, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8CP expectedColumnNames = "IdECClassIdP0sc1sc2";
+    Utf8CP expectedColumnNames = "IdECClassIdP0ps1ps2";
     Utf8String actualColumnNames;
     for (int i = 0; i < expectedColCount; i++)
         {
@@ -5612,7 +5662,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTabl
         "</ECSchema>"), 3);
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassId myClassId = ecdb.Schemas().GetClassId("ts1", "MyClass", ResolveSchema::BySchemaAlias);
+    ECClassId myClassId = ecdb.Schemas().GetClassId("ts1", "MyClass", SchemaLookupMode::ByAlias);
     ASSERT_TRUE(myClassId.IsValid());
 
     {
@@ -5727,7 +5777,9 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
                                      "            <MapStrategy>TablePerHierarchy</MapStrategy>"
                                      "        </ClassMap>"
                                      "        <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                     "        <ShareColumns xmlns='ECDbMap.02.00'/>"
+                                     "        <ShareColumns xmlns='ECDbMap.02.00'>"
+                                     "           <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                                     "        </ShareColumns>"
                                      "    </ECCustomAttributes>"
                                      "    <ECProperty propertyName='Base_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
@@ -6433,7 +6485,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                     "            </ClassMap>"
                     "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                    "              <SharedColumnCount>5</SharedColumnCount>"
+                    "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                     "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                     "            </ShareColumns>"
                     "        </ECCustomAttributes>"
@@ -6470,7 +6522,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                 AssertSchemaImport(db, asserted, testItem, "userdefinedindextest5.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(db, "ix_sub1_aid", false, "ts5_Base", {"sc1"});
+                AssertIndex(db, "ix_sub1_aid", false, "ts5_Base", {"ps1"});
                 }
 
                 {
@@ -6484,7 +6536,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                     "            </ClassMap>"
                     "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                    "              <SharedColumnCount>5</SharedColumnCount>"
+                    "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                     "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                     "            </ShareColumns>"
                     "        </ECCustomAttributes>"
@@ -6529,7 +6581,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                 ECClassId sub1ClassId = db.Schemas().GetClassId("TestSchema", "Sub1");
                 ECClassId sub11ClassId = db.Schemas().GetClassId("TestSchema", "Sub11");
                 Utf8String indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
-                AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"sc1"}, indexWhereClause.c_str());
+                AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"ps1"}, indexWhereClause.c_str());
                 }
 
                 {
@@ -7201,7 +7253,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                         "               <MapStrategy>TablePerHierarchy</MapStrategy>"
                                         "            </ClassMap>"
                                         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                        "                  <SharedColumnCount>2</SharedColumnCount>"
+                                        "                  <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
                                         "                  <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                                         "             </ShareColumns>"
                                         "           </ECCustomAttributes>"
@@ -7224,7 +7276,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                         "               <MapStrategy>TablePerHierarchy</MapStrategy>"
                                         "            </ClassMap>"
                                         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                        "                  <SharedColumnCount>2</SharedColumnCount>"
+                                        "                  <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
                                         "                  <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                                         "             </ShareColumns>"
                                         "           </ECCustomAttributes>"
@@ -7302,7 +7354,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                 "    <ECEntityClass typeName='Sub2Sub2' modifier='None'>"
                                 "      <ECCustomAttributes>"
                                 "        <ShareColumns xmlns='ECDbMap.02.00'>"
-                                "           <SharedColumnCount>2</SharedColumnCount>"
+                                "           <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
                                 "           <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                                 "        </ShareColumns>"
                                 "       </ECCustomAttributes>"
@@ -7437,7 +7489,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
                                 "    <ECEntityClass typeName='Sub2Sub2' modifier='None'>"
                                 "      <ECCustomAttributes>"
                                 "        <ShareColumns xmlns='ECDbMap.02.00'>"
-                                "           <SharedColumnCount>2</SharedColumnCount>"
+                                "           <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
                                 "           <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                                 "        </ShareColumns>"
                                 "       </ECCustomAttributes>"
@@ -7472,7 +7524,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
                                     "    </ECEntityClass>"
                                 "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-
+    GetECDb().SaveChanges();
 
     bvector<Utf8String> actualColNames;
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Base"));
@@ -7504,17 +7556,26 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
 
     actualColNames.clear();
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2"));
-    ASSERT_EQ(5, actualColNames.size()) << "ts_Sub2Sub2";
+    ASSERT_EQ(4, actualColNames.size()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2";
-    ASSERT_STRCASEEQ("sc1", actualColNames[2].c_str()) << "ts_Sub2Sub2";
-    ASSERT_STRCASEEQ("sc2", actualColNames[3].c_str()) << "ts_Sub2Sub2";
-    ASSERT_STRCASEEQ("sc3", actualColNames[4].c_str()) << "ts_Sub2Sub2";
+    ASSERT_STRCASEEQ("js1", actualColNames[2].c_str()) << "ts_Sub2Sub2";
+    ASSERT_STRCASEEQ("js2", actualColNames[3].c_str()) << "ts_Sub2Sub2";
 
     Utf8String tsSub2Sub2Ddl = RetrieveDdl(ecdb, "ts_Sub2Sub2");
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc1] BLOB,")) << tsSub2Sub2Ddl.c_str();
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc2] BLOB,")) << tsSub2Sub2Ddl.c_str();
-    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc3] BLOB,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[js1] BLOB,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[js2] BLOB,")) << tsSub2Sub2Ddl.c_str();
+
+    actualColNames.clear();
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2_Overflow"));
+    ASSERT_EQ(3, actualColNames.size()) << "ts_Sub2Sub2_Overflow";
+    ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2_Overflow";
+    ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2_Overflow";
+
+    Utf8String tsSub2Sub2_OverflowDdl = RetrieveDdl(ecdb, "ts_Sub2Sub2_Overflow");
+    ASSERT_TRUE(tsSub2Sub2_OverflowDdl.ContainsI("[os1] BLOB,")) << tsSub2Sub2_OverflowDdl.c_str();
+
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -7684,7 +7745,7 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
     statement.ClearBindings();
 
     {
-    BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp
+    BeThreadUtilities::BeSleep(200); // make sure the time is different by more than the resolution of the timestamp
     ECSqlStatement updateStatement;
     ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(GetECDb(), "UPDATE ts.Foo SET Code=23 WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, updateStatement.BindId(1, key.GetInstanceId()));
@@ -7775,7 +7836,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
                          "        <MapStrategy>TablePerHierarchy</MapStrategy>"
                          "      </ClassMap>"
                          "      <ShareColumns xmlns='ECDbMap.02.00'>"
-                         "        <SharedColumnCount>10</SharedColumnCount>"
+                         "        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
                          "        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                          "      </ShareColumns>"
                          "    </ECCustomAttributes>"
@@ -8014,7 +8075,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case1)
                          "              <MapStrategy>TablePerHierarchy</MapStrategy>"
                          "          </ClassMap>"
                          "          <ShareColumns xmlns='ECDbMap.02.00'>"
-                         "              <SharedColumnCount>7</SharedColumnCount>"
+                         "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
                          "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                          "          </ShareColumns>"
                          "      </ECCustomAttributes>"
@@ -8095,7 +8156,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
                          "              <MapStrategy>TablePerHierarchy</MapStrategy>"
                          "          </ClassMap>"
                          "          <ShareColumns xmlns='ECDbMap.02.00'>"
-                         "              <SharedColumnCount>10</SharedColumnCount>"
+                         "              <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
                          "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                          "          </ShareColumns>"
                          "      </ECCustomAttributes>"
@@ -8216,7 +8277,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case3)
                          "              <MapStrategy>TablePerHierarchy</MapStrategy>"
                          "          </ClassMap>"
                          "          <ShareColumns xmlns='ECDbMap.02.00'>"
-                         "              <SharedColumnCount>10</SharedColumnCount>"
+                         "              <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
                          "              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                          "          </ShareColumns>"
                          "      </ECCustomAttributes>"
@@ -8380,7 +8441,7 @@ TEST_F(DbMappingTestFixture, DiamondProblemInMixin)
                     <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
                 <ShareColumns xmlns='ECDbMap.02.00'>
-                    <SharedColumnCount>10</SharedColumnCount>
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
                     <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
                 </ShareColumns>
             </ECCustomAttributes>
@@ -8408,12 +8469,13 @@ TEST_F(DbMappingTestFixture, DiamondProblemInMixin)
     GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
+TEST_F(DbMappingTestFixture, OverflowingStructColumns)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("OverflowPartiallyMapStructToOverFlow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -8423,7 +8485,7 @@ TEST_F(DbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>8</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -8557,6 +8619,436 @@ TEST_F(DbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
+    {
+    std::vector<SchemaItem> invalidCombinations;
+    invalidCombinations.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="None" >
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECProperty propertyName="Type" typeName="int" />
+                     </ECEntityClass>
+                   </ECSchema>)xml", false, "Column sharing starts before the joined table split"));
+
+    invalidCombinations.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECProperty propertyName="Type" typeName="int" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Geometric3dElement" modifier="None" >
+                       <BaseClass>GeometricElement</BaseClass>
+                       <ECProperty propertyName="Origin" typeName="Point3d" />
+                     </ECEntityClass>
+                   </ECSchema>)xml", false, "Column sharing starts before the joined table split"));
+
+    invalidCombinations.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECProperty propertyName="Type" typeName="int" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Geometric3dElement" modifier="None" >
+                       <BaseClass>GeometricElement</BaseClass>
+                       <ECProperty propertyName="Origin" typeName="Point3d" />
+                     </ECEntityClass>
+                   </ECSchema>)xml", false, "Column sharing starts in base class of class having the joined table CA"));
+
+    AssertSchemaImport(invalidCombinations, "ShareColumnsJoinedTableCACombinations_invalidcombinations.ecdb");
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema10" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="None" >
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECStructProperty propertyName="Transform" typeName="Transform" />
+                     </ECEntityClass>
+                    <ECStructClass typeName="Transform" modifier="Sealed">
+                       <ECProperty propertyName="Prop1" typeName="double" />
+                       <ECProperty propertyName="Prop2" typeName="double" />
+                       <ECProperty propertyName="Prop3" typeName="double" />
+                       <ECProperty propertyName="Prop4" typeName="double" />
+                       <ECProperty propertyName="Prop5" typeName="double" />
+                       <ECProperty propertyName="Prop6" typeName="double" />
+                     </ECStructClass>
+                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations10.ecdb");
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Name"), {ColumnInfo("ts_Element","Name")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Code"), {ColumnInfo("ts_Element","Code")});
+    AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3","js4","js5","js6","js7"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), {ColumnInfo("ts_GeometricElement","js1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+    {{"Transform.Prop1",ColumnInfo("ts_GeometricElement","js2")},
+    {"Transform.Prop2",ColumnInfo("ts_GeometricElement","js3")},
+    {"Transform.Prop3",ColumnInfo("ts_GeometricElement","js4")},
+    {"Transform.Prop4",ColumnInfo("ts_GeometricElement","js5")},
+    {"Transform.Prop5",ColumnInfo("ts_GeometricElement","js6")},
+    {"Transform.Prop6",ColumnInfo("ts_GeometricElement","js7")}});
+
+    ASSERT_FALSE(ecdb.TableExists("ts_GeometricElement_Overflow"));
+    ASSERT_FALSE(ecdb.TableExists("ts_Element_Overflow"));
+    }
+
+    {
+    //Struct that doesn't fit in joined table comes before primitive prop 
+    //->prim prop expected in joined table
+    //->struct expected in overflow table
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema11" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>3</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="None" >
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECStructProperty propertyName="Transform" typeName="Transform" />
+                       <ECProperty propertyName="Type" typeName="string" />
+                     </ECEntityClass>
+                    <ECStructClass typeName="Transform" modifier="Sealed">
+                       <ECProperty propertyName="Prop1" typeName="double" />
+                       <ECProperty propertyName="Prop2" typeName="double" />
+                       <ECProperty propertyName="Prop3" typeName="double" />
+                       <ECProperty propertyName="Prop4" typeName="double" />
+                       <ECProperty propertyName="Prop5" typeName="double" />
+                       <ECProperty propertyName="Prop6" typeName="double" />
+                     </ECStructClass>
+                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations11.ecdb");
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+
+    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Name"), {ColumnInfo("ts_Element","Name")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Code"), {ColumnInfo("ts_Element","Code")});
+    AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), {ColumnInfo("ts_GeometricElement","js1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Type"), {ColumnInfo("ts_GeometricElement","js2")});
+    AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+                           {{"Transform.Prop1",ColumnInfo("ts_GeometricElement_Overflow","os1")},
+                            {"Transform.Prop2",ColumnInfo("ts_GeometricElement_Overflow","os2")},
+                            {"Transform.Prop3",ColumnInfo("ts_GeometricElement_Overflow","os3")},
+                            {"Transform.Prop4",ColumnInfo("ts_GeometricElement_Overflow","os4")},
+                            {"Transform.Prop5",ColumnInfo("ts_GeometricElement_Overflow","os5")},
+                            {"Transform.Prop6",ColumnInfo("ts_GeometricElement_Overflow","os6")}});
+    }
+
+    {
+    //Struct that doesn't fit in joined table comes before primitive prop 
+    //->prim prop expected in joined table
+    //->struct expected in overflow table
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema11" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <MaxSharedColumnsBeforeOverflow>3</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="GeometricElement" modifier="None" >
+                       <BaseClass>Element</BaseClass>
+                       <ECProperty propertyName="GeomStream" typeName="Binary" />
+                       <ECStructProperty propertyName="Transform" typeName="Transform" />
+                       <ECProperty propertyName="Origin" typeName="Point2d" />
+                     </ECEntityClass>
+                    <ECStructClass typeName="Transform" modifier="Sealed">
+                       <ECProperty propertyName="Prop1" typeName="double" />
+                       <ECProperty propertyName="Prop2" typeName="double" />
+                       <ECProperty propertyName="Prop3" typeName="double" />
+                       <ECProperty propertyName="Prop4" typeName="double" />
+                       <ECProperty propertyName="Prop5" typeName="double" />
+                       <ECProperty propertyName="Prop6" typeName="double" />
+                     </ECStructClass>
+                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations11.ecdb");
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+
+    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Name"), {ColumnInfo("ts_Element","Name")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Code"), {ColumnInfo("ts_Element","Code")});
+    AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), {ColumnInfo("ts_GeometricElement","js1")});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Origin"),
+                                {{"Origin.X",ColumnInfo("ts_GeometricElement","js2")},
+                                 {"Origin.Y",ColumnInfo("ts_GeometricElement","js3")}});
+    
+    AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+                                {{"Transform.Prop1",ColumnInfo("ts_GeometricElement_Overflow","os1")},
+                                {"Transform.Prop2",ColumnInfo("ts_GeometricElement_Overflow","os2")},
+                                {"Transform.Prop3",ColumnInfo("ts_GeometricElement_Overflow","os3")},
+                                {"Transform.Prop4",ColumnInfo("ts_GeometricElement_Overflow","os4")},
+                                {"Transform.Prop5",ColumnInfo("ts_GeometricElement_Overflow","os5")},
+                                {"Transform.Prop6",ColumnInfo("ts_GeometricElement_Overflow","os6")}});
+    }
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema12" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Element" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                            <ShareColumns xlmns="ECDbMap.02.00">
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations12.ecdb");
+    ASSERT_FALSE(asserted);
+    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name"});
+    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Name"), {ColumnInfo("ts_Element","Name")});
+    ASSERT_FALSE(ecdb.TableExists("ts_Element_Overflow"));
+    }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
+    {
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Element" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xlmns="ECDbMap.02.00">
+                            <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECStructProperty propertyName="Prop1" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop2" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop3" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop4" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop5" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop6" typeName="TenColumnStruct" />
+                    <ECProperty propertyName="Prop7" typeName="string" />
+                    <ECProperty propertyName="ExpectedToOverflow" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="SubElement">
+                    <BaseClass>Element</BaseClass>
+                    <ECProperty propertyName="ExpectedToBeInOverflowAsWell" typeName="double" />
+                </ECEntityClass>
+                <ECStructClass typeName="TenColumnStruct" modifier="Sealed">
+                    <ECProperty propertyName="P1" typeName="Point2d" />
+                    <ECProperty propertyName="P2" typeName="Point3d" />
+                    <ECProperty propertyName="P3" typeName="Point2d" />
+                    <ECProperty propertyName="P4" typeName="Point3d" />
+                </ECStructClass>
+                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow1.ecdb");
+        ASSERT_FALSE(asserted);
+        ecdb.SaveChanges();
+        AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 4}});
+        AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1", "os2"});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Prop7"), {ColumnInfo("ts_Element","ps61")});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToBeInOverflowAsWell"), {ColumnInfo("ts_Element_Overflow","os2")});
+        }
+
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Element" >
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xlmns="ECDbMap.02.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="BaseProp" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="SubElement" >
+                    <BaseClass>Element</BaseClass>
+                    <ECStructProperty propertyName="Prop1" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop2" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop3" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop4" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop5" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop6" typeName="TenColumnStruct" />
+                    <ECProperty propertyName="ExpectedToOverflow" typeName="string" />
+                </ECEntityClass>
+                <ECStructClass typeName="TenColumnStruct" modifier="Sealed">
+                    <ECProperty propertyName="P1" typeName="Point2d" />
+                    <ECProperty propertyName="P2" typeName="Point3d" />
+                    <ECProperty propertyName="P3" typeName="Point2d" />
+                    <ECProperty propertyName="P4" typeName="Point3d" />
+                 </ECStructClass>
+                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow2.ecdb");
+        ASSERT_FALSE(asserted);
+        ecdb.SaveChanges();
+        AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 3}});
+        AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1"});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "BaseProp"), {ColumnInfo("ts_Element","BaseProp")});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop1.P1"), {{"Prop1.P1.X", ColumnInfo("ts_Element","ps1") },
+                                                                                           {"Prop1.P1.Y", ColumnInfo("ts_Element","ps2")}});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop3.P2"), {{"Prop3.P2.X", ColumnInfo("ts_Element","ps23")},
+                                                                    {"Prop3.P2.Y", ColumnInfo("ts_Element","ps24")},
+                                                                    {"Prop3.P2.Z", ColumnInfo("ts_Element","ps25")}});
+
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
+        }
+
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Element" >
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <JoinedTablePerDirectSubclass xlmns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="BaseProp1" typeName="int" />
+                    <ECStructProperty propertyName="BaseProp2" typeName="TenColumnStruct" />
+                </ECEntityClass>
+                <ECEntityClass typeName="SubElement" >
+                    <ECCustomAttributes>
+                        <ShareColumns xlmns="ECDbMap.02.00">
+                            <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <BaseClass>Element</BaseClass>
+                    <ECStructProperty propertyName="Prop1" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop2" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop3" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop4" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop5" typeName="TenColumnStruct" />
+                    <ECStructProperty propertyName="Prop6" typeName="TenColumnStruct" />
+                    <ECProperty propertyName="Prop7" typeName="string" />
+                    <ECProperty propertyName="ExpectedToOverflow" typeName="string" />
+                </ECEntityClass>
+                <ECStructClass typeName="TenColumnStruct" modifier="Sealed">
+                    <ECProperty propertyName="P1" typeName="Point2d" />
+                    <ECProperty propertyName="P2" typeName="Point3d" />
+                    <ECProperty propertyName="P3" typeName="Point2d" />
+                    <ECProperty propertyName="P4" typeName="Point3d" />
+                </ECStructClass>
+                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow3.ecdb");
+        ASSERT_FALSE(asserted);
+        ecdb.SaveChanges();
+        AssertColumnCount(ecdb, {{"ts_Element", 13}, {"ts_SubElement", 63}, {"ts_SubElement_Overflow", 3}});
+        AssertColumnNames(ecdb, "ts_SubElement_Overflow", {"ElementId","ECClassId","os1"});
+        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_SubElement_Overflow","os1")});
+        }
+    }
 
 
 //--------------------------------------------------------------------------------------
@@ -9446,7 +9938,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                 <BaseClass>GeometricElement</BaseClass>
                 <ECCustomAttributes>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>32</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9468,7 +9960,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                 <BaseClass>InformationContentElement</BaseClass>
                 <ECCustomAttributes>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>32</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9599,7 +10091,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <BaseClass>GeometricElement</BaseClass>
                 <ECCustomAttributes>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>32</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9621,7 +10113,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <BaseClass>InformationContentElement</BaseClass>
                 <ECCustomAttributes>
                     <ShareColumns xmlns="ECDbMap.02.00">
-                        <SharedColumnCount>32</SharedColumnCount>
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
                 </ECCustomAttributes>
@@ -9715,5 +10207,173 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
 
     }
 
+    //---------------------------------------------------------------------------------------
+    // @bsiMethod                                      Affan Khan                  04/17
+    //+---------------+---------------+---------------+---------------+---------------+------
+    TEST_F(DbMappingTestFixture, OverflowTableTest)
+        {
+        SchemaItem testItem = SchemaItem(
+            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+            <!-- Subset of BisCore schema -->
+            <ECEntityClass typeName="B1" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <MaxSharedColumnsBeforeOverflow>20</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="P01" typeName="point3d" />
+                <ECProperty propertyName="P02" typeName="point3d" />
+                <ECProperty propertyName="P03" typeName="point3d" />
+                <ECProperty propertyName="P04" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B2" modifier="None" >
+                <BaseClass>B1</BaseClass>
+                <ECProperty propertyName="P11" typeName="point3d" />
+                <ECProperty propertyName="P12" typeName="point3d" />
+                <ECProperty propertyName="P13" typeName="point3d" />
+                <ECProperty propertyName="P14" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B3" modifier="None" >
+                <BaseClass>B2</BaseClass>
+                <ECProperty propertyName="P21" typeName="point3d" />
+                <ECProperty propertyName="P22" typeName="point3d" />
+                <ECProperty propertyName="P23" typeName="point3d" />
+                <ECProperty propertyName="P24" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B4" modifier="None" >
+                <BaseClass>B3</BaseClass>
+                <ECProperty propertyName="P31" typeName="point3d" />
+                <ECProperty propertyName="P32" typeName="point3d" />
+                <ECProperty propertyName="P33" typeName="point3d" />
+                <ECProperty propertyName="P34" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B5" modifier="None" >
+                <BaseClass>B4</BaseClass>
+                <ECProperty propertyName="P41" typeName="point3d" />
+                <ECProperty propertyName="P42" typeName="point3d" />
+                <ECProperty propertyName="P43" typeName="point3d" />
+                <ECProperty propertyName="P44" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B6" modifier="None" >
+                <BaseClass>B5</BaseClass>
+                <ECProperty propertyName="P51" typeName="point3d" />
+                <ECProperty propertyName="P52" typeName="point3d" />
+                <ECProperty propertyName="P53" typeName="point3d" />
+                <ECProperty propertyName="P54" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B7" modifier="None" >
+                <BaseClass>B6</BaseClass>
+                <ECProperty propertyName="P61" typeName="point3d" />
+                <ECProperty propertyName="P62" typeName="point3d" />
+                <ECProperty propertyName="P63" typeName="point3d" />
+                <ECProperty propertyName="P64" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B8" modifier="None" >
+                <BaseClass>B7</BaseClass>
+                <ECProperty propertyName="P71" typeName="point3d" />
+                <ECProperty propertyName="P72" typeName="point3d" />
+                <ECProperty propertyName="P73" typeName="point3d" />
+                <ECProperty propertyName="P74" typeName="point3d" />
+            </ECEntityClass>
+        </ECSchema>)xml", true);
+        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb");
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, testItem);
+        ecdb.Schemas().CreateClassViewsInDb();
+
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsiMethod                                      Affan Khan                  04/17
+    //+---------------+---------------+---------------+---------------+---------------+------
+    TEST_F(DbMappingTestFixture, OverflowTableJoinedTest)
+        {
+        SchemaItem testItem = SchemaItem(
+            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+            <!-- Subset of BisCore schema -->
+            <ECEntityClass typeName="B1" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <MaxSharedColumnsBeforeOverflow>20</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                    <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                </ECCustomAttributes>
+                <ECProperty propertyName="P01" typeName="point3d" />
+                <ECProperty propertyName="P02" typeName="point3d" />
+                <ECProperty propertyName="P03" typeName="point3d" />
+                <ECProperty propertyName="P04" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B2" modifier="None" >
+                <BaseClass>B1</BaseClass>
+                <ECProperty propertyName="P11" typeName="point3d" />
+                <ECProperty propertyName="P12" typeName="point3d" />
+                <ECProperty propertyName="P13" typeName="point3d" />
+                <ECProperty propertyName="P14" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B3" modifier="None" >
+                <BaseClass>B2</BaseClass>
+                <ECProperty propertyName="P21" typeName="point3d" />
+                <ECProperty propertyName="P22" typeName="point3d" />
+                <ECProperty propertyName="P23" typeName="point3d" />
+                <ECProperty propertyName="P24" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B4" modifier="None" >
+                <BaseClass>B3</BaseClass>
+                <ECProperty propertyName="P31" typeName="point3d" />
+                <ECProperty propertyName="P32" typeName="point3d" />
+                <ECProperty propertyName="P33" typeName="point3d" />
+                <ECProperty propertyName="P34" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B5" modifier="None" >
+                <BaseClass>B4</BaseClass>
+                <ECProperty propertyName="P41" typeName="point3d" />
+                <ECProperty propertyName="P42" typeName="point3d" />
+                <ECProperty propertyName="P43" typeName="point3d" />
+                <ECProperty propertyName="P44" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B6" modifier="None" >
+                <BaseClass>B5</BaseClass>
+                <ECProperty propertyName="P51" typeName="point3d" />
+                <ECProperty propertyName="P52" typeName="point3d" />
+                <ECProperty propertyName="P53" typeName="point3d" />
+                <ECProperty propertyName="P54" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B7" modifier="None" >
+                <BaseClass>B6</BaseClass>
+                <ECProperty propertyName="P61" typeName="point3d" />
+                <ECProperty propertyName="P62" typeName="point3d" />
+                <ECProperty propertyName="P63" typeName="point3d" />
+                <ECProperty propertyName="P64" typeName="point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B8" modifier="None" >
+                <BaseClass>B7</BaseClass>
+                <ECProperty propertyName="P71" typeName="point3d" />
+                <ECProperty propertyName="P72" typeName="point3d" />
+                <ECProperty propertyName="P73" typeName="point3d" />
+                <ECProperty propertyName="P74" typeName="point3d" />
+            </ECEntityClass>
+        </ECSchema>)xml", true);
+        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb",testItem,3);
+        /*bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, testItem);
+        */
+        ECSqlStatement b1,b2,b3;
+        b3.Prepare(ecdb, "SELECT * FROM diego.B3");  //Access B1, b2, b2_overflow
+        b1.Prepare(ecdb, "SELECT * FROM diego.B1"); //Acess B1
+        b2.Prepare(ecdb, "SELECT * FROM diego.B2"); //Access B1, B2
+
+        }
 END_ECDBUNITTESTS_NAMESPACE
  

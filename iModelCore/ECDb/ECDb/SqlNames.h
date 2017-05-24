@@ -81,6 +81,8 @@ static_assert(0 == (int) DbTable::Type::Primary, "Persisted enum DbTable::Type h
 static_assert(1 == (int) DbTable::Type::Joined, "Persisted enum DbTable::Type has changed");
 #define SQLVAL_DbTable_Type_Existing "2"
 static_assert(2 == (int) DbTable::Type::Existing, "Persisted enum DbTable::Type has changed");
+#define SQLVAL_DbTable_Type_Overflow "3"
+static_assert(3 == (int) DbTable::Type::Overflow, "Persisted enum DbTable::Type has changed");
 
 //** Enum ECClassType
 #define SQLVAL_ECClassType_Entity "0"
@@ -199,8 +201,9 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 
 //The SQL returns the issues as JSON string. JSON in a CSV file means that the double quotes must be escaped by preceding
 //them with another double quote
+
 #define SQL_ValidateDbMapping R"sql(SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, 1, 'Multiple ECProperties mapped to same column',
-           '{""column"":""' || ec_Column.Name || '"", ""properties"":[' || GROUP_CONCAT('""' || mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString || '""') || ']}'
+        'Column: ' || ec_Column.Name || ' Properties: ' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString)
         FROM ec_PropertyMap
         INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
         INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
@@ -216,7 +219,7 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
         UNION ALL
 
         SELECT mappedpropertyschema.Name, mappedpropertyschema.Alias, mappedpropertyclass.Name, ec_Table.Name, 2, 'ECProperty mapped to multiple columns',
-            '{""property"":""' || ec_PropertyPath.AccessString || '"",""columns"":[' || GROUP_CONCAT(DISTINCT '""' || ec_Column.Name || '""') || ']}'
+            'Property: ' || ec_PropertyPath.AccessString || ' Columns: ' || GROUP_CONCAT(DISTINCT ec_Column.Name)
         FROM ec_PropertyMap
         INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
         INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId

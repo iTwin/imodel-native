@@ -223,13 +223,13 @@ Utf8CP ExpHelper::ToSql (SqlCompareListType type)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle   08/2013
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(UnarySqlOperator op)
+Utf8CP ExpHelper::ToSql(UnaryValueExp::Operator op)
     {
     switch(op)
         {
-        case UnarySqlOperator::Plus:       return "+";
-        case UnarySqlOperator::Minus:      return "-";
-        case UnarySqlOperator::BitwiseNot: return "~";
+        case UnaryValueExp::Operator::Plus:       return "+";
+        case UnaryValueExp::Operator::Minus:      return "-";
+        case UnaryValueExp::Operator::BitwiseNot: return "~";
         }
     BeAssert(false && "case not handled");
     return nullptr;

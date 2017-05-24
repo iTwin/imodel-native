@@ -44,10 +44,8 @@
     <ClCompile Include="ECSql\ECSqlDeletePreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
-    <ClCompile Include="ECSql\ECSqlPreparedStatement_Old.cpp" />
     <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlSelectPreparer.cpp" />
-    <ClCompile Include="ECSql\ECSqlStatementBase.cpp" />
     <ClCompile Include="ECSql\ComputedExp.cpp" />
     <ClCompile Include="ECSql\DynamicSelectClauseECClass.cpp" />
     <ClCompile Include="ECSql\ECInstanceECSqlSelectAdapter.cpp" />
@@ -159,10 +157,8 @@
     <ClInclude Include="ECSql\ECSqlDeletePreparer.h" />
     <ClInclude Include="ECSql\ECSqlInsertPreparer.h" />
     <ClInclude Include="ECSql\ECSqlPreparedStatement.h" />
-    <ClInclude Include="ECSql\ECSqlPreparedStatement_Old.h" />
     <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h" />
     <ClInclude Include="ECSql\ECSqlSelectPreparer.h" />
-    <ClInclude Include="ECSql\ECSqlStatementBase.h" />
     <ClInclude Include="ECSql\ComputedExp.h" />
     <ClInclude Include="ECSql\DynamicSelectClauseECClass.h" />
     <ClInclude Include="ECSql\ECSqlFieldFactory.h" />

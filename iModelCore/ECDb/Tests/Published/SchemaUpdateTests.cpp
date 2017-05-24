@@ -102,7 +102,7 @@ void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true
     Utf8String schemaName = classQualifiedName.substr(0, n);
     Utf8String className = classQualifiedName.substr(n + 1);
 
-    ECClassCP ecClass = ecdb.Schemas().GetClass(schemaName, className, ResolveSchema::AutoDetect);
+    ECClassCP ecClass = ecdb.Schemas().GetClass(schemaName, className, SchemaLookupMode::AutoDetect);
     ASSERT_TRUE(ecClass != nullptr) << "Failed to find class " << classQualifiedName;
 
     bvector<Utf8String> properties;
@@ -400,7 +400,7 @@ TEST_F(SchemaUpdateTestFixture, ClassModifier)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -452,7 +452,7 @@ TEST_F(SchemaUpdateTestFixture, ClassModifier)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -469,7 +469,7 @@ TEST_F(SchemaUpdateTestFixture, ClassModifier)
         "       <ECProperty propertyName='L6' typeName='long' />"
         "       <ECProperty propertyName='S6' typeName='string' />"
         "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "   <ECEntityClass typeName='Goo' modifier='Abstract' >"
         "       <ECProperty propertyName='L3' typeName='long' />"
         "       <ECProperty propertyName='S3' typeName='string' />"
         "   </ECEntityClass>"
@@ -490,7 +490,7 @@ TEST_F(SchemaUpdateTestFixture, ClassModifier)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L4, S4) VALUES (10, 't10')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Moo (L5, S5) VALUES (11, 't11')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Voo (L6, S6) VALUES (12, 't12')"); //New class added
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (8, 't8')"); //Class deleted
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (8, 't8')"); //Class is still abstract
     }
 
 //---------------------------------------------------------------------------------------
@@ -508,7 +508,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECClassModifierToAbstract)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -542,7 +542,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECClassModifierToAbstract)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -559,6 +559,52 @@ TEST_F(SchemaUpdateTestFixture, UpdateECClassModifierToAbstract)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpdateTestFixture, ModifyECClassModifierFromAbstract)
+    {
+    SchemaItem schemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="Foo" modifier="Abstract">
+               <ECProperty propertyName="L1" typeName="long" />
+               <ECProperty propertyName="S1" typeName="string"/>
+           </ECEntityClass>
+        </ECSchema>)xml");
+    SetupECDb("schemaupdate_modifyclassmodifiertoabstract.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+
+    {
+    //Change abstract to sealed
+    Utf8CP editedSchemaItem = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="Foo" modifier="Sealed">
+               <ECProperty propertyName="L1" typeName="long" />
+               <ECProperty propertyName="S1" typeName="string"/>
+           </ECEntityClass>
+        </ECSchema>)xml";
+
+    AssertSchemaUpdate(editedSchemaItem, filePath, {false, false}, "Change Abstract to Sealed is not supported");
+    GetECDb().AbandonChanges();
+    }
+    {
+    //Change abstract to none
+    Utf8CP editedSchemaItem = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+           <ECEntityClass typeName="Foo" modifier="None">
+               <ECProperty propertyName="L1" typeName="long" />
+               <ECProperty propertyName="S1" typeName="string"/>
+           </ECEntityClass>
+        </ECSchema>)xml";
+
+    AssertSchemaUpdate(editedSchemaItem, filePath, {false, false}, "Change Abstract to None is not supported");
+    GetECDb().AbandonChanges();
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -620,7 +666,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperties_TPH)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -671,7 +717,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperties_TPH)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -741,7 +787,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperties_JoinedTable)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -792,7 +838,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperties_JoinedTable)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -855,8 +901,8 @@ TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias='ecdbmap' />"
         "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -864,7 +910,7 @@ TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges());
 
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -872,9 +918,9 @@ TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
     //Delete and Add some properties
     Utf8CP editedSchemaItem =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias='ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='D1' typeName='long' />"
         "   </ECEntityClass>"
@@ -908,7 +954,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteOverriddenProperties)
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -1211,7 +1257,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -1242,7 +1288,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -1317,7 +1363,7 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -1342,7 +1388,8 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
     GetECDb().SaveChanges();
 
     assertSelectSql(GetECDb(), "SELECT * FROM ts_C1", 4, 1, "IdECClassIdAB");
-    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 4, 1, "C1IdECClassIdsc1sc2");
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 3, 1, "C1IdECClassIdjs1");
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2_Overflow", 3, 1, "C1IdECClassIdos1");
 
     //Verifying the inserted values for classes C1 and C2
     ECSqlStatement stmt;
@@ -1366,7 +1413,7 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -1412,7 +1459,7 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>1</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "            </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -1459,6 +1506,7 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
         ASSERT_TRUE(GetECDb().TableExists("ts_C1"));
         ASSERT_TRUE(GetECDb().TableExists("ts_C2"));
         ASSERT_TRUE(GetECDb().TableExists("ts_C3"));
+        ASSERT_TRUE(GetECDb().TableExists("ts_C3_Overflow"));
 
         //C31 and C32 should not exist.
         ASSERT_FALSE(GetECDb().TableExists("ts_C31"));
@@ -1482,7 +1530,9 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
         GetECDb().SaveChanges();
 
         //Verifying values
-        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 6, 2, "C1IdECClassIdsc1sc2sc3sc4");
+        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 3, 2, "C1IdECClassIdjs1");
+        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3_Overflow", 5, 2, "C1IdECClassIdos1os2os3");
+
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT G,H FROM ts.C31"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(11.1, stmt.GetValueDouble(0));
@@ -2002,7 +2052,7 @@ TEST_F(SchemaUpdateTestFixture, Add_Delete_ECProperty_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
@@ -2016,7 +2066,7 @@ TEST_F(SchemaUpdateTestFixture, Add_Delete_ECProperty_ShareColumns)
 
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 4));
-    AssertColumnCount(GetECDb(), testItems, "SharedColumnCount");
+    AssertColumnCount(GetECDb(), testItems, "MaxSharedColumnsBeforeOverflow");
 
     ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Parent -> P1, P2");
 
@@ -2033,7 +2083,7 @@ TEST_F(SchemaUpdateTestFixture, Add_Delete_ECProperty_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
@@ -2052,7 +2102,7 @@ TEST_F(SchemaUpdateTestFixture, Add_Delete_ECProperty_ShareColumns)
 
         testItems.clear();
         testItems.push_back(std::make_pair("ts_Parent", 6));
-        AssertColumnCount(GetECDb(), testItems, "SharedColumnCount");
+        AssertColumnCount(GetECDb(), testItems, "MaxSharedColumnsBeforeOverflow");
 
         ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Parent -> P1, -P2, +P3, +P4, +P5");
 
@@ -2266,7 +2316,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewCAOnProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_AddSharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflow)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2302,7 +2352,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_AddSharedColumnCount)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2315,13 +2365,13 @@ TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_AddSharedColumnCount)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, { false, false }, "Adding SharedColumnCount is supported");
+    AssertSchemaUpdate(editedSchemaXml, filePath, { false, false }, "Adding MaxSharedColumnsBeforeOverflow is supported");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, SharedColumnCountForSubClasses_AddProperty)
+TEST_F(SchemaUpdateTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2333,7 +2383,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountForSubClasses_AddProperty)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2352,7 +2402,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountForSubClasses_AddProperty)
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 4));
-    AssertColumnCount(GetECDb(), testItems, "SharedColumnCountForSubClasses");
+    AssertColumnCount(GetECDb(), testItems, "MaxSharedColumnsBeforeOverflowForSubClasses");
 
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -2367,7 +2417,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountForSubClasses_AddProperty)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
@@ -2393,7 +2443,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountForSubClasses_AddProperty)
         //Verify number of columns after upgrade
         testItems.clear();
         testItems.push_back(std::make_pair("ts_Parent", 8));
-        AssertColumnCount(GetECDb(), testItems, "SharedColumnCountForSubClasses");
+        AssertColumnCount(GetECDb(), testItems, "MaxSharedColumnsBeforeOverflowForSubClasses");
 
         GetECDb().CloseDb();
         }
@@ -2402,7 +2452,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountForSubClasses_AddProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, SharedColumnCountWithJoinedTable_AddProperty)
+TEST_F(SchemaUpdateTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2414,7 +2464,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountWithJoinedTable_AddProperty)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -2435,7 +2485,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountWithJoinedTable_AddProperty)
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
     testItems.push_back(std::make_pair("ts_Sub1", 3));
-    AssertColumnCount(GetECDb(), testItems, "SharedColumnCountWithJoinedTable");
+    AssertColumnCount(GetECDb(), testItems, "MaxSharedColumnsBeforeOverflowWithJoinedTable");
 
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -2450,7 +2500,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountWithJoinedTable_AddProperty)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -2478,7 +2528,7 @@ TEST_F(SchemaUpdateTestFixture, SharedColumnCountWithJoinedTable_AddProperty)
         testItems.clear();
         testItems.push_back(std::make_pair("ts_Parent", 3));
         testItems.push_back(std::make_pair("ts_Sub1", 7));
-        AssertColumnCount(GetECDb(), testItems, "SharedColumnCountWithJoinedTable");
+        AssertColumnCount(GetECDb(), testItems, "MaxSharedColumnsBeforeOverflowWithJoinedTable");
 
         GetECDb().CloseDb();
         }
@@ -3080,7 +3130,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "             <SharedColumnCount>4</SharedColumnCount>"
+        "             <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -3109,7 +3159,8 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
+    testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
     AssertColumnCount(GetECDb(), testItems, "schema import");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
@@ -3129,7 +3180,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "             <SharedColumnCount>4</SharedColumnCount>"
+        "             <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -3148,10 +3199,10 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
-
+    GetECDb().SaveChanges();
     //verify number of columns
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
     AssertColumnCount(GetECDb(), testItems, "After deleting subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
@@ -3185,7 +3236,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "             <SharedColumnCount>4</SharedColumnCount>"
+        "             <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -3209,7 +3260,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "After deleting all classes and readding base class");
-
+    
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
@@ -3226,7 +3277,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "             <SharedColumnCount>4</SharedColumnCount>"
+        "             <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -3255,7 +3306,9 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Verify column count
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
+    testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
+
     AssertColumnCount(GetECDb(), testItems, "After readding subclass");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
@@ -3268,7 +3321,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBeforeOverflow)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3281,7 +3334,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -3330,7 +3383,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -3386,14 +3439,14 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
-        "</ECSchema>", true, "Add New Class with ECDbMap CA (TPH, SharedColumns, SharedColumnCount) is expected to be successful");
+        "</ECSchema>", true, "Add New Class with ECDbMap CA (TPH, SharedColumns, MaxSharedColumnsBeforeOverflow) is expected to be successful");
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), addGoo);
     ASSERT_FALSE(asserted);
@@ -3427,7 +3480,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -3457,7 +3510,9 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
 
     //Verify column count
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 10));
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo_Overflow", 3));
+
     AssertColumnCount(GetECDb(), testItems, "after readding subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
@@ -3760,7 +3815,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3799,7 +3854,9 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
+    testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
+
     AssertColumnCount(GetECDb(), testItems, "schema import");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
@@ -3819,7 +3876,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3848,6 +3905,11 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
     ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
+    //testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
+
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "after deleting subclass Foo");
 
@@ -3866,7 +3928,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3917,7 +3979,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3951,7 +4013,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -3995,7 +4057,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -4034,7 +4096,9 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
     //verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo", 6));
+    testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
+
     AssertColumnCount(GetECDb(), testItems, "after readding subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
@@ -4047,7 +4111,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColumnsBeforeOverflow)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -4060,7 +4124,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -4119,7 +4183,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -4166,7 +4230,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -4191,13 +4255,13 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
     AssertColumnCount(GetECDb(), testItems, "after deleting subclass Goo");
 
     //Delete Parent ===================================================================================================
-    //Deleting Class with CA  JoinedTablePerDirectSubclass_SharedColumnCount is expected to be supported
+    //Deleting Class with CA  JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow is expected to be supported
     GetECDb().SaveChanges();
     SchemaItem deleteParent(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "</ECSchema>", true, "Deleting Class with CA  JoinedTablePerDirectSubclass_SharedColumnCount is expected to be supported");
+        "</ECSchema>", true, "Deleting Class with CA  JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow is expected to be supported");
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), deleteParent);
     ASSERT_FALSE(asserted);
@@ -4217,14 +4281,14 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
-        "</ECSchema>", true, "Adding New class containing ECDbMap CA JoinedTablePerDirectSubclass_SharedColumnCount should be successful");
+        "</ECSchema>", true, "Adding New class containing ECDbMap CA JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow should be successful");
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), AddParent);
     ASSERT_FALSE(asserted);
@@ -4239,7 +4303,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
     AssertColumnCount(GetECDb(), testItems, "after deleting and readding base class Parent");
 
     //Add Goo Again===================================================================================================
-    //Added Derived class with CA JoinedTablePerDirectSubclass_MinimumSharedColumnCount on base class is expected to be supported
+    //Added Derived class with CA JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow on base class is expected to be supported
     GetECDb().SaveChanges();
     SchemaItem addGoo(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4251,7 +4315,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -4264,7 +4328,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
         "       <ECProperty propertyName='GD' typeName='double' />"
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
-        "</ECSchema>", true, "Add New Class with JoinedTablePerDirectSubclass_SharedColumnCount on Parent is expected to be successful");
+        "</ECSchema>", true, "Add New Class with JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow on Parent is expected to be successful");
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), addGoo);
     ASSERT_FALSE(asserted);
@@ -4295,7 +4359,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
@@ -4335,7 +4399,9 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColum
     //verify number of columns
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 10));
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    testItems.push_back(std::make_pair("ts_Goo_Overflow", 3));
+
     AssertColumnCount(GetECDb(), testItems, "after readding subclass Foo");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL, FI, FI1 FROM ts.Foo");
@@ -7269,7 +7335,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewDerivedLinkTableRelationship)
         "     <BaseClass>InformationElement</BaseClass>"
         "     <ECCustomAttributes>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>8</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "     </ECCustomAttributes>"
@@ -7291,7 +7357,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewDerivedLinkTableRelationship)
         "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
         "     <ECCustomAttributes>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>16</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>16</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "     </ECCustomAttributes>"
@@ -7365,7 +7431,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewDerivedLinkTableRelationship)
         "     <BaseClass>InformationElement</BaseClass>"
         "     <ECCustomAttributes>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>8</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "     </ECCustomAttributes>"
@@ -7387,7 +7453,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewDerivedLinkTableRelationship)
         "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
         "     <ECCustomAttributes>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>16</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>16</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
         "     </ECCustomAttributes>"
@@ -7521,7 +7587,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewDerivedLinkTableRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddSharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, AddMaxSharedColumnsBeforeOverflow)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7546,7 +7612,7 @@ TEST_F(SchemaUpdateTestFixture, AddSharedColumnCount)
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    SetupECDb("schemaupdate_addsharedcolumncount.ecdb", schemaItem);
+    SetupECDb("schemaupdate_addmaxsharedcolumnsbeforeoverflow.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -7560,7 +7626,7 @@ TEST_F(SchemaUpdateTestFixture, AddSharedColumnCount)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -7577,13 +7643,13 @@ TEST_F(SchemaUpdateTestFixture, AddSharedColumnCount)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Adding SharedColumnCount");
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Adding MaxSharedColumnsBeforeOverflow");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteSharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7595,7 +7661,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteSharedColumnCount)
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>"
         "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -7610,7 +7676,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteSharedColumnCount)
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    SetupECDb("schemaupdate_deletesharedcolumncount.ecdb", schemaItem);
+    SetupECDb("schemaupdate_deletemaxsharedcolumnsbeforeoverflow.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -7639,7 +7705,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteSharedColumnCount)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Deleting SharedColumnCount");
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Deleting MaxSharedColumnsBeforeOverflow");
     }
 
 

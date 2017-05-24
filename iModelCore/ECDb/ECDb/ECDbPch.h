@@ -19,6 +19,8 @@
 #include "ECDbInternalTypes.h"
 #include "ECDbLogger.h"
 #include "IssueReporter.h"
+#include "Nullable.h"
+
 #include "ECDbImpl.h"
 
 #include "ProfileManager.h"
@@ -84,11 +86,8 @@
 #include "ECSql/ECSqlDeletePreparer.h"
 #include "ECSql/ECSqlPropertyNameExpPreparer.h"
 
-
-#include "ECSql/ECSqlStatementBase.h"
 #include "ECSql/ECSqlStatementImpl.h"
 #include "ECSql/ECSqlPreparedStatement.h"
-#include "ECSql/ECSqlPreparedStatement_Old.h"
 
 #include "ECSql/ECSqlFieldFactory.h"
 #include "ECSql/ECSqlField.h"

@@ -51,7 +51,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
                     {
                     Utf8StringCR className = innerKvPair.first;
                     ECClassId expectedId = innerKvPair.second;
-                    ECClassId actualId = ecdb.Schemas().GetClassId(schemaName, className, ResolveSchema::BySchemaName);
+                    ECClassId actualId = ecdb.Schemas().GetClassId(schemaName, className, SchemaLookupMode::ByName);
                     ASSERT_EQ(expectedId.GetValue(), actualId.GetValue()) << "ECClass: " << schemaName.c_str() << "." << className.c_str();
                     }
                 }

@@ -260,7 +260,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
                 return SUCCESS;
 
             case ECSqlScope::NonSelectAssignmentExp:
-                if (relClassIdPropMap.IsVirtual()) //ignore completely, no-op binders will be
+                if (relClassIdPropMap.GetColumn().GetPersistenceType() == PersistenceType::Virtual) //ignore completely, no-op binders will be
                     return SUCCESS;
 
                 sqlBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
@@ -275,7 +275,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
             idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
 
             NativeSqlBuilder relClassIdColStrBuilder;
-            if (relClassIdPropMap.IsVirtual())
+            if (relClassIdPropMap.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
                 relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
             else
                 relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());

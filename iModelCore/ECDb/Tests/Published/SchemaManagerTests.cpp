@@ -104,7 +104,7 @@ TEST_F(SchemaManagerTests, ImportToken)
                                                   "    <ECEntityClass typeName='SubSharedCols' modifier='None'>"
                                                   "          <ECCustomAttributes>"
                                                   "            <ShareColumns xmlns='ECDbMap.02.00' >"
-                                                  "               <SharedColumnCount>5</SharedColumnCount>"
+                                                  "               <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
                                                   "               <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                                                   "            </ShareColumns>"
                                                   "          </ECCustomAttributes>"
@@ -682,22 +682,22 @@ TEST_F(SchemaManagerTests, CasingTests)
     ecclass = ecdb.Schemas().GetClass("ECSqlTest", "p");
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetClass("ecSqL", "P", ResolveSchema::BySchemaAlias);
+    ecclass = ecdb.Schemas().GetClass("ecSqL", "P", SchemaLookupMode::ByAlias);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetClass("ecsql", "p", ResolveSchema::BySchemaAlias);
+    ecclass = ecdb.Schemas().GetClass("ecsql", "p", SchemaLookupMode::ByAlias);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetClass("ecsqlTest", "P", ResolveSchema::AutoDetect);
+    ecclass = ecdb.Schemas().GetClass("ecsqlTest", "P", SchemaLookupMode::AutoDetect);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetClass("ecsqL", "P", ResolveSchema::AutoDetect);
+    ecclass = ecdb.Schemas().GetClass("ecsqL", "P", SchemaLookupMode::AutoDetect);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetClass("ECSqlTest", "p", ResolveSchema::AutoDetect);
+    ecclass = ecdb.Schemas().GetClass("ECSqlTest", "p", SchemaLookupMode::AutoDetect);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetClass("ecsql", "p", ResolveSchema::AutoDetect);
+    ecclass = ecdb.Schemas().GetClass("ecsql", "p", SchemaLookupMode::AutoDetect);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
     }
 
@@ -1295,13 +1295,13 @@ TEST_F(SchemaManagerTests, TestGetClassResolver)
     ASSERT_TRUE(ecdb.IsDbOpen());
     ECClassCP ecClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr);
-    ecClass = ecdb.Schemas().GetClass("ecsql", "PSA", ResolveSchema::BySchemaAlias);
+    ecClass = ecdb.Schemas().GetClass("ecsql", "PSA", SchemaLookupMode::ByAlias);
     EXPECT_TRUE(ecClass != nullptr);
 
-    ecClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA", ResolveSchema::AutoDetect);
+    ecClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA", SchemaLookupMode::AutoDetect);
     EXPECT_TRUE(ecClass != nullptr);
 
-    ecClass = ecdb.Schemas().GetClass("ecsql", "PSA", ResolveSchema::AutoDetect);
+    ecClass = ecdb.Schemas().GetClass("ecsql", "PSA", SchemaLookupMode::AutoDetect);
     EXPECT_TRUE(ecClass != nullptr);
     }
 
@@ -1519,7 +1519,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
             "                <MapStrategy>TablePerHierarchy</MapStrategy>"
             "            </ClassMap>"
             "            <ShareColumns xmlns='ECDbMap.02.00'>"
-            "                <SharedColumnCount>5</SharedColumnCount>"
+            "                <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
             "            </ShareColumns>"
             "        </ECCustomAttributes>"
             "    <ECProperty propertyName='BoolProp' typeName='Boolean' />"
@@ -1543,7 +1543,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
             "  <ECEntityClass typeName='SubElementSharedCols' modifier='Sealed' >"
             "        <ECCustomAttributes>"
             "            <ShareColumns xmlns='ECDbMap.02.00'>"
-            "                <SharedColumnCount>5</SharedColumnCount>"
+            "                <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
             "            </ShareColumns>"
             "        </ECCustomAttributes>"
             "      <BaseClass>Element</BaseClass>"
