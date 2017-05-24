@@ -11,6 +11,13 @@
     <KindOfQuantity typeName="PLANE_ANGLE" displayLabel="PLANE_ANGLE" persistenceUnit="RADIAN" relativeError="1e-2" />
     <KindOfQuantity typeName="PERCENT" displayLabel="PERCENT" persistenceUnit="PERCENT" relativeError="1e-2" />
 
+    <ECEntityClass typeName="RoadRailCategoryModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <!-- BEGIN CustomAttributes and Enums -->    
     <ECCustomAttributeClass typeName="PropertyPaneHint" appliesTo="Any">
         <ECProperty propertyName="UserDefinedOrDerived" typeName="boolean"/>
@@ -398,7 +405,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RoadDesignSpeedStandards">
         <BaseClass>bis:DefinitionElement</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -411,7 +418,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RoadDesignSpeedDefinitionTable">
         <BaseClass>bis:DefinitionElement</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -475,7 +482,7 @@
     <!-- BEGIN RoadClass classes -->
     <ECEntityClass typeName="RoadClassStandards">
         <BaseClass>bis:DefinitionElement</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -488,7 +495,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RoadClassDefinitionTable">
         <BaseClass>bis:DefinitionElement</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -604,7 +611,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="CrossSectionPortionDefinitionElement" modifier="Abstract">
         <BaseClass>bis:DefinitionElement</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -769,7 +776,7 @@
     <!-- BEGIN CrossSectionTemplate Element classes -->
     <!--ECEntityClass typeName="CrossSectionTemplateElement" modifier="Abstract">
         <BaseClass>bis:DefinitionElement</BaseClass>
-        <BaseClass>bis:IModellableElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>

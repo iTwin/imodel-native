@@ -42,7 +42,7 @@ DgnDbStatus PathwayElement::SetAlignment(PathwayElementCR roadway, AlignmentCP a
     stmtDelPtr->BindId(1, roadway.GetElementId());
     if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
         {
-        if (DbResult::BE_SQLITE_OK != roadway.GetDgnDb().DeleteNonNavigationRelationship(
+        if (DbResult::BE_SQLITE_OK != roadway.GetDgnDb().DeleteLinkTableRelationship(
             ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
             return DgnDbStatus::BadElement;
         }
@@ -50,7 +50,7 @@ DgnDbStatus PathwayElement::SetAlignment(PathwayElementCR roadway, AlignmentCP a
     if (alignment)
         {
         ECInstanceKey insKey;
-        if (DbResult::BE_SQLITE_OK != roadway.GetDgnDb().InsertNonNavigationRelationship(insKey,
+        if (DbResult::BE_SQLITE_OK != roadway.GetDgnDb().InsertLinkTableRelationship(insKey,
             *roadway.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToMainAlignment)->GetRelationshipClassCP(),
             ECInstanceId(roadway.GetElementId().GetValue()), ECInstanceId(alignment->GetElementId().GetValue())))
             return DgnDbStatus::BadElement;

@@ -154,24 +154,6 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     if (!projectPtr.IsValid() || DbResult::BE_SQLITE_OK != createStatus)
         return nullptr;
 
-    BeFileName assetsRootDir;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsRootDir);
-
-    BeFileName schemaRootDir = assetsRootDir;
-    schemaRootDir.AppendToPath(L"ECSchemas\\Domain\\");
-
-    DbResult status;
-    if (DbResult::BE_SQLITE_OK != (status = LinearReferencing::LinearReferencingDomain::GetDomain().ImportSchema(*projectPtr)))
-        return nullptr;
-
-    if (DbResult::BE_SQLITE_OK != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr)))
-        return nullptr;
-
-    if (DbResult::BE_SQLITE_OK != (status = RoadRailPhysical::RoadRailPhysicalDomain::GetDomain().ImportSchema(*projectPtr)))
-        return nullptr;
-
-    projectPtr->Schemas().CreateClassViewsInDb();
-
     return projectPtr;
     }
 
