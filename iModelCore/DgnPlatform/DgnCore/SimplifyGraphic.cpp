@@ -1675,14 +1675,14 @@ void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
     {
     // NEEDSWORK...Draw box...
     }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
 void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corners)
     {
-    FPoint3d        points[4];
-    FPoint2d        params[4];
+#ifdef NOTNOW_MAY_NOT_BE_NEEDED
+    QPoint3d        points[4];
+    QPoint2d        params[4];
     int32_t         indices[6] = {0, 1, 2, 1, 3, 2};
     TriMeshArgs     triMesh;
     
@@ -1708,6 +1708,7 @@ void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corner
     params[2].y = params[3].y = 1.0;
 
     _AddTriMesh(triMesh);
+#endif
     }
  
 /*---------------------------------------------------------------------------------**//**
@@ -1723,6 +1724,7 @@ void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args) 
     {
+#ifdef NOTNOW_MAY_NOT_BE_NEEDED
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
     // Give output a chance to handle geometry directly...
@@ -1804,6 +1806,7 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
             m_processor._ProcessTriMesh(triMesh, *this);
             }
         }
+#endif
     }
 
 

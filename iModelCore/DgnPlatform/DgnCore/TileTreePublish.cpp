@@ -179,10 +179,8 @@ struct RenderSystem : Render::System
 
     virtual int _Initialize(void* systemWindow, bool swRendering) override { return  0; }
     virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
-    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const override { return nullptr; }
     virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params)  const override { return nullptr; }
     virtual GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params)  const override { return nullptr; }
-    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params)  const override { return nullptr; }
     virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const override { return nullptr; }
     virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const override {return nullptr; }
     virtual uint32_t   _GetMaxFeaturesPerBatch() const override { return 0xffffffff; }
@@ -192,7 +190,23 @@ struct RenderSystem : Render::System
     virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams())  const override {return nullptr; }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017 
+* @bsimethod                                                    Ray.Bentley     05/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const override 
+    { 
+    return nullptr; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params)  const override 
+    { 
+    return nullptr; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017 
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const override 
     {
@@ -201,7 +215,7 @@ virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb, GraphicParam
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017 
+* @bsimethod                                                    Ray.Bentley     05/2017 
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const override 
     { 
@@ -291,8 +305,8 @@ static TileGenerator::FutureGenerateTileResult generateChildTiles (TileGenerator
 TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollector* collector, double leafTolerance, bool surfacesOnly, GeometricModelP model)
     {
     Context                     context(nullptr, nullptr, Transform::FromIdentity(), nullptr, collector, leafTolerance, model);
-    RenderSys               
-    TileTree::RootCPtr          tileRoot = model->GetTileTree(nullptr);
+    RenderSystem                renderSys(context);
+    TileTree::RootCPtr          tileRoot = model->GetTileTree(&renderSys);
     ClipVectorPtr               clip;
 
     if (!tileRoot.IsValid())
