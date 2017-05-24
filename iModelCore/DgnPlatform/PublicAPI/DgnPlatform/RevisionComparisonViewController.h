@@ -67,7 +67,7 @@ struct RevisionComparisonState
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
-struct PersistentState : RevisionComparisonState
+struct EXPORT_VTABLE_ATTRIBUTE PersistentState : RevisionComparisonState
 {
     DgnElementId    m_elementId;
 
@@ -82,7 +82,7 @@ struct PersistentState : RevisionComparisonState
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
-struct TransientState : RevisionComparisonState
+struct EXPORT_VTABLE_ATTRIBUTE TransientState : RevisionComparisonState
 {
     DgnElementCPtr  m_element;
 
@@ -103,8 +103,8 @@ private:
     bset<PersistentState>   m_persistent;
     bset<TransientState>    m_transient;
 public:
-    PersistentState GetPersistentState(DgnElementId elementId) const;
-    TransientState GetTransientState(DgnElementId elementId) const;
+    DGNPLATFORM_EXPORT PersistentState GetPersistentState(DgnElementId elementId) const;
+    DGNPLATFORM_EXPORT TransientState GetTransientState(DgnElementId elementId) const;
 
     bset<PersistentState> const& GetPersistentStates() const { return m_persistent; }
     bset<TransientState> const& GetTransientStates() const { return m_transient; }
