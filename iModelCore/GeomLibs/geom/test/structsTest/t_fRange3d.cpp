@@ -18,6 +18,16 @@ TEST(FRange3d, RangeDistance)
     range01F.Extend(pnttoExtF);
     range01D.Extend(pnttoExtD);
     Check::ExactRange(DRange3d::From(range01F), range01D);
+    Check::True(range01D.MaxAbs() == range01F.MaxAbs());
+    DPoint3d cornersD[8];
+    range01D.Get8Corners(cornersD);
+    bvector<FPoint3d> cornersF;
+    range01F.Get8Corners(cornersF);
+    for (int i = 0; i < 8; i++)
+        Check::Exact(cornersD[i], DPoint3d::From(cornersF[i]));
+
+    Check::True(FRange3d::NullRange().IsNull());
+    Check::True(range01D.MaxAbs() == range01F.MaxAbs());
     //diagonal tests
     Check::ExactDouble(range01F.DiagonalDistance(), range01D.DiagonalDistance());
     Check::ExactDouble(range01F.DiagonalDistanceXY(), range01D.DiagonalDistanceXY());
@@ -52,7 +62,15 @@ TEST(FRange3d, RangeDistance)
     auto range23D = DRange3d::From(range23F);
     Check::ExactDouble(range01D.DistanceSquaredTo(range23D), range01F.DistanceSquaredTo(range23F));
     
+    Check::False(range01F.IntersectsWith(range23F, false));
     Check::ExactRange(DRange3d::FromIntersection(range01D, range23D), DRange3d::From(FRange3d::FromIntersection(range01F, range23F)));
+    FPoint3d pntExtF0, pntExtF1;
+    pntExtF0.Init(3.0, 3.0, 8.0);
+    pntExtF1.Init(0.0, 0.0, 0.0);
+
+    range23F.Extend(pntExtF0, pntExtF1);
+    range23D.Extend(pntExtF0, pntExtF1);
+    Check::True(Check::True(range01F.IntersectsWith(range23F, true)) == Check::True(range01D.IntersectsWith(range23D)));
 
     auto unionRange = DRange3d::From(range01F);
     unionRange.Extend(range23D.low);
