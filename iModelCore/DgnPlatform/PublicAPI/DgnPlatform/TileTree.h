@@ -76,6 +76,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PickArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNode)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNodes)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileRequests)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
@@ -519,6 +520,26 @@ public:
 };
 
 //=======================================================================================
+//! Accumulates a set of tiles that need to be loaded, for any number of tile trees.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct TileRequests
+{
+private:
+    // NB: We use an std::map because we need each MissingNodes to maintain a stable address as we add to the map
+    typedef std::map<RootPtr, MissingNodes> Map;
+
+    Map m_map;
+public:
+    //! Obtain the set of missing nodes for the given tile tree.
+    MissingNodesR GetMissing(RootR root) { return m_map.insert(Map::value_type(RootPtr(&root), MissingNodes())).first->second; }
+
+    //! Request all accumulated tiles to be loaded. This operation first cancels loading of any previously-requested tiles which
+    //! are not contained in this set of requests.
+    DGNPLATFORM_EXPORT void RequestMissing() const;
+};
+
+//=======================================================================================
 // Arguments for drawing or picking tiles.
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
@@ -548,21 +569,19 @@ struct TileArgs
 //=======================================================================================
 struct DrawArgs : TileArgs
 {
-    RenderContextR m_context;
+    SceneContextR m_context;
     Render::GraphicBranch m_graphics;
-    MissingNodes m_missing;
+    MissingNodesR m_missing;
     BeTimePoint m_now;
     BeTimePoint m_purgeOlderThan;
 
-    DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
-            : TileArgs(location, root, clip), m_context(context), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
+    DGNPLATFORM_EXPORT DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr);
 
     void DrawBranch(Render::ViewFlagsOverridesCR ovrFlags, Render::GraphicBranch& branch);
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
     void Clear() {m_graphics.Clear(); m_missing.clear(); }
     DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.
 
-    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR);
     DGNPLATFORM_EXPORT void InsertMissing(TileCR tile);
 
     double ComputeTileDistance(TileCR tile) const;

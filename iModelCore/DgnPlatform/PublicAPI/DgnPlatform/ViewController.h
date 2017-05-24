@@ -216,8 +216,8 @@ protected:
 
 public:
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
-    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan);
-    void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
+    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
+    void RequestScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
     Render::GraphicListPtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}

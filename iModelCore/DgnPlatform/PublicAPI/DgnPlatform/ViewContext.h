@@ -17,6 +17,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace TileTree {struct TileRequests;}
 /**
 * @addtogroup GROUP_ViewContext ViewContext Module
 * A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.
@@ -357,13 +358,23 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_ViewContext
+//! Accumulates the list of Graphics which comprise the current scene, along with a set
+//! of Tiles which need to be loaded to complete the scene.
+//! @note The TileRequests object accumulates tile requests for multiple SceneContexts;
+//! therefore the requests are not actually processed until all SceneContexts have been
+//! processed. This allows previously-queued tile loads to be canceled if they are no
+//! longer required for any Scene.
 // @bsiclass                                                    Keith.Bentley   10/15
 //=======================================================================================
 struct SceneContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
+
+    TileTree::TileRequests& m_requests;
+
+    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests);
+
     bool _CheckStop() override;
-    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
 };
 
 //=======================================================================================
