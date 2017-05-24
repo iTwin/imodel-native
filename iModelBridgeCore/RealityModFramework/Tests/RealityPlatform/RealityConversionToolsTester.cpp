@@ -15,53 +15,92 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+using ::testing::Contains;
+using ::testing::Key;
+
 //=====================================================================================
 //! @bsiclass                          Spencer.Mason                            10/2016
 //=====================================================================================
 class RealityConversionTestFixture : public testing::Test
     {
     public:
-        static Utf8CP s_SpatialEntityJSONString;
+		static Utf8CP s_TwoSpatialEntityJSONString;
         static Utf8CP s_EnterpriseStatJSONString;
         static Utf8CP s_RealityDataJSONString;
+		static Utf8CP s_EntityDataSourceJSONString;
+		static Utf8CP s_SpatialEntityServerJSONString;
+		static Utf8CP s_SpatialEntityMetadataJSONString;
     };
 
 
-Utf8CP RealityConversionTestFixture::s_SpatialEntityJSONString = R"(
-    {
-        "instances": [
-            {
-                "instanceId": "14812",
-                "schemaName": "RealityModeling",
-                "className": "SpatialEntityWithDetailsView",
-                "properties": {
-                    "Id": "14812",
-                    "Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
-                    "Name": "N38W093",
-                    "Description": null,
-                    "ContactInformation": null,
-                    "Keywords": null,
-                    "Legal": "Data available from the U.S. Geological Survey",
-                    "ProcessingDescription": null,
-                    "DataSourceType": "hgt",
-                    "AccuracyResolutionDensity": null,
-                    "Date": "2005-07-05T00:00:00",
-                    "Classification": "Terrain",
-                    "FileSize": "7066",
-                    "SpatialDataSourceId": "14812",
-                    "ResolutionInMeters": "24.2x30.922",
-                    "DataProvider": "USGS",
-                    "DataProviderName": "USGS",
-                    "ThumbnailURL": null,
-                    "MetadataURL": null,
-                    "RawMetadataURL": null,
-                    "RawMetadataFormat": null,
-                    "SubAPI": null
-                },
-                "eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
-            }
-        ]
-    }
+Utf8CP RealityConversionTestFixture::s_TwoSpatialEntityJSONString = R"(
+	{
+		"instances": [
+			{
+				"instanceId": "14812",
+				"schemaName": "RealityModeling",
+				"className": "SpatialEntityWithDetailsView",
+				"properties": {
+					"Id": "14812",
+					"Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
+					"Name": "N38W093",
+					"Description": null,
+					"ContactInformation": null,
+					"Keywords": null,
+					"Legal": "Data available from the U.S. Geological Survey",
+					"ProcessingDescription": null,
+					"DataSourceType": "hgt",
+					"Dataset": "someDataSet",
+					"AccuracyResolutionDensity": null,
+					"Date": "2005-07-05T00:00:00.000",
+					"Classification": "Terrain",
+					"FileSize": "7066",
+					"SpatialDataSourceId": "14812",
+					"ResolutionInMeters": "24.2x30.922",
+					"AccuracyInMeters": "5x5",
+					"DataProvider": "USGS",
+					"DataProviderName": "United States Geological Survey",
+					"ThumbnailURL": "http://www.example.com/thumbnail.jpg",
+					"MetadataURL": null,
+					"RawMetadataURL": null,
+					"RawMetadataFormat": null,
+					"SubAPI": null
+				},
+				"eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
+			},
+			{
+				"instanceId": "14813",
+				"schemaName": "RealityModeling",
+				"className": "SpatialEntityWithDetailsView",
+				"properties": {
+					"Id": "14813",
+					"Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
+					"Name": "N39W093",
+					"Description": null,
+					"ContactInformation": null,
+					"Keywords": null,
+					"Legal": "Data also available from the U.S. Geological Survey",
+					"ProcessingDescription": "This is a dummy description that is not Lorem Ipsum based",
+					"DataSourceType": "hgt;tif;dem",
+					"AccuracyResolutionDensity": null,
+					"Date": "2005-07-05T12:12:00",
+					"Classification": "Terrain",
+					"Dataset": "someDataSet",
+					"FileSize": "7066",
+					"SpatialDataSourceId": "14812",
+					"ResolutionInMeters": "24.2x30.922",
+					"DataProvider": "USGS",
+					"DataProviderName": "United States Geological Survey",
+					"ThumbnailURL": null,
+					"MetadataURL": null,
+					"RawMetadataURL": null,
+					"RawMetadataFormat": null,
+					"SubAPI": null
+				},
+				"eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
+			}
+		]
+	}
         )";
 
 Utf8CP RealityConversionTestFixture::s_EnterpriseStatJSONString = R"(
@@ -100,7 +139,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Group": "TestGroup",
                     "Description": "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
                     "RootDocument": "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx",
-                    "Size": 1036657,
+                    "Size": "1036657",
                     "Classification": "Terrain",
                     "Streamed": false,
                     "Type": "3mx",
@@ -138,8 +177,65 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "ResolutionInMeters": "13.45x16.34",
                     "Visibility": "PRIVATE",
                     "Listable": true,
-                    "ModifiedTimestamp": "2017-02-01T22:26:06.4138132Z",
-                    "CreatedTimestamp": "2017-02-01T22:26:06.4138132Z",
+                    "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
+                    "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
+                    "OwnedBy": "francis.boily@bentley.com"
+                },
+                "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
+            },
+            {
+                "instanceId": "bf3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                "schemaName": "S3MX",
+                "className": "RealityData",
+                "properties": {
+                    "Id": "bf3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                    "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                    "ContainerName": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                    "Name": "Helsinki2",
+                    "Dataset": "Geogratis2",
+                    "Group": "TestGroup",
+                    "Description": "Helsinki222 is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
+                    "RootDocument": "Helsinki2/Scene/Production_Helsinki_3MX_ok.3mx",
+                    "Size": "1036657",
+                    "Classification": "Terrain",
+                    "Streamed": false,
+                    "Type": "3mx",
+                    "Footprint": {
+                        "Coordinates": [
+                            {
+                                "Long": 24.7828757,
+                                "Lat": 59.9224887
+                            },
+                            {
+                                "Long": 25.2544848,
+                                "Lat": 59.9224887
+                            },
+                            {
+                                "Long": 25.2544848,
+                                "Lat": 60.2978389
+                            },
+                            {
+                                "Long": 24.7828757,
+                                "Lat": 60.2978389
+                            },
+                            {
+                                "Long": 24.7828757,
+                                "Lat": 59.9224887
+                            }
+                        ]
+                    },
+                    "ThumbnailDocument": "Helsinki/thumbnail.jpg",
+                    "MetadataUrl": "www.bigTest.com",
+                    "UltimateId": "uId",
+                    "UltimateSite": "www.bigTest.com/1",
+                    "Copyright": "Copyright goes here",
+                    "TermsOfUse": "And the terms go here",
+                    "AccuracyInMeters": "16.147",
+                    "ResolutionInMeters": "13.45x16.34",
+                    "Visibility": "PRIVATE",
+                    "Listable": true,
+                    "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
+                    "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
                     "OwnedBy": "francis.boily@bentley.com"
                 },
                 "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
@@ -148,15 +244,176 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
     }
     )";
 
+	Utf8CP RealityConversionTestFixture::s_EntityDataSourceJSONString = 
+		R"(
+		
+		{
+		  "instances": [
+			{
+			  "instanceId": "1",
+			  "schemaName": "RealityModeling",
+			  "className": "SpatialDataSource",
+			  "properties": {
+				"Id": "1",
+				"MainURL": "http://www.openstreetmap.org/api/0.6/map?",
+				"ParameterizedURL": "http://www.example.com",
+				"CompoundType": "myCompoundType",
+				"LocationInCompound": "myLocationInCompound",
+				"DataSourceType": "OSM",
+				"SisterFiles": "mySisterfiles",
+				"NoDataValue": "myDataValue",
+				"FileSize": "9999",
+				"CoordinateSystem": "EPSG:9999",
+				"Streamed": true,
+				"Metadata": "someMetaDATA"
+			  },
+			  "eTag": "\"5gfZgh6RyYOK1ugIJsUVj6LDp7Y=\""
+			},
+			{
+			  "instanceId": "2",
+			  "schemaName": "RealityModeling",
+			  "className": "SpatialDataSource",
+			  "properties": {
+				"Id": "2",
+				"MainURL": "http://www.openstreetmap.org/api/0.6/map?",
+				"ParameterizedURL": "http://www.example.com",
+				"CompoundType": "myCompoundType",
+				"LocationInCompound": "myLocationInCompound",
+				"DataSourceType": "OSM",
+				"SisterFiles": "mySisterfiles",
+				"NoDataValue": "myDataValue",
+				"FileSize": "9999",
+				"CoordinateSystem": "EPSG:4326",
+				"Streamed": true,
+				"Metadata": "someMetaDATA"
+			  },
+			  "eTag": "\"5gfZgh6RyYOK1ugIJsUVj6LDp7Y=\""
+			}
+		  ]
+		}
+
+		)";
+
+	Utf8CP RealityConversionTestFixture::s_SpatialEntityServerJSONString =
+		R"(
+		
+		{
+			"instances": [
+			{
+				"instanceId": "1",
+				"schemaName": "RealityModeling",
+				"className": "Server",
+				"properties": {
+				"Id": "1",
+					"CommunicationProtocol": "ftp",
+					"Streamed": true,
+					"LoginKey": "myLoginKey",
+					"LoginMethod": "myLoginMethod",
+					"RegistrationPage": "http://www.example.com/register",
+					"OrganisationPage": "http://www.example.com/organisation",
+					"Name": "GeoGratis",
+					"URL": "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/",
+					"ServerContactInformation": "mycontact@example.com",
+					"Fees": "Over 9000",
+					"Legal": "Better Call Saul",
+					"AccessConstraints": "No one",
+					"Online": true,
+					"LastCheck": "2017-02-02T00:28:22",
+					"LastTimeOnline": "2017-02-03T00:28:22",
+					"Latency": 9000,
+					"MeanReachabilityStats": 5,
+					"State": "myState",
+					"Type": "sftp"
+				},
+				"eTag": "\"tkErs5pTIlkWlQgzDzW9u0kuBgk=\""
+			},
+			{
+				"instanceId": "2",
+				"schemaName": "RealityModeling",
+				"className": "Server",
+				"properties": {
+				"Id": "2",
+					"CommunicationProtocol": "ftp",
+					"Streamed": null,
+					"LoginKey": null,
+					"LoginMethod": null,
+					"RegistrationPage": null,
+					"OrganisationPage": null,
+					"Name": "GeoGratis2",
+					"URL": "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/",
+					"ServerContactInformation": null,
+					"Fees": null,
+					"Legal": null,
+					"AccessConstraints": null,
+					"Online": true,
+					"LastCheck": "2017-02-02T00:28:22",
+					"LastTimeOnline": "2017-02-02T00:28:22",
+					"Latency": null,
+					"MeanReachabilityStats": null,
+					"State": null,
+					"Type": "ftp"
+				},
+				"eTag": "\"tkErs5pTIlkWlQgzDzW9u0kuBgk=\""
+			}
+		]
+		}
+
+		)";
+
+	Utf8CP RealityConversionTestFixture::s_SpatialEntityMetadataJSONString = R"(
+
+	{
+	  "instances": [
+		{
+		  "instanceId": "1",
+		  "schemaName": "RealityModeling",
+		  "className": "Metadata",
+		  "properties": {
+			"Id": "1",
+			"MetadataURL": "http://www.example.com/metadata",
+			"DisplayStyle": "myDisplayStyle",
+			"Description": "some big description",
+			"ContactInformation": "my contact",
+			"Keywords": "keyword1;keyword2",
+			"Legal": "© OpenStreetMap contributors",
+			"TermsOfUse": "Everyone",
+			"Lineage": "ok",
+			"Provenance": "somewhere"
+		  },
+		  "eTag": "\"+g+HZYXF8u7jrPDPTI5JJ5Sl2aE=\""
+		},
+		{
+		  "instanceId": "2",
+		  "schemaName": "RealityModeling",
+		  "className": "Metadata",
+		  "properties": {
+			"Id": "2",
+			"MetadataURL": null,
+			"DisplayStyle": null,
+			"Description": null,
+			"ContactInformation": null,
+			"Keywords": null,
+			"Legal": "© OpenStreetMap contributors",
+			"TermsOfUse": null,
+			"Lineage": null,
+			"Provenance": null
+		  },
+		  "eTag": "\"+g+HZYXF8u7jrPDPTI5JJ5Sl2aE=\""
+		}
+	  ]
+	}
+
+    )";
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016
 //-------------------------------------------------------------------------------------
-TEST_F(RealityConversionTestFixture, JsonToSpatialEntity1)
+TEST_F(RealityConversionTestFixture, JsonToSpatialEntitybvector)
     {
     bvector<SpatialEntityPtr> spatialVector = bvector<SpatialEntityPtr>();
-    StatusInt status = RealityConversionTools::JsonToSpatialEntity(s_SpatialEntityJSONString, &spatialVector);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntity(s_TwoSpatialEntityJSONString, &spatialVector);
     ASSERT_EQ(SUCCESS, status);
-    ASSERT_EQ(spatialVector.size(), 1);
+    ASSERT_EQ(spatialVector.size(), 2);
     SpatialEntityPtr spatialData = spatialVector[0];
     ASSERT_TRUE(spatialData.IsValid());
 
@@ -164,6 +421,12 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntity1)
     ASSERT_EQ(spatialData->GetIdentifier(), "14812");
     ASSERT_EQ(spatialData->GetDataType(), "hgt");
     ASSERT_EQ(spatialData->GetProvider(), "USGS");
+	ASSERT_EQ(spatialData->GetProviderName(), "United States Geological Survey");
+	ASSERT_STREQ(spatialData->GetThumbnailURL().c_str(), "http://www.example.com/thumbnail.jpg");
+	ASSERT_STREQ(spatialData->GetAccuracy().c_str(), "5x5");
+	ASSERT_NEAR(spatialData->GetAccuracyValue(), sqrt(5*5), 0.000001);
+	ASSERT_STREQ(spatialData->GetDataset().c_str(), "someDataSet");
+
     DateTime date;
     DateTime::FromString(date, "2005-07-05T00:00:00");
     ASSERT_EQ(spatialData->GetDate(), date);
@@ -202,27 +465,27 @@ TEST_F(RealityConversionTestFixture, JsonToEnterpriseStat)
 // @bsimethod                        Remi.Charbonneau                           05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat)
-{
+	{
 	RealityDataEnterpriseStat stat;
 	StatusInt status = RealityConversionTools::JsonToEnterpriseStat("BadlyformatedJSONString", stat);
 	ASSERT_EQ(ERROR, status);
-}
+	}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                        Remi.Charbonneau                           05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat2)
-{
+	{
 	RealityDataEnterpriseStat stat;
 	StatusInt status = RealityConversionTools::JsonToEnterpriseStat(R"({ "notInstances": { "child": "value" }})", stat);
 	ASSERT_EQ(ERROR, status);
-}
+	}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                        Remi.Charbonneau                           05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat3)
-{
+	{
 	RealityDataEnterpriseStat stat;
 	StatusInt status = RealityConversionTools::JsonToEnterpriseStat(R"(
 		{
@@ -236,7 +499,7 @@ TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat3)
 		}
 		)", stat);
 	ASSERT_EQ(ERROR, status);
-}
+	}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            04/2017
@@ -246,7 +509,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     bvector<RealityDataPtr> realityVector = bvector<RealityDataPtr>();
     StatusInt status = RealityConversionTools::JsonToRealityData(s_RealityDataJSONString, &realityVector);
     ASSERT_EQ(SUCCESS, status);
-    ASSERT_EQ(realityVector.size(), 1);
+    ASSERT_EQ(realityVector.size(), 2);
     RealityDataPtr realityData = realityVector[0];
     ASSERT_TRUE(realityData.IsValid());
 
@@ -287,108 +550,189 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_TRUE(std::abs(range.high.y - 60.2978389) < 0.000000001);
     }
 
-#if (0)
 //-------------------------------------------------------------------------------------
-// @bsimethod                          Spencer.Mason                            10/2016
+// @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
-TEST_F(RealityConversionTestFixture, JsonToSpatialEntity2)
-    {
-    Utf8CP jsonString = "{"
-                          "instances\": [" 
-                            "{"
-                            "\"instanceId\": \"14812\","
-                            "\"schemaName\" : \"RealityModeling\","
-                            "\"className\" : \"SpatialEntityWithDetailsView\","
-                            "\"properties\" : {"
-                                  "\"Id\": \"14812\","
-                                  "\"Footprint\" : \"{ \\\"points\\\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \\\"coordinate_system\\\" : \\\"4326\\\" }\","
-                                  "\"Name\" : \"N38W093\","
-                                  "\"Description\" : null," 
-                                  "\"ContactInformation\" : null,"
-                                  "\"Keywords\" : null,"
-                                  "\"Legal\" : \"Data available from the U.S. Geological Survey\","
-                                  "\"ProcessingDescription\" : null,"
-                                  "\"DataSourceType\" : \"hgt\","
-                                  "\"AccuracyResolutionDensity\" : null,"
-                                  "\"Date\" : \"2005-07-05T00:00:00\","
-                                  "\"Classification\" : \"Terrain\","
-                                  "\"FileSize\" : \"7066\","
-                                  "\"SpatialDataSourceId\" : \"14812\","
-                                  "\"ResolutionInMeters\" : \"24.2x30.922\","
-                                  "\"DataProvider\" : \"USGS\","
-                                  "\"DataProviderName\" : \"United States Geological Survey\","
-                                  "\"ThumbnailURL\" : null,"
-                                  "\"MetadataURL\" : null,"
-                                  "\"RawMetadataURL\" : null,"
-                                  "\"RawMetadataFormat\" : null,"
-                                  " \"SubAPI\" : null"
-                               " },"
-                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-                           "},"
-                            "{"
-                            "\"instanceId\": \"14813\","
-                            "\"schemaName\" : \"RealityModeling\","
-                            "\"className\" : \"SpatialEntityWithDetailsView\","
-                            "\"properties\" : {"
-                                  "\"Id\": \"14813\","
-                                  "\"Footprint\" : \"{ \\\"points\\\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \\\"coordinate_system\\\" : \\\"4326\\\" }\","
-                                  "\"Name\" : \"N39W093\","
-                                  "\"Description\" : null," 
-                                  "\"ContactInformation\" : null,"
-                                  "\"Keywords\" : null,"
-                                  "\"Legal\" : \"Data also available from the U.S. Geological Survey\","
-                                  "\"ProcessingDescription\" : \"This is a dummy description that is not Lorem Ipsum based\","
-                                  "\"DataSourceType\" : \"hgt;tif;dem\","
-                                  "\"AccuracyResolutionDensity\" : null,"
-                                  "\"Date\" : \"2005-07-05T12:12:00\","
-                                  "\"Classification\" : \"Terrain\","
-                                  "\"FileSize\" : \"7066\","
-                                  "\"SpatialDataSourceId\" : \"14812\","
-                                  "\"ResolutionInMeters\" : \"24.2x30.922\","
-                                  "\"DataProvider\" : \"USGS\","
-                                  "\"DataProviderName\" : \"United States Geological Survey\","
-                                  "\"ThumbnailURL\" : null,"
-                                  "\"MetadataURL\" : null,"
-                                  "\"RawMetadataURL\" : null,"
-                                  "\"RawMetadataFormat\" : null,"
-                                  " \"SubAPI\" : null"
-                               " },"
-                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
-                           "}"
-                       " ]"
-                     " }";
+TEST_F(RealityConversionTestFixture, RealityDataToJson)
+	{
+	bvector<RealityDataPtr> realityVector = bvector<RealityDataPtr>();
+	StatusInt status = RealityConversionTools::JsonToRealityData(s_RealityDataJSONString, &realityVector);
+	BeAssert(SUCCESS == status);
 
-    bmap<Utf8String, SpatialEntityPtr> spatialMap;
+	Utf8String entityJson("{");
+	entityJson.append(RealityConversionTools::RealityDataToJson(*realityVector[0], true, true));
+	entityJson.append("}");
+	
+	Json::Value root(Json::objectValue);
+	if(Json::Reader::Parse(s_RealityDataJSONString, root))
+		{
+		const Json::Value expectedValue = root["instances"][0]["properties"];
+		Json::Value valueUnderTest(Json::objectValue);
 
-    StatusInt status = RealityConversionTools::JsonToSpatialEntity(jsonString, &spatialMap);
+		bool parseStatus = Json::Reader::Parse(entityJson, valueUnderTest);
+		EXPECT_TRUE(parseStatus);
 
-    ASSERT_EQ(SUCCESS, status);
-    ASSERT_EQ(spatialMap.size(), 2);
-    SpatialEntityPtr spatialData = spatialMap[0];
-    ASSERT_TRUE(spatialData.IsValid());
+		for (const auto& memberName : expectedValue.getMemberNames())
+			{
+			//std::cerr << "[          ] memberName = " << memberName << " val: " << expectedValue[memberName].ToString() << " <=> " << valueUnderTest[memberName].ToString() << std::endl;
+			EXPECT_TRUE(valueUnderTest.isMember(memberName));
+			EXPECT_TRUE(expectedValue[memberName] == valueUnderTest[memberName]);
+			}
 
-    ASSERT_EQ(spatialData->GetName(), "N38W093");    
-    ASSERT_EQ(spatialData->GetIdentifier(), "14812");
-    ASSERT_EQ(spatialData->GetDataType(), "hgt");
-    ASSERT_EQ(spatialData->GetProvider(), "USGS");
-    DateTime date;
-    DateTime::FromString(date, "2005-07-05T00:00:00");
-    ASSERT_EQ(spatialData->GetDate(), date);
-    ASSERT_EQ(spatialData->GetApproximateFileSize(), 7066);
-    ASSERT_EQ(spatialData->GetResolution(), "24.2x30.922");
-    bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
-    footprint.push_back(GeoPoint2d::From(-92, 39));
-    footprint.push_back(GeoPoint2d::From(-92, 38));
-    footprint.push_back(GeoPoint2d::From(-93, 38));
-    footprint.push_back(GeoPoint2d::From(-93, 39));
-    footprint.push_back(GeoPoint2d::From(-92, 39));
+		}
 
-    for (int i = 0 ; i != footprint.size(); i++)
-        {
-        ASSERT_EQ(spatialData->GetFootprint()[i].longitude, footprint[i].longitude);
-        ASSERT_EQ(spatialData->GetFootprint()[i].latitude, footprint[i].latitude);
-        }
-    }
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToRealityDatabmap)
+	{
+	bmap<Utf8String, RealityDataPtr> realityMap = bmap<Utf8String, RealityDataPtr>();
+	StatusInt status = RealityConversionTools::JsonToRealityData(s_RealityDataJSONString, &realityMap);
+	ASSERT_EQ(SUCCESS, status);
+
+	ASSERT_THAT(realityMap, Contains(Key("Helsinki")));
+	ASSERT_THAT(realityMap, Contains(Key("Helsinki2")));
+	}
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToSpatialEntitybmap)
+	{
+	bmap<Utf8String, SpatialEntityPtr> spatialMap;
+
+	StatusInt status = RealityConversionTools::JsonToSpatialEntity(s_TwoSpatialEntityJSONString, &spatialMap);
+
+	ASSERT_EQ(SUCCESS, status);
+
+	ASSERT_THAT(spatialMap, Contains(Key("N38W093")));
+	ASSERT_THAT(spatialMap, Contains(Key("N39W093")));
+
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntitybmap)
+	{
+	bmap<Utf8String, SpatialEntityPtr> spatialMap;
+
+	StatusInt status = RealityConversionTools::JsonToSpatialEntity("BADJSON", &spatialMap);
+
+	ASSERT_EQ(ERROR, status);
+
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityDataSource)
+	{
+	bvector<SpatialEntityDataSourcePtr> dataSourceVector;
+
+	StatusInt status = RealityConversionTools::JsonToSpatialEntityDataSource("BADJSON", &dataSourceVector);
+
+	ASSERT_EQ(ERROR, status);
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToSpatialEntityServer)
+	{
+	bvector<SpatialEntityServerPtr> entityServersVector;
+
+	StatusInt status = RealityConversionTools::JsonToSpatialEntityServer(s_SpatialEntityServerJSONString, &entityServersVector);
+
+	ASSERT_EQ(SUCCESS, status);
+
+	// Verify both SpatialEntityServer were parsed
+	ASSERT_EQ(entityServersVector.size(), 2);
+	ASSERT_STREQ(entityServersVector[0]->GetId().c_str(), "1");
+	ASSERT_STREQ(entityServersVector[1]->GetId().c_str(), "2");
+
+	// Only verify the first one was correctly parsed
+	auto entityServerUnderTest = entityServersVector[0];
+	ASSERT_STREQ(entityServerUnderTest->GetProtocol().c_str(), "ftp");
+	ASSERT_TRUE(entityServerUnderTest->IsStreamed());
+	ASSERT_STREQ(entityServerUnderTest->GetLoginKey().c_str(), "myLoginKey");
+	ASSERT_STREQ(entityServerUnderTest->GetLoginMethod().c_str(), "myLoginMethod");
+	ASSERT_STREQ(entityServerUnderTest->GetRegistrationPage().c_str(), "http://www.example.com/register");
+	ASSERT_STREQ(entityServerUnderTest->GetOrganisationPage().c_str(), "http://www.example.com/organisation");
+	ASSERT_STREQ(entityServerUnderTest->GetName().c_str(), "GeoGratis");
+	ASSERT_STREQ(entityServerUnderTest->GetUrl().c_str(), "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/");
+	ASSERT_STREQ(entityServerUnderTest->GetContactInfo().c_str(), "mycontact@example.com");
+	ASSERT_STREQ(entityServerUnderTest->GetFees().c_str(), "Over 9000");
+	ASSERT_STREQ(entityServerUnderTest->GetLegal().c_str(), "Better Call Saul");
+	ASSERT_STREQ(entityServerUnderTest->GetAccessConstraints().c_str(), "No one");
+	ASSERT_TRUE(entityServerUnderTest->IsOnline());
+	ASSERT_STREQ(entityServerUnderTest->GetLastCheck().ToString().c_str(), "2017-02-02T00:28:22.000");
+	ASSERT_STREQ(entityServerUnderTest->GetLastTimeOnline().ToString().c_str(), "2017-02-03T00:28:22.000");
+	ASSERT_EQ(entityServerUnderTest->GetLatency(), 9000);
+	ASSERT_EQ(entityServerUnderTest->GetMeanReachabilityStats(), 5);
+	ASSERT_STREQ(entityServerUnderTest->GetState().c_str(), "myState");
+	ASSERT_STREQ(entityServerUnderTest->GetType().c_str(), "sftp");
+
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityServer)
+	{
+	bvector<SpatialEntityServerPtr> entityServersVector;
+
+	StatusInt status = RealityConversionTools::JsonToSpatialEntityServer("BADJSON", &entityServersVector);
+
+	ASSERT_EQ(ERROR, status);
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToSpatialEntityMetadata)
+	{
+	bvector<SpatialEntityMetadataPtr> entityMetadataVector;
+
+	StatusInt status = RealityConversionTools::JsonToSpatialEntityMetadata(s_SpatialEntityMetadataJSONString, &entityMetadataVector);
+
+	ASSERT_EQ(SUCCESS, status);
+
+	// Verify both SpatialEntityMetadata were parsed
+	ASSERT_EQ(entityMetadataVector.size(), 2);
+	ASSERT_STREQ(entityMetadataVector[0]->GetId().c_str(), "1");
+	ASSERT_STREQ(entityMetadataVector[1]->GetId().c_str(), "2");
+
+	auto metadataUnderTest = entityMetadataVector[0];
+
+	ASSERT_STREQ(metadataUnderTest->GetMetadataUrl().c_str(), "http://www.example.com/metadata");
+	ASSERT_STREQ(metadataUnderTest->GetDisplayStyle().c_str(), "myDisplayStyle");
+	ASSERT_STREQ(metadataUnderTest->GetDescription().c_str(), "some big description");
+	ASSERT_STREQ(metadataUnderTest->GetContactInfo().c_str(), "my contact");
+	ASSERT_STREQ(metadataUnderTest->GetKeywords().c_str(), "keyword1;keyword2");
+	ASSERT_STREQ(metadataUnderTest->GetLegal().c_str(), "© OpenStreetMap contributors");
+	ASSERT_STREQ(metadataUnderTest->GetTermsOfUse().c_str(), "Everyone");
+	ASSERT_STREQ(metadataUnderTest->GetLineage().c_str(), "ok");
+	ASSERT_STREQ(metadataUnderTest->GetProvenance().c_str(), "somewhere");
+
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityMetadata)
+	{
+	bvector<SpatialEntityMetadataPtr> entityMetadataVector;
+
+	StatusInt status = RealityConversionTools::JsonToSpatialEntityMetadata("BADJSON", &entityMetadataVector);
+
+	ASSERT_EQ(ERROR, status);
+	}
+
+#if 0
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017
 //-------------------------------------------------------------------------------------

@@ -643,8 +643,8 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         data->SetClassificationByTag(Utf8CP(properties["Classification"].asString().c_str()));
 
     // Thumbnail URL
-    if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
-        data->SetThumbnailURL(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
+    if (properties.isMember("ThumbnailURL") && !properties["ThumbnailURL"].isNull())
+        data->SetThumbnailURL(Utf8CP(properties["ThumbnailURL"].asString().c_str()));
 
     // MetadataURL
     if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
@@ -662,8 +662,12 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         data->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
 
     // Provider
+    if(properties.isMember("DataProvider") && !properties["DataProvider"].isNull())
+        data->SetProvider(Utf8CP(properties["DataProvider"].asString().c_str()));
+
+    // ProviderName
     if(properties.isMember("DataProviderName") && !properties["DataProviderName"].isNull())
-        data->SetProvider(Utf8CP(properties["DataProviderName"].asString().c_str()));
+        data->SetProviderName(Utf8CP(properties["DataProviderName"].asString().c_str()));
 
     // Visibility
     if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
