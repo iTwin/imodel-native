@@ -1830,8 +1830,26 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 
 			if(!voidsIntersectBoundary)
 				status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::DrapeVoid, dtmObjP);
-			else 
+			else
+			{
+				for (auto& poly : postFeatureBoundary)
+				{
+					DTMDrapedLinePtr newPoly;
+					bvector<DPoint3d> listOfPts;
+
+					dtmPtr->GetBcDTM()->DrapeLinear(newPoly, poly.data(), (int)poly.size());
+					for (size_t i = 0; i < (size_t)newPoly->GetPointCount(); i++)
+					{
+						DPoint3d coordPt;
+						DTMDrapedLinePointPtr pt;
+						newPoly->GetPointByIndex(pt, (unsigned int)i);
+						pt->GetPointCoordinates(coordPt);
+						listOfPts.push_back(coordPt);
+					}
+					poly = listOfPts;
+				}
 				status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::BreakVoid, dtmObjP);
+			}
 		}
 
     status = AddPolygonsToDTMObject(stitchedNeighborsBoundary, DTMFeatureType::Breakline, dtmObjP);
