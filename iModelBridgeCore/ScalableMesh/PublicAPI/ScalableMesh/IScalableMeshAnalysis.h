@@ -44,8 +44,6 @@ class ISMGridVolume
             m_VolSegments = NULL;
             };
 
-        virtual bool InitFrom(double _resolution, const DRange3d& _rangeMesh, const DRange3d& _rangeRegion);
-
         BENTLEY_SM_EXPORT bool GetGridSize(int &_xSize, int &_ySize)
             {
             if (!m_bInitialised)
@@ -53,6 +51,19 @@ class ISMGridVolume
             _xSize = m_xSize;
             _ySize = m_ySize;
             return true;
+            }
+
+        BENTLEY_SM_EXPORT bool InitGrid(int _xSize, int _ySize)
+            {
+            m_xSize = _xSize;
+            m_ySize = _ySize;
+            // reserve memory for segments
+            m_VolSegments = new SMVolumeSegment[m_xSize*m_ySize];
+            if (m_VolSegments == nullptr)
+                m_bInitialised = false; // failed allocating memory for the grid
+            else
+                m_bInitialised = true;
+            return m_bInitialised;
             }
 
         DVec3d m_direction;     // the projection direction
@@ -73,6 +84,7 @@ class ISMGridVolume
 
         double m_xStep;     // resolution on X
         double m_yStep;     // resolution on Y
+
         bool m_bInitialised;
     };
 

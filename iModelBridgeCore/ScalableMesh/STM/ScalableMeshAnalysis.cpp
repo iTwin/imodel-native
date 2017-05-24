@@ -98,35 +98,32 @@ void ScalableMeshAnalysis::_CreateCutVolumeRanges(SMVolumeSegment& segment, bvec
         }
     }
 
-bool ISMGridVolume::InitFrom(double _resolution, const DRange3d& _rangeMesh, const DRange3d& _rangeRegion)
+bool ScalableMeshAnalysis::_InitGridFrom(ISMGridVolume& grid, double _resolution, const DRange3d& _rangeMesh, const DRange3d& _rangeRegion)
     {
-    m_range.IntersectionOf(_rangeMesh, _rangeRegion);
-    if (m_range.IsNull())
+    grid.m_range.IntersectionOf(_rangeMesh, _rangeRegion);
+    if (grid.m_range.IsNull())
         return DTMStatusInt::DTM_ERROR; // cannot compute volume, no intersection
 
-    m_resolution = _resolution;
-    double maxLength = std::max(m_range.XLength(), m_range.YLength());
-    int gridSize = maxLength / m_resolution;
-    if (gridSize > m_gridSizeLimit)
+    grid.m_resolution = _resolution;
+    double maxLength = std::max(grid.m_range.XLength(), grid.m_range.YLength());
+    int gridSize = maxLength / grid.m_resolution;
+    if (gridSize > grid.m_gridSizeLimit)
         {
-        m_resolution = maxLength / m_gridSizeLimit; // we limit the resolution
+        grid.m_resolution = maxLength / grid.m_gridSizeLimit; // we limit the resolution
         }
 
-    // split the range in regular grid xy
-    m_xSize = (m_range.high.x - m_range.low.x) / m_resolution; // Nb of cells on X
-    m_ySize = (m_range.high.y - m_range.low.y) / m_resolution; // Nb of cells on Y
-
-    m_center = DPoint3d::From(_rangeMesh.low.x + _rangeMesh.XLength() / 2,
+    grid.m_center = DPoint3d::From(_rangeMesh.low.x + _rangeMesh.XLength() / 2,
         _rangeMesh.low.y + _rangeMesh.YLength() / 2,
         _rangeMesh.low.z + _rangeMesh.ZLength() / 2);
 
-    // reserve memory for segments
-    m_VolSegments = new SMVolumeSegment[m_xSize*m_ySize];
-    if (m_VolSegments == nullptr)
-        return false; // failed allocating memory for the grid
+    // split the range in regular grid xy
+    double xSize = (grid.m_range.high.x - grid.m_range.low.x) / grid.m_resolution; // Nb of cells on X
+    double ySize = (grid.m_range.high.y - grid.m_range.low.y) / grid.m_resolution; // Nb of cells on Y
 
-    m_bInitialised = true;
-    return true;
+    // Init and reserve the memory for the volume segments
+    bool bRes = grid.InitGrid(xSize, ySize);
+
+    return bRes;
     }
 
 // Compute "Stock Pile" volume between a polygon region and this scalablemesh
@@ -152,7 +149,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     rangeRegion.high.z = rangeMesh.high.z;
 
     // Initialize the grid volume structure
-    if (!grid.InitFrom(resolution, rangeMesh, rangeRegion))
+    if (!_InitGridFrom(grid, resolution, rangeMesh, rangeRegion))
         return DTMStatusInt::DTM_ERROR; // could not initialize grid
 
     DRange3d range = grid.m_range; // the intersection range (mesh inter region)
@@ -290,7 +287,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     rangeRegion.high.z = rangeInter.high.z;
 
     // Initialize the grid volume structure
-    if (!grid.InitFrom(resolution, rangeInter, rangeRegion))
+    if (!_InitGridFrom(grid, resolution, rangeInter, rangeRegion))
         return DTMStatusInt::DTM_ERROR; // could not initialize grid
 
     DRange3d range = grid.m_range; // the intersection range (mesh inter region)
@@ -328,36 +325,26 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
             intersected[i*m_ySize + j] = false;
             double y = range.low.y + m_yStep * j;
             DPoint3d source = DPoint3d::From(x, y, zsource);
-            bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits;
-            bool bret = draping1->IntersectRay(Hits, grid.m_direction, source);
 
-            if (bret && Hits.size() > 0)
+            DPoint3d interP1;
+            bool bret = draping1->IntersectRay(interP1, grid.m_direction, source);
+
+            if (bret)
                 {
-                DPoint3d source_local = source;// -DVec3d::From(grid.m_center);
+                DPoint3d source_local = source;
                 auto classif = curveVectorPtr->PointInOnOutXY(source_local);
                 if (classif == CurveVector::InOutClassification::INOUT_In) // we are inside the restriction
                     {
                     DRay3d ray = DRay3d::FromOriginAndVector(source_local, grid.m_direction);
                     DPoint3d polyHit; polyHit.Zero();
 
-                    bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits2;
-                    bret = draping2->IntersectRay(Hits2, grid.m_direction, source);
-                    if (bret && Hits2.size() > 0)
+                    DPoint3d interP2;
+                    bret = draping2->IntersectRay(interP2, grid.m_direction, source);
+                    if (bret)
                         {
-                        //inverse the normals of the second hits, and merge them in the main hit list
-                        for (auto hit2 : Hits2)
-                            {
-                            if (hit2.hasNormal)
-                                hit2.normal = -1.0 * hit2.normal;
-                            Hits.push_back(hit2);
-                            }
-                        // re-order the complete hit list
-                        DTMIntersectionCompare Comparator;
-                        std::sort(Hits.begin(), Hits.end(), Comparator); // sort by ray fraction
-
-                        SMVolumeSegment aSegment;
-                        _CreateFillVolumeRanges(aSegment, Hits, source, grid.m_direction);
-                        _CreateCutVolumeRanges(aSegment, Hits, source, grid.m_direction);
+                        SMVolumeSegment aSegment; // only one segment for 1st version
+                        aSegment.VolumeRanges.push_back(interP1.z);
+                        aSegment.VolumeRanges.push_back(interP2.z);
 
                         if (aSegment.VolumeRanges.size() > 0)
                             {
@@ -370,6 +357,34 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
             }
         }
 
+    // Sum the discrete volumes
+    double AreaCell = m_xStep*m_yStep;
+    for (int i = 0; i < m_xSize; i++) // need to parallelize
+        {
+        for (int j = 0; j < m_ySize; j++)
+            {
+            if (intersected[i*m_ySize + j] != true)
+                {
+                SMVolumeSegment emptySegment;
+                grid.m_VolSegments[i*m_ySize + j] = emptySegment;
+                continue;
+                }
+            SMVolumeSegment &segment = grid.m_VolSegments[i*m_ySize + j];
+            for (int k = 0; k < segment.VolumeRanges.size() - 1; k += 2)
+                {
+                double deltaZ = segment.VolumeRanges[k + 1] - segment.VolumeRanges[k];
+                if (deltaZ > 0)
+                    grid.m_cutVolume += deltaZ * AreaCell;
+                else
+                    grid.m_fillVolume += -deltaZ * AreaCell;
+
+                segment.volume += deltaZ * AreaCell; // keep sum of volume
+                }
+            }
+        }
+    grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
+
+    delete[] intersected;
 
     return DTMStatusInt::DTM_SUCCESS;
     }
