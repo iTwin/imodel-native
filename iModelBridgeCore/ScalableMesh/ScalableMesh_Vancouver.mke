@@ -393,6 +393,9 @@ $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp 
 
 #$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)TextureImporter$(oext) : $(importerPluginsDir)TextureImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+
 
 #   Importer from DcStmCore
 $(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
