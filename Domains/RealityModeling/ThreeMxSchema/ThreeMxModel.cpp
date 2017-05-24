@@ -134,7 +134,7 @@ ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
 SceneP ThreeMxModel::Load(SystemP renderSys) const
     {
     auto root = const_cast<ThreeMxModel&>(*this).GetTileTree(renderSys);
-    return static_cast<SceneP>(root.get());
+    return static_cast<SceneP>(root);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -346,7 +346,7 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
 RasterRootP RasterModel::Load(Dgn::Render::SystemP system) const
     {
     auto root = const_cast<RasterModel&>(*this).GetTileTree(system);
-    return static_cast<RasterRootP>(root.get());
+    return static_cast<RasterRootP>(root);
     }
 
 #if defined(WIP_TILETREE_PUBLISH)
