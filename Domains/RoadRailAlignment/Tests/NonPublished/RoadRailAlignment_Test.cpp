@@ -21,6 +21,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
     auto horizAlignmPtr = HorizontalAlignment::Create(*alignmentPtr, *horizAlignVecPtr);
     ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
+    ASSERT_TRUE(horizAlignmPtr->GetGeometry().IsOpenPath());
 
     // Create Vertical
     auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(*projectPtr, VerticalAlignmentModel::QueryClassId(*projectPtr),
