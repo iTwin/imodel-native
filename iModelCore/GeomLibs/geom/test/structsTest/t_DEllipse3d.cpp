@@ -2098,15 +2098,45 @@ TEST(DEllipse3d,SweepToPlane)
     TestSweepToPlane (baseEllipse, skewTarget, slant);
     }
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Farhad.Kabir                    02/17
+// @bsimethod                                     Earlin.Lutz                    05/17
 //---------------------------------------------------------------------------------------
-TEST(DEllipse3d, RotatedAxes) 
+TEST(DEllipse3d, ArcLengthTolerance) 
     {
-    DEllipse3d ellipse = DEllipse3d::From(0, 0, 0, 1, 1, 1, 2, 2, 2, 0.7, 0.5);
-    DEllipse3d ellipseShifted = DEllipse3d::FromRotatedAxes(ellipse, 0);
-    Check::Near(ellipseShifted.start, 0);
-    ellipseShifted = DEllipse3d::FromRotatedAxes(ellipse, 0.9);
-    Check::Near(ellipseShifted.start, 0.9);
-    Check::False(ellipseShifted.vector0 == ellipse.vector0);
-    Check::False(ellipseShifted.vector90 == ellipse.vector90);
+    auto arc = DEllipse3d::From
+        (
+        302415.36920969415, 256189.85380689989, 0.00000000000000000,
+        -68.208760403853375, -73.127047008398222, 0.00000000000000000,
+        73.127047008398208, -68.208760403853361, -0.00000000000000000,
+        -0.95777356280688086,
+        6.2831853071795862
+        );
+    auto cp = ICurvePrimitive::CreateArc (arc);
+    for (double fraction0 : bvector<double>{1.0, 0.9})
+        {
+        for (auto signedDistanceA :
+            bvector<double> {-10.0, -1.0, -1.4210854715202004e-14, 1.4210854715202004e-14, 1.0})
+            {
+            CurveLocationDetail location;
+            Check::True (cp->PointAtSignedDistanceFromFraction
+                    (
+                fraction0, signedDistanceA, false,
+                location
+                ));
+            double signedDistanceB;
+            Check::True (cp->SignedDistanceBetweenFractions (fraction0, location.fraction, signedDistanceB));
+            if (location.a < signedDistanceA)
+                {
+                Check::Near (1.0, location.fraction);
+                }
+            else if (location.a > signedDistanceA)
+                {
+                Check::Near (0.0, location.fraction);
+                }
+            else
+                {
+                Check::Near (signedDistanceA, signedDistanceB);
+                }
+            }
+        }
     }
+

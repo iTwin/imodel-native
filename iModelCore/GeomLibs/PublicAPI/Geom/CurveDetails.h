@@ -883,6 +883,8 @@ GEOMDLLIMPEXP void AnnouncePoint (CurveLocationDetailCR worldDetail, KeyPointTyp
 //! Access the saved detail
 GEOMDLLIMPEXP bool GetResult (CurveLocationDetailR detail, KeyPointType &selector) const;
 };
+
+
 #endif
 
 END_BENTLEY_GEOMETRY_NAMESPACE

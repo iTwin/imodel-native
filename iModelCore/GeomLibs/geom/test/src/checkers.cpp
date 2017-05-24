@@ -3,6 +3,12 @@
 #include <Bentley/BeTest.h>
 static double s_simpleZeroTol = 1.0e-12;
 
+struct ScopedPrintState
+{
+int m_savedVolume;
+ScopedPrintState (int volume = 10000) : m_savedVolume (Check::SetMaxVolume (volume)) {}
+~ScopedPrintState (){Check::SetMaxVolume (m_savedVolume);}
+};
 static bvector<WString> s_stack;
 int __setDefaultPrint ()
     {
@@ -95,10 +101,10 @@ void Check::EndScope ()
     }
 
 
-void Check::PrintScope (int volume)
+void Check::PrintScope ()
     {
-    if (IsSuppressed (volume))
-        return;
+    ScopedPrintState printState; 
+
     if (s_stack.size () == 0)
         return;
     printf ("(");
@@ -339,6 +345,7 @@ bool Check::ExactDouble (double a, double b, char const*pString)
         return true;
 
     PrintScope ();
+    ScopedPrintState printState;
     PrintIndent (2);Print (a, "a");
     PrintIndent (2);Print (b, "b");
 
@@ -352,6 +359,7 @@ bool Check::Exact (DPoint3dCR a, DPoint3dCR b, char const*pString)
         return true;
 
     PrintScope ();
+    ScopedPrintState printState;
     PrintIndent (2);Print (a, "a");
     PrintIndent (2);Print (b, "b");
 
@@ -373,6 +381,7 @@ bool Check::Near (double a, double b, char const*pString, double refValue)
         return true;
 
     PrintScope ();
+    ScopedPrintState printState;
     PrintIndent (2);Print (a, "a");
     PrintIndent (2);Print (b, "b");
 
@@ -584,9 +593,10 @@ bool Check::Near (DPoint4dCR a, DPoint4dCR b, char const*pString, double refValu
     double delta = a.MaxUnnormalizedXYZDiff (b);
     if (delta > tol)
         {
+        PrintScope ();
+        ScopedPrintState printState;
         PrintIndent (2);Print (a, "a");
         PrintIndent (2);Print (b, "b");
-        PrintScope ();
         Fail (pString);
         return false;
         }
