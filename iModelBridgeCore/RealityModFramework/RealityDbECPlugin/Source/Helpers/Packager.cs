@@ -99,7 +99,7 @@ namespace IndexECPlugin.Source.Helpers
 
                 var requestedEntity = ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue);
 
-                if (!SourceStringMap.IsValidId(DataSource.USGS, requestedEntity.ID) && !SourceStringMap.IsValidId(DataSource.RDS, requestedEntity.ID))
+                if ( !SourceStringMap.IsValidId(DataSource.USGS, requestedEntity.ID) && !SourceStringMap.IsValidId(DataSource.RDS, requestedEntity.ID) )
                     {
                     if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID && e.SpatialDataSourceID == requestedEntity.SpatialDataSourceID) )
                         {
@@ -150,7 +150,7 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     throw new UserFriendlyException("The given polygon's format was not correct.");
                     }
-                
+
                 //We also extract the bbox
                 //x
                 double temp = m_selectedRegion[i];
@@ -167,7 +167,7 @@ namespace IndexECPlugin.Source.Helpers
                 }
 
             m_email = IndexECPlugin.GetEmailFromConnection(connection);
-            if(m_email == null)
+            if ( m_email == null )
                 {
                 throw new OperationFailedException("The email should not be null");
                 }
@@ -186,9 +186,9 @@ namespace IndexECPlugin.Source.Helpers
 
             // Create data group and package.
             List<ImageryDataNet> imgGroup = new List<ImageryDataNet>();
-            List<ModelDataNet> modelGroup = new List<ModelDataNet> ();
-            List<PinnedDataNet> pinnedGroup = new List<PinnedDataNet> ();
-            List<TerrainDataNet> terrainGroup = new List<TerrainDataNet> ();
+            List<ModelDataNet> modelGroup = new List<ModelDataNet>();
+            List<PinnedDataNet> pinnedGroup = new List<PinnedDataNet>();
+            List<TerrainDataNet> terrainGroup = new List<TerrainDataNet>();
 
             SortRealityDataNet(imgGroup, modelGroup, terrainGroup, pinnedGroup, realityDataNetList);
 
@@ -204,7 +204,7 @@ namespace IndexECPlugin.Source.Helpers
             package.SetOrigin("");
             package.SetCreationDate(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 
-            foreach(ImageryDataNet img in imgGroup)
+            foreach ( ImageryDataNet img in imgGroup )
                 {
                 package.AddImageryData(img);
                 }
@@ -278,7 +278,7 @@ namespace IndexECPlugin.Source.Helpers
 
             IECClass serverClass = schema.GetClass("Server");
             RelatedInstanceSelectCriteria serverRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, serverClass), false);
-            
+
             IECClass wmsServerClass = schema.GetClass("WMSServer");
             RelatedInstanceSelectCriteria wmsServerRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, wmsServerClass), false);
 
@@ -357,14 +357,14 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 IECInstance spatialEntity = queriedSpatialEntities.FirstOrDefault(s => s.GetPropertyValue("Id").StringValue == requestedEntity.ID);
 
-                if (spatialEntity == null)
+                if ( spatialEntity == null )
                     {
                     throw new UserFriendlyException("At least one of the requested entities has an invalid identifier (Id).");
                     }
 
                 GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
 
-                if((major == 1) && (genericInfo.Streamed == true))
+                if ( (major == 1) && (genericInfo.Streamed == true) )
                     {
                     //We don't put streamed data in a v1 package
                     continue;
@@ -421,10 +421,10 @@ namespace IndexECPlugin.Source.Helpers
                     string greenBandURL = (firstMultibandSource.GetPropertyValue("GreenBandURL") == null || firstMultibandSource.GetPropertyValue("GreenBandURL").IsNull) ? null : firstMultibandSource.GetPropertyValue("GreenBandURL").StringValue;
                     string blueBandURL = (firstMultibandSource.GetPropertyValue("BlueBandURL") == null || firstMultibandSource.GetPropertyValue("BlueBandURL").IsNull) ? null : firstMultibandSource.GetPropertyValue("BlueBandURL").StringValue;
                     string panchromaticBandURL = (firstMultibandSource.GetPropertyValue("PanchromaticBandURL") == null || firstMultibandSource.GetPropertyValue("PanchromaticBandURL").IsNull) ? null : firstMultibandSource.GetPropertyValue("PanchromaticBandURL").StringValue;
-                    long redBandFileSize = (firstMultibandSource.GetPropertyValue("RedBandFileSize") == null || firstMultibandSource.GetPropertyValue("RedBandFileSize").IsNull) ? 0 : (long)firstMultibandSource.GetPropertyValue("RedBandFileSize").NativeValue;
-                    long greenBandFileSize = (firstMultibandSource.GetPropertyValue("GreenBandFileSize") == null || firstMultibandSource.GetPropertyValue("GreenBandFileSize").IsNull) ? 0 : (long)firstMultibandSource.GetPropertyValue("GreenBandFileSize").NativeValue;
-                    long blueBandFileSize = (firstMultibandSource.GetPropertyValue("BlueBandFileSize") == null || firstMultibandSource.GetPropertyValue("BlueBandFileSize").IsNull) ? 0 : (long)firstMultibandSource.GetPropertyValue("BlueBandFileSize").NativeValue;
-                    long panchromaticBandFileSize = (firstMultibandSource.GetPropertyValue("PanchromaticBandFileSize") == null || firstMultibandSource.GetPropertyValue("PanchromaticBandFileSize").IsNull) ? 0 : (long)firstMultibandSource.GetPropertyValue("PanchromaticBandFileSize").NativeValue;
+                    long redBandFileSize = (firstMultibandSource.GetPropertyValue("RedBandFileSize") == null || firstMultibandSource.GetPropertyValue("RedBandFileSize").IsNull) ? 0 : (long) firstMultibandSource.GetPropertyValue("RedBandFileSize").NativeValue;
+                    long greenBandFileSize = (firstMultibandSource.GetPropertyValue("GreenBandFileSize") == null || firstMultibandSource.GetPropertyValue("GreenBandFileSize").IsNull) ? 0 : (long) firstMultibandSource.GetPropertyValue("GreenBandFileSize").NativeValue;
+                    long blueBandFileSize = (firstMultibandSource.GetPropertyValue("BlueBandFileSize") == null || firstMultibandSource.GetPropertyValue("BlueBandFileSize").IsNull) ? 0 : (long) firstMultibandSource.GetPropertyValue("BlueBandFileSize").NativeValue;
+                    long panchromaticBandFileSize = (firstMultibandSource.GetPropertyValue("PanchromaticBandFileSize") == null || firstMultibandSource.GetPropertyValue("PanchromaticBandFileSize").IsNull) ? 0 : (long) firstMultibandSource.GetPropertyValue("PanchromaticBandFileSize").NativeValue;
                     string redBandSisterFilesString = (firstMultibandSource.GetPropertyValue("RedBandSisterFiles") == null || firstMultibandSource.GetPropertyValue("RedBandSisterFiles").IsNull) ? null : firstMultibandSource.GetPropertyValue("RedBandSisterFiles").StringValue;
                     string blueBandSisterFilesString = (firstMultibandSource.GetPropertyValue("BlueBandSisterFiles") == null || firstMultibandSource.GetPropertyValue("BlueBandSisterFiles").IsNull) ? null : firstMultibandSource.GetPropertyValue("BlueBandSisterFiles").StringValue;
                     string greenBandSisterFilesString = (firstMultibandSource.GetPropertyValue("GreenBandSisterFiles") == null || firstMultibandSource.GetPropertyValue("GreenBandSisterFiles").IsNull) ? null : firstMultibandSource.GetPropertyValue("GreenBandSisterFiles").StringValue;
@@ -503,7 +503,7 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     //This is a generic source, not needing any special treatment.
 
-                    if(genericInfo.ParameterizedURI)
+                    if ( genericInfo.ParameterizedURI )
                         {
                         SetParameterizedURL(genericInfo, m_selectedBBox, m_email, m_coordinateSystem);
                         }
@@ -512,7 +512,7 @@ namespace IndexECPlugin.Source.Helpers
 
                     SetRdsnFields(rdsn, genericInfo);
 
-                    if(genericInfo.Name == "OpenStreetMap" || genericInfo.Type == "OSM")
+                    if ( genericInfo.Name == "OpenStreetMap" || genericInfo.Type == "OSM" )
                         {
                         //We skip OpenStreetMap and make sure it will be done later. 
                         m_osm = true;
@@ -576,7 +576,7 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 rdsn.SetSisterFiles(genericInfo.SisterFiles);
                 }
-            if(genericInfo.ServerLoginKey != null)
+            if ( genericInfo.ServerLoginKey != null )
                 {
                 rdsn.SetServerLoginKey(genericInfo.ServerLoginKey);
                 }
@@ -595,85 +595,85 @@ namespace IndexECPlugin.Source.Helpers
             rdsn.SetStreamed(genericInfo.Streamed);
             }
 
-        private static GenericInfo ExtractGenericInfo(IECInstance spatialEntity, RequestedEntity requestedEntity)
-        {
-        GenericInfo genericInfo = new GenericInfo();
-
-        IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToMetadata");
-        IECInstance firstMetadata = firstMetadataRel.Target;
-
-        IECRelationshipInstance dataSourceRel;
-        if ( requestedEntity.SpatialDataSourceID == null )
+        private static GenericInfo ExtractGenericInfo (IECInstance spatialEntity, RequestedEntity requestedEntity)
             {
-            dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
-                                                                                               relInst.Target.ClassDefinition.Name == "SpatialDataSource");
-            if ( dataSourceRel == null )
+            GenericInfo genericInfo = new GenericInfo();
+
+            IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToMetadata");
+            IECInstance firstMetadata = firstMetadataRel.Target;
+
+            IECRelationshipInstance dataSourceRel;
+            if ( requestedEntity.SpatialDataSourceID == null )
                 {
-                throw new OperationFailedException("The selected spatial entity does not have any related spatial data source.");
+                dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+                                                                                                   relInst.Target.ClassDefinition.Name == "SpatialDataSource");
+                if ( dataSourceRel == null )
+                    {
+                    throw new OperationFailedException("The selected spatial entity does not have any related spatial data source.");
+                    }
                 }
-            }
-        else
-            {
-            dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
-                                                                                               relInst.Target.ClassDefinition.Name == "SpatialDataSource" &&
-                                                                                               relInst.Target.InstanceId == requestedEntity.SpatialDataSourceID);
-            if ( dataSourceRel == null )
+            else
                 {
-                throw new UserFriendlyException("The specified spatial dataSource ID is not related to the selected spatial entity");
+                dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+                                                                                                   relInst.Target.ClassDefinition.Name == "SpatialDataSource" &&
+                                                                                                   relInst.Target.InstanceId == requestedEntity.SpatialDataSourceID);
+                if ( dataSourceRel == null )
+                    {
+                    throw new UserFriendlyException("The specified spatial dataSource ID is not related to the selected spatial entity");
+                    }
                 }
+
+            IECInstance firstSpatialDataSource = dataSourceRel.Target;
+
+            IECRelationshipInstance serverRel = firstSpatialDataSource.GetRelationshipInstances().FirstOrDefault(relServ => relServ.ClassDefinition.Name == "ServerToSpatialDataSource" &&
+                                                                                                                   relServ.Source.ClassDefinition.Name == "Server");
+
+            IECInstance server = null;
+            if ( serverRel != null )
+                {
+                server = serverRel.Source;
+                }
+
+            long fileSize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
+            genericInfo.FileSize = (fileSize < 0) ? 0 : (ulong) fileSize;
+            genericInfo.URI = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
+            genericInfo.ParameterizedURI = (firstSpatialDataSource.GetPropertyValue("ParameterizedURL") == null || firstSpatialDataSource.GetPropertyValue("ParameterizedURL").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("ParameterizedURL").NativeValue;
+            genericInfo.Type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
+            genericInfo.Streamed = (firstSpatialDataSource.GetPropertyValue("Streamed") == null || firstSpatialDataSource.GetPropertyValue("Streamed").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("Streamed").NativeValue;
+            genericInfo.Copyright = (firstMetadata.GetPropertyValue("Legal") == null || firstMetadata.GetPropertyValue("Legal").IsNull) ? null : firstMetadata.GetPropertyValue("Legal").StringValue;
+            genericInfo.TermsOfUse = (firstMetadata.GetPropertyValue("TermsOfUse") == null || firstMetadata.GetPropertyValue("TermsOfUse").IsNull) ? null : firstMetadata.GetPropertyValue("TermsOfUse").StringValue;
+            genericInfo.Provider = (spatialEntity.GetPropertyValue("DataProvider") == null || spatialEntity.GetPropertyValue("DataProvider").IsNull) ? null : spatialEntity.GetPropertyValue("DataProvider").StringValue;
+            genericInfo.SpatialEntityID = spatialEntity.InstanceId;
+            genericInfo.Name = (spatialEntity.GetPropertyValue("Name") == null || spatialEntity.GetPropertyValue("Name").IsNull) ? null : spatialEntity.GetPropertyValue("Name").StringValue;
+            genericInfo.Footprint = (spatialEntity.GetPropertyValue("Footprint") == null || spatialEntity.GetPropertyValue("Footprint").IsNull) ? null : spatialEntity.GetPropertyValue("Footprint").StringValue;
+            genericInfo.SpatialDataSourceID = firstSpatialDataSource.InstanceId;
+            genericInfo.FileInCompound = (firstSpatialDataSource.GetPropertyValue("LocationInCompound") == null || firstSpatialDataSource.GetPropertyValue("LocationInCompound").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("LocationInCompound").StringValue;
+            genericInfo.NoDataValue = (firstSpatialDataSource.GetPropertyValue("NoDataValue") == null || firstSpatialDataSource.GetPropertyValue("NoDataValue").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("NoDataValue").StringValue;
+            genericInfo.CoordinateSystem = (firstSpatialDataSource.GetPropertyValue("CoordinateSystem") == null || firstSpatialDataSource.GetPropertyValue("CoordinateSystem").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("CoordinateSystem").StringValue;
+            genericInfo.Classification = (spatialEntity.GetPropertyValue("Classification") == null || spatialEntity.GetPropertyValue("Classification").IsNull) ? null : spatialEntity.GetPropertyValue("Classification").StringValue;
+            genericInfo.Metadata = (firstMetadata.GetPropertyValue("MetadataURL") == null || firstMetadata.GetPropertyValue("MetadataURL").IsNull) ? null : firstMetadata.GetPropertyValue("MetadataURL").StringValue;
+            genericInfo.Dataset = (spatialEntity.GetPropertyValue("Dataset") == null || spatialEntity.GetPropertyValue("Dataset").IsNull) ? null : spatialEntity.GetPropertyValue("Dataset").StringValue;
+            if ( server != null )
+                {
+                genericInfo.ServerLoginKey = (server.GetPropertyValue("LoginKey") == null || server.GetPropertyValue("LoginKey").IsNull) ? null : server.GetPropertyValue("LoginKey").StringValue;
+                genericInfo.ServerLoginMethod = (server.GetPropertyValue("LoginMethod") == null || server.GetPropertyValue("LoginMethod").IsNull) ? null : server.GetPropertyValue("LoginMethod").StringValue;
+                genericInfo.ServerRegistrationPage = (server.GetPropertyValue("RegistrationPage") == null || server.GetPropertyValue("RegistrationPage").IsNull) ? null : server.GetPropertyValue("RegistrationPage").StringValue;
+                genericInfo.ServerOrganisationPage = (server.GetPropertyValue("OrganisationPage") == null || server.GetPropertyValue("OrganisationPage").IsNull) ? null : server.GetPropertyValue("OrganisationPage").StringValue;
+                }
+
+
+            string sisterFilesString = (firstSpatialDataSource.GetPropertyValue("SisterFiles") == null || firstSpatialDataSource.GetPropertyValue("SisterFiles").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("SisterFiles").StringValue;
+            if ( sisterFilesString != null )
+                {
+                genericInfo.SisterFiles = sisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList();
+                }
+            else
+                {
+                genericInfo.SisterFiles = null;
+                }
+
+            return genericInfo;
             }
-
-        IECInstance firstSpatialDataSource = dataSourceRel.Target;
-
-        IECRelationshipInstance serverRel = firstSpatialDataSource.GetRelationshipInstances().FirstOrDefault(relServ => relServ.ClassDefinition.Name == "ServerToSpatialDataSource" &&
-                                                                                                               relServ.Source.ClassDefinition.Name == "Server");
-        
-        IECInstance server = null;
-        if ( serverRel != null )
-            {
-            server = serverRel.Source;
-            }
-
-        long fileSize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
-        genericInfo.FileSize = (fileSize < 0) ? 0 : (ulong) fileSize;
-        genericInfo.URI = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
-        genericInfo.ParameterizedURI = (firstSpatialDataSource.GetPropertyValue("ParameterizedURL") == null || firstSpatialDataSource.GetPropertyValue("ParameterizedURL").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("ParameterizedURL").NativeValue;
-        genericInfo.Type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
-        genericInfo.Streamed = (firstSpatialDataSource.GetPropertyValue("Streamed") == null || firstSpatialDataSource.GetPropertyValue("Streamed").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("Streamed").NativeValue;
-        genericInfo.Copyright = (firstMetadata.GetPropertyValue("Legal") == null || firstMetadata.GetPropertyValue("Legal").IsNull) ? null : firstMetadata.GetPropertyValue("Legal").StringValue;
-        genericInfo.TermsOfUse = (firstMetadata.GetPropertyValue("TermsOfUse") == null || firstMetadata.GetPropertyValue("TermsOfUse").IsNull) ? null : firstMetadata.GetPropertyValue("TermsOfUse").StringValue;
-        genericInfo.Provider = (spatialEntity.GetPropertyValue("DataProvider") == null || spatialEntity.GetPropertyValue("DataProvider").IsNull) ? null : spatialEntity.GetPropertyValue("DataProvider").StringValue;
-        genericInfo.SpatialEntityID = spatialEntity.InstanceId;
-        genericInfo.Name = (spatialEntity.GetPropertyValue("Name") == null || spatialEntity.GetPropertyValue("Name").IsNull) ? null : spatialEntity.GetPropertyValue("Name").StringValue;
-        genericInfo.Footprint = (spatialEntity.GetPropertyValue("Footprint") == null || spatialEntity.GetPropertyValue("Footprint").IsNull) ? null : spatialEntity.GetPropertyValue("Footprint").StringValue;
-        genericInfo.SpatialDataSourceID = firstSpatialDataSource.InstanceId;
-        genericInfo.FileInCompound = (firstSpatialDataSource.GetPropertyValue("LocationInCompound") == null || firstSpatialDataSource.GetPropertyValue("LocationInCompound").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("LocationInCompound").StringValue;
-        genericInfo.NoDataValue = (firstSpatialDataSource.GetPropertyValue("NoDataValue") == null || firstSpatialDataSource.GetPropertyValue("NoDataValue").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("NoDataValue").StringValue;
-        genericInfo.CoordinateSystem = (firstSpatialDataSource.GetPropertyValue("CoordinateSystem") == null || firstSpatialDataSource.GetPropertyValue("CoordinateSystem").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("CoordinateSystem").StringValue;
-        genericInfo.Classification = (spatialEntity.GetPropertyValue("Classification") == null || spatialEntity.GetPropertyValue("Classification").IsNull) ? null : spatialEntity.GetPropertyValue("Classification").StringValue;
-        genericInfo.Metadata = (firstMetadata.GetPropertyValue("MetadataURL") == null || firstMetadata.GetPropertyValue("MetadataURL").IsNull) ? null : firstMetadata.GetPropertyValue("MetadataURL").StringValue;
-        genericInfo.Dataset = (spatialEntity.GetPropertyValue("Dataset") == null || spatialEntity.GetPropertyValue("Dataset").IsNull) ? null : spatialEntity.GetPropertyValue("Dataset").StringValue;
-        if(server != null)
-            {
-            genericInfo.ServerLoginKey = (server.GetPropertyValue("LoginKey") == null || server.GetPropertyValue("LoginKey").IsNull) ? null : server.GetPropertyValue("LoginKey").StringValue;
-            genericInfo.ServerLoginMethod = (server.GetPropertyValue("LoginMethod") == null || server.GetPropertyValue("LoginMethod").IsNull) ? null : server.GetPropertyValue("LoginMethod").StringValue;
-            genericInfo.ServerRegistrationPage = (server.GetPropertyValue("RegistrationPage") == null || server.GetPropertyValue("RegistrationPage").IsNull) ? null : server.GetPropertyValue("RegistrationPage").StringValue;
-            genericInfo.ServerOrganisationPage = (server.GetPropertyValue("OrganisationPage") == null || server.GetPropertyValue("OrganisationPage").IsNull) ? null : server.GetPropertyValue("OrganisationPage").StringValue;
-            }
-
-
-        string sisterFilesString = (firstSpatialDataSource.GetPropertyValue("SisterFiles") == null || firstSpatialDataSource.GetPropertyValue("SisterFiles").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("SisterFiles").StringValue;
-        if ( sisterFilesString != null )
-            {
-            genericInfo.SisterFiles = sisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList();
-            }
-        else
-            {
-            genericInfo.SisterFiles = null;
-            }
-
-        return genericInfo;
-        }
 
         //private static MultibandSource CreateMultibandSource (IECInstance spatialEntity, RequestedEntity requestedEntity)
         //    {
@@ -777,7 +777,7 @@ namespace IndexECPlugin.Source.Helpers
                     maxY = temp;
                 }
 
-            List<Double> bbox = new List<double>{minX,minY,maxX,maxY};
+            List<Double> bbox = new List<double> { minX, minY, maxX, maxY };
 
             //&&JFC Workaround for the moment (until we add a csType column in the database). 
             // We suppose CRS for version 1.3, SRS for 1.1.1 and below.
@@ -950,7 +950,7 @@ namespace IndexECPlugin.Source.Helpers
 
                 GenericInfo genericInfo = ExtractGenericInfo(entity, subAPIRequestedEntities.First(e => e.ID == entity.InstanceId));
 
-                if((major == 1) && (genericInfo.Streamed == true))
+                if ( (major == 1) && (genericInfo.Streamed == true) )
                     {
                     //We don't put streamed data in a v1 package
                     continue;
@@ -1219,7 +1219,7 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-            private RequestedEntity ECStructToRequestedEntity (IECStructValue structValue)
+        private RequestedEntity ECStructToRequestedEntity (IECStructValue structValue)
             {
             if ( structValue.ClassDefinition.Name != "RequestedEntity" )
                 {
@@ -1244,125 +1244,130 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="connectionString">The connection string.</param>
         /// <param name="schema">The schema containing the stats ECClass</param>
         /// <returns></returns>
-            public static List<IECInstance> ExtractStats(ECQuery query, string connectionString, IECSchema schema)  //TODO: add dependancy injection here
+        public static List<IECInstance> ExtractStats (ECQuery query, string connectionString, IECSchema schema, IDbConnectionCreator dbConnectionCreator)  //TODO: add dependancy injection here
             {
-                List<IECInstance> StatsList = new List<IECInstance>();
+            List<IECInstance> StatsList = new List<IECInstance>();
 
-                int i = 0;
-                DateTime now = DateTime.Now;
+            int i = 0;
+            DateTime now = DateTime.Now;
 
-                //By default, the start date and end Date are the entire last month (from the 1st of that month)
-                DateTime startDate = (new DateTime(now.Year, now.Month, 1)).AddMonths(-1);
-                bool useDefaultStartDate = true;
+            //By default, the start date and end Date are the entire last month (from the 1st of that month)
+            DateTime startDate = (new DateTime(now.Year, now.Month, 1)).AddMonths(-1);
+            bool useDefaultStartDate = true;
 
-                DateTime endDate = (new DateTime(now.Year, now.Month, 1));
-                bool useDefaultEndDate = true;
+            DateTime endDate = (new DateTime(now.Year, now.Month, 1));
+            bool useDefaultEndDate = true;
 
-                string bentleyInternalStatement = " AND t.BentleyInternal = 0 ";
+            string bentleyInternalStatement = GetBentleyInternalStatement(query);
 
-                if ( query.ExtendedData.ContainsKey("includebentleyinternal") && query.ExtendedData["includebentleyinternal"].ToString().ToLower() == "true" )
-                    {
-                    bentleyInternalStatement = "";
-                    }
-
-                while (i < query.WhereClause.Count)
+            while ( i < query.WhereClause.Count )
                 {
-                    WhereCriterion criterion = query.WhereClause[i];
-                    if (i != (query.WhereClause.Count - 1) &&
-                        query.WhereClause.GetLogicalOperatorAfter(i) != LogicalOperator.AND)
+                WhereCriterion criterion = query.WhereClause[i];
+                if ( i != (query.WhereClause.Count - 1) &&
+                    query.WhereClause.GetLogicalOperatorAfter(i) != LogicalOperator.AND )
                     {
-                        throw new UserFriendlyException("This query only uses AND logical operators");
+                    throw new UserFriendlyException("This query only uses AND logical operators");
                     }
-                    if (criterion is PropertyExpression)
+                if ( criterion is PropertyExpression )
                     {
-                        PropertyExpression propExp = criterion as PropertyExpression;
-                        if (propExp.LeftSideProperty.Name == "CreationTime")
+                    PropertyExpression propExp = criterion as PropertyExpression;
+                    if ( propExp.LeftSideProperty.Name == "CreationTime" )
                         {
-                            if (propExp.Operator == RelationalOperator.LT || propExp.Operator == RelationalOperator.LTEQ)
+                        if ( propExp.Operator == RelationalOperator.LT || propExp.Operator == RelationalOperator.LTEQ )
                             {
-                                if (propExp.RightSide is DateTime)
+                            if ( propExp.RightSide is DateTime )
                                 {
-                                    if (useDefaultEndDate || endDate > (DateTime) propExp.RightSide)
+                                if ( useDefaultEndDate || endDate > (DateTime) propExp.RightSide )
                                     {
-                                        endDate = (DateTime) propExp.RightSide;
+                                    endDate = (DateTime) propExp.RightSide;
                                     }
-                                    useDefaultEndDate = false;
+                                useDefaultEndDate = false;
                                 }
                             }
-                            if (propExp.Operator == RelationalOperator.GT || propExp.Operator == RelationalOperator.GTEQ)
+                        if ( propExp.Operator == RelationalOperator.GT || propExp.Operator == RelationalOperator.GTEQ )
                             {
-                                if (propExp.RightSide is DateTime)
+                            if ( propExp.RightSide is DateTime )
                                 {
-                                    if (useDefaultStartDate || startDate < (DateTime) propExp.RightSide)
+                                if ( useDefaultStartDate || startDate < (DateTime) propExp.RightSide )
                                     {
-                                        startDate = (DateTime) propExp.RightSide;
+                                    startDate = (DateTime) propExp.RightSide;
                                     }
-                                    useDefaultStartDate = false;
+                                useDefaultStartDate = false;
                                 }
                             }
                         }
                     }
-                    i++;
+                i++;
                 }
-                if (useDefaultEndDate != useDefaultStartDate)
+            if ( useDefaultEndDate != useDefaultStartDate )
                 {
-                    throw new UserFriendlyException("Please specify both start and end times.");
+                throw new UserFriendlyException("Please specify both start and end times.");
                 }
-                using ( DbConnection sqlConnection = new SqlConnection(connectionString) )    //TODO: use injected dependancy here
+            using ( IDbConnection sqlConnection = dbConnectionCreator.CreateDbConnection(connectionString) )    //TODO: use injected dependancy here
                 {
-                    sqlConnection.Open();
-                    using (DbCommand dbCommand = sqlConnection.CreateCommand())
+                sqlConnection.Open();
+                using ( IDbCommand dbCommand = sqlConnection.CreateCommand() )
                     {
-                        dbCommand.CommandText =
-                            "SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.UserId FROM dbo.Packages AS t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime" + bentleyInternalStatement;
-                        dbCommand.CommandType = CommandType.Text;
-                        dbCommand.Connection = sqlConnection;
+                    dbCommand.CommandText =
+                        "SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.UserId FROM dbo.Packages AS t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime" + bentleyInternalStatement;
+                    dbCommand.CommandType = CommandType.Text;
+                    dbCommand.Connection = sqlConnection;
 
-                        DbParameter param1 = dbCommand.CreateParameter();
-                        param1.DbType = DbType.DateTime;
-                        param1.ParameterName = "@startTime";
-                        param1.Value = startDate;
-                        dbCommand.Parameters.Add(param1);
+                    IDbDataParameter param1 = dbCommand.CreateParameter();
+                    param1.DbType = DbType.DateTime;
+                    param1.ParameterName = "@startTime";
+                    param1.Value = startDate;
+                    dbCommand.Parameters.Add(param1);
 
-                        DbParameter param2 = dbCommand.CreateParameter();
-                        param2.DbType = DbType.DateTime;
-                        param2.ParameterName = "@endTime";
-                        param2.Value = endDate;
-                        dbCommand.Parameters.Add(param2);
+                    IDbDataParameter param2 = dbCommand.CreateParameter();
+                    param2.DbType = DbType.DateTime;
+                    param2.ParameterName = "@endTime";
+                    param2.Value = endDate;
+                    dbCommand.Parameters.Add(param2);
 
-                        using (IDataReader reader = dbCommand.ExecuteReader())
+                    using ( IDataReader reader = dbCommand.ExecuteReader() )
                         {
-                            IECClass ecClass = schema.GetClass("PackageStats");
-                            while (reader.Read())
+                        IECClass ecClass = schema.GetClass("PackageStats");
+                        while ( reader.Read() )
                             {
-                                IECInstance instance = ecClass.CreateInstance();
+                            IECInstance instance = ecClass.CreateInstance();
 
-                                if (!reader.IsDBNull(0))
+                            if ( !reader.IsDBNull(0) )
                                 {
-                                    instance["Name"].StringValue = reader.GetString(0);
+                                instance["Name"].StringValue = reader.GetString(0);
                                 }
-                                if (!reader.IsDBNull(1))
+                            if ( !reader.IsDBNull(1) )
                                 {
-                                    instance["BoundingPolygon"].StringValue = reader.GetString(1);
+                                instance["BoundingPolygon"].StringValue = reader.GetString(1);
                                 }
-                                if (!reader.IsDBNull(2))
+                            if ( !reader.IsDBNull(2) )
                                 {
-                                    instance["CreationTime"].NativeValue = reader.GetDateTime(2);
+                                instance["CreationTime"].NativeValue = reader.GetDateTime(2);
                                 }
-                                if (!reader.IsDBNull(3))
+                            if ( !reader.IsDBNull(3) )
                                 {
-                                    instance["UserId"].StringValue = reader.GetString(3);
+                                instance["UserId"].StringValue = reader.GetString(3);
                                 }
 
-                                StatsList.Add(instance);
+                            StatsList.Add(instance);
                             }
                         }
                     }
                 }
 
 
-                return StatsList;
+            return StatsList;
             }
 
+        internal static string GetBentleyInternalStatement (ECQuery query)
+            {
+            string bentleyInternalStatement = " AND t.BentleyInternal = 0 ";
+
+            if ( query.ExtendedData.ContainsKey("includebentleyinternal") && query.ExtendedData["includebentleyinternal"].ToString().ToLower() == "true" )
+                {
+                bentleyInternalStatement = "";
+                }
+            return bentleyInternalStatement;
+            }
         }
     }

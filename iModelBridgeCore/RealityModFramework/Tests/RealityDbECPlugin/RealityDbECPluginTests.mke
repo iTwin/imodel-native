@@ -78,6 +78,7 @@ ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Common/SetupHelpers.cs \
+			$(baseDir)Common/DataReaderStub.cs \
             $(baseDir)Tests/DataExtractorTests.cs \
             $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
@@ -98,6 +99,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/Helpers/MimicTableWriterTests.cs \
             $(baseDir)Tests/Helpers/MimicTableAccessorTests.cs \
             $(baseDir)Tests/Helpers/PackagerTests.cs \
+			$(baseDir)Tests/Helpers/RetrievalControllerTests.cs \
             $(baseDir)Tests/Helpers/SourceStringMapTests.cs \
             $(baseDir)Tests/Helpers/TableAliasCreatorTests.cs \
             $(baseDir)Tests/Helpers/TableDescriptorTests.cs

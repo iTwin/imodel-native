@@ -100,6 +100,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\DataReaderStub.cs" />
     <Compile Include="Common\SetupHelpers.cs" />
     <Compile Include="Tests\DataExtractorTests.cs" />
     <Compile Include="Tests\Helpers\DbConnectionHelperTests.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="Tests\Helpers\DownloadReportHelperTests.cs" />
     <Compile Include="Tests\Helpers\ECQueryConverterTests.cs" />
     <Compile Include="Tests\Helpers\ECToSQLMapTests.cs" />
+    <Compile Include="Tests\Helpers\RetrievalControllerTests.cs" />
     <Compile Include="Tests\Helpers\SourceStringMapTests.cs" />
     <Compile Include="Tests\Helpers\TableAliasCreatorTests.cs" />
     <Compile Include="Tests\Helpers\TableDescriptorTests.cs" />

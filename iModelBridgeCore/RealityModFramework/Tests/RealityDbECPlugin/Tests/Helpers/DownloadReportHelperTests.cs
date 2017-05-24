@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Bentley.Exceptions;
 using IndexECPlugin.Source.Helpers;
 using NUnit.Framework;
 using Rhino.Mocks;
@@ -76,7 +77,6 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                 Expect.Call(dbDataParameterCollection.Add(dbDataParameter1Stub)).Repeat.Once();
                 Expect.Call(dbDataParameterCollection.Add(dbDataParameter2Stub)).Repeat.Once();
 
-                //Expect.Call(dbCommandMock.ExecuteNonQuery()).Repeat.Once();
                 Expect.Call(dbConnectionMock.Close).Repeat.Once();
                 }
             using ( mocks.Playback() )
@@ -97,22 +97,46 @@ namespace IndexECPlugin.Tests.Tests.Helpers
 
             Assert.That(dbDataParameter2Stub.DbType, Is.EqualTo(DbType.Binary));
             Assert.That(dbDataParameter2Stub.ParameterName, Is.EqualTo("@param2"));
-            //Assert.That(dbDataParameter2Stub.Value, Is.EqualTo(fileBytes)); //TODO
+            Assert.That(((byte[])dbDataParameter2Stub.Value).SequenceEqual(fileBytes), Is.True);
             }
 
         [Test]
         public void InsertInDatabaseReportTooLargeExceptionTest ()
             {
+            Stream streamStub = mocks.Stub<Stream>();
             //FakeRead fakeReadMethod = new FakeRead(FakeReadMethod); 
             //byte[] buffer = new byte[fileBytes.Length];
             //Expect.Call(memoryStream.Read(Arg<byte[]>.Is.NotNull, Arg<int>.Is.Equal(0), Arg<int>.Is.Equal(10))).Do(fakeReadMethod);
             //SetupResult.For(memoryStream.Read(array, 0, 10)).Do(new Action<byte[]>(x => array = fileBytes)).Return(10);    //TODO: fill array Arg<byte[]>.Out(new byte[10]).Dummy
+            using ( mocks.Record() )
+                {
+                SetupResult.For(dbConnectionCreatorStub.CreateDbConnection(Arg<string>.Is.Anything)).Return(dbConnectionMock);
+                Expect.Call(dbConnectionMock.Open).Repeat.Once();
+                Expect.Call(dbConnectionMock.CreateCommand()).Repeat.Once().Return(dbCommandMock);
+
+                Expect.Call(dbCommandMock.CommandText).PropertyBehavior();
+                dbCommandMock.CommandText = "";
+                Expect.Call(dbCommandMock.CommandType).PropertyBehavior();
+                dbCommandMock.CommandType = 0;
+                Expect.Call(dbCommandMock.Parameters).Return(dbDataParameterCollection);
+                Expect.Call(dbCommandMock.CreateParameter()).Return(dbDataParameter0Stub).Repeat.Once();
+                Expect.Call(dbCommandMock.CreateParameter()).Return(dbDataParameter1Stub).Repeat.Once();
+                Expect.Call(dbDataParameterCollection.Add(dbDataParameter0Stub)).Repeat.Once();
+                Expect.Call(dbDataParameterCollection.Add(dbDataParameter1Stub)).Repeat.Once();
+
+                SetupResult.For(streamStub.Length).Return((long)int.MaxValue + 1);
+                }
+            using (mocks.Playback())
+                {
+                Assert.That(() => DownloadReportHelper.InsertInDatabase(streamStub, packageName, connectionString, dbConnectionCreatorStub),
+                    Throws.TypeOf<UserFriendlyException>());
+                }
             }
 
         [Test]
         public void InsertInDatabaseInvalidPackageIdExceptionTest ()
             {
-
+            
             }
         }
     }

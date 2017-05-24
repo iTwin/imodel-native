@@ -21,7 +21,6 @@ using Bentley.ECSystem.Extensibility;
 using Bentley.ECSystem.Repository;
 using Bentley.ECSystem.Session;
 using Bentley.Exceptions;
-using IndexECPlugin.Source.FileRetrievalControllers;
 using IndexECPlugin.Source.Helpers;
 using IndexECPlugin.Source.QueryProviders;
 using Newtonsoft.Json;
@@ -234,14 +233,15 @@ namespace IndexECPlugin.Source
                     Log.Logger.info("Executing query " + query.ID + " : " + query.ToECSqlString(0) + ", custom parameters : " + String.Join(",", query.ExtendedData.Select(x => x.ToString())));
 
                     if ( (querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) )
-                        {
+                    {
+                        SqlDbConnectionCreator sqlDbConnectionCreator = new SqlDbConnectionCreator();
                         switch ( searchClass.Class.Name )
                             {
                             case "PreparedPackage":
                                 IECInstance packageInstance = searchClass.Class.CreateInstance();
                                 ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
                                 packageInstance.InstanceId = exp.RightSideString;
-                                PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, ConnectionString);
+                                RetrievalController.RetrievePackage(packageInstance, ConnectionString, sqlDbConnectionCreator);
                                 return new List<IECInstance> { packageInstance };
 
                             case "DownloadReport":
@@ -249,7 +249,7 @@ namespace IndexECPlugin.Source
                                 IECInstance DownloadReportInstance = searchClass.Class.CreateInstance();
                                 ECInstanceIdExpression exp2 = query.WhereClause[0] as ECInstanceIdExpression;
                                 DownloadReportInstance.InstanceId = exp2.RightSideString;
-                                DRStreamRetrievalController.SetStreamRetrieval(DownloadReportInstance, ConnectionString);
+                                RetrievalController.RetrieveDownloadReport(DownloadReportInstance, ConnectionString, sqlDbConnectionCreator);
                                 return new List<IECInstance> { DownloadReportInstance };
                             default:
                                 //We continue
@@ -264,7 +264,8 @@ namespace IndexECPlugin.Source
                             {
                             throw new UserFriendlyException("This operation is not permitted");
                             }
-                        return Packager.ExtractStats(query, ConnectionString, schema);
+                        SqlDbConnectionCreator sqlDbConnectionCreator = new SqlDbConnectionCreator();
+                        return Packager.ExtractStats(query, ConnectionString, schema, sqlDbConnectionCreator);
                         }
 
 
@@ -546,7 +547,7 @@ namespace IndexECPlugin.Source
                     }
 
 
-
+                SqlDbConnectionCreator sqlDbConnectionCreator = new SqlDbConnectionCreator();
                 switch ( fileHolderAttribute["Type"].StringValue )
                     {
 
@@ -555,7 +556,7 @@ namespace IndexECPlugin.Source
                         //FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
                         //var packageRetrievalController = new PackageRetrievalController(instance, resourceManager, operation, m_packagesLocation, m_connectionString);
                         //packageRetrievalController.Run();
-                        PackageStreamRetrievalController.SetStreamRetrieval(instance, ConnectionString);
+                        RetrievalController.RetrievePackage(instance, ConnectionString, sqlDbConnectionCreator);
 
                         break;
                     case "SQLThumbnail":

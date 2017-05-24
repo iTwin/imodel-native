@@ -162,14 +162,13 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/MimicTableAccessor.cs \
             $(baseDir)Source/Helpers/MimicTableWriter.cs \
             $(baseDir)Source/Helpers/Packager.cs \
+			$(baseDir)Source/Helpers/RetrievalController.cs \
             $(baseDir)Source/Helpers/SourceStringMap.cs \
             $(baseDir)Source/Helpers/SqlQueryHelpers.cs \
             $(baseDir)Source/Helpers/TableAliasCreator.cs \
             $(baseDir)Source/Helpers/TableDescriptor.cs \
             $(baseDir)Source/IECInstanceExtension.cs \
-            $(baseDir)Source/FileRetrievalControllers/DRStreamRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageRetrievalController.cs \
-            $(baseDir)Source/FileRetrievalControllers/PackageStreamRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/SQLThumbnailRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/USGSThumbnailRetrievalController.cs \
             $(baseDir)Source/QueryProviders/IECQueryProvider.cs \
