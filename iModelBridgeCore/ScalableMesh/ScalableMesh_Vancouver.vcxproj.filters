@@ -1471,6 +1471,9 @@
     <ClCompile Include="STM\ScalableMeshAnalysis.cpp">
       <Filter>Source\Core\Analysis</Filter>
     </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\TextureImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableMesh_Vancouver.mke" />

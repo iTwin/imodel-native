@@ -377,17 +377,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         textureGenerator->SetTextureTempDir(currentTextureDir);
         textureGenerator->SetTransform(m_scalableMesh->GetReprojectionTransform());
 
-        DRange3d covExt = DRange3d::From(m_extractionArea);
-       
-        bvector<bvector<DPoint3d>> polys;
-        m_scalableMesh->GetAllCoverages(polys);
-
-        for (auto& poly : polys)
-            {
-            DRange3d newRange = DRange3d::From(poly);
-            covExt.Extend(newRange);
-            }
-    
+        DRange3d covExt = DRange3d::From(m_extractionArea);               
         covExt.ScaleAboutCenter(covExt, 1.1);
 
         bvector<DPoint3d> closedPolygonPoints;
