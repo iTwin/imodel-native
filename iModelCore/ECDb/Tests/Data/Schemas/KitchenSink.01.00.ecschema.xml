@@ -102,11 +102,14 @@
         <ECProperty propertyName="FileName" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Size" typeName="long" readOnly="false"/>
         <ECProperty propertyName="UpdateTime" typeName="dateTime" readOnly="false"/>
+        <ECNavigationProperty propertyName="Folder" relationshipName="FolderHasDocuments" direction="Backward" />
+       
     </ECEntityClass>
     <ECEntityClass typeName="User" modifier="None">
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECNavigationProperty propertyName="Doc" relationshipName="DocumentHasOwner" direction="Backward" />
     </ECEntityClass>
-    <ECRelationshipClass typeName="DocumentHasOwner" description="FolderHasDocuments" modifier="Sealed" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="DocumentHasOwner" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source multiplicity="(0..1)" roleLabel="has Owner" polymorphic="true">
             <Class class="Document"/>
         </Source>
@@ -186,12 +189,13 @@
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
         <ECProperty propertyName="SomeNumber" typeName="int" readOnly="false"/>
         <ECProperty propertyName="UpdateTime" typeName="dateTime" readOnly="false"/>
+        <ECNavigationProperty propertyName="ParentFolder" relationshipName="FolderHasSubFolders" direction="Backward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="FolderHasDocuments" description="FolderHasDocuments" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source multiplicity="(0..1)" roleLabel="has Documents" polymorphic="true">
             <Class class="Folder"/>
         </Source>
-        <Target multiplicity="(0..N)" roleLabel="are held by Folder" polymorphic="true">
+        <Target multiplicity="(0..N)" roleLabel="areWid held by Folder" polymorphic="true">
             <Class class="Document"/>
         </Target>
     </ECRelationshipClass>
@@ -259,9 +263,11 @@
         <ECProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel" readOnly="false"/>
         <ECProperty propertyName="StartPoint" typeName="point3d" description="This is the start point property description" displayLabel="Start Point Label" readOnly="false"/>
         <ECProperty propertyName="EndPoint" typeName="point3d" readOnly="false"/>
+        <ECNavigationProperty propertyName="Project" relationshipName="ProjectHasPrimitive" direction="Backward" />
     </ECEntityClass>
     <ECEntityClass typeName="ecProject" description="Project Class" displayLabel="Project" modifier="None">
         <ECProperty propertyName="Name" typeName="string" displayLabel="Project Name" readOnly="false"/>
+        <ECNavigationProperty propertyName="Widget" relationshipName="WidgetBelongsToProject" direction="Backward" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ProjectHasPrimitive" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="holds">
@@ -275,6 +281,7 @@
         <ECProperty propertyName="EC_InstanceID" typeName="int" description="Unique identifier for instances of your business class" readOnly="false"/>
         <ECProperty propertyName="ecstringattr" typeName="string" displayLabel="stringattr" readOnly="false"/>
         <ECProperty propertyName="eclongattr" typeName="int" displayLabel="longattr" readOnly="false"/>
+        <ECNavigationProperty propertyName="Project" relationshipName="ProjectHasWidget" direction="Backward" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ProjectHasWidget" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="holds">

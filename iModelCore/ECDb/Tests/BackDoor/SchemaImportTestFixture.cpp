@@ -303,12 +303,14 @@ bool DbMappingTestFixture::TryGetColumnInfo(std::map<Utf8String, ColumnInfo>& co
 
     CachedStatementPtr stmt = ecdb.GetCachedStatement(
         //can return multiple rows for same prop and same column in case of inherited prop. Therefore using DISTINCT
+        //Need to wrap the pp.AccessString and the parameter in . so that we don't find cases like this:
+        //A -> should not match AId, but should match Foo.A or A.Id or Foo.A.Id
         R"sql(
         SELECT pp.AccessString, t.Name, c.Name, c.IsVirtual FROM ec_Table t
                      INNER JOIN ec_Column c ON t.Id=c.TableId
                      INNER JOIN ec_PropertyMap pm ON pm.ColumnId=c.Id
                      INNER JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
-                WHERE pm.ClassId=? AND instr(pp.AccessString,?) = 1 ORDER BY pp.AccessString,t.Name,c.Name
+                WHERE pm.ClassId=?1 AND instr('.' || pp.AccessString || '.' ,'.' || ?2 || '.') = 1 ORDER BY pp.AccessString,t.Name,c.Name
         )sql");
 
     if (stmt == nullptr)

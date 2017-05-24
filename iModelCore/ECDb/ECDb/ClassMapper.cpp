@@ -12,18 +12,20 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //***************************************************ClassMapper*****************************************
-//=======================================================================================
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 PropertyMap* ClassMapper::MapProperty(ClassMap& classMap, ECN::ECPropertyCR ecProperty)
     {
     ClassMapper mapper(classMap);
     return mapper.ProcessProperty(ecProperty);
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 //static
 PropertyMap* ClassMapper::LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext)
     {
@@ -31,9 +33,9 @@ PropertyMap* ClassMapper::LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR 
     return mapper.ProcessProperty(ecProperty);
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     {
     if (m_classMap.GetPropertyMaps().Find(property.GetName().c_str()))
@@ -77,6 +79,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
 
     return propertyMap.get();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
@@ -556,6 +559,13 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
         return ERROR;
         }
 
+    if (relClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+        {
+        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s'. Its NavigationECProperty '%s' refers to a relationship that has the 'NotMapped' strategy. Therefore its dependencies must have that strategy as well.",
+                                                                   navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str());
+        return ERROR;
+        }
+
     if (relClassMap->GetType() == ClassMap::Type::RelationshipLinkTable)
         {
         ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
@@ -600,9 +610,9 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
     }
 
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 //static 
 Utf8String ClassMapper::ComputeAccessString(ECN::ECPropertyCR ecProperty, CompoundDataPropertyMap const* parentPropMap)
     {
@@ -613,4 +623,371 @@ Utf8String ClassMapper::ComputeAccessString(ECN::ECPropertyCR ecProperty, Compou
     accessString.append(".").append(ecProperty.GetName());
     return accessString;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                   10/2016
+//---------------------------------------------------------------------------------------
+//static
+ClassMapper::PropertyMapInheritanceMode ClassMapper::GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const& mapStrategyExtInfo)
+    {
+    if (mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
+        return PropertyMapInheritanceMode::NotInherited;
+
+    return PropertyMapInheritanceMode::Clone;
+    }
+
+
+//*************************************************************************************
+//ClassMapper::TableMapper
+//*************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMapper::TableMapper::MapToTable(ClassMap& classMap, ClassMappingInfo const& info)
+    {
+    DbTable::Type tableType = DbTable::Type::Primary;
+    //if (classMap.GetClass().GetClassModifier() == ECClassModifier::Abstract)
+    //    tableType == DbTable::Type::UpdatableView;
+
+    const bool isTph = info.GetMapStrategy().IsTablePerHierarchy();
+    TablePerHierarchyInfo const& tphInfo = info.GetMapStrategy().GetTphInfo();
+    ClassMap const* tphBaseClassMap = isTph ? info.GetTphBaseClassMap() : nullptr;
+    if (isTph && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable)
+        {
+        tableType = DbTable::Type::Joined;
+        if (tphBaseClassMap == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        }
+    else if (info.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
+        tableType = DbTable::Type::Existing;
+
+    DbTable const* primaryTable = nullptr;
+    bool needsToCreateTable = !isTph || tphBaseClassMap == nullptr;
+    if (tphBaseClassMap != nullptr)
+        {
+        classMap.SetTable(tphBaseClassMap->GetPrimaryTable());
+        if (tableType == DbTable::Type::Joined)
+            {
+            if (tphBaseClassMap->GetTphHelper()->IsParentOfJoinedTable())
+                {
+                primaryTable = &tphBaseClassMap->GetPrimaryTable();
+                needsToCreateTable = true;
+                }
+            else
+                classMap.AddTable(tphBaseClassMap->GetJoinedOrPrimaryTable());
+            }
+
+        for (DbTable const* table : classMap.GetTables())
+            {
+            DbTable::LinkNode const* overflowTableNode = table->GetLinkNode().FindOverflowTable();
+            if (overflowTableNode != nullptr)
+                {
+                classMap.AddTable(overflowTableNode->GetTableR());
+                break;
+                }
+            }
+        }
+
+    if (needsToCreateTable)
+        {
+        DbTable* table = FindOrCreateTable(classMap, info, tableType, primaryTable);
+        if (table == nullptr)
+            return ERROR;
+
+        classMap.AddTable(*table);
+        }
+
+    return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+DbTable* ClassMapper::TableMapper::FindOrCreateTable(ClassMap const& classMap, ClassMappingInfo const& info, DbTable::Type tableType, DbTable const* primaryTable)
+    {
+    BeAssert(!info.GetECInstanceIdColumnName().empty() && "should always be set (either to user value or default value) by this time");
+
+    const ECClassId exclusiveRootClassId = IsExclusiveRootClassOfTable(info) ? info.GetClass().GetId() : ECClassId();
+
+    DbTable* table = classMap.GetDbMap().GetDbSchema().FindTableP(info.GetTableName().c_str());
+    if (table != nullptr)
+        {
+        if (table->GetType() != tableType)
+            {
+            classMap.GetDbMap().Issues().Report("Table %s already used by another ECClass for a different mapping type.", table->GetName().c_str());
+            return nullptr;
+            }
+
+        if (table->HasExclusiveRootECClass())
+            {
+            BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
+            classMap.GetDbMap().Issues().Report("Table %s is exclusively used by the ECClass with Id %s and therefore "
+                                                                        "cannot be used by other ECClasses which are no subclass of the mentioned ECClass.",
+                                                table->GetName().c_str(), table->GetExclusiveRootECClassId().ToString().c_str());
+            return nullptr;
+            }
+
+        if (exclusiveRootClassId.IsValid())
+            {
+            BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
+            classMap.GetDbMap().Issues().Report("The ECClass with Id %s requests exclusive use of the table %s, "
+                                                                        "but it is already used by some other ECClass.",
+                                                                        exclusiveRootClassId.ToString().c_str(), table->GetName().c_str());
+            return nullptr;
+            }
+
+        return table;
+        }
+
+    PersistenceType classIdColPersistenceType;
+    switch (info.GetMapStrategy().GetStrategy())
+        {
+            case MapStrategy::OwnTable:
+            case MapStrategy::ExistingTable:
+                classIdColPersistenceType = PersistenceType::Virtual;
+                break;
+
+            case MapStrategy::TablePerHierarchy:
+                classIdColPersistenceType = PersistenceType::Physical;
+                break;
+
+            default:
+                BeAssert(false && "Should have been handled before");
+                return nullptr;
+        }
+
+    if (tableType != DbTable::Type::Existing)
+        return CreateTableForOtherStrategies(classMap, info.GetTableName(), tableType, info.GetECInstanceIdColumnName(), classIdColPersistenceType, exclusiveRootClassId, primaryTable);
+
+    return CreateTableForExistingTableStrategy(classMap, info.GetTableName(), info.GetECInstanceIdColumnName(), classIdColPersistenceType, exclusiveRootClassId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle       11/2016
+//---------------------------------------------------------------------------------------
+//static
+DbTable* ClassMapper::TableMapper::CreateTableForOtherStrategies(ClassMap const& classMap, Utf8StringCR tableName, DbTable::Type tableType, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
+    {
+    if (classMap.GetDbMap().GetECDb().TableExists(tableName.c_str()))
+        {
+        classMap.GetDbMap().Issues().Report("Failed to map ECClass '%s'. It would be mapped to the table '%s' which already exists. Consider applying the 'ExistingTable' MapStrategy to the ECClass.",
+                                            classMap.GetClass().GetFullName(), tableName.c_str());
+        return nullptr;
+        }
+
+    const PersistenceType tablePersType = classMap.GetClass().GetClassModifier() != ECClassModifier::Abstract || classMap.GetMapStrategy().IsTablePerHierarchy() ? PersistenceType::Physical : PersistenceType::Virtual;
+    DbTable* table = classMap.GetDbMap().GetDbSchemaR().CreateTable(tableName.c_str(), tableType, tablePersType, exclusiveRootClassId, primaryTable);
+
+    DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
+    if (table->GetPersistenceType() == PersistenceType::Physical)
+        {
+        std::vector<DbColumn*> pkColumns {pkColumn};
+        if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns))
+            return nullptr;
+        }
+
+    if (SUCCESS != CreateClassIdColumn(classMap.GetDbMap().GetDbSchemaR(), *table, classIdColPersistenceType))
+        return nullptr;
+
+    return table;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+//static
+DbTable* ClassMapper::TableMapper::CreateTableForExistingTableStrategy(ClassMap const& classMap, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECClassId exclusiveRootClassId)
+    {
+    BeAssert(!existingTableName.empty());
+
+    if (!classMap.GetDbMap().GetECDb().TableExists(existingTableName.c_str()))
+        {
+        classMap.GetDbMap().Issues().Report("Failed to map ECClass '%s'. The table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.",
+                                            classMap.GetClass().GetFullName(), existingTableName.c_str());
+        return nullptr;
+        }
+
+    DbTable* table = classMap.GetDbMap().GetDbSchemaR().CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Physical, exclusiveRootClassId, nullptr);
+    if (table == nullptr)
+        return nullptr;
+
+    bvector<SqliteColumnInfo> existingColumnInfos;
+    if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(existingColumnInfos, classMap.GetDbMap().GetECDb(), existingTableName))
+        {
+        BeAssert(false && "Failed to get column informations");
+        return nullptr;
+        }
+
+    if (!table->GetEditHandle().CanEdit())
+        table->GetEditHandleR().BeginEdit();
+
+    DbColumn* idColumn = nullptr;
+    std::vector<DbColumn*> pkColumns;
+    std::vector<size_t> pkOrdinals;
+    for (SqliteColumnInfo const& colInfo : existingColumnInfos)
+        {
+        DbColumn* column = table->CreateColumn(colInfo.GetName(), colInfo.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Physical);
+        if (column == nullptr)
+            {
+            BeAssert(false && "Failed to create column");
+            return nullptr;
+            }
+
+        if (!colInfo.GetDefaultConstraint().empty())
+            column->GetConstraintsR().SetDefaultValueExpression(colInfo.GetDefaultConstraint().c_str());
+
+        if (colInfo.IsNotNull())
+            column->GetConstraintsR().SetNotNullConstraint();
+
+        if (colInfo.GetPrimaryKeyOrdinal() > 0)
+            {
+            pkColumns.push_back(column);
+            pkOrdinals.push_back((size_t) (colInfo.GetPrimaryKeyOrdinal() - 1));
+            }
+
+        if (column->GetName().EqualsIAscii(primaryKeyColName))
+            idColumn = column;
+        }
+
+    if (!pkColumns.empty())
+        {
+        if (pkColumns.size() > 1)
+            {
+            classMap.GetDbMap().Issues().Report("Failed to map ECClass '%s'. Multi-column PK not supported for MapStrategy 'ExistingTable'. Table: %s",
+                                                classMap.GetClass().GetFullName(), existingTableName.c_str());
+            return nullptr;
+            }
+
+        if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns, &pkOrdinals))
+            return nullptr;
+        }
+
+    if (idColumn != nullptr)
+        idColumn->SetKind(DbColumn::Kind::ECInstanceId);
+    else
+        {
+        classMap.GetDbMap().Issues().Report("Failed to map ECClass '%s'. " ECDBSYS_PROP_ECInstanceId " column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
+                                            classMap.GetClass().GetFullName(), primaryKeyColName.c_str(), existingTableName.c_str());
+        return nullptr;
+        }
+
+    if (SUCCESS != CreateClassIdColumn(classMap.GetDbMap().GetDbSchemaR(), *table, classIdColPersistenceType))
+        return nullptr;
+
+    table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
+    return table;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle       05/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMapper::TableMapper::CreateClassIdColumn(DbSchema& dbSchema, DbTable& table, PersistenceType persType)
+    {
+    DbColumn* classIdColumn = table.CreateColumn(Utf8String(COL_ECClassId), DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, persType);
+    if (classIdColumn == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    classIdColumn->GetConstraintsR().SetNotNullConstraint();
+
+    //create index on ECClassId col if it is not virtual
+    if (persType == PersistenceType::Virtual)
+        return SUCCESS;
+
+    Nullable<Utf8String> indexName("ix_");
+    indexName.ValueR().append(table.GetName()).append("_ecclassid");
+    return dbSchema.CreateIndex(table, indexName, false, {classIdColumn}, false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2016
+//---------------------------------------------------------------------------------------
+//static
+bool ClassMapper::TableMapper::IsExclusiveRootClassOfTable(ClassMappingInfo const& mappingInfo)
+    {
+    MapStrategy strategy = mappingInfo.GetMapStrategy().GetStrategy();
+    switch (strategy)
+        {
+            case MapStrategy::ExistingTable:
+                //for existing table we also assume an exclusive root as ECDb only supports mapping a single ECClass to an existing table
+                return true;
+
+                //OwnedTable obviously always has an exclusive root because only a single class is mapped to the table.
+            case MapStrategy::OwnTable:
+                return true;
+
+            default:
+                break;
+        }
+
+    //For subclasses in a TablePerHierarchy, true must be returned for joined table root classes
+    ClassMap const* tphBaseClassMap = mappingInfo.GetTphBaseClassMap();
+    if (tphBaseClassMap == nullptr) //this is the root of the TablePerHierarchy class hierarchy
+        return true;
+
+    //if base class is the direct parent of the joined table, this class is the
+    //starting point of the joined table, so also the exclusive root (of the joined table)
+    BeAssert(tphBaseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
+    return tphBaseClassMap->GetTphHelper()->IsParentOfJoinedTable();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMapper::TableMapper::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR ecclass, Utf8CP tablePrefix)
+    {
+    if (!Utf8String::IsNullOrEmpty(tablePrefix))
+        tableName.assign(tablePrefix);
+    else
+        {
+        if (SUCCESS != DetermineTablePrefix(tableName, ecclass))
+            return ERROR;
+        }
+
+    tableName.append("_").append(ecclass.GetName());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMapper::TableMapper::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
+    {
+    ECSchemaCR schema = ecclass.GetSchema();
+    ECDbSchemaMap customSchemaMap;
+
+    if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
+        {
+        Nullable<Utf8String> tablePrefixFromCA;
+        if (SUCCESS != customSchemaMap.TryGetTablePrefix(tablePrefixFromCA))
+            return ERROR;
+
+        if (!tablePrefixFromCA.IsNull())
+            {
+            tablePrefix.assign(tablePrefixFromCA.Value());
+            BeAssert(!tablePrefix.empty() && "tablePrefixFromCA is null also if it contains an empty string");
+            return SUCCESS;
+            }
+        }
+
+    Utf8StringCR alias = schema.GetAlias();
+    if (!alias.empty())
+        tablePrefix = alias;
+    else
+        tablePrefix = schema.GetName();
+
+    return SUCCESS;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

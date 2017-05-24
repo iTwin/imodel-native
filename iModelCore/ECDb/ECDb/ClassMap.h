@@ -94,12 +94,7 @@ struct ClassMap : RefCountedBase
             NotMapped
             };
 
-        enum class PropertyMapInheritanceMode
-            {
-            NotInherited, //!< indicates that base property map is not inherited, but created from scratch
-            Clone //! inherited property maps areGet cloned from the base class property map
-            };
-
+   
         struct TablePerHierarchyHelper final
             {
         private:
@@ -159,9 +154,6 @@ struct ClassMap : RefCountedBase
         bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
         ObjectState m_state;
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
-        bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
-
-        PropertyMapInheritanceMode GetPropertyMapInheritanceMode() const { return GetPropertyMapInheritanceMode(m_mapStrategyExtInfo); }
 
         ClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, Type::Class, ecClass, mapStrat) {}
         ClassMap(ECDb const&ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat, UpdatableViewInfo const& updatableViewInfo) : ClassMap(ecdb, Type::Class, ecClass, mapStrat, updatableViewInfo) {}
@@ -177,25 +169,24 @@ struct ClassMap : RefCountedBase
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
 
-        void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
-        void AddTable(DbTable& newTable) { BeAssert(std::find(begin(m_tables), end(m_tables), &newTable) == end(m_tables)); m_tables.push_back(&newTable); }
-
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
-        static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
         BentleyStatus MapSystemColumns();
 
     public:
         virtual ~ClassMap() {}
+
+        //! Called when loading an existing class map from the ECDb file 
+        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
+
         ObjectState GetState() const { return m_state; }
         template<typename TClassMap>
         TClassMap const& GetAs() const { BeAssert(dynamic_cast<TClassMap const*> (this) != nullptr); return *static_cast<TClassMap const*>(this); }
+        Type GetType() const { return m_type; }
         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
         ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
         ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
-        BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
-        Type GetType() const { return m_type; }
-        ClassMapColumnFactory const& GetColumnFactory() const;
+
         std::vector<DbTable*>& GetTables() const { return m_tables; }
         DbTable& GetPrimaryTable() const 
             { 
@@ -214,7 +205,6 @@ struct ClassMap : RefCountedBase
             BeAssert(false);
             return *nulltable;
             }
-
         DbTable& GetJoinedOrPrimaryTable() const 
             {
             for (DbTable* table : GetTables())
@@ -227,7 +217,6 @@ struct ClassMap : RefCountedBase
 
             return GetPrimaryTable();
             }
-
         DbTable* GetOverflowTable() const
             {
             for (DbTable* table : GetTables())
@@ -257,22 +246,18 @@ struct ClassMap : RefCountedBase
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
         DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         DbTable const* ExpectingSingleTable() const;
-        BentleyStatus SetOverflowTable(DbTable& overflowTable);
-        //! Called when loading an existing class map from the ECDb file 
-        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
-        //! Called during schema import when creating the class map from the imported ECClass 
+
         ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
         BentleyStatus Save(SchemaImportContext&, DbMapSaveContext&);
         BentleyStatus Update();
+        BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
+        void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
+        void AddTable(DbTable& newTable) { BeAssert(std::find(begin(m_tables), end(m_tables), &newTable) == end(m_tables)); m_tables.push_back(&newTable); }
+        BentleyStatus SetOverflowTable(DbTable& overflowTable);
+        ClassMapColumnFactory const& GetColumnFactory() const;
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
-        //void DeleteColumnFactory() const { m_columnFactory = nullptr; }
-        //! Rules:
-        //! If MapStrategy != TPH: NotInherited
-        //! Else: Clone
-        static PropertyMapInheritanceMode GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const&);
-        static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
+   
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
-
         static Utf8CP TypeToString(Type);
     };
 

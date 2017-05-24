@@ -374,6 +374,41 @@
             - in the @b ForeignKeyConstraint custom attribute the property @b OnDeleteAction is set to @b Cascade or
             - the strength is @b Embedding
 
+    ## Foreign Key ECRelationshipClasses require NavigationProperty on Foreign Key end
+    
+    ECRelationshipClasses with the Foreign Key mapping require that a navigation property is defined on the foreign key end constraint class.
+    
+    The foreign key end of a relationship is determined by cardinality and, only if the cardinality is 1:1, by the strength direction:
+
+    Cardinality  | Strength Direction | End requiring a nav prop
+    ------------ | ------------------ | ------------------------
+    1:1          | Forward            | Target
+    &nbsp;       | Backward           | Source
+    1:N          | not relevant       | Target
+    N:1          | not relevant       | Source
+
+    
+    ####Example
+
+        <ECEntityClass typeName="Folder">
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="File">
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECNavigationProperty propertyName="Folder" relationshipName="FolderHasFiles" direction="Backward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="FolderHasFiles" strength="embedding">
+            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                <Class class="Folder" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is in">
+                <Class class="File" />
+            </Target>
+        </ECRelationshipClass>
+        
+
     ## Mapping Rules
     The <b>number of tables to which the two relationship ends map to</b> is the key criterion for ECDb to decide whether
     an ECRelationshipClass is supported or not.
@@ -456,7 +491,6 @@
     Likewise ECDb's referential integrity does not clean up the RelECClassId values. If for an ECRelationshipClass with OnDelete action 'SetNull', a parent is deleted,
     the navigation property's Id value is set to NULL, but the RelECClassId's value is not changed.
     
-
     @see BentleyApi::BeSQLite::EC::ECSqlStatement::BindNavigationValue
 
     @see @ref ECDbRelationshipRules

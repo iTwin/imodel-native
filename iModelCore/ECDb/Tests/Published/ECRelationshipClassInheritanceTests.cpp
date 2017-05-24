@@ -441,7 +441,13 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                           "  </ECEntityClass>"
                                           "  <ECEntityClass typeName='Element' >"
+                                          "    <ECCustomAttributes>"
+                                          "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                          "                <MapStrategy>NotMapped</MapStrategy>"
+                                          "        </ClassMap>"
+                                          "    </ECCustomAttributes>"
                                           "    <ECProperty propertyName='Code' typeName='string' />"
+                                          "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
                                           "  </ECEntityClass>"
                                           "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
                                           "    <ECCustomAttributes>"
@@ -486,6 +492,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
 
             ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements2")->GetId()));
             ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
+
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Element")->GetId()));
+            ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
+
             }
 
     }
@@ -942,6 +952,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECEntityClass>"
                           "  <ECEntityClass typeName='B' >"
                           "    <ECProperty propertyName='Code' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
                           "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
@@ -956,6 +967,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECEntityClass>"
                           "  <ECEntityClass typeName='D' >"
                           "    <ECProperty propertyName='Code' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='C' relationshipName='CHasD' direction='Backward' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='CHasD' modifier='Sealed' strength='embedding'>"
                           "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='C Has D'>"
@@ -972,8 +984,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
     AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasB", RelClassIdExistenceMode::Persisted, false);
-    assertRelECClassId(ecdb, SCHEMAALIAS "_D", "RelECClassId_" SCHEMAALIAS "_CHasD", RelClassIdExistenceMode::Virtual, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false);
     }
 
     {
@@ -992,6 +1004,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "        </ClassMap>"
                           "    </ECCustomAttributes>"
                           "    <ECProperty propertyName='Code' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB' direction='Backward' />"
+                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasB1N' direction='Backward' />"
                           "  </ECEntityClass>"
                           "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
                           "    <BaseClass>B</BaseClass>"
@@ -1020,8 +1034,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
     AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasB", RelClassIdExistenceMode::Persisted, false);
-    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasB1N", RelClassIdExistenceMode::Persisted, true);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, true);
     }
 
     {
@@ -1040,6 +1054,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "        </ClassMap>"
                           "    </ECCustomAttributes>"
                           "    <ECProperty propertyName='Code' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB' direction='Backward' />"
+                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasB1N' direction='Backward' />"
                           "  </ECEntityClass>"
                           "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
                           "    <BaseClass>B</BaseClass>"
@@ -1087,10 +1103,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
     ASSERT_FALSE(asserted);
 
     Utf8CP tableName = SCHEMAALIAS "_B";
-    assertRelECClassId(ecdb, tableName, "RelECClassId_" SCHEMAALIAS "_AHasB", RelClassIdExistenceMode::Persisted, false);
-    assertRelECClassId(ecdb, tableName, "RelECClassId_" SCHEMAALIAS "_AHasBSub", RelClassIdExistenceMode::DoesNotExist, false);
-    assertRelECClassId(ecdb, tableName, "RelECClassId_" SCHEMAALIAS "_AHasB1N", RelClassIdExistenceMode::Persisted, true);
-    assertRelECClassId(ecdb, tableName, "RelECClassId_" SCHEMAALIAS "_AHasB1NSub", RelClassIdExistenceMode::DoesNotExist, false);
+    assertRelECClassId(ecdb, tableName, "A1RelECClassId", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, tableName, "A2RelECClassId", RelClassIdExistenceMode::Persisted, true);
     }
 
     {
@@ -1113,6 +1127,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
                           "    <BaseClass>B</BaseClass>"
                           "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasBSub' direction='Backward' />"
+                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub1N' direction='Backward' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasBSub' modifier='Abstract' strength='embedding'>"
                           "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
@@ -1137,9 +1153,9 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
     AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasBSub", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false);
     //cardinality would imply NOT NULL on rel class id, but the column is shared by other base class rows, so no enforcement of NOT NULL.
-    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasBSub1N", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, false);
     }
 
     {
@@ -1158,10 +1174,13 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "        </ClassMap>"
                           "    </ECCustomAttributes>"
                           "    <ECProperty propertyName='Code' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB1N' direction='Backward' />"
                           "  </ECEntityClass>"
                           "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
                           "    <BaseClass>B</BaseClass>"
                           "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub' direction='Backward' />"
+                          "    <ECNavigationProperty propertyName='A3' relationshipName='AHasBSub1N' direction='Backward' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
                           "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
@@ -1194,9 +1213,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
     AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasBSub", RelClassIdExistenceMode::Virtual, false);
-    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasB1N", RelClassIdExistenceMode::Virtual, true);
-    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasBSub1N", RelClassIdExistenceMode::Virtual, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, true);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false);
+    //nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A3RelECClassId", RelClassIdExistenceMode::Virtual, false);
     }
 
     {

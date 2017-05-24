@@ -25,10 +25,11 @@ TEST_F(BulkBisDomainCrudTestFixture, Test)
     if (m_failed)
         return;
 
-    TestDataset testDataset;
+ /*   TestDataset testDataset;
     ASSERT_EQ(SUCCESS, testDataset.Populate(GetECDb())) << domainSchemaFolder.GetNameUtf8().c_str();
 
     AssertInsert(testDataset);
+    */
     }
 
 END_ECDBUNITTESTS_NAMESPACE

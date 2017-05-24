@@ -1938,10 +1938,9 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     const int perClassRowCount = 10;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
-    auto ecsql = "SELECT c1.ECInstanceId, c2.ECInstanceId, c1.ECClassId, c2.ECClassId FROM ecsql.PSA c1, ecsql.P c2 LIMIT 1";
+    Utf8CP ecsql = "SELECT c1.ECInstanceId, c2.ECInstanceId, c1.ECClassId, c2.ECClassId FROM ecsql.PSA c1, ecsql.P c2 LIMIT 1";
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << ecsql;
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     auto const& value1 = statement.GetValue(0);
@@ -4364,20 +4363,6 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
         }
 
     ASSERT_EQ(ExpectedValueOfStructP2, ActualValueOfStructP2);
-    stmt.Finalize();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Umer Sufyan                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, AmbiguousJoin)
-    {
-    ECDbCR ecdb = SetupECDb("ambiguousjoin.ecdb", BeFileName(L"Computers.01.00.ecschema.xml"));
-    ECSqlStatement stmt;
-
-    auto stat = stmt.Prepare(ecdb, "SELECT * FROM TR.Laptop JOIN TR.Laptop USING TR.LaptopHasLaptop FORWARD");
-
-    ASSERT_NE(ECSqlStatus::Success, stat);
     stmt.Finalize();
     }
 

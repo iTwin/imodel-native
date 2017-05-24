@@ -834,6 +834,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
         ChangeSummary after inserting relationships:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
+        0:1;StartupCompany:Employee:175;Update;No
+                Company.Id;NULL;2
         0:1;StartupCompany:EmployeeCompany:1099511627845;Insert;No
                 SourceECClassId;NULL;StartupCompany:Employee:1099511627843
                 SourceECInstanceId;NULL;0:1
@@ -845,7 +847,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
                 TargetECInstanceId;NULL;0:4
     */
-    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, employeeKey.GetInstanceId(), "StartupCompany", "Employee", DbOpcode::Update));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
@@ -904,6 +907,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
         ChangeSummary after updating (deleting and inserting different) relationships:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
+        0:1;StartupCompany:Employee:175;Update;No
+                Company.Id;2;3
         0:6;StartupCompany:EmployeeHardware:1099511627847;Delete;No
                 SourceECClassId;StartupCompany:Employee:1099511627843;NULL
                 SourceECInstanceId;0:1;NULL
@@ -920,11 +925,125 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 TargetECClassId;StartupCompany:Company:1099511627836;StartupCompany:Company:1099511627836
                 TargetECInstanceId;0:2;0:3
     */
-    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(employeeCompanyKey.GetInstanceId() == employeeCompanyKey2.GetInstanceId());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, employeeKey.GetInstanceId(), "StartupCompany", "Employee", DbOpcode::Update));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
     EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/16
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, OverflowTables)
+    {
+    ECDbR ecdb = SetupECDb("overflowTables.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='GrandParent' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='string' />"
+        "        <ECProperty propertyName='B' typeName='string' />"
+        "        <ECProperty propertyName='C' typeName='string' />"
+        "        <ECProperty propertyName='D' typeName='string' />"
+        "        <ECProperty propertyName='E' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <BaseClass>GrandParent</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.2.0'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "        <ECProperty propertyName='G' typeName='string'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "        <ECProperty propertyName='I' typeName='string'/>"
+        "        <ECProperty propertyName='J' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Child' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='K' typeName='string'/>"
+        "        <ECProperty propertyName='L' typeName='string'/>"
+        "        <ECProperty propertyName='M' typeName='string'/>"
+        "        <ECProperty propertyName='N' typeName='string'/>"
+        "        <ECProperty propertyName='O' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='GrandChild' modifier='None'>"
+        "        <BaseClass>Child</BaseClass>"
+        "        <ECProperty propertyName='P' typeName='string'/>"
+        "        <ECProperty propertyName='Q' typeName='string'/>"
+        "        <ECProperty propertyName='R' typeName='string'/>"
+        "        <ECProperty propertyName='S' typeName='string'/>"
+        "        <ECProperty propertyName='T' typeName='string'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    TestChangeTracker tracker(ecdb);
+    tracker.EnableTracking(true);
+
+    ECSqlStatement stmt;
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.GrandChild (A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T) VALUES ('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T')"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ecdb.SaveChanges();
+
+    ASSERT_TRUE(tracker.HasChanges());
+
+    TestChangeSet changeset;
+    auto rc = changeset.FromChangeTrack(tracker);
+    ASSERT_TRUE(BE_SQLITE_OK == rc);
+
+    ChangeSummary changeSummary(ecdb);
+    BentleyStatus status = changeSummary.FromChangeSet(changeset);
+    ASSERT_TRUE(SUCCESS == status);
+
+    /*
+    BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+            AccessString;OldValue;NewValue
+    0:1;TestSchema:GrandChild:53;Insert;No
+            A;NULL;"A"
+            B;NULL;"B"
+            C;NULL;"C"
+            D;NULL;"D"
+            E;NULL;"E"
+            F;NULL;"F"
+            G;NULL;"G"
+            H;NULL;"H"
+            I;NULL;"I"
+            J;NULL;"J"
+            K;NULL;"K"
+            L;NULL;"L"
+            M;NULL;"M"
+            N;NULL;"N"
+            O;NULL;"O"
+            P;NULL;"P"
+            Q;NULL;"Q"
+            R;NULL;"R"
+            S;NULL;"S"
+            T;NULL;"T"
+    */
+    DumpChangeSummary(changeSummary, "OverflowTables");
+
+    ChangeSummary::InstanceIterator instIter = changeSummary.MakeInstanceIterator();
+    EXPECT_EQ(1, instIter.QueryCount());
+
+    ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
+    EXPECT_EQ(20, valIter.QueryCount());
     }
 
 END_ECDBUNITTESTS_NAMESPACE

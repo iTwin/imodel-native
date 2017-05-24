@@ -8,6 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "PropertyMap.h"
+#include "ClassMappingInfo.h"
 #include "IssueReporter.h"
 #include <Bentley/NonCopyableClass.h>
 
@@ -17,6 +18,37 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ClassMapper final
     {
+    public:
+        //======================================================================================
+        // @bsiclass                                              Krischan.Eberle        12/2016
+        //======================================================================================
+        struct TableMapper final : NonCopyableClass
+            {
+            private:
+                TableMapper();
+                ~TableMapper();
+
+                static DbTable* FindOrCreateTable(ClassMap const&, ClassMappingInfo const&, DbTable::Type, DbTable const* primaryTable);
+                static DbTable* CreateTableForExistingTableStrategy(ClassMap const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
+                static DbTable* CreateTableForOtherStrategies(ClassMap const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+
+                static BentleyStatus CreateClassIdColumn(DbSchema&, DbTable&, PersistenceType);
+                
+                static bool IsExclusiveRootClassOfTable(ClassMappingInfo const&);
+                static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
+
+            public:
+                static BentleyStatus MapToTable(ClassMap&, ClassMappingInfo const&);
+                static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
+            };
+
+        enum class PropertyMapInheritanceMode
+            {
+            NotInherited, //!< indicates that base property map is not inherited, but created from scratch
+            Clone //! inherited property maps areGet cloned from the base class property map
+            };
+
+
     private:
         ClassMap& m_classMap;
         DbClassMapLoadContext const* m_loadContext;
@@ -40,11 +72,16 @@ struct ClassMapper final
         static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ClassMap const&, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
 
     public:
-        static PropertyMap* MapProperty(ClassMap& classMap, ECN::ECPropertyCR ecProperty);
-        static PropertyMap* LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);
-        static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap& classMap);
-        static BentleyStatus CreateECClassIdPropertyMap(ClassMap& classMap);
-        static BentleyStatus SetupNavigationPropertyMap(NavigationPropertyMap& propertyMap);
+        static PropertyMap* MapProperty(ClassMap&, ECN::ECPropertyCR);
+        static PropertyMap* LoadPropertyMap(ClassMap&, ECN::ECPropertyCR, DbClassMapLoadContext const&);
+        static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap&);
+        static BentleyStatus CreateECClassIdPropertyMap(ClassMap&);
+        static BentleyStatus SetupNavigationPropertyMap(NavigationPropertyMap&);
+
+        //! Rules:
+        //! If MapStrategy != TPH: NotInherited
+        //! Else: Clone
+        static PropertyMapInheritanceMode GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const&);
     };
 
 

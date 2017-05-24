@@ -81,59 +81,60 @@ TEST_F(SchemaManagerTests, ImportToken)
 
 
     SetupECDb("importtokentests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
-                                                  "<ECSchema schemaName='BaseSchema' alias='base' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                                  "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
-                                                  "    <ECEntityClass typeName='BaseNoTph' modifier='Abstract'>"
-                                                  "        <ECProperty propertyName='BaseProp1' typeName='long' />"
-                                                  "        <ECProperty propertyName='BaseProp2' typeName='string' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
-                                                  "        <ECProperty propertyName='SubNoTphProp1' typeName='long' />"
-                                                  "        <ECProperty propertyName='SubNoTphProp2' typeName='string' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='TphBase' modifier='Abstract'>"
-                                                  "          <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                                  "          </ECCustomAttributes>"
-                                                  "        <ECProperty propertyName='BaseProp1' typeName='long' />"
-                                                  "        <ECProperty propertyName='BaseProp2' typeName='string' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='SubSharedCols' modifier='None'>"
-                                                  "          <ECCustomAttributes>"
-                                                  "            <ShareColumns xmlns='ECDbMap.02.00' >"
-                                                  "               <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-                                                  "               <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                  "            </ShareColumns>"
-                                                  "          </ECCustomAttributes>"
-                                                  "        <BaseClass>TphBase</BaseClass>"
-                                                  "        <ECProperty propertyName='SubSharedColsProp1' typeName='long' />"
-                                                  "        <ECProperty propertyName='SubSharedColsProp2' typeName='string' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='SubNotSharedCols' modifier='None'>"
-                                                  "        <BaseClass>TphBase</BaseClass>"
-                                                  "        <ECProperty propertyName='SubNotSharedColsProp1' typeName='long' />"
-                                                  "        <ECProperty propertyName='SubNotSharedColsProp2' typeName='string' />"
-                                                  "    </ECEntityClass>"
-                                                  "   <ECRelationshipClass typeName='FKRel' strength='Referencing' modifier='None'>"
-                                                  "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent'>"
-                                                  "          <Class class ='Foo' />"
-                                                  "      </Source>"
-                                                  "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Children'>"
-                                                  "          <Class class ='TphBase' />"
-                                                  "      </Target>"
-                                                  "   </ECRelationshipClass>"
-                                                  "   <ECRelationshipClass typeName='LinkTableRel' strength='Referencing' modifier='None'>"
-                                                  "      <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Lhs'>"
-                                                  "          <Class class ='Foo' />"
-                                                  "      </Source>"
-                                                  "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Rhs'>"
-                                                  "          <Class class ='TphBase' />"
-                                                  "      </Target>"
-                                                  "   </ECRelationshipClass>"
-                                                  "</ECSchema>", true));
+                    R"xml(<ECSchema schemaName="BaseSchema" alias="base" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbMap" />
+                        <ECEntityClass typeName="BaseNoTph" modifier="Abstract">
+                            <ECProperty propertyName="BaseProp1" typeName="long" />
+                            <ECProperty propertyName="BaseProp2" typeName="string" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="Foo" modifier="Sealed">
+                            <ECProperty propertyName="SubNoTphProp1" typeName="long" />
+                            <ECProperty propertyName="SubNoTphProp2" typeName="string" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="TphBase" modifier="Abstract">
+                            <ECCustomAttributes>
+                                <ClassMap xmlns="ECDbMap.02.00">
+                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                </ClassMap>
+                                <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                            <ECProperty propertyName="BaseProp1" typeName="long" />
+                            <ECProperty propertyName="BaseProp2" typeName="string" />
+                            <ECNavigationProperty propertyName="Foo" relationshipName="FKRel" direction="Backward" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="SubSharedCols" modifier="None">
+                            <ECCustomAttributes>
+                                <ShareColumns xmlns="ECDbMap.02.00" >
+                                    <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
+                                    <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                                </ShareColumns>
+                            </ECCustomAttributes>
+                            <BaseClass>TphBase</BaseClass>
+                            <ECProperty propertyName="SubSharedColsProp1" typeName="long" />
+                            <ECProperty propertyName="SubSharedColsProp2" typeName="string" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="SubNotSharedCols" modifier="None">
+                            <BaseClass>TphBase</BaseClass>
+                            <ECProperty propertyName="SubNotSharedColsProp1" typeName="long" />
+                            <ECProperty propertyName="SubNotSharedColsProp2" typeName="string" />
+                        </ECEntityClass>
+                        <ECRelationshipClass typeName="FKRel" strength="Referencing" modifier="None">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Parent">
+                            <Class class ="Foo" />
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Children">
+                            <Class class ="TphBase" />
+                        </Target>
+                        </ECRelationshipClass>
+                        <ECRelationshipClass typeName="LinkTableRel" strength="Referencing" modifier="None">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="Lhs">
+                            <Class class ="Foo" />
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Rhs">
+                            <Class class ="TphBase" />
+                        </Target>
+                        </ECRelationshipClass>
+                    </ECSchema>)xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
     seedFileName.AssignUtf8(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -180,12 +181,17 @@ TEST_F(SchemaManagerTests, ImportToken)
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='RootFkRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                  "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "    <ECEntityClass typeName='Sub' modifier='None'>"
+                 "        <BaseClass>base:TphBase</BaseClass>"
+                 "        <ECProperty propertyName='SubSubProp1' typeName='long' />"
+                 "        <ECNavigationProperty propertyName='Foo2' relationshipName='NewFKRel' direction='Backward'/>"
+                 "    </ECEntityClass>"
                  "   <ECRelationshipClass typeName='NewFKRel' strength='Referencing' modifier='None'>"
                  "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent'>"
                  "          <Class class ='base:Foo' />"
                  "      </Source>"
                  "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Children'>"
-                 "          <Class class ='base:TphBase' />"
+                 "          <Class class ='Sub' />"
                  "      </Target>"
                  "   </ECRelationshipClass>"
                  "</ECSchema>", seedFileName);
@@ -647,17 +653,17 @@ TEST_F(SchemaManagerTests, IncrementalLoading)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
-    ECClassCP ecClass = ecdb.Schemas().GetClass("ECSqlTest", "THBase");
-    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetClass ('THBase') is expected to succeed as the class exists in the ecdb file.";
+    ECClassCP ecClass = ecdb.Schemas().GetClass("ECSqlTest", "PA");
+    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetClass('PA') is expected to succeed as the class exists in the ecdb file.";
 
     ECSchemaCP schema = ecdb.Schemas().GetSchema("ECSqlTest", false);
     ASSERT_TRUE(schema != nullptr);
-    ASSERT_EQ(1, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema (..., false) is expected to return a schema with only the classes already loaded.";
+    ASSERT_EQ(1, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema(..., false) is expected to return a schema with only the classes already loaded.";
 
     schema = ecdb.Schemas().GetSchema("ECSqlTest", true);
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(expectedClassCount, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema (..., true) is expected to return a fully populated schema even if ECDbSchemaManager::GetClass was called before for a class in the same schema.";
+    ASSERT_EQ(expectedClassCount, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema(..., true) is expected to return a fully populated schema even if ECDbSchemaManager::GetClass was called before for a class in the same schema.";
     }
     }
 
@@ -772,6 +778,7 @@ TEST_F(SchemaManagerTests, GetMixin)
                                                     <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
                                                     </ECCustomAttributes>
                                                     <ECProperty propertyName="Code" typeName="string" />
+                                                    <ECNavigationProperty propertyName="Model" relationshipName="ModelHasElements" direction="Backward"/>
                                             </ECEntityClass>
                                             <ECEntityClass typeName="Element2d">
                                                 <BaseClass>Element</BaseClass>
@@ -813,9 +820,12 @@ TEST_F(SchemaManagerTests, GetMixin)
     //load mixin as first class and make sure the applies to class is loaded implicitly
     ECClassCP mixinRaw = ecdb.Schemas().GetClass("TestSchema", "IIsGeometric");
     ASSERT_TRUE(mixinRaw != nullptr && mixinRaw->IsEntityClass());
-    ASSERT_EQ(2, schema->GetClassCount()) << "Mixin class is loaded and its applies to class";
+    ASSERT_EQ(4, schema->GetClassCount()) << "Mixin class is loaded and its applies to class and the nav prop's rel class plus constraint classes";
     ASSERT_TRUE(schema->GetClassCP("IIsGeometric") != nullptr);
-    ASSERT_TRUE(schema->GetClassCP("Element") != nullptr);
+    ASSERT_TRUE(schema->GetClassCP("Element") != nullptr) << "Applies to class of mixin is expected to be loaded";
+    ASSERT_TRUE(schema->GetClassCP("ModelHasElements") != nullptr) << "Nav prop rel class is expected to be loaded";
+    ASSERT_TRUE(schema->GetClassCP("ModelHasGeometricElements") == nullptr) << "Subclass of nav prop rel class is not expected to be loaded";
+    ASSERT_TRUE(schema->GetClassCP("Model") != nullptr) << "Constraint class of nav prop rel class is expected to be loaded";
 
     ECEntityClassCP mixin = mixinRaw->GetEntityClassCP();
     ASSERT_TRUE(mixin->IsMixin());
@@ -1078,47 +1088,49 @@ TEST_F(SchemaManagerTests, GetPropertyWithExtendedType)
 TEST_F(SchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
     {
     ECDbR ecdb = SetupECDb("relationshipwithabstractconstraintclass.ecdb",
-                           SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
-                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                      "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
-                                      "  <ECEntityClass typeName='Model' >"
-                                      "    <ECProperty propertyName='Name' typeName='string' />"
-                                      "  </ECEntityClass>"
-                                      "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-                                      "        <ECCustomAttributes>"
-                                      "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                      "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                      "            </ClassMap>"
-                                      "        </ECCustomAttributes>"
-                                      "    <ECProperty propertyName='Code' typeName='string' />"
-                                      "  </ECEntityClass>"
-                                      "  <ECEntityClass typeName='BaseElement' modifier='Abstract' >"
-                                      "      <BaseClass>Element</BaseClass>"
-                                      "  </ECEntityClass>"
-                                      "  <ECEntityClass typeName='FooElement' modifier='Sealed' >"
-                                      "      <BaseClass>BaseElement</BaseClass>"
-                                      "  </ECEntityClass>"
-                                      "  <ECEntityClass typeName='GooElement' modifier='Sealed' >"
-                                      "      <BaseClass>BaseElement</BaseClass>"
-                                      "  </ECEntityClass>"
-                                      "  <ECRelationshipClass typeName='ModelHasFooOrGooElements' modifier='Sealed' >"
-                                      "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
-                                      "          <Class class ='Model' />"
-                                      "      </Source>"
-                                      "      <Target multiplicity='(0..*)' polymorphic='False' abstractConstraint='BaseElement' roleLabel='Foo or Goo Elements'>"
-                                      "          <Class class ='FooElement' />"
-                                      "          <Class class ='GooElement' />"
-                                      "      </Target>"
-                                      "  </ECRelationshipClass>"
-                                      "  <ECRelationshipClass typeName='ModelHasElements' modifier='Sealed' >"
-                                      "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
-                                      "          <Class class ='Model' />"
-                                      "      </Source>"
-                                      "      <Target multiplicity='(0..*)' polymorphic='False' roleLabel='Elements'>"
-                                      "          <Class class ='Element' />"
-                                      "      </Target>"
-                                      "  </ECRelationshipClass>"
-                                      "</ECSchema>"));
+                           SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                      <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                                        <ECEntityClass typeName="Model" >
+                                          <ECProperty propertyName="Name" typeName="string" />
+                                        </ECEntityClass>
+                                        <ECEntityClass typeName="Element" modifier="Abstract" >
+                                              <ECCustomAttributes>
+                                                  <ClassMap xmlns="ECDbMap.02.00">
+                                                      <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                  </ClassMap>
+                                              </ECCustomAttributes>
+                                          <ECProperty propertyName="Code" typeName="string" />
+                                          <ECNavigationProperty propertyName="Model1" relationshipName="ModelHasElements" direction="Backward"/>
+                                        </ECEntityClass>
+                                        <ECEntityClass typeName="BaseElement" modifier="Abstract" >
+                                            <BaseClass>Element</BaseClass>
+                                            <ECNavigationProperty propertyName="Model2" relationshipName="ModelHasFooOrGooElements" direction="Backward"/>
+                                        </ECEntityClass>
+                                        <ECEntityClass typeName="FooElement" modifier="Sealed" >
+                                            <BaseClass>BaseElement</BaseClass>
+                                        </ECEntityClass>
+                                        <ECEntityClass typeName="GooElement" modifier="Sealed" >
+                                            <BaseClass>BaseElement</BaseClass>
+                                        </ECEntityClass>
+                                        <ECRelationshipClass typeName="ModelHasFooOrGooElements" modifier="Sealed" >
+                                            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="Model">
+                                                <Class class ="Model" />
+                                            </Source>
+                                            <Target multiplicity="(0..*)" polymorphic="False" abstractConstraint="BaseElement" roleLabel="Foo or Goo Elements">
+                                                <Class class ="FooElement" />
+                                                <Class class ="GooElement" />
+                                            </Target>
+                                        </ECRelationshipClass>
+                                        <ECRelationshipClass typeName="ModelHasElements" modifier="Sealed" >
+                                            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="Model">
+                                                <Class class ="Model" />
+                                            </Source>
+                                            <Target multiplicity="(0..*)" polymorphic="False" roleLabel="Elements">
+                                                <Class class ="Element" />
+                                            </Target>
+                                        </ECRelationshipClass>
+                                      </ECSchema>)xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECClassCP ecclass = ecdb.Schemas().GetClass("TestSchema", "ModelHasFooOrGooElements");
@@ -1186,104 +1198,147 @@ TEST_F(SchemaManagerTests, ImportDuplicateSchema)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
     {
-    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
+    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb",
+                 SchemaItem({R"xml(<ECSchema schemaName="SchoolSchema" alias="SS" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="School" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string"/>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECProperty propertyName="FoundationDate" typeName="DateTime" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Course" modifier="None">
+                    <ECProperty propertyName="LastMod1" typeName="DateTime"/>
+                    <ECProperty propertyName="LastMod2" typeName="DateTime"/>
+                    <ECNavigationProperty propertyName="School" relationshipName="SchoolHasCourses" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="SchoolHasCourses" modifier="Sealed" strength="embedding">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has">
+                        <Class class="School"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="true" roleLabel="belongs to">
+                        <Class class="Course"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml",
+
+            R"xml(<ECSchema schemaName="SchoolSchema_Supplemental_1" alias="SSS1" version="01.00" displayLabel="School Supplemental1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
+                <ECCustomAttributes>
+                    <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
+                        <PrimarySchemaReference>
+                            <SchemaName>SchoolSchema</SchemaName>
+                            <MajorVersion>1</MajorVersion>
+                            <WriteVersion>0</WriteVersion>
+                            <MinorVersion>0</MinorVersion>
+                        </PrimarySchemaReference>
+                        <Precedence>210</Precedence>
+                        <Purpose>Test1</Purpose>
+                    </SupplementalSchema>
+                </ECCustomAttributes>
+                <ECEntityClass typeName="School" modifier="None">
+                    <ECProperty propertyName="FoundationDate" typeName="DateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                            <DateTimeComponent>Date</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                    </ECProperty>
+                </ECEntityClass>
+                <ECEntityClass typeName="Course" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                            <PropertyName>LastMod1</PropertyName>
+                        </ClassHasCurrentTimeStampProperty>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                </ECSchema>)xml",
+
+            R"xml(<ECSchema schemaName="SchoolSchema_Supplemental_2" alias="SSS2" version="01.00" displayLabel="School Supplemental2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
+                <ECCustomAttributes>
+                    <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
+                        <PrimarySchemaReference>
+                            <SchemaName>SchoolSchema</SchemaName>
+                            <MajorVersion>1</MajorVersion>
+                            <WriteVersion>0</WriteVersion>
+                            <MinorVersion>0</MinorVersion>
+                        </PrimarySchemaReference>
+                        <Precedence>215</Precedence>
+                        <Purpose>Test2</Purpose>
+                    </SupplementalSchema>
+                </ECCustomAttributes>
+                <ECEntityClass typeName="Course" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                            <PropertyName>LastMod2</PropertyName>
+                        </ClassHasCurrentTimeStampProperty>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="SchoolHasCourses" modifier="Sealed" strength="embedding">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                            <OnDeleteAction>Cascade</OnDeleteAction>
+                        </ForeignKeyConstraint>
+                    </ECCustomAttributes>
+                </ECRelationshipClass>
+                </ECSchema>)xml"}, true, ""));
+
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaReadContextPtr context = nullptr;
+    ECClassCP schoolClass = ecdb.Schemas().GetClass("SchoolSchema", "School");
+    ASSERT_TRUE(schoolClass != nullptr);
+    ECClassCP courseClass = ecdb.Schemas().GetClass("SchoolSchema", "Course");
+    ASSERT_TRUE(courseClass != nullptr);
+    ECClassCP relClass = ecdb.Schemas().GetClass("SchoolSchema", "SchoolHasCourses");
+    ASSERT_TRUE(relClass != nullptr);
 
-    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
-    ASSERT_TRUE(schemaptr != NULL);
-    ECSchemaPtr supple = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml"));
-    ASSERT_TRUE(supple != NULL);
-    ECSchemaPtr supple1 = ReadECSchemaFromDisk(context, ecdb, BeFileName(L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml"));
-    ASSERT_TRUE(supple1 != NULL);
-
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetSchema("SchoolSchema", true);
-    ASSERT_TRUE(SchoolSupplSchema != NULL);
-
-    ECClassCP ecclassCourse = SchoolSupplSchema->GetClassCP("Course");
-    ASSERT_TRUE(ecclassCourse != NULL);
-    ECClassCP ecclassCourseTitle = SchoolSupplSchema->GetClassCP("CourseTitle");
-    ASSERT_TRUE(ecclassCourseTitle != NULL);
-    //get custom attributes from base class (false)
-    ECCustomAttributeInstanceIterable iterator2 = ecclassCourseTitle->GetCustomAttributes(false);
-    uint32_t i = 0;
-    for (IECInstancePtr instance : iterator2)
+    int caCount = 0;
+    for (IECInstancePtr ca : schoolClass->GetCustomAttributes(false))
         {
-        i++;
+        caCount++;
         }
-    EXPECT_EQ(1, i) << "the number of custom attributes on the Class CourseTitle do not match the original";
-    //get custom attributes from base class (false)
-    ECCustomAttributeInstanceIterable iterator1 = ecclassCourseTitle->GetCustomAttributes(true);
-    i = 0;
-    for (IECInstancePtr instance : iterator1)
+    ASSERT_EQ(0, caCount) << "ECClass School";
+
+    ECPropertyCP foundationDateProp = schoolClass->GetPropertyP("FoundationDate");
+    ASSERT_TRUE(foundationDateProp != nullptr);
+    caCount = 0;
+    for (IECInstancePtr ca : foundationDateProp->GetCustomAttributes(false))
         {
-        i++;
+        caCount++;
+        ASSERT_STREQ("DateTimeInfo", ca->GetClass().GetName().c_str()) << "ECProperty School.FoundationDate";
+        ECValue v;
+        ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeComponent")) << "ECProperty School.FoundationDate";
+        ASSERT_STREQ("Date", v.GetUtf8CP()) << "ECProperty School.FoundationDate";
         }
-    EXPECT_EQ(4, i) << "the number of custom attributes on the Class CourseTitle do not match the original";
+    ASSERT_EQ(1, caCount) << "ECProperty School.FoundationDate";
 
-    ECClassCP relationshipClass = SchoolSupplSchema->GetClassCP("SchoolDepartmentRelation");
-    ASSERT_TRUE(relationshipClass != NULL);
-    ECCustomAttributeInstanceIterable iterator = relationshipClass->GetCustomAttributes(false);
-    i = 0;
-    for (IECInstancePtr instance : iterator)
+
+    caCount = 0;
+    for (IECInstancePtr ca : courseClass->GetCustomAttributes(false))
         {
-        i++;
+        caCount++;
+        ASSERT_STREQ("ClassHasCurrentTimeStampProperty", ca->GetClass().GetName().c_str()) << "ECClass Course";
+        ECValue v;
+        ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "PropertyName")) << "ECClass Course";
+        ASSERT_STREQ("LastMod2", v.GetUtf8CP()) << "ECClass Course";
         }
-    EXPECT_EQ(5, i) << "the number of custom attributes on the Class relationshipClass do not match the original";
+    ASSERT_EQ(1, caCount) << "ECClass Course";
 
-    ECClassCP ecclasscp = SchoolSupplSchema->GetClassCP("Department");
-    ASSERT_TRUE(ecclasscp != NULL) << "couldn't read the class Department from schema";
-    IECInstancePtr iecinstancePtr = ecclasscp->GetCustomAttribute("ChangeManagement");
-    ASSERT_TRUE(iecinstancePtr.IsValid()) << "couldn't retrieve the custom attribute from the class Department";
-    }
+    caCount = 0;
+    for (IECInstancePtr ca : relClass->GetCustomAttributes(false))
+        {
+        caCount++;
+        ASSERT_STREQ("ForeignKeyConstraint", ca->GetClass().GetName().c_str()) << "RelationshipECClass SchoolHasCourses";
+        ECValue v;
+        ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "OnDeleteAction")) << "RelationshipECClass SchoolHasCourses";
+        ASSERT_STREQ("Cascade", v.GetUtf8CP()) << "RelationshipECClass SchoolHasCourses";
+        }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  10/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaManagerTests, ImportLowPrioritySupplementalSchama)
-    {
-    ECDbCR testecdb = SetupECDb("supplementalSchematest.ecdb");
-    ASSERT_TRUE(testecdb.IsDbOpen());
-    ECSchemaReadContextPtr  context = nullptr;
-
-    
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-
-    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
-    ASSERT_TRUE(schemaPtr != NULL);
-    schemaCache->AddSchema(*schemaPtr);
-    schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml"));
-    schemaCache->AddSchema(*schemaPtr);
-
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportSchemas(schemaCache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetSchema("SchoolSchema", true);
-    ASSERT_TRUE(SchoolSupplSchema != NULL);
-    }
-
-    
- //---------------------------------------------------------------------------------------
- // @bsimethod                                    Muhammad Hassan                  10/14
- //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaManagerTests, ImportHighPrioritySupplementalSchama)
-    {
-    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ECSchemaReadContextPtr context = nullptr;
-
-    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema.01.00.ecschema.xml"));
-    ASSERT_TRUE(schemaptr != NULL);
-    ECSchemaPtr supplementalSchemaptr= ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml"));
-    ASSERT_TRUE(supplementalSchemaptr != NULL);
-
-    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-    schemacache->AddSchema(*schemaptr);
-    schemacache->AddSchema(*supplementalSchemaptr);
-
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetSchema("SchoolSchema", true);
-    ASSERT_TRUE(SchoolSupplSchema != NULL);
+    ASSERT_EQ(1, caCount) << "RelationshipECClass SchoolHasCourses";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1457,7 +1512,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews)
     ASSERT_FALSE(validationFailed);
     ASSERT_EQ(3, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
-    ASSERT_EQ(36, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
+    ASSERT_EQ(30, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1469,7 +1524,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('FileInfo', 'FileInfoOwnership', 'AAA','Cubicle', 'Foo_has_Bars', 'RelationWithLinkTableMapping')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('FileInfo', 'FileInfoOwnership', 'AAA','Cubicle', 'RelationWithLinkTableMapping')"));
     bvector<ECClassId> classIds;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -1497,10 +1552,9 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     it = schemasWithECClassViews.find("stco");
     ASSERT_TRUE(it != schemasWithECClassViews.end());
     bset<Utf8String> const& stcoViews = it->second;
-    ASSERT_EQ(4, stcoViews.size());
+    ASSERT_EQ(3, stcoViews.size());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.AAA]")) != stcoViews.end());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Cubicle]")) != stcoViews.end());
-    ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Foo_has_Bars]")) != stcoViews.end());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.RelationWithLinkTableMapping]")) != stcoViews.end());
     }
 
@@ -1602,7 +1656,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AAA', 'AnglesStruct', 'AClassThatDoesNotGetMappedToDb', 'Foo_has_Bars')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AAA', 'AnglesStruct', 'AClassThatDoesNotGetMappedToDb')"));
     bvector<ECClassId> classIds;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -1614,7 +1668,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses
     ASSERT_EQ(ERROR, ecdb.Schemas().CreateClassViewsInDb(classIds));
     ecdb.SaveChanges();
 
-    // Class view will be created for the provided list of ECClassIds untill it get the first invalid one
+    // Class view will be created for the provided list of ECClassIds until it get the first invalid one
     // so ClassView only for class "AAA" will exist.
     std::map<Utf8String, std::set<Utf8String>> schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(1, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
