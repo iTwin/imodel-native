@@ -171,10 +171,14 @@ TEST(BeTimeUtilitiesTests, AdjustUnixMillisForLocalTime)
                 dateTimeTemp.GetMinute(), dateTimeTemp.GetSecond(), dateTimeTemp.GetMillisecond());
     ASSERT_EQ(BentleyStatus::SUCCESS, dateTimeUtc.ToUnixMilliseconds(retUtcMillis));
     ASSERT_EQ(BentleyStatus::SUCCESS, dateTimeLocal.ToUnixMilliseconds(retLocalMillis));
-    int64_t localMillis = retLocalMillis - retUtcMillis;
+    int64_t localMillisAdjustment = retLocalMillis - retUtcMillis;
 
-    uint64_t actualMillis = 1095379199000;
-    uint64_t expectedMillis = 1095379199000 + localMillis;
+    int64_t localMillisAdjustmentAlt;
+    ASSERT_EQ(BentleyStatus::SUCCESS, dateTimeTemp.ComputeOffsetToUtcInMsec(localMillisAdjustmentAlt));
+    ASSERT_EQ(localMillisAdjustmentAlt, localMillisAdjustment);
+
+    uint64_t actualMillis = retUtcMillis;
+    uint64_t expectedMillis = actualMillis + localMillisAdjustment;
     stat = BeTimeUtilities::AdjustUnixMillisForLocalTime(actualMillis);
     ASSERT_TRUE(stat == BentleyStatus::SUCCESS);
     printf("%Id    %Id\n", expectedMillis, actualMillis);
