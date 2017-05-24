@@ -94,7 +94,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-RoadRailPhysical-Tests/RoadRailPhysicalTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RoadRailPhysicalTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-RoadRailPhysical-Tests -dGTEST_NAME=RoadRailPhysicalTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-RoadRailPhysical-Tests" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
