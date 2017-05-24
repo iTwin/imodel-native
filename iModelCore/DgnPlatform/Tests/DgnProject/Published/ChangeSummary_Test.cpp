@@ -358,43 +358,48 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
         ChangeSummary after deletes:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
-        0:9;Generic:PhysicalObject:328;Delete;No
+        0:11;Generic:PhysicalObject:341;Delete;No
                 BBoxHigh.X;0.5;NULL
                 BBoxHigh.Y;0.5;NULL
                 BBoxHigh.Z;0.5;NULL
                 BBoxLow.X;-0.5;NULL
                 BBoxLow.Y;-0.5;NULL
                 BBoxLow.Z;-0.5;NULL
-                Category.Id;1099511627783;NULL
-                CodeAuthority.Id;1;NULL
-                CodeNamespace;"";NULL
+                Category.Id;1099511627785;NULL
+                CodeScope.Id;1;NULL
+                CodeSpec.Id;1;NULL
                 GeometryStream;...;NULL
                 InSpatialIndex;1;NULL
-                LastMod;2.45777e+06;NULL
-                Model.Id;1099511627782;NULL
+                LastMod;2.45788e+06;NULL
+                Model.Id;1099511627784;NULL
                 Origin.X;0;NULL
                 Origin.Y;0;NULL
                 Origin.Z;0;NULL
                 Pitch;0;NULL
                 Roll;0;NULL
                 Yaw;0;NULL
-        0:9;BisCore:AuthorityIssuesElementCode:169;Delete;No
-                SourceECClassId;BisCore:NullAuthority:274;NULL
+        0:11;BisCore:ModelContainsElements:157;Delete;No
+                SourceECClassId;BisCore:PhysicalModel:287;NULL
+                SourceECInstanceId;0:8;NULL
+                TargetECClassId;Generic:PhysicalObject:341;NULL
+                TargetECInstanceId;0:11;NULL
+        0:11;BisCore:CodeSpecSpecifiesCode:163;Delete;No
+                SourceECClassId;BisCore:CodeSpec:164;NULL
                 SourceECInstanceId;0:1;NULL
-                TargetECClassId;Generic:PhysicalObject:328;NULL
+                TargetECClassId;Generic:PhysicalObject:341;NULL
+                TargetECInstanceId;0:11;NULL
+        0:11;BisCore:ElementScopesCode:165;Delete;No
+                SourceECClassId;BisCore:Subject:315;NULL
+                SourceECInstanceId;0:1;NULL
+                TargetECClassId;Generic:PhysicalObject:341;NULL
+                TargetECInstanceId;0:11;NULL
+        0:11;BisCore:GeometricElement3dIsInCategory:249;Delete;Yes
+                SourceECClassId;Generic:PhysicalObject:341;NULL
+                SourceECInstanceId;0:11;NULL
+                TargetECClassId;BisCore:SpatialCategory:250;NULL
                 TargetECInstanceId;0:9;NULL
-        0:9;BisCore:ModelContainsElements:172;Delete;No
-                SourceECClassId;BisCore:PhysicalModel:281;NULL
-                SourceECInstanceId;0:6;NULL
-                TargetECClassId;Generic:PhysicalObject:328;NULL
-                TargetECInstanceId;0:9;NULL
-        0:9;BisCore:GeometricElement3dIsInCategory:258;Delete;Yes
-                SourceECClassId;Generic:PhysicalObject:328;NULL
-                SourceECInstanceId;0:9;NULL
-                TargetECClassId;BisCore:SpatialCategory:259;NULL
-                TargetECInstanceId;0:7;NULL
     */
-    EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject, DbOpcode::Delete));
     }
 
@@ -418,43 +423,48 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
         After inserts:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
-        0:6;Generic:PhysicalObject:328;Insert;No
+        0:8;Generic:PhysicalObject:341;Insert;No
                 BBoxHigh.X;NULL;0.5
                 BBoxHigh.Y;NULL;0.5
                 BBoxHigh.Z;NULL;0.5
                 BBoxLow.X;NULL;-0.5
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
-                Category.Id;NULL;1099511627779
+                Category.Id;NULL;1099511627778
+                CodeScope.Id;NULL;1
                 CodeSpec.Id;NULL;1
-                CodeScope;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
-                LastMod;NULL;2.45777e+06
-                Model.Id;NULL;1099511627778
+                LastMod;NULL;2.45788e+06
+                Model.Id;NULL;1099511627777
                 Origin.X;NULL;0
                 Origin.Y;NULL;0
                 Origin.Z;NULL;0
                 Pitch;NULL;0
                 Roll;NULL;0
                 Yaw;NULL;0
-        0:6;BisCore:AuthorityIssuesElementCode:169;Insert;No
-                SourceECClassId;NULL;BisCore:NullAuthority:274
+        0:8;BisCore:ModelContainsElements:157;Insert;No
+                SourceECClassId;NULL;BisCore:PhysicalModel:287
                 SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;Generic:PhysicalObject:328
-                TargetECInstanceId;NULL;0:6
-        0:6;BisCore:ModelContainsElements:172;Insert;No
-                SourceECClassId;NULL;BisCore:PhysicalModel:281
-                SourceECInstanceId;NULL;0:2
-                TargetECClassId;NULL;Generic:PhysicalObject:328
-                TargetECInstanceId;NULL;0:6
-        0:6;BisCore:GeometricElement3dIsInCategory:258;Insert;No
-                SourceECClassId;NULL;Generic:PhysicalObject:328
-                SourceECInstanceId;NULL;0:6
-                TargetECClassId;NULL;BisCore:SpatialCategory:259
-                TargetECInstanceId;NULL;0:3
+                TargetECClassId;NULL;Generic:PhysicalObject:341
+                TargetECInstanceId;NULL;0:8
+        0:8;BisCore:CodeSpecSpecifiesCode:163;Insert;No
+                SourceECClassId;NULL;BisCore:CodeSpec:164
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;Generic:PhysicalObject:341
+                TargetECInstanceId;NULL;0:8
+        0:8;BisCore:ElementScopesCode:165;Insert;No
+                SourceECClassId;NULL;BisCore:Subject:315
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;Generic:PhysicalObject:341
+                TargetECInstanceId;NULL;0:8
+        0:8;BisCore:GeometricElement3dIsInCategory:249;Insert;No
+                SourceECClassId;NULL;Generic:PhysicalObject:341
+                SourceECInstanceId;NULL;0:8
+                TargetECClassId;NULL;BisCore:SpatialCategory:250
+                TargetECInstanceId;NULL;0:2
     */
-    EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
 
     ModifyElement(elementId);
 
@@ -468,43 +478,48 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
         After updates:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
-        0:6;Generic:PhysicalObject:328;Insert;No
+        0:8;Generic:PhysicalObject:341;Insert;No
                 BBoxHigh.X;NULL;0.5
                 BBoxHigh.Y;NULL;0.5
                 BBoxHigh.Z;NULL;0.5
                 BBoxLow.X;NULL;-0.5
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
-                Category.Id;NULL;1099511627779
+                Category.Id;NULL;1099511627778
+                CodeScope.Id;NULL;1
                 CodeSpec.Id;NULL;1
-                CodeScope;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
-                LastMod;NULL;2.45777e+06
-                Model.Id;NULL;1099511627778
+                LastMod;NULL;2.45788e+06
+                Model.Id;NULL;1099511627777
                 Origin.X;NULL;0
                 Origin.Y;NULL;0
                 Origin.Z;NULL;0
                 Pitch;NULL;0
                 Roll;NULL;0
                 Yaw;NULL;0
-        0:6;BisCore:AuthorityIssuesElementCode:169;Insert;No
-                SourceECClassId;NULL;BisCore:NullAuthority:274
+        0:8;BisCore:ModelContainsElements:157;Insert;No
+                SourceECClassId;NULL;BisCore:PhysicalModel:287
                 SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;Generic:PhysicalObject:328
-                TargetECInstanceId;NULL;0:6
-        0:6;BisCore:ModelContainsElements:172;Insert;No
-                SourceECClassId;NULL;BisCore:PhysicalModel:281
-                SourceECInstanceId;NULL;0:2
-                TargetECClassId;NULL;Generic:PhysicalObject:328
-                TargetECInstanceId;NULL;0:6
-        0:6;BisCore:GeometricElement3dIsInCategory:258;Insert;No
-                SourceECClassId;NULL;Generic:PhysicalObject:328
-                SourceECInstanceId;NULL;0:6
-                TargetECClassId;NULL;BisCore:SpatialCategory:259
-                TargetECInstanceId;NULL;0:3
+                TargetECClassId;NULL;Generic:PhysicalObject:341
+                TargetECInstanceId;NULL;0:8
+        0:8;BisCore:CodeSpecSpecifiesCode:163;Insert;No
+                SourceECClassId;NULL;BisCore:CodeSpec:164
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;Generic:PhysicalObject:341
+                TargetECInstanceId;NULL;0:8
+        0:8;BisCore:ElementScopesCode:165;Insert;No
+                SourceECClassId;NULL;BisCore:Subject:315
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;Generic:PhysicalObject:341
+                TargetECInstanceId;NULL;0:8
+        0:8;BisCore:GeometricElement3dIsInCategory:249;Insert;No
+                SourceECClassId;NULL;Generic:PhysicalObject:341
+                SourceECInstanceId;NULL;0:8
+                TargetECClassId;NULL;BisCore:SpatialCategory:250
+                TargetECInstanceId;NULL;0:2
     */
-    EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
 
     DeleteElement(elementId);
 

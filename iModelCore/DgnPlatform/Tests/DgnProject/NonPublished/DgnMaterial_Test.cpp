@@ -15,13 +15,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MaterialTest : public DgnDbTestFixture
 {
-    void ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR parentName);
-
-    DgnMaterial::CreateParams MakeParams(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parent=DgnMaterialId(), DgnDbP pDb=nullptr)
-        {
-        DgnDbR db = nullptr != pDb ? *pDb : *m_db;
-        return DgnMaterial::CreateParams(db, palette, name, parent);
-        }
+    void ExpectParent(DefinitionModelR model, Utf8StringCR childName, Utf8StringCR parentName);
 
     template<typename T, typename U>
     void Compare(T const& a, U const& b)
@@ -31,9 +25,9 @@ struct MaterialTest : public DgnDbTestFixture
         EXPECT_EQ(a.GetParentId(), b.GetParentId());
         }
 
-    DgnMaterialCPtr CreateMaterial(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parentId = DgnMaterialId(), DgnDbP pDb = nullptr)
+    DgnMaterialCPtr InsertMaterial(DefinitionModelR model, Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parentId = DgnMaterialId())
         {
-        DgnMaterial material(MakeParams(palette, name, parentId, pDb));
+        DgnMaterial material(model, palette, name, parentId);
         return material.Insert();
         }
 };
@@ -44,8 +38,9 @@ struct MaterialTest : public DgnDbTestFixture
 TEST_F(MaterialTest, CRUD)
     {
     SetupSeedProject();
-    auto params = MakeParams("Palette1", "Material1");
-    DgnMaterialPtr mat = new DgnMaterial(params);
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+
+    DgnMaterialPtr mat = new DgnMaterial(dictionary, "Palette1", "Material1");
     ASSERT_TRUE(mat.IsValid());
     DgnMaterialCPtr persistent = mat->Insert();
     EXPECT_TRUE(persistent.IsValid());
@@ -63,13 +58,14 @@ TEST_F(MaterialTest, CRUD)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MaterialTest::ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR parentName)
+void MaterialTest::ExpectParent(DefinitionModelR model, Utf8StringCR childName, Utf8StringCR parentName)
     {
-    DgnMaterialId childId = DgnMaterial::QueryMaterialId(db, "Palette", childName),
-                  parentId = DgnMaterial::QueryMaterialId(db, "Palette", parentName);
+    DgnMaterialId childId = DgnMaterial::QueryMaterialId(model, childName),
+                  parentId = DgnMaterial::QueryMaterialId(model, parentName);
     EXPECT_TRUE(childId.IsValid());
     EXPECT_TRUE(parentId.IsValid());
 
+    DgnDbR db = model.GetDgnDb();
     DgnMaterialCPtr child = DgnMaterial::Get(db, childId),
                     parent = DgnMaterial::Get(db, parentId);
     EXPECT_TRUE(child.IsValid());
@@ -84,8 +80,9 @@ void MaterialTest::ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR 
 TEST_F(MaterialTest, ParentChildCycles)
     {
     SetupSeedProject();
-    auto params = MakeParams("Palette", "Parent");
-    DgnMaterialPtr parent = new DgnMaterial(params);
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+
+    DgnMaterialPtr parent = new DgnMaterial(dictionary, "Palette", "Parent");
     parent->Insert();
 
     DgnElementId parentId = parent->GetElementId();
@@ -95,8 +92,7 @@ TEST_F(MaterialTest, ParentChildCycles)
     parent = GetDgnDb().Elements().GetElement(parentId)->MakeCopy<DgnMaterial>();
     EXPECT_EQ(DgnDbStatus::InvalidParent, parent->SetParentId(parentId, parentRelClassId));
 
-    auto childParams = MakeParams("Palette", "Child");
-    DgnMaterialPtr child = new DgnMaterial(childParams);
+    DgnMaterialPtr child = new DgnMaterial(dictionary, "Palette", "Child");
     child->Insert();
 
     DgnElementId childId = child->GetElementId();
@@ -106,7 +102,7 @@ TEST_F(MaterialTest, ParentChildCycles)
     EXPECT_EQ(DgnDbStatus::Success, child->SetParentId(parentId, parentRelClassId));
     child->Update(&status);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    ExpectParent(GetDgnDb(), "Child", "Parent");
+    ExpectParent(dictionary, "Child", "Parent");
 
     // Child.parent=Parent && Parent.parent=Child:
     //  Child => Parent => Child => ... - caught in Update()
@@ -117,12 +113,11 @@ TEST_F(MaterialTest, ParentChildCycles)
 
     // Grandchild => Child => Parent - OK.
     parent->SetParentId(DgnElementId(), DgnClassId());
-    auto grandchildParams = MakeParams("Palette", "Grandchild", child->GetMaterialId());
-    DgnMaterial grandchild(grandchildParams);
+    DgnMaterial grandchild(dictionary, "Palette", "Grandchild", child->GetMaterialId());
     grandchild.Insert(&status);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    ExpectParent(GetDgnDb(), "Grandchild", "Child");
-    ExpectParent(GetDgnDb(), "Child", "Parent");
+    ExpectParent(dictionary, "Grandchild", "Child");
+    ExpectParent(dictionary, "Child", "Parent");
 
     // Grandchild => Child => Parent => Grandchild - caught in Update()
     EXPECT_EQ(DgnDbStatus::Success, parent->SetParentId(grandchild.GetElementId(), parentRelClassId));
@@ -137,14 +132,16 @@ TEST_F(MaterialTest, ParentChildClone)
     {
     SetupSeedProject();
     DgnDbPtr db2 = DgnPlatformSeedManager::OpenSeedDbCopy(DgnDbTestFixture::s_seedFileInfo.fileName, L"clonematerials.bim");
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+    DefinitionModelR dictionary2 = db2->GetDictionaryModel();
 
     Utf8String palette("Palette");
-    DgnMaterialCPtr parent = CreateMaterial(palette, "Parent");
+    DgnMaterialCPtr parent = InsertMaterial(dictionary, palette, "Parent");
     ASSERT_TRUE(parent.IsValid());
 
     DgnMaterialId parentId = parent->GetMaterialId();
-    DgnMaterialCPtr childA = CreateMaterial(palette, "ChildA", parentId),
-                    childB = CreateMaterial(palette, "ChildB", parentId);
+    DgnMaterialCPtr childA = InsertMaterial(dictionary, palette, "ChildA", parentId),
+                    childB = InsertMaterial(dictionary, palette, "ChildB", parentId);
 
     ASSERT_TRUE(childA.IsValid());
     ASSERT_TRUE(childB.IsValid());
@@ -153,54 +150,57 @@ TEST_F(MaterialTest, ParentChildClone)
     EXPECT_EQ(childA->GetParentMaterial().get(), parent.get());
     EXPECT_EQ(childB->GetParentMaterial().get(), parent.get());
 
-    DgnMaterialCPtr grandchildA = CreateMaterial(palette, "GrandchildA", childA->GetMaterialId());
+    DgnMaterialCPtr grandchildA = InsertMaterial(dictionary, palette, "GrandchildA", childA->GetMaterialId());
     ASSERT_TRUE(grandchildA.IsValid());
     EXPECT_EQ(grandchildA->GetParentMaterialId(), childA->GetMaterialId());
     EXPECT_EQ(grandchildA->GetParentMaterial().get(), childA.get());
 
-    DgnMaterialCPtr grandchildB = CreateMaterial(palette, "GrandchildB", childB->GetMaterialId());
+    DgnMaterialCPtr grandchildB = InsertMaterial(dictionary, palette, "GrandchildB", childB->GetMaterialId());
     ASSERT_TRUE(grandchildB.IsValid());
 
     // Importing a child imports its parent. Importing a parent does not import its children.
     DgnImportContext importer(GetDgnDb(), *db2);
-    DgnElementCPtr clonedGrandchild = grandchildA->Import(nullptr, db2->GetDictionaryModel(), importer);
+    DgnElementCPtr clonedGrandchild = grandchildA->Import(nullptr, dictionary2, importer);
     ASSERT_TRUE(clonedGrandchild.IsValid());
 
-    ExpectParent(*db2, "GrandchildA", "ChildA");
-    ExpectParent(*db2, "ChildA", "Parent");
-    EXPECT_FALSE(DgnMaterial::QueryMaterialId(*db2, palette, "ChildB").IsValid());
-    EXPECT_FALSE(DgnMaterial::QueryMaterialId(*db2, palette, "GrandchildB").IsValid());
+    ExpectParent(dictionary2, "GrandchildA", "ChildA");
+    ExpectParent(dictionary2, "ChildA", "Parent");
+    EXPECT_FALSE(DgnMaterial::QueryMaterialId(dictionary2, "ChildB").IsValid());
+    EXPECT_FALSE(DgnMaterial::QueryMaterialId(dictionary2, "GrandchildB").IsValid());
 
     // Importing a child when the parent already exists (by Code) associates the child to the existing parent.
     // The version of ChildB in the destination db does not have a parent material.
-    DgnMaterialCPtr destChildA = CreateMaterial(palette, "ChildB", DgnMaterialId(), db2.get());
+    DgnMaterialCPtr destChildA = InsertMaterial(dictionary2, palette, "ChildB");
     ASSERT_TRUE(destChildA.IsValid());
 
     DgnImportContext importer2(GetDgnDb(), *db2);
-    DgnMaterialCPtr destGrandchildB = dynamic_cast<DgnMaterialCP>(grandchildB->Import(nullptr, db2->GetDictionaryModel(), importer2).get());
+    DgnMaterialCPtr destGrandchildB = dynamic_cast<DgnMaterialCP>(grandchildB->Import(nullptr, dictionary2, importer2).get());
     ASSERT_TRUE(destGrandchildB.IsValid());
 
-    ExpectParent(*db2, "GrandchildB", "ChildB");
-    DgnMaterialCPtr destChildB = DgnMaterial::Get(*db2, DgnMaterial::QueryMaterialId(*db2, palette, "ChildB"));
+    ExpectParent(dictionary2, "GrandchildB", "ChildB");
+    DgnMaterialCPtr destChildB = DgnMaterial::Get(*db2, DgnMaterial::QueryMaterialId(dictionary2, "ChildB"));
     EXPECT_FALSE(destChildB->GetParentMaterialId().IsValid());
 
     db2->SaveChanges();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, Iterate)
     {
     SetupSeedProject();
-    DgnMaterialCPtr mat1 = CreateMaterial("Palette1", "Material1");
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+
+    DgnMaterialCPtr mat1 = InsertMaterial(dictionary, "Palette1", "Material1");
     ASSERT_TRUE(mat1.IsValid());
-    DgnMaterialCPtr mat2 = CreateMaterial("Palette1", "Material2");
+    DgnMaterialCPtr mat2 = InsertMaterial(dictionary, "Palette1", "Material2");
     ASSERT_TRUE(mat2.IsValid());
-    DgnMaterialCPtr mat3 = CreateMaterial("Palette2", "Material3");
+    DgnMaterialCPtr mat3 = InsertMaterial(dictionary, "Palette2", "Material3");
     ASSERT_TRUE(mat3.IsValid());
-    DgnMaterialCPtr mat4 = CreateMaterial("Palette3", "Material4");
+    DgnMaterialCPtr mat4 = InsertMaterial(dictionary, "Palette3", "Material4");
     ASSERT_TRUE(mat4.IsValid());
-    DgnMaterialCPtr mat5 = CreateMaterial("Palette4", "Material5");
+    DgnMaterialCPtr mat5 = InsertMaterial(dictionary, "Palette4", "Material5");
     ASSERT_TRUE(mat5.IsValid());
     
     int count = 0;
@@ -239,17 +239,20 @@ TEST_F(MaterialTest, Iterate)
         }
     ASSERT_EQ(5, count);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, Iterate_WithFilter)
     {
     SetupSeedProject();
-    DgnMaterialCPtr mat1 = CreateMaterial("Palette1", "Material1");
+    DefinitionModelR dictionary = m_db->GetDictionaryModel();
+
+    DgnMaterialCPtr mat1 = InsertMaterial(dictionary, "Palette1", "Material1");
     ASSERT_TRUE(mat1.IsValid());
-    DgnMaterialCPtr mat2 = CreateMaterial("Palette1", "Material2");
+    DgnMaterialCPtr mat2 = InsertMaterial(dictionary, "Palette1", "Material2");
     ASSERT_TRUE(mat2.IsValid());
-    DgnMaterialCPtr mat3 = CreateMaterial("Palette2", "Material3",mat2->GetMaterialId());
+    DgnMaterialCPtr mat3 = InsertMaterial(dictionary, "Palette2", "Material3", mat2->GetMaterialId());
     ASSERT_TRUE(mat3.IsValid());
 
     int count = 0;
@@ -268,13 +271,13 @@ TEST_F(MaterialTest, Iterate_WithFilter)
 
     count = 0;
     for (DgnMaterial::Entry entry : DgnMaterial::MakeIterator(*m_db, DgnMaterial::Iterator::Options::ByParentId(mat2->GetMaterialId())))
-    {
+        {
         if (entry.GetId() == mat3->GetMaterialId())
             EXPECT_STREQ(mat3->GetMaterialName().c_str(), entry.GetName());
         else
             FAIL() << "This material should not exisit";
 
         count++;
-    }
+        }
     ASSERT_EQ(1, count);
     }

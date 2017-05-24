@@ -213,7 +213,7 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
 
-    m_defaultCategoryId = DgnCategory::QueryCategoryId(*m_db, SpatialCategory::CreateCode(*m_db, "TestCategory"));
+    m_defaultCategoryId = SpatialCategory::QueryCategoryId(m_db->GetDictionaryModel(), "TestCategory");
     EXPECT_TRUE(m_defaultCategoryId.IsValid());
     }
 

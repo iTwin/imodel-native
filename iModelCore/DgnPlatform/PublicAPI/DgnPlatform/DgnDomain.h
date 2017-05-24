@@ -63,6 +63,92 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+//=======================================================================================
+//! Options to upgrade schemas when the DgnDb is opened
+//! @note We upgrade the schemas only when the DgnDb is opened to eliminate the impact 
+//! of the changes to existing caches. 
+//=======================================================================================
+struct SchemaUpgradeOptions
+{
+//! Option to control upgrade of schemas in the DgnDb from the domains.
+enum class AllowedDomainUpgrades : int
+    {
+    None, //!< Domain schemas will not be upgraded
+    UseDefaults, //!< Determines if incompatible changes are allowed based on the application's development phase. CompatibleOnly if the application is in Certified/Beta phase and IncompatibleAlso if the application is still in the Development phase. @see DgnPlatformLib::Host::_SupplyDevelopmentPhase(). 
+    CompatibleOnly, //!< Allows only compatible schema upgrades - these are typically additions of classes, properties, and changes to custom attributes. 
+    IncompatibleAlso //!< Allows certain incompatible schema upgrades - this option should typically not be used in certified or beta builds. 
+    };
+
+private:
+    AllowedDomainUpgrades m_allowedDomainUpgrades;
+    DgnRevisionCP m_upgradeRevision;
+
+public:
+    //! Default constructor
+    SchemaUpgradeOptions() : m_allowedDomainUpgrades(AllowedDomainUpgrades::None), m_upgradeRevision(nullptr) {}
+
+    //! Constructor to setup schema upgrades from the registered domains
+    SchemaUpgradeOptions(AllowedDomainUpgrades allowedDomainUpgrades) { SetUpgradeFromDomains(allowedDomainUpgrades); }
+
+    //! Constructor to setup schema upgrades by merging a revision (that contains schema changes).
+    SchemaUpgradeOptions(DgnRevisionCR revision) { SetUpgradeFromRevision(revision); }
+
+    //! Setup to upgrade schemas from the registered domains
+    void SetUpgradeFromDomains(AllowedDomainUpgrades allowedDomainUpgrades = AllowedDomainUpgrades::UseDefaults)
+        {
+        m_allowedDomainUpgrades = allowedDomainUpgrades;
+        m_upgradeRevision = nullptr;
+        }
+
+    //! Setup Schema upgrades by merging a revision (that contains schema changes)
+    void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision)
+        {
+        m_allowedDomainUpgrades = AllowedDomainUpgrades::None;
+        m_upgradeRevision = &upgradeRevision;
+        }
+
+    //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
+    AllowedDomainUpgrades GetAllowedDomainUpgrades() const;
+
+    //! Returns true if schemas are to be upgraded from the domains.
+    bool AreDomainUpgradesAllowed() const { return m_allowedDomainUpgrades != AllowedDomainUpgrades::None; }
+
+    //! Gets the revision containing schema changes if the schemas in the DgnDb are to be upgraded from it.
+    DgnRevisionCP GetUpgradeRevision() const { return m_upgradeRevision; }
+};
+
+//=======================================================================================
+//! Status returned by schema validation, import or upgrade routines
+//=======================================================================================
+enum class SchemaStatus
+    {
+    Success = 0,
+    SchemaNotFound,
+    SchemaReadFailed,
+    SchemaTooNew,
+    SchemaTooOld,
+    SchemaUpgradeRequired,
+    SchemaLockFailed,
+    SchemaImportFailed,
+    SchemaDomainNamesMismatched,
+    SchemaInvalid,
+    MergeSchemaRevisionFailed,
+    DbHasLocalChanges,
+    DbIsReadonly
+    };
+
+//=======================================================================================
+//! Development phase of the host application, or of the DgnDb created by the host application
+//! @note These correspond with build environment settings setup by the Product Release Group. 
+//! @see DgnPlatformLib::Host::_SupplyDevelopmentPhase()
+//=======================================================================================
+enum class DevelopmentPhase
+    {
+    Development = 0,
+    Beta = 1,
+    Certified = 2
+    };
+
 struct DgnDomains;
 
 /** @addtogroup GROUP_DgnDomain DgnDomain Module
@@ -281,9 +367,8 @@ private:
     BeFileName GetSchemaPathname() const;
     bool ValidateSchemaPathname() const;
     ECN::ECSchemaPtr ReadSchema(ECN::ECSchemaReadContextR schemaContext) const;
-    BeSQLite::DbResult ValidateSchema(ECN::ECSchemaCR schema, DgnDbCR dgndb) const;
-    void CallOnSchemaImported(DgnDbR db) { _OnSchemaImported(db); }
-        
+    SchemaStatus ValidateSchema(ECN::ECSchemaCR schema, DgnDbCR dgndb) const;
+
 protected:
     int32_t         m_version;
     Utf8String      m_domainName;
@@ -343,9 +428,16 @@ public:
     void SetRequired(Required isRequired) { m_isRequired = isRequired; }
 
     //! Imports (or upgrades) the schema of this domain into the supplied DgnDb.
-    //! @remarks Use DgnDomains::ImportSchemas() to import or upgrade all domain schemas and
-    //! their references. 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchema(DgnDbR dgndb);
+    //! @remarks 
+    //! <ul>
+    //! <li> Only used for cases where the schemas of an optional domain are to be imported in. In all other cases 
+    //! domain schemas are imported or upgraded when the DgnDb is created or opened. 
+    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
+    //! import. If an error happens during the import, the new transaction is abandoned within the call. 
+    //! <li> Errors out if there are local changes (uncommited or committed). These need to be flushed by committing 
+    //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
+    //! </ul>
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb);
 
     //! Returns true of the schema for this domain has been imported into the supplied DgnDb. 
     //! @remarks Only checks if the schema has been imported, and does not do any validation of 
@@ -386,7 +478,7 @@ private:
 
     DomainList    m_domains;
     Handlers      m_handlers;
-    bool          m_isSchemaUpgradeEnabled;
+    SchemaUpgradeOptions m_schemaUpgradeOptions;
 
     void LoadDomain(DgnDomainR);
     void AddHandler(DgnClassId id, DgnDomain::Handler* handler) {m_handlers.Insert(id, handler);}
@@ -394,21 +486,29 @@ private:
     bool GetHandlerInfo(uint64_t* restrictions, DgnClassId handlerId, DgnDomain::Handler& handler);
     BeSQLite::DbResult InsertDomain(DgnDomainCR);
     ECN::ECClassCP FindBaseOfType(DgnClassId subClassId, DgnClassId baseClassId);
-    BeSQLite::DbResult OnDbOpened(bool isSchemaUpgradeEnabled);
+
+    void OnDbOpened();
     void OnDbClose();
     void SyncWithSchemas();
+    void DeleteHandlers();
+	
+    // Imports schemas of all required domains into the DgnDb. 
+    SchemaStatus ImportSchemas();
+    // Validates (and upgrades if necessary) domain schemas - used when the DgnDb is first opened up.
+    SchemaStatus InitializeSchemas(SchemaUpgradeOptions const& schemaUpgradeOptions);
+    // Upgrades schemas of all domains already imported into the DgnDb, and of any newly registered required domains. 
+    SchemaStatus UpgradeSchemas();
+    SchemaStatus ValidateSchemas();
+    SchemaStatus DoValidateSchemas(bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
+    static SchemaStatus DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
+    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
+    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport);
+    ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;
 
-    void SetEnableSchemaUpgrade(bool enable) { m_isSchemaUpgradeEnabled = enable; }
-    bool IsSchemaUpgradeEnabled() const { return m_isSchemaUpgradeEnabled; }
+    static Utf8CP ConvertDevelopmentPhaseToString(DevelopmentPhase developmentPhase);
+    BeSQLite::DbResult SaveDevelopmentPhase();
 
-    BeSQLite::DbResult ValidateSchemas();
-    BeSQLite::DbResult ValidateAndImportSchemas(bool doImport);
-    ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;    
-
-    static BeSQLite::DbResult DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
-    static BeSQLite::DbResult DoImportSchemas(DgnDbR dgndb, bvector<ECN::ECSchemaCP> const& schemasToImport, bool isImportingFromV8);
-    
-    explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_isSchemaUpgradeEnabled(false) {}
+    explicit DgnDomains(DgnDbR db) : DgnDbTable(db) {}
 
 public:
     //! Look up a handler for a given DgnClassId. Does not check base classes.
@@ -457,11 +557,6 @@ public:
     //! @note The DgnClassId @b is a ECClassId.
     DGNPLATFORM_EXPORT DgnDomain::Handler* FindHandler(DgnClassId handlerId, DgnClassId baseClassId);
 
-    //! Imports (or upgrades) EC Schemas of all registered domains after comparing the versions 
-    //! supplied by the domains against those in the Db.
-    //! @return BE_SQLITE_OK if successful. Appropriate BE_SQLITE_ERROR_Schema* error status otherwise. 
-    //! Requires a lock on the schemas and is typically done by a project administrator
-    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchemas();
 };
 
 struct CreateDgnDbParams;

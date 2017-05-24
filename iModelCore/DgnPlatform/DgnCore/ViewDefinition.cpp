@@ -362,42 +362,6 @@ double DrawingViewDefinition::GetAspectRatioSkew() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus lockElement(DgnElementCR ele)
-    {
-    LockRequest lockReq;
-    lockReq.Insert(ele, LockLevel::Exclusive);
-    return (RepositoryStatus::Success == ele.GetDgnDb().BriefcaseManager().AcquireLocks(lockReq).Result())? DgnDbStatus::Success: DgnDbStatus::LockNotHeld;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition2d::OnModelDelete(DgnDbR db, DgnModelId mid)
-    {
-    auto findViewsStmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition2d") " WHERE BaseModel.Id=?");
-    if (!findViewsStmt.IsValid())
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadRequest;
-        }
-    findViewsStmt->BindId(1, mid);
-    while (BE_SQLITE_ROW == findViewsStmt->Step())
-        {
-        auto viewId = findViewsStmt->GetValueId<DgnViewId>(0);
-        auto view = Get(db, viewId);
-        if (view.IsValid())
-            {
-            lockElement(*view);
-            view->Delete();
-            }
-        }
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition2d::_RemapIds(DgnImportContext& importer)
@@ -627,53 +591,6 @@ DgnDbStatus CategorySelector::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
-    {
-    // Detect all ModelSelectors that include this model
-    auto statement = db.GetPreparedECSqlStatement("SELECT SourceECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE TargetECInstanceId=?");
-    if (!statement.IsValid())
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadRequest;
-        }
-    statement->BindId(1, mid);
-    while (BE_SQLITE_ROW == statement->Step())
-        {
-        auto selId = statement->GetValueId<DgnElementId>(0);
-        auto selector = db.Elements().Get<ModelSelector>(selId);
-        if (!selector.IsValid())
-            continue;
-
-        //  If the this ModelSelector contains *ONLY* this model, it is about to become empty. Delete it.
-        if (selector->GetModels().size() == 1)
-            {
-            lockElement(*selector);
-            selector->Delete();
-            }
-        }
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::_OnDelete() const
-    {
-    // Delete all 3d views that are based on on this selector
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("SpatialViewDefinition") " WHERE ModelSelector.Id=?");
-    statement->BindId(1, GetElementId());
-    if (BE_SQLITE_ROW == statement->Step())
-        {
-        auto view = ViewDefinition::Get(GetDgnDb(), statement->GetValueId<DgnViewId>(0));
-        if (view.IsValid())
-            view->Delete();
-        }
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ModelSelector::_CopyFrom(DgnElementCR rhsElement)
     {
     T_Super::_CopyFrom(rhsElement);
@@ -687,7 +604,7 @@ void ModelSelector::_CopyFrom(DgnElementCR rhsElement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ModelSelector::_InsertInDb()
     {
-    auto status = T_Super::_InsertInDb();
+    DgnDbStatus status = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -699,15 +616,22 @@ DgnDbStatus ModelSelector::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
     {
-    auto status = T_Super::_OnUpdate(el);
+    DgnDbStatus status = T_Super::_OnUpdate(el);
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=?", GetDgnDb().GetECCrudWriteToken());
-    delExisting->BindId(1, GetElementId());
-    delExisting->Step();
-
+    GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), GetElementId(), DgnElementId() /* all targets */);
     return WriteModels();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSelector::_OnDeleted() const
+    {
+    T_Super::_OnDeleted();
+    // provide clean up behavior previously handled by foreign keys (the bis_ModelSelectorRefersToModels table uses "logical" foreign keys now)
+    GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), GetElementId(), DgnElementId() /* all targets */);
     }
 
 /*---------------------------------------------------------------------------------**//**

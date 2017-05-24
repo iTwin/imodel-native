@@ -4,7 +4,7 @@
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
 
-    <ECEntityClass typeName="SchemaVersionTestElement">
+    <ECEntityClass typeName="TestElement">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>

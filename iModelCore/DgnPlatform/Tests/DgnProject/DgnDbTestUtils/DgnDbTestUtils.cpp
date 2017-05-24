@@ -271,7 +271,7 @@ DgnCategoryId DgnDbTestUtils::InsertSpatialCategory(DgnDbR db, Utf8CP categoryNa
     {
     MUST_HAVE_HOST(DgnCategoryId());
 
-    SpatialCategory category(db, categoryName, rank);
+    SpatialCategory category(db.GetDictionaryModel(), categoryName, rank);
     SpatialCategoryCPtr persistentCategory = category.Insert(appearance);
     EXPECT_TRUE(persistentCategory.IsValid());
 
@@ -434,6 +434,7 @@ int DgnDbTestUtils::SelectCountFromTable(DgnDbR db, Utf8CP tableName)
     if (!tableName || !*tableName)
         return -1;
 
+    EXPECT_TRUE(db.TableExists(tableName));
     Utf8PrintfString sql("SELECT COUNT(*) FROM %s", tableName);
 
     Statement statement;

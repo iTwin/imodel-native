@@ -17,7 +17,11 @@ USING_NAMESPACE_BENTLEY_SQLITE
 #define INITIAL_PARENT_REV_ID   "InitialParentRevisionId"
 #define PARENT_REV_ID           "ParentRevisionId"
 #define REVERSED_REV_ID         "ReversedRevisionId"
+#define CONTAINS_SCHEMA_CHANGES "ContainsSchemaChanges"
 #define REVISION_FORMAT_VERSION  0x10
+#define JSON_PROP_DDL                   "DDL"
+#define JSON_PROP_ContainsSchemaChanges "ContainsSchemaChanges"
+
 // #define DEBUG_REVISION_KEEP_FILES 1
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -100,7 +104,7 @@ private:
     BeSQLite::LzmaEncoder m_lzmaEncoder;
     BeFileName m_pathname;
     BeFileLzmaOutStream* m_outLzmaFileStream;
-    DbSchemaChangeSet m_dbSchemaChanges;
+    Utf8String m_prefix;
     DgnDbCR m_dgndb; // Only for debugging
 
     //---------------------------------------------------------------------------------------
@@ -134,7 +138,7 @@ private:
             return BE_SQLITE_ERROR;
             }
 
-        return WriteDbSchemaChanges();
+        return WritePrefix();
         }
 
     //---------------------------------------------------------------------------------------
@@ -187,9 +191,9 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    01/2017
     //---------------------------------------------------------------------------------------
-    DbResult WriteDbSchemaChanges()
+    DbResult WritePrefix()
         {
-        uint32_t size = (uint32_t) m_dbSchemaChanges.GetSize();
+        uint32_t size = m_prefix.empty() ? 0 : (uint32_t) m_prefix.SizeInBytes();
         Byte sizeBytes[4];
         UIntToByteArray(sizeBytes, size);
 
@@ -200,15 +204,35 @@ private:
         if (size == 0)
             return BE_SQLITE_OK;
 
-        zipErrors = m_lzmaEncoder.CompressNextPage(m_dbSchemaChanges.GetData(), m_dbSchemaChanges.GetSize());
+        zipErrors = m_lzmaEncoder.CompressNextPage(m_prefix.c_str(), size);
         return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Ramanujam.Raman                    05/2017
+    //---------------------------------------------------------------------------------------
+    void InitPrefix(bool containsSchemaChanges, DbSchemaChangeSetCR dbSchemaChanges)
+        {
+        m_prefix = "";
+        if (!containsSchemaChanges)
+            return;
+
+        Json::Value jsonPrefix = Json::objectValue;
+        jsonPrefix[JSON_PROP_ContainsSchemaChanges] = true;
+        if (dbSchemaChanges.GetSize() > 0)
+            jsonPrefix[JSON_PROP_DDL] = dbSchemaChanges.ToString();
+
+        m_prefix = Json::FastWriter().write(jsonPrefix);
         }
 
 public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    RevisionChangesFileWriter(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChanges, DgnDbCR dgnDb) : m_pathname(pathname), m_dbSchemaChanges(dbSchemaChanges), m_dgndb(dgnDb), m_outLzmaFileStream(nullptr) {}
+    RevisionChangesFileWriter(BeFileNameCR pathname, bool containsSchemaChanges, DbSchemaChangeSetCR dbSchemaChanges, DgnDbCR dgnDb) : m_pathname(pathname), m_prefix(""), m_dgndb(dgnDb), m_outLzmaFileStream(nullptr) 
+        {
+        InitPrefix(containsSchemaChanges, dbSchemaChanges);
+        }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    01/2017
@@ -224,7 +248,7 @@ public:
         return StartOutput();
         }
 
-    ~RevisionChangesFileWriter() {}
+    ~RevisionChangesFileWriter() { _Reset(); }
 };
 
 //---------------------------------------------------------------------------------------
@@ -234,6 +258,7 @@ DbResult RevisionChangesFileReader::StartInput()
     {
     BeAssert(m_inLzmaFileStream == nullptr);
     m_inLzmaFileStream = new BeFileLzmaInStream();
+    m_prefix = "";
 
     StatusInt status = m_inLzmaFileStream->OpenInputFile(m_pathname);
     if (status != SUCCESS)
@@ -258,7 +283,7 @@ DbResult RevisionChangesFileReader::StartInput()
         return BE_SQLITE_ERROR;
         }
 
-    return ReadDbSchemaChanges();
+    return ReadPrefix();
     }
 
 //---------------------------------------------------------------------------------------
@@ -293,23 +318,51 @@ DbResult RevisionChangesFileReader::_InputPage(void *pData, int *pnData)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
 //---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileReader::GetDbSchemaChanges(DbSchemaChangeSetR dbSchemaChanges)
+Utf8StringCR RevisionChangesFileReader::GetPrefix(DbResult& result)
     {
+    result = BE_SQLITE_OK;
     if (nullptr == m_inLzmaFileStream)
-        {
-        DbResult result = StartInput();
-        if (result != BE_SQLITE_OK)
-            return result;
-        }
+        result = StartInput();
     
-    dbSchemaChanges = m_dbSchemaChanges;
+    return m_prefix;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+DbResult RevisionChangesFileReader::GetSchemaChanges(bool& containsSchemaChanges, DbSchemaChangeSetR dbSchemaChanges)
+    {
+    DbResult result;
+    /* unused - Utf8StringCR prefix = */GetPrefix(result);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    containsSchemaChanges = false;
+    dbSchemaChanges.Clear();
+
+    if (m_prefix.empty())
+        return BE_SQLITE_OK;
+
+    Json::Value prefixJson;
+    if (!Json::Reader::Parse(m_prefix.c_str(), prefixJson))
+        {
+        BeAssert(false && "Prefix seems corrupted");
+        return BE_SQLITE_ERROR;
+        }
+
+    if (prefixJson.isMember(JSON_PROP_ContainsSchemaChanges))
+        containsSchemaChanges = prefixJson[JSON_PROP_ContainsSchemaChanges].asBool();
+
+    if (prefixJson.isMember(JSON_PROP_DDL))
+        dbSchemaChanges.AddDDL(prefixJson[JSON_PROP_DDL].asCString());
+
     return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
 //---------------------------------------------------------------------------------------
-BeSQLite::DbResult RevisionChangesFileReader::ReadDbSchemaChanges()
+BeSQLite::DbResult RevisionChangesFileReader::ReadPrefix()
     {
     Byte sizeBytes[4];
     int readSizeBytes = 4;
@@ -324,16 +377,23 @@ BeSQLite::DbResult RevisionChangesFileReader::ReadDbSchemaChanges()
     if (size == 0)
         return BE_SQLITE_OK;
 
-    ScopedArray<Byte> schemaChangeBytes(size);
-    int readSize = size;
-    zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*) schemaChangeBytes.GetData(), &readSize);
-    if (zipErrors != ZIP_SUCCESS || readSize != size)
+    ScopedArray<Byte> prefixBytes(size);
+    int bytesRead = 0;
+    while (bytesRead < size)
         {
-        BeAssert(false && "Didn't expect that schema changes would take multiple reads");
-        return BE_SQLITE_ERROR;
-        }
+        int readSize = size - bytesRead;
+        zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*) prefixBytes.GetData() + bytesRead, &readSize);
+        if (zipErrors != ZIP_SUCCESS)
+            {
+            BeAssert(false && "Error reading revision prefix stream");
+            return BE_SQLITE_ERROR;
+            }
 
-    m_dbSchemaChanges.AddDDL((Utf8CP) schemaChangeBytes.GetData());
+        bytesRead += readSize;
+        }
+    BeAssert(bytesRead == size);
+
+    m_prefix = (Utf8CP) prefixBytes.GetData();
     return BE_SQLITE_OK;
     }
 
@@ -504,15 +564,16 @@ public:
         DgnRevisionIdGenerator idgen;
         idgen.AddStringToHash(parentRevId);
 
-        DbSchemaChangeSet dbSchemaChanges;
-        DbResult result = fs.GetDbSchemaChanges(dbSchemaChanges);
+        DbResult result;
+        Utf8StringCR prefix = fs.GetPrefix(result);
         if (BE_SQLITE_OK != result)
             {
             BeAssert(false);
             return (result == BE_SQLITE_ERROR_InvalidRevisionVersion) ? RevisionStatus::InvalidVersion : RevisionStatus::CorruptedChangeStream;
             }
-        if (dbSchemaChanges.GetSize() > 0)
-            idgen._OutputPage(dbSchemaChanges.GetData(), dbSchemaChanges.GetSize());
+
+        if (!prefix.empty())
+            idgen._OutputPage(prefix.c_str(), (int) prefix.SizeInBytes());
 
         result = idgen.FromChangeStream(fs);
         if (BE_SQLITE_OK != result)
@@ -524,7 +585,6 @@ public:
         revId = idgen.GetHashString();
         return RevisionStatus::Success;
         }
-
 };
 
 //---------------------------------------------------------------------------------------
@@ -593,12 +653,17 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
 
     RevisionChangesFileReader fs(m_revChangesFile, dgndb);
 
+    bool containsSchemaChanges;
     DbSchemaChangeSet dbSchemaChangeSet;
-    DbResult result = fs.GetDbSchemaChanges(dbSchemaChangeSet);
+    DbResult result = fs.GetSchemaChanges(containsSchemaChanges, dbSchemaChangeSet);
     BeAssert(result == BE_SQLITE_OK);
-    dbSchemaChangeSet.Dump("Schema Contents: ");
 
-    fs.Dump("Data Contents:\n", dgndb, false, 0);
+    LOG.infov("Contains Schema Changes: %s", containsSchemaChanges ? "yes" : "no");
+    LOG.infov("Contains DbSchema Changes: %s", (dbSchemaChangeSet.GetSize() > 0) ? "yes" : "no");
+    if (dbSchemaChangeSet.GetSize() > 0)
+        dbSchemaChangeSet.Dump("DDL: ");
+
+    fs.Dump("ChangeSet:\n", dgndb, false, 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -676,12 +741,12 @@ static DgnModelId GetModelIdFromChangeOrDb(ChangeIterator::ColumnIterator const&
 static DgnCode GetCodeFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
     {
     DbDupValue codeSpecId = GetValueFromChangeOrDb(columnIter, "CodeSpec.Id", stage);
-    DbDupValue scope = GetValueFromChangeOrDb(columnIter, "CodeScope", stage);
+    DbDupValue scope = GetValueFromChangeOrDb(columnIter, "CodeScope.Id", stage);
     DbDupValue value = GetValueFromChangeOrDb(columnIter, "CodeValue", stage);
 
     DgnCode code;
     if (codeSpecId.IsValid() && scope.IsValid() && value.IsValid())
-        code.From(codeSpecId.GetValueId<CodeSpecId>(), value.GetValueText(), scope.GetValueText());
+        code.From(codeSpecId.GetValueId<CodeSpecId>(), scope.GetValueId<DgnElementId>(), value.GetValueText());
 
     return code;
     }
@@ -825,25 +890,17 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
 bool DgnRevision::ContainsSchemaChanges(DgnDbCR dgndb) const
     {
     RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
-    ChangeIterator changeIter(dgndb, changeStream);
 
-    for (ChangeIterator::RowEntry const& entry : changeIter)
+    bool containsSchemaChanges;
+    DbSchemaChangeSet dbSchemaChanges;
+    DbResult result = changeStream.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
+    if (BE_SQLITE_OK != result)
         {
-        if (entry.GetTableName().StartsWith("ec_"))
-            return true;
+        BeAssert(false);
+        return false;
         }
 
-    // Validate that there aren't any DbSchema changes in the change set
-    // Note: We do NOT typically expect database schema changes without corresponding EC changes
-    DbSchemaChangeSet dbSchemaChangeSet;
-    changeStream.GetDbSchemaChanges(dbSchemaChangeSet);
-    if (!dbSchemaChangeSet.IsEmpty())
-        {
-        LOG.warning("Detected database schema changes without importing shemas");
-        return true;
-        }
-
-    return false;
+    return containsSchemaChanges; // TODO: Consider caching this flag
     }
 
 //---------------------------------------------------------------------------------------
@@ -852,15 +909,6 @@ bool DgnRevision::ContainsSchemaChanges(DgnDbCR dgndb) const
 RevisionManager::RevisionManager(DgnDbR dgndb) : m_dgndb(dgndb)
     {
     m_tempRevisionPathname = BuildTempRevisionPathname();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-RevisionManager::~RevisionManager()
-    {
-    if (IsCreatingRevision()) 
-        AbandonCreateRevision();
     }
 
 //---------------------------------------------------------------------------------------
@@ -958,6 +1006,31 @@ RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2017
+//---------------------------------------------------------------------------------------
+DbResult RevisionManager::SaveContainsSchemaChanges()
+    {
+    return m_dgndb.SaveBriefcaseLocalValue(CONTAINS_SCHEMA_CHANGES, 1);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2017
+//---------------------------------------------------------------------------------------
+DbResult RevisionManager::ClearContainsSchemaChanges()
+    {
+    return m_dgndb.DeleteBriefcaseLocalValue(CONTAINS_SCHEMA_CHANGES);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2017
+//---------------------------------------------------------------------------------------
+bool RevisionManager::QueryContainsSchemaChanges() const
+    {
+    uint64_t value;
+    return BE_SQLITE_ROW == m_dgndb.QueryBriefcaseLocalValue(value, CONTAINS_SCHEMA_CHANGES);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
 Utf8String RevisionManager::QueryInitialParentRevisionId() const
@@ -1051,9 +1124,23 @@ DgnRevisionPtr RevisionManager::GetCreatingRevision()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    05/2017
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
+    {
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        {
+        BeAssert(false && "Cannot merge a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.");
+        return RevisionStatus::MergeSchemaChangesOnOpen;
+        }
+
+    return DoMergeRevision(revision);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
@@ -1167,7 +1254,8 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChangeSet, ChangeGroupCR dataChangeGroup)
     {
-    RevisionChangesFileWriter writer(pathname, dbSchemaChangeSet, m_dgndb);
+    bool containsSchemaChanges = QueryContainsSchemaChanges() || (dbSchemaChangeSet.GetSize() > 0); // Note: Our workflows really disallow DbSchemaChanges without corresponding ECSchema changes, but we allow this here to for testing cases. 
+    RevisionChangesFileWriter writer(pathname, containsSchemaChanges, dbSchemaChangeSet, m_dgndb);
 
     DbResult result = writer.Initialize();
     if (BE_SQLITE_OK != result)
@@ -1293,6 +1381,16 @@ RevisionStatus RevisionManager::FinishCreateRevision()
     if (RevisionStatus::Success != status)
         return status;
 
+    if (QueryContainsSchemaChanges())
+        {
+        DbResult result = ClearContainsSchemaChanges();
+        if (result != BE_SQLITE_DONE)
+            {
+            BeAssert(false);
+            return RevisionStatus::SQLiteError;
+            }
+        }
+
     m_dgndb.BriefcaseManager().OnFinishRevision(*currentRevision);
 
     DeleteCurrentRevisionEndTxnId();
@@ -1319,7 +1417,7 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
-    if (txnMgr.HasChanges() || txnMgr.QueryNextTxnId(TxnManager::TxnId(0)).IsValid())
+    if (txnMgr.HasLocalChanges())
         {
         BeAssert(false && "Cannot reverse revisions if there are local changes.");
         return RevisionStatus::HasLocalChanges;

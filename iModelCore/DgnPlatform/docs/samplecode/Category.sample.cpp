@@ -2,7 +2,7 @@
 |
 |     $Source: docs/samplecode/Category.sample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ Category_Includes.sampleCode
@@ -20,9 +20,9 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnCategoryId createAndInsertCategory(DgnDbR db)
+DgnCategoryId createAndInsertCategory(DefinitionModelR definitionModel)
     {
-    SpatialCategory category(db, "MyApp_MyCategory", DgnCategory::Rank::Application);
+    SpatialCategory category(definitionModel, "MyCategory", DgnCategory::Rank::Application);
 
     // configure the appearance for the Category's default SubCategory
     DgnSubCategory::Appearance appearance;

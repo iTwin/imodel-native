@@ -490,10 +490,10 @@ JsDgnCode* JsDgnCode::FromJson(JsDgnDbP jsdb, Utf8StringCR jsonStr)
         }
 
     auto db = jsdb->m_db;
-    auto a = db->CodeSpecs().QueryCodeSpecId(json["CodeSpecId"].asCString());
-    auto v = json["Value"].asCString();
-    auto n = json["Scope"].asCString();
-    return new JsDgnCode(DgnCode(a, v, n));
+    auto codeSpec = db->CodeSpecs().QueryCodeSpecId(json["CodeSpecId"].asCString());
+    auto codeValue = json["Value"].asCString();
+    auto codeScope = DgnElementId(json["Scope"].asUInt64());
+    return new JsDgnCode(DgnCode(codeSpec, codeScope, codeValue));
     }
 
 //---------------------------------------------------------------------------------------
