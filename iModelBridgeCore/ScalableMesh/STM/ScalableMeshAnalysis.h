@@ -26,6 +26,8 @@ class ScalableMeshAnalysis : public IScalableMeshAnalysis
         void _CreateCutVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction);
         void _CreateFillVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction);
 
+        bool _InitGridFrom(ISMGridVolume& grid, double _resolution, const DRange3d& _rangeMesh, const DRange3d& _rangeRegion);
+
     protected:
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid) override;
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid) override;
