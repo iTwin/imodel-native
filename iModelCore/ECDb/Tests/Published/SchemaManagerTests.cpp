@@ -1235,10 +1235,19 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
                             <WriteVersion>0</WriteVersion>
                             <MinorVersion>0</MinorVersion>
                         </PrimarySchemaReference>
-                        <Precedence>10</Precedence>
+                        <Precedence>210</Precedence>
                         <Purpose>Test1</Purpose>
                     </SupplementalSchema>
                 </ECCustomAttributes>
+                <ECEntityClass typeName="School" modifier="None">
+                    <ECProperty propertyName="FoundationDate" typeName="DateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                            <DateTimeComponent>Date</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                    </ECProperty>
+                </ECEntityClass>
                 <ECEntityClass typeName="Course" modifier="None">
                     <ECCustomAttributes>
                         <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
@@ -1258,7 +1267,7 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
                             <WriteVersion>0</WriteVersion>
                             <MinorVersion>0</MinorVersion>
                         </PrimarySchemaReference>
-                        <Precedence>5</Precedence>
+                        <Precedence>215</Precedence>
                         <Purpose>Test2</Purpose>
                     </SupplementalSchema>
                 </ECCustomAttributes>
@@ -1268,15 +1277,6 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
                             <PropertyName>LastMod2</PropertyName>
                         </ClassHasCurrentTimeStampProperty>
                     </ECCustomAttributes>
-                </ECEntityClass>
-                <ECEntityClass typeName="School" modifier="None">
-                    <ECProperty propertyName="FoundationDate" typeName="DateTime">
-                    <ECCustomAttributes>
-                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
-                            <DateTimeComponent>Date</DateTimeComponent>
-                        </DateTimeInfo>
-                    </ECCustomAttributes>
-                    </ECProperty>
                 </ECEntityClass>
                 <ECRelationshipClass typeName="SchoolHasCourses" modifier="Sealed" strength="embedding">
                     <ECCustomAttributes>
@@ -1337,8 +1337,8 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
         ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "OnDeleteAction")) << "RelationshipECClass SchoolHasCourses";
         ASSERT_STREQ("Cascade", v.GetUtf8CP()) << "RelationshipECClass SchoolHasCourses";
         }
-    ASSERT_EQ(1, caCount) << "RelationshipECClass SchoolHasCourses";
 
+    ASSERT_EQ(1, caCount) << "RelationshipECClass SchoolHasCourses";
     }
 
 //---------------------------------------------------------------------------------------
