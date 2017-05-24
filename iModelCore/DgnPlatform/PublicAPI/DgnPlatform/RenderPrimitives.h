@@ -744,6 +744,7 @@ public:
     bool IsCurved() const;
     GeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
+    void SetInCache(bool inCache);
 };
 
 //=======================================================================================

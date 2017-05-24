@@ -492,15 +492,14 @@ protected:
 
     Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
         {
-        if (1 == m_tileBuilder->GetRefCount())
-            {
-            m_tileBuilder->ReInitialize(m_curElemId, m_curRangeDiagonalSquared, params.m_placement);
-            return m_tileBuilder;
-            }
+        Render::GraphicBuilderPtr builder(m_tileBuilder);
+        if (builder->GetRefCount() > 2)
+            builder = new TileBuilder(*this, m_curElemId, m_curRangeDiagonalSquared, params);
         else
-            {
-            return new TileBuilder(*this, m_curElemId, m_curRangeDiagonalSquared, params);
-            }
+            m_tileBuilder->ReInitialize(m_curElemId, m_curRangeDiagonalSquared, params.m_placement);
+
+        BeAssert(builder->GetRefCount() <= 2);
+        return builder;
         }
 
     bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
@@ -1059,7 +1058,8 @@ bool Root::SolidPrimitivePartMap::Key::IsEqual(Key const& rhs) const
 void Root::AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const
     {
     BeMutexHolder lock(m_mutex);
-    m_geomParts.Insert(partId, &geomPart);
+    if (m_geomParts.Insert(partId, &geomPart).second)
+        geomPart.SetInCache(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1820,7 +1820,13 @@ GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& b
 GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf)
     {
     DgnGeometryPartCR input = subGf.GetInput();
+    if (accum.GetGeometries().empty())
+        BeAssert(false);
+
     subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
+    if (accum.GetGeometries().empty())
+        BeAssert(false);
+
     m_root.AddGeomPart(input.GetId(), *subGf.GetOutput());
     return m_finishedGraphic;
     }
@@ -1866,16 +1872,11 @@ void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartI
         if (geomPart.IsNull())
             return;
 
-        TileSubGraphicPtr partBuilder;
-        if (1 == m_subGraphic->GetRefCount())
-            {
-            m_subGraphic->ReInitialize(*geomPart);
-            partBuilder = m_subGraphic;
-            }
-        else
-            {
+        TileSubGraphicPtr partBuilder(m_subGraphic);
+        if (partBuilder->GetRefCount() > 2)
             partBuilder = new TileSubGraphic(*this, *geomPart);
-            }
+        else
+            partBuilder->ReInitialize(*geomPart);
 
         GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
         collection.Draw(*partBuilder, *this, geomParams, false, geomPart.get());
@@ -1883,6 +1884,7 @@ void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartI
         // Apparently _AddSubGraphic() caller does not call Finish()?
         partBuilder->Finish();
         tileGeomPart = partBuilder->GetOutput();
+        BeAssert(partBuilder->GetRefCount() <= 2);
         }
 
     DRange3d range;

@@ -73,7 +73,7 @@ struct PrimitiveGeometry : Geometry
 {
 private:
     IGeometryPtr        m_geometry;
-    bool                m_inCache;
+    bool                m_inCache = false;
 
     PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db)
         : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
@@ -152,6 +152,7 @@ private:
 
     GeomPartInstanceGeometry(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
         : Geometry(tf, range, elemId, params, part.IsCurved(), db), m_part(&part) { }
+
 public:
     static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
 
@@ -893,6 +894,15 @@ PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP inst
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeomPart::SetInCache(bool inCache)
+    {
+    for (auto& geometry : m_geometries)
+        geometry->SetInCache(inCache);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList GeomPart::GetStrokes (IFacetOptionsR facetOptions, GeometryCR instance)
@@ -1056,7 +1066,9 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     polyface = polyfaceBuilder->GetClientMeshPtr();
     if (polyface.IsValid())
         {
-        polyface->Transform(GetTransform());
+        if (!GetTransform().IsIdentity())
+            polyface->Transform(GetTransform());
+
         polyfaces.push_back (Polyface(*GetDisplayParamsPtr(), *polyface));
         }
 
