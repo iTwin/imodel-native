@@ -39,6 +39,7 @@
     <ClCompile Include="Published\BulkCrudTestFixture.cpp" />
     <ClCompile Include="Published\BulkCrudTests.cpp" />
     <ClCompile Include="Published\ChangeSummaryTests.cpp" />
+    <ClCompile Include="Published\DataTable.cpp" />
     <ClCompile Include="Published\DateTimeTests.cpp" />
     <ClCompile Include="Published\DbMappingTests.cpp" />
     <ClCompile Include="Published\ECCrudWriteTokenTests.cpp" />
@@ -75,6 +76,7 @@
     <ClCompile Include="Published\JsonLibraryTests.cpp" />
     <ClCompile Include="Published\JsonReaderTests.cpp" />
     <ClCompile Include="Published\JsonUpdaterTests.cpp" />
+    <ClCompile Include="Published\MapContext.cpp" />
     <ClCompile Include="Published\NavigationPropsTests.cpp" />
     <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp" />
     <ClCompile Include="Published\ProfileTests.cpp" />
@@ -95,6 +97,7 @@
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\ProfileBreak.h" />
     <ClInclude Include="Published\BulkCrudTestFixture.h" />
+    <ClInclude Include="Published\DataTable.h" />
     <ClInclude Include="Published\ECDbPublishedTests.h" />
     <ClInclude Include="Published\ECSqlAsserter.h" />
     <ClInclude Include="Published\ECSqlDeleteTestDataset.h" />
@@ -108,6 +111,7 @@
     <ClInclude Include="Published\ECSqlTestFrameworkFixture.h" />
     <ClInclude Include="Published\ECSqlTestFrameworkHelper.h" />
     <ClInclude Include="Published\ECSqlUpdateTestDataset.h" />
+    <ClInclude Include="Published\MapContext.h" />
     <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h" />
     <ClInclude Include="Published\RandomECInstanceGenerator.h" />
   </ItemGroup>

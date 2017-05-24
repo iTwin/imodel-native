@@ -6,12 +6,1043 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-
+#include "DataTable.h"
+#include "MapContext.h"
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+struct DataFacetComparer
+    {
+    private:
+        DataTable m_baseLine;
+        DataTable m_current;
+        BeFileName m_dataFile;
+        ECDbCR m_ecdb;
+        Utf8String m_dataFolder;
+        Utf8String m_test;
+
+    private:
+        virtual Utf8CP GetSQL() const = 0;
+        virtual Utf8CP GetDataSetId() const = 0;
+        Utf8String GetDataFilePath() const
+            {
+            Utf8String str;
+            str.append(m_dataFolder).append("/").append(m_test).append(".").append(GetDataSetId()).append(".csv");
+            return str;
+            }
+        BentleyStatus ReadFromDb(DataTable& table)
+            {
+            Statement stmt;
+            if (stmt.Prepare(m_ecdb, GetSQL()) != BE_SQLITE_OK)
+                return ERROR;
+
+            SqlAdaptor::Fill(table, stmt, nullptr);
+            return SUCCESS;
+            }
+        BentleyStatus WriteFile(Utf8StringCR content, bool overrideFile)
+            {
+            BeFileName file(GetDataFilePath());
+            if (file.DoesPathExist())
+                {
+                if (!overrideFile)
+                    return ERROR;
+
+                if (file.BeDeleteFile() != BeFileNameStatus::Success)
+                    return ERROR;
+                }
+            BeFile o;
+            if (o.Create(file.GetNameUtf8(), true) != BeFileStatus::Success)
+                return ERROR;
+
+            uint32_t bytesWritten;
+            if (o.Write(&bytesWritten, content.c_str(), (uint32_t) content.size()) != BeFileStatus::Success)
+                return ERROR;
+
+            o.Flush();
+            return o.Close() != BeFileStatus::Success ? ERROR : SUCCESS;
+            }
+        BentleyStatus ReadFile(Utf8StringR content, Utf8StringCR path)
+            {
+            BeFileName bf(path);
+            if (!bf.DoesPathExist())
+                return ERROR;
+
+            BeFile file;
+            if (file.Open(bf.GetNameUtf8(), BeFileAccess::Read) != BeFileStatus::Success)
+                return ERROR;
+
+            ByteStream bs;
+            if (file.ReadEntireFile(bs) != BeFileStatus::Success)
+                return ERROR;
+
+            content.clear();
+            content.reserve(bs.GetSize());
+            for (auto itor = bs.begin(); itor != bs.end(); ++itor)
+                content.push_back((Utf8Char) (*itor));
+
+            return SUCCESS;
+            }
+        BentleyStatus ReadFromFile(DataTable& table)
+            {
+            Utf8String content;
+            if (ReadFile(content, GetDataFilePath()) != SUCCESS)
+                return ERROR;
+
+            return CSVAdaptor::Fill(table, content.c_str());
+            }
+        DataTable const& GetCurrent() const { return m_current; }
+        DataTable const& GetBaseline() const { return m_baseLine; }
+
+    public:
+        DataFacetComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            :m_ecdb(ecdb), m_dataFolder(directory), m_test(test)
+            {}
+        BentleyStatus Init()
+            {
+            m_baseLine.Reset();
+            m_current.Reset();
+            if (ReadFromDb(m_baseLine) != SUCCESS)
+                return ERROR;
+
+            return ReadFromFile(m_current);
+            }
+        BentleyStatus WriteBaselineToDisk()
+            {
+            m_baseLine.Reset();
+            if (ReadFromDb(m_baseLine) != SUCCESS)
+                return ERROR;
+
+            Utf8String csvBuffer;
+            CSVAdaptor::Fill(csvBuffer, m_baseLine);
+            return WriteFile(csvBuffer, true);
+            }
+        void Assert()
+            {
+            ASSERT_EQ(SUCCESS, Init());
+            ASSERT_TRUE(GetCurrent().IsDefinitionLocked()) << "DataTable/Current was not loaded correctly -> " << GetDataSetId();
+            ASSERT_TRUE(GetBaseline().IsDefinitionLocked()) << "DataTable/Baseline was not loaded correctly -> " << GetDataSetId();
+            ASSERT_EQ(GetBaseline().GetColumnCount(), GetCurrent().GetColumnCount()) << "Column must match -> " << GetDataSetId();
+            ASSERT_EQ(GetBaseline().GetRowCount(), GetCurrent().GetRowCount()) << "Row must match -> " << GetDataSetId();
+            const size_t maxColumns = MIN(GetBaseline().GetColumnCount(), GetCurrent().GetColumnCount());
+            const size_t maxRows = MIN(GetBaseline().GetRowCount(), GetCurrent().GetRowCount());
+            for (size_t row = 0; row < maxRows; ++row)
+                {
+                DataTable::Row const& currentRow = GetCurrent().GetRow(row);
+                DataTable::Row const& baselineRow = GetBaseline().GetRow(row);
+                ASSERT_STREQ(baselineRow.ToString().c_str(), currentRow.ToString().c_str());
+                for (size_t col = 0; col < maxColumns; ++col)
+                    {
+                    DataTable::Value const& currentValue = currentRow.GetValue(col);
+                    DataTable::Value const& baselineValue = baselineRow.GetValue(col);
+                    ASSERT_EQ(baselineValue.GetType(), currentValue.GetType());
+                    switch (baselineValue.GetType())
+                        {
+                            case DataTable::Value::Type::Text:
+                            {
+                            ASSERT_STREQ(baselineValue.GetText(), currentValue.GetText())
+                                << "BaseLine:" << baselineRow.ToString().c_str() << ", Current: " << currentRow.ToString().c_str();
+                            break;
+                            }
+                            case DataTable::Value::Type::Float:
+                            {
+                            ASSERT_EQ(baselineValue.GetFloat(), currentValue.GetFloat())
+                                << "BaseLine:" << baselineRow.ToString().c_str() << ", Current: " << currentRow.ToString().c_str();
+                            break;
+                            }
+                            case DataTable::Value::Type::Integer:
+                            {
+                            ASSERT_EQ(baselineValue.GetInteger(), currentValue.GetInteger())
+                                << "BaseLine:" << baselineRow.ToString().c_str() << ", Current: " << currentRow.ToString().c_str();
+                            break;
+                            }
+                            case DataTable::Value::Type::Blob:
+                            {
+                            ASSERT_TRUE(false);
+                            }
+                        }
+                    }
+                }
+            }
+    };
+
+struct PropertyMapComparer : DataFacetComparer
+    {
+    private:
+        virtual Utf8CP GetDataSetId()  const override { return "PropertyMap"; }
+        virtual Utf8CP GetSQL() const override
+            {
+            return R"(
+                SELECT [S].[Name] [Schema], 
+                        [CL].[Name] [Class], 
+                        [PP].[AccessString], 
+                        [T].[Name] [Table], 
+                        [C].[Name] [Column]
+                FROM   [ec_ClassMap] [CM]
+                        INNER JOIN [ec_PropertyMap] [PM] ON [PM].[ClassId] = [CM].[ClassId]
+                        INNER JOIN [ec_PropertyPath] [PP] ON [PP].[Id] = [PM].[PropertyPathId]
+                        INNER JOIN [ec_Class] [CL] ON [CL].[Id] = [PM].[ClassId]
+                        INNER JOIN [ec_Schema] [S] ON [S].[Id] = [CL].[SchemaId]
+                        INNER JOIN [ec_Column] [C] ON [C].[Id] = [PM].[ColumnId]
+                        INNER JOIN [ec_Table] [T] ON [T].[Id] = [C].[TableId]
+                ORDER  BY [PM].[Id];)";
+            }
+    public:
+        PropertyMapComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            : DataFacetComparer(ecdb, test, directory)
+            {}
+        };
+
+struct TableComparer : DataFacetComparer
+    {
+    private:
+        virtual Utf8CP GetDataSetId()  const override { return "Table"; }
+        virtual Utf8CP GetSQL() const override
+            {
+            return R"(
+                SELECT [T].[Name], 
+                       CASE [T].[Type] WHEN 0 THEN 'Primary' WHEN 1 THEN 'Joined' WHEN 2 THEN 'Existing' WHEN 3 THEN 'Overflow' ELSE '<err>' END [Type], 
+                       CASE [T].[IsVirtual] WHEN 0 THEN 'False' WHEN 1 THEN 'True' ELSE '<err>' END [IsVirtual], 
+                       [TP].[Name] [ParentTable], 
+                       [S].[Name] [ExclusiveRootSchema], 
+                       [C].[Name] [ExclusiveRootClass]
+                FROM   [ec_Table] [T]
+                       LEFT JOIN [ec_Table] [TP] ON [TP].[Id] = [T].[ParentTableId]
+                       LEFT JOIN [ec_Class] [C] ON [C].[Id] = [T].[ExclusiveRootClassId]
+                       LEFT JOIN [ec_Schema] [S] ON [S].[Id] = [C].[SchemaId]
+                ORDER  BY [T].[Name];)";
+            }
+    public:
+        TableComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            : DataFacetComparer(ecdb, test, directory)
+            {}
+    };
+
+struct IndexComparer : DataFacetComparer
+    {
+    private:
+        virtual Utf8CP GetDataSetId()  const override { return "Index"; }
+        virtual Utf8CP GetSQL() const override
+            {
+            return R"(
+                SELECT [I].[Name] [Index], 
+                       [T].[Name] [Table], 
+                       CASE [IsUnique] WHEN 0 THEN 'False' WHEN 1 THEN 'True' END [IsUnique], 
+                       CASE [AddNotNullWhereExp] WHEN 0 THEN 'False' WHEN 1 THEN 'True' END [AddNotNullWhereExp], 
+                       CASE [IsAutoGenerated] WHEN 0 THEN 'False' WHEN 1 THEN 'True' END [IsAutoGenerated], 
+                       CASE [AppliesToSubclassesIfPartial] WHEN 0 THEN 'False' WHEN 1 THEN 'True' END [AppliesToSubclassesIfPartial], 
+                       [S].[Name] [RootSchema], 
+                       [C].[Name] [RootClass],
+                       (SELECT GROUP_CONCAT(C.Name, ', ') from ec_IndexColumn IC INNER JOIN ec_Column C ON C.Id = IC.ColumnId WHERE IC.IndexId=I.Id ORDER BY C.Name) Columns                 
+                FROM   [ec_Index] [I]
+                       INNER JOIN [ec_Table] [T] ON [T].[Id] = [I].[TableId]
+                       LEFT OUTER JOIN [ec_Class] [C] ON [C].[Id] = [I].[ClassId]
+                       LEFT OUTER JOIN [ec_Schema] [S] ON [S].[Id] = [C].[SchemaId];
+                ORDER BY T.Name, I.Name)";
+            }
+    public:
+        IndexComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            : DataFacetComparer(ecdb, test, directory)
+            {}
+    };
+struct ColumnComparer : DataFacetComparer
+    {
+    private:
+        virtual Utf8CP GetDataSetId()  const override { return "Column"; }
+        virtual Utf8CP GetSQL() const override
+            {
+            return  R"(
+                SELECT [T].[Name] [Table], 
+                        [C].[Name] [Column], 
+                        CASE [C].[Type] WHEN 0 THEN 'Any' WHEN 1 THEN 'Boolean' WHEN 2 THEN 'Blob' WHEN 3 THEN 'TimeStamp' WHEN 4 THEN 'Real' WHEN 5 THEN 'Integer' WHEN 6 THEN 'Text' ELSE '<err>' END [Type], 
+                        CASE [C].[IsVirtual] WHEN 0 THEN 'False' WHEN 1 THEN 'True' ELSE '<err>' END [IsVirtual], 
+                        [Ordinal], 
+                        CASE [C].[NotNullConstraint] WHEN 1 THEN 'True' WHEN 0 THEN 'False' ELSE '<err>' END [NotNullConstraint], 
+                        CASE [C].[UniqueConstraint] WHEN 1 THEN 'True' WHEN 0 THEN 'False' ELSE '<err>' END [UniqueConstraint], 
+                        [CheckConstraint], 
+                        [DefaultConstraint], 
+                        CASE [CollationConstraint] WHEN 0 THEN 'Unset' WHEN 1 THEN 'Binary' WHEN 2 THEN 'NoCase' WHEN 3 THEN 'RTrim' ELSE '<err>' END CollationConstraint, 
+                        [OrdinalInPrimaryKey], 
+                        (SELECT GROUP_CONCAT ([Name], ' | ')
+                FROM   (SELECT [] [Value], 
+                                [:1] [Name]
+                        FROM   (VALUES (1, 'ECInstanceId')
+                                UNION
+                                VALUES (2, 'ECClassId')
+                                UNION
+                                VALUES (4, 'SourceECInstanceId')
+                                UNION
+                                VALUES (8, 'SourceECClassId')
+                                UNION
+                                VALUES (16, 'TargetECInstanceId')
+                                UNION
+                                VALUES (32, 'TargetECClassId')
+                                UNION
+                                VALUES (64, 'DataColumn')
+                                UNION
+                                VALUES (128, 'SharedDataColumn')
+                                UNION
+                                VALUES (256, 'RelECClassId')))
+                WHERE  [Value] | [ColumnKind] = [ColumnKind]) [ColumnKind]
+                FROM   [ec_Column] [C]
+                        INNER JOIN [ec_Table] [T] ON [T].[Id] = [C].[TableId]
+                ORDER  BY [C].[TableId],
+                            [C].[Id];)";
+            }
+    public:
+        ColumnComparer(ECDbCR ecdb, Utf8CP test, Utf8CP directory)
+            : DataFacetComparer(ecdb, test, directory)
+            {}
+
+    };
+struct ComparerContext
+    {
+    private:
+        static Utf8String GetBaselineFolder()
+            {
+            return "C:/TEMP/BaseLines/";
+            //BeFileName ecdbPath;
+            //BeTest::GetHost().GetDocumentsRoot(ecdbPath);
+            //ecdbPath.AppendToPath(WString("Baselines", BentleyCharEncoding::Utf8).c_str());
+            //return ecdbPath.GetNameUtf8();
+            }
+
+        std::vector< std::unique_ptr<DataFacetComparer>> m_comparers;
+    public:
+        ComparerContext(ECDbCR ecdb, Utf8CP test)
+            {
+            m_comparers.push_back(std::unique_ptr<DataFacetComparer>(new ColumnComparer(ecdb, test, GetBaselineFolder().c_str())));
+            m_comparers.push_back(std::unique_ptr<DataFacetComparer>(new IndexComparer(ecdb, test, GetBaselineFolder().c_str())));
+            m_comparers.push_back(std::unique_ptr<DataFacetComparer>(new TableComparer(ecdb, test, GetBaselineFolder().c_str())));
+            m_comparers.push_back(std::unique_ptr<DataFacetComparer>(new PropertyMapComparer(ecdb, test, GetBaselineFolder().c_str())));
+            }
+        BentleyStatus CreateBaseline()
+            {
+            for (auto& v : m_comparers)
+                if (v->WriteBaselineToDisk() != SUCCESS)
+                    return ERROR;
+
+            return SUCCESS;
+            }
+
+        void Assert()
+            {
+            for (auto& v : m_comparers)
+                v->Assert();
+            }
+    };
+
+
 //---------------------------------------------------------------------------------------
-// @bsiMethod                                      Muhammad Hassan                  01/16
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SimpleTest)
+    {
+    ECDbCR ecdb = SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="SimpleTable" modifier="Abstract">
+                <ECProperty propertyName="Prop1" typeName="string" />
+            </ECEntityClass>
+          </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    MapContext ctx(ecdb);
+    ASSERT_TRUE_CLASSMAP_EXISTS(ctx, "TestSchema", "SimpleTable");
+    EXPECT_TRUE_CLASSMAP_EXISTS(ctx, "TestSchema", "SimpleTable");
+    ASSERT_FALSE_CLASSMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo");
+    EXPECT_FALSE_CLASSMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo");
+    ASSERT_TRUE_PROPERTYMAP_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1");
+    EXPECT_TRUE_PROPERTYMAP_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1");
+    ASSERT_FALSE_PROPERTYMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo");
+    EXPECT_FALSE_PROPERTYMAP_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo");
+    ASSERT_TRUE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable");
+    EXPECT_TRUE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable");
+    ASSERT_FALSE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo", "ts_SimpleTableBoo");
+    EXPECT_FALSE_PROPERTYMAP_TABLE_EXISTS(ctx, "TestSchemaBoo", "SimpleTableBoo", "Prop1Boo", "ts_SimpleTableBoo");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "Prop1", "ts_SimpleTable", "Prop1");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "ECInstanceId", "ts_SimpleTable", "Id");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "SimpleTable", "ECClassId", "ts_SimpleTable", "ECClassId");
+    ASSERT_FALSE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "Prop1");
+    ASSERT_FALSE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_ISVIRTUAL(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_TRUE_TABLE_EXISTS(ctx, "ts_SimpleTable");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "Prop1");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_EXISTS(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_SimpleTable", 3);
+    ASSERT_EQ_PROPERTYMAP_COUNT(ctx, "TestSchema", "SimpleTable", 3);
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_SimpleTable");
+    ASSERT_TRUE_COLUMN_IS_INTEGER(ctx, "ts_SimpleTable", "Id");
+    ASSERT_TRUE_COLUMN_IS_INTEGER(ctx, "ts_SimpleTable", "ECClassId");
+    ASSERT_TRUE_COLUMN_IS_TEXT(ctx, "ts_SimpleTable", "Prop1");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Max_15)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECStructClass typeName="GreekApha">
+                    <ECProperty propertyName="Alpha" typeName="double"/>
+                    <ECProperty propertyName="Beta" typeName="double"/>
+                    <ECProperty propertyName="Gamma" typeName="double"/>
+                    <ECProperty propertyName="Delta" typeName="double"/>
+                    <ECProperty propertyName="Epsilon" typeName="double"/>
+                    <ECProperty propertyName="Zeta" typeName="double"/>
+                    <ECProperty propertyName="Eta" typeName="double"/>
+                    <ECProperty propertyName="Theta" typeName="double"/>
+                    <ECProperty propertyName="Iota" typeName="double"/>
+                    <ECProperty propertyName="Kappa" typeName="double"/>
+                    <ECProperty propertyName="Lamda" typeName="double"/>
+                    <ECProperty propertyName="Mu" typeName="double"/>
+                </ECStructClass>
+                <ECEntityClass typeName="IP" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                            <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                        </IsMixin>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="I" typeName="int"/>
+                    <ECProperty propertyName="L" typeName="long"/>
+                    <ECProperty propertyName="B" typeName="binary"/>
+                    <ECProperty propertyName="BOOL" typeName="boolean"/>
+                    <ECProperty propertyName="P2D" typeName="point2d"/>
+                    <ECProperty propertyName="P3D" typeName="point3d"/>
+                    <ECStructProperty propertyName="ST" typeName="GreekApha"/>
+                    <ECProperty propertyName="G" typeName="Bentley.Geometry.Common.IGeometry"/>
+                    <ECProperty propertyName="S" typeName="string"/>
+                    <ECProperty propertyName="DT" typeName="dateTime"/>
+                    <ECProperty propertyName="D" typeName="double"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="IA" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                            <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                        </IsMixin>
+                    </ECCustomAttributes>
+                    <ECArrayProperty propertyName="ArS" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArI" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArL" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArD" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArDT" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArB" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArBOOL" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArP2D" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArP3D" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArG" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded"/>
+                    <ECArrayProperty propertyName="ArST" typeName="GreekApha" minOccurs="0" maxOccurs="unbounded"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="BaseClass" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns='ECDbMap.02.00'>
+                            <MaxSharedColumnsBeforeOverflow>15</MaxSharedColumnsBeforeOverflow>
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>"
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="M_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="ChildClass">
+                    <BaseClass>BaseClass</BaseClass>
+                    <BaseClass>IP</BaseClass>
+                    <BaseClass>IA</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    const_cast<ECDbR>(ecdb).SaveChanges();
+    MapContext ctx(ecdb);
+
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_IA");
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_IP");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_BaseClass");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_BaseClass_Overflow");
+
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_IA", 13); //11+2
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_IP", 27); //25+2  
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_BaseClass", 18); //15+2 +1
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_BaseClass_Overflow", 23);//21+2
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "M_S", "ts_BaseClass", "M_S");
+    //SharedColumn
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "I", "ts_BaseClass", "ps1");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "L", "ts_BaseClass", "ps2");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "B", "ts_BaseClass", "ps3");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "BOOL", "ts_BaseClass", "ps4");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P2D.X", "ts_BaseClass", "ps5");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P2D.Y", "ts_BaseClass", "ps6");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.X", "ts_BaseClass", "ps7");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.Y", "ts_BaseClass", "ps8");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.Z", "ts_BaseClass", "ps9");
+    //Struct is pused into overflow
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Alpha", "ts_BaseClass_Overflow", "os1");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Beta", "ts_BaseClass_Overflow", "os2");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Gamma", "ts_BaseClass_Overflow", "os3");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Delta", "ts_BaseClass_Overflow", "os4");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Epsilon", "ts_BaseClass_Overflow", "os5");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Zeta", "ts_BaseClass_Overflow", "os6");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Eta", "ts_BaseClass_Overflow", "os7");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Theta", "ts_BaseClass_Overflow", "os8");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Iota", "ts_BaseClass_Overflow", "os9");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Kappa", "ts_BaseClass_Overflow", "os10");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Lamda", "ts_BaseClass_Overflow", "os11");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Mu", "ts_BaseClass_Overflow", "os12");
+    //Back to primary table
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "G", "ts_BaseClass", "ps10");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "S", "ts_BaseClass", "ps11");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "DT", "ts_BaseClass", "ps12");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "D", "ts_BaseClass", "ps13");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArS", "ts_BaseClass", "ps14");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArI", "ts_BaseClass", "ps15");
+    //back to overflow
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArL", "ts_BaseClass_Overflow", "os13");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArD", "ts_BaseClass_Overflow", "os14");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArDT", "ts_BaseClass_Overflow", "os15");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArB", "ts_BaseClass_Overflow", "os16");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArBOOL", "ts_BaseClass_Overflow", "os17");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArP2D", "ts_BaseClass_Overflow", "os18");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArP3D", "ts_BaseClass_Overflow", "os19");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArG", "ts_BaseClass_Overflow", "os20");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArST", "ts_BaseClass_Overflow", "os21");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Default)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECStructClass typeName="GreekApha">
+                <ECProperty propertyName="Alpha" typeName="double"/>
+                <ECProperty propertyName="Beta" typeName="double"/>
+                <ECProperty propertyName="Gamma" typeName="double"/>
+                <ECProperty propertyName="Delta" typeName="double"/>
+                <ECProperty propertyName="Epsilon" typeName="double"/>
+                <ECProperty propertyName="Zeta" typeName="double"/>
+                <ECProperty propertyName="Eta" typeName="double"/>
+                <ECProperty propertyName="Theta" typeName="double"/>
+                <ECProperty propertyName="Iota" typeName="double"/>
+                <ECProperty propertyName="Kappa" typeName="double"/>
+                <ECProperty propertyName="Lamda" typeName="double"/>
+                <ECProperty propertyName="Mu" typeName="double"/>
+            </ECStructClass>
+            <ECEntityClass typeName="IP" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                        <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECProperty propertyName="I" typeName="int"/>
+                <ECProperty propertyName="L" typeName="long"/>
+                <ECProperty propertyName="B" typeName="binary"/>
+                <ECProperty propertyName="BOOL" typeName="boolean"/>
+                <ECProperty propertyName="P2D" typeName="point2d"/>
+                <ECProperty propertyName="P3D" typeName="point3d"/>
+                <ECStructProperty propertyName="ST" typeName="GreekApha"/>
+                <ECProperty propertyName="G" typeName="Bentley.Geometry.Common.IGeometry"/>
+                <ECProperty propertyName="S" typeName="string"/>
+                <ECProperty propertyName="DT" typeName="dateTime"/>
+                <ECProperty propertyName="D" typeName="double"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="IA" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                        <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECArrayProperty propertyName="ArS" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArI" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArL" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArD" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArDT" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArB" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArBOOL" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArP2D" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArP3D" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArG" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="ArST" typeName="GreekApha" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="BaseClass" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xlmns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns='ECDbMap.02.00'>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>"
+                </ECCustomAttributes>
+                <ECProperty propertyName="M_S" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="ChildClass">
+                <BaseClass>BaseClass</BaseClass>
+                <BaseClass>IP</BaseClass>
+                <BaseClass>IA</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    const_cast<ECDbR>(ecdb).SaveChanges();
+    //ComparerContext aa(ecdb,"Test3");
+    //aa.CreateBaseline();
+    MapContext ctx(ecdb);
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_IA");
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_IP");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_BaseClass");
+    ASSERT_FALSE_TABLE_EXISTS(ctx, "ts_BaseClass_Overflow");
+
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_IA", 13); //11+2
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_IP", 27); //25+2  
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_BaseClass", 39); 
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ECInstanceId", "ts_BaseClass", "Id");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ECClassId", "ts_BaseClass", "ECClassId");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "M_S", "ts_BaseClass", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "I", "ts_BaseClass", "ps1");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "L", "ts_BaseClass", "ps2");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "B", "ts_BaseClass", "ps3");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "BOOL", "ts_BaseClass", "ps4");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P2D.X", "ts_BaseClass", "ps5");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P2D.Y", "ts_BaseClass", "ps6");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.X", "ts_BaseClass", "ps7");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.Y", "ts_BaseClass", "ps8");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.Z", "ts_BaseClass", "ps9");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Alpha", "ts_BaseClass", "ps10");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Beta", "ts_BaseClass", "ps11");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Gamma", "ts_BaseClass", "ps12");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Delta", "ts_BaseClass", "ps13");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Epsilon", "ts_BaseClass", "ps14");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Zeta", "ts_BaseClass", "ps15");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Eta", "ts_BaseClass", "ps16");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Theta", "ts_BaseClass", "ps17");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Iota", "ts_BaseClass", "ps18");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Kappa", "ts_BaseClass", "ps19");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Lamda", "ts_BaseClass", "ps20");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Mu", "ts_BaseClass", "ps21");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "G", "ts_BaseClass", "ps22");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "S", "ts_BaseClass", "ps23");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "DT", "ts_BaseClass", "ps24");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "D", "ts_BaseClass", "ps25");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArS", "ts_BaseClass", "ps26");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArI", "ts_BaseClass", "ps27");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArL", "ts_BaseClass", "ps28");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArD", "ts_BaseClass", "ps29");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArDT", "ts_BaseClass", "ps30");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArB", "ts_BaseClass", "ps31");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArBOOL", "ts_BaseClass", "ps32");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArP2D", "ts_BaseClass", "ps33");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArP3D", "ts_BaseClass", "ps34");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArG", "ts_BaseClass", "ps35");
+    }
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                  Affan.Khan                          05/17
+    //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_0)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECStructClass typeName="GreekApha">
+            <ECProperty propertyName="Alpha" typeName="double"/>
+            <ECProperty propertyName="Beta" typeName="double"/>
+            <ECProperty propertyName="Gamma" typeName="double"/>
+            <ECProperty propertyName="Delta" typeName="double"/>
+            <ECProperty propertyName="Epsilon" typeName="double"/>
+            <ECProperty propertyName="Zeta" typeName="double"/>
+            <ECProperty propertyName="Eta" typeName="double"/>
+            <ECProperty propertyName="Theta" typeName="double"/>
+            <ECProperty propertyName="Iota" typeName="double"/>
+            <ECProperty propertyName="Kappa" typeName="double"/>
+            <ECProperty propertyName="Lamda" typeName="double"/>
+            <ECProperty propertyName="Mu" typeName="double"/>
+        </ECStructClass>
+        <ECEntityClass typeName="IP" modifier="Abstract">
+            <ECCustomAttributes>
+                <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                    <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+            <ECProperty propertyName="I" typeName="int"/>
+            <ECProperty propertyName="L" typeName="long"/>
+            <ECProperty propertyName="B" typeName="binary"/>
+            <ECProperty propertyName="BOOL" typeName="boolean"/>
+            <ECProperty propertyName="P2D" typeName="point2d"/>
+            <ECProperty propertyName="P3D" typeName="point3d"/>
+            <ECStructProperty propertyName="ST" typeName="GreekApha"/>
+            <ECProperty propertyName="G" typeName="Bentley.Geometry.Common.IGeometry"/>
+            <ECProperty propertyName="S" typeName="string"/>
+            <ECProperty propertyName="DT" typeName="dateTime"/>
+            <ECProperty propertyName="D" typeName="double"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="IA" modifier="Abstract">
+            <ECCustomAttributes>
+                <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                    <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+            <ECArrayProperty propertyName="ArS" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArI" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArL" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArD" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArDT" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArB" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArBOOL" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArP2D" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArP3D" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArG" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded"/>
+            <ECArrayProperty propertyName="ArST" typeName="GreekApha" minOccurs="0" maxOccurs="unbounded"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="BaseClass" modifier="Abstract">
+            <ECCustomAttributes>
+                <ClassMap xlmns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns='ECDbMap.02.00'>
+                    <MaxSharedColumnsBeforeOverflow>0</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                </ShareColumns>"
+            </ECCustomAttributes>
+            <ECProperty propertyName="M_S" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="ChildClass">
+            <BaseClass>BaseClass</BaseClass>
+            <BaseClass>IP</BaseClass>
+            <BaseClass>IA</BaseClass>
+        </ECEntityClass>
+    </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    const_cast<ECDbR>(ecdb).SaveChanges();
+    //ComparerContext aa(ecdb,"Test3");
+    //aa.CreateBaseline();
+    MapContext ctx(ecdb);
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_IA");
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_IP");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_BaseClass");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_BaseClass_Overflow");
+
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_IA", 13); //11+2
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_IP", 27); //25+2  
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_BaseClass", 3);
+    ASSERT_EQ_COLUMN_COUNT(ctx, "ts_BaseClass_Overflow", 38);
+
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "M_S", "ts_BaseClass", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "I", "ts_BaseClass_Overflow", "os1");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "L", "ts_BaseClass_Overflow", "os2");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "B", "ts_BaseClass_Overflow", "os3");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "BOOL", "ts_BaseClass_Overflow", "os4");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P2D.X", "ts_BaseClass_Overflow", "os5");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P2D.Y", "ts_BaseClass_Overflow", "os6");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.X", "ts_BaseClass_Overflow", "os7");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.Y", "ts_BaseClass_Overflow", "os8");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "P3D.Z", "ts_BaseClass_Overflow", "os9");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Alpha", "ts_BaseClass_Overflow", "os10");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Beta", "ts_BaseClass_Overflow", "os11");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Gamma", "ts_BaseClass_Overflow", "os12");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Delta", "ts_BaseClass_Overflow", "os13");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Epsilon", "ts_BaseClass_Overflow", "os14");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Zeta", "ts_BaseClass_Overflow", "os15");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Eta", "ts_BaseClass_Overflow", "os16");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Theta", "ts_BaseClass_Overflow", "os17");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Iota", "ts_BaseClass_Overflow", "os18");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Kappa", "ts_BaseClass_Overflow", "os19");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Lamda", "ts_BaseClass_Overflow", "os20");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ST.Mu", "ts_BaseClass_Overflow", "os21");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "G", "ts_BaseClass_Overflow", "os22");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "S", "ts_BaseClass_Overflow", "os23");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "DT", "ts_BaseClass_Overflow", "os24");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "D", "ts_BaseClass_Overflow", "os25");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArS", "ts_BaseClass_Overflow", "os26");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArI", "ts_BaseClass_Overflow", "os27");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArL", "ts_BaseClass_Overflow", "os28");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArD", "ts_BaseClass_Overflow", "os29");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArDT", "ts_BaseClass_Overflow", "os30");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArB", "ts_BaseClass_Overflow", "os31");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArBOOL", "ts_BaseClass_Overflow", "os32");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArP2D", "ts_BaseClass_Overflow", "os33");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArP3D", "ts_BaseClass_Overflow", "os34");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, "TestSchema", "ChildClass", "ArG", "ts_BaseClass_Overflow", "os35");
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SimpleTree_TPH_JT)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="M" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="M_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="ML" modifier="Abstract">
+                    <BaseClass>M</BaseClass>
+                    <ECProperty propertyName="ML_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="L" modifier="none">
+                    <BaseClass>ML</BaseClass>
+                    <ECProperty propertyName="L_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="LL" modifier="sealed">
+                    <BaseClass>L</BaseClass>
+                    <ECProperty propertyName="LL_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="LR" modifier="sealed">
+                    <BaseClass>L</BaseClass>
+                    <ECProperty propertyName="LR_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="MR" modifier="Abstract">
+                    <BaseClass>M</BaseClass>
+                    <ECProperty propertyName="MR_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="R" modifier="none">
+                    <BaseClass>MR</BaseClass>
+                    <ECProperty propertyName="R_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="RL" modifier="sealed">
+                    <BaseClass>R</BaseClass>
+                    <ECProperty propertyName="RL_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="RR" modifier="sealed">
+                    <BaseClass>R</BaseClass>
+                    <ECProperty propertyName="RR_S" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    const_cast<ECDbR>(ecdb).SaveChanges();
+    MapContext ctx(ecdb);
+    Utf8CP testSchema = "TestSchema";
+    //==================================================================================
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_M");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "M", "ECInstanceId", "ts_M", "Id");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "M", "ECClassId", "ts_M", "ECClassId");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "M", "M_S", "ts_M", "M_S");
+
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_ML");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "ML", "ML_S", "ts_ML", "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "L", "ML_S", "ts_ML", "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "L", "L_S", "ts_ML", "L_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "ML_S", "ts_ML", "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "L_S", "ts_ML", "L_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "LL_S", "ts_ML", "LL_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "ML_S", "ts_ML", "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "L_S", "ts_ML", "L_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "LR_S", "ts_ML", "LR_S");
+
+    //==================================================================================
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_ML");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "MR", "MR_S", "ts_MR", "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "R", "MR_S", "ts_MR", "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "R", "R_S", "ts_MR", "R_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "MR_S", "ts_MR", "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "R_S", "ts_MR", "R_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "RL_S", "ts_MR", "RL_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "MR_S", "ts_MR", "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "R_S", "ts_MR", "R_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "RR_S", "ts_MR", "RR_S");
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SimpleTree_TPH)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleTree.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="M" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="M_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="ML" modifier="Abstract">
+                    <BaseClass>M</BaseClass>
+                    <ECProperty propertyName="ML_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="L" modifier="none">
+                    <BaseClass>ML</BaseClass>
+                    <ECProperty propertyName="L_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="LL" modifier="sealed">
+                    <BaseClass>L</BaseClass>
+                    <ECProperty propertyName="LL_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="LR" modifier="sealed">
+                    <BaseClass>L</BaseClass>
+                    <ECProperty propertyName="LR_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="MR" modifier="Abstract">
+                    <BaseClass>M</BaseClass>
+                    <ECProperty propertyName="MR_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="R" modifier="none">
+                    <BaseClass>MR</BaseClass>
+                    <ECProperty propertyName="R_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="RL" modifier="sealed">
+                    <BaseClass>R</BaseClass>
+                    <ECProperty propertyName="RL_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="RR" modifier="sealed">
+                    <BaseClass>R</BaseClass>
+                    <ECProperty propertyName="RR_S" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    const_cast<ECDbR>(ecdb).SaveChanges();
+    MapContext ctx(ecdb);
+    Utf8CP testSchema = "TestSchema";
+    Utf8CP tableName = "ts_M";
+    //==================================================================================
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, tableName);
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "M", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "ML", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "ML", "ML_S", tableName, "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "L", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "L", "ML_S", tableName, "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "L", "L_S", tableName, "L_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "ML_S", tableName, "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "L_S", tableName, "L_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "LL_S", tableName, "LL_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "ML_S", tableName, "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "L_S", tableName, "L_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "LR_S", tableName, "LR_S");
+    //==================================================================================
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "M", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "MR", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "MR", "MR_S", tableName, "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "R", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "R", "MR_S", tableName, "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "R", "R_S", tableName, "R_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "MR_S", tableName, "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "R_S", tableName, "R_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "RL_S", tableName, "RL_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "M_S", tableName, "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "MR_S", tableName, "mR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "R_S", tableName, "R_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "RR_S", tableName, "RR_S");
+    //==================================================================================
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SimpleTree)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerClass.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="M" modifier="Abstract">
+                    <ECProperty propertyName="M_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="ML" modifier="Abstract">
+                    <BaseClass>M</BaseClass>
+                    <ECProperty propertyName="ML_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="L" modifier="none">
+                    <BaseClass>ML</BaseClass>
+                    <ECProperty propertyName="L_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="LL" modifier="sealed">
+                    <BaseClass>L</BaseClass>
+                    <ECProperty propertyName="LL_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="LR" modifier="sealed">
+                    <BaseClass>L</BaseClass>
+                    <ECProperty propertyName="LR_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="MR" modifier="Abstract">
+                    <BaseClass>M</BaseClass>
+                    <ECProperty propertyName="MR_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="R" modifier="none">
+                    <BaseClass>MR</BaseClass>
+                    <ECProperty propertyName="R_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="RL" modifier="sealed">
+                    <BaseClass>R</BaseClass>
+                    <ECProperty propertyName="RL_S" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="RR" modifier="sealed">
+                    <BaseClass>R</BaseClass>
+                    <ECProperty propertyName="RR_S" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    const_cast<ECDbR>(ecdb).SaveChanges();
+    MapContext ctx(ecdb);
+    const Utf8CP testSchema = "TestSchema";
+    //==================================================================================
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_M");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "M", "M_S", "ts_M", "M_S");
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_ML");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "ML", "M_S", "ts_ML", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "ML", "ML_S", "ts_ML", "ML_S");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_L");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "L", "M_S", "ts_L", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "L", "ML_S", "ts_L", "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "L", "L_S", "ts_L", "L_S");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_LL");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "M_S", "ts_LL", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "ML_S", "ts_LL", "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "L_S", "ts_LL", "L_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LL", "LL_S", "ts_LL", "LL_S");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_LR");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "M_S", "ts_LR", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "ML_S", "ts_LR", "ML_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "L_S", "ts_LR", "L_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "LR", "LR_S", "ts_LR", "LR_S");
+    //==================================================================================
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_M");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "M", "M_S", "ts_M", "M_S");
+    ASSERT_TRUE_TABLE_ISVIRTUAL(ctx, "ts_MR");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "MR", "M_S", "ts_MR", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "MR", "MR_S", "ts_MR", "MR_S");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_R");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "R", "M_S", "ts_R", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "R", "MR_S", "ts_R", "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "R", "R_S", "ts_R", "R_S");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_RL");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "M_S", "ts_RL", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "MR_S", "ts_RL", "MR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "R_S", "ts_RL", "R_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RL", "RL_S", "ts_RL", "RL_S");
+    ASSERT_FALSE_TABLE_ISVIRTUAL(ctx, "ts_RR");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "M_S", "ts_RR", "M_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "MR_S", "ts_RR", "mR_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "R_S", "ts_RR", "R_S");
+    ASSERT_TRUE_PROPERTYMAP_COLUMN_EXISTS(ctx, testSchema, "RR", "RR_S", "ts_RR", "RR_S");
+    //==================================================================================
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
     {
@@ -9835,8 +10866,8 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
             <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
             <ECSchemaReference name="EditorCustomAttributes" version="01.03" alias="beca" />
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
-	        <!-- Subset of BisCore schema -->
-	        <ECEntityClass typeName="Element" modifier="Abstract" >
+            <!-- Subset of BisCore schema -->
+            <ECEntityClass typeName="Element" modifier="Abstract" >
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
@@ -9852,8 +10883,8 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
             </ECEntityClass>
             <ECEntityClass typeName="PhysicalElement" modifier="Abstract"  >
                 <BaseClass>SpatialElement</BaseClass>
-            </ECEntityClass>	
-	            <ECEntityClass typeName="SpatialElement" modifier="Abstract"  >
+            </ECEntityClass>    
+                <ECEntityClass typeName="SpatialElement" modifier="Abstract"  >
                 <BaseClass>GeometricElement3d</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="GeometricElement3d" modifier="Abstract"  >
@@ -9871,8 +10902,8 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                 <ECProperty propertyName="Roll" typeName="double" />
                 <ECProperty propertyName="BBoxLow" typeName="point3d"  />
                 <ECProperty propertyName="BBoxHigh" typeName="point3d"  />
-            </ECEntityClass>	
-	        <ECEntityClass typeName="GeometricElement" modifier="Abstract"  >
+            </ECEntityClass>    
+            <ECEntityClass typeName="GeometricElement" modifier="Abstract"  >
                 <BaseClass>Element</BaseClass>
                 <ECCustomAttributes>
                     <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
@@ -9888,14 +10919,14 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                 </ECCustomAttributes>
                 <ECProperty propertyName="IsPrivate" typeName="boolean"  />
             </ECEntityClass>
-	        <ECEntityClass typeName="InformationContentElement" modifier="Abstract"  >
+            <ECEntityClass typeName="InformationContentElement" modifier="Abstract"  >
                 <BaseClass>Element</BaseClass>
                 <ECCustomAttributes>
                     <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
                 </ECCustomAttributes>
             </ECEntityClass>
-	        <!-- Test classes causing the issue -->
-	        <ECEntityClass typeName="ILinearElement" modifier="Abstract">
+            <!-- Test classes causing the issue -->
+            <ECEntityClass typeName="ILinearElement" modifier="Abstract">
                 <ECCustomAttributes>
                     <IsMixin xmlns="CoreCustomAttributes.01.00">
                         <AppliesToEntityClass>Element</AppliesToEntityClass>
@@ -9918,11 +10949,11 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                     </IsMixin>
                 </ECCustomAttributes>
             </ECEntityClass>
-	        <ECEntityClass typeName="Tunnel" modifier="Sealed"  >
+            <ECEntityClass typeName="Tunnel" modifier="Sealed"  >
                 <BaseClass>PhysicalElement</BaseClass>
                 <BaseClass>ILinearElement</BaseClass>
             </ECEntityClass>
-	        <ECEntityClass typeName="FurnitureElement" modifier="Abstract" >
+            <ECEntityClass typeName="FurnitureElement" modifier="Abstract" >
                 <BaseClass>PhysicalElement</BaseClass>
                 <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="Forward"/>
             </ECEntityClass>
@@ -9930,7 +10961,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                 <BaseClass>FurnitureElement</BaseClass>
                 <BaseClass>ILinearlyLocatedElement</BaseClass>
             </ECEntityClass>    
-	        <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
+            <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
                 <BaseClass>DefinitionElement</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="TemplateGeometryDefinitionElement" modifier="Abstract">
@@ -9939,7 +10970,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
             <ECEntityClass typeName="GenericTemplateGeometryDefinition" modifier="Sealed">
                 <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
             </ECEntityClass>
-	        <ECEntityClass typeName="FurnitureDefinitionElement" modifier="Abstract">
+            <ECEntityClass typeName="FurnitureDefinitionElement" modifier="Abstract">
                 <BaseClass>DefinitionElement</BaseClass>
                 <ECProperty propertyName="Thumbnail" typeName="binary" />
                 <ECProperty propertyName="LightsJson" typeName="string" />
@@ -9961,7 +10992,7 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                     <Class class="FurnitureDefinitionElement"/>
                 </Target>
             </ECRelationshipClass>
-	        <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
+            <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
                 <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
                     <Class class="FurnitureDefinitionElement"/>
                 </Source>
@@ -9988,8 +11019,8 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
             <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
             <ECSchemaReference name="EditorCustomAttributes" version="01.03" alias="beca" />
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
-	        <!-- Subset of BisCore schema -->
-	        <ECEntityClass typeName="Element" modifier="Abstract" >
+            <!-- Subset of BisCore schema -->
+            <ECEntityClass typeName="Element" modifier="Abstract" >
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
@@ -10005,8 +11036,8 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
             </ECEntityClass>
             <ECEntityClass typeName="PhysicalElement" modifier="Abstract"  >
                 <BaseClass>SpatialElement</BaseClass>
-            </ECEntityClass>	
-	            <ECEntityClass typeName="SpatialElement" modifier="Abstract"  >
+            </ECEntityClass>    
+                <ECEntityClass typeName="SpatialElement" modifier="Abstract"  >
                 <BaseClass>GeometricElement3d</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="GeometricElement3d" modifier="Abstract"  >
@@ -10024,8 +11055,8 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <ECProperty propertyName="Roll" typeName="double" />
                 <ECProperty propertyName="BBoxLow" typeName="point3d"  />
                 <ECProperty propertyName="BBoxHigh" typeName="point3d"  />
-            </ECEntityClass>	
-	        <ECEntityClass typeName="GeometricElement" modifier="Abstract"  >
+            </ECEntityClass>    
+            <ECEntityClass typeName="GeometricElement" modifier="Abstract"  >
                 <BaseClass>Element</BaseClass>
                 <ECCustomAttributes>
                     <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
@@ -10041,14 +11072,14 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 </ECCustomAttributes>
                 <ECProperty propertyName="IsPrivate" typeName="boolean"  />
             </ECEntityClass>
-	        <ECEntityClass typeName="InformationContentElement" modifier="Abstract"  >
+            <ECEntityClass typeName="InformationContentElement" modifier="Abstract"  >
                 <BaseClass>Element</BaseClass>
                 <ECCustomAttributes>
                     <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
                 </ECCustomAttributes>
             </ECEntityClass>
-	        <!-- Test classes causing the issue -->
-	        <ECEntityClass typeName="ILinearElement" modifier="Abstract">
+            <!-- Test classes causing the issue -->
+            <ECEntityClass typeName="ILinearElement" modifier="Abstract">
                 <ECCustomAttributes>
                     <IsMixin xmlns="CoreCustomAttributes.01.00">
                         <AppliesToEntityClass>Element</AppliesToEntityClass>
@@ -10071,16 +11102,16 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                     </IsMixin>
                 </ECCustomAttributes>
             </ECEntityClass>
-	        <ECEntityClass typeName="Tunnel" modifier="Sealed"  >
+            <ECEntityClass typeName="Tunnel" modifier="Sealed"  >
                 <BaseClass>PhysicalElement</BaseClass>
                 <BaseClass>ILinearElement</BaseClass>
             </ECEntityClass>
-	        <ECEntityClass typeName="FurnitureElement" modifier="Abstract" >
+            <ECEntityClass typeName="FurnitureElement" modifier="Abstract" >
                 <BaseClass>PhysicalElement</BaseClass>
                 <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="Forward"/>
             </ECEntityClass>
   
-	        <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
+            <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
                 <BaseClass>DefinitionElement</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="TemplateGeometryDefinitionElement" modifier="Abstract">
@@ -10089,7 +11120,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
             <ECEntityClass typeName="GenericTemplateGeometryDefinition" modifier="Sealed">
                 <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
             </ECEntityClass>
-	        <ECEntityClass typeName="FurnitureDefinitionElement" modifier="Abstract">
+            <ECEntityClass typeName="FurnitureDefinitionElement" modifier="Abstract">
                 <BaseClass>DefinitionElement</BaseClass>
                 <ECProperty propertyName="Thumbnail" typeName="binary" />
                 <ECProperty propertyName="LightsJson" typeName="string" />
@@ -10111,7 +11142,7 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                     <Class class="FurnitureDefinitionElement"/>
                 </Target>
             </ECRelationshipClass>
-	        <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
+            <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
                 <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
                     <Class class="FurnitureDefinitionElement"/>
                 </Source>

@@ -211,6 +211,12 @@
     <ClCompile Include="Published\BulkCrudTestFixture.cpp">
       <Filter>Published\BulkCrudTestFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Published\DataTable.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\MapContext.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">
@@ -284,6 +290,12 @@
     </ClInclude>
     <ClInclude Include="Published\BulkCrudTestFixture.h">
       <Filter>Published\BulkCrudTestFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\DataTable.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\MapContext.h">
+      <Filter>Published</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
