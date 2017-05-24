@@ -102,7 +102,6 @@ int FormattingScannerCursor::AddTrailingByte()
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //---------------------------------------------------------------------------------------
 PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
-//POP_MSVC_IGNORE
 FormattingWord FormattingScannerCursor::ExtractWord()
     {
     static const size_t maxDelim = 4;
@@ -368,6 +367,7 @@ Utf8CP FormattingScannerCursor::GetSignature(bool refresh, bool compress)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
+PUSH_MSVC_IGNORE(6385 6386)
 Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
     {
     Utf8CP sig = GetSignature(true, true);
@@ -428,6 +428,7 @@ Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
 
     return str;
     }
+POP_MSVC_IGNORE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
@@ -661,6 +662,7 @@ size_t FormattingSignature::DetectFractPattern(size_t ind)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
+PUSH_MSVC_IGNORE(6385 6386)
 size_t FormattingSignature::CompressPattern()
     {
     if (FormatConstant::EndOfLine() == m_pattern[0])
@@ -686,6 +688,7 @@ size_t FormattingSignature::CompressPattern()
     m_pattern[i] = FormatConstant::EndOfLine();
     return i;
     }
+POP_MSVC_IGNORE
 
 //===================================================
 //
