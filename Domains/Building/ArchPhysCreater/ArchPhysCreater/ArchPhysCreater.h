@@ -40,6 +40,10 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
         WString GetArgValueW(WCharCP arg);
         BentleyStatus ParseCommandLine(int argc, WCharP argv[]);
         BentleyStatus CreateBuilding( BuildingPhysical::BuildingPhysicalModelR, BuildingPhysical::BuildingTypeDefinitionModelR);
+        BentleyStatus PopulateInstanceProperties(ECN::IECInstancePtr instance);
+        BentleyStatus PopulateElementProperties(Dgn::PhysicalElementPtr element);
+
+
 
 
         Dgn::DgnDbPtr CreateDgnDb(BeFileNameCR);

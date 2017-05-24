@@ -50,7 +50,6 @@ ArchitecturalPhysical::ArchitecturalBaseElementPtr ArchitecturalBaseElement::Cre
 
     ArchitecturalPhysical::ArchitecturalBaseElementPtr buildingElement = dynamic_pointer_cast<ArchitecturalPhysical::ArchitecturalBaseElement>(element);
 
-
     auto geomSource = buildingElement->ToGeometrySourceP();
 
     if (nullptr == geomSource)
@@ -58,12 +57,8 @@ ArchitecturalPhysical::ArchitecturalBaseElementPtr ArchitecturalBaseElement::Cre
 
     geomSource->SetCategoryId(categoryId);
 
-
-    //ArchitecturalBaseElementPtr buildingElement = new ArchitecturalBaseElement();
-
- //   return buildingElement;
-
     return buildingElement;
+
     }
 
 

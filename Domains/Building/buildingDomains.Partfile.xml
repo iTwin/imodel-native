@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <Part Name="BuildingDomains" >
-        <SubPart PartName="ArchitecturalPhysical"/>
+        <SubProduct ProductName="ArchitecturalPhysicalTests"/>
     </Part>
 
     
@@ -12,6 +12,7 @@
         <SubPart PartName="BuildingCommon"/>
         <SubPart PartName="BuildingPhysical"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+
         <Bindings>
             <Libs>Delivery/$(libprefix)ArchitecturalPhysical$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ArchitecturalPhysical$(ApiNumber)$(shlibext)</Assemblies>
@@ -70,6 +71,46 @@
             <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
     </Part>
+    
+    
+    <Part Name="ArchitecturalPhysicalTestsExe" DeferType="ArchitecturalPhysicalTests" BentleyBuildMakeFile="ArchitecturalPhysicalSchema/Tests/Tests.mke" OnlyPlatforms="x64">
+        <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
+        <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
+        <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <SubPart PartName="ArchitecturalPhysical"/>
+        <Bindings>
+              <Assemblies>Delivery/$(shlibprefix)ArchitecturalPhysicalTests.exe</Assemblies>
+              <Files ProductDirectoryName="Assets">Delivery/ArchitecturalPhysicalTests.logging.config.xml</Files>
+              <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/ArchitecturalPhysicalTests_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="Tests">
+        <ProductDirectory Name="VendorNotices"                  Path="VendorNotices"/>
+        <ProductDirectory Name="Assemblies"                     Path="Assemblies"/>
+        <ProductDirectory Name="Assets"                         Path="Assemblies/Assets"/>
+        <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
+        <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
+        <ProductDirectory Name="UnitTests-Assets"               Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
+    </ProductDirectoryList>
+    
+    <Product Name="ArchitecturalPhysicalTests" OnlyPlatforms="x64">
+        <SubPart PartName="ArchitecturalPhysicalTestsExe"/>
+<!--        <Directories DirectoryListName="RevitBridgeDirectories" /> -->
+        <Directories DirectoryListName="Tests"/>
+    </Product>
+
+    
+    <Part Name="RunArchitecturalPhysicalTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ArchitecturalPhysicalTests/ArchitecturalPhysicalTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="ArchitecturalPhysicalTests" />
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ArchitecturalPhysicalTests.log</Files>
+        </Bindings>
+    </Part>
+    
     
     <!-- NOT YET
     

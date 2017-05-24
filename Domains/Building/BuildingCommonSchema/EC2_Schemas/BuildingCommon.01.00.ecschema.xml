@@ -11,6 +11,33 @@
             <SchemaFullNameAtEditingStart>BuildingCommon.01.00</SchemaFullNameAtEditingStart>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
+    <ECClass typeName="ABDIdentification" displayLabel="ABD Identification" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="CatalogType" typeName="string" displayLabel="Catalog Type" />
+        <ECProperty propertyName="CatalogInstance" typeName="string" displayLabel="Catalog Instance" />
+        <ECProperty propertyName="ElementId" typeName="long" description="Dgn File Element Id" />
+        <ECProperty propertyName="PartDefinition" typeName="string" displayLabel="Part Definition" />
+    </ECClass>
+    <ECClass typeName="ABDIFCOerrides" displayLabel="ABD IFC Oerrides" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Ifc4Override" typeName="string" displayLabel="Ifc 2x4 Override" />
+        <ECProperty propertyName="Ifc3Override" typeName="string" displayLabel="Ifc 2x3 Entity/Type Override" />
+        <ECProperty propertyName="Ifc4Overridedescription" typeName="string" displayLabel="Ifc 2x4 Override Description" />
+        <ECProperty propertyName="Ifc3Overridedescription" typeName="string" displayLabel="Ifc 2x3 Override Description" />
+    </ECClass>
+    <ECClass typeName="AcousticalProperties" displayLabel="Acoustical Properties" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Rating" typeName="double" description="Acoustics Rating " displayLabel="Acoustic Rating (STC)" />
+        <ECProperty propertyName="TestReferenceNumber" typeName="string" displayLabel="Acoustic Test Reference No." />
+        <ECProperty propertyName="TestReferenceUrl" typeName="string" displayLabel="Acoustic Test Reference URL" />
+    </ECClass>
+    <ECClass typeName="AnalyticalProperties" displayLabel="Analytical Properties" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="HeatTransferCoefficient" typeName="double" displayLabel="Heat Transfer Coefficient (U)" />
+        <ECProperty propertyName="ThermalMass" typeName="double" displayLabel="Thermal Mass" />
+        <ECProperty propertyName="Absorptance" typeName="double" />
+        <ECProperty propertyName="Roughness" typeName="double" />
+    </ECClass>
     <ECClass typeName="Classification" description="Contains the definition for the Classifications that are applied to building elements" isDomainClass="True">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="OmniClass" typeName="string" displayLabel="Omni Class" />
@@ -20,10 +47,34 @@
         <ECProperty propertyName="UniFormat" typeName="string" />
         <ECProperty propertyName="UniFormatDescription" typeName="string" displayLabel="UniFormat Description" />
     </ECClass>
+    <ECClass typeName="FireResistance" displayLabel="Fire Resistance" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TestReferenceNumber" typeName="string" displayLabel="Fire Test Reference No." />
+        <ECProperty propertyName="SurfaceSpreadOfFlame" typeName="string" displayLabel="Surface Spread of Flame" />
+        <ECProperty propertyName="Compartmentation" typeName="string" />
+        <ECProperty propertyName="IsCombustible" typeName="boolean" displayLabel="Is Combustible" />
+        <ECProperty propertyName="Rating" typeName="double" />
+        <ECProperty propertyName="TestReferenceUrl" typeName="string" displayLabel="Fire Test Reference URL" />
+    </ECClass>
+    <ECClass typeName="IdentityData" displayLabel="Identity Data" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="Keynote" typeName="string" />
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name (Alternate)" />
+        <ECProperty propertyName="Notes" typeName="string" />
+        <ECProperty propertyName="TypeId" typeName="string" />
+        <ECProperty propertyName="ItemId" typeName="string" />
+    </ECClass>
     <ECClass typeName="Manufacturer" description="This is a class to group the Manufacturer properties applied to Building Classes" isDomainClass="True">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="Manufacturer" typeName="string" />
         <ECProperty propertyName="ModelNumber" typeName="string" displayLabel="Model Number" />
         <ECProperty propertyName="ManufacturerURL" typeName="string" displayLabel="Manufacturer URL" />
+    </ECClass>
+    <ECClass typeName="Phases" isDomainClass="True">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Phase" typeName="string" />
+        <ECProperty propertyName="PhaseCreated" typeName="string" displayLabel="Phase Created" />
+        <ECProperty propertyName="PhaseDemolished" typeName="string" displayLabel="Phase Demolished" />
     </ECClass>
 </ECSchema>

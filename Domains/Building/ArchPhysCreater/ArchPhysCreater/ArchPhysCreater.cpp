@@ -178,6 +178,8 @@ Dgn::DgnDbPtr ArchPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
     }
 
 
+template<class T, class U> RefCountedCPtr<T> const_pointer_cast(RefCountedCPtr<U> const & p) { return dynamic_cast<T const *>(p.get()); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
@@ -196,15 +198,41 @@ BentleyStatus ArchPhysCreator::DoCreate()
     // Create an DefinitionPartitionElement for the building model
 
     Dgn::SubjectCPtr rootSubject = db->Elements().GetRootSubject();
+
+
     Dgn::PhysicalPartitionCPtr partition = Dgn::PhysicalPartition::CreateAndInsert(*rootSubject, "BuildingPhysicalModel");
     if (!partition.IsValid())
         return BentleyStatus::ERROR;
-
 
     
     BuildingPhysical::BuildingPhysicalModelPtr physicalModel = BuildingPhysical::BuildingPhysicalModel::Create(*partition);
     if (!physicalModel.IsValid())
         return BentleyStatus::ERROR;
+
+
+    Dgn::ElementIterator itr = db->Elements().MakeIterator(BIS_SCHEMA("PhysicalPartition"));
+
+    for each (Dgn::ElementIteratorEntry ele in itr)
+        {
+        Utf8CP codeValue = ele.GetCodeValue();
+
+        Dgn::DgnElementCPtr element = db->Elements().GetElement(ele.GetElementId());
+
+        Dgn::PhysicalPartitionCPtr part1 = const_pointer_cast<Dgn::PhysicalPartition>(element);
+
+        if (part1.IsValid())
+            {
+            Dgn::DgnModelCPtr model = part1->GetSubModel();
+            BuildingPhysical::BuildingPhysicalModelCPtr bm = const_pointer_cast<BuildingPhysical::BuildingPhysicalModel>(model);
+
+            if (bm.IsValid())
+                {
+                bm->GetClassId();
+                }
+
+            }
+        }
+
 
     Dgn::DefinitionPartitionCPtr defPartition = Dgn::DefinitionPartition::CreateAndInsert(*rootSubject, "BuildingTypeDefinitionModel");
     if (!defPartition.IsValid())
@@ -266,6 +294,92 @@ Dgn::DgnViewId ArchPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP n
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
+BentleyStatus ArchPhysCreator::PopulateInstanceProperties(ECN::IECInstancePtr instance)
+    {
+    ECN::ECClassCR ecClass = instance->GetClass();
+
+    int i = 0;
+
+    for each (ECN::ECPropertyP prop in ecClass.GetProperties())
+        {
+        if (nullptr == prop || prop->GetName() == "Roll" || prop->GetName() == "Pitch" || prop->GetName() == "Yaw" )
+            continue;
+
+        Utf8String typeName = prop->GetTypeName();
+
+        if (typeName == "double")
+            {
+            ECN::ECValue doubleValue;
+
+            doubleValue.SetDouble((i + 1) * 10.0);
+            instance->SetValue(prop->GetName().c_str(), doubleValue);
+            }
+        else if (typeName == "string")
+            {
+            ECN::ECValue stringValue;
+
+            stringValue.SetWCharCP(L"String Value");
+            instance->SetValue(prop->GetName().c_str(), stringValue);
+            }
+        else if (typeName == "boolean")
+            {
+            ECN::ECValue boolValue;
+            boolValue.SetBoolean(true);
+            instance->SetValue(prop->GetName().c_str(), boolValue);
+            }
+            i++;
+        }
+
+    return BentleyStatus::SUCCESS;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+BentleyStatus ArchPhysCreator::PopulateElementProperties(Dgn::PhysicalElementPtr element)
+    {
+    ECN::ECClassCP ecClass = element->GetElementClass();
+    int i = 0;
+
+    for each (ECN::ECPropertyP prop in ecClass->GetProperties())
+        {
+        if (nullptr == prop || prop->GetName() == "Roll" || prop->GetName() == "Pitch" || prop->GetName() == "Yaw")
+            continue;
+
+        Utf8String typeName = prop->GetTypeName();
+
+        if (typeName == "double")
+            {
+            ECN::ECValue doubleValue;
+
+            doubleValue.SetDouble((i + 1) * 10.0);
+            element->SetPropertyValue(prop->GetName().c_str(), doubleValue);
+            }
+        else if (typeName == "string")
+            {
+            ECN::ECValue stringValue;
+
+            stringValue.SetWCharCP(L"String Value");
+            element->SetPropertyValue(prop->GetName().c_str(), stringValue);
+            }
+        else if (typeName == "boolean")
+            {
+            ECN::ECValue boolValue;
+            boolValue.SetBoolean(true);
+            element->SetPropertyValue(prop->GetName().c_str(), boolValue);
+            }
+        i++;
+        }
+
+    return BentleyStatus::SUCCESS;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
 
 BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysicalModelR physicalModel, BuildingPhysical::BuildingTypeDefinitionModelR typeModel)
     {
@@ -288,36 +402,26 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
 
         GeometricTools::CreateGeometry(buildingElement, physicalModel);
 
-        ECN::IECInstancePtr instance = ArchitecturalPhysical::ArchitecturalBaseElement::AddClassificationAspect(physicalModel, buildingElement);
+        ECN::IECInstancePtr instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement,"Classification");
+        PopulateInstanceProperties( instance );
+        instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Manufacturer");
+        PopulateInstanceProperties(instance);
+        instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Phases");
+        PopulateInstanceProperties(instance);
+        instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "IdentityData");
+        PopulateInstanceProperties(instance);
+        instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "FireResistance");
+        PopulateInstanceProperties(instance);
+        instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AnalyticalProperties");
+        PopulateInstanceProperties(instance);
+        instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AcousticalProperties");
+        PopulateInstanceProperties(instance);
+        instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIFCOerrides");
+        PopulateInstanceProperties(instance);
+        instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIdentification");
+        PopulateInstanceProperties(instance);
 
-        ECN::ECValue value;
-
-        value.SetWCharCP(L"40-10-10");
-
-        instance->SetValue("OmniClass", value);
-
-        for each (ECN::ECPropertyP prop in var->GetProperties())
-            {
-            if ( nullptr == prop )
-                continue;
-
-            Utf8String typeName = prop->GetTypeName();
-
-            if (typeName == "double")
-                {
-                ECN::ECValue doubleValue;
-
-                doubleValue.SetDouble((i+1) * 10.0);
-                buildingElement->SetPropertyValue(prop->GetName().c_str(), doubleValue);
-                }
-            else if (typeName == "string")
-                {
-                ECN::ECValue stringValue;
-
-                stringValue.SetWCharCP(L"String Value");
-                buildingElement->SetPropertyValue ( prop->GetName().c_str(), stringValue);
-                }
-            }
+        PopulateElementProperties ( buildingElement );
 
         buildingElement->Insert(&status);
 

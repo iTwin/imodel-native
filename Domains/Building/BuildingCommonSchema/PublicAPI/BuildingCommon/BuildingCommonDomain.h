@@ -28,6 +28,8 @@ struct BuildingCommonDomain : Dgn::DgnDomain
         BuildingCommonDomain();
         BUILDING_COMMON_EXPORT static Dgn::CodeSpecId QueryBuildingCommonCodeSpecId(Dgn::DgnDbCR dgndb);
         BUILDING_COMMON_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
+        BUILDING_COMMON_EXPORT static ECN::IECInstancePtr BuildingCommonDomain::AddAspect(Dgn::PhysicalModelR model, Dgn::PhysicalElementPtr element, Utf8StringCR className);
+
     };
 
 END_BENTLEY_BUILDING_COMMON_NAMESPACE

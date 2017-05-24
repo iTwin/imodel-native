@@ -79,4 +79,46 @@ void BuildingCommonDomain::_OnDgnDbOpened(DgnDbR db) const
     {
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ECN::IECInstancePtr BuildingCommonDomain::AddAspect(Dgn::PhysicalModelR model, Dgn::PhysicalElementPtr element, Utf8StringCR className)
+    {
+
+    // Find the class
+
+    ECN::ECClassCP aspectClassP = model.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_BUILDING_COMMON_SCHEMA_NAME, className.c_str());
+
+    if (nullptr == aspectClassP)
+        return nullptr;
+
+    // If the element is already persisted and has the Aspect class, you can't add another
+
+    if (element->GetElementId().IsValid())
+        {
+        ECN::IECInstanceCP instance = DgnElement::GenericUniqueAspect::GetAspect(*element, *aspectClassP);
+
+        if (nullptr != instance)
+            return nullptr;
+        }
+
+    ECN::StandaloneECEnablerPtr enabler = aspectClassP->GetDefaultStandaloneEnabler();
+
+    if (!enabler.IsValid())
+        return nullptr;
+
+    ECN::IECInstancePtr instance = enabler->CreateInstance().get();
+    if (!instance.IsValid())
+        return nullptr;
+
+    Dgn::DgnDbStatus status = DgnElement::GenericUniqueAspect::SetAspect(*element, *instance);
+
+    if (Dgn::DgnDbStatus::Success != status)
+        return nullptr;
+
+    return instance;
+    }
+
+
 END_BENTLEY_BUILDING_COMMON_NAMESPACE
