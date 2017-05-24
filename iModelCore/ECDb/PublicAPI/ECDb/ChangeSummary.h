@@ -98,8 +98,8 @@ struct ChangeIterator final
         //! Get the table name of the current change
         ECDB_EXPORT Utf8StringCR GetTableName() const;
 
-        //! Return true if the current change is in a joined table (and not primary table)
-        ECDB_EXPORT bool IsJoinedTable() const;
+        //! Return true if the current change is in the primary table (and not a joined or overflow table)
+        ECDB_EXPORT bool IsPrimaryTable() const;
 
         //! Get the DbOpcode of the current change
         ECDB_EXPORT DbOpcode GetDbOpcode() const;
