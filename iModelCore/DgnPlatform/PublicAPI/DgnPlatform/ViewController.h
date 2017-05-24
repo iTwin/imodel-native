@@ -118,7 +118,8 @@ protected:
     DgnViewportP m_vp = nullptr;
     ViewDefinitionPtr m_definition;
     bool m_noQuery = false;
-    bool m_featureSymbologyDirty = true;
+    bool m_featureOverridesDirty = true;
+    bool m_selectionSetDirty;
     SpecialElements m_special;
     ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
     Render::GraphicListPtr m_currentScene;
@@ -186,8 +187,8 @@ protected:
     bool IsSceneReady() const;
 
     //! Override visibility and/or symbology of features. Base implementation handles hilite color.
-    //! Note: This function is invoked just before rendering a frame, if and only if ViewController::IsFeatureSymbologyDirty() returns true.
-    //! If you override this function, use SetFeatureSymbologyDirty() to set this flag whenever changes are made which will affect your symbology overrides.
+    //! Note: This function is invoked just before rendering a frame, if and only if ViewController::AreFeatureOverridesDirty() returns true.
+    //! If you override this function, use SetFeatureOverridesDirty() to set this flag whenever changes are made which will affect your symbology overrides.
     DGNPLATFORM_EXPORT virtual void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const;
 
     //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
@@ -224,8 +225,10 @@ public:
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     virtual void _PickTerrain(PickContextR context) {}
 
-    bool IsFeatureSymbologyDirty() const {return m_featureSymbologyDirty;}
-    void SetFeatureSymbologyDirty(bool dirty=true) {m_featureSymbologyDirty = dirty;}
+    bool AreFeatureOverridesDirty() const {return m_featureOverridesDirty;}
+    void SetFeatureOverridesDirty(bool dirty=true) {m_featureOverridesDirty = dirty;}
+    bool IsSelectionSetDirty() const {return m_selectionSetDirty;}
+    void SetSelectionSetDirty(bool dirty=true) {m_selectionSetDirty = dirty;}
 
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -302,7 +305,7 @@ public:
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
 
     //! Set the CategorySelector for this view.
-    void SetCategorySelector(CategorySelectorR selector) { m_definition->SetCategorySelector(selector); SetFeatureSymbologyDirty(); }
+    void SetCategorySelector(CategorySelectorR selector) { m_definition->SetCategorySelector(selector); SetFeatureOverridesDirty(); }
 
     //! Gets the Auxiliary Coordinate System for this view.
     AuxCoordSystemCR GetAuxCoordinateSystem() const {return *m_auxCoordSys;}
