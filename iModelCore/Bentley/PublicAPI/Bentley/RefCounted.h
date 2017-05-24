@@ -144,6 +144,7 @@ public:
     template<class U> bool operator== (RefCountedPtr<U> const& rhs) const {return m_p == rhs.get();}
     bool operator!= (RefCountedPtr<T> const& rhs) const {return m_p != rhs.m_p;}
     template<class U> bool operator!= (RefCountedPtr<U> const& rhs) const {return m_p != rhs.get();}
+    template<class U> bool operator< (RefCountedPtr<U> const& rhs) const {return m_p < rhs.get();}
 
     RefCountedPtr& operator=(RefCountedPtr const & rhs) {RefCountedPtr(rhs).swap(*this); return *this;}
     RefCountedPtr& operator=(T* rhs) {RefCountedPtr(rhs).swap(*this); return *this;}
@@ -184,6 +185,7 @@ public:
     template<class U> bool operator== (RefCountedCPtr<U> const& rhs) const {return m_p == rhs.get();}
     bool operator!= (RefCountedCPtr<T> const& rhs) const {return m_p != rhs.m_p;}
     template<class U> bool operator!= (RefCountedCPtr<U> const& rhs) const {return m_p != rhs.get();}
+    template<class U> bool operator< (RefCountedCPtr<U> const& rhs) const {return m_p < rhs.get();}
 
     RefCountedCPtr& operator=(RefCountedCPtr const& rhs) {RefCountedCPtr(rhs).swap(*this); return *this;}
     RefCountedCPtr& operator=(T const* rhs) {RefCountedCPtr(rhs).swap(*this); return *this;}
