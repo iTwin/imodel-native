@@ -80,6 +80,23 @@ ClientPtr ClientHelper::SignIn(Tasks::AsyncError* errorOut, SignInInfo const& si
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Algirdas.Mikoliunas            03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr, WebServices::UrlProvider::Environment environment)
+    {
+    UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, m_localState);
+    
+    m_signinMgr = managerPtr;
+    Utf8String host = UrlProvider::Urls::iModelHubServices.Get();
+
+    AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(host);
+    ClientPtr client = Client::Create(m_clientInfo, authHandler);
+    client->SetServerURL(host);
+
+    return client;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository)
