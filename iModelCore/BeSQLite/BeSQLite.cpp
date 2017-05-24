@@ -1567,6 +1567,16 @@ int Db::RemoveFunction(DbFunction& func) const
     return m_dbFile->RemoveFunction(func);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void Db::AddDataUpdateCallback(DataUpdateCallback& callback) const { m_dbFile->AddDataUpdateCallback(callback); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void Db::RemoveDataUpdateCallback() const { m_dbFile->RemoveDataUpdateCallback();}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2742,6 +2752,51 @@ int DbFile::RemoveFunction(DbFunction& function) const
     {
     return sqlite3_create_function_v2(m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+static void updateHookCallback(void* arg, int sqlTypeInt, Utf8CP dbName, Utf8CP tableName, sqlite3_int64 rowid)
+    { 
+    DataUpdateCallback::SqlType sqlType = DataUpdateCallback::SqlType::Insert;
+    switch (sqlTypeInt)
+        {
+            case SQLITE_INSERT:
+                sqlType = DataUpdateCallback::SqlType::Insert;
+                break;
+
+            case SQLITE_UPDATE:
+                sqlType = DataUpdateCallback::SqlType::Update;
+                break;
+            case SQLITE_DELETE:
+                sqlType = DataUpdateCallback::SqlType::Delete;
+                break;
+
+            default:
+                BeAssert(false && "Unexpected SQL type passed to call back in sqlite3_update_hook");
+                return;
+        }
+
+    ((DataUpdateCallback*) arg)->_OnRowModified(sqlType, dbName, tableName, BeInt64Id((uint64_t) rowid));
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void DbFile::AddDataUpdateCallback(DataUpdateCallback& updateHook) const 
+    { 
+    void* previousHook = sqlite3_update_hook(m_sqlDb, updateHookCallback, &updateHook); 
+    if (previousHook != nullptr)
+        {
+        BeAssert(false && "Previous SQLite data change notification callback was overridden by call to Db::AddDataUpdateCallback");
+        LOG.debugv("SQLite data change notification callback was overridden by call to Db::AddDataUpdateCallback.");
+        }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void DbFile::RemoveDataUpdateCallback() const { sqlite3_update_hook(m_sqlDb, nullptr, nullptr); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13

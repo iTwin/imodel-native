@@ -441,14 +441,12 @@ enum DbResult
     BE_SQLITE_ERROR_ChangeTrackError  = (BE_SQLITE_IOERR | (13<<24)),  //!< attempt to commit with active changetrack
     BE_SQLITE_ERROR_InvalidRevisionVersion = (BE_SQLITE_IOERR | (14 << 24)), //!< invalid version of the revision file is being imported
     
-    BE_SQLITE_ERROR_SchemaReadFailed        = (BE_SQLITE_IOERR | 15 << 24), //!< Error reading schemas
-    BE_SQLITE_ERROR_SchemaNotFound          = (BE_SQLITE_ERROR | 16 << 24), //!< The schema was not found in the database.
+    BE_SQLITE_ERROR_SchemaUpgradeRequired   = (BE_SQLITE_IOERR | 15 << 24), //!< The schemas found in the database need to be upgraded.
     BE_SQLITE_ERROR_SchemaTooNew            = (BE_SQLITE_IOERR | 16 << 24), //!< The schemas found in the database are too new, and the application needs to be upgraded. 
     BE_SQLITE_ERROR_SchemaTooOld            = (BE_SQLITE_IOERR | 17 << 24), //!< The schemas found in the database are too old, and the DgnDb needs to be recreated after extensive data transformations ("teleported").
-    BE_SQLITE_ERROR_SchemaUpgradeRequired   = (BE_SQLITE_IOERR | 18 << 24), //!< The schemas can and must be upgraded by importing them.
-    BE_SQLITE_ERROR_SchemaLockFailed        = (BE_SQLITE_IOERR | 19 << 24), //!< Error acquiring schema lock
-    BE_SQLITE_ERROR_SchemaImportFailed      = (BE_SQLITE_IOERR | 20 << 24), //!< Error importing schemas
-    BE_SQLITE_ERROR_SchemaDomainMismatch    = (BE_SQLITE_IOERR | 21 << 24), //!< The name of the schema doesn't match the name of the domain. 
+    BE_SQLITE_ERROR_SchemaLockFailed        = (BE_SQLITE_IOERR | 18 << 24), //!< Error acquiring a lock on the schemas before upgrade.
+    BE_SQLITE_ERROR_SchemaUpgradeFailed     = (BE_SQLITE_IOERR | 19 << 24), //!< Error upgrading the schemas in the database.
+    BE_SQLITE_ERROR_SchemaImportFailed      = (BE_SQLITE_IOERR | 20 << 24), //!< Error importing the schemas into the database.
 
     BE_SQLITE_LOCKED_SHAREDCACHE      = (BE_SQLITE_LOCKED   | (1<<8)),
 
@@ -1214,6 +1212,38 @@ public:
 
     BeIdSet const& GetBeIdSet() const {return m_set;}
 };
+
+//=======================================================================================
+//! A user-defined callback which is invoked whenever a row is updated, inserted or 
+//! deleted in a rowid table.
+//! Call Db::AddDataUpdateCallback to register a callback with the db connection
+//! @see https://sqlite.org/c3ref/update_hook.html for details
+// @bsiclass                                                   Krischan.Eberle   04/17
+//=======================================================================================
+struct DataUpdateCallback : NonCopyableClass
+    {
+public:
+    enum class SqlType
+        {
+        Insert, //!< Row, for which callback was invoked, was inserted
+        Update, //!< Row, for which callback was invoked, was updated
+        Delete //!< Row, for which callback was invoked, was deleted
+        };
+
+protected:
+    DataUpdateCallback() {}
+
+public:
+    virtual ~DataUpdateCallback() {}
+
+    //! Called by SQLite when a row is updated, inserted or deleted.
+    //! @param[in] sqlType SQL operation that caused the callback to be invoked
+    //! @param[in] dbName Name of the database containing the table of the affected row
+    //! @param[in] tableName Name of the table containing the affected row
+    //! @param[in] rowid Rowid of the affected row. In case of SqlType::Update, this is the rowid after the update
+    //! takes place
+    virtual void _OnRowModified(SqlType sqlType, Utf8CP dbName, Utf8CP tableName, BeInt64Id rowid) = 0;
+    };
 
 //=======================================================================================
 //! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
@@ -2007,9 +2037,13 @@ protected:
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction&) const;
     BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetBLVCache();
 
+    void AddDataUpdateCallback(DataUpdateCallback&) const;
+    void RemoveDataUpdateCallback() const;
+
 public:
     Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
     int OnCommit();
+
     bool UseSettingsTable(PropertySpecCR spec) const;
     void OnSettingsDirtied() {m_settingsDirty=true;}
     bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
@@ -2629,6 +2663,16 @@ public:
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction& func) const;
 
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& func) const;
+
+    //! Add a callback to this Db that is invoked whenever a row is updated, inserted or deleted in a 
+    //! <a href="https://sqlite.org/rowidtable.html">rowid</a> table.
+    //! @see DataUpdateHook
+    //! @see https://sqlite.org/c3ref/update_hook.html
+    BE_SQLITE_EXPORT void AddDataUpdateCallback(DataUpdateCallback&) const;
+    //! Removes the data change callback from this Db
+    //! @see DataUpdateHook
+    //! @see https://sqlite.org/c3ref/update_hook.html
+    BE_SQLITE_EXPORT void RemoveDataUpdateCallback() const;
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeGuid);
 

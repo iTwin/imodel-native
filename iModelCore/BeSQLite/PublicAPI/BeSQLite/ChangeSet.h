@@ -24,9 +24,14 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //=======================================================================================
 struct IByteArray
 {
-protected:
+private:
     virtual int _GetSize() const = 0;
     virtual void const* _GetData() const = 0;
+
+protected:
+    IByteArray() = default;
+    ~IByteArray() = default;
+
 public:
     //! Get the number of bytes
     int GetSize() const { return _GetSize(); }
@@ -43,12 +48,15 @@ struct DbSchemaChangeSet : IByteArray
 private:
     Utf8String m_ddl;
 
-    int _GetSize() const override { return IsEmpty() ? 0 : (int) m_ddl.SizeInBytes(); }
-    void const* _GetData() const override { return m_ddl.c_str(); }
+    int _GetSize() const override final { return IsEmpty() ? 0 : (int) m_ddl.SizeInBytes(); }
+    void const* _GetData() const override final { return m_ddl.c_str(); }
 
 public:
     //! Create a new schema change set
     DbSchemaChangeSet(Utf8CP ddl = nullptr) { m_ddl.AssignOrClear(ddl); }
+
+    //! Destructor
+    ~DbSchemaChangeSet() = default;
 
     //! Add new DDL statements to the schema change set (separate multiple commands by ';')
     BE_SQLITE_EXPORT void AddDDL(Utf8CP ddl);
@@ -107,6 +115,7 @@ protected:
 public:
     ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_db=0; m_isTracking=false;}
     virtual ~ChangeTracker() {EndTracking();}
+
     virtual TrackChangesForTable _FilterTable(Utf8CP tableName) {return TrackChangesForTable::Yes;}
     SqlSessionP GetSqlSession() {return m_session;}
 
@@ -277,15 +286,19 @@ public:
     enum class ApplyChangesForTable : bool {No=0, Yes=1};
     enum class ConflictCause : int {Data=1, NotFound=2, Conflict=3, Constraint=4, ForeignKey=5};
     enum class ConflictResolution : int {Skip=0, Replace=1, Abort=2};
-protected:
-    virtual ~IChangeSet() { }
 
-    virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) {return ApplyChangesForTable::Yes;}
-    virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
+private:
     virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) = 0;
     virtual DbResult _FromChangeGroup(ChangeGroupCR changeGroup) = 0;
     virtual DbResult _ApplyChanges(DbR db) = 0;
     virtual Changes _GetChanges() = 0;
+
+protected:
+    ~IChangeSet() = default;
+    
+    virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) { return ApplyChangesForTable::Yes; }
+    virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
+
 public:
     //! Implement to handle conflicts when applying changes
     //! @see ApplyChanges
@@ -340,11 +353,11 @@ private:
     int _GetSize() const override { return m_size; }
     void const* _GetData() const override { return m_changeset; }
 
-protected:
-    BE_SQLITE_EXPORT virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override;
-    BE_SQLITE_EXPORT virtual DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override;
-    BE_SQLITE_EXPORT virtual DbResult _ApplyChanges(DbR db) override;
-    virtual Changes _GetChanges() override { return Changes(*this); }
+    BE_SQLITE_EXPORT DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override final;
+    BE_SQLITE_EXPORT DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override final;
+    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db) override final;
+    Changes _GetChanges() override final { return Changes(*this); }
+
 public:
     //! construct a blank, empty ChangeSet
     ChangeSet() {m_size=0; m_changeset=nullptr;}
@@ -381,11 +394,12 @@ public:
 //=======================================================================================
 struct AbortOnConflictChangeSet : BeSQLite::ChangeSet
 {
-ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override
-    {
-    BeAssert(false);
-    return ChangeSet::ConflictResolution::Abort;
-    }
+private:
+    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override final
+        {
+        BeAssert(false);
+        return ChangeSet::ConflictResolution::Abort;
+        }
 };
 
 //=======================================================================================
@@ -408,11 +422,10 @@ private:
     void Reset() { _Reset(); }
     static DbResult TransferBytesBetweenStreams(ChangeStream& inStream, ChangeStream& outStream);
 
-protected:
-    BE_SQLITE_EXPORT virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override;
-    BE_SQLITE_EXPORT virtual DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override;
-    BE_SQLITE_EXPORT virtual DbResult _ApplyChanges(DbR db) override;
-    virtual Changes _GetChanges() override { return Changes(*this); }
+    BE_SQLITE_EXPORT DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override final;
+    BE_SQLITE_EXPORT DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override final;
+    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db) override final;
+    Changes _GetChanges() override final { return Changes(*this); }
 
     //! Application implements this to supply input to the system. 
     //! @param[out] pData Buffer to copy data into. 
@@ -432,10 +445,12 @@ protected:
     //! dispose resources as necessary. 
     virtual void _Reset() {}
 
-public:
-    //! Constructor
-    ChangeStream() {}
+protected:
+    ChangeStream() = default;
+    ~ChangeStream() = default;
 
+public:
+    
     //! Stream changes to a ChangeGroup. 
     //! @param[out] changeGroup ChangeGroup to stream to stream the contents to
     //! @remarks Implement _InputPage to send the stream
