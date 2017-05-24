@@ -313,17 +313,21 @@ HorizontalAlignmentPtr HorizontalAlignment::Create(AlignmentCR alignment, CurveV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr HorizontalAlignment::GetGeometry() const
+CurveVectorCR HorizontalAlignment::GetGeometry() const
     {
-    ECValue val;
-    if (DgnDbStatus::Success != GetPropertyValue(val, BRRA_PROP_HorizontalAlignment_HorizontalGeometry))
+    if (m_geometry.IsNull())
         {
-        BeAssert(false);
+        ECValue val;
+        if (DgnDbStatus::Success != GetPropertyValue(val, BRRA_PROP_HorizontalAlignment_HorizontalGeometry))
+            {
+            BeAssert(false);
+            }
+
+        BeAssert(val.IsIGeometry());
+        m_geometry = val.GetIGeometry()->GetAsCurveVector();
         }
 
-    BeAssert(val.IsIGeometry());
-
-    return val.GetIGeometry ()->GetAsCurveVector ();
+    return *m_geometry;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,6 +335,8 @@ CurveVectorPtr HorizontalAlignment::GetGeometry() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HorizontalAlignment::SetGeometry(CurveVectorR geometry)
     {
+    m_geometry = nullptr;
+
     CurveVectorPtr cvPtr = &geometry;
 
     ECValue val(PrimitiveType::PRIMITIVETYPE_IGeometry);

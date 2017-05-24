@@ -79,6 +79,7 @@ struct HorizontalAlignment : Dgn::GeometricElement2d
 
 private:
     Dgn::DgnElementId m_alignmentId;
+    mutable CurveVectorPtr m_geometry;
 
 protected:
     //! @private
@@ -92,7 +93,7 @@ public:
     DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(HorizontalAlignment)
     ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentPtr Create(AlignmentCR alignment, CurveVectorR horizontalGeometry);
 
-    ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetGeometry() const;
+    ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const;
     ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
 
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr Insert(Dgn::DgnDbStatus* stat = nullptr);
