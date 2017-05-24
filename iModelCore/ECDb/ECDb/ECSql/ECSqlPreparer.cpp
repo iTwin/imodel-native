@@ -549,7 +549,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     //in a no-op in SQLite. Continue preparation as clients must continue to be able to call the bind
     //API, even if it is a no-op. If we stopped preparation, clients would see index out of range errors when 
     //calling the bind API.
-    if (table->GetPersistenceType() == PersistenceType::Virtual)
+    if (table->GetType() == DbTable::Type::Virtual)
         ctx.SetNativeStatementIsNoop(true);
 
     NativeSqlBuilder nativeSqlSnippet;

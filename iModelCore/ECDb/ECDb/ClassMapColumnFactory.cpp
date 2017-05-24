@@ -70,12 +70,9 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
             return ERROR;
             }
 
-        if (baseClassMap->GetJoinedOrPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
+        if (baseClass->IsEntityClass() && baseClass->GetEntityClassCP()->IsMixin())
             {
-            ECClassCR baseClass = baseClassMap->GetClass();
-            if (baseClass.IsEntityClass() && baseClass.GetEntityClassCP()->IsMixin())
-                mixins.push_back(&baseClass);
-
+            mixins.push_back(baseClass);
             continue;
             }
 
@@ -88,7 +85,7 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
 
     if (baseClasses.size() > 1)
         {
-        BeAssert(false && "Expecting zero or one base classs");
+        BeAssert(false && "Expecting zero or one base class");
         return ERROR;
         }
 
@@ -117,10 +114,11 @@ BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, C
         {
         if (ClassMapCP derivedClassMap = dbMap.GetClassMap(*derivedClass))
             {
-            if (derivedClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
+            DbTable const& primTable = derivedClassMap->GetPrimaryTable();
+            if (primTable.GetType() == DbTable::Type::Virtual)
                 continue;
 
-            if (derivedClassMap->GetPrimaryTable().GetId() != contextClassMap.GetPrimaryTable().GetId())
+            if (primTable.GetId() != contextClassMap.GetPrimaryTable().GetId())
                 continue;
 
             if (Query(columnMaps, *derivedClassMap, Filter::DerivedAndLocal, &contextClassMap) != SUCCESS)
@@ -546,7 +544,8 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
     if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
         DbColumn::IsCompatible(existingColumn->GetType(), colType))
         {
-        if (!GetEffectiveTable()->IsOwnedByECDb() || (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
+        if (GetEffectiveTable()->GetType() == DbTable::Type::Existing || 
+            (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
                                                       existingColumn->GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
                                                       existingColumn->GetConstraints().GetCollation() == params.GetCollation()))
             {
@@ -831,9 +830,10 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     {
     if (DbColumn::IsCompatible(avaliableColumn.GetType(), type))
         {
-        if (!m_primaryOrJoinedTable->IsOwnedByECDb() || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
-                                                         avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
-                                                         avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))
+        if (m_primaryOrJoinedTable->GetType() == DbTable::Type::Existing
+            || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
+                avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
+                avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))
             {
             return true;
             }
