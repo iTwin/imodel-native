@@ -42,8 +42,9 @@ public:
     Utf8CP sig = curs1.GetSignature(true, true);
     LOG.infov("Original Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
     sig = curs1.GetReversedSignature(true, true);
+    Utf8String rpat = curs1.ReversedPattern();
     LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
-    LOG.infov("Restored Signature Test%02d  >%s< Signature >%s< ", tstN, txt, curs1.ReversedSignature().c_str());
+    LOG.infov("Restored Signature Test%02d  >%s< Signature >%s< Pattern >%s< ", tstN, txt, curs1.ReversedSignature().c_str(), rpat.c_str());
 
     Utf8String cols = curs1.CollapseSpaces(true);
     sig = curs1.GetSignature(true, true);
@@ -63,9 +64,11 @@ public:
         {
         FormattingScannerCursor curs = FormattingScannerCursor(txt, -1);
         Utf8CP sig = curs.GetSignature(true, true);
-        LOG.infov("Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
+        Utf8CP pat = curs.GetPattern(false,false);
+        LOG.infov("Signature Test%02d  >%s< Signature >%s< Pattern >%s<", tstN, txt, sig, pat);
         sig = curs.GetReversedSignature(true, true);
-        LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
+        pat = curs.GetPattern(false, false);
+        LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< Pattern >%s<", tstN, txt, sig, pat);
         }
 
     static void ShowHexDump(Utf8String str, int len)
@@ -122,14 +125,26 @@ public:
         Utf8String fmtQ = fus.FormatQuantity(q);
         LOG.infov("%f of %s = %s", dval, uom, fmtQ.c_str());
         }
+
+    static NumericAccumulator* NumericAccState(NumericAccumulator* nacc, Utf8CP txt)
+        {
+        while ('\0' != *txt)
+            {
+            LOG.infov("Added[%d] %c  state %s", nacc->GetByteCount(), *txt, Utils::AccumulatorStateName(nacc->AddSymbol((size_t)*txt)).c_str());
+            ++txt;
+            }
+        nacc->SetComplete();
+        return nacc;
+        }
+
     };
 
 TEST(FormattingTest, Preliminary)
     {
+    LOG.infov("================  Formatting Log ===========================");
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
     //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
     NumericFormatSpec numFmt = NumericFormatSpec();
-    LOG.infov("================  Formatting Log ===========================");
     //LOG.infov("UNI: |%s|", uni);
     //LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
 
@@ -141,32 +156,38 @@ TEST(FormattingTest, Preliminary)
         }*/
 
     FormattingScannerCursor tc = FormattingScannerCursor(u8"ЯA型号   sautéςερ", -1);
-    size_t nc = tc.GetNextSymbol();
+    /*size_t nc = tc.GetNextSymbol();
     do {
         LOG.infov("Next code %d scanLen %d inferredLen %d", nc, tc.GetLastLength(), Utils::NumberOfUtf8Bytes(nc));
         nc = tc.GetNextSymbol();
         } while (nc != 0);
-   
-
+   */
+/*
      LOG.infov("11100000 BitCount %d", tc.HeadBitCount(224));
      LOG.infov("11110000 BitCount %d", tc.HeadBitCount(0xF0));
      LOG.infov("11000000 BitCount %d", tc.HeadBitCount(0xC0));
      LOG.infov("11111000 BitCount %d", tc.HeadBitCount(0xF8));
-     LOG.infov("11111100 BitCount %d", tc.HeadBitCount(0xFC));
+     LOG.infov("11111100 BitCount %d", tc.HeadBitCount(0xFC));*/
 
     NumericAccumulator nacc = NumericAccumulator();
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'-')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());
-    if(nacc.HasProblem())
-        LOG.infov("NumAcc problem (%s)", nacc.GetProblemDescription().c_str());
-    else
-        LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText().c_str());
+    //LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'-')).c_str());
+    //LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());
+    //if(nacc.HasProblem())
+    //    LOG.infov("NumAcc problem (%s)", nacc.GetProblemDescription().c_str());
+    //else
+    //    LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText().c_str());
 
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi8");
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi16");
     FormattingTestFixture::ShowQuantity(20.0, "M", "FT", "fi8");
 
-    /*LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
+    FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_");
+    if (nacc.HasProblem())
+        LOG.infov("NumAcc problem (%s)", nacc.GetProblemDescription().c_str());
+    else
+        LOG.infov("NumAcc %d %s", nacc.GetByteCount(), nacc.ToText().c_str(), nacc.GetProblemDescription().c_str());
+
+   /* LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'.')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'4')).c_str());
@@ -176,9 +197,9 @@ TEST(FormattingTest, Preliminary)
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'0')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'_')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());
-    LOG.infov("NumAcc %d %d  (%s)", nacc.GetByteCount(), nacc.ToText(), nacc.GetProblemDescription());
-*/
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());*/
+    //LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText(), nacc.GetProblemDescription());
+
     FormattingTestFixture::ShowSignature(u8"135°", 200);
     FormattingTestFixture::ShowSignature(u8"135°11'30-1/4\" S", 201);
     FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);

@@ -832,6 +832,16 @@ Utf8String FormattingSignature::ReversedSignature()
     return Utf8String(temp);
     }
 
+Utf8String FormattingSignature::ReversedPattern()
+    {
+    size_t sigL = Utils::TextLength(m_pattern);
+    if (sigL == 0)
+        return nullptr;
+    Utf8P temp = (Utf8P)alloca(sigL + 2);
+    ReverseString(m_pattern, temp, sigL + 2);
+
+    return Utf8String(temp);
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -868,6 +878,23 @@ POP_MSVC_IGNORE
 //
 //===================================================
 
+int  NumericAccumulator::AddDigitValue(Utf8Char c)
+    {
+    switch (m_stat)
+        {
+        case AccumulatorState::Init:
+            SetIntegerState();
+        case AccumulatorState::Integer:
+            return IncrementIntPart(FormatConstant::DigitValue(c));
+        case AccumulatorState::Fraction:
+            return IncrementFractPart(FormatConstant::DigitValue(c));
+        case AccumulatorState::Exponent:
+            return IncrementExponentPart(FormatConstant::DigitValue(c));
+        default:
+            break;
+        }
+    return 0;
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -994,6 +1021,8 @@ AccumulatorState NumericAccumulator::SetComplete()
         }
     if (m_sign < 0)
         m_dval = -m_dval;
+    if (m_real)
+        m_ival = (int)m_dval;
 
     return m_stat = AccumulatorState::Complete; 
     }

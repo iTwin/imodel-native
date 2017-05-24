@@ -65,24 +65,8 @@ struct NumericAccumulator
         int IncrementFractPart(int v) { return IncrementPart(v, 1); }
         int IncrementExponentPart(int v) { return IncrementPart(v, 2); }
 
-        int AddDigitValue(Utf8Char c)
-            {
-            switch (m_stat)
-                {
-                case AccumulatorState::Init:
-                    SetIntegerState();
-                case AccumulatorState::Integer:
-                    return IncrementIntPart(FormatConstant::DigitValue(c));
-                case AccumulatorState::Fraction:
-                    return IncrementFractPart(FormatConstant::DigitValue(c));
-                case AccumulatorState::Exponent:
-                    return IncrementExponentPart(FormatConstant::DigitValue(c));
-                default:
-                    break;
-                }
-            return 0;
-            }
-
+        UNITS_EXPORT int AddDigitValue(Utf8Char c);
+         
     public:
         NumericAccumulator() { Init(); }
         int GetInteger() { return m_ival; }
@@ -176,6 +160,7 @@ public:
     UNITS_EXPORT size_t CompressPattern();
     UNITS_EXPORT  Utf8CP ReverseString(Utf8CP str, Utf8P revStr, size_t bufSize);
     UNITS_EXPORT  Utf8String ReversedSignature();
+    UNITS_EXPORT  Utf8String ReversedPattern();
     };
 
 //=======================================================================================
@@ -314,6 +299,7 @@ public:
     Utf8CP GetPattern(bool refresh, bool compress) { GetSignature(refresh, compress); return m_traits.GetPattern(); }
     UNITS_EXPORT Utf8String CollapseSpaces(bool replace);
     Utf8String ReversedSignature() { return m_traits.ReversedSignature(); }
+    Utf8String ReversedPattern() { return m_traits.ReversedPattern(); }
     };
 
 //=======================================================================================
