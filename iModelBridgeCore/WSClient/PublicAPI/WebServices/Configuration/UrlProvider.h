@@ -114,6 +114,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor UsageAndFeatureTrackingAPI;
             WSCLIENT_EXPORT static const UrlDescriptor UsageTracking;
             WSCLIENT_EXPORT static const UrlDescriptor UsageLoggingServices;
+            WSCLIENT_EXPORT static const UrlDescriptor UsageLoggingServicesLocation;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectXmpp;
             };
     };

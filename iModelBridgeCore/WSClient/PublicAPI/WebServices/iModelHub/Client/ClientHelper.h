@@ -86,6 +86,12 @@ public:
     //! @return a connected client if signin succeeds
     IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignIn(Tasks::AsyncError* errorOut, SignInInfo const& signinInfo);
 
+    //! Sign in with ConnectSignInManager
+    //! @param signInManagerPtr Connect sign-in manager
+    //! @param environment      Environment
+    //! @return a connected client if signin succeeds
+    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithManager(ConnectSignInManagerPtr signInManagerPtr, WebServices::UrlProvider::Environment environment);
+
     //! Look up a BCS project ID from a BCS project name
     //! @param wserrorOut     Optional. If not null, then details about a query failure are returned here if the failure is due to a communications error or some 
     //! server failure. No details would be returned if the lookup failed simply because the project name was not found.
