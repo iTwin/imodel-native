@@ -608,7 +608,7 @@ TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
 TEST_F(SchemaRulesTestFixture, NavigationProperties)
     {
     std::vector <SchemaItem> testItems {
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -626,7 +626,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A nav prop must not point to a relationship end with multiplicity greater than 1"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Foo" >
                        <ECProperty propertyName="Code" typeName="string" />
                        <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
@@ -640,9 +640,9 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                             <Class class="Foo"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml", false, "A class can have two navigation properties for the same relationship with different direction"),
+                   </ECSchema>)xml", true, "A class can have two navigation properties for the same relationship with different direction"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -661,7 +661,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties for the same relationship"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -690,7 +690,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties for the same relationship (even if one is inherited from a base class)"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Foo" modifier="Abstract" >
                         <ECCustomAttributes>
@@ -716,7 +716,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class can have two navigation properties for the same relationship (if one is inherited from a base class) if the direction is different"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema6" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -744,12 +744,13 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema7" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
                     <ECEntityClass typeName="Child" modifier="Abstract" >
                        <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
                        <ECNavigationProperty propertyName="MyParent1" relationshipName="RelSub1" direction="Backward" />
                        <ECNavigationProperty propertyName="MyParent2" relationshipName="RelSub2" direction="Backward" />
                      </ECEntityClass>
@@ -781,7 +782,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy"),
 
-    SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    SchemaItem(R"xml(<ECSchema schemaName="TestSchema8" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -830,16 +831,16 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
 TEST_F(SchemaRulesTestFixture, Relationship)
     {
     std::vector <SchemaItem> testItems {
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
         "  <ECEntityClass typeName='A'>"
         "    <ECProperty propertyName='Name' typeName='string' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='B'>"
         "    <ECProperty propertyName='CodeId' typeName='string' />"
-        "   <ECNavigationProperty propertyName='Any' relationshipName='Rel1' direction='Backward' />"
+        "    <ECNavigationProperty propertyName='Any' relationshipName='Rel' direction='Backward' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='Rel1' modifier='Sealed' strength='Referencing'>"
+        "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
         "      <Class class='bsc:AnyClass'/>"
         "    </Source>"
@@ -850,7 +851,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
         "</ECSchema>",
         false, "AnyClass is not supported by ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
                    "  <ECEntityClass typeName='A'>"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -858,7 +859,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                    "  <ECEntityClass typeName='B'>"
                    "    <ECProperty propertyName='CodeId' typeName='string' />"
                    "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed' strength='Referencing'>"
+                   "  <ECRelationshipClass typeName='Rel'  modifier='Sealed' strength='Referencing'>"
                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                    "      <Class class='A'/>"
                    "    </Source>"
@@ -869,7 +870,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                    "</ECSchema>",
                    false, "AnyClass is not supported by ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
                    "  <ECEntityClass typeName='A'>"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -877,7 +878,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                    "  <ECEntityClass typeName='B'>"
                    "    <ECProperty propertyName='CodeId' typeName='string' />"
                    "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed' strength='Referencing'>"
+                   "  <ECRelationshipClass typeName='Rel'  modifier='Sealed' strength='Referencing'>"
                    "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Source' >"
                    "      <Class class='A'/>"
                    "    </Source>"
@@ -889,7 +890,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                    "</ECSchema>",
                    false, "AnyClass is not supported by ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                  "  <ECEntityClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
@@ -916,14 +917,15 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                  "  <ECEntityClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECEntityClass typeName='B'>"
                  "    <ECProperty propertyName='CodeId' typeName='string' />"
                  "   <ECNavigationProperty propertyName='A' relationshipName='Rel1' direction='Backward' />"
-                 "  </ECEntityClass>"
+                   "   <ECNavigationProperty propertyName='A2' relationshipName='Rel2' direction='Backward' />"
+                   "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='Rel1' modifier='Sealed' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='A'/>"
@@ -943,14 +945,15 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema6' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                  "  <ECEntityClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECEntityClass typeName='B'>"
                  "    <ECProperty propertyName='CodeId' typeName='string' />"
                  "   <ECNavigationProperty propertyName='A' relationshipName='Rel1' direction='Backward' />"
-                 "  </ECEntityClass>"
+                   "   <ECNavigationProperty propertyName='A2' relationshipName='Rel2' direction='Backward' />"
+                   "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed' strength='Referencing'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                  "      <Class class='A'/>"
@@ -971,7 +974,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
@@ -989,13 +992,14 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                     "</ECSchema>",
                     false, "Sealed RelationshipClass must at least specify one constraint class each."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECEntityClass typeName='B'>"
                     "    <ECProperty propertyName='CodeId' typeName='string' />"
-                    "  </ECEntityClass>"
+                   "     <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward' />"
+                   "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
                     "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Target'>"
                     "      <Class class='B'/>"
@@ -1004,7 +1008,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                     "</ECSchema>",
                     false, "RelationshipClass constraint must not be left out."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -1022,7 +1026,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                 "  </ECRelationshipClass>"
                 "</ECSchema>", true, "Abstract relationship class must have fully defined constraints"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -1036,7 +1040,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                 "  </ECRelationshipClass>"
                 "</ECSchema>", false, "Abstract relationship class must have fully defined constraints"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -1050,7 +1054,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                 "  </ECRelationshipClass>"
                 "</ECSchema>", false, "Abstract relationship class must have fully defined constraints"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        SchemaItem("<ECSchema schemaName='TestSchema12' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -1854,7 +1858,7 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
 TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
     {
     std::vector<SchemaItem> unsupportedSchemas;
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
                                             "  </ECEntityClass>"
@@ -1871,7 +1875,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "End table relationship requires a navigation property on FK end"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
                                             "    <ECNavigationProperty propertyName='Child' relationshipName='ParentHasChildren' direction='Forward'/>"
@@ -1889,7 +1893,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "End table relationship requires a navigation property on FK end"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Foo' >"
                                             "    <ECProperty propertyName='FooProp' typeName='long' />"
                                             "  </ECEntityClass>"
@@ -1907,7 +1911,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "End table relationship requires a navigation property on FK end"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
                                             "  </ECEntityClass>"
@@ -1924,7 +1928,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Cardinality N:N and Embedding is not supported"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
@@ -1945,7 +1949,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "ForeignKeyConstraint CA cannot applied to link table (as implied from cardinality N:N)"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema6' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
@@ -1967,7 +1971,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "ForeignKeyConstraint CA cannot applied to link table (as implied from additional property on relationship class)"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -1993,7 +1997,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Referenced end maps to more than one table"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent1' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -2015,7 +2019,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Referenced end maps to more than one table"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -2041,7 +2045,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Referenced end maps to more than one table"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -2066,7 +2070,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Target end of link table maps to more than one table"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
