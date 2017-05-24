@@ -967,7 +967,6 @@ BentleyStatus RelationshipMappingInfo::FailIfConstraintClassIsNotMapped() const
     {
     for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(m_ecClass.GetId()))
         {
-        const LightweightCache::RelationshipEnd end = kvPair.second;
         ECClassCP constraintClass = m_ecdb.Schemas().GetClass(kvPair.first);
         if (constraintClass == nullptr)
             {
