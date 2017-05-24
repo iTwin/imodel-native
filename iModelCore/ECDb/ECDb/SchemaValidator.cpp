@@ -237,7 +237,8 @@ bool SchemaValidator::RelationshipHasNavigationPropertyRule::PostProcessValidati
             {
             if (navPropRelationships.find(candidateRel) == navPropRelationships.end())
                 {
-                issueReporter.Report("Invalid relationship class '%s'. A navigation property must be defined on a constraint class on its foreign key end.", candidateRel->GetFullName());
+                issueReporter.Report("Invalid relationship class '%s'. A navigation property must be defined on the %s constraint class.", candidateRel->GetFullName(),
+                                     expectedNavPropDirection == ECRelatedInstanceDirection::Backward ? "target" : "source");
                 isValid = false;
                 }
             }
