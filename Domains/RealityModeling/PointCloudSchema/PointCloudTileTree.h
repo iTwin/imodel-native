@@ -51,8 +51,6 @@ public:
 
 };//     TileRoot
 
-typedef bvector<QuantizedPoint> QuantizedPointList; 
-
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley      02/2017
 //=======================================================================================
@@ -63,7 +61,7 @@ struct Tile : Dgn::TileTree::OctTree::Tile
 
 private:
     double                          m_tolerance;
-    QuantizedPointList              m_points;
+    Render::QPoint3dList            m_points;
     bvector<PointCloudColorDef>     m_colors;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
@@ -75,7 +73,7 @@ private:
 public:
     RootCR GetPointCloudRoot() const { return static_cast<RootCR>(GetRoot()); }
 
-    QuantizedPointList& Points() { return m_points; };
+    QPoint3dList& Points() { return m_points; };
     bvector<PointCloudColorDef>& Colors() { return m_colors; };
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }

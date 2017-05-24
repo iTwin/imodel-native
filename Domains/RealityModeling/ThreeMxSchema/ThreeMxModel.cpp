@@ -292,21 +292,17 @@ struct Publish3mxGeometry : Geometry
 {
     TexturePtr m_texture;
 
-    Publish3mxGeometry(TriMeshArgs const& args, SceneR scene)
+    Publish3mxGeometry(CreateParams const& args, SceneR scene)
         {
         m_texture = args.m_texture;
 
         m_indices.resize(args.m_numIndices);
         memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
 
-        m_points.resize(args.m_numPoints);
-        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
+        m_points = args.QuantizePoints();
 
         if (nullptr != args.m_normals)
-            {
-            m_normals.resize(args.m_numPoints);
-            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
-            }
+            m_normals = args.QuantizeNormals();
 
         if (nullptr != args.m_textureUV)
             {
@@ -459,7 +455,7 @@ struct Publish3mxScene : Scene
     using Scene::Scene;
 
     TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp=Image::BottomUp::No) const override {return new Publish3mxTexture(source, bottomUp);}
-    GeometryPtr _CreateGeometry(TriMeshArgs const& args, DRange3dCR tileRange) override {return new Publish3mxGeometry(args, *this);}
+    GeometryPtr _CreateGeometry(Geometry::CreateParams const& args, DRange3dCR tileRange) override {return new Publish3mxGeometry(args, *this);}
 };
 typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
 

@@ -85,10 +85,10 @@ BentleyStatus DoGetFromSource()
     PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
     size_t                      nBatchPoints = 0;
     bvector<FPoint3d>           batchPoints(s_maxTileBatchCount);
-    QuantizedPointList          points;
     bvector<PointCloudColorDef> batchColors(s_maxTileBatchCount), colors;
     Transform                   dgnToTile, cloudToTile;
     DRange3d                    tileRange = tile.GetRange();
+    QPoint3dList                points(tileRange);
 
     dgnToTile.InverseOf(root.GetLocation());
     cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
@@ -101,7 +101,7 @@ BentleyStatus DoGetFromSource()
 
             cloudToTile.Multiply(tmpPoint);
 
-            points.push_back(QuantizedPoint(tileRange, tmpPoint));
+            points.Add(tmpPoint);
             if (colorsPresent)
                 colors.push_back(batchColors[i]);
             }
@@ -130,7 +130,7 @@ BentleyStatus DoGetFromSource()
     featureTable["QUANTIZED_VOLUME_SCALE"].append(tileRangeDiagonal.z);
 
     if (rgbPresent)
-        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(QuantizedPoint);
+        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(QPoint3d);
 
     Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
     uint32_t        featureTableStrLen = featureTableStr.size();
@@ -139,7 +139,7 @@ BentleyStatus DoGetFromSource()
     m_tileBytes.Append((uint8_t const*) featureTableStr.c_str(), featureTableStrLen);
     if (!points.empty())
         {
-        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(QuantizedPoint));
+        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(QPoint3d));
         if (rgbPresent)
             m_tileBytes.Append((uint8_t const*) colors.data(), colors.size() * sizeof(PointCloudColorDef));
         }
@@ -157,7 +157,7 @@ public:
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range)
-    : T_Super(octRoot, id, parent, false)
+    : T_Super(octRoot, id, parent, false), m_points(QPoint3d::Params())
     {
     static const double s_minToleranceRatio = 1000.0;
 
@@ -166,6 +166,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     else
         m_range.Extend (*range);
 
+    m_points.Reset(QPoint3d::Params(m_range));
     m_tolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
     }
 
@@ -231,7 +232,7 @@ BentleyStatus Tile::Read (TileTree::StreamBuffer& streamBuffer)
         m_points.resize(nPoints);                                      
         
         streamBuffer.SetPos(binaryPos + (positionOffset = featureTable["POSITION"]["byteOffset"].asUInt()));;
-        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(QuantizedPoint)))
+        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(QPoint3d)))
             {
             BeAssert(false);
             return ERROR;
@@ -261,7 +262,7 @@ BentleyStatus Tile::AddGraphics (Dgn::Render::SystemP renderSys)
     if (!m_points.empty())
         {
         auto&                       root   = static_cast<RootCR>(GetRoot());
-        Render::PointCloudArgs      args(m_range, static_cast<int32_t>(m_points.size()), &m_points.front(), reinterpret_cast<ByteCP>(m_colors.data()));
+        Render::PointCloudArgs      args(QPoint3d::Params(m_range), static_cast<int32_t>(m_points.size()), &m_points.front(), reinterpret_cast<ByteCP>(m_colors.data()));
         Render::GraphicPtr          graphic = renderSys->_CreatePointCloud(args, root.GetDgnDb(), Render::GraphicParams());
 
         SetGraphic(*graphic);
@@ -279,7 +280,7 @@ void Root::LoadRootTile(DRange3dCR tileRange)
 
 #define LOAD_ASYNCH_ROOT
 #ifdef LOAD_ASYNCH_ROOT
-    // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final diaplay).
+    // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final display).
     auto result = _RequestTile(*m_rootTile, nullptr, nullptr);
     result.wait();
 #endif

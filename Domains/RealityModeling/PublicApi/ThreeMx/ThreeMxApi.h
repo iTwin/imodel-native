@@ -45,21 +45,36 @@ DEFINE_REF_COUNTED_PTR(ThreeMxModel)
 //=======================================================================================
 struct Geometry : RefCountedBase, NonCopyableClass
 {
+    struct CreateParams
+    {
+        int32_t m_numIndices = 0;
+        int32_t const* m_vertIndex = nullptr;
+        int32_t m_numPoints = 0;
+        FPoint3d const* m_points = nullptr;
+        FPoint3d const* m_normals = nullptr;
+        FPoint2d const* m_textureUV = nullptr;
+        Dgn::Render::TexturePtr m_texture;
+
+        Dgn::Render::QPoint3dList QuantizePoints() const;
+        Dgn::Render::QPoint3dList QuantizeNormals() const;
+    };
 protected:
-    bvector<FPoint3d> m_points;
-    bvector<FPoint3d> m_normals;
+    Dgn::Render::QPoint3dList m_points = Dgn::Render::QPoint3dList(DRange3d::NullRange());
+    Dgn::Render::QPoint3dList m_normals = Dgn::Render::QPoint3dList(DRange3d::NullRange());
     bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
     bvector<Dgn::Render::GraphicPtr> m_graphics;
 
+    Dgn::Render::TriMeshArgs CreateTriMeshArgs(Dgn::Render::TextureP texture, FPoint2d const* textureUV) const;
+
 public:
     Geometry() {}
-    THREEMX_EXPORT Geometry(Dgn::Render::TriMeshArgs const&, SceneR, DRange3dCR, Dgn::Render::SystemP renderSys);
+    THREEMX_EXPORT Geometry(CreateParams const&, SceneR, DRange3dCR, Dgn::Render::SystemP renderSys);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
     void Pick(Dgn::TileTree::PickArgsR);
     void ClearGraphic() {m_graphics.clear();}
-    bvector<FPoint3d> const& GetPoints() const {return m_points;}
+    Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
     bool HasGraphics() const {return !m_graphics.empty() && m_graphics.front().IsValid();}
 };
@@ -161,7 +176,7 @@ private:
     SceneInfo   m_sceneInfo;
     Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
-    virtual GeometryPtr _CreateGeometry(Dgn::Render::TriMeshArgs const& args, DRange3dCR tileRange, Dgn::Render::SystemP renderSys) {return new Geometry(args, *this, tileRange, renderSys);}
+    virtual GeometryPtr _CreateGeometry(Geometry::CreateParams const& args, DRange3dCR tileRange, Dgn::Render::SystemP renderSys) {return new Geometry(args, *this, tileRange, renderSys);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr;}
     virtual Utf8CP _GetName() const override { return m_rootResource.c_str(); }
     virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }

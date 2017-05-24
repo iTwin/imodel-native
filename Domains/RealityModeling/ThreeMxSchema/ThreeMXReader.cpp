@@ -275,18 +275,18 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             if (texName.empty())
                 continue;
 
-            Render::TriMeshArgs trimesh;
-            trimesh.m_numPoints  = ctm.GetInteger(CTM_VERTEX_COUNT);
-            trimesh.m_points     = ctm.GetFloatArray(CTM_VERTICES);
-            trimesh.m_normals    = (ctm.GetInteger(CTM_HAS_NORMALS) == CTM_TRUE) ? ctm.GetFloatArray(CTM_NORMALS) : nullptr;
-            trimesh.m_numIndices = 3 * ctm.GetInteger(CTM_TRIANGLE_COUNT);
-            trimesh.m_vertIndex  = ctm.GetIntegerArray(CTM_INDICES);
-            trimesh.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
+            Geometry::CreateParams geomParams;
+            geomParams.m_numPoints  = ctm.GetInteger(CTM_VERTEX_COUNT);
+            geomParams.m_points     = ctm.GetFloatArray(CTM_VERTICES);
+            geomParams.m_normals    = (ctm.GetInteger(CTM_HAS_NORMALS) == CTM_TRUE) ? ctm.GetFloatArray(CTM_NORMALS) : nullptr;
+            geomParams.m_numIndices = 3 * ctm.GetInteger(CTM_TRIANGLE_COUNT);
+            geomParams.m_vertIndex  = ctm.GetIntegerArray(CTM_INDICES);
+            geomParams.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
 
             auto texture = renderTextures.find(texName);
-            trimesh.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
+            geomParams.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
-            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(trimesh, m_children[nodeId->second]->GetRange(), renderSys));
+            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(geomParams, m_children[nodeId->second]->GetRange(), renderSys));
             }
         }
 

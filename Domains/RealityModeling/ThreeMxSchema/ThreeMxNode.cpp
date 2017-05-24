@@ -122,10 +122,46 @@ TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Syste
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Create a PolyfaceHeader from a Geometry
-    * @bsimethod                                    Keith.Bentley                   05/16
+* @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr Geometry::GetPolyface() const
+static void quantize(Render::QPoint3dListR qpts, FPoint3dCP fpts, int32_t nPts)
+    {
+    qpts.reserve(nPts);
+    for (int32_t i = 0; i < nPts; i++)
+        qpts.Add(DPoint3d::From(fpts[i]));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::QPoint3dList Geometry::CreateParams::QuantizePoints() const
+    {
+    // ###TODO: Is the tile's range known yet, and do we expect the range of points within it to be significantly smaller?
+    DRange3d range = DRange3d::NullRange();
+    for (int32_t i = 0; i < m_numPoints; i++)
+        range.Extend(DPoint3d::From(m_points[i]));
+
+    Render::QPoint3dList qpts(range);
+    quantize(qpts, m_points, m_numPoints);
+    return qpts;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::QPoint3dList Geometry::CreateParams::QuantizeNormals() const
+    {
+    Render::QPoint3dList qpts(Render::QPoint3d::Params::FromNormalizedRange());
+    if (nullptr != m_normals)
+        quantize(qpts, m_normals, m_numPoints);
+
+    return qpts;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TriMeshArgs Geometry::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
     {
     TriMeshArgs trimesh;
     trimesh.m_numIndices = (int32_t) m_indices.size();
@@ -133,17 +169,29 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
     trimesh.m_numPoints = (int32_t) m_points.size();
     trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
     trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
-    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();;
+    trimesh.m_textureUV = textureUV;
+    trimesh.m_pointParams = m_points.GetParams();
+    trimesh.m_texture = texture;
 
+    return trimesh;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Create a PolyfaceHeader from a Geometry
+    * @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr Geometry::GetPolyface() const
+    {
+    TriMeshArgs trimesh = CreateTriMeshArgs(nullptr, nullptr);
     return trimesh.ToPolyface();
     }
 
 /*-----------------------------------------------------------------------------------**//**
-* Construct a Geometry from a TriMeshArgs and a Scene. The scene is necessary to get the Render::System, and this
+* Construct a Geometry from a CreateParams and a Scene. The scene is necessary to get the Render::System, and this
 * Geometry is only valid for that Render::System
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Geometry::Geometry(TriMeshArgs const& args, SceneR scene, DRange3dCR tileRange, Dgn::Render::SystemP renderSys)
+Geometry::Geometry(CreateParams const& args, SceneR scene, DRange3dCR tileRange, Dgn::Render::SystemP renderSys)
     {
     // After we create a Render::Graphic, we only need the points/indices/normals for picking.
     // To save memory, only store them if the model is locatable.
@@ -152,26 +200,19 @@ Geometry::Geometry(TriMeshArgs const& args, SceneR scene, DRange3dCR tileRange, 
         m_indices.resize(args.m_numIndices);
         memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
 
-        m_points.resize(args.m_numPoints);
-        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
+        m_points = args.QuantizePoints();
 
         if (nullptr != args.m_normals)
-            {
-            m_normals.resize(args.m_numPoints);
-            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
-            }
+            m_normals = args.QuantizeNormals();
         }
 
     if (nullptr == renderSys || !args.m_texture.IsValid())
         return;
 
+    auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
     GraphicParams gfParams = GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0, GraphicParams::LinePixels::Solid);
 
-#ifdef GENERATE_REALITY_MODEL_EDGES
-    m_graphics = renderSys->_CreateTriMeshAndEdges(args, scene.GetDgnDb(), gfParams, tileRange, MeshEdgeCreationOptions(true, false, false, 0.0));
-#else
-    m_graphics.push_back(renderSys->_CreateTriMesh(args, scene.GetDgnDb(), gfParams));
-#endif
+    m_graphics.push_back(renderSys->_CreateTriMesh(trimesh, scene.GetDgnDb(), gfParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
