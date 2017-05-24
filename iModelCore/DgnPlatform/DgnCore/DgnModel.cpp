@@ -409,7 +409,25 @@ SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPortionCR mo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jonas.Valiunas  03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationElementCR modeledElement)
+    {
+    return SpatialLocationModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Jonas.Valiunas  03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPortionCR modeledElement)
+    {
+    SpatialLocationModelPtr model = Create(modeledElement);
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Jonas.Valiunas  03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationElementCR modeledElement)
     {
     SpatialLocationModelPtr model = Create(modeledElement);
     return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
