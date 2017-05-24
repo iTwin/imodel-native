@@ -626,22 +626,6 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A nav prop must not point to a relationship end with multiplicity greater than 1"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <ECEntityClass typeName="Foo" >
-                       <ECProperty propertyName="Code" typeName="string" />
-                       <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
-                       <ECNavigationProperty propertyName="MyParent2" relationshipName="Rel" direction="Forward" />
-                     </ECEntityClass>
-                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
-                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
-                         <Class class="Foo"/>
-                        </Source>
-                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
-                            <Class class="Foo"/>
-                        </Target>
-                     </ECRelationshipClass>
-                   </ECSchema>)xml", false, "A class can have two navigation properties for the same relationship with different direction"),
-
         SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -822,7 +806,6 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
     };
 
     AssertSchemaImport(testItems, "ecdbschemarules_navprops.ecdb");
-
     }
 
 //---------------------------------------------------------------------------------------
