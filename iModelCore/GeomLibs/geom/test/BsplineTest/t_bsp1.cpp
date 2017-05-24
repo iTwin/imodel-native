@@ -433,3 +433,245 @@ TEST(MSBsplineSurface,TightPrincipalExtentsWeighted)
     testTightSurfaceExtents (surface);
     Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtentsWeighted");
     }
+
+TEST(MSInterpolatingCurve,EndConditions)
+    {
+    bvector<bool> truefalse {true, false};
+    for (auto &q : bvector <bvector<double>>
+                {
+                // greville-like spacing
+                bvector<double>{0, 1, 3, 6, 9, 11, 12},
+                // uniform spacing
+                bvector<double>{0, 2, 4, 6, 8, 10, 12}
+                }
+            )
+        {
+        SaveAndRestoreCheckTransform shifter (0, 20, 0);
+        bvector<DPoint3d> points;
+        for (auto x : q)
+            {
+            double theta = Angle::Pi () * (x - q[0]) / (q.back () - q.front ());
+            points.push_back (DPoint3d::From (cos (theta), sin(theta), 0.0));
+            }
+        for (bool closedCurve : truefalse)
+            {
+            for (bool colinearTangents : truefalse)
+                {
+                for (bool chordLengthTangents : truefalse)
+                    {
+                    for (bool naturalTangents : truefalse)
+                        {
+                        SaveAndRestoreCheckTransform shifter (10, 0, 0);
+                        MSInterpolationCurve curve;
+                        auto s = curve.InitFromPointsAndEndTangents (points, false, 0.0, nullptr,
+                            closedCurve, colinearTangents, chordLengthTangents, naturalTangents);
+                        if (s == SUCCESS)
+                            {
+                            auto cp = ICurvePrimitive::CreateInterpolationCurveSwapFromSource (curve);
+                            auto cp1 = ICurvePrimitive::CreateBsplineCurve (cp->GetProxyBsplineCurvePtr ());
+                            Check::SaveTransformed (*cp1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("MSInterpolatingCurve.EndConditions");
+    }
+void DrawLine (DPoint3dCR xyz0, DPoint3dCR xyz1)
+    {
+    Check::SaveTransformed (bvector<DPoint3d>{xyz0, xyz1});
+    }
+TEST(Spiral,OffsetConstruction0)
+    {
+    double r0 = 100.0;
+    double length0 = 50.0;
+    double sweep0 = Angle::DegreesToRadians (20.0);
+    Check::SaveTransformed (bvector<DPoint3d>{DPoint3d::From (-30.0, 0,0), DPoint3d::From (30,-0,0)});
+    auto spiral0 = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (10,
+                            Angle::PiOver2 (), 0.0, length0, r0,
+                            Transform::FromIdentity (), 0.0, 1.0);
+    Check::SaveTransformed (*spiral0);
+    auto endRay0 = spiral0->FractionToPointAndUnitTangent (1.0).Value ();
+    auto startRay0 = spiral0->FractionToPointAndUnitTangent (0.0).Value ();
+    DEllipse3d arc0 = DEllipse3d::FromStartTangentNormalRadiusSweep (endRay0.origin, endRay0.direction, DVec3d::UnitZ (), r0, sweep0);
+    DPoint3d midPoint0;
+    DVec3d midTangent0, d2;
+    arc0.FractionParameterToDerivatives (midPoint0, midTangent0, d2, 0.5);
+    double halfTurn = DVec3d::UnitY ().AngleTo (midTangent0);
+    DVec3d outboundTangent = DVec3d::FromRotateVectorAroundVector (midTangent0, DVec3d::UnitZ (), Angle::FromRadians (halfTurn));
+
+    Check::SaveTransformed (bvector<DPoint3d> {arc0.center, DPoint3d::FromInterpolate (arc0.center, 3.0, endRay0.origin)});
+    auto midray0 = DRay3d::FromOriginAndTarget (arc0.center, midPoint0);
+    Check::SaveTransformed (bvector<DPoint3d> {arc0.center, DPoint3d::FromInterpolate (arc0.center, 3.0, midPoint0)});
+
+    auto refray = DRay3d::FromOriginAndVector (startRay0.origin, DVec3d::UnitY());
+    DPoint3d piA, piB;
+    double fiA, fiB;
+    DRay3d::ClosestApproachUnboundedRayUnboundedRay (fiA, fiB, piA, piB, midray0, refray);
+    DrawLine (startRay0.origin, piB);       
+    
+    Check::SaveTransformed (arc0);
+    bvector<DPoint3d> refMarks;
+//    for (double radiusFactor : bvector<double> {0.8, 0.85, 0.9, 0.95, 1.05, 1.10, 1.15, 1.20})
+    for (double radiusFactor : bvector<double> {0.8, 1.20})
+        {
+        double r1 = radiusFactor * r0;
+        double offset = r1 - r0;
+        DEllipse3d arc1 = DEllipse3d::FromVectors
+            (
+            arc0.center,
+            arc0.vector0 * radiusFactor,
+            arc0.vector90 * radiusFactor,
+            0.0, sweep0
+            );
+        Check::SaveTransformed (arc1);
+        DPoint3d refStart = DPoint3d::From (offset, 0,0);
+
+        Transform frame1 = Transform::From (refStart);
+        refMarks.push_back (refStart);
+
+        ICurvePrimitivePtr spiral2 = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (10,
+                                Angle::PiOver2 (), 0.0, length0 * radiusFactor, r1,
+                                frame1, 0.0, 1.0);
+
+        auto endRay2 = spiral2->FractionToPointAndUnitTangent (1.0).Value ();
+        DPoint3d center2 = endRay2.origin + r1 * DVec3d::FromUnitPerpendicularXY (endRay2.direction);
+        DEllipse3d arc2 = DEllipse3d::FromStartTangentNormalRadiusSweep (endRay2.origin, endRay2.direction, DVec3d::UnitZ (), r1, sweep0);
+
+        // translate the whole spiral+arc so the arc midpoint is on midray0
+        DPoint3d midpoint2;
+        arc2.FractionParameterToPoint (midpoint2, 0.5);
+
+        auto midPointShiftRay = DRay3d::FromOriginAndVector (midpoint2, DVec3d::UnitY());
+        DPoint3d piA, piB;
+        double fiA, fiB;
+        DRay3d::ClosestApproachUnboundedRayUnboundedRay (fiA, fiB, piA, piB, midray0, midPointShiftRay);
+
+        DVec3d shiftVector = piB - midpoint2;
+        auto shiftTransform = Transform::From (shiftVector);
+        spiral2->TransformInPlace (shiftTransform);
+        DPoint3d start2;
+        spiral2->FractionToPoint (0.0, start2);
+        DrawLine (start2, start2 + 2.0 * DVec3d::UnitX ());
+        shiftTransform.Multiply (arc2);
+        Check::SaveTransformed (*spiral2);    
+        Check::SaveTransformed (arc2);
+
+        DRay3d startRay2 = DRay3d::FromOriginAndVector (start2, DVec3d::UnitY ());
+        DRay3d::ClosestApproachUnboundedRayUnboundedRay (fiA, fiB, piA, piB, midray0, startRay2);
+        DrawLine (refStart, piB);
+        DrawLine (piB, piB + 100 * outboundTangent);
+        refMarks.push_back (piB);
+        }
+    Check::SaveTransformedMarkers (refMarks, 0.4);
+    Check::ClearGeometry ("Spiral.OffsetConstruction0");
+    }
+// curvature along length . . .
+//       o------------------o k
+//      /|                  |
+//     / |                  |
+//    /  |                  |
+//   +-a-+----b-------------+
+// a = spiral length
+// b = arc length to middle of arc portion.
+// total turn = a * k/2 + b * k
+// consider both a and b variable.  this makes the angle at transition vary.
+// (But total turn is fixed.   So db = -da/2)
+// As a and b vary, the arc midpoint moves both along the mid ray and away from it.
+// For newton condition ... let the end float along, but not perpendicular.
+// f0 = a*k/2 + b*k - totalTurn
+// f1 = distance from midray = (Xend - rayOrigin)
+//
+void ConstructTransition
+(
+bvector<DPoint3d> xyz,
+double arcRadius,
+double spiralLength,
+DPoint3dR   xyzLineTangent,
+DEllipse3dR arc
+)
+    {
+    DSpiral2dBaseP spiralA = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DSpiral2dBaseP spiralB = DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid);
+    DPoint3d xyzA, xyzB, xyzC, xyzD;
+    DPoint3d xyz0, xyz1;
+    DVec3d uv0, uv1;
+    double ticLength = 2.0;
+    DVec3d crossVec = DVec3d::UnitZ () * ticLength;
+    if (Check::True (
+        DSpiral2dBase::LineSpiralArcSpiralLineTransition (xyz[0], xyz[2], xyz[1],
+                arcRadius, spiralLength, spiralLength, *spiralA, *spiralB, 
+                xyzA, xyzB, xyzC, xyzD, arc
+                )))
+        {
+        xyzLineTangent = xyzA;
+        Check::SaveTransformed (xyz);
+        Transform frameA = Transform::From (xyzA);
+        Transform frameB = Transform::From (xyzB);
+        auto cpA = ICurvePrimitive::CreateSpiral (*spiralA, frameA, 0.0, 1.0);
+        auto cpB = ICurvePrimitive::CreateSpiral (*spiralB, frameB, 1.0, 0.0);
+        for (auto cp : bvector<ICurvePrimitivePtr> {cpA, cpB})
+            {
+            Check::SaveTransformed (*cp);
+            cp->GetStartEnd (xyz0, xyz1, uv0, uv1);
+            DrawLine (xyz0, xyz0 + DVec3d::FromCrossProduct (crossVec, uv0));
+            DrawLine (xyz1, xyz1 + DVec3d::FromCrossProduct (crossVec, uv1));
+            }
+        Check::SaveTransformed (arc);
+        }
+    }
+
+
+
+TEST(Spiral,OffsetConstruction1)
+    {
+    bvector<DPoint3d> pi0 = bvector<DPoint3d> {DPoint3d::From (0,0,0), DPoint3d::From (0,60,0), DPoint3d::From (40,110,0)};
+    double r0 = 70.0;
+    double length0 = 20.0;
+    DEllipse3d arc, arc0;
+    DPoint3d lineTangent0, lineTangent1;
+    ConstructTransition (pi0, r0, length0, lineTangent0, arc0);
+    bvector<DPoint3d> centers;
+    centers.push_back (arc0.center);
+    double markerSize = 1.0;
+    for (double offsetDistance : bvector<double> {14.0, 8.0, -8.0, -15.0})
+        {
+        double r1 = r0 - offsetDistance;
+        double fraction = r1 / r0;
+        double length1 = fraction * length0;
+        bvector<DPoint3d> pi1;
+        PolylineOps::OffsetLineString (pi1, pi0, offsetDistance, DVec3d::UnitZ (), false, 2.0);
+        ConstructTransition (pi1, r1, length1, lineTangent1, arc);
+        centers.push_back (arc.center);
+        }
+    Check::SaveTransformedMarkers (centers, markerSize);
+    Check::ClearGeometry ("Spiral.OffsetConstruction1");
+    }
+
+
+
+TEST(Spiral,OffsetConstruction2)
+    {
+    bvector<DPoint3d> pi0 = bvector<DPoint3d> {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0,60,0),
+        DPoint3d::From (40,110,0),
+        DPoint3d::From (50,160,0)
+        };
+    double r0 = 70.0;
+    double length0 = 20.0;
+
+    for (size_t i0 = 0; i0 + 2 < pi0.size (); i0++)
+        {
+        auto primaryCV = CurveVector::ConstructSpiralArcSpiralTransition (pi0[i0], pi0[i0 + 1], pi0[i0 + 2], r0, length0);
+        Check::SaveTransformed (*primaryCV);
+        for (double offsetDistance : bvector<double> {12.0, 8.0, -6.0, -10.0})  // assymetric magnitudes to expose right-left flip
+            {
+            auto offsetCV = CurveVector::ConstructSpiralArcSpiralTransitionPseudoOffset (pi0[i0], pi0[i0 + 1], pi0[i0 + 2], r0, length0, offsetDistance);
+            if (offsetCV.IsValid ())
+                Check::SaveTransformed (*offsetCV);
+            }
+        }
+    Check::ClearGeometry ("Spiral.OffsetConstruction2");
+    }

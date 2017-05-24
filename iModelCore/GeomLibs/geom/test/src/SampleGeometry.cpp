@@ -392,3 +392,34 @@ double dyFillet    //!< [in] y size under elliptic fillet
     return cv;
 
     }
+
+// Create a typical transform for testing.
+// All selects "0" is an identity.
+// Defaults produce a general rigid rotation around a point near the origin.
+// Translate * Rotate * Scale
+// that is, in sequential construction, there is a scaling around the origin, followed by rotation around the origin, followed by translation
+Transform CreateTestTransform
+(
+double translateX = 1.0,
+double translateY = 2.0,
+double translateZ = 3.0,
+double yawDegrees = 10.0,
+double pitchDegrees = 5.0,
+double rollDegrees = -12.0,
+double xScale = 1.0,
+double yScale = 1.0,
+double zScale = 1.0
+)
+    {
+    Transform transform;
+    if (yawDegrees != 0.0 || pitchDegrees != 0.0 || rollDegrees != 0.0)
+        {
+        auto ypr = YawPitchRollAngles::FromDegrees (yawDegrees, pitchDegrees, rollDegrees);
+        transform  = transform * ypr.ToTransform (DPoint3d::From (translateX, translateY, translateZ));
+        }
+    else
+        transform = Transform::From (translateX, translateY, translateZ);
+    if (xScale != 1.0 || yScale != 1.0 || zScale != 1.0)
+        transform.ScaleMatrixColumns (xScale, yScale, zScale);
+    return transform;
+    }
