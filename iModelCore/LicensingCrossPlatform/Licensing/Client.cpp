@@ -29,7 +29,7 @@ BentleyStatus Client::TestMethod()
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, localState);
 
-    auto url = UrlProvider::Urls::UsageLoggingServices.Get();
+    auto url = UrlProvider::Urls::UsageLoggingServicesLocation.Get();
 
     return SUCCESS;
     }
