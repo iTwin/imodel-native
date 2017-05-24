@@ -9121,89 +9121,70 @@ void AssertImportedSchema(ECDbCR ecdb, Utf8CP expectedSchemaName, Utf8CP expecte
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   04/13
+// @bsimethod                                   Krischan.Eberle                   05/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, ImportSchemaAgainstExistingTableWithoutECInstanceIdColumn)
+TEST_F(DbMappingTestFixture, SchemaImportWithExistingTables)
     {
-    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
+        {
+        ECDbR ecdb = SetupECDb("schemaimport_existingtables.ecdb");
 
-    //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (Name TEXT)"));
+        //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo(Name TEXT)"));
 
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <ECEntityClass typeName="Foo" >
-                       <ECProperty propertyName="Name" typeName="string"/>
-                    </ECEntityClass>
-                    <ECEntityClass typeName="Goo" >
-                       <ECProperty propertyName="Price" typeName="double"/>
-                       <ECNavigationProperty propertyName="Foo" relationshipName="FooHasGoo" direction="Backward"/>
-                    </ECEntityClass>
-                    <ECRelationshipClass typeName="FooHasGoo" modifier="Sealed" strength="Referencing" >
-                       <Source multiplicity="(0..1)" polymorphic="true" roleLabel="references">
-                            <Class class="Foo"/>
-                       </Source>
-                       <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
-                            <Class class="Goo"/>
-                       </Target>
-                     </ECRelationshipClass>
-                   </ECSchema>)xml", false));
-    ASSERT_FALSE(asserted);
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="Name" typeName="string"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="Goo" >
+                    <ECProperty propertyName="Price" typeName="double"/>
+                    <ECNavigationProperty propertyName="Foo" relationshipName="FooHasGoo" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="FooHasGoo" modifier="Sealed" strength="Referencing" >
+                    <Source multiplicity="(0..1)" polymorphic="true" roleLabel="references">
+                        <Class class="Foo"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
+                        <Class class="Goo"/>
+                    </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml", false));
+        ASSERT_FALSE(asserted);
+        ecdb.AbandonChanges();
+        ecdb.CloseDb();
+        }
 
-    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Name")) << "Existing column is expected to still be in the table after ImportSchemas.";
-    EXPECT_FALSE(ecdb.ColumnExists("t_Foo", "ECInstanceId")) << "ECInstanceId column not expected to be in the table after ImportSchemas as ImportSchemas is not expected to modify existing tables.";
-    }
+        {
+        ECDbR ecdb = SetupECDb("schemaimport_existingtables.ecdb");
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo(Id INTEGER PRIMARY KEY, Name TEXT)"));
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
-    {
-    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="Name" typeName="string"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="Goo" >
+                    <ECProperty propertyName="Price" typeName="double"/>
+                    <ECNavigationProperty propertyName="Foo" relationshipName="FooHasGoo" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="FooHasGoo" modifier="Sealed" strength="Referencing" >
+                    <Source multiplicity="(0..1)" polymorphic="true" roleLabel="references">
+                        <Class class="Foo"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
+                        <Class class="Goo"/>
+                    </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml", false));
+        ASSERT_FALSE(asserted);
+        }
 
-    //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (Id INTEGER PRIMARY KEY, Name TEXT)"));
+        {
+        ECDbR ecdb = SetupECDb("schemaimport_existingtables.ecdb");
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Goo (Id INTEGER PRIMARY KEY, Price REAL, FooId INTEGER)"));
 
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <ECEntityClass typeName="Foo" >
-                       <ECProperty propertyName="Name" typeName="string"/>
-                    </ECEntityClass>
-                    <ECEntityClass typeName="Goo" >
-                       <ECProperty propertyName="Price" typeName="double"/>
-                       <ECNavigationProperty propertyName="Foo" relationshipName="FooHasGoo" direction="Backward"/>
-                    </ECEntityClass>
-                    <ECRelationshipClass typeName="FooHasGoo" modifier="Sealed" strength="Referencing" >
-                       <Source multiplicity="(0..1)" polymorphic="true" roleLabel="references">
-                            <Class class="Foo"/>
-                       </Source>
-                       <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
-                            <Class class="Goo"/>
-                       </Target>
-                     </ECRelationshipClass>
-                   </ECSchema>)xml"));
-    ASSERT_FALSE(asserted);
-
-    //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
-    AssertImportedSchema(ecdb, "test", "Foo", "Name");
-    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Name")) << "Existing column is expected to still be in the table after ImportSchemas.";
-    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Id")) << "Existing column is expected to still be in the table after ImportSchemas.";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, ImportSchemaWithRelationshipAgainstExistingTable)
-    {
-    // Create a sample project
-    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
-
-    //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (Id INTEGER PRIMARY KEY, Name TEXT)"));
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Goo (Id INTEGER PRIMARY KEY, Price REAL)"));
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Foo" >
                        <ECProperty propertyName="Name" typeName="string"/>
                     </ECEntityClass>
@@ -9227,17 +9208,10 @@ TEST_F(DbMappingTestFixture, ImportSchemaWithRelationshipAgainstExistingTable)
                             <Class class="Goo"/>
                        </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"));
-    ASSERT_FALSE(asserted);
-
-    //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
-    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Id")) << "Existing column is expected to still be in the table after ImportSchemas.";
-    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Price")) << "Existing column is expected to still be in the table after ImportSchemas.";
-    //WIP: Not sure whether this should be like this or whether existing able should not be modified by a schema import
-    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "FooId"));
-    EXPECT_TRUE(ecdb.TableExists("t_FooHasGooLinkTable"));
+                   </ECSchema>)xml", false));
+        ASSERT_FALSE(asserted);
+        }
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/12

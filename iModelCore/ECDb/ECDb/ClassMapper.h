@@ -18,6 +18,24 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ClassMapper final
     {
     private:
+        //======================================================================================
+        // @bsiclass                                              Krischan.Eberle        12/2016
+        //======================================================================================
+        struct TableMapper final : NonCopyableClass
+            {
+            private:
+                TableMapper();
+                ~TableMapper();
+
+                static DbTable* CreateTableForExistingTableStrategy(ClassMap const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
+                static DbTable* CreateTableForOtherStrategies(ClassMap const&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+
+                static BentleyStatus CreateClassIdColumn(DbSchema&, DbTable&, PersistenceType);
+
+            public:
+                static DbTable* FindOrCreateTable(ClassMap const&, Utf8StringCR tableName, DbTable::Type, MapStrategyExtendedInfo const&, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+            };
+
         ClassMap& m_classMap;
         DbClassMapLoadContext const* m_loadContext;
 
@@ -40,6 +58,8 @@ struct ClassMapper final
         static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ClassMap const&, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
 
     public:
+        static DbTable* FindOrCreateTable(ClassMap const& classMap, Utf8StringCR tableName, DbTable::Type tableType, MapStrategyExtendedInfo const& mapStrategy, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable) { return TableMapper::FindOrCreateTable(classMap, tableName, tableType, mapStrategy, isVirtual, primaryKeyColumnName, exclusiveRootClassId, primaryTable); }
+
         static PropertyMap* MapProperty(ClassMap& classMap, ECN::ECPropertyCR ecProperty);
         static PropertyMap* LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);
         static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap& classMap);

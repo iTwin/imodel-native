@@ -99,7 +99,7 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
     if (needsToCreateTable)
         {
         const bool isExclusiveRootClassOfTable = DetermineIsExclusiveRootClassOfTable(ctx.GetClassMappingInfo());
-        DbTable* table = TableMapper::FindOrCreateTable(GetDbMap().GetDbSchemaR(), ctx.GetClassMappingInfo().GetTableName(), tableType, ctx.GetClassMappingInfo().GetMapStrategy(),
+        DbTable* table = ClassMapper::FindOrCreateTable(*this, ctx.GetClassMappingInfo().GetTableName(), tableType, ctx.GetClassMappingInfo().GetMapStrategy(),
                                                         ctx.GetClassMappingInfo().MapsToVirtualTable(), ctx.GetClassMappingInfo().GetECInstanceIdColumnName(),
                                                         isExclusiveRootClassOfTable ? ctx.GetClassMappingInfo().GetClass().GetId() : ECClassId(),
                                                         primaryTable);
