@@ -157,7 +157,7 @@ protected:
     Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show show, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(show) { }
 
     DGNPLATFORM_EXPORT void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const override;
-    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
 public:
     static ControllerPtr Create(SpatialViewDefinition const& view, ComparisonDataCR data, Show show=kShowBoth, SymbologyCR symb=Symbology())
         {
@@ -166,7 +166,7 @@ public:
 
     void SetShow(Show show) { m_show = show; SetFeatureOverridesDirty(); }
     void SetSymbology(SymbologyCR symb) { m_symbology = symb; SetFeatureOverridesDirty(); }
-
+    bool WantShowBoth() const { return WantShowCurrent() && WantShowTarget(); }
     bool WantShowCurrent() const { return 0 != (m_show & kShowCurrent); }
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
 };

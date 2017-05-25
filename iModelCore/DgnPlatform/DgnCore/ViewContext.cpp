@@ -438,16 +438,9 @@ StatusInt ViewContext::_VisitHit(HitDetailCR hit)
         return ERROR;
 
     if (graphic.IsValid())
-        {
         _OutputGraphic(*graphic, source); 
-        return SUCCESS;
-        }
 
-#if defined(TODO_ELEMENT_TILE_FLASH)
-    return VisitGeometry(*source);
-#else
     return SUCCESS;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

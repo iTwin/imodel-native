@@ -297,13 +297,13 @@ struct JsDgnCode : RefCountedBaseWithCreate
     bool IsValid() const {return m_code.IsValid();}
 
     Utf8String GetValue() const {return m_code.GetValue();}
-    Utf8String GetScope() const {return m_code.GetScope();}
+    JsDgnObjectIdP GetScope() const {return new JsDgnObjectId(m_code.GetScopeElementId().GetValueUnchecked());}
     JsDgnObjectIdP GetCodeSpecId() {return new JsDgnObjectId(m_code.GetCodeSpecId().GetValueUnchecked());}
 
     static JsDgnCode* FromJson(JsDgnDbP, Utf8StringCR json);
 
     STUB_OUT_SET_METHOD(Value,Utf8String)
-    STUB_OUT_SET_METHOD(Scope,Utf8String)
+    STUB_OUT_SET_METHOD(Scope,JsDgnObjectIdP)
     STUB_OUT_SET_METHOD(CodeSpecId,JsDgnObjectIdP)
 };
 
@@ -996,7 +996,7 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     static JsDgnObjectIdP QueryCategoryId(Utf8StringCR name, JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectId(DgnCategory::QueryCategoryId(*db->m_db, SpatialCategory::CreateCode(*db->m_db, name)).GetValueUnchecked());
+        return new JsDgnObjectId(SpatialCategory::QueryCategoryId(db->m_db->GetDictionaryModel(), name).GetValueUnchecked());
         }
     static JsDgnCategory* QueryCategory(JsDgnObjectIdP id, JsDgnDbP db) 
         {

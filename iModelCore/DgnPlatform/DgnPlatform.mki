@@ -2,7 +2,7 @@
 #
 #     $Source: DgnPlatform.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 OutDgnPlatformBuild             = $(OutBuildDir)DgnPlatform/
@@ -36,6 +36,15 @@ nameToDefine                    = NOMINMAX
 
 %if defined (debug)                     # If bmake  +ddebug
     nameToDefine                = PAGALLOC_PAGE_DEBUG_CHECK_DOUBLE_FREE=1
+    %include cdefapnd.mki
+%endif
+
+# Phase of development lifecycle
+%if defined (PRG_BETABUILD)
+    nameToDefine = PRG_BETABUILD
+    %include cdefapnd.mki
+%elif defined (PRG_CERTIFIEDBUILD)
+    nameToDefine = PRG_CERTIFIEDBUILD
     %include cdefapnd.mki
 %endif
 

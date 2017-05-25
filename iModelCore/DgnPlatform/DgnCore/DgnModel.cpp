@@ -9,33 +9,11 @@
 #include <DgnPlatform/ElementTileTree.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
+#define MODEL_PROP_ParentModel "ParentModel"
 #define MODEL_PROP_ModeledElement "ModeledElement"
 #define MODEL_PROP_IsPrivate "IsPrivate"
 #define MODEL_PROP_JsonProperties "JsonProperties"
 #define MODEL_PROP_IsTemplate "IsTemplate"
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
-    {
-    Statement stmt(m_dgndb, "SELECT ECClassId,IsPrivate,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
-    stmt.BindId(1, id);
-
-    if (BE_SQLITE_ROW != stmt.Step())
-        return ERROR;
-
-    if (out) // this can be null to just test for the existence of a model by id
-        {
-        out->m_id = id;
-        out->m_classId = stmt.GetValueId<DgnClassId>(0);
-        out->m_isPrivate = stmt.GetValueBoolean(1);
-        out->m_modeledElementId = stmt.GetValueId<DgnElementId>(2);
-        out->m_isTemplate = TO_BOOL(stmt.GetValueInt(3));
-        }
-
-    return SUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/16
@@ -79,7 +57,13 @@ void DgnModels::DropLoadedModel(DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::Empty()
     {
-    m_dgndb.Elements().Destroy(); // Has to be called before models are released.
+    // Tile-loader threads may be executing, so must release roots (and wait for loaders to cancel) first
+    // Must be done before destroying Elements because tile loaders may have ref-counted ptrs to elements
+    for (auto& kvp : m_models)
+        kvp.second->_Destroy();
+
+    // Has to be called before models are released.
+    m_dgndb.Elements().Destroy();
     m_models.clear();
     }
 
@@ -88,7 +72,7 @@ void DgnModels::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelIterator DgnModels::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElement.Id,IsTemplate,IsPrivate FROM ");
+    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElement.Id,IsTemplate,IsPrivate,ParentModel.Id FROM ");
     sql.append(className);
 
     if (whereClause)
@@ -111,8 +95,9 @@ ModelIterator DgnModels::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8
 DgnModelId ModelIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(0);}
 DgnClassId ModelIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
 DgnElementId ModelIteratorEntry::GetModeledElementId() const {return m_statement->GetValueId<DgnElementId>(2);}
-bool ModelIteratorEntry::GetIsTemplate() const {return m_statement->GetValueBoolean(3);}
+bool ModelIteratorEntry::IsTemplate() const {return m_statement->GetValueBoolean(3);}
 bool ModelIteratorEntry::IsPrivate() const {return m_statement->GetValueBoolean(4);}
+DgnModelId ModelIteratorEntry::GetParentModelId() const {return m_statement->GetValueId<DgnModelId>(5);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -148,8 +133,8 @@ CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) {return FindCl
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_isPrivate(params.m_isPrivate),
     m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
-    // WIP: Add m_modeledElementRelClassId to CreateParams!!!
-    m_modeledElementRelClassId = DgnClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
+    m_parentModelId = GetDgnDb().Elements().QueryModelId(GetModeledElementId());
+    m_modeledElementRelClassId = params.m_modeledElementRelClassId.IsValid() ? params.m_modeledElementRelClassId : GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -431,7 +416,25 @@ SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPortionCR mo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jonas.Valiunas  03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationElementCR modeledElement)
+    {
+    return SpatialLocationModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Jonas.Valiunas  03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPortionCR modeledElement)
+    {
+    SpatialLocationModelPtr model = Create(modeledElement);
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Jonas.Valiunas  03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationElementCR modeledElement)
     {
     SpatialLocationModelPtr model = Create(modeledElement);
     return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
@@ -665,14 +668,17 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     if (ForInsert::Yes == forInsert)
         statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
 
-    if (!m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid())
+    if (!m_parentModelId.IsValid() || !m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid())
         {
         BeAssert(false);
-        return ;
+        return;
         }
 
     if (ForInsert::Yes == forInsert)
+        {
+        statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ParentModel), m_parentModelId);
         statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElement), m_modeledElementId, m_modeledElementRelClassId);
+        }
 
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsPrivate), m_isPrivate);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
@@ -953,25 +959,8 @@ DgnDbStatus DgnModel::_OnDelete()
             return stat;
         }
 
-    // delete all views which use this model as their base model
-    stat = DeleteAllViews();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
     BeAssert(GetRefCount() > 1);
     m_dgndb.Models().DropLoadedModel(*this);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::DeleteAllViews()
-    {
-    if (Is3dModel())
-        return ModelSelector::OnModelDelete(GetDgnDb(), GetModelId());
-     
-    ViewDefinition2d::OnModelDelete(GetDgnDb(), GetModelId());
     return DgnDbStatus::Success;
     }
 
@@ -982,22 +971,7 @@ struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& ha
 void DgnModel::_OnDeleted()
     {
     CallAppData(DeletedCaller());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void getElementsThatPointToModel(bset<DgnElementId>& dependents, DgnModelCR model)
-    {
-    BeSQLite::EC::CachedECSqlStatementPtr stmt;
-    if (model.Is2dModel())
-        stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_BaseModelForView2d) " WHERE SourceECInstanceId = ?");
-    else
-        stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT SourceECInstanceId As ModelSelectorId, SourceECClassId ModelSelectorClassId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE TargetECInstanceId = ?");
-
-    stmt->BindId(1, model.GetModelId());
-    while (BE_SQLITE_ROW == stmt->Step())
-        dependents.insert(stmt->GetValueId<DgnElementId>(0));
+    GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), DgnElementId() /* all ModelSelectors */, GetModeledElementId()); // replicate former foreign key behavior
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1030,18 +1004,6 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                         return stat;
                     }
                 }
-
-            // and we must delete all of its views
-            bset<DgnElementId> dependents;
-            getElementsThatPointToModel(dependents, *this);
-            for (auto id : dependents)
-                {
-                auto dependent = GetDgnDb().Elements().GetElement(id);
-                auto stat = dependent->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
-                if (RepositoryStatus::Success != stat)
-                    return stat;
-                }
-
             break;
             }
         case BeSQLite::DbOpcode::Update:
@@ -1225,23 +1187,30 @@ ModelHandlerR DgnModel::GetModelHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     {
-    DgnModels::Model model;
-    if (SUCCESS != QueryModelById(&model, modelId))
+    enum Column {ClassId=0, ModeledElementId=1, IsPrivate=2, IsTemplate=3};
+    Statement stmt(m_dgndb, "SELECT ECClassId,ModeledElementId,IsPrivate,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    stmt.BindId(1, modelId);
+
+    if (BE_SQLITE_ROW != stmt.Step())
         return nullptr;
 
+    DgnClassId modelClassId = stmt.GetValueId<DgnClassId>(Column::ClassId);
+    DgnElementId modeledElementId = stmt.GetValueId<DgnElementId>(Column::ModeledElementId);
+    bool isPrivate = stmt.GetValueBoolean(Column::IsPrivate);
+    bool isTemplate = stmt.GetValueBoolean(Column::IsTemplate);
+
     // make sure the class derives from Model (has a handler)
-    ModelHandlerP handler = dgn_ModelHandler::Model::FindHandler(m_dgndb, model.GetClassId());
+    ModelHandlerP handler = dgn_ModelHandler::Model::FindHandler(m_dgndb, modelClassId);
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.IsPrivate(), model.IsTemplate());
+    DgnModel::CreateParams params(m_dgndb, modelClassId, modeledElementId, isPrivate, isTemplate);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
 
     dgnModel->Read(modelId);
     dgnModel->_OnLoaded();   // this adds the model to the loaded models list and increments the ref count, so returning by value is safe.
-
     return dgnModel;
     }
 
@@ -1338,6 +1307,7 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {  
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
+    params.Add(MODEL_PROP_ParentModel, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_JsonProperties, ECSqlClassParams::StatementType::All);
@@ -1419,7 +1389,7 @@ DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
         Utf8StringCR propName = prop->GetName();
 
         // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
-        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElement) || propName.Equals(MODEL_PROP_IsPrivate))
+        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ParentModel) || propName.Equals(MODEL_PROP_ModeledElement) || propName.Equals(MODEL_PROP_IsPrivate))
             continue;
 
         ECN::ECValue value;
@@ -1462,6 +1432,7 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
+    model->m_parentModelId = db.Elements().QueryModelId(params.m_modeledElementId);
     stat = model->_SetProperties(properties);
     return (DgnDbStatus::Success == stat)? model : nullptr;
     }
@@ -1547,7 +1518,7 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr GeometricModel::GetTileTree(Render::SystemP system)
+TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
     {
     DgnDb::VerifyClientThread();
 
@@ -1557,7 +1528,20 @@ TileTree::RootPtr GeometricModel::GetTileTree(Render::SystemP system)
     if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystemP() != system))
         m_root = _CreateTileTree(system);
 
-    return m_root;
+    return m_root.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::ReleaseTileTree()
+    {
+    // NB: We may be loading any number of tiles in background threads. We need to cancel them before destroying this model and its root.
+    // The root's destructor takes care of that.
+    // Why not do this in GeometricModel's destructor? Because loaders may invoke functions like _FillRangeIndex(), which will
+    // have become pure calls by the time we get to that destructor.
+    BeAssert(m_root.IsNull() || 1 == m_root->GetRefCount());
+    m_root = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1739,7 +1723,7 @@ static BentleyStatus getECRelColIds(int& sourceInstanceIdCol, int& targetInstanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relschema, Utf8CP relname)
+DgnDbStatus DgnModel::ImportLinkTableECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relschema, Utf8CP relname)
     {
     auto sstmt = sourceModel.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(
         "SELECT rel.* FROM %s.%s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
@@ -1779,7 +1763,7 @@ DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnM
                 }
 
             EC::ECInstanceKey ekey;
-            destDb.InsertNonNavigationRelationship(ekey, *actualDstRelClass, remappedSrcId, remappedDstId, relinst.get());
+            destDb.InsertLinkTableRelationship(ekey, *actualDstRelClass, remappedSrcId, remappedDstId, relinst.get());
             }
         }
 
@@ -1789,7 +1773,7 @@ DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+DgnDbStatus DgnModel::_ImportLinkTableECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
     // Copy ECRelationships where source and target are both in this model, and where the relationship is implemented as a link table.
     // Note: this requires domain-specific knowledge of what ECRelationships exist.
@@ -1797,10 +1781,10 @@ DgnDbStatus DgnModel::_ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceM
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
     StopWatch timer(true);
-    ImportNonNavigationECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementGroupsMembers);
+    ImportLinkTableECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementGroupsMembers);
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementGroupsMembers);
     timer.Start();
-    ImportNonNavigationECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementDrivesElement);
+    ImportLinkTableECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementDrivesElement);
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
 
 #ifdef WIP_VIEW_DEFINITION
@@ -1834,7 +1818,7 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
     logPerformance(timer, "Import element aspects time");
 
     timer.Start();
-    if (DgnDbStatus::Success != (status = _ImportNonNavigationECRelationshipsFrom(sourceModel, importer)))
+    if (DgnDbStatus::Success != (status = _ImportLinkTableECRelationshipsFrom(sourceModel, importer)))
         return status;
     logPerformance(timer, "Import ECRelationships time");
 

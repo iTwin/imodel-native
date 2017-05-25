@@ -28,17 +28,23 @@
             </Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Functional.ecschema.xml
-                ECSchemas/Script.ecschema.xml
             </Files>
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
     </Part>
 
-    <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
-    <Part Name="PsolidShim" OnlyPlatforms="x64">
+    <!-- We need this shim part to avoid pulling all psolid repos just to see their platform dependency. -->
+    <Part Name="PsolidShim">
+        <SubPart PartName="PsolidShimWindowsDesktop"/>
+        <SubPart PartName="PsolidShimIos"/>
+    </Part>
+    <Part Name="PsolidShimWindowsDesktop" OnlyPlatforms="x64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_29_1_241"/>
     </Part>
-    
+    <Part Name="PsolidShimIos" OnlyPlatforms="iOSARM64,iOSx64" WipPartEnable="ParasolidIos">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_ios_alpha1"/>
+    </Part>
+
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
     <Part Name="FollyShim" ExcludePlatforms="Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
@@ -375,45 +381,7 @@
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/ForeignFormat_zh-tw.xliff</Files>
         </Bindings>
     </Part>
-
-    <!-- Define a test collection part-->
-    <Part Name="Tests">
-        <SubPart PartName="UnitTests-NonPublished"/>
-        <SubPart PartName="UnitTests-Published"/>
-    </Part>
-
-    <!-- Define a gtest program to run the tests -->
-    <Product Name="DgnPlatform-Tests">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
-        <SubPart PartName="Tests"/>
-        <SubPart PartName="DgnPlatformSqlang" />
-        <!-- DgnPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
-        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
-      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
-    </Product>
-
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <SubProduct ProductName="DgnPlatform-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-        <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatformTest/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPlatformTest/Assets" />
-        </Bindings>
-    </Part>
-
-    <Product Name="DgnPlatform-Gtest" SaveProduct="true">
-        <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
-    </Product>
-
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/DgnPlatform-Gtest/DgnPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="DgnPlatform-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-        <Bindings>
-            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnPlatformTest.log</Files>
-        </Bindings>
-    </Part>
-
+ 
     <Product Name="CompatibilityTestFiles" SaveProduct="true">
         <SubPart PartName="SaveCompatibilityTestFiles"/>
         <Directories DirectoryListName="CompatibilityTestFiles"/>
@@ -438,6 +406,47 @@
             </Files>
         </Bindings>
     </Part>
+  
+    <!-- Define a test collection part-->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+        <SubPart PartName="UnitTests-Published"/>
+    </Part>
+
+    <Product Name="DgnPlatform-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <!-- DgnPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
+        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+  <!-- ********************** -->
+  <!-- **** Gtest **** -->
+  <!-- ********************** -->
+  <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="DgnPlatform-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatformTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPlatformTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-Gtest" SaveProduct="true">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="DgnPlatform-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnPlatformTest.log</Files>
+        </Bindings>
+    </Part>
+
     
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
@@ -525,65 +534,49 @@
     <!-- ******************************************************************************************* -->
 
     <Part Name="DgnPlatformNoViewTested">
-      <!-- TOO BAD. None of this builds, because WSClient depends on DgnClientFx, and DgnClientFx won't build. That's too bad, because none of this actually uses DgnClientFx ... except its L10N function.
       <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
-      <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
-      <SubPart PartName="RunToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
-      <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
-      -->
       <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="BimConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
       <SubProduct ProductName="TilePublisher" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-      <SubPart PartName="NoView-Gtest-RunAggregator" />
+        -->
+      <SubPart PartName="NoView-Gtest-RunAggregator-Unix" LibType="Static" />
+      <SubPart PartName="NoView-Gtest-RunAggregator-Windows" LibType="Dynamic" />
+      <SubPart PartName="RunToyTileCreator-Unix" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
+      <SubPart PartName="RunToyTileCreator-Windows" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Dynamic"/>
     </Part>
 
-    <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-        <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="RunGtest"/>
-        <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="RunGtest"/>
-        <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RunGtest"/>
-        <SubPart Repository="Units"                 PartFile="Units"            PartName="RunGtest"/>
-        <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest"/> -->
-        <!-- <SubPart Repository="WSClient"              PartFile="WSClient"         PartName="RunGtest"/> -->
-        <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunGtest"/>
-        <SubPart Repository="DgnDbSync"             PartFile="iModelBridge"     PartName="RunGtest"/>
-        <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest"/> -->
-        <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RunGtest"/>
-        <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunGtest"/>
-        <SubPart Repository="BeHttp"                PartFile="BeHttp"           PartName="RunGtest"/>
-        <SubPart Repository="BeSecurity"            PartFile="BeSecurity"       PartName="RunGtest"/>
-        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest"/>
-        <SubPart Repository="DgnDomains-RealityModeling" PartFile="RealityModeling" PartName="RunGtest"/>
-        <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest"/>
-        <!-- <SubPart Repository="DgnDbSync"             PartFile="DgnDbSync"        PartName="RunDgnV8ConverterTests"/> -->
+    <Part Name="NoView-Gtest-RunAggregator-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+      <SubPart PartName="NoView-Gtest-RunAggregator"/>
+    </Part>
+  
+    <Part Name="NoView-Gtest-RunAggregator-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" >
+      <SubPart PartName="NoView-Gtest-RunAggregator"/>
+    </Part>
+  
+    <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs">
+        <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="RunGtest" />
+        <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="RunGtest" />
+        <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RunGtest" />
+        <SubPart Repository="Units"                 PartFile="Units"            PartName="RunGtest" />
+        <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest" /> -->
+        <!-- <SubPart Repository="WSClient"              PartFile="WSClient"         PartName="RunGtest" /> -->
+        <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunGtest" />
+        <SubPart Repository="DgnDbSync"             PartFile="iModelBridge"     PartName="RunGtest" />
+        <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest" /> -->
+        <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RunGtest" />
+        <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunGtest" />
+        <SubPart Repository="BeHttp"                PartFile="BeHttp"           PartName="RunGtest" />
+        <SubPart Repository="BeSecurity"            PartFile="BeSecurity"       PartName="RunGtest" />
+        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest" />
+        <SubPart Repository="DgnDomains-RealityModeling" PartFile="RealityModeling" PartName="RunGtest" />
+        <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />
+        <!-- <SubPart Repository="DgnDbSync"             PartFile="DgnDbSync"        PartName="RunDgnV8ConverterTests" /> -->
         <!-- Test that are too time-consuming to run every time:
         <SubPart Repository="GeoCoord"              PartFile="GeoCoord"         PartName="RunGtest"/>
       -->
-    </Part>
-
-    <Part Name="NoView-AndroidJUnit-RunAggregator" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/ANJU/Logs" OnlyPlatforms="Android*" Sequential="true">
-        <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="BeHttp"                PartFile="BeHttp"           PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="Units"                 PartFile="Units"            PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunAndroidJUnitTest"/>
-    </Part>
-
-    <Part Name="NoView-iOSXCTest-RunAggregator" OnlyPlatforms="iOS*" Sequential="true">
-        <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RuniOSXCTest"/>
-        <SubPart Repository="BeHttp"                PartFile="BeHttp"           PartName="RuniOSXCTest"/>
-        <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="RuniOSXCTest"/>
-        <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="RuniOSXCTest"/>
-        <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RuniOSXCTest"/>
-        <SubPart Repository="Units"                 PartFile="Units"            PartName="RuniOSXCTest"/>
-        <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RuniOSXCTest"/>
-        <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RuniOSXCTest"/>
-        <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RuniOSXCTest"/>
-        <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RuniOSXCTest"/>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -591,25 +584,39 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
     <Product Name="BimConsole">
-        <SubPart PartName="BimConsoleExe" />
+        <SubPart PartName="BimConsoleExe-Windows" LibType="Dynamic" />
+        <SubPart PartName="BimConsoleExe-Unix" LibType="Static" />
         <Directories DirectoryListName="BimConsoleDirList" />
     </Product>
 
-    <Part Name="BimConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="BimConsole/BimConsole.mke" OnlyPlatforms="x64,MacOS*,Linux*">
+    <Part Name="BimConsoleExe-Windows" OnlyPlatforms="x64,MacOS*" ExcludeLibType="Static">
+        <SubPart PartName="BimConsoleExe" />
+    </Part>
+    
+    <Part Name="BimConsoleExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="BimConsoleExe" />
+    </Part>
+
+    <Part Name="BimConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="BimConsole/BimConsole.mke" >
         <SubPart PartName="DgnPlatformLib"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/BimConsole$(exeext)
-                                                          Delivery/logging.config.xml</Files>
+            <Files ProductDirectoryName="ApplicationRoot">
+                Delivery/BimConsole$(exeext)
+                Delivery/logging.config.xml
+            </Files>
         </Bindings>
     </Part>
 
     <ProductDirectoryList ListName="BimConsoleDirList" >
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <ProductDirectory Name="ApplicationRoot"                Path="" LibType="Static" />
         <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot" LibType="Static"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
-        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="Static" />
+       <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
+       <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices" LibType="Static"/>
     </ProductDirectoryList>
     
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -652,7 +659,15 @@
         </Bindings>
     </Part>
 
-    <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="TilePublisherExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="TilePublisherExe" />
+    </Part>
+  
+    <Part Name="TilePublisherExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
+        <SubPart PartName="TilePublisherExe" />
+    </Part>
+
+    <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
         <SubPart PartName="TilePublisherLib" />
         <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
@@ -661,7 +676,8 @@
     </Part>
 
     <Product Name="TilePublisher">
-        <SubPart PartName="TilePublisherExe" />
+        <SubPart PartName="TilePublisherExe-Windows" LibType="Dynamic" />
+        <SubPart PartName="TilePublisherExe-Unix" LibType="Static"/>
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
 
@@ -676,9 +692,11 @@
     <ProductDirectoryList ListName="TilePublisherDirs" >
         <ProductDirectory Name="ApplicationRoot" Path=""/>
         <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot" LibType="Static"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="Static"/>
     </ProductDirectoryList>
 
     <!-- *********************************************************** -->

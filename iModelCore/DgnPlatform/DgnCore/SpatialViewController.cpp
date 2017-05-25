@@ -123,7 +123,7 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
+BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
@@ -159,7 +159,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
         for (auto modelId : GetViewedModels())
             {
             auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
-            TileTree::RootPtr modelRoot;
+            TileTree::RootP modelRoot;
             if (model.IsValid())
                 {
                 modelRoot = model->GetTileTree(context.GetTargetR().GetSystem());
@@ -183,8 +183,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
     if (!m_allRootsLoaded)
         {
         // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
-        // ###TODO_ELEMENT_TILE: UpdatePlan is on RenderListContext...
-        auto const& plan = static_cast<RenderListContext&>(context).GetUpdatePlan().GetQuery();
+        auto const& plan = context.GetUpdatePlan().GetQuery();
         uint64_t endTime = plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
 
         // Create as many tile trees as we can within the allotted time...
@@ -195,7 +194,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
             if (m_roots.end() == iter)
                 {
                 auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
-                TileTree::RootPtr modelRoot;
+                TileTree::RootP modelRoot = nullptr;
                 if (model.IsValid())
                     {
                     modelRoot = model->GetTileTree(&context.GetTargetR().GetSystem());
@@ -221,7 +220,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
     // Always draw all the tile trees we currently have...
     // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
     for (auto pair : m_roots)
-        if (pair.second.IsValid())
+        if (nullptr != pair.second)
             pair.second->DrawInView(context);
 
     //DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
@@ -234,7 +233,6 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
-    RequestAbort(true);
     m_noQuery = exclusive;
     m_special.m_always = newSet; // NB: copies values
     SetFeatureOverridesDirty();
@@ -245,7 +243,6 @@ void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusiv
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ClearAlwaysDrawn()
     {
-    RequestAbort(true);
     m_special.m_always.clear();
     m_noQuery = false;
     SetFeatureOverridesDirty();
@@ -256,7 +253,6 @@ void ViewController::ClearAlwaysDrawn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
-    RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
     SetFeatureOverridesDirty();
     }
@@ -266,7 +262,6 @@ void ViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ClearNeverDrawn()
     {
-    RequestAbort(true);
     m_special.m_never.clear();
     SetFeatureOverridesDirty();
     }
@@ -313,7 +308,6 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     if (onOff == models.Contains(modelId))
         return;
 
-    RequestAbort(true);
     if (onOff)
         {
         models.insert(modelId);
@@ -325,30 +319,6 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
         }
 
     m_allRootsLoaded = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_OnCategoryChange(bool singleEnabled)
-    {
-    T_Super::_OnCategoryChange(singleEnabled);
-    RequestAbort(true);
-
-    // Category stuff is baked into the tiles (for now) - throw them away
-    // ###TODO_ELEMENT_TILES: If we were informed about the delta in the set of viewed categories, we could throw away only those tiles affected.
-    m_roots.clear();
-    m_allRootsLoaded = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::RequestAbort(bool wait)
-    {
-    // ###TODO_ELEMENT_TILE: This is generally called when the criteria defining the scene have changed. e.g., we turned off a category or changed the sets of always/never drawn elemets.
-    // In tile-based rendering we will want to invalidate tiles - though we'd probably also like to change how these criteria are defined and applied.
-    DgnDb::VerifyClientThread();
     }
 
 /*---------------------------------------------------------------------------------**//**

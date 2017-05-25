@@ -174,16 +174,23 @@ DgnDbStatus ViewAttachment::CheckValid() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ViewAttachment::GetClip() const
     {
-    return ClipVector::FromJson(Json::Value::From(GetPropertyValueString(prop_Clip())));
+    return m_jsonProperties.isMember(json_clip()) ? ClipVector::FromJson(m_jsonProperties[json_clip()]) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
+void ViewAttachment::SetClip(ClipVectorCR clipVector)
     {
-    Json::Value clipJson = clipVector.ToJson();
-    return SetPropertyValue(prop_Clip(), clipJson.ToString().c_str());
+    m_jsonProperties[json_clip()] = clipVector.ToJson();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachment::ClearClip()
+    { 
+    m_jsonProperties.removeMember(json_clip());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,7 +357,7 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tree::Draw(RenderListContext& context)
+void Attachment::Tree::Draw(SceneContext& context)
     {
     Load(&context.GetTargetR().GetSystem());
 
@@ -656,13 +663,11 @@ void Sheet::Model::DrawBorder(ViewContextR context, DPoint2dCR size)
 
 /*---------------------------------------------------------------------------------**//**
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Sheet::ViewController::_CreateScene(RenderContextR context)
+BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     {
-    // ###TODO_ELEMENT_TILE: Draw() wants the context's UpdatePlan...
-    BeAssert(nullptr != dynamic_cast<RenderListContext*>(&context));
     auto status = T_Super::_CreateScene(context);
     for (auto& attach : m_attachments)
-        attach->Draw(static_cast<RenderListContext&>(context));
+        attach->Draw(context);
 
     Sheet::Model::DrawBorder(context, m_size);
     return status;

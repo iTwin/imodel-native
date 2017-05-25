@@ -124,7 +124,7 @@ protected:
     ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
     Render::GraphicListPtr m_currentScene;
     Render::GraphicListPtr m_readyScene;
-    bmap<DgnModelId, TileTree::RootPtr> m_roots;
+    bmap<DgnModelId, TileTree::RootP> m_roots;
     bool m_allRootsLoaded = false;
     GridOrientationType m_gridOrientation = GridOrientationType::WorldXY;
     DPoint2d m_gridSpacing = DPoint2d::From(1.0, 1.0);
@@ -143,7 +143,7 @@ protected:
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual GeometricModelP _GetTargetModel() const = 0;
-    virtual BentleyStatus _CreateScene(RenderContextR context) = 0;
+    virtual BentleyStatus _CreateScene(SceneContextR context) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
 
@@ -216,8 +216,8 @@ protected:
 
 public:
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
-    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan);
-    void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
+    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
+    void RequestScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
     Render::GraphicListPtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
@@ -408,9 +408,6 @@ public:
 
     //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
-
-    //! Requests that any active or pending scene queries for this view be canceled, optionally not returning until the request is satisfied
-    DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
 };
 
 //=======================================================================================
@@ -549,7 +546,6 @@ protected:
     DGNPLATFORM_EXPORT void _PickTerrain(PickContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
-    DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
@@ -557,12 +553,12 @@ protected:
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
     DGNPLATFORM_EXPORT SpatialViewController(SpatialViewDefinitionCR definition);
-    ~SpatialViewController() {RequestAbort(true);}
+    ~SpatialViewController() {}
 
     void LoadSkyBox(Render::SystemCR system);
     Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
@@ -628,14 +624,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    TileTree::RootPtr   m_root;
+    TileTree::RootP m_root = nullptr;
 
-    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
-    DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnable) override;
 
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 
@@ -801,7 +796,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
 
 private:
     DgnModelId m_viewedModelId;
-    TileTree::RootPtr m_root;
+    TileTree::RootP m_root = nullptr;
 
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
@@ -809,7 +804,7 @@ protected:
     bool _Allow3dManipulations() const override {return true;}
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
-    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
 
 public:
     TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}

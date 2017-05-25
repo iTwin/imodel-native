@@ -707,8 +707,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 +---------------+---------------+---------------+---------------+---------------+------*/
 RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream)
     {
+    bool containsSchemaChanges;
     DbSchemaChangeSet dbSchemaChanges;
-    DbResult result = changeStream.GetDbSchemaChanges(dbSchemaChanges);
+    DbResult result = changeStream.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
@@ -739,7 +740,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
     RevisionStatus status = RevisionStatus::Success;
     UndoChangeSet indirectChanges;
-    if (HasDataChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local changes
+    if (HasDataChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local data changes
         {
         /*
          * We propagate changes (run dependency rules) ONLY if there are local changes.
@@ -795,7 +796,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
         if (status == RevisionStatus::Success)
             {
-            result = m_dgndb.SaveChanges(""); 
+            result = m_dgndb.SaveChanges(); 
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
             // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
@@ -861,7 +862,7 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
         
     if (status == RevisionStatus::Success)
         {
-        DbResult result = m_dgndb.SaveChanges("");
+        DbResult result = m_dgndb.SaveChanges();
         if (BE_SQLITE_OK != result)
             {
             LOG.errorv("Apply failed with SQLite error %s", m_dgndb.GetLastError().c_str());
@@ -1007,19 +1008,16 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
 
     if (containsSchemaChanges)
         {
-        m_dgndb.ClearECSqlCache();
-        m_dgndb.Elements().ClearUpdaterCache();
+        /* Note: All caches that hold ec-classes and handler-associations in memory have to be cleared. 
+         * The calls below replicate a similar clearing that happens when ImportSchemas() are called. 
+         * Additionally, we force merging of revisions containing schema changes to happen right when the 
+         * DgnDb is opened, and the Element caches haven't had a chance to get initialized. 
+         */
+        m_dgndb.FireAfterSchemaImportEvent(); 
+
         m_dgndb.ClearECDbCache();
         m_dgndb.Schemas().RepopulateCacheTables();
         m_dgndb.Domains().SyncWithSchemas();
-        /*
-        * Caches related to schemas need to be cleared/recreated before handlers can be invoked
-        * + Data changes in the change set could include changes to the ec_ class, ec-mapping and dgn_Handler tables.
-        * + Recreate the ECDb cache since the merge would have affected the schema entries. (TODO: Ideally this
-        *   wouldn't be necessary since the tables representing the cache should be in the change set, but need to check with
-        *   the ECDb team on why that doesn't work)
-        * + Reinitialize any handler-class associations with the newly imported classes.
-        */
         }
 
     BeAssert(result == BE_SQLITE_OK);

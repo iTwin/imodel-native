@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <Bentley\GlobalHandleContainer.h>
+#include <Bentley/GlobalHandleContainer.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #include <Bentley/Desktop/FileSystem.h> // *** NEEDS WORK: Why are we using desktop-only functions?
 
@@ -1190,7 +1190,7 @@ static char*    getFileGuiseString (int guise)
     static char ffcsnp[] = "snapshot";
     static char ffcjnl[] = "journal";
     static char ffcxmt[] = "transmit";
-    static char ffcxmo[] = "old_transmit";
+    // unused - static char ffcxmo[] = "old_transmit";
     static char ffcsch[] = "schema";
     static char ffclnc[] = "licence";
     static char ffcdbg[] = "debug_report";
@@ -1698,7 +1698,7 @@ static int      writeXMLFileHeader (PFrustrumFile pFileIn, const char pr2hdr[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int      deleteFile (wchar_t* filename)
     {
-    if (0 != _wremove (filename))
+    if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(filename))
         return FR_close_fail;
 
     return FR_no_errors;
@@ -1862,6 +1862,11 @@ int*                strid       // <= output stream-id on which file is opened
 
     wcscpy (filename, (wchar_t const*) name);
 
+#if defined(BENTLEYCONFIG_OS_UNIX)
+    WString lower(filename);
+    lower.ToLower();
+    wcscpy(filename, lower.c_str());
+#endif
     // prepend the schema path
     prependSchemaExtension (filename, guise);
 
@@ -1872,9 +1877,21 @@ int*                strid       // <= output stream-id on which file is opened
 
     // open file for reading
     if (FFTEXT == format)
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
         fp = _wfopen (filename, L"r");
+#elif defined(BENTLEYCONFIG_OS_UNIX)
+        fp = fopen(Utf8String(filename).c_str(), "r");
+#else
+        #error Unsupported OS.
+#endif
     else
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
         fp = _wfopen (filename, L"rb");
+#elif defined(BENTLEYCONFIG_OS_UNIX)
+        fp = fopen(Utf8String(filename).c_str(), "rb");
+#else
+        #error Unsupported OS.
+#endif
 
     if (0 == fp)
         return FR_not_found;
@@ -1924,9 +1941,21 @@ int*                strid       // <= output stream-id on which file is opened
 
     // open file for writing
     if (FFTEXT == format)
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
         fp = _wfopen (filename, L"w");
+#elif defined(BENTLEYCONFIG_OS_UNIX)
+        fp = fopen(Utf8String(filename).c_str(), "w");
+#else
+        #error Unsupported OS.
+#endif
     else
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
         fp = _wfopen (filename, L"wb");
+#elif defined(BENTLEYCONFIG_OS_UNIX)
+        fp = fopen(Utf8String(filename).c_str(), "wb");
+#else
+        #error Unsupported OS.
+#endif
 
     if (0 == fp)
         return FR_already_exists;
@@ -1996,7 +2025,13 @@ int*            pFailureCodeOut     // <= outputs failure code if error, else 0
     BeStringUtilities::Wcsncpy(filename, L"rollback.001");
     BeStringUtilities::Wcsncpy(keyname, L"rollback");
 
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
     FILE*   fp = _wfopen (filename, L"a");
+#elif defined(BENTLEYCONFIG_OS_UNIX)
+    FILE*   fp = fopen(Utf8String(filename).c_str(), "a");
+#else
+        #error Unsupported OS.
+#endif
 
     if (0 == fp)
         {

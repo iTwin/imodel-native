@@ -139,25 +139,12 @@ void dgn_ElementHandler::AnnotationTextStyleHandler::_RegisterPropertyAccessors(
     params.RegisterPropertyAccessors(layout, PROP_Data,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            AnnotationTextStyle& el = (AnnotationTextStyle&) elIn;
-            bvector<Byte> data;
-            if (SUCCESS != AnnotationTextStylePersistence::EncodeAsFlatBuf(data, el, AnnotationTextStylePersistence::FlatBufEncodeOptions::Default))
-                return DgnDbStatus::BadArg;
-            value.SetBinary(data.data(), data.size());
-            return DgnDbStatus::Success;
-        },
+            return DgnDbStatus::BadRequest; // BLOB that is not meant to be directly accessed; use the element API.
+            },
         [] (DgnElementR elIn, ECValueCR value)
             {
-            if (!value.IsBinary())
-                return DgnDbStatus::BadArg;
-            AnnotationTextStyle& el = (AnnotationTextStyle&) elIn;
-            size_t dataSize = 0;
-            ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
-            if (SUCCESS != AnnotationTextStylePersistence::DecodeFromFlatBuf(el, data, static_cast<size_t>(dataSize)))
-                return DgnDbStatus::BadArg;
-            return DgnDbStatus::Success;
+            return DgnDbStatus::BadRequest; // BLOB that is not meant to be directly accessed; use the element API.
             });
-
     }
 
 //---------------------------------------------------------------------------------------

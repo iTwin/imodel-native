@@ -845,7 +845,7 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::DrawInView(RenderContextR context)
+void Root::DrawInView(SceneContextR context)
     {
     if (!GetRootTile().IsValid())
         {
@@ -896,13 +896,6 @@ void Root::DrawInView(RenderContextR context)
     //DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
     args.DrawGraphics();
-
-    // Do we still have missing tiles?
-    if (!args.m_missing.empty())
-        {
-        // yes, request them - we'll draw them in the frame following their arrival
-        args.RequestMissingTiles(*this);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1035,15 +1028,6 @@ void DrawArgs::DrawGraphics()
     {
     // Allow the tile tree to specify how view flags should be overridden
     DrawBranch(m_root._GetViewFlagsOverrides(), m_graphics);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Add all missing tiles that are in the "not loaded" state to the download queue.
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::RequestMissingTiles(RootR root)
-    {
-    root.RequestTiles(m_missing);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1425,5 +1409,24 @@ void Root::CancelTileLoad(TileCR tile)
         (*iter)->SetCanceled();
         m_activeLoads.erase(iter);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileRequests::RequestMissing() const
+    {
+    for (auto const& kvp : m_map)
+        if (!kvp.second.empty())
+            kvp.first->RequestTiles(kvp.second);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip)
+    : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan)
+    {
+    //
     }
 

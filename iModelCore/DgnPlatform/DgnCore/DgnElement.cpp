@@ -93,9 +93,9 @@ DgnModelId DgnElement::GetSubModelId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnSubModelInsert(DgnModelCR model) const
     {
-    bool isModellable = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_IModellableElement);
-    BeAssert(isModellable && "Only element ECClasses that implement bis:IModellableElement can have SubModels");
-    return isModellable ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
+    bool isSubModeled = GetElementClass()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ISubModeledElement);
+    BeAssert(isSubModeled && "Only ECClasses that implement bis:ISubModeledElement can have SubModels");
+    return isSubModeled ? DgnDbStatus::Success : DgnDbStatus::WrongElement;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -308,9 +308,9 @@ Utf8String DgnElement::_GetInfoString(Utf8CP delimiter) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DrawingGraphic::GetDerivedFromElement() const
+DgnElementCPtr DrawingGraphic::GetRepresentedElement() const
     {
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_GraphicDerivedFromElement) " WHERE SourceECInstanceId=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_DrawingGraphicRepresentsElement) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
         {
         BeAssert(false);
@@ -326,7 +326,7 @@ DgnElementCPtr DrawingGraphic::GetDerivedFromElement() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const 
     {
-    auto source = GetDerivedFromElement();
+    DgnElementCPtr source = GetRepresentedElement();
     return source.IsValid() ? source->GetInfoString(delimiter) : T_Super::_GetInfoString(delimiter);
     }
 
@@ -1010,6 +1010,29 @@ DgnDbStatus DgnElement::_OnDelete() const
     return GetModel()->_OnDeleteElement(*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void deleteLinkTableRelationships(DgnDbR db, Utf8CP tableName, DgnElementId elementId)
+    {
+    BeAssert(db.TableExists(tableName));
+    Utf8PrintfString sql("DELETE FROM %s WHERE SourceId=? OR TargetId=?", tableName);
+    CachedStatementPtr statement = db.Elements().GetStatement(sql.c_str());
+    statement->BindId(1, elementId);
+    statement->BindId(2, elementId);
+    statement->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void deleteLinkTableRelationships(DgnDbR db, DgnElementId elementId)
+    {
+    // provide clean up behavior previously handled by foreign keys (the following link tables use "logical" foreign keys now)
+    deleteLinkTableRelationships(db, BIS_TABLE(BIS_REL_ElementRefersToElements), elementId);
+    deleteLinkTableRelationships(db, BIS_TABLE(BIS_REL_ElementDrivesElement), elementId);
+    }
+
 struct OnDeletedCaller  {DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -1018,6 +1041,7 @@ void DgnElement::_OnDeleted() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
+    deleteLinkTableRelationships(GetDgnDb(), GetElementId());
     DgnModelPtr model = GetModel();
     if (model.IsValid())
         model->_OnDeletedElement(*this);
@@ -1030,6 +1054,7 @@ void DgnElement::_OnAppliedDelete() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
+    deleteLinkTableRelationships(GetDgnDb(), GetElementId());
     DgnModelPtr model = GetModel();
     if (model.IsValid())
         model->_OnAppliedDeleteElement(*this);
@@ -1062,7 +1087,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeSpec), m_code.GetCodeSpecId());
-    statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScopeElementId());
 
     if (HasUserLabel())
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel), GetUserLabel(), IECSqlBinder::MakeCopy::No);
@@ -1458,7 +1483,8 @@ void DgnElement::CopyAppDataFrom(DgnElementCR source) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
     {
-    m_codeSpecId = importer.RemapCodeSpecId(m_codeSpecId);
+    m_specId = importer.RemapCodeSpecId(m_specId);
+    m_scopeElementId = importer.FindElementId(m_scopeElementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2383,23 +2409,23 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetCodeSpecId(), value.ToString(), existingCode.GetScope());
+            DgnCode newCode(existingCode.GetCodeSpecId(), existingCode.GetScopeElementId(), value.ToString());
             return el.SetCode(newCode);
             });
 
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeScope,
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetUtf8CP(el.GetCode().GetScope().c_str());
+            value.SetNavigationInfo(el.GetCode().GetScopeElementId());
             return DgnDbStatus::Success;
             },
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsString())
+            if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetCodeSpecId(), existingCode.GetValue(), value.ToString());
+            DgnCode newCode(existingCode.GetCodeSpecId(), value.GetNavigationInfo().GetId<DgnElementId>(), existingCode.GetValue());
             return el.SetCode(newCode);
             });
         
@@ -2415,7 +2441,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(value.GetNavigationInfo().GetId<CodeSpecId>(), existingCode.GetValue(), existingCode.GetScope());
+            DgnCode newCode(value.GetNavigationInfo().GetId<CodeSpecId>(), existingCode.GetScopeElementId(), existingCode.GetValue());
             return el.SetCode(newCode);
             });
         
@@ -3821,23 +3847,7 @@ DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR d
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::InsertGeomStream() const
     {
-    DgnDbStatus status = WriteGeomStream();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-#if defined (NOT_NOW_TOO_EXPENSIVE_FOR_BENEFIT)
-    // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
-    DgnDbR db = GetDgnDb();
-    IdSet<DgnGeometryPartId> parts;
-    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
-    for (DgnGeometryPartId const& partId : parts)
-        {
-        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, GetElementId(), partId))
-            status = DgnDbStatus::WriteError;
-        }
-#endif
-
-    return status;
+    return WriteGeomStream();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3845,60 +3855,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::UpdateGeomStream() const
     {
-    DgnDbStatus status = WriteGeomStream();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-#if defined (NOT_NOW_TOO_EXPENSIVE_FOR_BENEFIT)
-    // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
-    DgnDbR db = GetDgnDb();
-    DgnElementId elementId = GetElementId();
-    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::ReadError;
-
-    statement->BindId(1, elementId);
-
-    IdSet<DgnGeometryPartId> partsOld;
-    while (BE_SQLITE_ROW == statement->Step())
-        partsOld.insert(statement->GetValueId<DgnGeometryPartId>(0));
-
-    IdSet<DgnGeometryPartId> partsNew;
-    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(partsNew, db);
-
-    if (partsOld.empty() && partsNew.empty())
-        return status;
-
-    bset<DgnGeometryPartId> partsToRemove;
-    std::set_difference(partsOld.begin(), partsOld.end(), partsNew.begin(), partsNew.end(), std::inserter(partsToRemove, partsToRemove.end()));
-
-    if (!partsToRemove.empty())
-        {
-        CachedECSqlStatementPtr statement = db.GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?", db.GetECCrudWriteToken());
-        if (!statement.IsValid())
-            return DgnDbStatus::BadRequest;
-
-        statement->BindId(1, elementId);
-
-        for (DgnGeometryPartId const& partId : partsToRemove)
-            {
-            statement->BindId(2, partId);
-            if (BE_SQLITE_DONE != statement->Step())
-                status = DgnDbStatus::BadRequest;
-            }
-        }
-
-    bset<DgnGeometryPartId> partsToAdd;
-    std::set_difference(partsNew.begin(), partsNew.end(), partsOld.begin(), partsOld.end(), std::inserter(partsToAdd, partsToAdd.end()));
-
-    for (DgnGeometryPartId const& partId : partsToAdd)
-        {
-        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, elementId, partId))
-            status = DgnDbStatus::WriteError;
-        }
-#endif
-
-    return status;
+    return WriteGeomStream();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -23,7 +23,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
 namespace TileTree {struct Root;}
-namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
+namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct Geometric2d; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -70,8 +70,9 @@ private:
 public:
     DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
     DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
+    DGNPLATFORM_EXPORT DgnModelId GetParentModelId() const;
     DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
-    DGNPLATFORM_EXPORT bool GetIsTemplate() const;
+    DGNPLATFORM_EXPORT bool IsTemplate() const;
     DGNPLATFORM_EXPORT bool IsPrivate() const;
 };
 
@@ -164,6 +165,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnDbR m_dgndb;
         DgnClassId m_classId;
         DgnElementId  m_modeledElementId;
+        DgnClassId m_modeledElementRelClassId;
         bool m_isPrivate;
         bool m_isTemplate = false;
 
@@ -179,6 +181,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
+        void SetModeledElementRelClassId(DgnClassId classId) {m_modeledElementRelClassId = classId;} //!< Set the DgnClassId of the relationship of the DgnModel to the modeled element
         void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this model should @em not appear in lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
@@ -219,6 +222,7 @@ protected:
     DgnDbR m_dgndb;
     DgnModelId m_modelId;
     DgnClassId m_classId;
+    DgnModelId m_parentModelId;
     DgnElementId m_modeledElementId;
     DgnClassId m_modeledElementRelClassId;
     BeMutex m_mutex;
@@ -230,6 +234,7 @@ protected:
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
+    virtual void _Destroy() { }
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
 
@@ -393,7 +398,7 @@ protected:
     /** @} */
 
     //! The sublcass should import elements from the source model into this model. 
-    //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportNonNavigationECRelationshipsFrom after calling this method.
+    //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportLinkTableECRelationshipsFrom after calling this method.
     //! @note It should be rare for a subclass to override _ImportElementsFrom. The base class implementation copies all elements in the model,
     //! and it fixes up all parent-child pointers. A subclass can override _ShouldImportElementFrom in order to exclude individual elements.
     //! @see _ShouldImportElementFrom
@@ -413,7 +418,7 @@ protected:
     //! Import is done in phases. This method will be called by the import framework after all elements and aspects have been imported.
     //! This method will be called after all elements (and aspects) have been imported.
     //! <p>
-    //! A subclass implementation of _ImportNonNavigationECRelationshipsFrom should copy only the non-navigation relationship subclasses that are defined by the 
+    //! A subclass implementation of _ImportLinkTableECRelationshipsFrom should copy only the non-navigation relationship subclasses that are defined by the 
     //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
     //! base bis schema, including ElementDrivesElement and ElementGroupsMembers.
     //! <p>
@@ -424,7 +429,7 @@ protected:
     //! deep-copying an element in the general case requires all of the support for copying and remapping of parents and aspects that is implemented by the framework,
     //! prior to the phase where ECRelationships are copied.
     //! @note The implementation should start by calling the superclass implementation.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportLinkTableECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
     //! Utility function to import non-Navigation ECRelationships from one DgnDb to another, selecting only the relationship instances whose source and target elements are
     //! in the specified source model and only if both source and target have already been imported and are registered in the importContext's remap tables. The source and 
@@ -437,7 +442,7 @@ protected:
     //! @param relname      The name of the relationship class
     //! @return non-zero error status if the relationship class does not exist in the source or target DgnDb. Note that this function will return success even if no 
     //! relationship instances are imported.
-    DGNPLATFORM_EXPORT static DgnDbStatus ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importContext, Utf8CP relschema, Utf8CP relname);
+    DGNPLATFORM_EXPORT static DgnDbStatus ImportLinkTableECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importContext, Utf8CP relschema, Utf8CP relname);
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
     //! @param[in]      request  Request to populate
@@ -482,6 +487,9 @@ public:
 
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
+
+    //! Get the DgnModelId of the DgnModel above this one in the information hierarchy
+    DgnModelId GetParentModelId() const {return m_parentModelId;}
 
     //! Get the DgnElement that this DgnModel is describing/modeling
     DGNPLATFORM_EXPORT DgnElementCPtr GetModeledElement() const;
@@ -562,10 +570,6 @@ public:
     //! that some elements may have been deleted. Therefore, you should always call DgnDb::AbandonChanges after a failure to avoid partial deletions.
     DGNPLATFORM_EXPORT DgnDbStatus Delete();
 
-    //! Deletes all ViewDefinitions which use this model as their base model
-    //! @return Success if all views were successfully deleted, or an error code.
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteAllViews();
-
     //! Update the Properties of this model in the DgnDb
     //! @return DgnDbStatus::Success if the properties of this model were successfully updated, error otherwise.
     DGNPLATFORM_EXPORT DgnDbStatus Update();
@@ -615,7 +619,7 @@ public:
     //! This base class implemenation calls the following methods, in order:
     //!     -# _ImportElementsFrom
     //!     -# _ImportElementAspectsFrom
-    //!     -# _ImportNonNavigationECRelationshipsFrom
+    //!     -# _ImportLinkTableECRelationshipsFrom
     //! @param[in] sourceModel The model to copy
     //! @param[in] importer Used by elements when copying between DgnDbs.
     //! @return non-zero if the copy failed
@@ -850,6 +854,8 @@ protected:
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
 
     DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::SystemP);
+    DGNPLATFORM_EXPORT void ReleaseTileTree();
+    void _Destroy() override { ReleaseTileTree(); }
 
     virtual void _PickTerrainGraphics(PickContextR) const {}
 
@@ -886,7 +892,7 @@ public:
     //! Get the Formatter for this model.
     Formatter const& GetFormatter() const {return m_displayInfo;}
 
-    DGNPLATFORM_EXPORT RefCountedPtr<TileTree::Root> GetTileTree(Render::SystemP system);
+    DGNPLATFORM_EXPORT TileTree::Root* GetTileTree(Render::SystemP system);
 };
 
 //=======================================================================================
@@ -904,6 +910,7 @@ protected:
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
+    ~GeometricModel3d() { ReleaseTileTree(); }
 };
 
 //=======================================================================================
@@ -913,7 +920,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 {
-    DEFINE_T_SUPER(GeometricModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel);
+    friend struct dgn_ModelHandler::Geometric2d;
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
@@ -921,6 +929,7 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
+    ~GeometricModel2d() { ReleaseTileTree(); }
 };
 
 //=======================================================================================
@@ -1006,6 +1015,9 @@ public:
 
     DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create(SpatialLocationPortionCR modeledElement);
     DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert(SpatialLocationPortionCR modeledElement);
+
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create (SpatialLocationElementCR modeledElement);
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert (SpatialLocationElementCR modeledElement);
 };
 
 //=======================================================================================
@@ -1249,10 +1261,16 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
-    //! The ModelHandler for DrawingModel
-    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Model
+    //! The ModelHandler for GeometricModel2d
+    struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel2d, Geometric2d, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for DrawingModel
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Geometric2d
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SpatialModel

@@ -25,10 +25,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Context);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Result);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPartBuilder);
 
 DEFINE_REF_COUNTED_PTR(Tile);
 DEFINE_REF_COUNTED_PTR(Root);
 DEFINE_REF_COUNTED_PTR(Loader);
+DEFINE_REF_COUNTED_PTR(GeomPartBuilder);
 
 typedef bvector<TilePtr>    TileList;
 typedef bvector<TileP>      TilePList;
@@ -68,6 +70,41 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct GeomPartBuilder : RefCountedBase
+{
+private:
+    BeConditionVariable             m_cv;
+    Render::Primitives::GeomPartPtr m_part;
+
+    GeomPartBuilder() { }
+public:
+    static GeomPartBuilderPtr Create() { return new GeomPartBuilder(); }
+
+    Render::Primitives::GeomPartPtr WaitForPart();
+    Render::Primitives::GeomPartPtr GeneratePart(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR viewContext);
+    BeMutex& GetMutex() { return m_cv.GetMutex(); }
+    void NotifyAll() { BeAssert(m_part.IsValid()); m_cv.notify_all(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct GeomPartCache
+{
+private:
+    typedef bmap<DgnGeometryPartId, Render::Primitives::GeomPartPtr> PartMap;
+    typedef bmap<DgnGeometryPartId, GeomPartBuilderPtr> BuilderMap;
+
+    std::mutex  m_mutex;
+    PartMap     m_parts;
+    BuilderMap  m_builders;
+public:
+    Render::Primitives::GeomPartPtr FindOrInsert(DgnGeometryPartId, DgnDbR, Render::GeometryParamsR, ViewContextR);
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct Root : TileTree::OctTree::Root
@@ -103,14 +140,13 @@ private:
         Render::Primitives::GeomPartPtr FindOrInsert(ISolidPrimitiveR prim, DRange3dCR range, Render::Primitives::DisplayParamsCR displayParams, DgnElementId elemId, DgnDbR db);
     };
 
-    typedef bmap<DgnGeometryPartId, Render::Primitives::GeomPartPtr> GeomPartMap;
     typedef bmap<DgnElementId, Render::Primitives::GeometryList> GeomListMap;
 
     DgnModelId                      m_modelId;
     Utf8String                      m_name;
     mutable BeMutex                 m_mutex;
-    mutable BeSQLite::BeDbMutex     m_dbMutex;
-    mutable GeomPartMap             m_geomParts;
+    mutable std::mutex              m_dbMutex;
+    mutable GeomPartCache           m_geomParts;
     mutable SolidPrimitivePartMap   m_solidPrimitiveParts;
     mutable GeomListMap             m_geomLists;
     bool                            m_is3d;
@@ -134,10 +170,9 @@ public:
     DebugOptions GetDebugOptions() const;
     void SetDebugOptions(DebugOptions opts) { m_debugOptions = opts; }
 
-    BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
+    std::mutex& GetDbMutex() const { return m_dbMutex; }
 
-    Render::Primitives::GeomPartPtr GetGeomPart(DgnGeometryPartId partId) const;
-    void AddGeomPart(DgnGeometryPartId partId, Render::Primitives::GeomPartR geomPart) const;
+    Render::Primitives::GeomPartPtr FindOrInsertGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR viewContext);
     Render::Primitives::GeomPartPtr FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, Render::Primitives::DisplayParamsCR displayParams, DgnElementId elemId) const;
 
     bool GetCachedGeometry(Render::Primitives::GeometryList& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;

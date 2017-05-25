@@ -40,7 +40,7 @@
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnTexture.h>
-#include <DgnPlatform/DgnTrueColor.h>
+#include <DgnPlatform/ColorBook.h>
 #include <DgnPlatform/ViewDefinition.h>
 #include <DgnPlatform/DisplayMetrics.h>
 #include <DgnPlatform/ECUtils.h>

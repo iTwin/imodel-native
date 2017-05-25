@@ -1693,7 +1693,7 @@ PSolidPartitionMark ()
     PK_PARTITION_delete_o_m (options);
 
     options.delete_non_empty = true;
-    StatusInt   status = PK_PARTITION_delete (m_lightweightPartition, &options);
+    /* unused - StatusInt   status = */PK_PARTITION_delete (m_lightweightPartition, &options);
 
     PK_PARTITION_set_current (m_originalPartition);
     }
