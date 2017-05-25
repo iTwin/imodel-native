@@ -710,7 +710,7 @@ TEST(Spiral,PartialSpiralEvaluation)
     bvector<PathLocationDetail> locations;
     path->Stroke(locations, *curveOptions);
 
-    double prevDropDist = DBL_MAX;
+    double prevDropDist = -DBL_MAX;
     bvector<double> dropDistances;
     for (PathLocationDetailCR pntDetail : locations)
         {
