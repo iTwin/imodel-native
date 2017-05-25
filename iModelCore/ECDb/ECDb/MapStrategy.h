@@ -89,7 +89,7 @@ private:
     bool m_isValid;
 
 public:
-    MapStrategyExtendedInfo() : m_isValid(false) {}
+    MapStrategyExtendedInfo() : m_isValid(false), m_strategy(MapStrategy::NotMapped) {}
     explicit MapStrategyExtendedInfo(MapStrategy strat) : m_strategy(strat), m_tphInfo(strat == MapStrategy::TablePerHierarchy), m_isValid(true) {}
     explicit MapStrategyExtendedInfo(TablePerHierarchyInfo const& tphInfo) : m_strategy(MapStrategy::TablePerHierarchy), m_tphInfo(tphInfo), m_isValid(true)
         {

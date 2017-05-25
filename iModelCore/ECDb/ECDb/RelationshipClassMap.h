@@ -17,22 +17,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct RelationshipConstraintMap : NonCopyableClass
     {
     private:
-        ECDb const& m_ecdb;
-        ECN::ECClassId m_relClassId;
-        ECN::ECRelationshipEnd m_constraintEnd;
         ECN::ECRelationshipConstraintCR m_constraint;
         ConstraintECInstanceIdPropertyMap const* m_ecInstanceIdPropMap;
         ConstraintECClassIdPropertyMap const* m_ecClassIdPropMap;
-        bool m_anyClassMatches;
 
     public:
-        RelationshipConstraintMap(ECDb const&, ECN::ECClassId relClassId, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR);
+        RelationshipConstraintMap(ECN::ECRelationshipConstraintCR constraint)
+            :  m_constraint(constraint), m_ecInstanceIdPropMap(nullptr), m_ecClassIdPropMap(nullptr)
+            {}
         ConstraintECInstanceIdPropertyMap const* GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
         void SetECInstanceIdPropMap(ConstraintECInstanceIdPropertyMap const* ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
         ConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
         void SetECClassIdPropMap(ConstraintECClassIdPropertyMap const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
-        bool TryGetSingleClassIdFromConstraint(ECN::ECClassId&) const;
-        bool IsSingleAbstractClass() const { return m_constraint.GetConstraintClasses().size() == 1 && m_constraint.GetConstraintClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint() const { return m_constraint; }
     };
 
@@ -74,14 +70,16 @@ struct RelationshipClassMap : ClassMap
         ConstraintECClassIdPropertyMap const* GetSourceECClassIdPropMap() const { return m_sourceConstraintMap.GetECClassIdPropMap(); }
         ConstraintECInstanceIdPropertyMap const* GetTargetECInstanceIdPropMap() const { return m_targetConstraintMap.GetECInstanceIdPropMap(); }
         ConstraintECClassIdPropertyMap const* GetTargetECClassIdPropMap() const { return m_targetConstraintMap.GetECClassIdPropMap(); }
-
-        virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod(ClassMappingContext&) const = 0;
-        virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const;
-
         static bool ConstraintIncludesAnyClass(ECN::ECRelationshipConstraintClassList const&);
     };
 
 typedef RelationshipClassMap const& RelationshipClassMapCR;
+
+/*struct RelationshipClassEndTableMapEx final : RelationshipClassMap
+    {
+
+    }*/;
+
 
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      06/2012
@@ -233,8 +231,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
         ConstraintECClassIdPropertyMap const* GetForeignEndECClassIdPropMap() const;
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, updatableViewInfo); }
-        ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod(ClassMappingContext&) const override;
-        bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
         Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
             {
             Utf8String temp = GetRelationshipClass().GetFullName();
@@ -283,8 +279,6 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
 
     public:
         ~RelationshipClassLinkTableMap() {}
-
-        ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod(ClassMappingContext&) const override;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

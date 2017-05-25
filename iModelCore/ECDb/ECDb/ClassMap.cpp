@@ -350,7 +350,7 @@ BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& c
         {
         for (ECClassCP baseClass : GetClass().GetBaseClasses())
             {
-            ClassMap* baseClassMap = (ClassMap*) GetDbMap().GetClassMap(*baseClass);
+            ClassMap* baseClassMap = const_cast<ClassMap*>(GetDbMap().GetClassMap(*baseClass));
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false && "Failed to find baseClass map");
