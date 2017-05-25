@@ -14,49 +14,9 @@ HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId PathwayElement::QueryAlignmentId() const
+DgnDbStatus PathwayElement::SetAlignment(AlignmentCP alignment)
     {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT TargetECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_PathwayRefersToMainAlignment) " WHERE SourceECInstanceId = ?;");
-    BeAssert(stmtPtr.IsValid());
-
-    stmtPtr->BindId(1, GetElementId());
-
-    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
-        return DgnElementId();
-
-    return stmtPtr->GetValueId<DgnElementId>(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PathwayElement::SetAlignment(PathwayElementCR roadway, AlignmentCP alignment)
-    {
-    if (!roadway.GetElementId().IsValid() || (alignment && !alignment->GetElementId().IsValid()))
-        return DgnDbStatus::BadArg;
-
-    auto stmtDelPtr = roadway.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_PathwayRefersToMainAlignment) " WHERE SourceECInstanceId = ?;");
-    BeAssert(stmtDelPtr.IsValid());
-
-    stmtDelPtr->BindId(1, roadway.GetElementId());
-    if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
-        {
-        if (DbResult::BE_SQLITE_OK != roadway.GetDgnDb().DeleteLinkTableRelationship(
-            ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
-            return DgnDbStatus::BadElement;
-        }
-
-    if (alignment)
-        {
-        ECInstanceKey insKey;
-        if (DbResult::BE_SQLITE_OK != roadway.GetDgnDb().InsertLinkTableRelationship(insKey,
-            *roadway.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToMainAlignment)->GetRelationshipClassCP(),
-            ECInstanceId(roadway.GetElementId().GetValue()), ECInstanceId(alignment->GetElementId().GetValue())))
-            return DgnDbStatus::BadElement;
-        }
-    
-    return DgnDbStatus::Success;
+    return SetPropertyValue("MainAlignment", (alignment) ? alignment->GetElementId() : DgnElementId(), Alignment::QueryClassId(GetDgnDb()));
     }
 
 //=======================================================================================
@@ -167,22 +127,6 @@ DgnDbStatus Roadway::_OnChildUpdate(DgnElementCR original, DgnElementCR replacem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadwayCPtr Roadway::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus* status)
-    {
-    auto retVal = Insert(status);
-    if (retVal.IsValid())
-        {
-        DgnDbStatus localStatus = SetAlignment(*retVal, &alignment);
-        if (status)
-            *status = localStatus;
-        }
-    
-    return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 RailwayPtr Railway::Create(PhysicalModelR model)
     {
     if (!model.GetModelId().IsValid())
@@ -191,16 +135,4 @@ RailwayPtr Railway::Create(PhysicalModelR model)
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetTrack(model.GetDgnDb()));
 
     return new Railway(createParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RailwayCPtr Railway::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus* status)
-    {
-    auto retVal = Insert(status);
-    if (retVal.IsValid())
-        *status = SetAlignment(*retVal, &alignment);
-    
-    return retVal;
     }

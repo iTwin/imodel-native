@@ -48,7 +48,7 @@ RegularTravelwaySegmentPtr RegularTravelwaySegment::Create(PathwayElementCR path
     if (!pathway.GetElementId().IsValid())
         return nullptr;
 
-    auto alignmentId = pathway.QueryAlignmentId();
+    auto alignmentId = pathway.GetAlignmentId();
     if (!alignmentId.IsValid())
         return nullptr;
 
@@ -87,7 +87,7 @@ TravelwayTransitionPtr TravelwayTransition::Create(PathwayElementCR pathway, dou
     if (!pathway.GetElementId().IsValid())
         return nullptr;
 
-    auto alignmentId = pathway.QueryAlignmentId();
+    auto alignmentId = pathway.GetAlignmentId();
     if (!alignmentId.IsValid())
         return nullptr;
 

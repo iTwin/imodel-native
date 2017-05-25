@@ -37,8 +37,9 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
 
-    ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryAlignmentId() const;
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetAlignment(PathwayElementCR segmentRange, RoadRailAlignment::AlignmentCP alignment);
+    Dgn::DgnElementId GetAlignmentId() const { return GetPropertyValueId<Dgn::DgnElementId>("MainAlignment"); }
+    RoadRailAlignment::AlignmentCPtr GetAlignment() const { return RoadRailAlignment::Alignment::Get(GetDgnDb(), GetAlignmentId()); }
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetAlignment(RoadRailAlignment::AlignmentCP alignment);
 }; // PathwayElement
 
 //=======================================================================================
@@ -64,8 +65,6 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(Roadway)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(Roadway)
     ROADRAILPHYSICAL_EXPORT static RoadwayPtr Create(Dgn::PhysicalModelR model);
-
-    ROADRAILPHYSICAL_EXPORT RoadwayCPtr InsertWithAlignment(RoadRailAlignment::AlignmentCR alignment, Dgn::DgnDbStatus* status = nullptr);
 }; // Roadway
 
 //=======================================================================================
@@ -88,8 +87,6 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(Railway)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(Railway)
     ROADRAILPHYSICAL_EXPORT static RailwayPtr Create(Dgn::PhysicalModelR model);
-
-    ROADRAILPHYSICAL_EXPORT RailwayCPtr InsertWithAlignment(RoadRailAlignment::AlignmentCR alignment, Dgn::DgnDbStatus* status = nullptr);
 }; // Railway
 
 
