@@ -1920,9 +1920,10 @@ struct IndexedPolylineArgs
     {
         uint32_t const* m_vertIndex = nullptr;
         uint32_t        m_numIndices = 0;
+        float           m_startDistance = 0.0;
 
         Polyline() { }
-        Polyline(uint32_t const* indices, uint32_t numIndices) : m_vertIndex(indices), m_numIndices(numIndices) { }
+        Polyline(uint32_t const* indices, uint32_t numIndices, float startDistance) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance) { }
     };
 
     QPoint3dCP          m_points = nullptr;
@@ -1935,7 +1936,7 @@ struct IndexedPolylineArgs
     bool                m_disjoint = false;
 
     IndexedPolylineArgs() { }
-    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams)
+    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams, float startDistance)
         : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams) { }
 };
 
@@ -1949,7 +1950,6 @@ struct  MeshEdge
         Invisible =  1,
         Visible    = 0,
         };
-
 
     uint32_t                m_indices[2];
 

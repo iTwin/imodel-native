@@ -302,9 +302,13 @@ struct Polyline
 {
 private:
     bvector<uint32_t>   m_indices;
+    float               m_startDistance;
 public:
+    Polyline () : m_startDistance(0.0) { }
+    Polyline (float startDistance) : m_startDistance(startDistance) { }
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
+    float GetStartDistance() const { return m_startDistance; }
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
 };
@@ -583,7 +587,7 @@ public:
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance);
     DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor);
 
     void AddMesh(TriangleCR triangle);
@@ -615,10 +619,22 @@ struct Polyface
 //=======================================================================================
 struct Strokes
 {
-    typedef bvector<bvector<DPoint3d>> PointLists;
+    struct  PointList
+        {
+        double              m_startDistance;
+        bvector<DPoint3d>   m_points;
+
+        PointList(double startDistance) : m_startDistance(startDistance) { }
+        PointList() : m_startDistance(0.0) { }
+        PointList(bvector<DPoint3d>&& points) : m_startDistance(), m_points(std::move(points)) { }
+        };
+
+
+    typedef bvector<PointList> PointLists;
 
     DisplayParamsCPtr   m_displayParams;
     PointLists          m_strokes;
+    bvector<double>     m_strokeStartDistance;
     bool                m_disjoint;
 
     Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint) : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
@@ -877,6 +893,7 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
         {
         m_numIndices = 0;
         m_vertIndex = nullptr;
+        m_startDistance = 0.0;
         }
 
     bool Init(PolylineCR line)
@@ -885,6 +902,7 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
 
         m_numIndices = static_cast<uint32_t>(line.GetIndices().size());
         m_vertIndex = &line.GetIndices()[0];
+        m_startDistance = line.GetStartDistance();
 
         return IsValid();
         }
