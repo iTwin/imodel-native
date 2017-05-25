@@ -1581,13 +1581,18 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             }
         }
 
-    // NB: The mesh's display params contain a fill color, which is used by the tri mesh primitive if the color table is empty (uniform)
-    // But each polyface's display params may have a different fill color.
-    // If a polyface contributes no vertices, we may end up incorrectly using its fill color for the primitive
-    // Make sure the mesh's display params match one (any) mesh which actually contributed vertices, so that if the result is a uniform color,
-    // we will use the fill color of the (only) mesh which contributed.
     if (anyContributed)
+        {
+        // NB: The mesh's display params contain a fill color, which is used by the tri mesh primitive if the color table is empty (uniform)
+        // But each polyface's display params may have a different fill color.
+        // If a polyface contributes no vertices, we may end up incorrectly using its fill color for the primitive
+        // Make sure the mesh's display params match one (any) mesh which actually contributed vertices, so that if the result is a uniform color,
+        // we will use the fill color of the (only) mesh which contributed.
         builder.SetDisplayParams(displayParams);
+
+        // Do not allow vertices outside of this tile's range to expand its content range
+        m_contentRange.IntersectionOf(m_contentRange, m_tileRange);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2006,7 +2011,8 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
     // NB: The Step() below as well as each column access requires acquiring the sqlite mutex.
     // Prevent micro-contention by locking the db here
     // Note we do not use a mutex holder because we want to release the mutex before processing the geometry.
-    GetRoot().GetDbMutex().Enter();
+    // Also note we use a less-expensive non-recursive mutex for performance.
+    GetRoot().GetDbMutex().lock();
     StatusInt status = ERROR;
     auto& stmt = *m_statement;
     stmt.BindInt64(1, static_cast<int64_t>(elementId.GetValueUnchecked()));
@@ -2016,7 +2022,7 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
         auto geomSrcPtr = m_is3dView ? GeometrySelector3d::ExtractGeometrySource(stmt, GetDgnDb()) : GeometrySelector2d::ExtractGeometrySource(stmt, GetDgnDb());
 
         stmt.Reset();
-        GetRoot().GetDbMutex().Leave();
+        GetRoot().GetDbMutex().unlock();
 
         if (nullptr != geomSrcPtr)
             status = VisitGeometry(*geomSrcPtr);
@@ -2024,7 +2030,7 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
     else
         {
         stmt.Reset();
-        GetRoot().GetDbMutex().Leave();
+        GetRoot().GetDbMutex().unlock();
         }
 
     return status;
