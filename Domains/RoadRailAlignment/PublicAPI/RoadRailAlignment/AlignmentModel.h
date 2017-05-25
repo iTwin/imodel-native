@@ -132,17 +132,17 @@ struct EXPORT_VTABLE_ATTRIBUTE AlignmentModelHandler : Dgn::dgn_ModelHandler::Sp
 //=======================================================================================
 //! The ModelHandler for HorizontalAlignmentModel
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentModelHandler : Dgn::dgn_ModelHandler::Model
+struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentModelHandler : Dgn::dgn_ModelHandler::Geometric2d
 {
-    MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentModel, HorizontalAlignmentModel, HorizontalAlignmentModelHandler, Dgn::dgn_ModelHandler::Model, ROADRAILALIGNMENT_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentModel, HorizontalAlignmentModel, HorizontalAlignmentModelHandler, Dgn::dgn_ModelHandler::Geometric2d, ROADRAILALIGNMENT_EXPORT)
 }; // HorizontalAlignmentModelHandler
 
 //=======================================================================================
 //! The ModelHandler for VerticalAlignmentModel
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE VerticalAlignmentModelHandler : Dgn::dgn_ModelHandler::Model
+struct EXPORT_VTABLE_ATTRIBUTE VerticalAlignmentModelHandler : Dgn::dgn_ModelHandler::Geometric2d
 {
-    MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignmentModel, VerticalAlignmentModel, VerticalAlignmentModelHandler, Dgn::dgn_ModelHandler::Model, ROADRAILALIGNMENT_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignmentModel, VerticalAlignmentModel, VerticalAlignmentModelHandler, Dgn::dgn_ModelHandler::Geometric2d, ROADRAILALIGNMENT_EXPORT)
 }; // VerticalAlignmentModelHandler
 
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

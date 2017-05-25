@@ -93,13 +93,13 @@ DgnDbStatus Alignment::SetHorizontal(AlignmentCR alignment, HorizontalAlignmentC
     stmtDelPtr->BindId(1, alignment.GetElementId());
     if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
         {
-        if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteNonNavigationRelationship(
+        if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteLinkTableRelationship(
             ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
             return DgnDbStatus::BadElement;
         }
 
     ECInstanceKey insKey;
-    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertNonNavigationRelationship(insKey,
+    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
         *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentRefersToHorizontal)->GetRelationshipClassCP(),
         ECInstanceId(alignment.GetElementId().GetValue()), ECInstanceId(vertical.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
@@ -118,13 +118,13 @@ DgnDbStatus Alignment::SetMainVertical(AlignmentCR alignment, VerticalAlignmentC
     stmtDelPtr->BindId(1, alignment.GetElementId());
     if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
         {
-        if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteNonNavigationRelationship(
+        if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteLinkTableRelationship(
             ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
             return DgnDbStatus::BadElement;
         }
      
     ECInstanceKey insKey;
-    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertNonNavigationRelationship(insKey,
+    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
         *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentRefersToMainVertical)->GetRelationshipClassCP(),
         ECInstanceId(alignment.GetElementId().GetValue()), ECInstanceId(vertical.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
