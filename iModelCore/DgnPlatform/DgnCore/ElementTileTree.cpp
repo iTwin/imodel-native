@@ -13,6 +13,10 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
+// Define this if you want to generate a root tile containing geometry.
+// By default the root tile is empty.
+// #define POPULATE_ROOT_TILE
+
 USING_NAMESPACE_ELEMENT_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
@@ -978,7 +982,11 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
     // Possible optimization: Don't do this if the number of elements in the model is less than the min number of elements per tile, so that we reduce the number
     // of tiles required.
     m_rootTile = Tile::Create(*this, range);
+
+#if !defined(POPULATE_ROOT_TILE)
     m_rootTile->SetIsReady();
+#endif
+
     return true;
     }
 
@@ -1366,8 +1374,13 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
+#if !defined(POPULATE_ROOT_TILE)
     // The root tile is undisplayable (that's what returning 0.0 indicates)
     return 0 == GetDepth() ? 0.0 : s_tileScreenSize; // ###TODO: come up with a decent value, and account for device ppi
+#else
+    // for debugging only...
+    return s_tileScreenSize;
+#endif
     }
 
 //=======================================================================================
