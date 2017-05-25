@@ -470,11 +470,11 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
 
     Render::Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = m_tile->GetRoot().GetRenderSystem()->_CreateTexture(image, textureParams);
+    auto texture = GetRenderSystem()->_CreateTexture(image, textureParams);
 
     auto const& root = m_tile->GetRoot();
     auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
-    rasterTile.m_graphic = root.GetRenderSystem()->_CreateTile(*texture, rasterTile.m_corners, root.GetDgnDb(), gfParams);
+    rasterTile.m_graphic = GetRenderSystem()->_CreateTile(*texture, rasterTile.m_corners, root.GetDgnDb(), gfParams);
     BeAssert(rasterTile.m_graphic.IsValid());
 
     rasterTile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
@@ -484,13 +484,13 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
+TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
     auto status = GetSource().GetLastHttpError();
     if (Http::HttpStatus::Unauthorized == status || Http::HttpStatus::ProxyAuthenticationRequired == status)
         return nullptr; // Need to authenticate before we try again.
 
-    RefCountedPtr<WmsTileLoader> tileLoader = new WmsTileLoader(GetRoot()._ConstructTileResource(*this), *this, loads);
+    RefCountedPtr<WmsTileLoader> tileLoader = new WmsTileLoader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);
     tileLoader->m_credentials = GetSource().GetCredentials();
     tileLoader->m_proxyCredentials = GetSource().GetProxyCredentials();
 

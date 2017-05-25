@@ -41,7 +41,7 @@ struct Loader : TileTree::TileLoader
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads) : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile)) { }
+    Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -51,7 +51,7 @@ BentleyStatus _LoadTile() override
     TileR   tile = static_cast<TileR> (*m_tile);
 
     tile.Read(m_tileBytes);
-    return tile.AddGraphics (); 
+    return tile.AddGraphics (GetRenderSystem()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,7 +149,7 @@ BentleyStatus DoGetFromSource()
 
 
 public:
-    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
+    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
 };
 
 
@@ -173,9 +173,9 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TileLoaderPtr Tile::Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loadState) 
+TileTree::TileLoaderPtr Tile::Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loadState, Dgn::Render::SystemP renderSys) 
     {                                                                        
-    return Loader::Create(*this, loadState);
+    return Loader::Create(*this, loadState, renderSys);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -257,13 +257,13 @@ BentleyStatus Tile::Read (TileTree::StreamBuffer& streamBuffer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Tile::AddGraphics () 
+BentleyStatus Tile::AddGraphics (Dgn::Render::SystemP renderSys) 
     {
     if (!m_points.empty())
         {
         auto&                       root   = static_cast<RootCR>(GetRoot());
         Render::PointCloudArgs      args(QPoint3d::Params(m_range), static_cast<int32_t>(m_points.size()), &m_points.front(), reinterpret_cast<ByteCP>(m_colors.data()));
-        Render::GraphicPtr          graphic = root.GetRenderSystem()->_CreatePointCloud(args, root.GetDgnDb(), Render::GraphicParams());
+        Render::GraphicPtr          graphic = renderSys->_CreatePointCloud(args, root.GetDgnDb(), Render::GraphicParams());
 
         SetGraphic(*graphic);
         }
@@ -280,8 +280,8 @@ void Root::LoadRootTile(DRange3dCR tileRange)
 
 #define LOAD_ASYNCH_ROOT
 #ifdef LOAD_ASYNCH_ROOT
-    // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final diaplay).
-    auto result = _RequestTile(*m_rootTile, nullptr);
+    // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final display).
+    auto result = _RequestTile(*m_rootTile, nullptr, nullptr);
     result.wait();
 #endif
     }

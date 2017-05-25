@@ -66,7 +66,7 @@ private:
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     double _GetMaximumSize() const override;
     void _Invalidate() override;
@@ -79,7 +79,7 @@ public:
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }
 
     BentleyStatus Read (TileTree::StreamBuffer& streamBuffer);
-    BentleyStatus AddGraphics ();
+    BentleyStatus AddGraphics (Dgn::Render::SystemP renderSys);
 
     double GetTolerance() const         { return m_tolerance; }
 

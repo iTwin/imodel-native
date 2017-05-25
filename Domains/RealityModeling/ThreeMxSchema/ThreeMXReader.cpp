@@ -286,7 +286,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             auto texture = renderTextures.find(texName);
             geomParams.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
-            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(geomParams, m_children[nodeId->second]->GetRange()));
+            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(geomParams, m_children[nodeId->second]->GetRange(), renderSys));
             }
         }
 

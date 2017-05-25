@@ -69,7 +69,7 @@ protected:
 
 public:
     Geometry() {}
-    THREEMX_EXPORT Geometry(CreateParams const&, SceneR, DRange3dCR);
+    THREEMX_EXPORT Geometry(CreateParams const&, SceneR, DRange3dCR, Dgn::Render::SystemP renderSys);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
     void Pick(Dgn::TileTree::PickArgsR);
@@ -122,8 +122,8 @@ struct Node : Dgn::TileTree::Tile
     //=======================================================================================
     struct Loader : Dgn::TileTree::TileLoader
         {
-        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileCacheKey()) {}
-        BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR(), m_tile->GetRootR().GetRenderSystem());};
+        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileLoader(url, tile, loads, tile._GetTileCacheKey(), renderSys) {}
+        BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR(), GetRenderSystem());};
         };
 
 private:
@@ -139,7 +139,7 @@ private:
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene, Dgn::Render::SystemP renderSys);
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
-    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr) override;
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
 
     bool _HasGraphics() const override;
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
@@ -176,7 +176,7 @@ private:
     SceneInfo   m_sceneInfo;
     Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
-    virtual GeometryPtr _CreateGeometry(Geometry::CreateParams const& args, DRange3dCR tileRange) {return new Geometry(args, *this, tileRange);}
+    virtual GeometryPtr _CreateGeometry(Geometry::CreateParams const& args, DRange3dCR tileRange, Dgn::Render::SystemP renderSys) {return new Geometry(args, *this, tileRange, renderSys);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr;}
     virtual Utf8CP _GetName() const override { return m_rootResource.c_str(); }
     virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
@@ -215,7 +215,7 @@ private:
 //! to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles // WIP_TILETREE_PUBLISH, Dgn::Render::IGetTileTreeForPublishing
+struct ThreeMxModel : Dgn::SpatialModel
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
@@ -243,11 +243,6 @@ public:
     THREEMX_EXPORT void _OnLoadedJsonProperties() override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
-    THREEMX_EXPORT Dgn::Render::TileGeneratorStatus _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, Dgn::Render::TileGenerator::ITileCollector& collector, Dgn::Render::ITileGenerationProgressMonitorR progressMeter) override;
-#if defined(WIP_TILETREE_PUBLISH)
-    THREEMX_EXPORT Dgn::TileTree::RootCPtr _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const override;
-    THREEMX_EXPORT Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip() const override;
-#endif
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
     //! @note New models are not valid until the have a scene file.

@@ -51,7 +51,7 @@ BentleyStatus Scene::LoadScene()
     root->m_childPath = m_sceneInfo.m_rootNodePath;
     m_rootTile = root;
 
-    auto result = _RequestTile(*root, nullptr);
+    auto result = _RequestTile(*root, nullptr, nullptr);
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
     }
@@ -61,7 +61,7 @@ BentleyStatus Scene::LoadScene()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::LoadNodeSynchronous(NodeR node)
     {
-    auto result = _RequestTile(node, nullptr);
+    auto result = _RequestTile(node, nullptr, nullptr);
     result.wait();
     return result.isReady() ? SUCCESS : ERROR;
     }
@@ -283,6 +283,7 @@ BentleyStatus ThreeMxModel::GeolocateFromSceneFile()
     return stat;
     }
 
+#ifdef NOT_NOW_OBSOLETE
 BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/16
@@ -588,7 +589,6 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
 
-#if defined(WIP_TILETREE_PUBLISH)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
