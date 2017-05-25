@@ -79,7 +79,13 @@ void DgnModels::DropLoadedModel(DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::Empty()
     {
-    m_dgndb.Elements().Destroy(); // Has to be called before models are released.
+    // Tile-loader threads may be executing, so must release roots (and wait for loaders to cancel) first
+    // Must be done before destroying Elements because tile loaders may have ref-counted ptrs to elements
+    for (auto& kvp : m_models)
+        kvp.second->_Destroy();
+
+    // Has to be called before models are released.
+    m_dgndb.Elements().Destroy();
     m_models.clear();
     }
 
@@ -1563,23 +1569,7 @@ TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricModel3d::~GeometricModel3d()
-    {
-    ReleaseRoot();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometricModel2d::~GeometricModel2d()
-    {
-    ReleaseRoot();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::ReleaseRoot()
+void GeometricModel::ReleaseTileTree()
     {
     // NB: We may be loading any number of tiles in background threads. We need to cancel them before destroying this model and its root.
     // The root's destructor takes care of that.
