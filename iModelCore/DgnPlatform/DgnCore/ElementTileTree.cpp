@@ -521,6 +521,7 @@ public:
 
     void ProcessElement(DgnElementId elementId, double diagonalRangeSquared);
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams);
+    GeomPartPtr GenerateGeomPart(DgnGeometryPartCR, GeometryParamsR);
 
     RootR GetRoot() const { return m_root; }
 
@@ -982,13 +983,129 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
+* @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr Root::GetGeomPart(DgnGeometryPartId partId) const
+GeomPartPtr Root::FindOrInsertGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR context)
     {
-    BeMutexHolder lock(m_mutex);
-    auto iter = m_geomParts.find(partId);
-    return iter != m_geomParts.end() ? iter->second.get() : nullptr;
+    return m_geomParts.FindOrInsert(partId, GetDgnDb(), geomParams, context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR context)
+    {
+    m_mutex.lock(); // << LOCK
+
+    auto foundPart = m_parts.find(partId);
+    if (m_parts.end() != foundPart)
+        {
+        // This part has already been created and cached.
+        m_mutex.unlock(); // >> UNLOCK
+        return foundPart->second;
+        }
+
+    auto foundBuilder = m_builders.find(partId);
+    if (m_builders.end() != foundBuilder)
+        {
+        // Another thread is currently generating this part. Wait for it to finish.
+        GeomPartBuilderPtr builder = foundBuilder->second;
+        m_mutex.unlock(); // >> UNLOCK
+        return builder->WaitForPart();
+        }
+
+    // We need to create this part. Any other threads that also want this part should wait while we create it.
+    GeomPartBuilderPtr builder = GeomPartBuilder::Create();
+    m_builders.Insert(partId, builder);
+    builder->GetMutex().lock();
+    m_mutex.unlock(); // >> UNLOCK
+
+    GeomPartPtr part = builder->GeneratePart(partId, db, geomParams, context);
+
+    m_mutex.lock(); // << LOCK
+
+    BeAssert(m_parts.end() == m_parts.find(partId));
+    m_parts.Insert(partId, part);
+
+    foundBuilder = m_builders.find(partId);
+    BeAssert(m_builders.end() != foundBuilder);
+    m_builders.erase(foundBuilder);
+
+    m_mutex.unlock(); // >> UNLOCK
+    builder->GetMutex().unlock();
+    builder->NotifyAll();
+
+    return part;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GeomPartPtr GeomPartBuilder::WaitForPart()
+    {
+    BeMutexHolder lock(GetMutex());
+    while (m_part.IsNull())
+        m_cv.InfiniteWait(lock);
+
+    BeAssert(m_part.IsValid());
+    return m_part;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GeomPartPtr GeomPartBuilder::GeneratePart(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR vc)
+    {
+    BeAssert(m_part.IsNull());
+    BeAssert(nullptr != dynamic_cast<TileContext*>(&vc));
+
+    auto& context = static_cast<TileContext&>(vc);
+    DgnGeometryPartCPtr geomPart = db.Elements().Get<DgnGeometryPart>(partId);
+    if (geomPart.IsNull())
+        return nullptr;
+
+    m_part = context.GenerateGeomPart(*geomPart, geomParams);
+    return m_part;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GeomPartPtr TileContext::GenerateGeomPart(DgnGeometryPartCR geomPart, GeometryParamsR geomParams)
+    {
+    TileSubGraphicPtr partBuilder(m_subGraphic);
+    if (partBuilder->GetRefCount() > 2)
+        partBuilder = new TileSubGraphic(*this, geomPart);
+    else
+        partBuilder->ReInitialize(geomPart);
+
+    GeometryStreamIO::Collection collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
+    collection.Draw(*partBuilder, *this, geomParams, false, &geomPart);
+
+    partBuilder->Finish();
+    BeAssert(partBuilder->GetRefCount() <= 2);
+    return partBuilder->GetOutput();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileContext::AddGeomPart(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams)
+    {
+    GeomPartPtr tileGeomPart = m_root.FindOrInsertGeomPart(partId, geomParams, *this);
+    if (tileGeomPart.IsNull())
+        return;
+
+    DRange3d range;
+    Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
+    Transform tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
+    tf.Multiply(range, tileGeomPart->GetRange());
+
+    DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().Get(graphicParams, geomParams);
+
+    BeAssert(nullptr != dynamic_cast<TileBuilderP>(&graphic));
+    auto& parent = static_cast<TileBuilderR>(graphic);
+    parent.Add(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1050,16 +1167,6 @@ bool Root::SolidPrimitivePartMap::Key::IsEqual(Key const& rhs) const
     {
     return m_displayParams->IsEqualTo(*rhs.m_displayParams, DisplayParams::ComparePurpose::Merge)
         && m_solidPrimitive->IsSameStructureAndGeometry(*rhs.m_solidPrimitive, s_solidPrimitivePartCompareTolerance);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const
-    {
-    BeMutexHolder lock(m_mutex);
-    if (m_geomParts.Insert(partId, &geomPart).second)
-        geomPart.SetInCache(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1827,7 +1934,6 @@ GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGrap
     if (accum.GetGeometries().empty())
         BeAssert(false);
 
-    m_root.AddGeomPart(input.GetId(), *subGf.GetOutput());
     return m_finishedGraphic;
     }
 
@@ -1858,45 +1964,6 @@ void TileContext::PushGeometry(GeometryR geom)
     {
     if (!BelowMinRange(geom.GetTileRange()))
         m_geometries.push_back(geom);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileContext::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams)
-    {
-    GeomPartPtr tileGeomPart = m_root.GetGeomPart(partId);
-    if (tileGeomPart.IsNull())
-        {
-        DgnGeometryPartCPtr geomPart = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
-        if (geomPart.IsNull())
-            return;
-
-        TileSubGraphicPtr partBuilder(m_subGraphic);
-        if (partBuilder->GetRefCount() > 2)
-            partBuilder = new TileSubGraphic(*this, *geomPart);
-        else
-            partBuilder->ReInitialize(*geomPart);
-
-        GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
-        collection.Draw(*partBuilder, *this, geomParams, false, geomPart.get());
-
-        // Apparently _AddSubGraphic() caller does not call Finish()?
-        partBuilder->Finish();
-        tileGeomPart = partBuilder->GetOutput();
-        BeAssert(partBuilder->GetRefCount() <= 2);
-        }
-
-    DRange3d range;
-    Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
-    Transform tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
-    tf.Multiply(range, tileGeomPart->GetRange());
-
-    DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().Get(graphicParams, geomParams);
-
-    BeAssert(nullptr != dynamic_cast<TileBuilderP>(&graphic));
-    auto& parent = static_cast<TileBuilderR>(graphic);
-    parent.Add(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
