@@ -134,7 +134,7 @@ TEST_F(CreateFromInstanceTests, SpatialCategory)
     Utf8PrintfString json(
         "{"
         "\"CodeSpec\" : {\"id\" : \"%d\"},"
-        "\"CodeScope\" : \"\","
+        "\"CodeScope\" : {\"id\" : \"16\"},"
         "\"CodeValue\" : \"Hub\","
         "\"Description\" : \"\","
         "\"Model\" : {\"id\" : \"16\"},"
@@ -165,7 +165,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "\"$ECInstanceId\" : \"502\","
         "\"$ECInstanceLabel\" : \"SpatialViewDefinition\","
         "\"CodeSpec\" : {\"id\" : \"%d\"},"
-        "\"CodeScope\" : \"ViewDefinition\","
+        "\"CodeScope\" : {\"id\" : \"16\"},"
         "\"CodeValue\" : \"Default - View 1\","
         "\"Description\" : \"\","
         "\"Model\" : {\"id\" : \"16\"},"
@@ -273,7 +273,7 @@ TEST_F(CreateFromInstanceTests, FullyCreateBim)
     ECN::IECInstancePtr modelInstance = CreateInstanceFromModel(physicalModel.get());
     
     // Create a new Category
-    SpatialCategory spatialCategory(*m_db, "Test Spatial Category", DgnCategory::Rank::Application, "This is a test category for spatial elements");
+    SpatialCategory spatialCategory(m_db->GetDictionaryModel(), "Test Spatial Category", DgnCategory::Rank::Application, "This is a test category for spatial elements");
     ////Appearance properties.
     uint32_t weight = 10;
     double trans = 0.5;

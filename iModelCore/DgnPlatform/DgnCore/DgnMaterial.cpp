@@ -16,8 +16,6 @@ namespace dgn_ElementHandler
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define PROPNAME_Description "Description"
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -47,25 +45,6 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRe
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, DgnMaterialId parentMaterialId)
-  : T_Super(db, DgnModel::DictionaryId(), DgnMaterial::QueryDgnClassId(db), CreateCode(db, paletteName, materialName), nullptr, parentMaterialId)
-    {
-    if (parentMaterialId.IsValid())
-        m_parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_MaterialOwnsChildMaterials);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId DgnMaterial::QueryMaterialId(DgnDbR db, DgnCodeCR code)
-    {
-    DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
-    return DgnMaterialId(elemId.GetValueUnchecked());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const
@@ -88,15 +67,15 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeScope,Parent.Id,Description FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,CodeValue,PaletteName,Parent.Id,Description FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
     if (options.m_byPalette)
-        ecsql.append(" WHERE CodeScope=?");
+        ecsql.append(" WHERE PaletteName=?");
 
     if (options.m_byParent)
         ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("Parent.Id=?");
 
     if (options.m_ordered)
-        ecsql.append(" ORDER BY CodeScope,CodeValue");
+        ecsql.append(" ORDER BY PaletteName,CodeValue");
 
     Iterator iter;
     ECSqlStatement* stmt = iter.Prepare(db, ecsql.c_str(), 0);
@@ -125,29 +104,37 @@ DgnMaterial::Iterator DgnMaterial::MakeIterator(DgnDbR db, Iterator::Options opt
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImportContext& importer)
     {
-    //  See if we already have a material with the same palette and code in the destination Db.
-    //  If so, we'll map the source material to it.
     DgnMaterialCPtr srcMaterial = DgnMaterial::Get(importer.GetSourceDb(), srcMaterialId);
     BeAssert(srcMaterial.IsValid());
     if (!srcMaterial.IsValid())
-        {
-        BeAssert(false);
         return DgnMaterialId();
-        }
 
-    DgnMaterialId dstMaterialId = QueryMaterialId(importer.GetDestinationDb(), srcMaterial->GetPaletteName(), srcMaterial->GetMaterialName());
-    if (dstMaterialId.IsValid())
+    DgnModelId destModelId = importer.FindModelId(srcMaterial->GetModelId());
+    if (!destModelId.IsValid())
+        destModelId = DgnModel::DictionaryId(); // Use the DictionaryModel as a fallback
+
+    DefinitionModelPtr destModel = importer.GetDestinationDb().Models().Get<DefinitionModel>(destModelId);
+    if (!destModel.IsValid())
+        return DgnMaterialId(); // ERROR: didn't find the destination model
+
+    //  See if we already have a material with the same name in the destination DefinitionModel. If so, we'll map the source material to it.
+    DgnMaterialId destMaterialId = QueryMaterialId(*destModel, srcMaterial->GetMaterialName());
+    if (destMaterialId.IsValid())
         {
         //  *** TBD: Check if the material definitions match. If not, rename and remap
         //  *** TBD: Make sure that child materials are also remapped? Or, wait for someone to ask for them one by one?
-        importer.AddMaterialId(srcMaterialId, dstMaterialId);
-        return dstMaterialId;
+        importer.AddMaterialId(srcMaterialId, destMaterialId);
+        return destMaterialId; // SUCCESS: material found by name
         }
 
-    //  No such material in the destination Db. Ask the source Material to import itself.
-    auto importedElem = srcMaterial->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
+    //  No such material in the destination DefinitionModel. Ask the source Material to import itself.
+    DgnElementCPtr destMaterial = srcMaterial->Import(nullptr, *destModel, importer);
+    if (!destMaterial.IsValid())
+        return DgnMaterialId(); // ERROR: Import failed
 
-    return importedElem.IsValid()? DgnMaterialId(importedElem->GetElementId().GetValue()): DgnMaterialId();
+    destMaterialId = DgnMaterialId(destMaterial->GetElementId().GetValue());
+    importer.AddMaterialId(srcMaterialId, destMaterialId);
+    return destMaterialId;
     }
 
 /*---------------------------------------------------------------------------------**//**

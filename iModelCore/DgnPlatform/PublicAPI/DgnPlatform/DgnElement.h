@@ -2505,7 +2505,8 @@ public:
     //! Create an instance of a DrawingGraphic by specifying the model and category
     DGNPLATFORM_EXPORT static DrawingGraphicPtr Create(GraphicalModel2dCR model, DgnCategoryId categoryId);
 
-    DGNPLATFORM_EXPORT DgnElementCPtr GetDerivedFromElement() const;
+    //! Return the element that this DrawingGraphic represents (if it represents another element)
+    DGNPLATFORM_EXPORT DgnElementCPtr GetRepresentedElement() const;
 };
 
 //=======================================================================================
@@ -3278,7 +3279,6 @@ private:
     typedef bmap<DgnClassId, ECSqlClassInfo> ClassInfoMap;
     typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
 
-    DgnElementId  m_nextAvailableId;
     std::unique_ptr<struct ElemIdTree> m_tree;
     BeSQLite::StatementCache m_stmts;
     Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
@@ -3297,7 +3297,6 @@ private:
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, Utf8CP jsonProps, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
@@ -3316,6 +3315,9 @@ private:
 
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
+    // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
+    void ClearECCaches();
+
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -3327,9 +3329,6 @@ public:
     //! @private
     ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     
-    // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    DGNPLATFORM_EXPORT void ClearUpdaterCache();
-
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //!< @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
@@ -3341,7 +3340,7 @@ public:
     //! @private
     DGNPLATFORM_EXPORT DgnElementCP FindLoadedElement(DgnElementId id) const;
 
-    //! Query the DgnModelId of the specified DgnElementId.
+    //! Query the DgnModelId of the model that contains the specified element.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
     //! @private Allow Navigator to try to resolve URIs created in this version and in Graphite05 for things like issues and clashes.
@@ -3361,10 +3360,10 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCodeCR code) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(CodeSpecId codeSpecId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(CodeSpecId codeSpecId, DgnElementId codeScopeElementId, Utf8StringCR codeValue) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeSpecName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeSpecName, DgnElementId codeScopeElementId, Utf8StringCR codeValue) const;
 
     //! Get the total counts for the current state of the pool.
     DGNPLATFORM_EXPORT Totals const& GetTotals() const;

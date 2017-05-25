@@ -1144,6 +1144,12 @@ TEST_F(DynamicTxnsTest, TxnMonitors)
     EXPECT_FALSE(monitor.HasInstances());
     EXPECT_FALSE(monitor.m_OnTxnClosedCalled);
 
+    ExpectAllExist(persistentIds);
+    ExpectNoneExist(dynamicIds);
+
+    persistentIds.clear();
+    dynamicIds.clear();
+
     monitor.Clear();
     InsertElement(persistentIds);
     txns.BeginDynamicOperation();
@@ -1282,6 +1288,7 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
     SetupSeedProject();
 
     DgnDbR db = *m_db;
+    DefinitionModelR dictionary = db.GetDictionaryModel();
     auto& txns = db.Txns();
 
     // Set up a dependency between two elements, and register a callback
@@ -1289,7 +1296,7 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
 
     Byte textureBytes[] = { 1, 2, 3 };
     ImageSource textureData(ImageSource::Format::Jpeg, ByteStream(textureBytes, 3));
-    DgnTexture texture(DgnTexture::CreateParams(db, "Dependent", textureData, 1,1));
+    DgnTexture texture(DgnTexture::CreateParams(dictionary, "Dependent", textureData, 1,1));
     EXPECT_TRUE(texture.Insert().IsValid());
     auto depId = texture.GetElementId();
     db.SaveChanges();
@@ -1466,7 +1473,7 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
 static BeSQLite::EC::ECInstanceId insertRelationship(DgnDbR db, ECN::ECRelationshipClassCR relcls, DgnElementId root, DgnElementId dependent)
     {
     ECInstanceKey rkey;
-    db.InsertNonNavigationRelationship(rkey, relcls, root, dependent);
+    db.InsertLinkTableRelationship(rkey, relcls, root, dependent);
     return rkey.GetInstanceId();
     }
 
@@ -1490,7 +1497,7 @@ static BeSQLite::DbResult modifyRelationshipProperty(DgnDbR db, ECN::ECClassCR r
     {
     auto inst = relcls.GetDefaultStandaloneEnabler()->CreateInstance();
     inst->SetValue(propName, ECN::ECValue(newValue));
-    return db.UpdateNonNavigationRelationshipProperties(EC::ECInstanceKey(relcls.GetId(), relid), *inst);
+    return db.UpdateLinkTableRelationshipProperties(EC::ECInstanceKey(relcls.GetId(), relid), *inst);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1524,7 +1531,7 @@ static BeSQLite::DbResult selectRelationshipProperty(Utf8StringR value, DgnDbR d
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BeSQLite::DbResult deleteRelationship(DgnDbR db, ECN::ECClassCR relcls, BeSQLite::EC::ECInstanceId relid)
     {
-    return db.DeleteNonNavigationRelationship(EC::ECInstanceKey(relcls.GetId(), relid));
+    return db.DeleteLinkTableRelationship(EC::ECInstanceKey(relcls.GetId(), relid));
     }
 
 /*---------------------------------------------------------------------------------**//**
