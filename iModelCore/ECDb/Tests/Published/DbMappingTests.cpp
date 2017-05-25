@@ -331,6 +331,45 @@ struct ComparerContext
             }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SimpleFK)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleFK.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+
+                <ECEntityClass typeName="L">
+                    <ECProperty propertyName="D" typeName="double" />
+                </ECEntityClass>
+
+                <ECEntityClass typeName="R">
+                    <ECProperty propertyName="S" typeName="string" />
+                    <ECNavigationProperty propertyName="LNav" relationshipName="LHasR" direction="Backward" />
+                </ECEntityClass>
+                <ECEntityClass typeName="RL">
+                    <BaseClass>R</BaseClass>
+                    <ECProperty propertyName="LS" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="RR">
+                    <BaseClass>R</BaseClass>
+                    <ECProperty propertyName="RS" typeName="string" />
+                </ECEntityClass>
+
+               <ECRelationshipClass typeName="LHasR" strength="referencing" modifier="Sealed">
+                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="L">
+                      <Class class ="L" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Rs" abstractConstraint="R">
+                      <Class class ="RL" />
+                  </Target>
+               </ECRelationshipClass>
+          </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+//    MapContext ctx(ecdb);
+
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
