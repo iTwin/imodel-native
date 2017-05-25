@@ -144,7 +144,7 @@ private:
     DgnModelId                      m_modelId;
     Utf8String                      m_name;
     mutable BeMutex                 m_mutex;
-    mutable BeSQLite::BeDbMutex     m_dbMutex;
+    mutable std::mutex              m_dbMutex;
     mutable GeomPartCache           m_geomParts;
     mutable SolidPrimitivePartMap   m_solidPrimitiveParts;
     mutable GeomListMap             m_geomLists;
@@ -169,7 +169,7 @@ public:
     DebugOptions GetDebugOptions() const;
     void SetDebugOptions(DebugOptions opts) { m_debugOptions = opts; }
 
-    BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
+    std::mutex& GetDbMutex() const { return m_dbMutex; }
 
     Render::Primitives::GeomPartPtr FindOrInsertGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR viewContext);
     Render::Primitives::GeomPartPtr FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, Render::Primitives::DisplayParamsCR displayParams, DgnElementId elemId) const;
