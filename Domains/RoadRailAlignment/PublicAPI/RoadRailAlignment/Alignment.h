@@ -43,6 +43,7 @@ public:
     ROADRAILALIGNMENT_EXPORT AlignmentPairPtr QueryMainPair() const;
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateAprox3dGeom();
 
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetHorizontal(AlignmentCR alignment, HorizontalAlignmentCR vertical);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetMainVertical(AlignmentCR alignment, VerticalAlignmentCR vertical);
@@ -95,6 +96,7 @@ public:
 
     ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const;
     ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateElementGeom();
 
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr Insert(Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr Update(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Update<HorizontalAlignment>(*this, stat); }

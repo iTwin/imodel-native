@@ -20,6 +20,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
     CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
     auto horizAlignmPtr = HorizontalAlignment::Create(*alignmentPtr, *horizAlignVecPtr);
+    ASSERT_EQ(DgnDbStatus::Success, horizAlignmPtr->GenerateElementGeom());
     ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
     ASSERT_TRUE(horizAlignmPtr->GetGeometry().IsOpenPath());
 

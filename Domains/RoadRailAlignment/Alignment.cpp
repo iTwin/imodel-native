@@ -267,6 +267,24 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::GenerateAprox3dGeom()
+    {
+    auto& horizGeometryCR = QueryHorizontal()->GetGeometry();
+
+    DPoint3d origin = { 0, 0, 0 };
+    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
+    if (!geomBuilderPtr->Append(horizGeometryCR, GeometryBuilder::CoordSystem::World))
+        return DgnDbStatus::NoGeometry;
+
+    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*this))
+        return DgnDbStatus::NoGeometry;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 HorizontalAlignmentsPortionCPtr HorizontalAlignmentsPortion::InsertPortion(AlignmentModelCR model)
@@ -343,6 +361,22 @@ void HorizontalAlignment::SetGeometry(CurveVectorR geometry)
     val.SetIGeometry(*IGeometry::Create(cvPtr));
 
     SetPropertyValue(BRRA_PROP_HorizontalAlignment_HorizontalGeometry, val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus HorizontalAlignment::GenerateElementGeom()
+    {
+    DPoint2d origin = { 0, 0 };
+    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
+    if (!geomBuilderPtr->Append(GetGeometry(), GeometryBuilder::CoordSystem::World))
+        return DgnDbStatus::NoGeometry;
+
+    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*this))
+        return DgnDbStatus::NoGeometry;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
