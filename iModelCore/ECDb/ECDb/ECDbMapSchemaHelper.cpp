@@ -448,7 +448,7 @@ BentleyStatus DbIndexList::GetIndexes(bvector<DbIndex>& indices) const
                 }
 
             BeAssert(!propName.Value().empty());
-            dbIndex.AddProperty(propName.Value());
+            dbIndex.m_properties.push_back(propName.Value());
             }
 
         indices.push_back(std::move(dbIndex));

@@ -422,13 +422,12 @@ bool InstanceCRUDTests::importSchema(WString schemaNameWithoutVerionAndExtension
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceCRUDTests::insertECClassInstances(ECClassCP ecClass)
     {
-    bool instatus = false;
     ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
     if (relClass == NULL)
-        {
+        {			
         LOG1.infov("Starting Insert operation for class: %s", m_className.c_str());
         m_classList.push_back(ecClass);
-
+		bool instatus = false;
         RandomECInstanceGenerator insert(m_classList);
         auto status = insert.Generate(false);
         if (status != SUCCESS)
@@ -712,10 +711,10 @@ bool InstanceCRUDTests::deleteECInstances(bmap<ECN::ECClassCP, std::vector<ECN::
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceCRUDTests::updateECClassInstances(ECClassCP ecClass)
     {
-    bool upstatus = false;
     ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
     if (relClass == NULL)
         {
+		bool upstatus = false;    
         LOG1.infov("Starting update operation for class: %s", m_className.c_str());
         RandomECInstanceGenerator update(m_classList);
         auto status = update.Generate(false);

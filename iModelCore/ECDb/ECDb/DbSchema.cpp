@@ -705,9 +705,9 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
         return ERROR;
 
     bmap<DbColumn const*, int> primaryKeys;
-    int i = 0;
     if (PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint())
         {
+		int i = 0;
         for (DbColumn const* pkCol : pkConstraint->GetColumns())
             {
             primaryKeys[pkCol] = i++;
