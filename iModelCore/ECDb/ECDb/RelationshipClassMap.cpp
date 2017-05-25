@@ -822,31 +822,9 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(RelationshipMapping
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ConstraintECInstanceIdPropertyMap const* RelationshipClassEndTableMap::GetForeignEndECInstanceIdPropMap() const
-    {
-    return GetConstraintMap(GetForeignEnd()).GetECInstanceIdPropMap();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ConstraintECClassIdPropertyMap const* RelationshipClassEndTableMap::GetForeignEndECClassIdPropMap() const
-    {
-    return GetConstraintMap(GetForeignEnd()).GetECClassIdPropMap();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 ConstraintECInstanceIdPropertyMap const* RelationshipClassEndTableMap::GetReferencedEndECInstanceIdPropMap() const
     {
     return GetConstraintMap(GetReferencedEnd()).GetECInstanceIdPropMap();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ConstraintECClassIdPropertyMap const* RelationshipClassEndTableMap::GetReferencedEndECClassIdPropMap() const
-    {
-    return GetConstraintMap(GetReferencedEnd()).GetECClassIdPropMap();
     }
 
 //---------------------------------------------------------------------------------------

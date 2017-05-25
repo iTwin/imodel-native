@@ -15,18 +15,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-ECN::ECPropertyCR PropertyMap::GetOverriddenRootProperty(ECN::ECPropertyCR ecProperty)
-    {
-    ECPropertyCP cursor = &ecProperty;
-    while (cursor->GetBaseProperty())
-        cursor = cursor->GetBaseProperty();
-
-    return *cursor;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
 ECPropertyId PropertyMap::GetRootPropertyId() const
     {
     PropertyMap const* root = this;

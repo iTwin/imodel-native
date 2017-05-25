@@ -61,7 +61,7 @@ struct GetTablesPropertyMapVisitor final : IPropertyMapVisitor
         ~GetTablesPropertyMapVisitor() {}
 
         std::set<DbTable const*> const& GetTables() const { return m_tables; }
-        DbTable const* GetSingleTable() const;
+
     };
 
 //=======================================================================================

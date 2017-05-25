@@ -445,7 +445,7 @@ public:
     const std::vector<DbColumn const*> FindAll(PersistenceType) const;
     const std::vector<DbColumn const*> FindAll(DbColumn::Kind) const;
     DbColumn const* FindFirst(DbColumn::Kind) const;
-    BentleyStatus DeleteColumn(DbColumn&);
+
 
     EditHandle& GetEditHandleR() { return m_editHandle; }
     EditHandle const& GetEditHandle() const { return m_editHandle; }
@@ -548,7 +548,6 @@ public:
     DbTable* CreateTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     DbTable* CreateOverflowTable(DbTable const& baseTable);
-    DbTable* CreateJoinedTable(DbTable const& baseTable, Utf8CP joinedTableName, ECN::ECClassId exclusiveRootClassId);
     std::vector<DbTable const*> GetCachedTables() const;
     DbTable const* FindTable(Utf8CP name) const;
     DbTable const* FindTable(DbTableId id) const;

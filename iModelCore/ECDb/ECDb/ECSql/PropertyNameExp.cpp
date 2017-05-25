@@ -346,18 +346,6 @@ DerivedPropertyExp const& PropertyNameExp::PropertyRef::GetEndPointDerivedProper
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp const* PropertyNameExp::PropertyRef::GetEndPointPropertyNameIfAny() const
-    {
-    DerivedPropertyExp const& cur = GetEndPointDerivedProperty();
-    if (cur.GetExpression()->GetType() == Exp::Type::PropertyName)
-        return cur.GetExpression()->GetAsCP<PropertyNameExp>();
-
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List const& snippets) const
     {
     m_nativeSqlSnippets.clear();

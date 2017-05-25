@@ -229,10 +229,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             return m_relClassIdAccessstring->c_str();
             }
 
-        ConstraintECInstanceIdPropertyMap const* GetForeignEndECInstanceIdPropMap() const;
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
-        ConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
-        ConstraintECClassIdPropertyMap const* GetForeignEndECClassIdPropMap() const;
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, updatableViewInfo); }
         Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
             {

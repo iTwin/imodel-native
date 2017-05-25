@@ -157,32 +157,6 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
 
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                03/2017
-//+---------------+---------------+---------------+---------------+---------------+-
-bool ECDbSystemSchemaHelper::IsSystemPropertyAlias(Utf8CP& sysPropName, Utf8StringCR propName) const
-    {
-    if (propName.EqualsIAscii(ECDBSYS_PROPALIAS_Id))
-        {
-        sysPropName = ECDBSYS_PROP_ECInstanceId;
-        return true;
-        }
-
-    if (propName.EqualsIAscii(ECDBSYS_PROPALIAS_SourceId))
-        {
-        sysPropName = ECDBSYS_PROP_SourceECInstanceId;
-        return true;
-        }
-
-    if (propName.EqualsIAscii(ECDBSYS_PROPALIAS_TargetId))
-        {
-        sysPropName = ECDBSYS_PROP_TargetECInstanceId;
-        return true;
-        }
-
-    return false;
-    }
-
-//----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                01/2017
 //+---------------+---------------+---------------+---------------+---------------+-
 BentleyStatus ECDbSystemSchemaHelper::InitializeCache() const

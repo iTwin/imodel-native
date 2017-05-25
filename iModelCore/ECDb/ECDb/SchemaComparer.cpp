@@ -1462,22 +1462,7 @@ std::vector<Utf8String> SchemaComparer::Split(Utf8StringCR path , bool stripArra
 
     return axis;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SchemaComparer::Join(std::vector<Utf8String> const& paths, Utf8CP delimiter)
-    {
-    Utf8String str;
-    for (auto itor = paths.begin(); itor != paths.end(); ++itor)
-        {
-        if (itor != paths.begin())
-            str.append(delimiter);
-        
-        str.append(*itor);
-        }
 
-    return str;
-    }
 //======================================================================================
 //ECChange
 //======================================================================================

@@ -416,34 +416,6 @@ BentleyStatus DbSchema::SaveOrUpdateTables() const
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        04/2017
-//---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateJoinedTable(DbTable const& primaryTable, Utf8CP joinedTableName, ECN::ECClassId exclusiveRootClassId)
-    {
-    if (primaryTable.GetType() != DbTable::Type::Primary)
-        {
-        BeAssert(false && "Base table must be primary or joined table");
-        return nullptr;
-        }
-
-    if (primaryTable.GetType() == DbTable::Type::Virtual)
-        {
-        BeAssert(false && "Base table must not be virtual");
-        return nullptr;
-        }
-
-    if (primaryTable.GetLinkNode().GetChildren().size() == 1 && primaryTable.GetLinkNode().GetChildren()[0]->GetType() == DbTable::Type::Overflow)
-        {
-        BeAssert(false && "Base table have overflow derive table. Derive table can only be of one type");
-        return nullptr;
-        }
-
-    if (SUCCESS != primaryTable.GetLinkNode().Validate())
-        return nullptr;
-
-    return CreateTable(joinedTableName, DbTable::Type::Joined, exclusiveRootClassId, &primaryTable);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        04/2017
@@ -1333,49 +1305,6 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         m_classIdColumn = newColumnP;
 
     return newColumnP;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DbTable::DeleteColumn(DbColumn& col)
-    {
-    if (GetEditHandleR().AssertNotInEditMode())
-        return ERROR;
-
-    for (std::unique_ptr<DbConstraint>& constraint : m_constraints)
-        {
-        switch (constraint->GetType())
-            {
-                case DbConstraint::Type::ForeignKey:
-                {
-                ForeignKeyDbConstraint* fkc = static_cast<ForeignKeyDbConstraint*>(constraint.get());
-                fkc->Remove(col.GetName().c_str(), nullptr);
-                break;
-                }
-
-                case DbConstraint::Type::PrimaryKey:
-                {
-                PrimaryKeyDbConstraint const* pkc = static_cast<PrimaryKeyDbConstraint const*>(constraint.get());
-                if (pkc->Contains(col))
-                    {
-                    BeAssert(false && "Cannot delete a column from a PK constraint");
-                    return ERROR;
-                    }
-
-                break;
-                }
-
-                default:
-                    BeAssert(false);
-                    return ERROR;
-            }
-        }
-
-    m_columns.erase(col.GetName().c_str());
-    auto columnsAreEqual = [&col] (DbColumn const* column) { return column == &col; };
-    m_orderedColumns.erase(std::find_if(m_orderedColumns.begin(), m_orderedColumns.end(), columnsAreEqual));
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

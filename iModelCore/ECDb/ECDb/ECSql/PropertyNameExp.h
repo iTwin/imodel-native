@@ -31,7 +31,6 @@ struct PropertyNameExp final : ValueExp
 
             DerivedPropertyExp const& LinkedTo() const { return m_linkedTo; }
             DerivedPropertyExp const& GetEndPointDerivedProperty() const;
-            PropertyNameExp const* GetEndPointPropertyNameIfAny() const;
 
             bool WasToNativeSqlCalled() const { return m_wasToNativeSqlCalled; }
             NativeSqlBuilder::List const& GetNativeSql() const { return m_nativeSqlSnippets; }
