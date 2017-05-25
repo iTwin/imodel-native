@@ -675,3 +675,56 @@ TEST(Spiral,OffsetConstruction2)
         }
     Check::ClearGeometry ("Spiral.OffsetConstruction2");
     }
+
+TEST(Spiral,PartialSpiralEvaluation)
+    {
+    double f0 = 0.1, f1 = 0.2;
+    double totalLength = 100.0;
+    double snippetLength = (f1 - f0) * totalLength;
+    auto spiral = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius
+        (10,
+            0.0, 0.0,  // x axis
+            totalLength, 100.0,   // obvious length
+            Transform::FromIdentity (),
+            f0, f1
+            );
+    bvector<DPoint3d> xyzC;
+    for (double u : bvector<double>{0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0})
+        {
+        DPoint3d xyz;
+        spiral->FractionToPoint (u, xyz);
+        xyzC.push_back (xyz);
+        }
+    double lengthB;
+    spiral->Length (lengthB);
+    double lengthC = PolylineOps::Length (xyzC);
+    Check::True (lengthC <= snippetLength);
+    Check::Near (lengthB, snippetLength);
+    auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    cv->push_back (spiral);
+    auto path = CurveVectorWithDistanceIndex::Create ();
+    path->SetPath (cv);
+
+    IFacetOptionsPtr curveOptions = IFacetOptions::CreateForCurves();
+
+    bvector<PathLocationDetail> locations;
+    path->Stroke(locations, *curveOptions);
+
+    double prevDropDist = DBL_MAX;
+    bvector<double> dropDistances;
+    for (PathLocationDetailCR pntDetail : locations)
+        {
+        double distanceAlong = pntDetail.DistanceFromPathStart();
+
+        //Sometimes we get duplicate drop distances at the ends, as we walk the stroked points make sure we filter out any consecutive duplicates
+        if(!DoubleOps::AlmostEqual(prevDropDist, distanceAlong))
+            {
+            dropDistances.push_back(distanceAlong);
+            Check::LessThanOrEqual (prevDropDist, distanceAlong);
+            Check::LessThanOrEqual (distanceAlong, snippetLength);
+            }
+
+        prevDropDist = distanceAlong;
+        }
+    Check::Near (prevDropDist, lengthB);
+    }
