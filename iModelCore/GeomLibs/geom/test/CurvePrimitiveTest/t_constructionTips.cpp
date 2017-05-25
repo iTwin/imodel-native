@@ -11,6 +11,7 @@ struct ConstructionHint
 enum class Type
     {
     ThroughPoint,
+    PointAndDirection,
     Center,
     PerpendicularNear,
     ClosestPoint,
@@ -19,22 +20,46 @@ enum class Type
 Type m_type;
 CurveLocationDetail m_location;
 ICurvePrimitivePtr m_curve; // redundant of the CurveLocationDetail -- but as a Ptr so the lifecycle management works
+DRay3d m_ray;
 private:
 ConstructionHint (Type type, CurveLocationDetailCR detail) :
     m_type (type),
     m_location (detail),
-    m_curve ((ICurvePrimitiveP)detail.curve)
+    m_curve ((ICurvePrimitiveP)detail.curve),
+    m_ray (DRay3d::FromOriginAndVector (detail.point, DVec3d::UnitX ()))
     {
 
     }
+
+ConstructionHint (Type type, CurveLocationDetailCR detail, DRay3dCR ray) :
+    m_type (type),
+    m_location (detail),
+    m_curve ((ICurvePrimitiveP)detail.curve),
+    m_ray (ray)
+    {
+
+    }
+
 public:
 
 bool IsType (ConstructionHint::Type t) { return t == m_type;}
 DPoint3d Point (){return m_location.point;}
+DRay3d PointAndDirection ()
+    {
+    return m_ray;
+    }
 
 static ConstructionHint CreateThroughPoint (DPoint3dCR point)
     {
     return ConstructionHint (Type::ThroughPoint, CurveLocationDetail (nullptr, 0.0, point));
+    }
+
+static ConstructionHint CreatePointAndDirection (DPoint3dCR point, DVec3dCR direction)
+    {
+    auto line = ICurvePrimitive::CreateLine (DSegment3d::From (point, point + direction));
+    return ConstructionHint (Type::PointAndDirection, CurveLocationDetail (
+                    line.get (), 0.0, point),
+                    DRay3d::FromOriginAndVector (point, direction));
     }
 
 static ConstructionHint CreateCenter (DPoint3dCR point)
@@ -182,6 +207,25 @@ struct FromCenterPointPoint: IConstructFrom3Hints
         return nullptr;
         }
     };
+
+struct FromPointDirectionPoint: IConstructFrom2Hints
+    {
+    ICurvePrimitivePtr DoConstruction (ConstructionHintCR hintA, ConstructionHintCR hintB) override
+        {
+        if (hintA.IsType (ConstructionHint::Type::PointAndDirection)
+            && hintB.IsType (ConstructionHint::Type::ThroughPoint)
+            )
+            {
+            DEllipse3d arc;
+            DRay3d ray = hintA.PointAndDirection ();
+            if (arc.InitArcFromPointTangentPoint (ray.origin, ray.direction, hintB.Point ()))
+                return ICurvePrimitive::CreateArc (arc);
+            }
+        return nullptr;
+        }
+    };
+
+
 };
 
 
@@ -267,6 +311,12 @@ void SaveHints (bvector<ConstructionHint> &hints)
                 Check::SaveTransformed (*hint.m_location.curve);
                 }
                 break;
+            case ConstructionHint::Type::PointAndDirection:
+                {
+                Check::SaveTransformed (*hint.m_location.curve);
+                Check::SaveTransformedMarkers (bvector<DPoint3d>{hint.m_location.point}, s_markerSize);
+                }
+                break;
             case ConstructionHint::Type::PerpendicularNear:
                 {
                 Check::SaveTransformed (*hint.m_location.curve);
@@ -286,13 +336,18 @@ bvector<IConstructFrom2Hints *>
     new LineConstructions::FromPointPerpendicularNear ()
     };
 
-static bvector<IConstructFrom3Hints *> s_circleBuilders =
+static bvector<IConstructFrom3Hints *> s_circleBuilders3 =
 bvector<IConstructFrom3Hints *>
     {
     new CircleConstructions::FromPointPointPoint (),
     new CircleConstructions::FromCenterPointPoint ()
     };
 
+static bvector<IConstructFrom2Hints *> s_circleBuilders2 =
+bvector<IConstructFrom2Hints *>
+    {
+    new CircleConstructions::FromPointDirectionPoint ()
+    };
 
 TEST (Construction,Hello)
     {
@@ -375,13 +430,15 @@ TEST (Construction,HelloCircles)
     auto hPoint0 = ConstructionHint::CreateThroughPoint (DPoint3d::From (0.1, 0.1));
     auto hPoint1 = ConstructionHint::CreateThroughPoint (DPoint3d::From (1,0));
     auto hPoint2 = ConstructionHint::CreateThroughPoint (DPoint3d::From (0,2));
+    auto hPointTangent0 = ConstructionHint::CreatePointAndDirection (DPoint3d::From (0.1, 0.1), DVec3d::From (1,0,0));
+
     auto hCenter0 = ConstructionHint::CreateCenter (DPoint3d::From (1,1));
     bvector<ConstructionHint> hints;
     hints.push_back (hPoint0);
     hints.push_back (hPoint1);
     hints.push_back (hPoint2);
     SaveHints (hints);
-    auto cp0 = ConstructionSearcher::ConstructByTriples (hints, s_circleBuilders);
+    auto cp0 = ConstructionSearcher::ConstructByTriples (hints, s_circleBuilders3);
     if (cp0.IsValid ())
         Check::SaveTransformed (*cp0);
 
@@ -392,7 +449,17 @@ TEST (Construction,HelloCircles)
     hints.push_back (hCenter0);
     hints.push_back (hPoint2);
     SaveHints (hints);
-    cp0 = ConstructionSearcher::ConstructByTriples (hints, s_circleBuilders);
+    cp0 = ConstructionSearcher::ConstructByTriples (hints, s_circleBuilders3);
+    if (cp0.IsValid ())
+        Check::SaveTransformed (*cp0);
+
+    Check::Shift (a,0,0);
+
+    hints.clear ();
+    hints.push_back (hPointTangent0);
+    hints.push_back (hPoint2);
+    SaveHints (hints);
+    cp0 = ConstructionSearcher::ConstructByPairs (hints, s_circleBuilders2);
     if (cp0.IsValid ())
         Check::SaveTransformed (*cp0);
 
