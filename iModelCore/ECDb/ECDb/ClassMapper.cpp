@@ -646,12 +646,12 @@ ClassMapper::PropertyMapInheritanceMode ClassMapper::GetPropertyMapInheritanceMo
 //static
 BentleyStatus ClassMapper::TableMapper::MapToTable(ClassMap& classMap, ClassMappingInfo const& info)
     {
-    DbTable::Type tableType = DbTable::Type::Primary;
-    //if (classMap.GetClass().GetClassModifier() == ECClassModifier::Abstract)
-    //    tableType == DbTable::Type::UpdatableView;
-
     const bool isTph = info.GetMapStrategy().IsTablePerHierarchy();
     TablePerHierarchyInfo const& tphInfo = info.GetMapStrategy().GetTphInfo();
+
+    DbTable::Type tableType = classMap.GetClass().GetClassModifier() != ECClassModifier::Abstract || 
+                              isTph ? DbTable::Type::Primary : DbTable::Type::Virtual;
+
     ClassMap const* tphBaseClassMap = isTph ? info.GetTphBaseClassMap() : nullptr;
     if (isTph && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable)
         {
@@ -781,11 +781,10 @@ DbTable* ClassMapper::TableMapper::CreateTableForOtherStrategies(ClassMap const&
         return nullptr;
         }
 
-    const PersistenceType tablePersType = classMap.GetClass().GetClassModifier() != ECClassModifier::Abstract || classMap.GetMapStrategy().IsTablePerHierarchy() ? PersistenceType::Physical : PersistenceType::Virtual;
-    DbTable* table = classMap.GetDbMap().GetDbSchemaR().CreateTable(tableName.c_str(), tableType, tablePersType, exclusiveRootClassId, primaryTable);
+    DbTable* table = classMap.GetDbMap().GetDbSchemaR().CreateTable(tableName.c_str(), tableType, exclusiveRootClassId, primaryTable);
 
     DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
-    if (table->GetPersistenceType() == PersistenceType::Physical)
+    if (table->GetType() != DbTable::Type::Virtual)
         {
         std::vector<DbColumn*> pkColumns {pkColumn};
         if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns))
@@ -813,7 +812,7 @@ DbTable* ClassMapper::TableMapper::CreateTableForExistingTableStrategy(ClassMap 
         return nullptr;
         }
 
-    DbTable* table = classMap.GetDbMap().GetDbSchemaR().CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Physical, exclusiveRootClassId, nullptr);
+    DbTable* table = classMap.GetDbMap().GetDbSchemaR().CreateTable(existingTableName, DbTable::Type::Existing, exclusiveRootClassId, nullptr);
     if (table == nullptr)
         return nullptr;
 

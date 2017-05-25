@@ -195,8 +195,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
                 return ClassMappingStatus::Error;
                 }
 
-            if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Physical &&
-                baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
+            if (baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
                 tphBaseClassMaps.push_back(baseClassMap);
             }
         }
@@ -296,7 +295,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             DbTable const& table = GetJoinedOrPrimaryTable();
             GetColumnsPropertyMapVisitor columnVisitor(table);
             propertyMap->AcceptVisitor(columnVisitor);
-            if (table.GetPersistenceType() == PersistenceType::Physical && columnVisitor.GetVirtualColumnCount() > 0)
+            if (columnVisitor.GetVirtualColumnCount() > 0)
                 {
                 Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                                 "The specified ECProperty '%s' is mapped to a virtual column.",
@@ -479,8 +478,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 return ERROR;
                 }
 
-            if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Physical &&
-                baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
+            if (baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
                 tphBaseClassMaps.push_back(baseClassMap);
             }
         }

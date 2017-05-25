@@ -72,7 +72,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 //static
 DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
+    if (table.GetType() == DbTable::Type::Virtual || table.GetType() == DbTable::Type::Existing)
         return CreateOrUpdateTableResult::Skipped;
 
     Utf8CP tableName = table.GetName().c_str();
@@ -110,7 +110,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         return ERROR;
         }
 
-    if (table.GetType() == DbTable::Type::Existing || table.GetPersistenceType() == PersistenceType::Virtual)
+    if (table.GetType() == DbTable::Type::Existing || table.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "CreateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
@@ -181,7 +181,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 //static
 BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (table.GetType() == DbTable::Type::Existing || table.GetPersistenceType() == PersistenceType::Virtual)
+    if (table.GetType() == DbTable::Type::Existing || table.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "UpdateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
@@ -386,8 +386,8 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
     {
     auto buildECClassIdFilter = [] (Utf8StringR filterSqlExpression, StorageDescription const& desc, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
         {
-        if (table.GetPersistenceType() != PersistenceType::Physical)
-            return SUCCESS; //table is virtual -> noop
+        if (table.GetType() == DbTable::Type::Virtual)
+            return SUCCESS; //-> noop
 
         Partition const* partition = desc.GetPartition(table);
         if (partition == nullptr)

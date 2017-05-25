@@ -26,7 +26,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
 
     DbTable const& table = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
-    if (table.GetPersistenceType() == PersistenceType::Virtual)
+    if (table.GetType() == DbTable::Type::Virtual)
         {
         if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
             {

@@ -465,7 +465,6 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)"
 
     );

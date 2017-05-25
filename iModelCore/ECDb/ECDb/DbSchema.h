@@ -354,7 +354,7 @@ public:
         Joined = 1, //! Derived Table cannot exist without a primary table
         Existing = 2, 
         Overflow = 3, //! Derived table cannot exist without a primary or joined table
-        UpdatableView = 4 //for abstract classes and mixins
+        Virtual = 4 //for abstract classes not using TPH and mixins
         };
 
     struct LinkNode final : NonCopyableClass
@@ -399,7 +399,6 @@ private:
     DbTableId m_id;
     Utf8String m_name;
     Type m_type;
-    PersistenceType m_persistenceType;
     ECN::ECClassId m_exclusiveRootECClassId;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
     bvector<DbColumn const*> m_orderedColumns;
@@ -419,16 +418,14 @@ private:
     static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
-    DbTable(DbTableId id, Utf8StringCR name, DbSchema&, PersistenceType, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
+    DbTable(DbTableId id, Utf8StringCR name, DbSchema&, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
     void InitializeSharedColumnNameGenerator(uint32_t existingSharedColumnCount) { m_sharedColumnNameGenerator.Initialize(existingSharedColumnCount); }
     DbTableId GetId() const { return m_id; }
     void SetId(DbTableId id) { m_id = id; }
     Utf8StringCR GetName() const { return m_name; }
-    PersistenceType GetPersistenceType() const { return m_persistenceType; }
     Type GetType() const { return m_type; }
-    bool IsOwnedByECDb() const { return m_type != Type::Existing; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
     ECN::ECClassId GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
@@ -548,8 +545,8 @@ public:
     explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_nameGenerator("ecdb_") {}
     ~DbSchema() {}
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* CreateTable(Utf8StringCR name, DbTable::Type, PersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
-    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, PersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     DbTable* CreateOverflowTable(DbTable const& baseTable);
     DbTable* CreateJoinedTable(DbTable const& baseTable, Utf8CP joinedTableName, ECN::ECClassId exclusiveRootClassId);
     std::vector<DbTable const*> GetCachedTables() const;

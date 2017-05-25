@@ -516,7 +516,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
     {
     //skip ExistingTable and NotMapped
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Name, t.IsVirtual FROM ec_Table t "
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Id, t.Name, t.Type= " SQLVAL_DbTable_Type_Virtual " FROM ec_Table t "
                                      "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
                                      "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
                                      "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
@@ -528,47 +528,37 @@ BentleyStatus DbMap::PurgeOrphanTables() const
         return ERROR;
         }
 
-    std::vector<Utf8String> nonVirtualTables;
-    std::vector<Utf8String> virtualTables;
+    IdSet<DbTableId> orphanTables;
+    std::vector<Utf8String> tablesToDrop;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        if (stmt.GetValueBoolean(1))
-            virtualTables.push_back(stmt.GetValueText(0));
-        else
-            nonVirtualTables.push_back(stmt.GetValueText(0));
+        orphanTables.insert(stmt.GetValueId<DbTableId>(0));
+        if (!stmt.GetValueBoolean(2))
+            tablesToDrop.push_back(stmt.GetValueText(1));
         }
-
-    if (nonVirtualTables.empty() && virtualTables.empty())
-        return SUCCESS;
-
     stmt.Finalize();
 
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name=?"))
+    if (orphanTables.empty())
+        return SUCCESS;
+
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE InVirtualSet(?,Id)") ||
+        BE_SQLITE_OK != stmt.BindVirtualSet(1, orphanTables) ||
+        BE_SQLITE_DONE != stmt.Step())
         {
-        BeAssert(false && "ECDb profile changed");
+        BeAssert(false);
         return ERROR;
         }
 
-    for (Utf8StringCR name : virtualTables)
-        {
-        stmt.Reset();
-        stmt.ClearBindings();
-        stmt.BindText(1, name, Statement::MakeCopy::No);
-        if (stmt.Step() != BE_SQLITE_DONE)
-            {
-            BeAssert(false && "constraint violation");
-            return ERROR;
-            }
-        }
+    stmt.Finalize();
 
-    if (nonVirtualTables.empty())
+    if (tablesToDrop.empty())
         return SUCCESS;
 
     if (!m_ecdb.GetECDbImplR().GetSettings().AllowChangesetMergingIncompatibleSchemaImport())
         {
         Utf8String tableNames;
         bool isFirstTable = true;
-        for (Utf8StringCR tableName : nonVirtualTables)
+        for (Utf8StringCR tableName : tablesToDrop)
             {
             if (!isFirstTable)
                 tableNames.append(",");
@@ -582,20 +572,11 @@ BentleyStatus DbMap::PurgeOrphanTables() const
         return ERROR;
         }
 
-    for (Utf8StringCR name : nonVirtualTables)
+    for (Utf8StringCR name : tablesToDrop)
         {
         if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
             {
             BeAssert(false && "failed to drop a table");
-            return ERROR;
-            }
-
-        stmt.Reset();
-        stmt.ClearBindings();
-        stmt.BindText(1, name, Statement::MakeCopy::No);
-        if (stmt.Step() != BE_SQLITE_DONE)
-            {
-            BeAssert(false && "constraint violation");
             return ERROR;
             }
         }
@@ -603,38 +584,38 @@ BentleyStatus DbMap::PurgeOrphanTables() const
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Gets the count of tables at the specified end of a relationship class.
-* @param  relationshpEnd [in] Constraint at the end of the relationship
-* @return Number of tables at the specified end of the relationship. Returns
-*         UINT_MAX if the end is AnyClass.
-* @bsimethod                                 Ramanujam.Raman                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// Gets the count of tables at the specified end of a relationship class.
+// @param  relationshpEnd [in] Constraint at the end of the relationship
+// @return Number of tables at the specified end of the relationship. Returns
+//         std::numeric_limits<size_t>::max() if the end is AnyClass.
+// @bsimethod                                 Ramanujam.Raman                05/2012
+//---------------------------------------------------------------------------------------
 size_t DbMap::GetTableCountOnRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR relationshipEnd) const
     {
     bool hasAnyClass = false;
     std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(ctx, relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
-        return SIZE_MAX;
+        return std::numeric_limits<size_t>::max();
 
-    std::map<PersistenceType, std::set<DbTable const*>> tables;
-    bool abstractEndPoint = relationshipEnd.GetConstraintClasses().size() == 1 && relationshipEnd.GetConstraintClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
+    const bool abstractEndPoint = relationshipEnd.GetConstraintClasses().size() == 1 && relationshipEnd.GetConstraintClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
+    
+    std::set<DbTable const*> nonVirtualTables;
+    bool hasAtLeastOneVirtualTable = false;
     for (ClassMap const* classMap : classMaps)
         {
-        if (abstractEndPoint)
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedOrPrimaryTable());
+        DbTable const* table = abstractEndPoint ? &classMap->GetJoinedOrPrimaryTable() : &classMap->GetPrimaryTable();
+        if (classMap->GetPrimaryTable().GetType() == DbTable::Type::Virtual)
+            hasAtLeastOneVirtualTable = true;
         else
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
+            nonVirtualTables.insert(table);
         }
 
-    if (tables[PersistenceType::Physical].size() > 0)
-        return tables[PersistenceType::Physical].size();
+    if (!nonVirtualTables.empty())
+        return nonVirtualTables.size();
 
-    if (tables[PersistenceType::Virtual].size() > 0)
-        return 1;
-
-    return 0;
+    return hasAtLeastOneVirtualTable ? 1 : 0;
     }
 
 //---------------------------------------------------------------------------------------
