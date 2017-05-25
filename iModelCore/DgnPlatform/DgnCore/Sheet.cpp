@@ -350,7 +350,7 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tree::Draw(RenderListContext& context)
+void Attachment::Tree::Draw(SceneContext& context)
     {
     Load(&context.GetTargetR().GetSystem());
 
@@ -656,13 +656,11 @@ void Sheet::Model::DrawBorder(ViewContextR context, DPoint2dCR size)
 
 /*---------------------------------------------------------------------------------**//**
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Sheet::ViewController::_CreateScene(RenderContextR context)
+BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     {
-    // ###TODO_ELEMENT_TILE: Draw() wants the context's UpdatePlan...
-    BeAssert(nullptr != dynamic_cast<RenderListContext*>(&context));
     auto status = T_Super::_CreateScene(context);
     for (auto& attach : m_attachments)
-        attach->Draw(static_cast<RenderListContext&>(context));
+        attach->Draw(context);
 
     Sheet::Model::DrawBorder(context, m_size);
     return status;

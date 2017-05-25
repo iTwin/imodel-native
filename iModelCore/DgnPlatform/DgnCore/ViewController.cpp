@@ -126,14 +126,14 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
     GetViewDefinitionR().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
-    SetFeatureSymbologyDirty();
+    SetFeatureOverridesDirty();
     _OnCategoryChange(onOff);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
+ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>()), m_selectionSetDirty(!m_dgndb.Elements().GetSelectionSet().empty())
     {
     DgnElementId acsId = def.GetAuxiliaryCoordinateSystemId();
 
@@ -173,7 +173,6 @@ void ViewController::_StoreState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::InvalidateScene()
     {
-    RequestAbort(false); 
     BeMutexHolder lock(m_mutex);
     m_readyScene = nullptr;
     }
@@ -902,31 +901,21 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController2d::_CreateScene(RenderContextR context)
+BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
-    if (m_root.IsNull())
+    if (nullptr == m_root)
         {
         auto model = GetViewedModel();
         if (nullptr == model)
             return ERROR;
 
         m_root = model->GetTileTree(&context.GetTargetR().GetSystem());
-        //BeAssert(m_root.IsValid());
-        if (m_root.IsNull())
+        if (nullptr == m_root)
             return ERROR;
         }
 
     m_root->DrawInView(context);
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController2d::_OnCategoryChange(bool singleEnable)
-    {
-    // Category stuff is baked into the tiles (for now) - throw them away
-    m_root = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -957,12 +946,12 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TemplateViewController3d::_CreateScene(RenderContextR context)
+BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
     {
-    if (m_root.IsNull())
+    if (nullptr == m_root)
         {
         auto model = GetViewedModel();
-        if (nullptr == model || (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())).IsNull())
+        if (nullptr == model || nullptr == (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())))
             return ERROR;
         }
 
@@ -997,7 +986,6 @@ DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
     if (m_viewedModelId == viewedModelId)
         return DgnDbStatus::Success;
 
-    RequestAbort(true);
     m_viewedModelId = viewedModelId;
     GeometricModel3dP model = GetViewedModel();
     if (!model || !model->IsTemplate())

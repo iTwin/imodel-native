@@ -39,7 +39,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshEdges);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(QVertex3d);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(MeshPart);
@@ -47,7 +47,6 @@ DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
-DEFINE_REF_COUNTED_PTR(MeshEdges);
 
 typedef bvector<MeshInstance>       MeshInstanceList;
 typedef bvector<MeshPartPtr>        MeshPartList;
@@ -277,6 +276,9 @@ struct Triangle
     bool        m_singleSided;
     uint8_t     m_edgeFlags[3];
 
+    uint32_t operator[](int index) const { BeAssert(index < 3); return m_indices[index]; }
+    uint32_t& operator[](int index) { BeAssert(index < 3); return m_indices[index]; }
+
     explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); SetEdgeFlags(MeshEdge::Flags::Visible); }
     Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); SetEdgeFlags(MeshEdge::Flags::Visible); }
     Triangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); SetEdgeFlags(MeshEdge::Flags::Visible); }
@@ -308,17 +310,105 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct                                                   Ray.Bentley     05/2017
+//! Represents a possibly-quantized position. Used during mesh generation.
+//! See QVertex3dList.
+// @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
-struct MeshEdges : RefCountedBase
+struct QVertex3d
 {
-    bvector<MeshEdge>           m_visible;
-    bvector<MeshEdge>           m_silhouette;
-    bvector<FPoint3d>           m_silhouetteNormals0;
-    bvector<FPoint3d>           m_silhouetteNormals1;
+    using Params = QPoint3d::Params;
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
+private:
+    struct Quantized { uint16_t x, y, z; };
+    struct Unquantized { float x, y, z; };
 
-    MeshEdges(MeshCR mesh);
+    union
+        {
+        Quantized   m_q;
+        Unquantized m_u;
+        };
+    bool    m_quantized;
+public:
+    QVertex3d() { }
+    QVertex3d(DPoint3dCR dpt, ParamsCR params) : QVertex3d(FPoint3d::From(dpt), params) { }
+    QVertex3d(FPoint3dCR fpt, ParamsCR params)
+        {
+        double x, y=0, z=0; // Compiler doesn't realize y and z are never used unless they are initialized, therefore must initialize here...
+        m_quantized = (Quantization::IsInRange(x = Quantization::QuantizeDouble(fpt.x, params.origin.x, params.scale.x))
+                    && Quantization::IsInRange(y = Quantization::QuantizeDouble(fpt.y, params.origin.y, params.scale.y))
+                    && Quantization::IsInRange(z = Quantization::QuantizeDouble(fpt.z, params.origin.z, params.scale.z)));
+        if (m_quantized)
+            {
+            m_q.x = static_cast<uint16_t>(x);
+            m_q.y = static_cast<uint16_t>(y);
+            m_q.z = static_cast<uint16_t>(z);
+            }
+        else
+            {
+            *reinterpret_cast<FPoint3dP>(&m_u) = fpt;
+            }
+        }
+
+    bool IsQuantized() const { return m_quantized; }
+    QPoint3dCR GetQPoint3d() const { BeAssert(IsQuantized()); return *reinterpret_cast<QPoint3dCP>(&m_q); }
+    FPoint3dCR GetFPoint3d() const { BeAssert(!IsQuantized()); return *reinterpret_cast<FPoint3dCP>(&m_u); }
+
+    FPoint3d Unquantize(ParamsCR params) const
+        {
+        return IsQuantized() ? GetQPoint3d().Unquantize32(params) : GetFPoint3d();
+        }
 };
+
+//=======================================================================================
+//! A list of possibly-quantized positions. When mesh generation begins, we typically
+//! know a range that will contain most of the mesh's vertices, but vertices of triangles
+//! which only partially intersect that range must also be included. Vertices within the
+//! initial range are quantized to that range; vertices outside of it are stored directly,
+//! and used to extend the initial range.
+//! After mesh generation completes, the entire list is requantized to the actual range
+//! if necessary.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct QVertex3dList
+{
+private:
+    bvector<FPoint3d>   m_fpoints;
+    QPoint3dList        m_qpoints;
+    DRange3d            m_range;
+public:
+    explicit QVertex3dList(DRange3dCR range) : m_qpoints(range), m_range(range) { }
+
+    void Add(QVertex3dCR vertex)
+        {
+        if (!vertex.IsQuantized())
+            {
+            FPoint3dCR fpt = vertex.GetFPoint3d();
+            m_fpoints.push_back(fpt);
+            m_range.Extend(fpt);
+            }
+        else if (m_fpoints.empty())
+            {
+            m_qpoints.push_back(vertex.GetQPoint3d());
+            }
+        else
+            {
+            m_fpoints.push_back(vertex.Unquantize(m_qpoints.GetParams()));
+            }
+        }
+
+    //! If any unquantized vertices exist, requantize. IsFullyQuantized() returns true after this operation.
+    DGNPLATFORM_EXPORT void Requantize();
+    bool IsFullyQuantized() const { return m_fpoints.empty(); }
+    QPoint3dListCR GetQuantizedPoints() const { BeAssert(IsFullyQuantized()); return m_qpoints; }
+    QPoint3d::ParamsCR GetParams() const { return m_qpoints.GetParams(); }
+    bool empty() const { return m_fpoints.empty() && m_qpoints.empty(); }
+    size_t size() const { return m_fpoints.size() + m_qpoints.size(); }
+
+    //! Returns the accumulated range, which may be larger than the initial range passed to the constructor.
+    DRange3dCR GetRange() const { return m_range; }
+};
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QVertex3dList);
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
@@ -346,12 +436,11 @@ private:
         void ToFeatureIndex(FeatureIndex& index) const;
     };
 
-
     DisplayParamsCPtr               m_displayParams;
     TriangleList                    m_triangles;
     PolylineList                    m_polylines;
-    bvector<FPoint3d>               m_points;
-    bvector<FPoint3d>               m_normals;
+    QVertex3dList                   m_verts;
+    QPoint3dList                    m_normals;
     bvector<FPoint2d>               m_uvParams;
     ColorTable                      m_colorTable;
     bvector<uint16_t>               m_colors;
@@ -359,17 +448,15 @@ private:
     PrimitiveType                   m_type;
     mutable MeshEdgesPtr            m_edges;
 
-    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) : m_displayParams(&params), m_features(featureTable), m_type(type) { }
-
-    template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
-
-    DPoint3d GetDPoint3d(bvector<FPoint3d> const& from, uint32_t index) const;
+    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range)
+        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_normals(QPoint3d::Params::FromNormalizedRange()) { }
 
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
 public:
-    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type) { return new Mesh(params, featureTable, type); }
+    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range) { return new Mesh(params, featureTable, type, range); }
 
+    DPoint3d                        GetPoint(uint32_t index) const;
     DGNPLATFORM_EXPORT DRange3d     GetTriangleRange(TriangleCR triangle) const;
     DGNPLATFORM_EXPORT DVec3d       GetTriangleNormal(TriangleCR triangle) const;
     DGNPLATFORM_EXPORT bool         HasNonPlanarNormals() const;
@@ -378,13 +465,14 @@ public:
     DisplayParamsCPtr               GetDisplayParamsPtr() const { return m_displayParams; } //!< The mesh symbology
     TriangleList const&             Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
     PolylineList const&             Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
-    bvector<FPoint3d> const&        Points() const { return m_points; } //!< Position vertex attribute array
-    bvector<FPoint3d> const&        Normals() const { return m_normals; } //!< Normal vertex attribute array
+    QPoint3dListCR                  Points() const { return m_verts.GetQuantizedPoints(); } //!< Position vertex attribute array
+    QVertex3dListCR                 Verts() const { return m_verts; }
+    QPoint3dListCR                  Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<FPoint2d> const&        Params() const { return m_uvParams; } //!< UV params vertex attribute array
     bvector<uint16_t> const&        Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
     ColorTableCR                    GetColorTable() const { return m_colorTable; }
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
-    MeshEdgesPtr                    GetEdges() const;
+    MeshEdgesPtr                    GetEdges(DRange3dCR tileRange, MeshEdgeCreationOptionsCR options) const;
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     PrimitiveType GetType() const { return m_type; }
@@ -392,12 +480,12 @@ public:
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     DGNPLATFORM_EXPORT DRange3d GetUVRange() const;
 
+    void Close() { m_verts.Requantize(); }
+
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
     void AddPolyline(PolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
-    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db);
-
-
+    uint32_t AddVertex(QVertex3dCR vertex, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
+    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db, DRange3dCR tileRange);
 };
 
 /*=================================================================================**//**
@@ -431,51 +519,26 @@ struct MeshMergeKey
 //=======================================================================================
 struct VertexKey
 {
-    struct Flags
-    {
-        union
-        {
-            uint8_t byteVal;
-            struct
-            {
-                uint32_t    normalValid: 1;
-                uint32_t    paramValid: 1;
-                uint32_t    pointXLessThanY: 1;
-                uint32_t    normalXLessThanY: 1;
-                uint32_t    paramXLessThanY: 1;
-            };
-        };
-
-        Flags() : byteVal(0) { }
-        Flags(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param);
-    };
-
-    DPoint3d        m_point;
-    DVec3d          m_normal;
+    QPoint3d        m_normal;
     DPoint2d        m_param;
-    Feature         m_feature;
     uint32_t        m_fillColor = 0;
-    Flags           m_flags;
+    Feature         m_feature;
+    QVertex3d       m_position;
+    bool            m_normalValid;
+    bool            m_paramValid;
 
     VertexKey() { }
-    VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureCR feature, uint32_t fillColor) : m_point(point), m_feature(feature), m_fillColor(fillColor), m_flags(point, normal, param)
-        {
-        if(m_flags.normalValid) m_normal = *normal;
-        if(m_flags.paramValid) m_param = *param;
-        }
+    VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr);
 
-    DVec3dCP GetNormal() const { return m_flags.normalValid ? &m_normal : nullptr; }
-    DPoint2dCP GetParam() const { return m_flags.paramValid ? &m_param : nullptr; }
+    QPoint3dCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
+    DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   12/16
     //=======================================================================================
     struct Comparator
     {
-        double  m_tolerance;
-
-        explicit Comparator(double tolerance) : m_tolerance(tolerance) { }
-        bool operator()(VertexKey const& lhs, VertexKey const& rhs) const;
+        DGNPLATFORM_EXPORT bool operator()(VertexKey const& lhs, VertexKey const& rhs) const;
     };
 };
 
@@ -510,15 +573,14 @@ private:
     DgnMaterialCPtr     m_materialEl;
     RenderingAssetCP    m_material = nullptr;
 
-    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type)
-        : m_mesh(Mesh::Create(params, featureTable, type)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
-          m_tolerance(tolerance), m_areaTolerance(areaTolerance) { }
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range)
+        : m_mesh(Mesh::Create(params, featureTable, type, range)), m_tolerance(tolerance), m_areaTolerance(areaTolerance) { }
 
     bool GetMaterial(DgnMaterialId materailId, DgnDbR db);
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
-    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type)
-        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type); }
+    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range)
+        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor);
@@ -531,7 +593,6 @@ public:
 
     MeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
     double GetTolerance() const { return m_tolerance; }
-
     void SetDisplayParams(DisplayParamsCR params) { m_mesh->SetDisplayParams(params); }
 };
 
@@ -653,6 +714,9 @@ public:
     void append(GeometryListR src) { m_list.insert(m_list.end(), src.m_list.begin(), src.m_list.end()); m_curved = m_curved || src.ContainsCurves(); }
     void resize(size_t newSize) { m_list.resize(newSize); }
     void clear() { m_list.clear(); }
+
+    QPoint3d::Params ComputeQuantizationParams() const { return QPoint3d::Params(ComputeRange()); }
+    DRange3d ComputeRange() const;
 };
 
 //=======================================================================================
@@ -680,6 +744,7 @@ public:
     bool IsCurved() const;
     GeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
+    void SetInCache(bool inCache);
 };
 
 //=======================================================================================
@@ -719,12 +784,13 @@ private:
     bool                        m_surfacesOnly;
     bool                        m_haveTransform;
     bool                        m_checkGlyphBoxes = false;
+    DRange3d                    m_tileRange;
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range);
 public:
-    GeometryAccumulator(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
-    explicit GeometryAccumulator(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
+    GeometryAccumulator(DgnDbR db, TransformCR transform, DRange3dCR tileRange, bool surfacesOnly) : m_transform(transform), m_tileRange(tileRange), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
+    explicit GeometryAccumulator(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false), m_tileRange(DRange3d::NullRange()) { }
 
     void AddGeometry(GeometryR geom) { m_geometries.push_back(geom); }
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
@@ -755,7 +821,7 @@ public:
     DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance=0.001) const;
 
     //! Populate a list of Graphic objects from the accumulated Geometry objects.
-    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance=0.001) const;
+    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options,double tolerance=0.001) const;
 
     //! Clear the geometry list and reinitialize for reuse. DisplayParamsCache contents are preserved.
     void ReInitialize(TransformCR transform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId(), bool surfacesOnly=false)
@@ -843,24 +909,22 @@ struct PolylineArgs : IndexedPolylineArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderMeshEdgeArgs : MeshEdgeArgs
+struct ElementMeshEdgeArgs : MeshEdgeArgs
 {
-    MeshEdgesPtr                    m_meshEdges;
     bvector<uint32_t>               m_colorTable;
 
-    bool Init(MeshCR mesh);
+    bool Init(MeshCR mesh, DRange3dCR tileRange);
 };
 
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
-struct RenderSilhouetteEdgeArgs : SilhouetteEdgeArgs
+struct ElementSilhouetteEdgeArgs : SilhouetteEdgeArgs
 {
-    MeshEdgesPtr                    m_meshEdges;
     bvector<uint32_t>               m_colorTable;
 
-    bool Init(MeshCR mesh);
+    bool Init(MeshCR mesh, DRange3dCR tileRange);
 };
 
 
@@ -871,8 +935,8 @@ struct GetMeshGraphicsArgs
 {
     PolylineArgs                    m_polylineArgs;
     MeshArgs                        m_meshArgs;
-    RenderMeshEdgeArgs              m_visibleEdgesArgs;
-    RenderSilhouetteEdgeArgs        m_invisibleEdgesArgs;
+    ElementMeshEdgeArgs              m_visibleEdgesArgs;
+    ElementSilhouetteEdgeArgs        m_invisibleEdgesArgs;
 };
 
 //=======================================================================================

@@ -79,7 +79,13 @@ void DgnModels::DropLoadedModel(DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::Empty()
     {
-    m_dgndb.Elements().Destroy(); // Has to be called before models are released.
+    // Tile-loader threads may be executing, so must release roots (and wait for loaders to cancel) first
+    // Must be done before destroying Elements because tile loaders may have ref-counted ptrs to elements
+    for (auto& kvp : m_models)
+        kvp.second->_Destroy();
+
+    // Has to be called before models are released.
+    m_dgndb.Elements().Destroy();
     m_models.clear();
     }
 
@@ -1547,7 +1553,7 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr GeometricModel::GetTileTree(Render::SystemP system)
+TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
     {
     DgnDb::VerifyClientThread();
 
@@ -1557,7 +1563,20 @@ TileTree::RootPtr GeometricModel::GetTileTree(Render::SystemP system)
     if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystem() != system))
         m_root = _CreateTileTree(system);
 
-    return m_root;
+    return m_root.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::ReleaseTileTree()
+    {
+    // NB: We may be loading any number of tiles in background threads. We need to cancel them before destroying this model and its root.
+    // The root's destructor takes care of that.
+    // Why not do this in GeometricModel's destructor? Because loaders may invoke functions like _FillRangeIndex(), which will
+    // have become pure calls by the time we get to that destructor.
+    BeAssert(m_root.IsNull() || 1 == m_root->GetRefCount());
+    m_root = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

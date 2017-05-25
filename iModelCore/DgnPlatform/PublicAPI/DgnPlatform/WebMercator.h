@@ -142,7 +142,6 @@ protected:
     double m_groundBias;
     double m_transparency;
     ImageryProviderPtr m_provider;
-    mutable MapRootPtr m_root;
 
     void FromJson(Json::Value const& value);
     void ToJson(Json::Value& value) const;

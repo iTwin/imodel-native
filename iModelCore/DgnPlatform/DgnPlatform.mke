@@ -230,9 +230,9 @@ $(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(Dg
 
 $(CoreObjs)RenderPrimitives$(oext) :                $(DgnCoreDir)RenderPrimitives.cpp $(DgnPlatformAPISrc)RenderPrimitives.h ${MultiCompileDepends}
 
-$(CoreObjs)QuantizedPoints$(oext) :                 $(DgnCoreDir)QuantizedPoints.cpp $(DgnPlatformAPISrc)Render.h ${MultiCompileDepends}
-
 $(CoreObjs)MeshTile$(oext) :                        $(DgnCoreDir)MeshTile.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
+
+$(CoreObjs)MeshEdgeBuilder$(oext) :                 $(DgnCoreDir)MeshEdgeBuilder.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
 
 $(CoreObjs)ElementTileTree$(oext) :                 $(DgnCoreDir)ElementTileTree.cpp $(DgnPlatformAPISrc)ElementTileTree.h ${MultiCompileDepends}
 

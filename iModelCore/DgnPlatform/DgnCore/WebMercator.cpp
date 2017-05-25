@@ -356,15 +356,11 @@ TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
         return nullptr;
         }
 
-    if (m_root.IsValid() && (nullptr==renderSys || m_root->GetRenderSystem()==renderSys))
-        return nullptr;
-
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_groundBias));
 
     uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
-    m_root = new MapRoot(m_dgndb, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
-    return m_root;
+    return new MapRoot(m_dgndb, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

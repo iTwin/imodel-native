@@ -258,7 +258,7 @@ namespace Attachment
         bool m_sceneQueued = false;
 
         bool Pick(PickContext&);
-        void Draw(RenderListContext&);
+        void Draw(SceneContext&);
         void Load(Render::SystemP);
         Utf8CP _GetName() const override {return "SheetTile";}
         Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
@@ -320,7 +320,7 @@ protected:
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
     void _LoadState() override;
-    BentleyStatus _CreateScene(RenderContextR) override;
+    BentleyStatus _CreateScene(SceneContextR) override;
     FitComplete _ComputeFitRange(FitContextR context) override;
 
     void DrawBorder(ViewContextR context) const;

@@ -253,7 +253,7 @@ void DgnViewport::SetRenderTarget(Target* newTarget)
 
     // Feature symbology is per-Target - will need to be updated for new Target (now, or possibly later if newTarget=nullptr)
     if (m_viewController.IsValid())
-        m_viewController->SetFeatureSymbologyDirty();
+        m_viewController->SetFeatureOverridesDirty();
 
     m_sync.InvalidateFirstDrawComplete();
     }
@@ -397,6 +397,16 @@ static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
         *pDouble++ = *pFloat++;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void toDPoints(T& dpts, QPoint3dCP qpts, QPoint3d::ParamsCR qparams, int32_t numPoints)
+    {
+    dpts.resize(numPoints);
+    for (int32_t i = 0; i < numPoints; i++)
+        dpts[i] = qpts[i].UnquantizeAsVector(qparams);
+    }
+
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -414,17 +424,10 @@ PolyfaceHeaderPtr TriMeshArgs::ToPolyface() const
         *pOut++ = 1 + *pIndex++;
 
     if (nullptr != m_points)
-        {
-        polyFace->Point().resize(m_numPoints);
-        floatToDouble(&polyFace->Point().front().x, &m_points->x, 3 * m_numPoints);
-        }
+        toDPoints(polyFace->Point(), m_points, m_pointParams, m_numPoints);
 
     if (nullptr != m_normals)
-        {
-        polyFace->Normal().resize(m_numPoints);
-        floatToDouble(&polyFace->Normal().front().x, &m_normals->x, 3 * m_numPoints);
-        polyFace->NormalIndex() = pointIndex;
-        }
+        toDPoints(polyFace->Normal(), m_normals, QPoint3d::Params::FromNormalizedRange(), m_numPoints);
 
     if (nullptr != m_textureUV)
         {
@@ -434,21 +437,6 @@ PolyfaceHeaderPtr TriMeshArgs::ToPolyface() const
         }
 
     return polyFace;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IndexedPolylineArgs::Polyline::ToPoints(bvector<DPoint3d>& dpts, FPoint3d const* fpts) const
-    {
-    dpts.clear();
-    dpts.reserve(m_numIndices);
-    for (uint32_t i = 0; i < m_numIndices; i++)
-        {
-        uint32_t index = m_vertIndex[i];
-        FPoint3d const& fpt = fpts[index];
-        dpts.push_back(DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z));
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -654,9 +642,6 @@ void ViewController::_AddFeatureOverrides(FeatureSymbologyOverrides& overrides) 
     auto vp = m_vp;
     if (nullptr == vp)
         return;
-
-    for (auto const& hiliteId : GetDgnDb().Elements().GetSelectionSet())
-        overrides.m_hilited.insert(hiliteId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -692,9 +677,6 @@ FeatureSymbologyOverrides::Appearance FeatureSymbologyOverrides::Appearance::Ext
 
     if (m_flags.m_weight && !app.m_flags.m_weight)
         app.SetWeight(GetWeight());
-
-    if (m_hilited)
-        app.m_hilited = true;
 
     return app;
     }
@@ -745,9 +727,6 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
         haveElemOverrides = m_elementOverrides.end() != elemIter;
         if (haveElemOverrides)
             app = elemIter->second;
-
-        if (m_hilited.end() != m_hilited.find(elemId))
-            app.m_hilited = true;
         }
 
     auto subcatId = feat.GetSubCategoryId();
@@ -864,5 +843,40 @@ MeshEdge::MeshEdge(uint32_t index0, uint32_t index1)
 bool MeshEdge::operator < (MeshEdge const& rhs) const
     {
     return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR qparams)
+    {
+    if (meshEdges.m_visible.empty())
+        return false;
+
+    m_points        = points;
+    m_pointParams   = qparams;
+    m_edges         = meshEdges.m_visible.data();
+    m_numEdges      = meshEdges.m_visible.size();
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR params)
+    {
+    if (meshEdges.m_silhouette.empty())
+        return false;
+
+    m_points        = points;
+    m_pointParams   = params;
+    m_edges         = meshEdges.m_silhouette.data();
+    m_numEdges      = meshEdges.m_silhouette.size();
+    m_normals0      = meshEdges.m_silhouetteNormals0.data();
+    m_normals1      = meshEdges.m_silhouetteNormals1.data();
+
+    return true;
     }
 

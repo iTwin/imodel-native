@@ -16,6 +16,8 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
 BEGIN_UNNAMED_NAMESPACE
 
+static QPoint3d::Params s_normalQParams = QPoint3d::Params::FromNormalizedRange();
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -71,7 +73,7 @@ struct PrimitiveGeometry : Geometry
 {
 private:
     IGeometryPtr        m_geometry;
-    bool                m_inCache;
+    bool                m_inCache = false;
 
     PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db)
         : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
@@ -150,6 +152,7 @@ private:
 
     GeomPartInstanceGeometry(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
         : Geometry(tf, range, elemId, params, part.IsCurved(), db), m_part(&part) { }
+
 public:
     static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
 
@@ -369,12 +372,11 @@ Render::TextureP DisplayParams::ResolveTexture(DgnDbR db, Render::System const& 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
+* @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d Mesh::GetDPoint3d(bvector<FPoint3d> const& from, uint32_t index) const
+DPoint3d Mesh::GetPoint(uint32_t index) const
     {
-    auto fpoint = from[index];
-    return DPoint3d::FromXYZ(fpoint.x, fpoint.y, fpoint.z);
+    return Points().Unquantize(index);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -382,9 +384,9 @@ DPoint3d Mesh::GetDPoint3d(bvector<FPoint3d> const& from, uint32_t index) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange3d Mesh::GetTriangleRange(TriangleCR triangle) const
     {
-    return DRange3d::From(GetDPoint3d(m_points, triangle.m_indices[0]),
-                          GetDPoint3d(m_points, triangle.m_indices[1]),
-                          GetDPoint3d(m_points, triangle.m_indices[2]));
+    return DRange3d::From(GetPoint(triangle[0]),
+                          GetPoint(triangle[1]),
+                          GetPoint(triangle[2]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -392,9 +394,9 @@ DRange3d Mesh::GetTriangleRange(TriangleCR triangle) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DVec3d Mesh::GetTriangleNormal(TriangleCR triangle) const
     {
-    return DVec3d::FromNormalizedCrossProductToPoints(GetDPoint3d(m_points, triangle.m_indices[0]),
-                                                      GetDPoint3d(m_points, triangle.m_indices[1]),
-                                                      GetDPoint3d(m_points, triangle.m_indices[2]));
+    return DVec3d::FromNormalizedCrossProductToPoints(GetPoint(triangle[0]),
+                                                      GetPoint(triangle[1]),
+                                                      GetPoint(triangle[2]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -405,132 +407,28 @@ bool Mesh::HasNonPlanarNormals() const
     if (m_normals.empty())
         return false;
 
-    for (auto& triangle : m_triangles)
-        if(!GetDPoint3d(m_normals, triangle.m_indices[0]).IsEqual(GetDPoint3d(m_normals, triangle.m_indices[1])) ||
-            !GetDPoint3d(m_normals, triangle.m_indices[0]).IsEqual(GetDPoint3d(m_normals, triangle.m_indices[2])) ||
-            !GetDPoint3d(m_normals, triangle.m_indices[1]).IsEqual(GetDPoint3d(m_normals, triangle.m_indices[2])))
+    QPoint3d normals[3];
+    for (auto const& triangle : m_triangles)
+        {
+        normals[0] = m_normals[triangle[0]];
+        normals[1] = m_normals[triangle[1]];
+        if (normals[0] != normals[1])
             return true;
+
+        normals[2] = m_normals[triangle[3]];
+        if (normals[0] != normals[2] || normals[1] != normals[2])
+            return true;
+        }
 
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdges::MeshEdges(MeshCR mesh)
-    {
-    struct  PointComparator 
-        {
-        bool operator()(FPoint3d const& lhs, FPoint3d const& rhs) const
-            {
-            COMPARE_VALUES(lhs.x, rhs.x);
-            COMPARE_VALUES(lhs.y, rhs.y);
-            return lhs.z < rhs.z; 
-            }
-        };
-
-    struct  PointMap : bmap<FPoint3d, uint32_t, PointComparator> 
-        {
-        uint32_t    m_next = 0;
-
-        uint32_t GetIndex(FPoint3d point)
-            {
-            auto insertPair = Insert(point, m_next);
-            if (insertPair.second)
-                m_next++;
-
-            return insertPair.first->second;
-            }
-        };
-
-
-    struct  EdgeInfo
-        {
-        bool        m_visible;
-        uint32_t    m_faceCount;
-        uint32_t    m_faceIndices[2];
-        MeshEdge    m_edge;
-
-        EdgeInfo () { }
-        EdgeInfo(bool visible, uint32_t faceIndex, MeshEdgeCR edge) : m_visible(visible), m_faceCount(1), m_edge(edge) { m_faceIndices[0] = faceIndex; }
-
-        void AddFace(bool visible, uint32_t faceIndex)
-            {
-            if (m_faceCount < 2)
-                {
-                m_visible |= visible;
-                m_faceIndices[m_faceCount++] = faceIndex;
-                }
-            }
-        };
-    
-    PointMap                    pointMap;
-    bmap<MeshEdge, EdgeInfo>    edgeMap;
-    TriangleList const&         triangles = mesh.Triangles();
-    bvector<FPoint3d>           triangleNormals(triangles.size());
-    bvector<FPoint3d> const&    points = mesh.Points();
-
-    for (uint32_t triangleIndex = 0; triangleIndex < triangles.size(); triangleIndex++)
-        {
-        auto const&   triangle = triangles.at(triangleIndex);
-        for (size_t j=0; j<3; j++)
-            {
-            MeshEdge        meshEdge(triangle.m_indices[j], triangle.m_indices[(j+1)%3]);
-            EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleIndex, meshEdge);
-            MeshEdge        pointMapEdge(pointMap.GetIndex(points.at(meshEdge.m_indices[0])), 
-                                         pointMap.GetIndex(points.at(meshEdge.m_indices[1])));
-
-            auto            insertPair = edgeMap.Insert(pointMapEdge, edgeInfo);
-
-            if (!insertPair.second)
-                insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
-            }
-
-        triangleNormals[triangleIndex] = FPoint3d::From(mesh.GetTriangleNormal(triangle));
-        }
-    
-
-    for (auto& edge : edgeMap)
-        {
-        if (edge.second.m_visible)    
-            {
-            m_visible.push_back(edge.second.m_edge);
-            }
-        else
-            {
-            if (2 == edge.second.m_faceCount)
-                {
-                FPoint3d const&  normal0 = triangleNormals.at(edge.second.m_faceIndices[0]);
-                FPoint3d const&  normal1 = triangleNormals.at(edge.second.m_faceIndices[1]);
-
-                if (!DPoint3d::From(normal0).IsParallelTo(DPoint3d::From(normal1)))
-                    {
-                    // Potential silhouettes.
-                    m_silhouette.push_back(edge.second.m_edge);
-                    m_silhouetteNormals0.push_back(normal0);
-                    m_silhouetteNormals1.push_back(normal1);
-                    }
-                }
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdgesPtr    Mesh::GetEdges() const
-    {
-    if (!m_edges.IsValid())
-        m_edges = new MeshEdges(*this);;
-
-    return m_edges;
-    }
 
      
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db)
+void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db, DRange3dCR tileRange)
     {
     bool haveMesh = !Triangles().empty();
     bool havePolyline = !haveMesh && !Polylines().empty();
@@ -546,12 +444,14 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
             (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back (thisGraphic);
 
-        if (args.m_visibleEdgesArgs.Init(*this) &&
+        MeshEdgesPtr    edges = GetEdges(tileRange, MeshEdgeCreationOptions());
+
+        if (args.m_visibleEdgesArgs.Init(*this, tileRange) &&
             (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back(thisGraphic);
 
-        if (args.m_invisibleEdgesArgs.Init(*this) &&
-            (thisGraphic = system._CreateInvisibleEdges(args.m_invisibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+        if (args.m_invisibleEdgesArgs.Init(*this, tileRange) &&
+            (thisGraphic = system._CreateSilhouetteEdges(args.m_invisibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
             graphics.push_back(thisGraphic);
         }
     else                           
@@ -565,7 +465,7 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, bvector<FPoint3d> const& vertices)
+template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QVertex3dListCR vertices)
     {
     // Don't allocate the indices until we have non-uniform values
     if (table.empty())
@@ -591,20 +491,20 @@ template<typename T, typename U> static void insertVertexAttribute(bvector<uint1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
+uint32_t Mesh::AddVertex(QVertex3dCR vert, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
     {
-    auto index = static_cast<uint32_t>(m_points.size());
+    auto index = static_cast<uint32_t>(m_verts.size());
 
-    m_points.push_back(FPoint3d::From(point));
-    m_features.Add(feature, m_points.size());
+    m_verts.Add(vert);
+    m_features.Add(feature, m_verts.size());
 
     if (nullptr != normal)
-        m_normals.push_back(FPoint3d::From(*normal));
+        m_normals.push_back(*normal);
                                                                                                                  
     if (nullptr != param)
         m_uvParams.push_back(toFPoint2d(*param));
     else
-        insertVertexAttribute(m_colors, m_colorTable, fillColor, m_points);
+        insertVertexAttribute(m_colors, m_colorTable, fillColor, m_verts);
 
     return index;
     }
@@ -666,8 +566,10 @@ void Mesh::Features::ToFeatureIndex(FeatureIndex& index) const
 DRange3d Mesh::GetRange() const
     {
     DRange3d range = DRange3d::NullRange();
-    for (auto const& fpoint : m_points)
-        range.Extend(DPoint3d::FromXYZ(fpoint.x, fpoint.y, fpoint.z));
+    auto const& points = Points();
+    size_t nPoints = points.size();
+    for (size_t i = 0; i < nPoints; i++)
+        range.Extend(points.Unquantize(i));
 
     return range;
     }
@@ -690,50 +592,50 @@ DRange3d Mesh::GetUVRange() const
 TriangleKey::TriangleKey(TriangleCR triangle)
     {
     // Could just use std::sort - but this should be faster?
-    if (triangle.m_indices[0] < triangle.m_indices[1])
+    if (triangle[0] < triangle[1])
         {
-        if (triangle.m_indices[0] < triangle.m_indices[2])
+        if (triangle[0] < triangle[2])
             {
-            m_sortedIndices[0] = triangle.m_indices[0];
-            if (triangle.m_indices[1] < triangle.m_indices[2])
+            m_sortedIndices[0] = triangle[0];
+            if (triangle[1] < triangle[2])
                 {
-                m_sortedIndices[1] = triangle.m_indices[1];
-                m_sortedIndices[2] = triangle.m_indices[2];
+                m_sortedIndices[1] = triangle[1];
+                m_sortedIndices[2] = triangle[2];
                 }
             else
                 {
-                m_sortedIndices[1] = triangle.m_indices[2];
-                m_sortedIndices[2] = triangle.m_indices[1];
+                m_sortedIndices[1] = triangle[2];
+                m_sortedIndices[2] = triangle[1];
                 }
             }
         else
             {
-            m_sortedIndices[0] = triangle.m_indices[2];
-            m_sortedIndices[1] = triangle.m_indices[0];
-            m_sortedIndices[2] = triangle.m_indices[1];
+            m_sortedIndices[0] = triangle[2];
+            m_sortedIndices[1] = triangle[0];
+            m_sortedIndices[2] = triangle[1];
             }
         }
     else
         {
-        if (triangle.m_indices[1] < triangle.m_indices[2])
+        if (triangle[1] < triangle[2])
             {
-            m_sortedIndices[0] = triangle.m_indices[1];
-            if (triangle.m_indices[0] < triangle.m_indices[2])
+            m_sortedIndices[0] = triangle[1];
+            if (triangle[0] < triangle[2])
                 {
-                m_sortedIndices[1] = triangle.m_indices[0];
-                m_sortedIndices[2] = triangle.m_indices[2];
+                m_sortedIndices[1] = triangle[0];
+                m_sortedIndices[2] = triangle[2];
                 }
             else
                 {
-                m_sortedIndices[1] = triangle.m_indices[2];
-                m_sortedIndices[2] = triangle.m_indices[0];
+                m_sortedIndices[1] = triangle[2];
+                m_sortedIndices[2] = triangle[0];
                 }
             }
         else
             {
-            m_sortedIndices[0] = triangle.m_indices[2];
-            m_sortedIndices[1] = triangle.m_indices[1];
-            m_sortedIndices[2] = triangle.m_indices[0];
+            m_sortedIndices[0] = triangle[2];
+            m_sortedIndices[1] = triangle[1];
+            m_sortedIndices[2] = triangle[0];
             }
         }
 
@@ -754,60 +656,76 @@ bool TriangleKey::operator<(TriangleKeyCR rhs) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-VertexKey::Flags::Flags(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param)
-    {
-    byteVal = 0;
-    pointXLessThanY = point.x < point.y;
-    if (nullptr != normal)
-        {
-        normalValid = 1;
-        normalXLessThanY = normal->x < normal->y;
-        }
-
-    if (nullptr != param)
-        {
-        paramValid = 1;
-        paramXLessThanY = param->x < param->y;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     {
-    static const double s_normalTolerance = .1;     
-    static const double s_paramTolerance  = .1;
+    // We never merge meshes where these differ...
+    BeAssert(lhs.m_normalValid == rhs.m_normalValid);
+    BeAssert(lhs.m_paramValid == rhs.m_paramValid);
 
-    COMPARE_VALUES(lhs.m_flags.byteVal, rhs.m_flags.byteVal);
+    if (lhs.m_position.IsQuantized())
+        {
+        if (!rhs.m_position.IsQuantized())
+            return false;
 
-    COMPARE_VALUES_TOLERANCE (lhs.m_point.x, rhs.m_point.x, m_tolerance);
-    COMPARE_VALUES_TOLERANCE (lhs.m_point.y, rhs.m_point.y, m_tolerance);
-    COMPARE_VALUES_TOLERANCE (lhs.m_point.z, rhs.m_point.z, m_tolerance);
+        auto const& lpos = lhs.m_position.GetQPoint3d();
+        auto const& rpos = rhs.m_position.GetQPoint3d();
+
+        COMPARE_VALUES(lpos.x, rpos.x);
+        COMPARE_VALUES(lpos.y, rpos.y);
+        COMPARE_VALUES(lpos.z, rpos.z);
+        }
+    else
+        {
+        if (rhs.m_position.IsQuantized())
+            return true;
+
+        auto const& lpos = lhs.m_position.GetFPoint3d();
+        auto const& rpos = rhs.m_position.GetFPoint3d();
+
+        // ###TODO: May want to use a tolerance here; if so must be relative to range...
+        COMPARE_VALUES(lpos.x, rpos.x);
+        COMPARE_VALUES(lpos.y, rpos.y);
+        COMPARE_VALUES(lpos.z, rpos.z);
+        }
 
     COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
-    COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
-    COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
 
-    if (lhs.m_flags.normalValid)
+    if (lhs.m_normalValid)
         {
-        BeAssert(rhs.m_flags.normalValid);
-        COMPARE_VALUES_TOLERANCE (lhs.m_normal.x, rhs.m_normal.x, s_normalTolerance);
-        COMPARE_VALUES_TOLERANCE (lhs.m_normal.y, rhs.m_normal.y, s_normalTolerance);
-        COMPARE_VALUES_TOLERANCE (lhs.m_normal.z, rhs.m_normal.z, s_normalTolerance);
+        COMPARE_VALUES(lhs.m_normal.x, rhs.m_normal.x);
+        COMPARE_VALUES(lhs.m_normal.y, rhs.m_normal.y);
+        COMPARE_VALUES(lhs.m_normal.z, rhs.m_normal.z);
         }
 
-    if (lhs.m_flags.paramValid)
+    COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
+
+    constexpr double s_paramTolerance  = .1;
+    if (lhs.m_paramValid)
         {
-        BeAssert(rhs.m_flags.paramValid);
+        BeAssert(rhs.m_paramValid);
         COMPARE_VALUES_TOLERANCE (lhs.m_param.x, rhs.m_param.x, s_paramTolerance);
         COMPARE_VALUES_TOLERANCE (lhs.m_param.y, rhs.m_param.y, s_paramTolerance);
         }
 
+    COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
+
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+VertexKey::VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal, DPoint2dCP param)
+    : m_position(point, qParams), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
+    {
+    if (m_normalValid)
+        m_normal = QPoint3d(*normal, s_normalQParams);
+
+    if (m_paramValid)
+        m_param = *param;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -861,15 +779,16 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     Triangle            newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>   params = visitor.Param();
 
+    bool haveParams = includeParams && !params.empty();
     newTriangle.SetEdgeFlags(visitor.GetVisibleCP());
-    if (includeParams && !params.empty() && (m_material || GetMaterial(materialId, dgnDb)))
+    if (haveParams && (m_material || GetMaterial(materialId, dgnDb)))
         {
         auto const&         patternMap = m_material->GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
         if (patternMap.IsValid())
             {
-            BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
+            BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
             if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
             }
@@ -878,12 +797,12 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points[i], haveNormals ? &visitor.Normal()[i] : nullptr, !includeParams || params.empty() ? nullptr : &params[i], feature, fillColor);
-        newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
+        VertexKey vertex(points[i], feature, fillColor, m_mesh->Verts().GetParams(), haveNormals ? &visitor.Normal()[i] : nullptr, haveParams ? &params[i] : nullptr);
+        newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
-    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
-    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Verts().size());
+    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Verts().size());
 
     AddTriangle(newTriangle);
     }
@@ -897,7 +816,7 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, nullptr, nullptr, feature, fillColor);
+        VertexKey vertex(point, feature, fillColor, m_mesh->Verts().GetParams());
         newPolyline.GetIndices().push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
 
@@ -919,10 +838,10 @@ void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialI
 uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
     {
     // Avoid doing lookup twice - once to find existing, again to add if not present
-    auto index = static_cast<uint32_t>(m_mesh->Points().size());
+    auto index = static_cast<uint32_t>(m_mesh->Verts().size());
     auto insertPair = verts.Insert(vertex, index);
     if (insertPair.second)
-        m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
+        m_mesh->AddVertex(vertex.m_position, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
 
     return insertPair.first->second;
     }
@@ -972,6 +891,15 @@ PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP inst
         }
 
     return polyfaces;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeomPart::SetInCache(bool inCache)
+    {
+    for (auto& geometry : m_geometries)
+        geometry->SetInCache(inCache);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1138,7 +1066,9 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     polyface = polyfaceBuilder->GetClientMeshPtr();
     if (polyface.IsValid())
         {
-        polyface->Transform(GetTransform());
+        if (!GetTransform().IsIdentity())
+            polyface->Transform(GetTransform());
+
         polyfaces.push_back (Polyface(*GetDisplayParamsPtr(), *polyface));
         }
 
@@ -1448,6 +1378,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
     double vertexTolerance = tolerance * ToleranceRatio::Vertex();
     double facetAreaTolerance = tolerance * tolerance * ToleranceRatio::FacetArea();
 
+    DRange3d range = m_geometries.ComputeRange();
     bmap<MeshMergeKey, MeshBuilderPtr> builderMap;
     for (auto const& geom : m_geometries)
         {
@@ -1468,7 +1399,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh);
+                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, range);
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1488,7 +1419,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType);
+                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, range);
 
                 uint32_t fillColor = displayParams->GetFillColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
@@ -1498,8 +1429,14 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
         }
 
     for (auto& builder : builderMap)
-        if (!builder.second->GetMesh()->IsEmpty())
-            meshes.push_back(builder.second->GetMesh());
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (!mesh->IsEmpty())
+            {
+            mesh->Close();
+            meshes.push_back(mesh);
+            }
+        }
 
     return meshes;
     }
@@ -1513,7 +1450,7 @@ void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Rende
     GetMeshGraphicsArgs     args;
 
     for (auto const& mesh : meshes)
-        mesh->GetGraphics (graphics, system, args, m_dgndb);
+        mesh->GetGraphics (graphics, system, args, m_dgndb, m_tileRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1713,10 +1650,12 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
 
     for (auto const& triangle : mesh.Triangles())
         {
-        m_indices.push_back(static_cast<int32_t>(triangle.m_indices[0]));
-        m_indices.push_back(static_cast<int32_t>(triangle.m_indices[1]));
-        m_indices.push_back(static_cast<int32_t>(triangle.m_indices[2]));
+        m_indices.push_back(static_cast<int32_t>(triangle[0]));
+        m_indices.push_back(static_cast<int32_t>(triangle[1]));
+        m_indices.push_back(static_cast<int32_t>(triangle[2]));
         }
+
+    m_pointParams = mesh.Points().GetParams();
 
     Set(m_numIndices, m_vertIndex, m_indices);
     Set(m_numPoints, m_points, mesh.Points());
@@ -1755,16 +1694,17 @@ void MeshArgs::Clear()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
+bool  ElementMeshEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     {
-    m_meshEdges = mesh.GetEdges();
+    MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
+    m_pointParams = mesh.Points().GetParams();
 
-    if (m_meshEdges->m_visible.empty())
+    if (!meshEdges.IsValid() || meshEdges->m_visible.empty())
         return false;
 
     m_points    = mesh.Points().data();
-    m_edges     = m_meshEdges->m_visible.data();
-    m_numEdges  = m_meshEdges->m_visible.size();
+    m_edges     = meshEdges->m_visible.data();
+    m_numEdges  = meshEdges->m_visible.size();
     
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
@@ -1775,18 +1715,19 @@ bool  RenderMeshEdgeArgs::Init(MeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  RenderSilhouetteEdgeArgs::Init(MeshCR mesh)
+bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     {
-    m_meshEdges = mesh.GetEdges();
+    MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
+    m_pointParams = mesh.Points().GetParams();
 
-    if (m_meshEdges->m_silhouette.empty())
+    if (!meshEdges.IsValid() || meshEdges->m_silhouette.empty())
         return false;
 
     m_points    = mesh.Points().data();
-    m_normals0  = m_meshEdges->m_silhouetteNormals0.data();
-    m_normals1  = m_meshEdges->m_silhouetteNormals1.data();
-    m_edges     = m_meshEdges->m_silhouette.data();
-    m_numEdges  = m_meshEdges->m_silhouette.size();
+    m_normals0  = meshEdges->m_silhouetteNormals0.data();
+    m_normals1  = meshEdges->m_silhouetteNormals1.data();
+    m_edges     = meshEdges->m_silhouette.data();
+    m_numEdges  = meshEdges->m_silhouette.size();
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
 
@@ -1815,6 +1756,8 @@ void PolylineArgs::Reset()
 bool PolylineArgs::Init(MeshCR mesh)
     {
     Reset();
+
+    m_pointParams = mesh.Points().GetParams();
 
     m_numPoints = static_cast<uint32_t>(mesh.Points().size());
     m_points = &mesh.Points()[0];
@@ -1863,13 +1806,11 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     // corners
     // [0] [1]
     // [2] [3]
-    FPoint3d vertex[4];
+    DPoint3dCP pts = corners.m_pts;
+    rasterTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, 4));
+    QPoint3d vertex[4];
     for (uint32_t i = 0; i < 4; ++i)
-        {
-        vertex[i].x = corners.m_pts[i].x;
-        vertex[i].y = corners.m_pts[i].y;
-        vertex[i].z = corners.m_pts[i].z;
-        }
+        vertex[i] = QPoint3d(pts[i], rasterTile.m_pointParams);
 
     rasterTile.m_points = vertex;
     rasterTile.m_numPoints = 4;
@@ -2374,4 +2315,34 @@ void GeometryListBuilder::ReInitialize(TransformCR localToWorld, TransformCR acc
 
     _Reset();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d GeometryList::ComputeRange() const
+    {
+    DRange3d range = DRange3d::NullRange();
+    for (auto const& geom : *this)
+        range.Extend(geom->GetTileRange());
+
+    return range;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void QVertex3dList::Requantize()
+    {
+    if (IsFullyQuantized())
+        return;
+
+    m_qpoints.Requantize(QPoint3d::Params(m_range));
+    m_qpoints.reserve(size());
+
+    for (auto const& fpt : m_fpoints)
+        m_qpoints.Add(DPoint3d::From(fpt));
+
+    m_fpoints.clear();
+    }
+
 
