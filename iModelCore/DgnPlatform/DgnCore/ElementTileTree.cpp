@@ -1021,6 +1021,7 @@ GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Ren
     m_mutex.unlock(); // >> UNLOCK
 
     GeomPartPtr part = builder->GeneratePart(partId, db, geomParams, context);
+    part->SetInCache(true);
 
     m_mutex.lock(); // << LOCK
 
