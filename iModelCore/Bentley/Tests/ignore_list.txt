@@ -22,9 +22,6 @@ DirectoryObserverTests.ModificationInObservedDirectory_UIThread
 #TFS 633328: randomly Crash on iosArm64
 DirectoryObserverTests.*
 
-AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
-    # bim0200, x64, NDEBUG, PRG, Hang
-
 #--------------------------------------------------------------------------------------
 # Randomly hanging tests, NDEGUG, Winx64
 #--------------------------------------------------------------------------------------

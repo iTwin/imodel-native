@@ -409,7 +409,7 @@ BeFileStatus BeFile::Flush()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileStatus BeFile::Close()
     {
-    if (IsBogus() || !IsOpen())
+    if (!IsOpen())
         return (m_lastError != BeFileStatus::Success)? m_lastError: (m_lastError=BeFileStatus::FileNotOpenError);
 
 #if defined (BENTLEYCONFIG_OS_WINDOWS)

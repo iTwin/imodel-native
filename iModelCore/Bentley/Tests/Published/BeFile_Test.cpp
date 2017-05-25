@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFile_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT) || defined (__unix__)
@@ -561,18 +561,22 @@ TEST_F(BeFileTests, GetLastError)
         uint32_t numBytes = (uint32_t)strlen(buf) * sizeof(char);
         BeFileStatus status;
         BeFileStatus status2;
+        m_file.Create(filePath, true);
+        m_file.Close();
         status =m_file.Write(&bytesWritten, buf, numBytes);
         EXPECT_TRUE(status != BeFileStatus::Success)<<"Write operation suceeded without opening file";
         status2 =m_file.GetLastError();
         EXPECT_TRUE(status ==status2)<<"Last error does not match after trying to write to not opened file.";
-
+        
         status =m_file.Open(filePath, BeFileAccess::Read);
+        EXPECT_TRUE(status == BeFileStatus::Success) << "File failed to open for read operation";
         status =m_file.Write(&bytesWritten, buf, numBytes);
         EXPECT_TRUE(status != BeFileStatus::Success)<<"Suceeded to write to file that was opened for reading, file: "<<filePath;
         status2 =m_file.GetLastError();
         EXPECT_TRUE(status == status2)<<"Last error does not match after trying to write to read only file, file: ."<<filePath;
         m_file.Close();
         status =m_file.Open(filePath, BeFileAccess::Write);
+        EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to open file for write operation";
         status =m_file.Write(&bytesWritten, buf, numBytes);
         EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file that was opened for writing, file: "<<filePath;
         status2 =m_file.GetLastError();

@@ -25,13 +25,7 @@ nameToDefine    = __BENTLEYDLL_BUILD__
 nameToDefine    = BC__RWSTD_LIB_SRC
 %include cdefapnd.mki
 
-%if defined(STATIC_LIB)
-    %if defined (CORVU)
-        nameToDefine=CORVU
-        %include cdefapnd.mki
-    %endif
-%endif
-
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
 %if defined (CREATE_STATIC_LIBRARIES) && !defined (TMP_BUILD_STATIC)     # Temporary.
     appName = BentleyStaticLib
