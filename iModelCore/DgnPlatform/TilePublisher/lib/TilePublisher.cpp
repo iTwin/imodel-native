@@ -3175,13 +3175,11 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
                 continue;
                 }
 
-            DRange3d modelRange;
             auto modelRangeIter = m_modelRanges.find(modelId);
-            if (m_modelRanges.end() != modelRangeIter)
-                modelRange = modelRangeIter->second;
-            else
-                modelRange = model->ToGeometricModel()->QueryModelRange(); // This gives a much larger range...
+            if (m_modelRanges.end() == modelRangeIter)
+                continue; // this model produced no tiles. ignore it.
 
+            DRange3d modelRange = modelRangeIter->second;
             if (modelRange.IsNull())
                 {
                 BeAssert(false && "Null model range");
