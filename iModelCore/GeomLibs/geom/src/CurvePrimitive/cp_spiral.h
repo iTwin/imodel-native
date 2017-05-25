@@ -560,7 +560,7 @@ bool _AddStrokes (bvector <PathLocationDetail> &points, IFacetOptionsCR options,
     double f0 = m_strokes.m_f.front ();
     double baseDistance = points.empty () ? 0.0 : points.back ().DistanceFromPathStart ();
     double totalLength;
-    totalLength = m_placement.SpiralLength01 ();
+    totalLength = m_placement.SpiralLengthActiveInterval ();
     if (options.GetAngleTolerance () < s_defaultStrokeRadians
         || !segment.Is01 ()
         )
