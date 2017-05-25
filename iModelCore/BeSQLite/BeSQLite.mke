@@ -57,6 +57,8 @@ $(o)L10N$(oext)         : $(baseDir)L10N.cpp $(baseDir)/PublicAPI/BeSQLite/L10N.
 
 $(o)BeLzma$(oext)     : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h ${MultiCompileDepends}
 
+$(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp $(baseDir)/PublicAPI/BeSQLite/BeBriefcaseBasedIdSequence.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

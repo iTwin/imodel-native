@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeLzma.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -206,7 +206,7 @@ public:
 
     //! Read and decompress the next page
     //! @param[out] pData Buffer to copy the data to (allocated by the client)
-    //! @param[in,out] pnData Set this to the size of the buffer. The method sets it to the actual
+    //! @param[in,out] pnData Caller sets this to the size of the buffer. The method then sets it to the actual
     //! number of bytes copied. If the input is exhausted, the value is set to 0. 
     //! @return ZIP_SUCCESS if successfully extracted data. Returns appropriate error otherwise. 
     BE_SQLITE_EXPORT ZipErrors DecompressNextPage(void* pData, int* pnData);

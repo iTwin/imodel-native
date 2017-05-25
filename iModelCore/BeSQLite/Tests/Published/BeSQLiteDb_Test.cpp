@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
 #include "BeSQLite/ChangeSet.h"
-
 #include <vector>
 #include <limits>
+#include <string>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Db
@@ -985,5 +985,194 @@ TEST_F(BeSQLiteDbTests, RealUpdateTest)
 
     changeTracker.EndTracking();
     changeSet.Free();
+    m_db.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, GetColumn)
+{
+    SetupDb (L"test1.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("TestTable1", "id NUMERIC, name TEXT")) << "Creating table failed.";
+    EXPECT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("INSERT INTO TestTable1 Values(1, 'test')"));
+
+    bvector<Utf8String> buff;
+    bool res1= m_db.GetColumns (buff ,"TestTable1");
+    EXPECT_EQ (res1, true);
+
+    bool IdStatus = false;
+    IdStatus = buff[0].Equals(Utf8String ("id"));
+    EXPECT_EQ (IdStatus, true);
+
+    bool nameStatus = false;
+    nameStatus = buff[1].Equals(Utf8String ("name"));
+    EXPECT_EQ (nameStatus, true);
+
+    EXPECT_EQ (BE_SQLITE_OK, m_db.AbandonChanges ());
+    m_db.CloseDb ();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, SaveCreationDate)
+{
+    bool result=false;
+    SetupDb (L"test2.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    BentleyB0200::DateTime currentDate = BentleyB0200::DateTime::GetCurrentTimeUtc ();
+    EXPECT_EQ (BE_SQLITE_OK, m_db.SaveCreationDate ());
+   
+    BentleyB0200::DateTime newDate;
+    EXPECT_EQ(BE_SQLITE_ROW, m_db.QueryCreationDate(newDate));
+
+    if ( (newDate.GetYear()==currentDate.GetYear()) && (newDate.GetMonth()==currentDate.GetMonth()) && (newDate.GetDay () == currentDate.GetDay ()) && (newDate.GetHour()==currentDate.GetHour()) && (newDate.GetMinute()==currentDate.GetMinute()) && (newDate.GetSecond()==currentDate.GetSecond()) )
+    {
+        result=true;
+    }
+    EXPECT_TRUE (result);
+
+    EXPECT_EQ (BE_SQLITE_OK, m_db.UpgradeBeSQLiteProfile ());
+
+    m_db.CloseDb ();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, AddColumnToTable)
+{
+    SetupDb (L"test1.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("TestTable2", "id NUMERIC, name TEXT")) << "Creating table failed.";
+    EXPECT_EQ (BE_SQLITE_OK, m_db.AddColumnToTable ("TestTable2", "TitleId", "INTEGER"));
+
+    bvector<Utf8String> buff;
+    bool res1 = m_db.GetColumns (buff, "TestTable2");
+    EXPECT_EQ (res1, true);
+
+    bool IdStatus = false;
+    IdStatus = buff[2].Equals (Utf8String ("TitleId"));
+    EXPECT_EQ (IdStatus, true);
+
+    EXPECT_EQ (BE_SQLITE_OK, m_db.CreateIndex("newInd", "TestTable2",true,"id",nullptr));
+
+    m_db.CloseDb ();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
+    {
+    /* Tests that 
+     * 1. Schema and data changes are not allowed to the same tables in the same change set. 
+     * This validates our assumptions in storing transactions and creating revisions 
+     * 2. Schema and data changes can be made to different tables in the same change set. 
+     * This validates our assumptions in allowing this for bridge-framework workflows when
+     * importing v8 legacy schemas. 
+     * */
+    
+    SetupDb(L"RealTest.db");
+
+    DbResult result = m_db.ExecuteSql("CREATE TABLE TestTable1 ([Id] INTEGER PRIMARY KEY, [Column1] REAL)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    result = m_db.ExecuteSql("CREATE TABLE TestTable2 ([Id] INTEGER PRIMARY KEY, [Column1] REAL)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+
+    // Add row to TestTable1
+    result = m_db.ExecuteSql("INSERT INTO TestTable1 (Column1) values (1.1)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Add column to TestTable2
+    result = m_db.AddColumnToTable("TestTable2", "Column2", "REAL");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Add row to TestTable2
+    result = m_db.ExecuteSql("INSERT INTO TestTable2 (Column1,Column2) values (1.1,2.2)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Create change set - succeeds!
+    MyChangeSet changeSet;
+    result = changeSet.FromChangeTrack(changeTracker);
+    ASSERT_TRUE(result == BE_SQLITE_OK); 
+
+    // Add column to TestTable1
+    result = m_db.AddColumnToTable("TestTable1", "Column2", "REAL");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Add row to TestTable 1
+    result = m_db.ExecuteSql("INSERT INTO TestTable1 (Column1,Column2) values (3.3,4.4)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Create change set - fails!
+    changeSet.Free();
+    result = changeSet.FromChangeTrack(changeTracker);
+    ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
+
+    changeTracker.EndTracking();
+    changeSet.Free();
+    m_db.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, ApplyChangeSetAfterSchemaChanges)
+    {
+    /* Tests that you can create a change set, make a schema change, and then apply that change 
+     * set to the Db. This validates our assumption that we can merge a schema revision when
+     * there are local changes */
+
+    SetupDb(L"RealTest.db");
+
+    DbResult result = m_db.ExecuteSql("CREATE TABLE TestTable ([Id] INTEGER PRIMARY KEY, [Column1] REAL, [Column2] REAL)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+
+    // Add row
+    result = m_db.ExecuteSql("INSERT INTO TestTable (Column1,Column2) values (1.1,2.2)");
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Create change set
+    MyChangeSet changeSet;
+    result = changeSet.FromChangeTrack(changeTracker);
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    changeTracker.EndTracking();
+
+    changeSet.Dump("ChangeSet", m_db);
+
+    // Delete all rows
+    result = m_db.ExecuteSql("DELETE FROM TestTable");
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Add column 
+    result = m_db.AddColumnToTable("TestTable", "Column3", "REAL");
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Apply change set
+    result = changeSet.ApplyChanges(m_db);
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+
+    // Validate
+    Statement stmt;
+    result = stmt.Prepare(m_db, "SELECT Column1 FROM TestTable WHERE Column2=2.2");
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    result = stmt.Step();
+    EXPECT_TRUE(result == BE_SQLITE_ROW);
+    EXPECT_EQ(1.1, stmt.GetValueDouble(0));
+
+    changeSet.Free();
+    stmt.Finalize();
     m_db.CloseDb();
     }
