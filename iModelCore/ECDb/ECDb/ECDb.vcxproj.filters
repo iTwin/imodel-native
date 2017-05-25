@@ -151,9 +151,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\ECSqlStatementBase.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\InsertStatementExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>
@@ -377,9 +374,6 @@
     <ClInclude Include="ECSql\ArrayECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\ECSqlPreparedStatement_Old.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\ECSqlPreparedStatement.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
@@ -516,9 +510,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlFieldFactory.cpp">
       <Filter>ECSql\Fields</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlStatementBase.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp">
       <Filter>docs\samplecode</Filter>
@@ -719,9 +710,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\ArrayECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlPreparedStatement_Old.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>

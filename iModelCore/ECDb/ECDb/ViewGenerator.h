@@ -159,17 +159,20 @@ struct ViewGenerator final
         ~ViewGenerator();
 
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
+
         static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
 
         static BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, Context&, ClassMap const&);
 
-        static BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, Context&, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin = false);
+        static BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, Context&, bset<DbTable const*>& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin = false);
         static BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassEndTableMap const& relationMap);
         static BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassLinkTableMap const& relationMap);
         static BentleyStatus DoRenderRelationshipClassMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr);
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
         static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
+
+        static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, bool polymorphic);
 
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
 
@@ -215,6 +218,7 @@ struct ConstraintECClassIdJoinInfo final
         DbColumn const& GetForignECInstanceIdColumn() const { BeAssert(RequiresJoin()); return *m_foreignECInstanceIdCol; }
         NativeSqlBuilder GetNativeConstraintECClassIdSql(bool appendAlias) const;
         NativeSqlBuilder GetNativeJoinSql() const;
-        static DbTable const* RequiresJoinTo(ConstraintECClassIdPropertyMap const& propertyMap, bool ignoreVirtualColumnCheck = false);
+
+        static DbTable const* RequiresJoinTo(ConstraintECClassIdPropertyMap const&, bool ignoreVirtualColumnCheck);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

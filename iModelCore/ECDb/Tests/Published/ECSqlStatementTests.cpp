@@ -14,7 +14,6 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -355,7 +354,7 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
                              <MapStrategy>TablePerHierarchy</MapStrategy>
                         </ClassMap>
                         <ShareColumns xmlns='ECDbMap.02.00'>
-                              <SharedColumnCount>100</SharedColumnCount>
+                              <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>
                         </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="I" typeName="int" />
@@ -1239,8 +1238,8 @@ TEST_F(ECSqlStatementTestFixture, NestedSelectStatementsTests)
     stmt.Finalize();
 
     //Using GetClassId in Nested Select statement
-    ECClassId supplierClassId = ecdb.Schemas().GetClassId("ECST", "Supplier", ResolveSchema::BySchemaAlias);
-    ECClassId customerClassId = ecdb.Schemas().GetClassId("ECST", "Customer", ResolveSchema::BySchemaAlias);
+    ECClassId supplierClassId = ecdb.Schemas().GetClassId("ECST", "Supplier", SchemaLookupMode::ByAlias);
+    ECClassId customerClassId = ecdb.Schemas().GetClassId("ECST", "Customer", SchemaLookupMode::ByAlias);
     ECClassId firstClassId = std::min<ECClassId>(supplierClassId, customerClassId);
     ECClassId secondClassId = std::max<ECClassId>(supplierClassId, customerClassId);
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT ECClassId FROM ECST.Supplier UNION ALL SELECT ECClassId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
@@ -1738,7 +1737,6 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(ecdb);
 
     ECSqlStatement stmt;
-
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ECST.Product SET ProductName='Laptop' WHERE ProductName IN(SELECT ProductName FROM ECST.Product GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Product WHERE UnitPrice >500))"));
     ASSERT_TRUE(BE_SQLITE_DONE == stmt.Step());
     stmt.Finalize();
@@ -1746,7 +1744,6 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT COUNT(*) FROM ECST.Product WHERE ProductName='Laptop'"));
     ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
     ASSERT_EQ(3, stmt.GetValueInt(0));
-    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1755,7 +1752,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
 TEST_F(ECSqlStatementTestFixture, InsertStructArray)
     {
     const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
     ECSqlStatement statement;
@@ -2127,22 +2124,18 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES(NULL)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES(NULL)"));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(pKey));
-
     statement.Finalize();
-    stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES(NULL)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES(NULL)"));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(psaKey));
     ecdb.SaveChanges();
     }
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, psaKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(2, pKey.GetInstanceId()));
 
@@ -2155,18 +2148,14 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(1, (int) psaKey.GetInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
     ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(2, (int) pKey.GetInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
     }
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, psaKey.GetInstanceId().GetValue()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(2, pKey.GetInstanceId().GetValue()));
 
@@ -2179,8 +2168,7 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
 
     {
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
 
     Utf8Char psaIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
     psaKey.GetInstanceId().ToString(psaIdStr);
@@ -2206,7 +2194,7 @@ TEST_F(ECSqlStatementTestFixture, InsertNullForECInstanceId)
 
     auto assertSequence = [] (ECDbCR ecdb, BeInt64Id expectedSequenceValue)
         {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Val FROM be_Local WHERE Name='ec_ecinstanceidsequence'");
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Val FROM be_Local WHERE Name='ec_instanceidsequence'");
         ASSERT_TRUE(stmt != nullptr);
         ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
         ASSERT_EQ(expectedSequenceValue.GetValue(), stmt->GetValueUInt64(0));
@@ -3874,7 +3862,7 @@ TEST_F(ECSqlStatementTestFixture, GeometryAndOverflow)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>2</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
@@ -4844,7 +4832,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
         "    <ECEntityClass typeName='Sub1'>"
         "        <ECCustomAttributes>"
         "           <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
         "           </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <BaseClass>Base</BaseClass>"
@@ -4861,7 +4849,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
 
     ECClassId sub1ClassId = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("Sub1")->GetId();
     Utf8String expectedNativeSql;
-    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[Id],ECClassId) VALUES (1.1,:_ecdb_sqlparam_ix1_col1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseId],ECClassId) VALUES (:_ecdb_sqlparam_ix1_col1,:_ecdb_sqlparam_ix1_col2,:_ecdb_sqlparam_ix1_col3,:_ecdb_sqlparam_id_col1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Id],[Prop1],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,1.1,%s);INSERT INTO [ts_Sub1] ([BaseId],[js2],[js3],[js4],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,:_ecdb_ecsqlparam_ix1_col1,:_ecdb_ecsqlparam_ix1_col2,:_ecdb_ecsqlparam_ix1_col3,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();
@@ -4891,7 +4879,7 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>5</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
@@ -5040,7 +5028,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>2</SharedColumnCount>
+                                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
@@ -5299,7 +5287,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     ASSERT_TRUE(key.IsValid());
     model3dKeys.push_back(key);
     }
-
+    ecdb.SaveChanges();
     {
     //Select models via mixin
     ECSqlStatement stmt;
@@ -5364,19 +5352,38 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     ASSERT_EQ(2, rowCount) << stmt.GetECSql();
     }
 
-    //UPDATE Mixin
+    //UPDATE Mixin non-polymorphically (-> noop)
+    {
+    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    stmt.Finalize();
+    }
+
+    //UPDATE Mixin polymorphically
     {
     const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    //Updates against mixins don't work yet. Once fixed this line should be uncommented.
-    //ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    stmt.Finalize();
+    }
+
+    //DELETE Mixin non-polymorphically (-> noop)
+    {
+    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ts.IIsGeometricModel WHERE Is2d=False"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    //the ECSQL deletes 2 models which results in 4 rows deleted (2 in primary and 2 in joined table)
     ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
     stmt.Finalize();
     }
 
-    //DELETE Mixin
+    //DELETE Mixin polymorphically
     {
     const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;

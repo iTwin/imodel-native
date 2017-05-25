@@ -48,6 +48,13 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumns
     if (SUCCESS != DetermineJoinedTableInfo(hasJoinedTablePerDirectSubclassOption, baseMapStrategy, ecClass, issues))
         return ERROR;
 
+    if (m_joinedTableInfo == JoinedTableInfo::ParentOfJoinedTable && m_shareColumnsMode == ShareColumnsMode::Yes)
+        {
+        issues.Report("Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although it or its base class already enabled column sharing.",
+                      ecClass.GetFullName());
+        return ERROR;
+        }
+
     m_isValid = true;
     return SUCCESS;
     }
@@ -70,8 +77,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
             }
 
         m_shareColumnsMode = ShareColumnsMode::Yes;
-        m_sharedColumnCount = baseMapStrategy->GetTphInfo().GetSharedColumnCount();
-        m_sharedColumnCountPerOverflowTable = baseMapStrategy->GetTphInfo().GetSharedColumnCountPerOverflowTable();
+        m_maxSharedColumnsBeforeOverflow = baseMapStrategy->GetTphInfo().GetMaxSharedColumnsBeforeOverflow();
         return SUCCESS;
         }
 
@@ -79,42 +85,22 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
     //now see whether it is enabled for this class
     if (shareColumnsCA.IsValid()) //CA exists on this class
         {
-        //if it says that it should only apply to subclasses set column sharing to false for this class
-        bool applyToSubclassesOnly = false;
+        Nullable<bool> applyToSubclassesOnly;
         if (SUCCESS != shareColumnsCA.TryGetApplyToSubclassesOnly(applyToSubclassesOnly))
             return ERROR;
 
-        if (applyToSubclassesOnly)
+        //default (if not set in CA) is false
+        if (!applyToSubclassesOnly.IsNull() && applyToSubclassesOnly.Value())
             m_shareColumnsMode = ShareColumnsMode::ApplyToSubclassesOnly;
         else
             m_shareColumnsMode = ShareColumnsMode::Yes;
 
-        int customShareColCount = 0; //default is 0 if not set in the CA
-        if (SUCCESS != shareColumnsCA.TryGetSharedColumnCount(customShareColCount))
-            return ERROR;
-
-        if (customShareColCount < 0)
+        if (SUCCESS != shareColumnsCA.TryGetMaxSharedColumnsBeforeOverflow(m_maxSharedColumnsBeforeOverflow))
             {
-            issues.Report("Failed to map ECClass %s. Its 'ShareColumns' custom attribute is invalid. The value of the property 'SharedColumnCount' must be greater or equal to 0, but was %d.",
-                          ecClass.GetFullName(), customShareColCount);
+            issues.Report("Failed to map ECClass %s. It has the ShareColumns custom attribute with an invalid value for 'MaxSharedColumnsBeforeOverflow'. Either provide a non-negative value or omit the property.",
+                                  ecClass.GetFullName());
             return ERROR;
             }
-
-        m_sharedColumnCount = customShareColCount;
-
-
-        int customShareColCountPerOverflowTable = 32; //default is 32 if not set in the CA
-        if (SUCCESS != shareColumnsCA.TryGetSharedColumnCountPerOverflowTable(customShareColCountPerOverflowTable))
-            return ERROR;
-
-        if (customShareColCountPerOverflowTable <= 0)
-            {
-            issues.Report("Failed to map ECClass %s. Its 'ShareColumns' custom attribute is invalid. The value of the property 'SharedColumnCountPerOverflowTable' must be greater or equal to 1, but was %d.",
-                          ecClass.GetFullName(), customShareColCountPerOverflowTable);
-            return ERROR;
-            }
-
-        m_sharedColumnCountPerOverflowTable = customShareColCountPerOverflowTable;
         }
 
     return SUCCESS;
@@ -155,11 +141,11 @@ BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
     {
     if (ECDbMapCustomAttributeHelper::TryGetClassMap(m_classMapCA, ecClass))
         {
-        Utf8String mapStrategyStr;
+        Nullable<Utf8String> mapStrategyStr;
         if (SUCCESS != m_classMapCA.TryGetMapStrategy(mapStrategyStr))
             return ERROR;
 
-        if (mapStrategyStr.empty())
+        if (mapStrategyStr.IsNull())
             {
             m_hasMapStrategy = false;
             //only set this to default in case using code calls GetStrategy without
@@ -168,7 +154,7 @@ BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
             }
         else
             {
-            if (SUCCESS != TryParse(m_mapStrategy, mapStrategyStr.c_str(), ecClass))
+            if (SUCCESS != TryParse(m_mapStrategy, mapStrategyStr.Value().c_str(), ecClass))
                 return ERROR;
 
             m_hasMapStrategy = true;

@@ -18,15 +18,15 @@ struct SchemaImportContext;
 #endif
 
 //=======================================================================================
-//! Options for how to specify the ECSchema when calling SchemaManager::GetClass
+//! Options for how to refer to an ECSchema when looking it up using the SchemaManager
 //! @ingroup ECDbGroup
 // @bsiclass                                                Muhammad.Zaighum      10/2014
 //+===============+===============+===============+===============+===============+======
-enum class ResolveSchema
+enum class SchemaLookupMode
     {
-    BySchemaName, //!< ECClass is qualified by schema name
-    BySchemaAlias, //!< ECClass is qualified by schema alias
-    AutoDetect//!< Detect automatically whether ECClass is qualified by schema name or alias
+    ByName, //!< Schema is referred to by its name
+    ByAlias, //!< Schema is referred to by its alias
+    AutoDetect //!< Detect automatically whether schema is referred to by name or alias
     };
 
 //=======================================================================================
@@ -74,6 +74,19 @@ enum class ResolveSchema
 //+===============+===============+===============+===============+===============+======
 struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
     {
+    public:
+
+#if !defined (DOCUMENTATION_GENERATOR)
+        //! Schema import options. Not needed by regular callers. They are specific to certain
+        //! exceptional workflows and therefore only used by them.
+        enum class SchemaImportOptions
+            {
+            None = 0,
+            DoNotFailSchemaValidationForLegacyIssues,
+            Poisoning
+            };
+#endif
+
     private:
         ECDb const& m_ecdb;
         SchemaReader* m_schemaReader;
@@ -81,8 +94,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         BeMutex& m_mutex;
 
         BentleyStatus DoImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*) const;
-        BentleyStatus PersistSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
-
+        BentleyStatus PersistSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECN::ECSchemaCP> const& schemasToImport) const;
         ECN::ECSchemaCP GetSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
 
         //! Implementation of IECSchemaLocater
@@ -99,7 +111,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".
-        //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
+        //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpgradeSupportedFeatures).
         //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
         //! they should be obtained as needed through the SchemaManager API.
         //! @remarks ECDb always persists ECSchemas in their invariant culture. That means localization ECSchemas are ignored
@@ -115,12 +127,12 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         //! If the option is not set, nullptr can be passed for @p token.
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
-        //! @see @ref ECDbECSchemaImportAndUpdate
+        //! @see @ref ECDbECSchemaImportAndUpgrade
         ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
-        //only for legacy support which cannot yet follow the strict bim rules
-        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, SchemaImportToken const* token = nullptr) const;
+        //only for legacy support which cannot yet follow the strict BIS rules
+        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions, SchemaImportToken const* token = nullptr) const;
 #endif
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
@@ -142,18 +154,18 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         ECDB_EXPORT bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities = true) const;
 
         //! Gets the ECClass for the specified name.
-        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p resolveSchema)
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p mode)
         //! @param[in] className Name of the class to be retrieved
-        //! @param[in] resolveSchema indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+        ECDB_EXPORT ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
 
         //! Gets the ECClassId for the ECClass with the specified name.
-        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p resolveSchema)
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p mode)
         //! @param[in] className Name of the class to be retrieved
-        //! @param[in] resolveSchema indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
-        ECDB_EXPORT ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+        ECDB_EXPORT ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
 
         //! Gets the ECClass for the specified ECClassId.
         //! @param[in] ecClassId Id of the ECClass to retrieve

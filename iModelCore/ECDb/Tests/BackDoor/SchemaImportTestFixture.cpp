@@ -103,6 +103,24 @@ bool SchemaImportTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle               05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertColumnNames(ECDbCR ecdb, Utf8CP tableName, std::vector<Utf8String> const& expectedColumnNames, Utf8CP scenario)
+    {
+    bvector<Utf8String> actualColNames;
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, tableName)) << tableName << " Scenario: " << scenario;
+    ASSERT_EQ(expectedColumnNames.size(), actualColNames.size()) << tableName << " Scenario: " << scenario;
+    std::sort(actualColNames.begin(), actualColNames.end());
+
+    std::vector<Utf8String> expectedColNamesSorted {expectedColumnNames};
+    std::sort(expectedColNamesSorted.begin(), expectedColNamesSorted.end());
+    for (size_t i = 0; i < expectedColNamesSorted.size(); i++)
+        {
+        ASSERT_STRCASEEQ(expectedColNamesSorted[0].c_str(), actualColNames[0].c_str()) << tableName << " Scenario: " << scenario;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario)
@@ -116,6 +134,7 @@ void SchemaImportTestFixture::AssertColumnCount(ECDbCR ecdb, std::vector<std::pa
         ASSERT_EQ(expectedColCount, colNames.size()) << tableName << " Scenario: " << scenario;
         }
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
@@ -221,7 +240,7 @@ void SchemaImportTestFixture::AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName,
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, ShareColumnsMode, SharedColumnCount, SharedColumnCountPerOverflowTable, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     EXPECT_TRUE(stmt != nullptr);
 
     stmt->BindId(1, classId);
@@ -232,9 +251,7 @@ bool DbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECD
         parameterIx++;
         stratInfo.m_tphInfo.m_sharedColumnsMode = stmt->IsColumnNull(parameterIx) ? MapStrategyInfo::TablePerHierarchyInfo::ShareColumnsMode::No : (MapStrategyInfo::TablePerHierarchyInfo::ShareColumnsMode) stmt->GetValueInt(parameterIx);
         parameterIx++;
-        stratInfo.m_tphInfo.m_sharedColumnCount = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
-        parameterIx++;
-        stratInfo.m_tphInfo.m_sharedColumnCountPerOverflowTable = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
+        stratInfo.m_tphInfo.m_maxSharedColumnsBeforeOverflow = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
         parameterIx++;
         stratInfo.m_tphInfo.m_joinedTableInfo = stmt->IsColumnNull(parameterIx) ? MapStrategyInfo::JoinedTableInfo::None : (MapStrategyInfo::JoinedTableInfo) stmt->GetValueInt(parameterIx);
         return true;
@@ -247,17 +264,51 @@ bool DbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECD
 //--------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                 03/17
 //+---------------+---------------+---------------+---------------+---------------+------
-bool DbMappingTestFixture::TryGetColumnInfo(std::vector<ColumnInfo>& colInfos, ECDbCR ecdb, ECN::ECPropertyCR prop) const
+void DbMappingTestFixture::AssertPropertyMapping(ECDbCR ecdb, PropertyAccessString const& accessString, std::map<Utf8String, ColumnInfo> const& expectedColumnInfosByAccessString) const
     {
+    std::map<Utf8String, ColumnInfo> actualColInfos;
+    ASSERT_TRUE(TryGetColumnInfo(actualColInfos, ecdb, accessString)) << accessString.ToString().c_str();
+    ASSERT_EQ(expectedColumnInfosByAccessString.size(), actualColInfos.size()) << accessString.ToString().c_str();
+    for (std::pair<Utf8String, ColumnInfo> const& expectedColInfo : expectedColumnInfosByAccessString)
+        {
+        Utf8StringCR expectedAccessString = expectedColInfo.first;
+        auto it = actualColInfos.find(expectedAccessString);
+        ASSERT_TRUE(it != actualColInfos.end()) << expectedAccessString.c_str() << " for " << accessString.ToString().c_str();
+        ColumnInfo const& actualColInfo = it->second;
+        ASSERT_EQ(expectedColInfo.second, actualColInfo) << "Expected: " << expectedColInfo.second.ToString().c_str() << " Actual: " << actualColInfo.ToString().c_str() << " " << expectedAccessString.c_str() << " for " << accessString.ToString().c_str();
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                 03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void DbMappingTestFixture::AssertPropertyMapping(ECDbCR ecdb, PropertyAccessString const& accessString, std::vector<ColumnInfo> const& expectedColInfos) const
+    {
+    std::vector<ColumnInfo> actualColInfos;
+    ASSERT_TRUE(TryGetColumnInfo(actualColInfos, ecdb, accessString)) << accessString.ToString().c_str();
+    ASSERT_EQ(expectedColInfos.size(), actualColInfos.size()) << accessString.ToString().c_str();
+    for (size_t i = 0; i < expectedColInfos.size(); i++)
+        {
+        ASSERT_EQ(expectedColInfos[i], actualColInfos[i]) << "Expected: " << expectedColInfos[i].ToString().c_str() << " Actual: " << actualColInfos[i].ToString().c_str() << " " <<  accessString.ToString().c_str();
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                 03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DbMappingTestFixture::TryGetColumnInfo(std::map<Utf8String, ColumnInfo>& colInfosPerAccessString, ECDbCR ecdb, PropertyAccessString const& accessString) const
+    {
+    ECN::ECClassId classId = ecdb.Schemas().GetClassId(accessString.m_schemaNameOrAlias, accessString.m_className, SchemaLookupMode::AutoDetect);
+    EXPECT_TRUE(classId.IsValid());
+
     CachedStatementPtr stmt = ecdb.GetCachedStatement(
         //can return multiple rows for same prop and same column in case of inherited prop. Therefore using DISTINCT
         R"sql(
-        SELECT distinct pp.AccessString, t.Name, c.Name, c.IsVirtual FROM ec_PropertyMap pm 
-        INNER JOIN ec_Column c ON c.Id = pm.ColumnId
-        INNER JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId
-        INNER JOIN ec_Table t ON t.Id = c.TableId
-        INNER JOIN ec_Property p ON p.Id = pp.RootPropertyId
-        WHERE p.Id=? ORDER BY t.Name, c.Name
+        SELECT pp.AccessString, t.Name, c.Name, c.IsVirtual FROM ec_Table t
+                     INNER JOIN ec_Column c ON t.Id=c.TableId
+                     INNER JOIN ec_PropertyMap pm ON pm.ColumnId=c.Id
+                     INNER JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+                WHERE pm.ClassId=? AND instr(pp.AccessString,?) = 1 ORDER BY pp.AccessString,t.Name,c.Name
         )sql");
 
     if (stmt == nullptr)
@@ -266,20 +317,51 @@ bool DbMappingTestFixture::TryGetColumnInfo(std::vector<ColumnInfo>& colInfos, E
         return false;
         }
 
-    EXPECT_EQ(BE_SQLITE_OK, stmt->BindId(1, prop.GetId()));
+    EXPECT_EQ(BE_SQLITE_OK, stmt->BindId(1, classId));
+    EXPECT_EQ(BE_SQLITE_OK, stmt->BindText(2, accessString.m_propAccessString, Statement::MakeCopy::No));
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        ColumnInfo colInfo;
-        colInfo.m_propAccessString.assign(stmt->GetValueText(0));
-        colInfo.m_tableName.assign(stmt->GetValueText(1));
-        colInfo.m_columnName.assign(stmt->GetValueText(2));
-        colInfo.m_isVirtual = stmt->GetValueInt(3) != 0;
-        colInfos.push_back(colInfo);
+        Utf8String actualPropAccessString(stmt->GetValueText(0));
+        BeAssert(colInfosPerAccessString.find(actualPropAccessString) == colInfosPerAccessString.end());
+        colInfosPerAccessString.insert(std::make_pair(actualPropAccessString, ColumnInfo(stmt->GetValueText(1), stmt->GetValueText(2), stmt->GetValueInt(3) != 0)));
+        }
+
+    return !colInfosPerAccessString.empty();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                 03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DbMappingTestFixture::TryGetColumnInfo(std::vector<ColumnInfo>& colInfos, ECDbCR ecdb, PropertyAccessString const& accessString) const
+    {
+    ECN::ECClassId classId = ecdb.Schemas().GetClassId(accessString.m_schemaNameOrAlias, accessString.m_className, SchemaLookupMode::AutoDetect);
+    EXPECT_TRUE(classId.IsValid());
+
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(
+        //can return multiple rows for same prop and same column in case of inherited prop. Therefore using DISTINCT
+        R"sql(
+        SELECT t.Name, c.Name, c.IsVirtual FROM ec_Table t
+                     INNER JOIN ec_Column c ON t.Id=c.TableId
+                     INNER JOIN ec_PropertyMap pm ON pm.ColumnId=c.Id
+                     INNER JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId
+                WHERE pm.ClassId=? AND pp.AccessString LIKE ? COLLATE NOCASE ORDER BY t.Name,c.Name
+        )sql");
+
+    if (stmt == nullptr)
+        {
+        EXPECT_TRUE(stmt != nullptr) << ecdb.GetLastError().c_str();
+        return false;
+        }
+
+    EXPECT_EQ(BE_SQLITE_OK, stmt->BindId(1, classId));
+    EXPECT_EQ(BE_SQLITE_OK, stmt->BindText(2, accessString.m_propAccessString, Statement::MakeCopy::No));
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        colInfos.push_back(ColumnInfo(stmt->GetValueText(0), stmt->GetValueText(1), stmt->GetValueInt(2) != 0));
         }
 
     return !colInfos.empty();
     }
-
 
 END_ECDBUNITTESTS_NAMESPACE
 

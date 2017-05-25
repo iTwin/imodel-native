@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/NestedStructArrayTestSchemaHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -36,7 +36,7 @@ private:
 
 public:
 
-    static void PopulateECSqlStatementTestsDb(ECDbR ecdb);
+    static void PopulateECSqlStatementTestsDb(ECDbCR);
 
     //Populate NestedStructArray Db
     static bvector<ECN::IECInstancePtr> CreateECInstances(ECDbR ecdb, int n, Utf8CP className);

@@ -245,13 +245,6 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromGeneratedProperty(EC
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlSelectPreparedStatement& ECSqlFieldFactory::GetPreparedStatement(ECSqlPrepareContext& ctx)
-    {
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-    return ctx.GetPreparedStatement<ECSqlSelectPreparedStatement>();
-#else
-    return *ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlSelectPreparedStatement>();
-#endif
-    }
+ECSqlSelectPreparedStatement& ECSqlFieldFactory::GetPreparedStatement(ECSqlPrepareContext& ctx) { return ctx.GetPreparedStatement<ECSqlSelectPreparedStatement>(); }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

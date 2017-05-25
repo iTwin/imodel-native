@@ -138,7 +138,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECDb-Gtest/ECDbTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest -dGTEST_NAME=ECDbTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECDb-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -283,7 +283,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest-Performance" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECDb-Gtest-Performance/ECDbTestPerformance -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-Performance" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest-Performance -dGTEST_NAME=ECDbTestPerformance -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECDb-Gtest-Performance" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>

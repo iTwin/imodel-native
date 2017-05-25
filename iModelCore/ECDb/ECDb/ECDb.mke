@@ -39,7 +39,6 @@ ECDbAllHeaders = \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)ECDbSqlFunctions.h \
-                $(baseDir)BeBriefcaseBasedIdSequence.h \
                 $(baseDir)DbMap.h \
                 $(baseDir)ClassMap.h \
                 $(baseDir)RelationshipClassMap.h \
@@ -94,8 +93,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECSqlUpdatePreparer.h \
                 $(baseDir)ECSql/ECSqlDeletePreparer.h \
                 $(baseDir)ECSql/ECSqlPreparedStatement.h \
-                $(baseDir)ECSql/ECSqlPreparedStatement_Old.h \
-                $(baseDir)ECSql/ECSqlStatementBase.h \
                 $(baseDir)ECSql/ECSqlStatementImpl.h \
                 $(baseDir)ECSql/ECSqlStatementNoopImpls.h \
                 $(baseDir)ECSql/ECSqlBinder.h \
@@ -153,8 +150,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 # Build objects
 #----------------------------------------------------------------------
 $(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)BeBriefcaseBasedIdSequence$(oext):                        $(baseDir)BeBriefcaseBasedIdSequence.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbMap$(oext):                                             $(baseDir)DbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -279,10 +274,6 @@ $(o)ECSqlColumnInfo$(oext):                                   $(baseDir)ECSql/EC
 $(o)ECSqlStatement$(oext):                                    $(baseDir)ECSql/ECSqlStatement.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlPreparedStatement$(oext):                            $(baseDir)ECSql/ECSqlPreparedStatement.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSqlPreparedStatement_Old$(oext):                        $(baseDir)ECSql/ECSqlPreparedStatement_Old.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSqlStatementBase$(oext):                                $(baseDir)ECSql/ECSqlStatementBase.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatementImpl$(oext):                                $(baseDir)ECSql/ECSqlStatementImpl.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -23,17 +23,6 @@ IdECSqlBinder::IdECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& type
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindNull()
     {
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    if (auto ehs = GetOnBindEventHandlers())
-        {
-        for (auto eh : *ehs)
-            {
-            auto es = eh->BindNull();
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     if (!m_isNoop)
         {
         const DbResult sqliteStat = GetSqliteStatement().BindNull(GetSqlParamIndex());
@@ -130,18 +119,6 @@ ECSqlStatus IdECSqlBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindInt64(int64_t value)
     {
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            ECSqlStatus es = eh->BindInt64(value);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
     if (!m_isNoop)
         {
         const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParamIndex(), value);
@@ -149,11 +126,6 @@ ECSqlStatus IdECSqlBinder::_BindInt64(int64_t value)
             return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt64");
         }
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    auto onBindEventHandler = GetOnBindECInstanceIdEventHandler();
-    if (onBindEventHandler != nullptr)
-        onBindEventHandler(ECInstanceId((uint64_t) value));
-#endif
     return ECSqlStatus::Success;
     }
 
@@ -162,19 +134,6 @@ ECSqlStatus IdECSqlBinder::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            auto es = eh->BindText(value, makeCopy, byteCount);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-#endif
-
     if (!m_isNoop)
         {
         const auto sqliteStat = GetSqliteStatement().BindText(GetSqlParamIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
@@ -182,20 +141,6 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
             return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");
         }
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    auto onBindEventHandler = GetOnBindECInstanceIdEventHandler();
-    if (onBindEventHandler != nullptr)
-        {
-        ECInstanceId id;
-        if (SUCCESS != ECInstanceId::FromString(id, value))
-            {
-            LOG.error("Binding string value to Id parameter failed. Value cannot be converted to an " ECDBSYS_PROP_ECInstanceId ".");
-            return ECSqlStatus::Error;
-            }
-
-        onBindEventHandler(id);
-        }
-#endif
     return ECSqlStatus::Success;
     }
 

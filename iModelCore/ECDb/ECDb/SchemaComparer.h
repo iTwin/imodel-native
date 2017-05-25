@@ -895,7 +895,7 @@ struct ECPropertyValueChange final : ECChange
         std::unique_ptr<ECChange> m_value;
         ECN::PrimitiveType m_type;
         Utf8String m_accessString;
-        mutable std::unique_ptr<ECChangeArray<ECPropertyValueChange>> m_children;
+        mutable std::unique_ptr<ECChangeArray<ECPropertyValueChange>> m_derivedTables;
 
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
         bool _IsEmpty() const override;
@@ -976,7 +976,7 @@ struct ECPropertyValueChange final : ECChange
         ECPropertyValueChange(ChangeState state, SystemId systemId = SystemId::PropertyValue, ECChange const* parent = nullptr, Utf8CP customId = nullptr);
         ~ECPropertyValueChange() {}
         bool HasValue() const { return m_value != nullptr; }
-        bool HasChildren() const { return m_children != nullptr; }
+        bool HasChildren() const { return m_derivedTables != nullptr; }
         ECChangeArray<ECPropertyValueChange>& GetChildren() const;
         Utf8StringCR GetAccessString() const { return m_accessString; }
         ECN::PrimitiveType GetValueType() const { return m_type; }

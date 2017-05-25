@@ -82,7 +82,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     sqlGenerator.Append("SELECT ");
     
     if (exp.GetSelectionType() != SqlSetQuantifier::NotSpecified)
-        sqlGenerator.Append(exp.GetSelectionType()).AppendSpace();
+        sqlGenerator.Append(ExpHelper::ToSql(exp.GetSelectionType())).AppendSpace();
 
     // Append selection.
     ECSqlStatus status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *exp.GetSelection(), referenceSelectClauseSqlSnippetCounts);

@@ -177,8 +177,7 @@ struct FunctionCallExp final : ValueExp
         Utf8StringCR GetFunctionName() const { return m_functionName; }
         SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
 
-        BentleyStatus AddArgument(std::unique_ptr<ValueExp> argument);
-
+        BentleyStatus AddArgument(std::unique_ptr<ValueExp>);
     };
 
 
@@ -242,9 +241,17 @@ struct ParameterExp final : ValueExp
 //+===============+===============+===============+===============+===============+======
 struct UnaryValueExp final : ValueExp
     {
+    public:
+        enum class Operator
+            {
+            Minus,
+            Plus,
+            BitwiseNot
+            };
+
     private:
         size_t m_operandExpIndex;
-        UnarySqlOperator m_op;
+        Operator m_op;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
@@ -252,13 +259,13 @@ struct UnaryValueExp final : ValueExp
         Utf8String _ToString() const override;
 
     public:
-        UnaryValueExp(std::unique_ptr<ValueExp>& operand, UnarySqlOperator op) : ValueExp(Type::UnaryValue, operand->IsConstant()), m_op(op)
+        UnaryValueExp(std::unique_ptr<ValueExp>& operand, Operator op) : ValueExp(Type::UnaryValue, operand->IsConstant()), m_op(op)
             {
             m_operandExpIndex = AddChild(std::move(operand));
             }
 
         ValueExp const* GetOperand() const { return GetChild<ValueExp>(m_operandExpIndex); }
-        UnarySqlOperator GetOperator() const { return m_op; }
+        Operator GetOperator() const { return m_op; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

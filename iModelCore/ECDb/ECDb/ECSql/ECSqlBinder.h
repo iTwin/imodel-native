@@ -56,10 +56,6 @@ struct ECSqlBinder : IECSqlBinder
     private:
         ECSqlTypeInfo m_typeInfo;
         std::vector<Utf8String> m_mappedSqlParameterNames;
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-        std::function<void(ECInstanceId bindValue)> m_onBindECInstanceIdEventHandler;
-        std::unique_ptr<std::vector<IECSqlBinder*>> m_onBindEventHandlers = nullptr;
-#endif
         bool m_hasToCallOnBeforeStep = false;
         bool m_hasToCallOnClearBindings = false;
 
@@ -76,11 +72,6 @@ struct ECSqlBinder : IECSqlBinder
             std::vector<Utf8String> const& memberBinderMappedParameterNames = memberBinder.GetMappedSqlParameterNames();
             m_mappedSqlParameterNames.insert(m_mappedSqlParameterNames.end(), memberBinderMappedParameterNames.begin(), memberBinderMappedParameterNames.end());
             }
-
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-        std::function<void(ECInstanceId bindValue)> GetOnBindECInstanceIdEventHandler() const { return m_onBindECInstanceIdEventHandler; }
-        std::vector<IECSqlBinder*>* GetOnBindEventHandlers() { return m_onBindEventHandlers.get(); }
-#endif
 
         ECSqlStatus LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
 
@@ -100,10 +91,6 @@ struct ECSqlBinder : IECSqlBinder
 
         ECSqlStatus OnBeforeStep() { return _OnBeforeStep(); }
         void OnClearBindings() { return _OnClearBindings(); }
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-        ECSqlStatus SetOnBindEventHandler(IECSqlBinder& binder);
-        void SetOnBindECInstanceIdEventHandler(std::function<void(ECInstanceId bindValue)> eventHandler) { BeAssert(m_onBindECInstanceIdEventHandler == nullptr); m_onBindECInstanceIdEventHandler = eventHandler; }
-#endif
     };
 
 struct IdECSqlBinder;
@@ -135,7 +122,6 @@ struct ECSqlParameterMap : NonCopyableClass
     private:
         std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
         std::vector<ECSqlBinder*> m_binders;
-        ECSqlBinder* m_internalECInstanceIdBinder = nullptr;
         bmap<Utf8String, int, CompareIUtf8Ascii> m_nameToIndexMapping;
 
         std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
@@ -152,26 +138,15 @@ struct ECSqlParameterMap : NonCopyableClass
         //!@param[in] ecsqlParameterIndex ECSQL parameter index (1-based)
         ECSqlStatus TryGetBinder(ECSqlBinder*&, int ecsqlParameterIndex) const;
 
-        ECSqlBinder* GetInternalECInstanceIdBinder() const { return m_internalECInstanceIdBinder; }
         //!@return ECSQL Parameter index (1-based) or -1 if index could not be found for @p ecsqlParameterName
         int GetIndexForName(Utf8StringCR ecsqlParameterName) const;
 
         ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const&);
-        ECSqlBinder* AddInternalECInstanceIdBinder(ECSqlPrepareContext&);
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-        //@deprecated
-        ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder&, Utf8StringCR parameterName);
-#endif
         ECSqlStatus OnBeforeStep();
 
         //Bindings in SQLite have already been cleared at this point. The method
         //allows subclasses to clean-up additional resources tied to binding parameters
         void OnClearBindings();
-
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-        //@deprecated
-        ECSqlStatus RemapForJoinTable(ECSqlPrepareContext&);
-#endif
     };
 
 

@@ -831,9 +831,9 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
                 arrayProp = structArrayProp;
 
             if (arrayProp != nullptr)
-                ASSERT_EQ((int) arrayProp->GetMinOccurs(), val.GetInt()) << "ECPropertyDef.ArrayMinOccurs for array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ((int64_t) arrayProp->GetMinOccurs(), val.GetInt64()) << "ECPropertyDef.ArrayMinOccurs for array prop " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.ArrayMinOccurs for non-array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.ArrayMinOccurs for non-array prop " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }
@@ -847,9 +847,14 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
                 arrayProp = structArrayProp;
 
             if (arrayProp != nullptr)
-                ASSERT_EQ((int) arrayProp->GetStoredMaxOccurs(), val.GetInt()) << "ECPropertyDef.ArrayMaxOccurs for array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                {
+                if (arrayProp->IsStoredMaxOccursUnbounded())
+                    ASSERT_TRUE(val.IsNull()) << "Unbounded ECPropertyDef.ArrayMaxOccurs for array prop " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                else
+                    ASSERT_EQ((int64_t) arrayProp->GetStoredMaxOccurs(), val.GetInt64()) << "ECPropertyDef.ArrayMaxOccurs for array prop " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
             else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.ArrayMaxOccurs for non-array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.ArrayMaxOccurs for non-array prop " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }
