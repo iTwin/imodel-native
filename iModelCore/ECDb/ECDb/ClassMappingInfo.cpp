@@ -1049,7 +1049,6 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(S
     if (!ignoreJoinedTables)
         return tables;
 
-    std::map<PersistenceType, std::set<DbTable const*>> finalListOfTables;
     std::set<DbTable const*> finalSetOfTables;
     for (DbTable const* table : tables)
         {

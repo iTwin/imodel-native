@@ -75,10 +75,13 @@ struct RelationshipClassMap : ClassMap
 
 typedef RelationshipClassMap const& RelationshipClassMapCR;
 
-/*struct RelationshipClassEndTableMapEx final : RelationshipClassMap
-    {
-
-    }*/;
+//struct RelationshipClassEndTableMapEx final : RelationshipClassMap
+//    {
+//    RelationshipClassEndTableMapEx()
+//        {
+//
+//        }
+//    };
 
 
 /*=================================================================================**//**

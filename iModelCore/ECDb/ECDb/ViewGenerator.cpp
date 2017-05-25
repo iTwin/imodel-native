@@ -37,7 +37,6 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
                                      "cm.MapStrategy<>" SQLVAL_MapStrategy_NotMapped " AND cm.MapStrategy<>" SQLVAL_MapStrategy_ExistingTable))
         return ERROR;
 
-    std::vector<ClassMapCP> classMaps;
     DbMap const& map = ecdb.Schemas().GetDbMap();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -395,7 +394,6 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             return ERROR;
             }
 
-        std::vector<DbColumn const*> derivedColumnList, baseColumnList;
         GetColumnsPropertyMapVisitor baseColumnVisitor, derivedColumnVisitor;
         baseClassDataPropertyMap->AcceptVisitor(baseColumnVisitor);
         derivedPropMap->AcceptVisitor(derivedColumnVisitor);

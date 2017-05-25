@@ -801,8 +801,6 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(RelationshipMapping
         return;
 
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
-    std::vector<DbColumn const*> referencedEndIdColumns;
-
     for (SystemPropertyMap::PerTableIdPropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
         {
         DbTable& persistenceEndTable = const_cast<DbTable&>(vmap->GetColumn().GetTable());

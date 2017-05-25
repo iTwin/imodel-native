@@ -31,7 +31,6 @@ struct ColumnMaps
         bset<Utf8String, CompareIUtf8Ascii> m_strings;
 
     private:
-        void Assert(Utf8CP accessString) const { BeAssert(m_maps.find(accessString) == m_maps.end()); }
         Utf8CP Copy(Utf8CP);
 
     public:
