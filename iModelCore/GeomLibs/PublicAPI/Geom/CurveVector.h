@@ -1627,11 +1627,11 @@ ICurvePrimitiveCR curve
 
 
 /*__PUBLISH_SECTION_END__*/
-bool ImprovePlaneCurveIntersection (DPlane3dCR plane, ICurvePrimitiveCP curve, CurveLocationDetailPair& pair);
-void ImprovePlaneCurveIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, bvector<CurveLocationDetailPair> &intersections);
-bool ImprovePerpendicularProjection (ICurvePrimitiveCP curve, DPoint3dCR spacePoint, double &fraction, DPoint3dR xyz);
-bool ImprovePerpendicularProjectionXY (ICurvePrimitiveCP curve, DPoint3dCR spacePoint, double &fraction, DPoint3dR xyz, DMatrix4dCP matrix);
-bool ImprovePlaneCurveCurveTransverseIntersectionXY
+GEOMDLLIMPEXP bool ImprovePlaneCurveIntersection (DPlane3dCR plane, ICurvePrimitiveCP curve, CurveLocationDetailPair& pair);
+GEOMDLLIMPEXP void ImprovePlaneCurveIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, bvector<CurveLocationDetailPair> &intersections);
+GEOMDLLIMPEXP bool ImprovePerpendicularProjection (ICurvePrimitiveCP curve, DPoint3dCR spacePoint, double &fraction, DPoint3dR xyz);
+GEOMDLLIMPEXP bool ImprovePerpendicularProjectionXY (ICurvePrimitiveCP curve, DPoint3dCR spacePoint, double &fraction, DPoint3dR xyz, DMatrix4dCP matrix);
+GEOMDLLIMPEXP bool ImprovePlaneCurveCurveTransverseIntersectionXY
 (
 ICurvePrimitiveCR curveA,
 ICurvePrimitiveCR curveB,
@@ -1640,12 +1640,12 @@ double &fractionA,
 double &fractionB
 );
 
-void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, DEllipse3d ellipse, bvector<CurveLocationDetailPair> &intersections, double tol);
-void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, DSegment3dCR segment, bvector<CurveLocationDetailPair> &intersections, double tol);
-void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, MSBsplineCurveCR bcurve, bvector<CurveLocationDetailPair> &intersections, double tol);
-void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, bvector<DPoint3d>const &points, bvector<CurveLocationDetailPair> &intersections, double tol);
-void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, CurveVectorCR curves, bvector<CurveLocationDetailPair> &intersections, double tol);
-void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, DCatenary3dPlacementCR catenary, bvector<CurveLocationDetailPair> &intersections, double tol);
+GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, DEllipse3d ellipse, bvector<CurveLocationDetailPair> &intersections, double tol);
+GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, DSegment3dCR segment, bvector<CurveLocationDetailPair> &intersections, double tol);
+GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, MSBsplineCurveCR bcurve, bvector<CurveLocationDetailPair> &intersections, double tol);
+GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, bvector<DPoint3d>const &points, bvector<CurveLocationDetailPair> &intersections, double tol);
+GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, CurveVectorCR curves, bvector<CurveLocationDetailPair> &intersections, double tol);
+GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, DCatenary3dPlacementCR catenary, bvector<CurveLocationDetailPair> &intersections, double tol);
 
 
 
