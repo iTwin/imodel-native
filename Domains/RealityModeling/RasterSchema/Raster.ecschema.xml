@@ -1,30 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="Raster" nameSpacePrefix="raster" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+<ECSchema schemaName="Raster" alias="raster" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
 
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
 
-    <ECClass typeName="RasterModel" isDomainClass="True" >
+    <ECEntityClass typeName="RasterModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>bis:SpatialModel</BaseClass>
         <ECProperty propertyName="Clip" typeName="binary" />
-    </ECClass>
+    </ECEntityClass>
 
-    <ECClass typeName="WmsModel" isDomainClass="True" >
+    <ECEntityClass typeName="WmsModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>RasterModel</BaseClass>
-    </ECClass>
+    </ECEntityClass>
 
-    <ECClass typeName="RasterFileModel" isDomainClass="True" >
+    <ECEntityClass typeName="RasterFileModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>RasterModel</BaseClass>
-    </ECClass>
+    </ECEntityClass>
 
 </ECSchema>
