@@ -1560,7 +1560,7 @@ TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
     // NB: Reality models sometimes need to load the root outside of the context of a render system.
     // ###TODO_ELEMENT_TILE: Eventually we may need to support multiple render systems within a single application
     // - in that case will not want to discard another system's root.
-    if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystem() != system))
+    if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystemP() != system))
         m_root = _CreateTileTree(system);
 
     return m_root.get();

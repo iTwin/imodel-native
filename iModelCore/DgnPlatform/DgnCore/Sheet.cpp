@@ -266,7 +266,7 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
 
     auto& tile = static_cast<Tile&>(*m_tile);
     Tree& tree = tile.GetTree();
-    auto system = tree.GetRenderSystem();
+    auto system = GetRenderSystem();
     auto graphic = system->_CreateGraphic(GraphicBuilder::CreateParams(tree.GetDgnDb()));
 
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency

@@ -1675,17 +1675,16 @@ void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
     {
     // NEEDSWORK...Draw box...
     }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
 void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corners)
     {
-#if defined(WIP_TILETREE_PUBLISH)
-    FPoint3d                        points[4];
-    FPoint2d                        params[4];
-    int32_t                         indices[6] = {0, 1, 2, 1, 3, 2};
-    IGraphicBuilder::TriMeshArgs    triMesh;
+#ifdef NOTNOW_MAY_NOT_BE_NEEDED
+    QPoint3d        points[4];
+    QPoint2d        params[4];
+    int32_t         indices[6] = {0, 1, 2, 1, 3, 2};
+    TriMeshArgs     triMesh;
     
     triMesh.m_numIndices = 6;
     triMesh.m_vertIndex = indices;
@@ -1709,18 +1708,108 @@ void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corner
     params[2].y = params[3].y = 1.0;
 
     _AddTriMesh(triMesh);
-#else
-    DPoint3d    shapePoints[5];
-
-    shapePoints[0] = shapePoints[4] = corners.m_pts[0];
-    shapePoints[1] = corners.m_pts[1];
-    shapePoints[2] = corners.m_pts[2];
-    shapePoints[3] = corners.m_pts[3];
-
-    _AddShape(5, shapePoints, true);
 #endif
     }
  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
+    {
+    ClipAndProcessTriMesh(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args) 
+    {
+#ifdef NOTNOW_MAY_NOT_BE_NEEDED
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    // Give output a chance to handle geometry directly...
+    if (doClipping)
+        {
+        if (m_processor._ProcessTriMeshClipped(args, *this, *GetCurrentClip()))
+            return;
+        }
+    else
+        {
+        if (m_processor._ProcessTriMesh(args, *this))
+            return;
+        }
+
+    PolyfaceHeaderPtr           polyface = args.ToPolyface();
+
+    if (m_processor._GetUnhandledPreference(args, *this) == IGeometryProcessor::UnhandledPreference::Ignore)
+        return;     
+
+    if (m_processor._GetUnhandledPreference(args, *this) == IGeometryProcessor::UnhandledPreference::Facet)
+        {
+        ClipAndProcessPolyface (*polyface, false);
+        return;
+        }
+
+    SimplifyPolyfaceClipper     polyfaceClipper;
+    bvector<PolyfaceHeaderPtr>& clippedPolyfaces = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), true);
+
+    if (polyfaceClipper.IsUnclipped())
+        {
+        m_processor._ProcessTriMesh(args, *this);
+        }
+    else 
+        {
+        for (PolyfaceHeaderPtr clippedPolyface : clippedPolyfaces)
+            {
+            if (!clippedPolyface->IsTriangulated())
+                clippedPolyface->Triangulate();
+
+            if ((0 != clippedPolyface->GetParamCount() && clippedPolyface->GetParamCount() != clippedPolyface->GetPointCount()) || 
+                (0 != clippedPolyface->GetNormalCount() && clippedPolyface->GetNormalCount() != clippedPolyface->GetPointCount()))
+                clippedPolyface = PolyfaceHeader::CreateUnifiedIndexMesh(*clippedPolyface);
+
+            // unused - size_t              numFacets = clippedPolyface->GetNumFacet();
+            size_t              numPoints = clippedPolyface->GetPointCount();
+            bvector<int32_t>    indices;
+            bvector<FPoint3d>   points(numPoints), normals(nullptr == clippedPolyface->GetNormalCP() ? 0 : numPoints);
+            bvector<FPoint2d>   params(nullptr == clippedPolyface->GetParamCP() ? 0 : numPoints);
+
+            for (size_t i=0; i<numPoints; i++)
+                {
+                bsiFPoint3d_initFromDPoint3d(&points[i], &clippedPolyface->GetPointCP()[i]);
+                if (nullptr != clippedPolyface->GetNormalCP())
+                    bsiFPoint3d_initFromDPoint3d(&normals[i], &clippedPolyface->GetNormalCP()[i]);
+
+                if (nullptr != clippedPolyface->GetParamCP())
+                    bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
+                }
+            // unused - size_t  j = 0;
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*clippedPolyface, true);
+            for (visitor->Reset(); visitor->AdvanceToNextFace();)
+                {   
+                indices.push_back(visitor->GetClientPointIndexCP()[0]);
+                indices.push_back(visitor->GetClientPointIndexCP()[1]);
+                indices.push_back(visitor->GetClientPointIndexCP()[2]);
+                }
+
+            TriMeshArgs     triMesh;
+
+            triMesh.m_numIndices = 3 * clippedPolyface->GetNumFacet();
+            triMesh.m_numPoints = numPoints;
+            triMesh.m_vertIndex = &indices.front();
+            triMesh.m_points  = &points.front();
+            triMesh.m_normals = normals.empty() ? nullptr : &normals.front();
+            triMesh.m_textureUV = params.empty() ? nullptr : &params.front();
+            triMesh.m_texture = args.m_texture;
+            triMesh.m_flags = args.m_flags;
+
+            m_processor._ProcessTriMesh(triMesh, *this);
+            }
+        }
+#endif
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/

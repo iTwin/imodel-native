@@ -453,10 +453,8 @@ public:
 
     void AddTriangle(TileTriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
-#if defined(WIP_TILETREE_PUBLISH)
-    void AddRenderTile(Render::IGraphicBuilder::TileCorners const&, TransformCR transform);
-    void AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam);
-#endif
+    void AddRenderTile(Render::GraphicBuilder::TileCorners const&, TransformCR transform);
+    void AddTriMesh(Render::TriMeshArgsCR triMesh, TransformCR transform, bool invertVParam);
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
     DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color);
@@ -1018,10 +1016,7 @@ private:
                                                                                 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
-#if defined(WIP_TILETREE_PUBLISH)
-    FutureStatus GenerateTilesFromTileTree(IGetTileTreeForPublishingP tileTreePublisher, ITileCollector* collector, double leafTolerance, bool surfacesOnly, DgnModelP model);
-    //FutureGenerateTileResult GenerateTilesFromTileTree(TileP outputTile, TileTree::TileP inputTile, TransformCR transformFromDgn, double leafTolerance, ClipVectorCP clip, DgnModelP model, ITileCollector* collector);
-#endif
+    FutureStatus GenerateTilesFromTileTree(ITileCollector* collector, double leafTolerance, bool surfacesOnly, GeometricModelP model);
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
@@ -1048,18 +1043,6 @@ struct IGenerateMeshTiles
 
 };  // IPublishModelMeshTiles
 
-#if defined(WIP_TILETREE_PUBLISH)
-//=======================================================================================
-// Interface for TileTree based models to expose their tree for publishing.
-// @bsistruct                                                   Ray.Bentley     08/2016
-//=======================================================================================
-struct IGetTileTreeForPublishing
-{
-    virtual ClipVectorPtr       _GetPublishingClip () const { return nullptr; }
-    virtual TileTree::RootCPtr  _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const = 0;
-
-};  // IGetTileTreeForPublishing
-#endif
 
 //=======================================================================================
 // static utility methods

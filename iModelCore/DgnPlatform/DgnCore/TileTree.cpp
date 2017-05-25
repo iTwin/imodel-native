@@ -458,7 +458,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -469,7 +469,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
     if (nullptr == loads)
         loads = std::make_shared<TileLoadState>(tile);
 
-    TileLoaderPtr loader = tile._CreateTileLoader(loads);
+    TileLoaderPtr loader = tile._CreateTileLoader(loads, renderSys);
     if (!loader.IsValid())
         return ERROR;   
     
@@ -1067,7 +1067,7 @@ void Root::RequestTiles(MissingNodesCR missingNodes)
         if (missing.GetTile().IsNotLoaded())
             {
             TileLoadStatePtr loads = std::make_shared<TileLoadState>(missing.GetTile());
-            _RequestTile(const_cast<TileR>(missing.GetTile()), loads);
+            _RequestTile(const_cast<TileR>(missing.GetTile()), loads, nullptr);
             }
         }
 

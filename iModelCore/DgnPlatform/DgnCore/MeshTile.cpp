@@ -1766,80 +1766,27 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
-#if defined(WIP_TILETREE_PUBLISH)
-    auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
-#endif
-    GeometricModelCP    geometricModel = model.ToGeometricModel();
+    GeometricModelP     geometricModel = model.ToGeometricModelP();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
     if (!isModel3d)
         surfacesOnly = false;
 
-    if (nullptr != geometricModel)
-        {
-        double          rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
-        double          minDiagonalToleranceRatio = isModel3d ? 1.0E-3 : 1.0E-5;   // Don't allow leaf tolerance to be less than this factor times range diagonal.
-        static  double  s_minLeafTolerance = 1.0E-6;
 
-        leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
+    if (nullptr == geometricModel)
+        {
+        BeAssert (false);
+        return folly::makeFuture(TileGeneratorStatus::NoGeometry);
         }
 
-#if defined(WIP_TILETREE_PUBLISH)
-    if (nullptr != getTileTree)
-        {
-        return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
-        }
-    else if (nullptr != generateMeshTiles)
-#else
-    if (nullptr != generateMeshTiles)
-#endif
-        {
-        return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
-            {
-            auto status = pCollector->_BeginProcessModel(*modelPtr);
-            TileNodePtr root;
-            if (TileGeneratorStatus::Success == status)
-                {
-                if (root.IsValid())
-                    m_totalTiles += root->GetNodeCount();
+    double          rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
+    double          minDiagonalToleranceRatio = isModel3d ? 1.0E-3 : 1.0E-5;   // Don't allow leaf tolerance to be less than this factor times range diagonal.
+    static  double  s_minLeafTolerance = 1.0E-6;
 
-                status = generateMeshTiles->_GenerateMeshTiles(root, m_spatialTransformFromDgn, leafTolerance, *pCollector, GetProgressMeter());
-                }
+    leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
 
-            m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
-            return pCollector->_EndProcessModel(*modelPtr, root.get(), status);
-            });
-        }
-    else
-        {
-        BeFileName          dataDirectory;
-
-        return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
-            {
-            return pCollector->_BeginProcessModel(*modelPtr);
-            })
-        .then([=](TileGeneratorStatus status)
-            {
-            if (TileGeneratorStatus::Success == status)
-                return GenerateElementTiles(*pCollector, leafTolerance, surfacesOnly, maxPointsPerTile, *modelPtr);
-
-            return folly::makeFuture(GenerateTileResult(status, nullptr));
-            })
-        .then([=](GenerateTileResult result)
-            {
-            if (result.m_tile.IsValid())
-                m_totalTiles += result.m_tile->GetNodeCount();
-
-            m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
-            return pCollector->_EndProcessModel(*modelPtr, result.m_tile.get(), result.m_status);
-            })
-        .then([=](TileGeneratorStatus status)
-            {
-            return status;                           
-            });
-        }
+    return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
     }
-
 
 
 

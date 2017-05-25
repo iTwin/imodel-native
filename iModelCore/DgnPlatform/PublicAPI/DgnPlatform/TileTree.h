@@ -235,7 +235,7 @@ public:
     virtual void _PickGraphics(PickArgsR args, int depth) const {}
 
     //! Called when tile data is required.
-    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) = 0;
 
     //! Get the tile cache key for this Tile.
     virtual Utf8String _GetTileCacheKey() const = 0;
@@ -279,6 +279,7 @@ public:
 struct Root : RefCountedBase, NonCopyableClass
 {
     friend struct DrawArgs;
+    friend TileLoader;
 
 protected:
     bool m_isHttp;
@@ -304,8 +305,9 @@ protected:
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
 
     void InvalidateDamagedTiles();
+
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys);
     void RequestTiles(MissingNodesCR);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
@@ -321,9 +323,9 @@ public:
     RealityData::CachePtr GetCache() const {return m_cache;}
     TilePtr GetRootTile() const {return m_rootTile;} //!< Get the root Tile of this Root
     DgnDbR GetDgnDb() const {return m_db;} //!< Get the DgnDb from which this Root was created.
-    Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
     DGNPLATFORM_EXPORT void MarkDamaged(DRange3dCR range);
+    Dgn::Render::SystemP GetRenderSystemP() const {return m_renderSystem;}
 
     //! Get the resource name (file name or URL) of a Tile in this TileTree. By default it concatenates the tile cache key to the rootResource
     virtual Utf8String _ConstructTileResource(TileCR tile) const {return m_rootResource + tile._GetTileCacheKey();}
@@ -383,6 +385,8 @@ protected:
     Utf8String m_resourceName;  // full file or URL name
     TilePtr m_tile;             // tile to load, cannot be null.
     TileLoadStatePtr m_loads;
+    Dgn::Render::SystemP m_renderSys;
+
 
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
@@ -396,8 +400,9 @@ protected:
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
-        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
+    //! @param[in] renderSys The renderSys.  If null then the root node renderSys is used.
+    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey, Dgn::Render::SystemP renderSys)
+        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0), m_renderSys(renderSys) {}
 
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
@@ -405,7 +410,7 @@ protected:
 
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
-    Dgn::Render::SystemP GetRenderSystem() { return m_tile->GetRoot().GetRenderSystem(); }
+    Dgn::Render::SystemP GetRenderSystem() const { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystemP(): m_renderSys; }
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();

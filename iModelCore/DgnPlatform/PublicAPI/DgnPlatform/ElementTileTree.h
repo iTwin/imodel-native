@@ -43,7 +43,7 @@ struct Loader : TileTree::TileLoader
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads);
+    Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
     folly::Future<BentleyStatus> _GetFromSource() override;
     BentleyStatus _LoadTile() override;
@@ -52,7 +52,7 @@ private:
 
     BentleyStatus DoGetFromSource();
 public:
-    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
+    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
 };
 
 //=======================================================================================
@@ -66,6 +66,7 @@ public:
     explicit LoadContext(LoaderCP loader) : m_loader(loader) { }
 
     bool WasAborted() const { return nullptr != m_loader && m_loader->IsCanceledOrAbandoned(); }
+    Dgn::Render::SystemP GetRenderSystem() const {return m_loader->GetRenderSystem();}
 };
 
 //=======================================================================================
@@ -202,7 +203,7 @@ private:
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
     void InitTolerance();
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) override;
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     double _GetMaximumSize() const override;
     void _Invalidate() override;

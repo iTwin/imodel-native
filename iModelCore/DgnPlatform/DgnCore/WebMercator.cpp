@@ -114,7 +114,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
     MapTileR tile = static_cast<MapTileR>(*m_tile);
     MapRootR mapRoot = tile.GetMapRoot();
 
-    auto graphic = mapRoot.GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams(mapRoot.GetDgnDb()));
+    auto graphic = GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams(mapRoot.GetDgnDb()));
 
     // some tile servers (for example Bing) start returning PNG tiles at a certain zoom level, even if you request Jpeg.
     ImageSource::Format format = mapRoot.m_format;
@@ -126,7 +126,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
     ImageSource source(format, std::move(m_tileBytes));
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = mapRoot.GetRenderSystem()->_CreateTexture(source, Image::BottomUp::No, textureParams);
+    auto texture = GetRenderSystem()->_CreateTexture(source, Image::BottomUp::No, textureParams);
     m_tileBytes = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
     graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency

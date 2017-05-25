@@ -510,7 +510,7 @@ protected:
 
     Render::MaterialPtr _GetMaterial(DgnMaterialId id) const override
         {
-        Render::SystemP system = GetRoot().GetRenderSystem();
+        Render::SystemP system = m_loadContext.GetRenderSystem();
         return nullptr != system ? system->_GetMaterial(id, GetDgnDb()) : nullptr;
         }
 
@@ -822,8 +822,8 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads)
-    : T_Super("", tile, loads, "")
+Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
+    : T_Super("", tile, loads, "", renderSys)
     {
     //
     }
@@ -859,7 +859,7 @@ BentleyStatus Loader::_LoadTile()
 
     auto& tile = static_cast<TileR>(*m_tile);
     RootR root = tile.GetElementRoot();
-    auto& system = *root.GetRenderSystem();
+    auto  system = GetRenderSystem();
 
     LoadContext loadContext(this);
     auto geometry = tile.GenerateGeometry(loadContext);
@@ -880,7 +880,7 @@ BentleyStatus Loader::_LoadTile()
     bvector<Render::GraphicPtr>     graphics;
 
     for (auto const& mesh : geometry.Meshes())
-        mesh->GetGraphics (graphics, system, args, root.GetDgnDb(), tile.GetRange());
+        mesh->GetGraphics (graphics, *system, args, root.GetDgnDb(), tile.GetRange());
 
     if (!graphics.empty())
         {
@@ -893,12 +893,12 @@ BentleyStatus Loader::_LoadTile()
                 graphic = *graphics.begin();
                 break;
             default:
-                graphic = system._CreateGraphicList(std::move(graphics), root.GetDgnDb());
+                graphic = system->_CreateGraphicList(std::move(graphics), root.GetDgnDb());
                 break;
             }
 
         if (graphic.IsValid())
-            tile.SetGraphic(*system._CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
+            tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
         }
 
     tile.SetIsReady();
@@ -1253,7 +1253,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     if (!wantRange && !wantContentRange)
         return (m_debugGraphics.m_graphic = nullptr);
 
-    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams(GetElementRoot().GetDgnDb()));
+    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystemP()->_CreateGraphic(GraphicBuilder::CreateParams(GetElementRoot().GetDgnDb()));
     GraphicParams params;
     params.SetWidth(0);
     if (wantRange)
@@ -1347,9 +1347,9 @@ bool Tile::_IsInvalidated(TileTree::DirtyRangesCR dirty) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
+TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
-    return Loader::Create(*this, loads);
+    return Loader::Create(*this, loads, renderSys);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1424,7 +1424,7 @@ public:
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
   : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_vertexTolerance(m_tolerance*ToleranceRatio::Vertex()),
     m_facetAreaTolerance(m_tolerance*ToleranceRatio::FacetArea()), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext),
-    m_featureTable(nullptr != tile.GetRoot().GetRenderSystem() ? tile.GetRoot().GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile)
+    m_featureTable(nullptr != loadContext.GetRenderSystem() ? loadContext.GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile)
     {
     //
     }
@@ -1855,7 +1855,7 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
 
     // Collect the set of largest elements for this tile's range, excluding any too small to contribute at this tile's tolerance.
     uint32_t maxFeatures = s_hardMaxFeaturesPerTile; // Note: Element != Feature - could have multiple features per element
-    auto sys = root.GetRenderSystem();
+    auto sys = loadContext.GetRenderSystem();
     if (nullptr != sys)
         maxFeatures = std::min(maxFeatures, sys->_GetMaxFeaturesPerBatch());
 
