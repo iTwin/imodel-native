@@ -157,7 +157,7 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
                 {
                 for (Partition const& horizPartition : assertion.GetClassMap().GetStorageDescription().GetHorizontalPartitions())
                     {
-                    if (!horizPartition.GetTable().IsOwnedByECDb())
+                    if (horizPartition.GetTable().GetType() == DbTable::Type::Existing)
                         {
                         Utf8String notSupportedMessage;
                         notSupportedMessage.Sprintf("A subclass of ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore polymorphic ECSQL UPDATEs or DELETEs cannot be performed against that class.",

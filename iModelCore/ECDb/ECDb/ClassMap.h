@@ -190,41 +190,43 @@ struct ClassMap : RefCountedBase
         std::vector<DbTable*>& GetTables() const { return m_tables; }
         DbTable& GetPrimaryTable() const 
             { 
-            DbTable* nulltable = nullptr;
             if (GetType() == Type::RelationshipEndTable)
                 return *m_tables.front();
 
             for (DbTable* table : GetTables())
                 {
-                if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing)
-                    {
+                if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
                     return *table;
-                    }
                 }
 
             BeAssert(false);
+            DbTable* nulltable = nullptr;
             return *nulltable;
             }
         DbTable& GetJoinedOrPrimaryTable() const 
             {
-            for (DbTable* table : GetTables())
+            DbTable* joinedTable = nullptr;
+            DbTable* primaryTable = nullptr;
+            for (DbTable* table : m_tables)
                 {
                 if (table->GetType() == DbTable::Type::Joined)
-                    {
-                    return *table;
-                    }
+                    joinedTable = table;
+                else if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
+                    primaryTable = table;
+                
+                if (joinedTable != nullptr)
+                    return *joinedTable;
                 }
 
-            return GetPrimaryTable();
+            BeAssert(primaryTable != nullptr);
+            return *primaryTable;
             }
         DbTable* GetOverflowTable() const
             {
             for (DbTable* table : GetTables())
                 {
                 if (table->GetType() == DbTable::Type::Overflow)
-                    {
                     return table;
-                    }
                 }
 
             return nullptr;

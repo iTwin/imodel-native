@@ -990,13 +990,13 @@ BentleyStatus SchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECC
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Ordinal FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?"))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId.GetValue()))
+    if (BE_SQLITE_OK != stmt->BindId(1, containerId))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(3, ecClassId.GetValue()))
+    if (BE_SQLITE_OK != stmt->BindId(3, ecClassId))
         return ERROR;
 
     if (stmt->Step() != BE_SQLITE_ROW)
@@ -1008,13 +1008,13 @@ BentleyStatus SchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECC
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?"))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId.GetValue()))
+    if (BE_SQLITE_OK != stmt->BindId(1, containerId))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(3, ecClassId.GetValue()))
+    if (BE_SQLITE_OK != stmt->BindId(3, ecClassId))
         return ERROR;
 
     if (stmt->Step() != BE_SQLITE_DONE)
@@ -1997,7 +1997,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
                 }
 
             //For virtual column delete column from ec_Column.
-            if (column->GetPersistenceType() == PersistenceType::Virtual || column->GetTable().GetPersistenceType() == PersistenceType::Virtual)
+            if (column->GetPersistenceType() == PersistenceType::Virtual || column->GetTable().GetType() == DbTable::Type::Virtual)
                 {
                 CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Column WHERE Id=?");
                 if (stmt == nullptr ||

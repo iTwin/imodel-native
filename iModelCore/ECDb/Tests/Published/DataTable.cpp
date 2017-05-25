@@ -175,7 +175,7 @@ bool DataTable::Value::EqualsI(DataTable::Value const& rhs) const
         return IsFloat() == rhs.IsFloat();
 
     if (IsText())
-        return strcmpi(rhs.GetText(), GetText()) == 0;
+        return BeStringUtilities::StricmpAscii(rhs.GetText(), GetText()) == 0;
 
     if (IsBlob())
         {

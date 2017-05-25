@@ -460,11 +460,9 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 }
             }
 
-        if (!fkTable.IsOwnedByECDb()
-            || fkTable.GetPersistenceType() == PersistenceType::Virtual
-            || referencedTable->GetPersistenceType() == PersistenceType::Virtual
-            || fkCol->IsShared()
-            || !classMappingInfo.GetFkMappingInfo()->IsPhysicalFk())
+        if (fkTable.GetType() == DbTable::Type::Existing || fkTable.GetType() == DbTable::Type::Virtual || 
+            referencedTable->GetType() == DbTable::Type::Virtual || 
+            fkCol->IsShared() || !classMappingInfo.GetFkMappingInfo()->IsPhysicalFk())
             continue;
 
         fkTable.CreateForeignKeyConstraint(*fkCol, *referencedTablePKCol, onDelete, onUpdate);
@@ -531,7 +529,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
     for (DbTable const* foreignEndTable : foreignEndTables)
         {
         DbColumn const* fkCol = foreignEndTable->FindColumn(fkColName.c_str());
-        if (!foreignEndTable->IsOwnedByECDb())
+        if (foreignEndTable->GetType() == DbTable::Type::Existing)
             {
             //for existing tables, the FK column must exist otherwise we fail schema import
             if (fkCol != nullptr)
@@ -591,7 +589,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& 
     const bool makeRelClassIdColNotNull = fkCol.DoNotAllowDbNull();
 
     PersistenceType persType = PersistenceType::Physical;
-    if (table.GetPersistenceType() == PersistenceType::Virtual || !table.IsOwnedByECDb() || GetClass().GetClassModifier() == ECClassModifier::Sealed)
+    if (table.GetType() == DbTable::Type::Virtual || table.GetType() == DbTable::Type::Existing || GetClass().GetClassModifier() == ECClassModifier::Sealed)
         persType = PersistenceType::Virtual;
 
     Utf8String relECClassIdColName;
@@ -1711,9 +1709,9 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
         return column;
         }
 
-    persType = table.IsOwnedByECDb() ? persType : PersistenceType::Virtual;
+    persType = table.GetType() != DbTable::Type::Existing ? persType : PersistenceType::Virtual;
     //Following protect creating virtual id/fk columns in persisted tables.
-    if (table.GetPersistenceType() == PersistenceType::Physical && persType == PersistenceType::Virtual)
+    if (table.GetType() != DbTable::Type::Virtual && persType == PersistenceType::Virtual)
         {
         if (columnKind == DbColumn::Kind::SourceECInstanceId || columnKind == DbColumn::Kind::TargetECInstanceId)
             {

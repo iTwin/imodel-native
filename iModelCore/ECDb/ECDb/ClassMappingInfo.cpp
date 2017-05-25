@@ -1050,12 +1050,14 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(S
         return tables;
 
     std::map<PersistenceType, std::set<DbTable const*>> finalListOfTables;
+    std::set<DbTable const*> finalSetOfTables;
     for (DbTable const* table : tables)
         {
-        finalListOfTables[table->GetPersistenceType()].insert(table);
+        if (table->GetType() != DbTable::Type::Virtual)
+            finalSetOfTables.insert(table);
         }
 
-    return finalListOfTables[PersistenceType::Physical];
+    return finalSetOfTables;
     }
 
 

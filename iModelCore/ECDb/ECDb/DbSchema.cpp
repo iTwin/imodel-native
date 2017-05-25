@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
+DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
     {
     Utf8String finalName;
     if (!name.empty())
@@ -42,13 +42,13 @@ DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, Persi
 
     DbTableId tableId;
     m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::TableId).GetNextValue(tableId);
-    return CreateTable(tableId, finalName, tableType, persType, exclusiveRootClassId, parentTable);
+    return CreateTable(tableId, finalName, tableType, exclusiveRootClassId, parentTable);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
+DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
     {
     if (name.empty() || !tableId.IsValid())
         {
@@ -56,7 +56,7 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Ty
         return nullptr;
         }
 
-    std::unique_ptr<DbTable> table(std::unique_ptr<DbTable>(new DbTable(tableId, name, *this, persType, tableType, exclusiveRootClassId, parentTable)));
+    std::unique_ptr<DbTable> table(std::unique_ptr<DbTable>(new DbTable(tableId, name, *this, tableType, exclusiveRootClassId, parentTable)));
     if (tableType == DbTable::Type::Existing)
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
@@ -427,7 +427,7 @@ DbTable* DbSchema::CreateJoinedTable(DbTable const& primaryTable, Utf8CP joinedT
         return nullptr;
         }
 
-    if (primaryTable.GetPersistenceType() == PersistenceType::Virtual)
+    if (primaryTable.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "Base table must not be virtual");
         return nullptr;
@@ -442,7 +442,7 @@ DbTable* DbSchema::CreateJoinedTable(DbTable const& primaryTable, Utf8CP joinedT
     if (SUCCESS != primaryTable.GetLinkNode().Validate())
         return nullptr;
 
-    return CreateTable(joinedTableName, DbTable::Type::Joined, PersistenceType::Physical, exclusiveRootClassId, &primaryTable);
+    return CreateTable(joinedTableName, DbTable::Type::Joined, exclusiveRootClassId, &primaryTable);
     }
 
 //---------------------------------------------------------------------------------------
@@ -457,7 +457,7 @@ DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
         return nullptr;
         }
 
-    if (baseTable.GetPersistenceType() == PersistenceType::Virtual)
+    if (baseTable.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "Base table must not be virtual");
         return nullptr;
@@ -478,7 +478,7 @@ DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
     if (table != nullptr)
         return table;
 
-    table = CreateTable(name, DbTable::Type::Overflow, PersistenceType::Physical, ECClassId(), &baseTable);
+    table = CreateTable(name, DbTable::Type::Overflow, ECClassId(), &baseTable);
     if (!table)
         return nullptr;
 
@@ -632,20 +632,19 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Table(Id,Name,Type,IsVirtual,ExclusiveRootClassId,ParentTableId) VALUES(?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Table(Id,Name,Type,ExclusiveRootClassId,ParentTableId) VALUES(?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
     stmt->BindId(1, table.GetId());
     stmt->BindText(2, table.GetName(), Statement::MakeCopy::No);
     stmt->BindInt(3, Enum::ToInt(table.GetType()));
-    stmt->BindBoolean(4, table.GetPersistenceType() == PersistenceType::Virtual);
     if (table.HasExclusiveRootECClass())
-        stmt->BindId(5, table.GetExclusiveRootECClassId());
+        stmt->BindId(4, table.GetExclusiveRootECClassId());
 
     DbTable::LinkNode const* parentNode = table.GetLinkNode().GetParent();
     if (parentNode != nullptr)
-        stmt->BindId(6, parentNode->GetTable().GetId());
+        stmt->BindId(5, parentNode->GetTable().GetId());
 
     DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
@@ -687,19 +686,19 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
         }
 
     bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> persistedColumnMap = GetPersistedColumnMap(table.GetId());
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("UPDATE ec_Table SET Name=?,Type=?,IsVirtual=?,ParentTableId=? WHERE Id=?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("UPDATE ec_Table SET Name=?,Type=?,ParentTableId=? WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
-    stmt->BindId(5, table.GetId());
     stmt->BindText(1, table.GetName(), Statement::MakeCopy::No);
     stmt->BindInt(2, Enum::ToInt(table.GetType()));
-    stmt->BindBoolean(3, table.GetPersistenceType() == PersistenceType::Virtual);
     DbTable::LinkNode const* parentNode = table.GetLinkNode().GetParent();
     if (parentNode != nullptr)
-        stmt->BindId(4, parentNode->GetTable().GetId());
+        stmt->BindId(3, parentNode->GetTable().GetId());
     else
-        stmt->BindNull(4);
+        stmt->BindNull(3);
+
+    stmt->BindId(4, table.GetId());
 
     DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
@@ -775,7 +774,7 @@ BentleyStatus DbSchema::CreateOrUpdateIndexes() const
         m_ecdb.TryExecuteSql(dropIndexSql.c_str());
 
         //indexes on virtual tables are ignored
-        if (index.GetTable().GetPersistenceType() == PersistenceType::Physical)
+        if (index.GetTable().GetType() != DbTable::Type::Virtual)
             {
             Utf8String ddl, comparableIndexDef;
             if (SUCCESS != DbSchemaPersistenceManager::BuildCreateIndexDdl(ddl, comparableIndexDef, m_ecdb, index))
@@ -1050,7 +1049,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
             return SUCCESS;
         }
 
-    if (table.GetType() != DbTable::Type::Existing)
+    if (table.GetType() != DbTable::Type::Existing && table.GetType() != DbTable::Type::Virtual)
         table.InitializeSharedColumnNameGenerator(sharedColumnCount);
 
     return SUCCESS;
@@ -1061,7 +1060,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
 BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
     {
     tableP = nullptr;
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Type, IsVirtual, ExclusiveRootClassId, ParentTableId FROM ec_Table WHERE Name=?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Type, ExclusiveRootClassId, ParentTableId FROM ec_Table WHERE Name=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -1071,21 +1070,20 @@ BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
 
     DbTableId id = stmt->GetValueId<DbTableId>(0);
     DbTable::Type tableType = Enum::FromInt<DbTable::Type>(stmt->GetValueInt(1));
-    PersistenceType persistenceType = stmt->GetValueBoolean(2) ? PersistenceType::Virtual : PersistenceType::Physical;
     ECClassId exclusiveRootClassId;
-    if (!stmt->IsColumnNull(3))
-        exclusiveRootClassId = stmt->GetValueId<ECClassId>(3);
+    if (!stmt->IsColumnNull(2))
+        exclusiveRootClassId = stmt->GetValueId<ECClassId>(2);
 
     DbTable const* parentTable = nullptr;
-    if (!stmt->IsColumnNull(4))
+    if (!stmt->IsColumnNull(3))
         {
         BeAssert((DbTable::Type::Joined == tableType || DbTable::Type::Overflow == tableType) && "Expecting joined or overflow table if parent table id is not null");
-        DbTableId parentTableId = stmt->GetValueId<DbTableId>(4);
+        DbTableId parentTableId = stmt->GetValueId<DbTableId>(3);
         parentTable = FindTable(parentTableId);
         BeAssert(parentTable != nullptr && "Failed to find parent table");
         }
 
-    DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, persistenceType, exclusiveRootClassId, parentTable);
+    DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, exclusiveRootClassId, parentTable);
     if (table == nullptr)
         {
         BeAssert(false && "Failed to create table definition");
@@ -1144,7 +1142,7 @@ DbTable const* DbSchema::GetNullTable() const
         {
         m_nullTable = FindTableP(DBSCHEMA_NULLTABLENAME);
         if (m_nullTable == nullptr)
-            m_nullTable = const_cast<DbSchema*>(this)->CreateTable(DBSCHEMA_NULLTABLENAME, DbTable::Type::Primary, PersistenceType::Virtual, ECClassId(), nullptr);
+            m_nullTable = const_cast<DbSchema*>(this)->CreateTable(DBSCHEMA_NULLTABLENAME, DbTable::Type::Virtual, ECClassId(), nullptr);
 
         if (m_nullTable != nullptr && m_nullTable->GetEditHandleR().CanEdit())
             m_nullTable->GetEditHandleR().EndEdit();
@@ -1160,11 +1158,11 @@ DbTable const* DbSchema::GetNullTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
-    : m_id(id), m_name(name), m_dbSchema(dbSchema), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
+DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
+    : m_id(id), m_name(name), m_dbSchema(dbSchema), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
     m_linkNode(*this, parentTable)
     {
-    if (tableType != Type::Existing)
+    if (tableType != Type::Existing && tableType != Type::Virtual)
         m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(tableType));
 
     BeAssert(m_linkNode.Validate() == SUCCESS);
@@ -1241,7 +1239,7 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::CreateTrigger(Utf8CP triggerName, DbTrigger::Type type, Utf8CP condition, Utf8CP body)
     {
-    if (!IsOwnedByECDb())
+    if (m_type == Type::Existing)
         {
         BeAssert(false);
         return ERROR;
@@ -1581,15 +1579,25 @@ BentleyStatus DbTable::LinkNode::Validate() const
             break;
             }
 
+            case Type::Virtual:
+            {
+            if (m_parent != nullptr)
+                {
+                BeAssert(false && "Virtual table must have a parent table");
+                return ERROR;
+                }
+
+            if (!m_children.empty())
+                {
+                BeAssert(false && "Virtual table must not have child tables");
+                return ERROR;
+                }
+
+            break;
+            }
             default:
                 BeAssert(false);
                 break;
-        }
-
-    if (m_table.GetPersistenceType() == PersistenceType::Virtual && (!m_children.empty() || m_parent != nullptr))
-        {
-        BeAssert(false && "Virtual table must neither have parent of child table nodes");
-        return ERROR;
         }
 
     return SUCCESS;

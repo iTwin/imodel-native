@@ -240,7 +240,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 
     for (Partition const& partition : partitions)
         {
-        if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+        if (partition.GetTable().GetType() == DbTable::Type::Virtual)
             continue;
 
         //WIP: If a class map has a subclass mapping to ExistingTable the class is not updatable polymorphically
@@ -272,7 +272,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     int tableCount = 0;
     for (Partition const& partition : partitions)
         {
-        if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+        if (partition.GetTable().GetType() == DbTable::Type::Virtual)
             continue;
 
         tableCount++;
@@ -485,7 +485,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
 
     for (Partition const* partition : partitionOfInterest)
         {
-        if (partition->GetTable().GetPersistenceType() == PersistenceType::Virtual)
+        if (partition->GetTable().GetType() == DbTable::Type::Virtual)
             continue;
 
         //For vertical partition we like to skip the first primary partition table.
@@ -627,7 +627,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
     StorageDescription const& storageDesc = relationMap.GetStorageDescription();
     for (Partition const& partition : storageDesc.GetHorizontalPartitions())
         {
-        if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+        if (partition.GetTable().GetType() == DbTable::Type::Virtual)
             continue;
 
         NativeSqlBuilder view;
@@ -708,7 +708,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
     NativeSqlBuilder::List unionList;
     for (DbTable const* table : relationMap.GetTables())
         {
-        if (table->GetPersistenceType() == PersistenceType::Virtual)
+        if (table->GetType() == DbTable::Type::Virtual)
             continue;
 
         NativeSqlBuilder view;
@@ -1145,7 +1145,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 //static
     BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const& classMap, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
     {
-    if (table.GetPersistenceType() != PersistenceType::Physical)
+    if (table.GetType() == DbTable::Type::Virtual)
         return SUCCESS;
 
     StorageDescription const& desc = classMap.GetStorageDescription();
@@ -1313,7 +1313,7 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
     if (!ignoreVirtualColumnCheck)
         {
         BeAssert(propertyMap.FindDataPropertyMap(*table) != nullptr);
-        if (table->GetPersistenceType() == PersistenceType::Virtual || propertyMap.FindDataPropertyMap(*table)->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
+        if (table->GetType() == DbTable::Type::Virtual || propertyMap.FindDataPropertyMap(*table)->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             return nullptr;
         }
 

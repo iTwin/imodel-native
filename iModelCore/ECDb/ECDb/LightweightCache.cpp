@@ -423,7 +423,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     //add vertical partitions
     for (auto table : lwmc.GetVerticalPartitionsForClass(classId))
         {
-        if (table->GetPersistenceType() == PersistenceType::Virtual)
+        if (table->GetType() == DbTable::Type::Virtual)
             continue;
 
         Partition* vp = storageDescription->AddVerticalPartition(*table, storageDescription->GetHorizontalPartition(*table) != nullptr);
@@ -481,11 +481,10 @@ Partition const& StorageDescription::GetRootHorizontalPartition() const
 //------------------------------------------------------------------------------------------
 Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool isRootPartition)
     {
-    const bool isVirtual = table.GetPersistenceType() == PersistenceType::Virtual;
     m_horizontalPartitions.push_back(Partition(table));
 
     const size_t indexOfAddedPartition = m_horizontalPartitions.size() - 1;
-    if (!isVirtual)
+    if (table.GetType() != DbTable::Type::Virtual)
         m_nonVirtualHorizontalPartitionIndices.push_back(indexOfAddedPartition);
 
     if (isRootPartition)
@@ -499,8 +498,8 @@ Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool
 //------------------------------------------------------------------------------------------
 Partition* StorageDescription::AddVerticalPartition(DbTable const& table, bool isRootPartition)
     {
-    BeAssert(table.GetPersistenceType() == PersistenceType::Physical);
-    if (table.GetPersistenceType() == PersistenceType::Virtual)
+    BeAssert(table.GetType() != DbTable::Type::Virtual);
+    if (table.GetType() == DbTable::Type::Virtual)
         return nullptr;
 
     m_verticalPartitions.push_back(Partition(table));
