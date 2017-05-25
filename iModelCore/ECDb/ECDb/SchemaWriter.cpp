@@ -1220,7 +1220,7 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
         auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty();
         if (newPrimitiveProperty == nullptr)
             {
-            BeAssert(newPrimitiveProperty != nullptr);
+            BeAssert(false);
             return ERROR;
             }
 
@@ -1269,7 +1269,7 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
             if (koqCP == nullptr)
                 {
-                BeAssert(koqCP != nullptr);
+                BeAssert(false);
                 return ERROR;
                 }
 

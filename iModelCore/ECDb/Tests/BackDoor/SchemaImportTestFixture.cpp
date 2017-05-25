@@ -315,7 +315,7 @@ bool DbMappingTestFixture::TryGetColumnInfo(std::map<Utf8String, ColumnInfo>& co
 
     if (stmt == nullptr)
         {
-        EXPECT_TRUE(stmt != nullptr) << ecdb.GetLastError().c_str();
+        EXPECT_TRUE(false) << ecdb.GetLastError().c_str();
         return false;
         }
 

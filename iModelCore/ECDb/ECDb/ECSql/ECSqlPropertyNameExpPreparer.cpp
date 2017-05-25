@@ -55,7 +55,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 effectivePropMap = rootClassMap->GetPropertyMaps().Find(propMap.GetAccessString().c_str());
                 if (effectivePropMap == nullptr)
                     {
-                    BeAssert(effectivePropMap != nullptr);
+                    BeAssert(false);
                     return ECSqlStatus::Error;
                     }
                 }

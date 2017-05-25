@@ -32,7 +32,8 @@ BentleyStatus Binary::Resize(size_t len)
         m_len = len;
         return SUCCESS;
         }
-
+		
+	m_buff=nullptr;
     BeAssert(false && "_resize() failed");
     return ERROR;
     }
@@ -892,7 +893,7 @@ BentleyStatus SchemaComparer::CompareECEnumeration(ECEnumerationChange& change, 
         {
         change.GetTypeName().SetValue(a.GetTypeName(), b.GetTypeName());
         }
-    else if (a.GetType() == b.GetType())
+    else 
         {
         if (a.GetType() == PrimitiveType::PRIMITIVETYPE_Integer)
             return CompareIntegerECEnumerators(change.Enumerators(), a.GetEnumerators(), b.GetEnumerators());

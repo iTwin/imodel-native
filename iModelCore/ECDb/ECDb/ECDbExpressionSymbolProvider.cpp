@@ -46,7 +46,7 @@ struct ECDbExpressionContext final : ECN::SymbolExpressionContext
 private:
     ECDbCR m_db;
 
-    ECDbExpressionContext(ECDbCR db) : SymbolExpressionContext(nullptr), m_db(db)
+    explicit ECDbExpressionContext(ECDbCR db) : SymbolExpressionContext(nullptr), m_db(db)
         {
         AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, Utf8CP>("Path", *this, &ECDbExpressionContext::GetPath));
         AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, ECValue>("Name", *this, &ECDbExpressionContext::GetName));

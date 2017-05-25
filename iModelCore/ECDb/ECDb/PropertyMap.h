@@ -85,7 +85,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         typedef bvector<PropertyMap const*>::const_iterator const_iterator;
         private:
             bvector<PropertyMap const*> m_vect;
-            Path(bvector<PropertyMap const*>& vect):m_vect(std::move(vect)){}
+            explicit Path(bvector<PropertyMap const*>& vect):m_vect(std::move(vect)){}
         public:
             Path(Path const&& path) : m_vect(std::move(path.m_vect)) {}
             Path(Path const& path) :m_vect(path.m_vect) {}

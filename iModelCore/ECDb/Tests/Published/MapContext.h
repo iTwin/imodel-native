@@ -46,7 +46,7 @@ struct MapContext final
                 Utf8String m_kind;
                 Table const& m_table;
             public:
-                Column(Table const& table) :m_table(table) {}
+                explicit Column(Table const& table) :m_table(table) {}
                 Table const& GetTable() const { return m_table; }
                 Utf8StringCR GetName() const { return m_name; }
                 Utf8StringCR GetType() const { return m_type; }
@@ -122,7 +122,7 @@ struct MapContext final
         ClassMap const* LoadClassMap(Utf8CP schemaName, Utf8CP className);
 
     public:
-        MapContext(ECDbCR ecdb):m_ecdb(ecdb){}
+        explicit MapContext(ECDbCR ecdb):m_ecdb(ecdb){}
         PropertyMap const* FindPropertyMap(Utf8CP schemaName, Utf8CP className, Utf8CP accessString);
         PropertyMap const* FindPropertyMap(Utf8CP schemaName, Utf8CP className, Utf8CP accessString, Utf8CP table);
         PropertyMap const* FindPropertyMap(Utf8CP schemaName, Utf8CP className, Utf8CP accessString, Utf8CP table, Utf8CP column);

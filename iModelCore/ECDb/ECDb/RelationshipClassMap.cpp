@@ -254,7 +254,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     DbColumn const* referencedTablePKCol = referencedTable->FindFirst(DbColumn::Kind::ECInstanceId);
     if (referencedTablePKCol == nullptr)
         {
-        BeAssert(referencedTablePKCol != nullptr);
+        BeAssert(false);
         return ERROR;
         }
 
@@ -1255,7 +1255,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Class
     auto targetECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this , ECRelationshipEnd_Target, {targetECClassIdColumn});
     if (targetECClassIdPropMap == nullptr)
         {
-        BeAssert(targetECClassIdPropMap != nullptr);
+        BeAssert(false);
         return ClassMappingStatus::Error;
         }
 

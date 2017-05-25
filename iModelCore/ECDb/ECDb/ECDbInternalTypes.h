@@ -27,7 +27,8 @@ enum class ECSqlType
     Select,
     Insert,
     Update,
-    Delete
+    Delete,
+    Unset
     };
 
 

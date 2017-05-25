@@ -107,7 +107,6 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
     BeAssert(snippets.m_propertyNamesNativeSqlSnippets.empty());
     BeAssert(snippets.m_valuesNativeSqlSnippets.empty());
 
-    size_t index = 0;
     for (Exp const* childExp : assignmentListExp->GetChildren())
         {
         BeAssert(childExp != nullptr);
@@ -148,8 +147,6 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
             snippets.m_propertyNamesNativeSqlSnippets.push_back(propertyNamesNativeSqlSnippets);
             snippets.m_valuesNativeSqlSnippets.push_back(rhsNativeSqlSnippets);
             }
-
-        index++;
         }
 
     ctx.PopScope();

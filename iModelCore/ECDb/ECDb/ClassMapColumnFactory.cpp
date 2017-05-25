@@ -628,16 +628,12 @@ DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, D
 
     //NOT NULL and UNIQUE will soon become ECSchema level things. They are not an error, and can only be taken as hints because
     //the ECSchema level doesn't say which layer (DB or API) has to enforce it
-    bool addNotNullConstraint = params.AddNotNullConstraint();
-    bool addUniqueConstraint = params.AddUniqueConstraint();
     if (params.AddNotNullConstraint() || params.AddUniqueConstraint())
         {
         LOG.warningv("For the ECProperty '%s' on ECClass '%s' either a NOT NULL or a UNIQUE constraint is defined. The constraint cannot be enforced though because "
                      "the ECProperty is mapped to a column shared with other ECProperties.",
                      prop.GetName().c_str(), prop.GetClass().GetFullName());
 
-        addNotNullConstraint = false;
-        addUniqueConstraint = false;
         }
 
     return RegisterColumnMap(accessString, ReuseOrCreateSharedColumn());

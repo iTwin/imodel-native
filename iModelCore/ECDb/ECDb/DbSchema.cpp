@@ -651,9 +651,9 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
         return ERROR;
 
     bmap<DbColumn const*, int> primaryKeys;
-    int i = 0;
     if (PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint())
         {
+		int i = 0;
         for (DbColumn const* pkCol : pkConstraint->GetColumns())
             {
             primaryKeys[pkCol] = i++;
@@ -2110,10 +2110,10 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
     if (rhs.m_fkColumns.size() != m_fkColumns.size())
         return false;
 
-    if (&this->GetForeignKeyTable() != &GetForeignKeyTable())
+    if (&rhs.GetForeignKeyTable() != &GetForeignKeyTable())
         return false;
 
-    if (&this->GetReferencedTable() != &GetReferencedTable())
+    if (&rhs.GetReferencedTable() != &GetReferencedTable())
         return false;
 
     std::set<DbColumn const*> rhsFkColumns = std::set<DbColumn const*>(rhs.m_fkColumns.begin(), rhs.m_fkColumns.end());

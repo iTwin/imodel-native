@@ -22,7 +22,7 @@ struct RelationshipConstraintMap : NonCopyableClass
         ConstraintECClassIdPropertyMap const* m_ecClassIdPropMap;
 
     public:
-        RelationshipConstraintMap(ECN::ECRelationshipConstraintCR constraint)
+        explicit RelationshipConstraintMap(ECN::ECRelationshipConstraintCR constraint)
             :  m_constraint(constraint), m_ecInstanceIdPropMap(nullptr), m_ecClassIdPropMap(nullptr)
             {}
         ConstraintECInstanceIdPropertyMap const* GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }

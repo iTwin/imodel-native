@@ -119,7 +119,7 @@ struct DataTable final : NonCopyableClass
 
     public:
         DataTable() :m_lock(false) {}
-        DataTable(Utf8CP name) :m_lock(false), m_name(name) {}
+        explicit DataTable(Utf8CP name) :m_lock(false), m_name(name) {}
         void LockDefinition() { m_lock = true; }
         void SetName(Utf8CP name) { m_name = name; }
         Utf8CP GetName() const { return m_name.c_str(); }
