@@ -4,7 +4,7 @@
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
 	
-    <ECEntityClass typeName="SchemaVersionTestElement">
+    <ECEntityClass typeName="TestElement">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -14,4 +14,13 @@
 		<ECProperty propertyName="IntegerProperty3" typeName="int"/>
 		<ECProperty propertyName="IntegerProperty4" typeName="int"/>
     </ECEntityClass>
+
+    <ECEntityClass typeName="AnotherTestElement">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="IntegerProperty5" typeName="int"/>
+    </ECEntityClass>
+    
 </ECSchema>

@@ -31,6 +31,7 @@
 #define BIS_CLASS_Category                  "Category"
 #define BIS_CLASS_CategorySelector          "CategorySelector"
 #define BIS_CLASS_CodeSpec                  "CodeSpec"
+#define BIS_CLASS_ColorBook                 "ColorBook"
 #define BIS_CLASS_DefinitionElement         "DefinitionElement"
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
 #define BIS_CLASS_DefinitionPartition       "DefinitionPartition"
@@ -64,7 +65,6 @@
 #define BIS_CLASS_GroupInformationElement   "GroupInformationElement"
 #define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
 #define BIS_CLASS_GroupInformationPartition "GroupInformationPartition"
-#define BIS_CLASS_IModellableElement        "IModellableElement"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
@@ -73,6 +73,7 @@
 #define BIS_CLASS_InformationRecordModel    "InformationRecordModel"
 #define BIS_CLASS_InformationRecordPartition "InformationRecordPartition"
 #define BIS_CLASS_InformationReferenceElement "InformationReferenceElement"
+#define BIS_CLASS_ISubModeledElement        "ISubModeledElement"
 #define BIS_CLASS_LightLocation             "LightLocation"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_MaterialElement           "MaterialElement"
@@ -105,7 +106,6 @@
 #define BIS_CLASS_TemplateViewDefinition3d  "TemplateViewDefinition3d"
 #define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
 #define BIS_CLASS_Texture                   "Texture"
-#define BIS_CLASS_TrueColor                 "TrueColor"
 #define BIS_CLASS_ViewDefinition            "ViewDefinition"
 #define BIS_CLASS_ViewDefinition2d          "ViewDefinition2d"
 #define BIS_CLASS_ViewDefinition3d          "ViewDefinition3d"
@@ -117,6 +117,7 @@
 //-----------------------------------------------------------------------------------------
 #define BIS_REL_BaseModelForView2d                  "BaseModelForView2d"
 #define BIS_REL_CategoryOwnsSubCategories           "CategoryOwnsSubCategories"
+#define BIS_REL_DrawingGraphicRepresentsElement     "DrawingGraphicRepresentsElement"
 #define BIS_REL_ElementDrivesElement                "ElementDrivesElement"
 #define BIS_REL_ElementGroupsMembers                "ElementGroupsMembers"
 #define BIS_REL_ElementOwnsChildElements            "ElementOwnsChildElements"
@@ -124,8 +125,6 @@
 #define BIS_REL_ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
 #define BIS_REL_ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementRefersToElements             "ElementRefersToElements"
-#define BIS_REL_ElementUsesGeometryParts            "ElementUsesGeometryParts"
-#define BIS_REL_GraphicDerivedFromElement           "GraphicDerivedFromElement"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
 #define BIS_REL_GraphicalType2dHasTemplateRecipe    "GraphicalType2dHasTemplateRecipe"
 #define BIS_REL_MaterialOwnsChildMaterials          "MaterialOwnsChildMaterials"
@@ -180,26 +179,23 @@ struct ModelIterator;
 struct DgnCode
 {
 private:
-    CodeSpecId m_codeSpecId;
+    CodeSpecId m_specId;
+    DgnElementId m_scopeElementId;
     Utf8String m_value;
-    Utf8String m_scope;
 
 public:
-    //! Constructs an invalid code
+    //! Constructs an invalid DgnCode
     DgnCode() {}
 
-    //! Constructor
-    DgnCode(CodeSpecId codeSpecId, Utf8StringCR value, Utf8StringCR scope) : m_codeSpecId(codeSpecId), m_value(value), m_scope(scope) {}
-
-    //! Construct a code with the specified Id as its scope
-    DGNPLATFORM_EXPORT DgnCode(CodeSpecId codeSpecId, Utf8StringCR value, BeInt64Id scopeId);
+    //! Construct a DgnCode from the specified parameters
+    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scopeElementId(scopeElementId), m_value(value) {};
 
     //! Determine whether this DgnCode is valid.
-    bool IsValid() const {return m_codeSpecId.IsValid();}
+    bool IsValid() const {return m_specId.IsValid();}
     //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
-    bool IsEmpty() const {return m_codeSpecId.IsValid() && m_value.empty();}
+    bool IsEmpty() const {return m_specId.IsValid() && m_value.empty();}
     //! Determine if two DgnCodes are equivalent
-    bool operator==(DgnCode const& other) const {return m_codeSpecId==other.m_codeSpecId && m_value==other.m_value && m_scope==other.m_scope;}
+    bool operator==(DgnCode const& other) const {return m_specId==other.m_specId && m_value==other.m_value && m_scopeElementId==other.m_scopeElementId;}
     //! Determine if two DgnCodes are not equivalent
     bool operator!=(DgnCode const& other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
@@ -207,15 +203,17 @@ public:
 
     //! Get the value for this DgnCode
     Utf8StringCR GetValue() const {return m_value;}
+    //! Get the value for this DgnCode
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
     //! Get the scope for this DgnCode
-    Utf8StringCR GetScope() const {return m_scope;}
+    DgnElementId GetScopeElementId() const {return m_scopeElementId;}
     //! Get the CodeSpecId of the CodeSpec that issued this DgnCode.
-    CodeSpecId GetCodeSpecId() const {return m_codeSpecId;}
+    CodeSpecId GetCodeSpecId() const {return m_specId;}
     void RelocateToDestinationDb(DgnImportContext&);
 
     //! Re-initialize to the specified values.
-    void From(CodeSpecId codeSpecId, Utf8StringCR value, Utf8StringCR scope);
+    //! @private
+    void From(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value);
 
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
@@ -231,8 +229,8 @@ public:
     public:
         CodeSpecId GetCodeSpecId() const {return m_statement->GetValueId<CodeSpecId>(0);}
         Utf8CP GetValue() const {return m_statement->GetValueText(1);}
-        Utf8CP GetScope() const {return m_statement->GetValueText(2);}
-        DgnCode GetCode() const {return DgnCode(GetCodeSpecId(), GetValue(), GetScope());}
+        DgnElementId GetScopeElementId() const {return m_statement->GetValueId<DgnElementId>(2);}
+        DgnCode GetCode() const {return DgnCode(GetCodeSpecId(), GetScopeElementId(), GetValue());}
     };
 
     struct Iterator : ECSqlStatementIterator<Entry>
@@ -316,37 +314,6 @@ private:
     ~DgnModels() {}
 
 public:
-    //! An object that holds a row from the DgnModel table.
-    struct Model
-    {
-        friend struct DgnModels;
-
-    private:
-        DgnModelId m_id;
-        DgnClassId m_classId;
-        DgnElementId m_modeledElementId;
-        bool m_isPrivate = false;
-        bool m_isTemplate = false;
-
-    public:
-        Model() {}
-        Model(DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid) {}
-
-        void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;}
-        void SetId(DgnModelId id) {m_id = id;}
-        void SetClassId(DgnClassId classId) {m_classId = classId;}
-        void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
-        void SetModelType(DgnClassId classId) {m_classId = classId;}
-        void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
-
-        bool IsPrivate() const {return m_isPrivate;}
-        DgnModelId GetId() const {return m_id;}
-        DgnClassId GetClassId() const {return m_classId;}
-        DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-        bool IsTemplate() const {return m_isTemplate;}
-    }; // Model
-
-public:
     //! Create a new, non-persistent model from the supplied ECInstance.
     //! The supplied instance must contain the model's Code.
     //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
@@ -372,9 +339,7 @@ public:
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
-    DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-
-    //! Query for a DgnModelId by the DgnCode of the element that it is modeling
+    //! Query for a DgnModelId by the DgnCode of the element that is being modeled
     DGNPLATFORM_EXPORT DgnModelId QuerySubModelId(DgnCodeCR modeledElementCode) const;
 
     //! Make an iterator over models of the specified ECClass in this DgnDb.

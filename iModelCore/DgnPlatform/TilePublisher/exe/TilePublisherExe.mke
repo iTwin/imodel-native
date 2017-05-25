@@ -39,6 +39,14 @@ EXE_NO_SIGN         = 1
 EXE_DEST            = $(o)
 EXE_NAME            = $(appName)
 EXE_OBJS            = $(MultiCompileObjectList)
+
+%ifdef __unix
+
+%include $(SharedMki)rollUpSubPartsLibsThin.mki
+EXE_OBJS + $(THIN_ARCHIVE_PATH)
+
+%else
+
 EXE_LOPT1           = -entry:wmainCRTStartup
 
 LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
@@ -58,6 +66,8 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)TilePublisher.lib     \
                       gdi32.lib                           \
                       user32.lib                          \
+
+%endif
 
 %include $(SharedMki)linktool.mki
 

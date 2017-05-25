@@ -433,7 +433,6 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#LineStyles.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup GROUP_DgnCategory
-BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that refers to a ViewDefinition.
 
 BESERVER_ISSUED_ID_CLASS(CodeSpecId)
@@ -480,6 +479,8 @@ public:
     void SetGeometryPartId(DgnGeometryPartId partId) {m_partId = partId; m_partIndex = 0;}
     void SetIndex(uint16_t index) {m_index = index;}
     void SetPartIndex(uint16_t partIndex) {m_partIndex = partIndex;}
+    void IncrementIndex() {if (USHRT_MAX == m_index) return; m_index += 1;} // More than 65535 geometric entries in a single GeometryStream is questionable...
+    void IncrementPartIndex() {if (USHRT_MAX == m_partIndex) return; m_partIndex += 1;}
 
     DgnGeometryPartId GetGeometryPartId() const {return m_partId;}
     uint16_t GetIndex() const {return m_index;}
@@ -488,7 +489,7 @@ public:
 
     void SetActive(bool enable) {if (m_partId.IsValid()) {if (!enable) SetGeometryPartId(DgnGeometryPartId()); return;} Init();}
     void SetActiveGeometryPart(DgnGeometryPartId partId) {SetGeometryPartId(partId);}
-    void Increment() {if (m_partId.IsValid()) SetPartIndex(GetPartIndex()+1); else SetIndex(GetIndex()+1);}
+    void Increment() {if (m_partId.IsValid()) IncrementPartIndex(); else IncrementIndex();}
 };
 
 //=======================================================================================

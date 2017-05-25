@@ -116,7 +116,7 @@ void ScriptTest::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBrie
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
 
-    m_defaultCategoryId = DgnCategory::QueryCategoryId(*m_db, SpatialCategory::CreateCode(*m_db, s_seedFileInfo.categoryName));
+    m_defaultCategoryId = SpatialCategory::QueryCategoryId(m_db->GetDictionaryModel(), s_seedFileInfo.categoryName);
     }
 
 //---------------------------------------------------------------------------------------

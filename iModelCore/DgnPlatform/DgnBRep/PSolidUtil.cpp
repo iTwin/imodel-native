@@ -457,7 +457,7 @@ void PSolidUtil::ExtractStartAndSweepFromInterval (double& start, double& sweep,
     if (reverse)
         {
         start += sweep;
-        sweep =- sweep;
+        sweep = -sweep;
         }
     }
 
@@ -1092,6 +1092,9 @@ bool            PSolidUtil::AreBodiesEqual(PK_BODY_t body1, PK_BODY_t body2, dou
             bvector<PK_FACE_t> faces2;
 
             if (SUCCESS != PSolidTopo::GetBodyFaces(faces1, body1) || SUCCESS != PSolidTopo::GetBodyFaces(faces2, body2) || faces1.size() != faces2.size())
+                return false;
+
+            if (SUCCESS != CheckBody(body1, true, true, false) || SUCCESS != CheckBody(body2, true, true, false))
                 return false;
 
             PK_VECTOR_t point;

@@ -169,10 +169,12 @@ protected:
     static double ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedBox2dCR);
 
 public:
-    BE_PROP_NAME(View)
-    BE_PROP_NAME(DisplayPriority)
-    BE_PROP_NAME(Scale)
-    BE_PROP_NAME(Clip)
+    BE_PROP_NAME(View);
+
+    BE_JSON_NAME(details);
+    BE_JSON_NAME(displayPriority);
+    BE_JSON_NAME(scale);
+    BE_JSON_NAME(clip);
 
     explicit ViewAttachment(CreateParams const& params) : T_Super(params) {}
 
@@ -195,10 +197,15 @@ public:
 
     DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(prop_View());} //!< Get the Id of the view definition to be drawn by this attachment
     DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(prop_View(), viewId, ECN::ECClassId());} //!< Set the view definition to be drawn
-    int32_t GetDisplayPriority() const {return GetPropertyValueInt32(prop_DisplayPriority());}
-    DgnDbStatus SetDisplayPriority(int32_t priority) {return SetPropertyValue(prop_DisplayPriority(), priority);}
-    double GetScale() const {return GetPropertyValueDouble(prop_Scale());}
-    DgnDbStatus SetScale(double scale) {return SetPropertyValue(prop_Scale(), scale);}
+
+    Utf8CP GetDetails() const { return m_jsonProperties[json_details()].asCString(nullptr); }
+    void SetDetails(Utf8CP details) { details ? m_jsonProperties[json_details()] = details : m_jsonProperties.removeMember(json_details()); }
+
+    int32_t GetDisplayPriority() const { return m_jsonProperties[json_displayPriority()].asInt(0); }
+    void SetDisplayPriority(int32_t priority) { m_jsonProperties[json_displayPriority()] = priority; }
+
+    double GetScale() const { return m_jsonProperties[json_scale()].asDouble(0.0); }
+    void SetScale(double scale) { m_jsonProperties[json_scale()] = scale; }
 
     //! Get the clip to be applied to this attachment, if any. 
     //! @return a clip vector or an invalid ptr if the attachment is not clipped.
@@ -206,13 +213,12 @@ public:
     DGNPLATFORM_EXPORT ClipVectorPtr GetClip() const;
 
     //! Set the clip to be applied to this attachment.
-    //! @return non-zero error status if the clip is invalid
     //! @see ClearClip
-    DGNPLATFORM_EXPORT DgnDbStatus SetClip(ClipVectorCR);
+    DGNPLATFORM_EXPORT void SetClip(ClipVectorCR);
 
     //! Clear the clip for this attachment.
     //! @see SetClip
-    void ClearClip() {SetPropertyValue(prop_Clip(), ECN::ECValue());}
+    DGNPLATFORM_EXPORT void ClearClip();
 };
 
 //=======================================================================================
@@ -346,9 +352,9 @@ namespace Handlers
     };
 
     //! The ModelHandler for Sheet::Model
-    struct EXPORT_VTABLE_ATTRIBUTE Model :  dgn_ModelHandler::Model
+    struct EXPORT_VTABLE_ATTRIBUTE Model :  dgn_ModelHandler::Geometric2d
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, Sheet::Model, Model, dgn_ModelHandler::Geometric2d, DGNPLATFORM_EXPORT)
     };
 };
 

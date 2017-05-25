@@ -133,23 +133,11 @@ void dgn_ElementHandler::AnnotationLeaderStyleHandler::_RegisterPropertyAccessor
     params.RegisterPropertyAccessors(layout, PROP_Data,
         [] (ECValueR value, DgnElementCR elIn)
             {
-            AnnotationLeaderStyle& el = (AnnotationLeaderStyle&) elIn;
-            bvector<Byte> data;
-            if (SUCCESS != AnnotationLeaderStylePersistence::EncodeAsFlatBuf(data, el, AnnotationLeaderStylePersistence::FlatBufEncodeOptions::Default))
-                return DgnDbStatus::BadArg;
-            value.SetBinary(data.data(), data.size());
-            return DgnDbStatus::Success;
+            return DgnDbStatus::BadRequest; // BLOB that is not meant to be directly accessed; use the element API.
             },
        [] (DgnElementR elIn, ECValueCR value)
             {
-            if (!value.IsBinary())
-                return DgnDbStatus::BadArg;
-            AnnotationLeaderStyle& el = (AnnotationLeaderStyle&) elIn;
-            size_t dataSize = 0;
-            ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
-            if (SUCCESS != AnnotationLeaderStylePersistence::DecodeFromFlatBuf(el, data, static_cast<size_t>(dataSize)))
-                return DgnDbStatus::BadArg;
-            return DgnDbStatus::Success;
+            return DgnDbStatus::BadRequest; // BLOB that is not meant to be directly accessed; use the element API.
             });
     }
 

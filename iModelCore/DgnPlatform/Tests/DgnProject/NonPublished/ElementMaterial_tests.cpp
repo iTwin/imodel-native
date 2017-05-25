@@ -61,7 +61,8 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     EXPECT_TRUE(imageSource.IsValid());
     EXPECT_TRUE(image.IsValid());
 
-    DgnTexture texture(DgnTexture::CreateParams(dgnDb, materialName/*###TODO unnamed textures*/, imageSource, image.GetWidth(), image.GetHeight()));
+    DefinitionModelR dictionary = dgnDb.GetDictionaryModel();
+    DgnTexture texture(DgnTexture::CreateParams(dictionary, materialName/*###TODO unnamed textures*/, imageSource, image.GetWidth(), image.GetHeight()));
     texture.Insert();
     DgnTextureId textureId = texture.GetTextureId();
     EXPECT_TRUE(textureId.IsValid());
@@ -75,7 +76,7 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset.GetValueR(RENDER_MATERIAL_Map) = mapsMap;
 
-    DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
+    DgnMaterial material(dictionary, "Test Palette", materialName);
     material.SetRenderingAsset(renderMaterialAsset);
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());

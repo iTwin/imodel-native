@@ -92,10 +92,10 @@ struct DgnCodeInfo : DgnCodeState
 private:
     DgnCode m_code;
 public:
-    explicit DgnCodeInfo(DgnCode const& code) : m_code(code) { }
+    explicit DgnCodeInfo(DgnCodeCR code) : m_code(code) { }
     DgnCodeInfo() { }
 
-    DgnCode const& GetCode() const { return m_code; } //!< The DgnCode whose state is represented by this DgnCodeInfo
+    DgnCodeCR GetCode() const { return m_code; } //!< The DgnCode whose state is represented by this DgnCodeInfo
 
     // For inclusion in DgnCodeInfoSet...only the DgnCode is significant for ordering.
     bool operator<(DgnCodeInfo const& rhs) const
@@ -110,4 +110,3 @@ public:
 typedef bset<DgnCodeInfo> DgnCodeInfoSet;
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-

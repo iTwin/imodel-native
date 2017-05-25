@@ -40,7 +40,7 @@ Some of the most common model classes are described below:
 If custom <i>container</i> behavior is desired, it is also possible to subclass one of the base model classes.
 To accomplish this, the first step is to create an ECEntityClass in the ecschema.xml file (data model) that subclasses the appropriate DgnPlatform ECEntityClass:
 
-__PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTilePhysicalModel.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTileGroupModel.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
@@ -48,7 +48,7 @@ __PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTilePhysicalModel.sampleCode
 
 The next step is to create a C++ class that subclasses the appropriate DgnModel C++ class:
 
-__PUBLISH_INSERT_FILE__ ToyTilePhysicalModel_Declare.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTileGroupModel_Declare.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
@@ -56,7 +56,7 @@ __PUBLISH_INSERT_FILE__ ToyTilePhysicalModel_Declare.sampleCode
 
 It is a best practice to have a static @c Create method that constructs a new instance and returns a reference-counted pointer.  For example:
 
-__PUBLISH_INSERT_FILE__ ToyTilePhysicalModel_Create.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTileGroupModel_Create.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
@@ -65,7 +65,7 @@ __PUBLISH_INSERT_FILE__ ToyTilePhysicalModel_Create.sampleCode
 This subclass wants custom behavior that ensures that only particular types of elements are inserted in the model.
 This is accomplished by overriding the appropriate virtual method:
 
-__PUBLISH_INSERT_FILE__ ToyTilePhysicalModel_OnInsertElement.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTileGroupModel_OnInsertElement.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
@@ -73,14 +73,14 @@ __PUBLISH_INSERT_FILE__ ToyTilePhysicalModel_OnInsertElement.sampleCode
 
 It is also required to declare a C++ handler class that serves as a <i>factory</i> to create new instances of the C++ class:
 
-__PUBLISH_INSERT_FILE__ ToyTilePhysicalModelHandler_Declare.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTileGroupModelHandler_Declare.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_CustomModel6 Define handler members
 
 A macro is provided to auto-generate the required factory methods within the handler class.
-See the @c ToyTilePhysicalModelHandler line in the sample code below:
+See the @c ToyTileGroupModelHandler line in the sample code below:
 
 __PUBLISH_INSERT_FILE__ ToyTileDomain_DefineMembers.sampleCode
 
@@ -89,7 +89,7 @@ __PUBLISH_INSERT_FILE__ ToyTileDomain_DefineMembers.sampleCode
 @section SECTION_CustomModel7 Register handlers
 
 The handlers must also be registered.
-See the @c ToyTilePhysicalModelHandler line in the sample code below:
+See the @c ToyTileGroupModelHandler line in the sample code below:
 
 __PUBLISH_INSERT_FILE__ ToyTileDomain_RegisterHandlers.sampleCode
 

@@ -2096,7 +2096,7 @@ BentleyStatus   PSolidGeom::BodyFromSweep (PK_BODY_t& bodyTag, PK_BODY_t profile
         options.scale.law_set.values [1] = *scale;
         }
     
-    static bool     s_doRepair;
+    // unused - static bool     s_doRepair;
 
     if (selfRepair)
         options.repair = PK_sweep_repair_yes_c;

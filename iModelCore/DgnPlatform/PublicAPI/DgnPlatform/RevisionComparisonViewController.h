@@ -166,7 +166,7 @@ public:
 
     void SetShow(Show show) { m_show = show; SetFeatureOverridesDirty(); }
     void SetSymbology(SymbologyCR symb) { m_symbology = symb; SetFeatureOverridesDirty(); }
-
+    bool WantShowBoth() const { return WantShowCurrent() && WantShowTarget(); }
     bool WantShowCurrent() const { return 0 != (m_show & kShowCurrent); }
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
 };

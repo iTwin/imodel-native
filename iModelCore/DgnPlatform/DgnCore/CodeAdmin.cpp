@@ -99,7 +99,7 @@ DgnCode DgnPlatformLib::Host::CodeAdmin::_GenerateCode(DgnElementCR element, Cod
         }
 
     if (!sequenceMaskContainsWildcard)
-        return DgnCode(codeSpec.GetCodeSpecId(), sequenceMask, codeSpec.GetScopeElementId(element));
+        return DgnCode(codeSpec.GetCodeSpecId(), codeSpec.GetScopeElementId(element), sequenceMask);
 
     return _ReserveNextCodeInSequence(element, codeSpec, sequenceMask);
     }

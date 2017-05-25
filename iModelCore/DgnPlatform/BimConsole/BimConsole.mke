@@ -47,7 +47,25 @@ EXE_NAME    = $(appName)
 EXE_OBJS    = $(MultiCompileObjectList)
 EXE_LOPT1   = -entry:wmainCRTStartup
 
-LINKER_LIBRARIES = $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)] $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)]
+%ifdef __unix
+
+%include $(SharedMki)rollUpSubPartsLibsThin.mki
+
+EXE_OBJS + $(THIN_ARCHIVE_PATH)
+
+%else
+
+LINKER_LIBRARIES = $(SubpartLibs)$(libprefix)Bentley$(libext)\
+                   $(SubpartLibs)$(libprefix)BeSQLite$(libext)\
+                   $(SubpartLibs)$(libprefix)BeSQLiteEC$(libext)\
+                   $(SubpartLibs)$(libprefix)BeLibxml2$(libext)\
+                   $(SubpartLibs)$(libprefix)BentleyGeom$(libext)\
+                   $(SubpartLibs)$(libprefix)DgnPlatform$(libext)\
+                   $(SubpartLibs)$(libprefix)ECObjects$(libext)\
+                   $(SubpartLibs)$(libprefix)BeJsonCpp$(stlibext)\
+                   $(SubpartLibs)$(libprefix)Units$(libext)
+
+%endif
 
 %include $(SharedMki)linktool.mki
 
