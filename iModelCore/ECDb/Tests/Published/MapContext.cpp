@@ -19,8 +19,8 @@ void MapContext::LoadTables()
 
     Utf8CP sql = R"(
                 SELECT [T].[Name], 
-                       CASE [T].[Type] WHEN 0 THEN 'Primary' WHEN 1 THEN 'Joined' WHEN 2 THEN 'Existing' WHEN 3 THEN 'Overflow' ELSE '<err>' END [Type], 
-                       CASE [T].[IsVirtual] WHEN 0 THEN 'False' WHEN 1 THEN 'True' ELSE '<err>' END [IsVirtual], 
+                       CASE [T].[Type] WHEN 0 THEN 'Primary' WHEN 1 THEN 'Joined' WHEN 2 THEN 'Existing' WHEN 3 THEN 'Overflow' WHEN 4 THEN 'Virtual' ELSE '<err>' END [Type], 
+                       CASE [T].[Type] WHEN 4 THEN 'True' ELSE 'False' END [IsVirtual], 
                        [TP].[Name] [ParentTable], 
                        [S].[Name] [ExclusiveRootSchema], 
                        [C].[Name] [ExclusiveRootClass]
