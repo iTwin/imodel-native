@@ -8,7 +8,7 @@
 
 #pragma once
 #include "stdafx.h"      
-#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 
                 
                 
@@ -24,7 +24,7 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
 
         virtual void _SupplyProductName(Utf8StringR name) override { name.assign("ArchPhysCreator"); }
         //__PUBLISH_SECTION_START__
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new   Dgn::KnownDesktopLocationsAdmin(); }
+        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new   Dgn::WindowsKnownLocationsAdmin(); }
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 

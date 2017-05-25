@@ -7,6 +7,14 @@
     </Part>
 
     
+    <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
+    <Part Name="BuildingDomainsWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
+        <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
+        <SubPart PartName="BuildingDomains"/>
+    </Part>
+    
+    
     <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
         <SubPart PartName="ArchPhysPublicAPI"/>
         <SubPart PartName="BuildingCommon"/>

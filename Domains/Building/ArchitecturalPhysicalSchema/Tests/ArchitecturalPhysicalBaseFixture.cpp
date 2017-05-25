@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ArchitecturalPhysicalBaseFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 
 using namespace BeSQLite;
@@ -88,7 +88,7 @@ ViewManager& ArchitecturalPhysicalTestsHost::_SupplyViewManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewLib::Host::IKnownLocationsAdmin& ArchitecturalPhysicalTestsHost::_SupplyIKnownLocationsAdmin()
     {
-    return *new KnownDesktopLocationsAdmin();
+    return *new WindowsKnownLocationsAdmin();
     }
 
 
