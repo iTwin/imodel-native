@@ -60,7 +60,7 @@ protected:
     void Init();
 public:
 
-    DefaultPropertyValueGenerator(ECN::ECPropertyCP templateProperty);
+    explicit DefaultPropertyValueGenerator(ECN::ECPropertyCP templateProperty);
     void SetSeedInt32(int32_t seed, int32_t increment);
     void SetSeedLong(int64_t seed, int64_t increment);
     void SetSeedDouble(double seed, double increment);

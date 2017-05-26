@@ -264,21 +264,16 @@ void ECSqlSelectAsserter::_Assert(ECSqlTestItem const& testItem) const
     ResultCountECSqlExpectedResult const* expectedResultForResultCount = nullptr;
     const bool assertPrepare = testItem.GetExpectedResults().TryGet<PrepareECSqlExpectedResult>(expectedResultForPrepare, ECSqlExpectedResult::Type::Prepare);
     const bool assertStepSelect = testItem.GetExpectedResults().TryGet<ResultCountECSqlExpectedResult>(expectedResultForResultCount, ECSqlExpectedResult::Type::ResultCount);
-
-    ECSqlExpectedResult const* expectedResultOfLastStep = nullptr;
-
     bool prepareSucceeded = true;
     ECSqlStatement statement;
     if (assertPrepare)
         {
         AssertPrepare(prepareSucceeded, testItem, statement, *expectedResultForPrepare);
-        expectedResultOfLastStep = expectedResultForPrepare;
         }
 
     if (prepareSucceeded && assertStepSelect)
         {
         AssertStep(testItem, statement, *expectedResultForResultCount);
-        expectedResultOfLastStep = expectedResultForResultCount;
         }
     }
 
@@ -604,19 +599,17 @@ void ECSqlNonSelectAsserter::_Assert(ECSqlTestItem const& testItem) const
     const auto assertPrepare = testItem.GetExpectedResults().TryGet<PrepareECSqlExpectedResult>(expectedResultForPrepare, ECSqlExpectedResult::Type::Prepare);
     const auto assertStepNonSelect = testItem.GetExpectedResults().TryGet<ECSqlExpectedResult>(expectedResultForStep, ECSqlExpectedResult::Type::Generic);
 
-    ECSqlExpectedResult const* expectedResultOfLastStep = nullptr;
+    //ECSqlExpectedResult const* expectedResultOfLastStep = nullptr;
     bool prepareSucceeded = true;
     ECSqlStatement statement;
     if (assertPrepare)
         {
         AssertPrepare(prepareSucceeded, testItem, statement, *expectedResultForPrepare);
-        expectedResultOfLastStep = expectedResultForPrepare;
         }
 
     if (prepareSucceeded && assertStepNonSelect)
         {
         AssertStep(testItem, statement, *expectedResultForStep);
-        expectedResultOfLastStep = expectedResultForStep;
         }
     }
 

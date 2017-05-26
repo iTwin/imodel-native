@@ -23,8 +23,8 @@ struct Policy final
         bool m_isSupported;
         Utf8String m_notSupportedMessage;
 
-        Policy(bool isSupported) : m_isSupported(isSupported) {}
-        Policy(Utf8StringCR notSupportedMessage) : m_isSupported(false), m_notSupportedMessage(notSupportedMessage) {}
+        explicit Policy(bool isSupported) : m_isSupported(isSupported) {}
+        explicit Policy(Utf8StringCR notSupportedMessage) : m_isSupported(false), m_notSupportedMessage(notSupportedMessage) {}
 
     public:
         ~Policy() {}
@@ -99,7 +99,7 @@ struct ClassIsValidInECSqlPolicyAssertion final : PolicyAssertion
             : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(false)
             {}
         explicit ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap) 
-                : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(false), m_isPolymorphicClassExpression(false)
+                : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(false), m_isPolymorphicClassExpression(false), m_ecSqlTypeFilter(ECSqlType::Unset)
             {}
 
         ClassMap const& GetClassMap() const { return m_classMap; }

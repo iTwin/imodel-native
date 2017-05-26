@@ -630,7 +630,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::PopulateProxyBinders(PrepareInfo const
     for (bpair<int, Exp::ECSqlRenderContext::ParameterNameInfo> const& parameterNameMapping : prepareInfo.GetECSqlRenderContext().GetParameterIndexNameMap())
         {
         const uint32_t paramIndex = (uint32_t) parameterNameMapping.first;
-        BeAssert(paramIndex >= 0 && paramIndex <= (uint32_t) m_proxyBinders.size());
+        BeAssert(paramIndex <= (uint32_t) m_proxyBinders.size());
         Utf8StringCR paramName = parameterNameMapping.second.m_name;
         if (!parameterNameMapping.second.m_isSystemGeneratedName)
             m_parameterNameMap[paramName] = paramIndex;

@@ -15,9 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
-    : ClassMap(ecdb, type, ecRelClass, mapStrategy),
-    m_sourceConstraintMap(ecdb, ecRelClass.GetId(), ECRelationshipEnd_Source, ecRelClass.GetRelationshipClassCP()->GetSource()),
-    m_targetConstraintMap(ecdb, ecRelClass.GetId(), ECRelationshipEnd_Target, ecRelClass.GetRelationshipClassCP()->GetTarget())
+    : ClassMap(ecdb, type, ecRelClass, mapStrategy), m_sourceConstraintMap( ecRelClass.GetRelationshipClassCP()->GetSource()), m_targetConstraintMap( ecRelClass.GetRelationshipClassCP()->GetTarget())
     {
     BeAssert(ecRelClass.IsRelationshipClass());
     }
@@ -28,8 +26,8 @@ RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECC
 //---------------------------------------------------------------------------------------
 RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
     : ClassMap(ecdb, type, ecRelClass, mapStrategy, updatableViewInfo),
-    m_sourceConstraintMap(ecdb, ecRelClass.GetId(), ECRelationshipEnd_Source, ecRelClass.GetRelationshipClassCP()->GetSource()),
-    m_targetConstraintMap(ecdb, ecRelClass.GetId(), ECRelationshipEnd_Target, ecRelClass.GetRelationshipClassCP()->GetTarget())
+    m_sourceConstraintMap(ecRelClass.GetRelationshipClassCP()->GetSource()),
+    m_targetConstraintMap(ecRelClass.GetRelationshipClassCP()->GetTarget())
     {
     BeAssert(ecRelClass.IsRelationshipClass());
     }
@@ -88,58 +86,6 @@ ConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClass
     }
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                    02/2016
-//---------------------------------------------------------------------------------------
-bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
-    {
-    ConstraintECClassIdPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-    if (referencedEndClassIdPropertyMap->GetDataPropertyMaps().size() != 1)
-        {
-        BeAssert(false && "Expecting exactly one property map");
-        return false;
-        }
-
-    SingleColumnDataPropertyMap const& vm = referencedEndClassIdPropertyMap->GetDataPropertyMaps().front()->GetAs<SingleColumnDataPropertyMap>();
-    return vm.GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm.IsMappedToClassMapTables();
-    }
-
-//************************ RelationshipConstraintMap ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2014
-//---------------------------------------------------------------------------------------
-RelationshipConstraintMap::RelationshipConstraintMap(ECDb const& ecdb, ECN::ECClassId relClassId, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint) : m_ecdb(ecdb), m_relClassId(relClassId), m_constraintEnd(constraintEnd), m_constraint(constraint), m_ecInstanceIdPropMap(nullptr), m_ecClassIdPropMap(nullptr)
-    {
-    m_anyClassMatches = RelationshipClassMap::ConstraintIncludesAnyClass(m_constraint.GetConstraintClasses());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2016
-//---------------------------------------------------------------------------------------
-bool RelationshipConstraintMap::TryGetSingleClassIdFromConstraint(ECClassId& constraintClassId) const
-    {
-    if (m_anyClassMatches)
-        return false;
-
-    bmap<ECClassId, LightweightCache::RelationshipEnd> const& constraintClassIds = m_ecdb.Schemas().GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(m_relClassId);
-
-    const LightweightCache::RelationshipEnd requiredEnd = m_constraintEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
-    ECClassId singleConstraintClassId;
-    for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : constraintClassIds)
-        {
-        const LightweightCache::RelationshipEnd actualEnd = kvPair.second;
-        if (LightweightCache::RelationshipEnd::Both == actualEnd || requiredEnd == actualEnd)
-            {
-            //If IsValid, then single constraint class id is already set, and therefore the constraint has more than one constraint classes
-            if (singleConstraintClassId.IsValid())
-                return false;
-
-            singleConstraintClassId = kvPair.first;
-            }
-        }
-
-    return true;
-    }
 
 //************************ RelationshipClassEndTableMap **********************************
 //--------------------------------------------------------------------------------------
@@ -162,57 +108,6 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECC
 RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
     : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy, updatableViewInfo)
     {}
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Affan.Khan                         1 / 16
-//---------------------------------------------------------------------------------------
-RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassEndTableMap::_GetDataIntegrityEnforcementMethod(ClassMappingContext&) const
-    {
-    if (GetPrimaryTable().GetType() == DbTable::Type::Existing || GetRelationshipClass().GetClassModifier() == ECClassModifier::Abstract
-        || GetRelationshipClass().GetSource().GetConstraintClasses().empty() || GetRelationshipClass().GetTarget().GetConstraintClasses().empty())
-        return ReferentialIntegrityMethod::None;
-
-    if (GetRelationshipClass().GetStrength() == StrengthType::Referencing || GetRelationshipClass().GetStrength() == StrengthType::Embedding || GetRelationshipClass().GetStrength() == StrengthType::Holding)
-        {
-        return ReferentialIntegrityMethod::ForeignKey;
-        }
-
-    BeAssert(false && "Trigger are not supported");
-    return ReferentialIntegrityMethod::Trigger;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Affan.Khan                         1 / 16
-//---------------------------------------------------------------------------------------
-bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
-    {
-    //We need to join if ECClassId is both SourceECClassId and TargetECClassId. This case of selfJoin where we must join.
-    if (endPoint == GetForeignEnd())
-        return false;
-
-    ConstraintECClassIdPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-    if (!referencedEndClassIdPropertyMap->IsMappedToSingleTable())
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    SingleColumnDataPropertyMap const& vm = referencedEndClassIdPropertyMap->GetDataPropertyMaps().front()->GetAs<SingleColumnDataPropertyMap>();
-    if (vm.GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm.IsMappedToClassMapTables())
-        return true;
-
-    //SELF JOIN case
-    if (GetSourceECClassIdPropMap()->IsMappedToSingleTable() && GetTargetECClassIdPropMap()->IsMappedToSingleTable())
-        {
-        SystemPropertyMap::PerTableIdPropertyMap const* source = GetSourceECClassIdPropMap()->GetDataPropertyMaps().front();
-        SystemPropertyMap::PerTableIdPropertyMap const* target = GetTargetECClassIdPropMap()->GetDataPropertyMaps().front();
-
-        return &source->GetColumn() == &target->GetColumn() && source->GetColumn().GetPersistenceType() == PersistenceType::Physical;
-        }
-
-    return false;
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
@@ -359,7 +254,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     DbColumn const* referencedTablePKCol = referencedTable->FindFirst(DbColumn::Kind::ECInstanceId);
     if (referencedTablePKCol == nullptr)
         {
-        BeAssert(referencedTablePKCol != nullptr);
+        BeAssert(false);
         return ERROR;
         }
 
@@ -906,8 +801,6 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(RelationshipMapping
         return;
 
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
-    std::vector<DbColumn const*> referencedEndIdColumns;
-
     for (SystemPropertyMap::PerTableIdPropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
         {
         DbTable& persistenceEndTable = const_cast<DbTable&>(vmap->GetColumn().GetTable());
@@ -929,31 +822,9 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(RelationshipMapping
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ConstraintECInstanceIdPropertyMap const* RelationshipClassEndTableMap::GetForeignEndECInstanceIdPropMap() const
-    {
-    return GetConstraintMap(GetForeignEnd()).GetECInstanceIdPropMap();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ConstraintECClassIdPropertyMap const* RelationshipClassEndTableMap::GetForeignEndECClassIdPropMap() const
-    {
-    return GetConstraintMap(GetForeignEnd()).GetECClassIdPropMap();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 ConstraintECInstanceIdPropertyMap const* RelationshipClassEndTableMap::GetReferencedEndECInstanceIdPropMap() const
     {
     return GetConstraintMap(GetReferencedEnd()).GetECInstanceIdPropMap();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ConstraintECClassIdPropertyMap const* RelationshipClassEndTableMap::GetReferencedEndECClassIdPropMap() const
-    {
-    return GetConstraintMap(GetReferencedEnd()).GetECClassIdPropMap();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1298,29 +1169,6 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(ClassMappi
     return endECClassIdColumn;
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Affan.Khan                         1 / 16
-//---------------------------------------------------------------------------------------
-RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassLinkTableMap::_GetDataIntegrityEnforcementMethod(ClassMappingContext& ctx) const
-    {
-    if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
-        return ReferentialIntegrityMethod::None;
-
-    size_t nSourceTables = GetDbMap().GetTableCountOnRelationshipEnd(ctx.GetImportCtx(), GetRelationshipClass().GetSource());
-    size_t nTargetTables = GetDbMap().GetTableCountOnRelationshipEnd(ctx.GetImportCtx(), GetRelationshipClass().GetTarget());
-
-    if (GetRelationshipClass().GetStrength() == StrengthType::Referencing ||
-        GetRelationshipClass().GetStrength() == StrengthType::Holding)
-        {
-        if (nSourceTables == 1 && nTargetTables == 1)
-            {
-            return ReferentialIntegrityMethod::ForeignKey;
-            }
-        }
-
-    BeAssert(false && "Trigger not supported");
-    return ReferentialIntegrityMethod::Trigger;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
@@ -1384,7 +1232,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Class
     auto targetECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this , ECRelationshipEnd_Target, {targetECClassIdColumn});
     if (targetECClassIdPropMap == nullptr)
         {
-        BeAssert(targetECClassIdPropMap != nullptr);
+        BeAssert(false);
         return ClassMappingStatus::Error;
         }
 

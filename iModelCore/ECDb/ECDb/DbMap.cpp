@@ -283,9 +283,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
              return status;
 
          BeAssert(classMapInfo != nullptr);
-
          MapStrategyExtendedInfo const& mapStrategy = classMapInfo->GetMapStrategy();
-
          ClassMapPtr classMap = nullptr;
          if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
              classMap = ClassMapFactory::CreateForMapping<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy);

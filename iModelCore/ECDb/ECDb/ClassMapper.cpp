@@ -84,57 +84,6 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
-    {
-    std::vector<DbColumn const*> ecInstanceIdColumns;
-    DbColumn const* ecInstanceIdColumn = classMap.GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECInstanceId);
-    if (ecInstanceIdColumn == nullptr)
-        {
-        BeAssert(false && "ECInstanceId column does not exist in table");
-        return ERROR;
-        }
-
-    ecInstanceIdColumns.push_back(ecInstanceIdColumn);
-    RefCountedPtr<ECInstanceIdPropertyMap> newProperty = ECInstanceIdPropertyMap::CreateInstance(classMap, ecInstanceIdColumns);
-    if (newProperty == nullptr)
-        {
-        BeAssert(false && "Failed to create property map");
-        return ERROR;
-        }
-
-    return classMap.GetPropertyMapsR().Insert(newProperty, 0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                      01/2016
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
-    {
-    std::vector<DbColumn const*> ecClassIdColumns;
-    DbColumn const* ecClassIdColumn = classMap.GetJoinedOrPrimaryTable().FindFirst(DbColumn::Kind::ECClassId);
-    if (ecClassIdColumn == nullptr)
-        {
-        BeAssert(false && "ECInstanceId column does not exist in table");
-        return ERROR;
-        }
-
-    ecClassIdColumns.push_back(ecClassIdColumn);
-    RefCountedPtr<ECClassIdPropertyMap> newProperty = ECClassIdPropertyMap::CreateInstance(classMap, ecClassIdColumns);
-    if (newProperty == nullptr)
-        {
-        BeAssert(false && "Failed to create property map");
-        return ERROR;
-        }
-
-
-    return classMap.GetPropertyMapsR().Insert(newProperty, 1);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                      01/2016
-//---------------------------------------------------------------------------------------
-//static
 ECN::ECRelationshipEnd ClassMapper::GetConstraintEnd(ECN::NavigationECPropertyCR prop, NavigationPropertyMap::NavigationEnd end)
     {
     const ECRelatedInstanceDirection navPropDir = prop.GetDirection();

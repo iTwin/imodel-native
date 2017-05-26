@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ClassRefExp : Exp
     {   
 protected:
-    ClassRefExp (Type type) : Exp (type) {}
+    explicit ClassRefExp (Type type) : Exp (type) {}
 
 public:
     virtual ~ClassRefExp () {}

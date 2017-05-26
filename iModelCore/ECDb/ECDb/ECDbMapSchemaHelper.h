@@ -201,7 +201,6 @@ struct DbIndexListCustomAttribute final
                 bvector<Utf8String> m_properties;
 
                 DbIndex(Nullable<Utf8String> const& name, Nullable<bool> isUnique, Nullable<Utf8String> const& whereClause) : m_name(name), m_isUnique(isUnique), m_whereClause(whereClause) {}
-                void AddProperty(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
 
             public:
                 //! Gets the index name.

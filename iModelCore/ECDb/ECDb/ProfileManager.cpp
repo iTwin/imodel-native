@@ -98,9 +98,9 @@ struct ProfileUpgradeContext final: NonCopyableClass
 
         //! Be default the upgrade transaction is rolled back when the context is destroyed.
         //! Be calling this method, the transaction is committed when the context is destroyed.
-        void SetCommitAfterUpgrade() { m_rollbackOnDestruction = false; }
+       // void SetCommitAfterUpgrade() { m_rollbackOnDestruction = false; }
 
-        DbResult GetBeginTransError() const { return m_beginTransError; }
+     //   DbResult GetBeginTransError() const { return m_beginTransError; }
     };
 
 //--------------------------------------------------------------------------------------

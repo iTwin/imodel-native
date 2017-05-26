@@ -184,7 +184,7 @@ ECSqlSystemPropertyBindingInfo* ECValueBindingInfoCollection::AddBindingInfo(ECV
     if (binding == nullptr)
         return nullptr;
 
-    ECSqlSystemPropertyBindingInfo* bindingP = (ECSqlSystemPropertyBindingInfo*) binding.get();
+    ECSqlSystemPropertyBindingInfo* bindingP = static_cast<ECSqlSystemPropertyBindingInfo*>(binding.get());
     m_bindingInfos.push_back(std::move(binding));
     return bindingP;
     }
@@ -576,7 +576,7 @@ bool ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(ECDbCR ecd
 
     if (selectStmtExp == nullptr)
         {
-        BeAssert(selectStmtExp != nullptr);
+        BeAssert(false);
         return false;
         }
 

@@ -255,7 +255,6 @@ ECClassCP InstanceCRUDTests::addClassInPlaceOFAnyClass(ECSchemaPtr schemaPtr)
 //+---------------+---------------+---------------+---------------+---------------+------
 bool InstanceCRUDTests::setUpDefaultECdbAndImportSchema()
     {
-    bool status = false;
     BeFileName dbname(m_schemaFullPath);
     WString schemaName = m_schemaFullPath.substr(m_schemaFullPath.find_last_of(L"\\") + 1, m_schemaFullPath.length());
     m_dirName = dbname.GetDirectoryName();
@@ -269,12 +268,9 @@ bool InstanceCRUDTests::setUpDefaultECdbAndImportSchema()
     dbName1.AppendA(".ecdb");
     m_dbName = dbName1;
     createDb();
-    status = importSchema(schemaNameWOVAE);
+    bool status = importSchema(schemaNameWOVAE);
     m_db.CloseDb();
-    if (status)
-        return true;
-    else
-        return false;
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -426,15 +422,12 @@ bool InstanceCRUDTests::importSchema(WString schemaNameWithoutVerionAndExtension
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceCRUDTests::insertECClassInstances(ECClassCP ecClass)
     {
-    bool instatus = false;
     ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
     if (relClass == NULL)
-        {
+        {			
         LOG1.infov("Starting Insert operation for class: %s", m_className.c_str());
         m_classList.push_back(ecClass);
-        int inserted = 0;
-        int actualCount = 0;
-
+		bool instatus = false;
         RandomECInstanceGenerator insert(m_classList);
         auto status = insert.Generate(false);
         if (status != SUCCESS)
@@ -444,6 +437,8 @@ void InstanceCRUDTests::insertECClassInstances(ECClassCP ecClass)
             }
         else
             {
+            int inserted = 0;
+            int actualCount = 0;
             m_generatedInstances = insert.GetGeneratedInstances();
             inserted = insertECInstances(m_generatedInstances);
             actualCount = countECInstnacesAndCompare(m_generatedInstances);
@@ -525,8 +520,8 @@ void InstanceCRUDTests::insertECRelationshipClassInstances()
         if (stat)
             {
             m_generatedInstances.clear();
-            inserted = 0;
-            actualCount = 0;
+//            inserted = 0;
+//            actualCount = 0;
             status = moreInstances.Generate(false);
             m_generatedInstances = moreInstances.GetGeneratedInstances();
             inserted = insertECInstances(m_generatedInstances);
@@ -565,8 +560,8 @@ void InstanceCRUDTests::insertECRelationshipClassInstances()
         if (relstat)
             {
             m_generatedRelationshipInstances.clear();
-            inserted = 0;
-            actualCount = 0;
+//            inserted = 0;
+//            actualCount = 0;
             status = moreInstances.GenerateRelationships();
             m_generatedRelationshipInstances = moreInstances.GetGeneratedRelationshipInstances();
             inserted = insertECInstances(m_generatedRelationshipInstances);
@@ -716,10 +711,10 @@ bool InstanceCRUDTests::deleteECInstances(bmap<ECN::ECClassCP, std::vector<ECN::
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceCRUDTests::updateECClassInstances(ECClassCP ecClass)
     {
-    bool upstatus = false;
     ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
     if (relClass == NULL)
         {
+		bool upstatus = false;    
         LOG1.infov("Starting update operation for class: %s", m_className.c_str());
         RandomECInstanceGenerator update(m_classList);
         auto status = update.Generate(false);

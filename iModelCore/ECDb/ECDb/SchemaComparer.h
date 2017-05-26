@@ -1227,7 +1227,6 @@ public:
 
     BentleyStatus Compare(SchemaChanges&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
     static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
-    static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };
 
 //=======================================================================================

@@ -108,8 +108,6 @@ struct ClassMap : RefCountedBase
             bool IsParentOfJoinedTable() const { return GetTphInfo().IsValid() && GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::ParentOfJoinedTable; }
 
             ECN::ECClassId DetermineTphRootClassId() const { return m_classMap.GetPrimaryTable().GetExclusiveRootECClassId(); }
-            ECN::ECClassId DetermineParentOfJoinedTableECClassId() const;
-
             };
 
         struct UpdatableViewInfo final
@@ -247,8 +245,6 @@ struct ClassMap : RefCountedBase
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
         DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
-        DbTable const* ExpectingSingleTable() const;
-
         ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
         BentleyStatus Save(SchemaImportContext&, DbMapSaveContext&);
         BentleyStatus Update();
@@ -257,10 +253,8 @@ struct ClassMap : RefCountedBase
         void AddTable(DbTable& newTable) { BeAssert(std::find(begin(m_tables), end(m_tables), &newTable) == end(m_tables)); m_tables.push_back(&newTable); }
         BentleyStatus SetOverflowTable(DbTable& overflowTable);
         ClassMapColumnFactory const& GetColumnFactory() const;
-        PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
-   
+        PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }  
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
-        static Utf8CP TypeToString(Type);
     };
 
 

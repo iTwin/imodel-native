@@ -156,7 +156,6 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         return status;
 
     PropertyNameListExp const* propNameListExp = exp.GetPropertyNameListExp();
-    size_t index = 0;
     for (Exp const* childExp : propNameListExp->GetChildren())
         {
         PropertyNameExp const& propNameExp = childExp->GetAs<PropertyNameExp>();
@@ -167,7 +166,6 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
             return stat;
 
         insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
-        index++;
         }
 
     status = ECSqlExpPreparer::PrepareValueExpListExp(insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, *exp.GetValuesExp(), insertSqlSnippets.m_propertyNamesNativeSqlSnippets);

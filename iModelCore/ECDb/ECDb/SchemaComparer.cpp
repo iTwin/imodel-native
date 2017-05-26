@@ -32,7 +32,8 @@ BentleyStatus Binary::Resize(size_t len)
         m_len = len;
         return SUCCESS;
         }
-
+		
+	m_buff=nullptr;
     BeAssert(false && "_resize() failed");
     return ERROR;
     }
@@ -892,7 +893,7 @@ BentleyStatus SchemaComparer::CompareECEnumeration(ECEnumerationChange& change, 
         {
         change.GetTypeName().SetValue(a.GetTypeName(), b.GetTypeName());
         }
-    else if (a.GetType() == b.GetType())
+    else 
         {
         if (a.GetType() == PrimitiveType::PRIMITIVETYPE_Integer)
             return CompareIntegerECEnumerators(change.Enumerators(), a.GetEnumerators(), b.GetEnumerators());
@@ -1461,22 +1462,7 @@ std::vector<Utf8String> SchemaComparer::Split(Utf8StringCR path , bool stripArra
 
     return axis;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SchemaComparer::Join(std::vector<Utf8String> const& paths, Utf8CP delimiter)
-    {
-    Utf8String str;
-    for (auto itor = paths.begin(); itor != paths.end(); ++itor)
-        {
-        if (itor != paths.begin())
-            str.append(delimiter);
-        
-        str.append(*itor);
-        }
 
-    return str;
-    }
 //======================================================================================
 //ECChange
 //======================================================================================

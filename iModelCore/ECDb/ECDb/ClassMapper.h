@@ -74,8 +74,6 @@ struct ClassMapper final
     public:
         static PropertyMap* MapProperty(ClassMap&, ECN::ECPropertyCR);
         static PropertyMap* LoadPropertyMap(ClassMap&, ECN::ECPropertyCR, DbClassMapLoadContext const&);
-        static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap&);
-        static BentleyStatus CreateECClassIdPropertyMap(ClassMap&);
         static BentleyStatus SetupNavigationPropertyMap(NavigationPropertyMap&);
 
         //! Rules:

@@ -350,7 +350,7 @@ BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& c
         {
         for (ECClassCP baseClass : GetClass().GetBaseClasses())
             {
-            ClassMap* baseClassMap = (ClassMap*) GetDbMap().GetClassMap(*baseClass);
+            ClassMap* baseClassMap = const_cast<ClassMap*>(GetDbMap().GetClassMap(*baseClass));
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false && "Failed to find baseClass map");
@@ -749,74 +749,6 @@ ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
     return *m_columnFactory;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  06/2016
-//---------------------------------------------------------------------------------------
-DbTable const* ClassMap::ExpectingSingleTable() const
-    {
-    BeAssert(GetTables().size() == 1);
-    if (GetTables().size() != 1)
-        return nullptr;
-
-    return &GetJoinedOrPrimaryTable();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  06/2016
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP ClassMap::TypeToString(Type type)
-    {
-    switch (type)
-        {
-            case Type::Class:
-                return "Class";
-            case Type::NotMapped:
-                return "NotMapped";
-            case Type::RelationshipEndTable:
-                return "RelationshipEndTable";
-            case Type::RelationshipLinkTable:
-                return "RelationshipLinkTable";
-
-            default:
-                BeAssert(false && "ClassMap::TypeToString must be extended to handle new ClassMap::Type value");
-                return "";
-        }
-    }
-
-//=========================================================================================
-//ClassMap::TablePerHierarchyHelper
-//=========================================================================================
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    09/2016
-//------------------------------------------------------------------------------------------
-ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClassId() const
-    {
-    if (!HasJoinedTable())
-        {
-        BeAssert(false && "TablePerHierarchyHelper::DetermineParentOfJoinedTableECClassId can only be called for class maps that have a joined table.");
-        return ECClassId();
-        }
-
-    if (!m_parentOfJoinedTableECClassId.IsValid())
-        {
-        CachedStatementPtr stmt = m_classMap.GetECDb().GetCachedStatement("SELECT ch.BaseClassId FROM " TABLE_ClassHierarchyCache " ch "
-                                                                          "JOIN ec_ClassMap cm ON cm.ClassId = ch.BaseClassId AND cm.JoinedTableInfo=" SQLVAL_JoinedTableInfo_ParentOfJoinedTable
-                                                                          " WHERE ch.ClassId=?");
-        if (stmt == nullptr ||
-            BE_SQLITE_OK != stmt->BindId(1, m_classMap.GetClass().GetId()) ||
-            BE_SQLITE_ROW != stmt->Step())
-            {
-            BeAssert(false && "Failed to retrieve parent of joined table ECClassId");
-            return ECClassId();
-            }
-
-        m_parentOfJoinedTableECClassId = stmt->GetValueId<ECClassId>(0);
-        BeAssert(m_parentOfJoinedTableECClassId.IsValid() && "Retrieval failed");
-        }
-
-    return m_parentOfJoinedTableECClassId; 
-    }
 //************************** ClassMapLoadContext ***************************************************
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    01/2016

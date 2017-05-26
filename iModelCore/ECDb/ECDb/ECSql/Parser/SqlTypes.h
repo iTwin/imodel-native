@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Parser/SqlTypes.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -242,7 +242,7 @@ namespace dbtools
     struct DatabaseMetaData
         {
         public:
-            DatabaseMetaData (
+            explicit DatabaseMetaData (
                 const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _connection){}
             DatabaseMetaData (const DatabaseMetaData& _copyFrom){}
             DatabaseMetaData& operator=(const DatabaseMetaData& _copyFrom){ return *this; }
