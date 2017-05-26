@@ -1243,6 +1243,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="query">The ECQuery requesting the stats. It is possible to filter by creation time using upper and lower bounds</param>
         /// <param name="connectionString">The connection string.</param>
         /// <param name="schema">The schema containing the stats ECClass</param>
+        /// <param name="dbConnectionCreator">The factory creating the database connection.</param>
         /// <returns></returns>
         public static List<IECInstance> ExtractStats (ECQuery query, string connectionString, IECSchema schema, IDbConnectionCreator dbConnectionCreator)  //TODO: add dependancy injection here
             {
