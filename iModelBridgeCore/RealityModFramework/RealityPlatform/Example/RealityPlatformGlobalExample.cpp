@@ -185,7 +185,7 @@ class RealityPlatformClient
                             RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
                             if (pDownload != NULL)
                                 {
-                                // Set call backs ... notice to value provided fot the progress callback indicating
+                                // Set call backs ... notice to value provided for the progress callback indicating
                                 // the frequency (a a percentage of downloaded file) to call the callback
                                 pDownload->SetProgressCallBack(DownloadProgressCallback, 0.1);
                                 pDownload->SetStatusCallBack(DownloadStatusCallback);

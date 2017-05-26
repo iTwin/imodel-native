@@ -348,7 +348,6 @@ namespace IndexECPlugin.Source
                     + " ON " + table.FirstTable.Alias + "." + table.FirstTableKey + " = " + table.Alias + "." + table.TableKey + " ";
                 }
 
-
             completeLeftJoinClause += " ";
 
             string completeWhereClause = "";

@@ -165,6 +165,28 @@ public:
             s_errorClass->errorCallBack(basicMessage, rawResponse);
         }
     }
+
+	//
+	WCharCP GetDirectory()
+	{
+		WChar exePath[MAX_PATH];
+		GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+		WString exeDir = exePath;
+		size_t pos = exeDir.find_last_of(L"/\\");
+		exeDir = exeDir.substr(0, pos + 1);
+
+		BeFileName testPath(exeDir);
+		testPath.AppendToPath(L"GeoCoordinationServiceTester");
+		return testPath;
+	}
+
+	void InitTestDirectory(WCharCP directoryname)
+	{
+		if (BeFileName::DoesPathExist(directoryname))
+			BeFileName::EmptyAndRemoveDirectory(directoryname);
+		BeFileName::CreateNewDirectory(directoryname);
+	}
 };
 
 ErrorClass* GeoCoordinationServiceRequestFixture::s_errorClass = nullptr;
@@ -278,16 +300,20 @@ TEST_F(GeoCoordinationServiceRequestFixture, DownloadRequestFileNotfoundCallback
     GeoCoordinationService::Request(request, rawResponse);
 }
 
-#if 0  //Remi
 //=====================================================================================
 //! @bsimethod                                 Remi.Charbonneau              05/2017
 //=====================================================================================
 TEST_F(GeoCoordinationServiceRequestFixture, DownloadReportBadRequest)
 {
-    BeFileName filename;
-    BeFileName::BeGetTempPath(filename);
-//Remi    Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix");
-    auto request = DownloadReportUploadRequest("randomguid", "myidentifier", filename);
+	WString directory(GetDirectory());
+	InitTestDirectory(directory.c_str());
+	WString fileName(directory);
+	fileName.append(L"xmlTestfile.xml");
+	BeFileStatus status;
+	BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
+	tempFile->Close();
+
+    auto request = DownloadReportUploadRequest("randomguid", "myidentifier", BeFileName(fileName));
 
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error Uploading DownloadReport"), _));
 
@@ -296,8 +322,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, DownloadReportBadRequest)
     GeoCoordinationService::Request(request, rawResponse);
     EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
 
-    //delete dummy file
-    BeFileName::BeDeleteFile(filename);
+	BeFileName::EmptyAndRemoveDirectory(directory.c_str());
 }
 
 //=====================================================================================
@@ -328,25 +353,23 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestBad)
         response.curlCode = CURLE_FILE_COULDNT_READ_FILE;
     }));
 
-    BeFileName filename;
-    BeFileName::BeGetTempPath(filename);
-    //Remi if (Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix") == BeFileNameStatus::Success)
-    if(1)
-        {
+	WString directory(GetDirectory());
+	InitTestDirectory(directory.c_str());
+	WString fileName(directory);
+	fileName.append(L"tempFile.tmp");
+	BeFileStatus status;
+	BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
+	tempFile->Close();
 
-        auto request = PreparedPackageRequest("myidentifier");
-        auto rawResponse = RawServerResponse();
 
-        GeoCoordinationService::Request(request, filename, rawResponse);
+    auto request = PreparedPackageRequest("myidentifier");
+    auto rawResponse = RawServerResponse();
 
-        EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
+    GeoCoordinationService::Request(request, BeFileName(fileName), rawResponse);
 
-        BeFileName::BeDeleteFile(filename);
-        }
-    else
-        {
-        BeAssert("Can't create temp file");
-        }
+    EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
+
+	BeFileName::EmptyAndRemoveDirectory(directory.c_str());
 }
 
 
@@ -362,27 +385,24 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestGood)
         response.curlCode = CURLE_OK;
     }));
 
-    BeFileName filename;
-    BeFileName::BeGetTempPath(filename);
-//Remi    if (Desktop::FileSystem::BeGetTempFileName(filename, BeFileName(""), L"myPrefix") == BeFileNameStatus::Success)
-    if (1)
-        {
+	WString directory(GetDirectory());
+	InitTestDirectory(directory.c_str());
+	WString fileName(directory);
+	fileName.append(L"tempFile.tmp");
+	BeFileStatus status;
+	BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
+	tempFile->Close();
 
-        auto request = PreparedPackageRequest("myidentifier");
-        auto rawResponse = RawServerResponse();
+    auto request = PreparedPackageRequest("myidentifier");
+    auto rawResponse = RawServerResponse();
 
-        GeoCoordinationService::Request(request, filename, rawResponse);
+    GeoCoordinationService::Request(request, BeFileName(fileName), rawResponse);
 
-        EXPECT_EQ(rawResponse.status, RequestStatus::OK);
+    EXPECT_EQ(rawResponse.status, RequestStatus::OK);
 
-        BeFileName::BeDeleteFile(filename);
-        }
-    else
-        {
-        BeAssert("Can't create temp file");
-        }
+	BeFileName::EmptyAndRemoveDirectory(directory.c_str());
 }
-#endif
+
 
 //=====================================================================================
 //! @bsimethod                                 Remi.Charbonneau              05/2017

@@ -79,6 +79,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Upload;
     else if (args[0].EqualsI("SetServer"))
         m_lastCommand = Command::SetServer;
+    else if (args[0].EqualsI("SetProjectId"))
+        m_lastCommand = Command::SetProjectId;
     else if (args[0].EqualsI("ChangeProps"))
         m_lastCommand = Command::ChangeProps;
     else if (args[0].EqualsI("Delete"))
@@ -133,6 +135,7 @@ RealityDataConsole::RealityDataConsole() :
     {
     m_functionMap.Insert(Command::Help, &RealityDataConsole::Usage);
     m_functionMap.Insert(Command::SetServer, &RealityDataConsole::ConfigureServer);
+    m_functionMap.Insert(Command::SetProjectId, &RealityDataConsole::SetProjectId);
     m_functionMap.Insert(Command::List, &RealityDataConsole::List);
     m_functionMap.Insert(Command::ListAll, &RealityDataConsole::ListAll);
     m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
@@ -327,6 +330,7 @@ void RealityDataConsole::Usage()
     DisplayInfo("  Retry               (during a multi-step operation) Restart current operation\n");
     DisplayInfo("  Help                Print current Display\n");
     DisplayInfo("  SetServer           Change server settings (server url, repository and schema)\n");
+    DisplayInfo("  SetProjectId        Sets the project id used for all RDS requests\n");
     DisplayInfo("  List                List all subfiles/folders for the given location on your server\n");
     DisplayInfo("  Dir                 same as List\n");
     DisplayInfo("  Filter              filters RealityDatas returned from a List/Dir command\n");
@@ -527,6 +531,24 @@ void RealityDataConsole::ConfigureServer()
         }
 
     DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
+    DisplayInfo("ProjectId required for multiple operations. Set ProjectId now?\n", DisplayOption::Question);
+    std::string str;
+    std::getline(*s_inputSource, str);
+    if (strstr(str.c_str(), "quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
+        }
+    else if (str == "y")
+        SetProjectId();
+    }
+    
+void RealityDataConsole::SetProjectId()
+    {
+    DisplayInfo("Please set project id\n ?", DisplayOption::Question);
+    std::string input;
+    std::getline(*s_inputSource, input);
+    RealityDataService::SetProjectId(Utf8String(input.c_str()).Trim());
     }
 
 void RealityDataConsole::List()
