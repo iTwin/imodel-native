@@ -24,7 +24,7 @@ struct SchemaValidator final
             {
         public:
             ValidBaseClassesRule() {}
-            bool Validate(IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR, bool doNotFailForLegacyIssues) const;
+            bool Validate(SchemaImportContext const&, IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const;
             };
 
         //=======================================================================================
@@ -33,7 +33,7 @@ struct SchemaValidator final
         struct ValidRelationshipRule final : NonCopyableClass
             {
             private:
-                bool ValidateConstraint(IssueReporter const& issueReporter, ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
+                bool ValidateConstraint(IssueReporter const&, ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
 
             public:
                 ValidRelationshipRule() {}
@@ -69,37 +69,6 @@ struct SchemaValidator final
             };
 
         //=======================================================================================
-        //! Makes sure an end-table RelationshipClass without base classes has a navigation property defined on
-        //! one of its constraint classes
-        // @bsiclass                                                Krischan.Eberle      04/2014
-        //+===============+===============+===============+===============+===============+======
-        struct RelationshipHasNavigationPropertyRule final : NonCopyableClass
-            {
-            public:
-                struct Context final : NonCopyableClass
-                    {
-                    private:
-                        bset<ECN::ECRelationshipClassCP> m_navPropForwardRelationships;
-                        bset<ECN::ECRelationshipClassCP> m_navPropBackwardRelationships;
-                        bmap<ECN::ECRelatedInstanceDirection, bset<ECN::ECRelationshipClassCP>> m_candidateRels;
-
-                    public:
-                        Context() {}
-                        void CacheRelationshipWithNavProp(ECN::NavigationECPropertyCR navProp);
-                        void AddCandidateRelationship(ECN::ECRelationshipClassCR rel, ECN::ECRelationshipEnd);
-
-                        bset<ECN::ECRelationshipClassCP> const& GetNavPropRelationships(ECN::ECRelatedInstanceDirection navPropDirection) const { return (navPropDirection == ECN::ECRelatedInstanceDirection::Forward) ? m_navPropForwardRelationships : m_navPropBackwardRelationships; }
-                        bmap<ECN::ECRelatedInstanceDirection, bset<ECN::ECRelationshipClassCP>> const& GetCandidateRelationships() const { return m_candidateRels; }
-                    };
-
-                RelationshipHasNavigationPropertyRule() {}
-
-                bool Validate(Context&, IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const;
-                bool Validate(Context&, IssueReporter const&, ECN::ECClassCR, ECN::ECPropertyCR) const;
-                bool PostProcessValidation(Context&, IssueReporter const&) const;
-            };
-
-        //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      04/2014
         //+===============+===============+===============+===============+===============+======
         struct ValidPropertyRule final : NonCopyableClass
@@ -117,7 +86,7 @@ struct SchemaValidator final
         ~SchemaValidator();
 
     public:
-        static bool ValidateSchemas(IssueReporter const&, bvector<ECN::ECSchemaCP> const&, bool doNotFailOnLegacyIssues);
+        static bool ValidateSchemas(SchemaImportContext&, IssueReporter const&, bvector<ECN::ECSchemaCP> const&);
     };
 
 

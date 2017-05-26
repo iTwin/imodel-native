@@ -304,7 +304,7 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema(SchemaImportContext& ctx)
 
     ClassMappingCACache const& caCache = *caCacheCP;
 
-    ECDbClassMap const& classMapCA = caCache.GetClassMap();
+    ClassMapCustomAttribute const& classMapCA = caCache.GetClassMap();
 
     if (classMapCA.IsValid())
         {
@@ -534,21 +534,43 @@ void ClassMappingInfo::LogClassNotMapped(NativeLogging::SEVERITY severity, ECCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool RelationshipMappingInfo::RequiresLinkTableMapping(ECN::ECRelationshipClassCR relClass, bool considerLinkTableRelationshipMapCA)
+BentleyStatus RelationshipMappingInfo::DetermineFkOrLinkTableMapping(bool& isFkMapping, ECRelationshipEnd& fkEnd, LinkTableRelationshipMapCustomAttribute const& linkTableRelationshipMapCA) const
     {
-    const bool isRequired = (relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1 && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1) ||
-        relClass.GetPropertyCount() > 0;
+    BeAssert(m_isRootClass && "DetermineFkOrLinkTableMapping must only be called for root classes");
 
-    if (isRequired)
-        return true;
+    isFkMapping = false;
+    ECRelationshipClass const& relClass = *m_ecClass.GetRelationshipClassCP();
 
-    if (!considerLinkTableRelationshipMapCA)
-        return false;
+    if (linkTableRelationshipMapCA.IsValid() || (relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1 && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1) ||
+        relClass.GetPropertyCount() > 0)
+        {
+        return SUCCESS;
+        }
 
-    //now check for the LinkTableRelMap CA
-    ECDbLinkTableRelationshipMap ca;
-    return ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(ca, relClass);
+    //Now it would be a FK relationship, but this would require a nav prop. So check for nav prop now
+    if (SUCCESS != TryDetermineFkEnd(fkEnd, relClass, Issues()))
+        return ERROR;
+
+    const ECRelatedInstanceDirection navPropDir = fkEnd == ECRelationshipEnd::ECRelationshipEnd_Target ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward;
+
+    //finally check whether the relationship requires a nav prop. If it does but doesn't have one, we also fall back to a link table
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT 1 FROM ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, relClass.GetId()) ||
+        BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(navPropDir)))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    isFkMapping = stmt->Step() == BE_SQLITE_ROW;
+    if (!isFkMapping)
+        LOG.debugv("ECRelationshipClass '%s' is mapped to a link table because the constraint class on the %s end doesn't define a navigation property for this relationship class.",
+                   relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------
@@ -616,16 +638,17 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext
     BeAssert(relClass != nullptr);
     BeAssert(relClass->GetBaseClasses().size() <= 1 && "Should actually have been enforced by ECSchemaValidator");
 
-    const bool requiresLinkTable = RequiresLinkTableMapping(*relClass, false);
-    ECDbForeignKeyConstraint foreignKeyConstraintCA;
+    LinkTableRelationshipMapCustomAttribute linkTableRelationMapCA;
+    ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMapCA, *relClass);
+    const bool hasLinkTableRelMapCA = linkTableRelationMapCA.IsValid();
+
+    ForeignKeyConstraintCustomAttribute foreignKeyConstraintCA;
     const bool hasForeignKeyConstraintCA = ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(foreignKeyConstraintCA, *relClass);
     const bool useECInstanceIdAsFk = ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(*relClass);
-    ECDbLinkTableRelationshipMap linkTableRelationMap;
-    const bool hasLinkTableRelMap = ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMap, *relClass);
 
     if (relClass->HasBaseClasses())
         {
-        if (hasForeignKeyConstraintCA || useECInstanceIdAsFk || hasLinkTableRelMap)
+        if (hasForeignKeyConstraintCA || useECInstanceIdAsFk || hasLinkTableRelMapCA)
             {
             Issues().Report("Failed to map ECRelationshipClass %s. It has a base class and therefore must not have any of the 'ForeignKeyConstraint', 'UseECInstanceIdAsForeignKey', 'LinkTableRelationshipMap' custom attributes. Only the root relationship class of a hierarchy can have these custom attributes.",
                             m_ecClass.GetFullName());
@@ -638,28 +661,28 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext
     //root rel class
     BeAssert(m_isRootClass);
 
-    if (hasLinkTableRelMap && (hasForeignKeyConstraintCA || useECInstanceIdAsFk))
+    if (hasLinkTableRelMapCA && (hasForeignKeyConstraintCA || useECInstanceIdAsFk))
         {
         Issues().Report("Failed to map ECRelationshipClass %s. It has the violating custom attributes 'ForeignKeyConstraint' and 'LinkTableRelationshipMap' or 'UseECInstanceIdAsForeignKey' and 'LinkTableRelationshipMap'.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
-    if ((hasForeignKeyConstraintCA || useECInstanceIdAsFk) && requiresLinkTable)
+    //determine whether a link table is required or not
+    bool isFkMapping = true;
+    ECRelationshipEnd foreignKeyEnd;
+    if (SUCCESS != DetermineFkOrLinkTableMapping(isFkMapping, foreignKeyEnd, linkTableRelationMapCA))
+        return ERROR;
+
+    if ((hasForeignKeyConstraintCA || useECInstanceIdAsFk) && !isFkMapping)
         {
         Issues().Report("Failed to map ECRelationshipClass %s. It has the 'ForeignKeyConstraint' or 'UseECInstanceIdAsForeignKey' custom attribute, but implies a link table mapping because of its cardinality or because it defines ECProperties.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
-    const bool mapAsLinkTable = requiresLinkTable || hasLinkTableRelMap;
-
-    if (!mapAsLinkTable)
+    if (isFkMapping)
         {
-        ECRelationshipEnd foreignKeyEnd;
-        if (SUCCESS != TryDetermineFkEnd(foreignKeyEnd, *relClass, Issues()))
-            return ERROR;
-
         if (useECInstanceIdAsFk)
             {
             RelationshipMultiplicityCR referencedEndMult = foreignKeyEnd == ECRelationshipEnd_Source ? relClass->GetTarget().GetMultiplicity() : relClass->GetSource().GetMultiplicity();
@@ -712,26 +735,27 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext
         return SUCCESS;
         }
 
-    if (!hasLinkTableRelMap)
+    //it is a link table mapping
+    if (!hasLinkTableRelMapCA)
         {
         m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>();
         return SUCCESS;
         }
 
     Nullable<Utf8String> sourceIdColName;
-    if (SUCCESS != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
+    if (SUCCESS != linkTableRelationMapCA.TryGetSourceECInstanceIdColumn(sourceIdColName))
         return ERROR;
 
     Nullable<Utf8String> targetIdColName;
-    if (SUCCESS != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
+    if (SUCCESS != linkTableRelationMapCA.TryGetTargetECInstanceIdColumn(targetIdColName))
         return ERROR;
 
     Nullable<bool> createForeignKeyConstraints = false;
-    if (SUCCESS != linkTableRelationMap.TryGetCreateForeignKeyConstraints(createForeignKeyConstraints))
+    if (SUCCESS != linkTableRelationMapCA.TryGetCreateForeignKeyConstraints(createForeignKeyConstraints))
         return ERROR;
 
     Nullable<bool> allowDuplicateRelationships = false;
-    if (SUCCESS != linkTableRelationMap.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
+    if (SUCCESS != linkTableRelationMapCA.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
         return ERROR;
 
     m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(sourceIdColName, targetIdColName, createForeignKeyConstraints, allowDuplicateRelationships);
@@ -842,12 +866,6 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
 BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(SchemaImportContext& ctx, ClassMappingCACache const& caCache, ClassMap const* baseClassMap)
     {
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    if (relClass->GetStrength() == StrengthType::Embedding)
-        {
-        Issues().Report("Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship, and link table relationships with strength 'Embedding' is not supported. See API docs for details on the mapping rules.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
 
     if (baseClassMap != nullptr)
         {
@@ -921,7 +939,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportCo
         }
 
     //root class
-    BeAssert(IsRootClass() && m_fkMappingInfo != nullptr);
+    BeAssert(m_isRootClass && m_fkMappingInfo != nullptr);
     ECRelationshipClassCR relClass = *m_ecClass.GetRelationshipClassCP();
 
     MapStrategy resolvedStrategy = m_fkMappingInfo->GetFkEnd() == ECRelationshipEnd_Source ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
@@ -1067,15 +1085,15 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(S
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR ecdb, ECClassCR ecClass, DbIndexList const& dbIndexListCA)
+BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR ecdb, ECClassCR ecClass, DbIndexListCustomAttribute const& dbIndexListCA)
     {
     if (dbIndexListCA.IsValid())
         {
-        bvector<DbIndexList::DbIndex> indices;
+        bvector<DbIndexListCustomAttribute::DbIndex> indices;
         if (SUCCESS != dbIndexListCA.GetIndexes(indices))
             return ERROR;
 
-        for (DbIndexList::DbIndex const& index : indices)
+        for (DbIndexListCustomAttribute::DbIndex const& index : indices)
             {
             bool addPropsAreNotNullWhereExp = false;
 
@@ -1121,7 +1139,7 @@ BentleyStatus IndexMappingInfoCache::TryGetIndexInfos(std::vector<IndexMappingIn
     //not in internal cache, so read index info from ECClass (and cache it)
     std::vector<IndexMappingInfoPtr>& newIndexInfos = m_indexInfoCache[&classMap];
     ECClassCR ecClass = classMap.GetClass();
-    DbIndexList dbIndexListCA;
+    DbIndexListCustomAttribute dbIndexListCA;
     ECDbMapCustomAttributeHelper::TryGetDbIndexList(dbIndexListCA, ecClass);
     if (SUCCESS != IndexMappingInfo::CreateFromECClass(newIndexInfos, m_ecdb, ecClass, dbIndexListCA))
         return ERROR;

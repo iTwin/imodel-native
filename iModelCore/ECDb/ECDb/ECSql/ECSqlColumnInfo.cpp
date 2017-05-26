@@ -95,7 +95,7 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType(DateTime::Info& dateTimeInfo
         const PrimitiveType primType = ecProperty.GetAsPrimitiveProperty()->GetType();
         if (primType == PRIMITIVETYPE_DateTime)
             {
-            if (ECObjectsStatus::Success != StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
+            if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
                 {
                 LOG.errorv("Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
                            ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
@@ -117,7 +117,7 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType(DateTime::Info& dateTimeInfo
         const PrimitiveType primType = ecProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
         if (primType == PRIMITIVETYPE_DateTime)
             {
-            if (ECObjectsStatus::Success != StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
+            if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
                 {
                 LOG.errorv("Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
                            ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());

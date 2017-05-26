@@ -15,15 +15,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool SchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailOnLegacyIssues)
+bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter const& issueReporter, bvector<ECN::ECSchemaCP> const& schemas)
     {
     PERFLOG_START("ECDb", "SchemaValidation");
     bool valid = true;
 
     ValidBaseClassesRule baseClassesRule;
     ValidRelationshipRule relRule;
-    RelationshipHasNavigationPropertyRule relsHaveNavPropsRule;
-    RelationshipHasNavigationPropertyRule::Context relsHaveNavPropsRuleCtx;
 
     ValidPropertyRule validPropertyRule;
     ClassHasNoDuplicateNavigationPropertiesRule classHasNoDupNavPropRule;
@@ -35,15 +33,11 @@ bool SchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::
         for (ECClassCP ecClass : schema->GetClasses())
             {
             //per class rules
-            bool succeeded = baseClassesRule.Validate(issues, *schema, *ecClass, doNotFailOnLegacyIssues);
+            bool succeeded = baseClassesRule.Validate(ctx, issueReporter, *schema, *ecClass);
             if (!succeeded)
                 valid = false;
 
-            succeeded = relRule.Validate(issues, *schema, *ecClass);
-            if (!succeeded)
-                valid = false;
-
-            succeeded = relsHaveNavPropsRule.Validate(relsHaveNavPropsRuleCtx, issues, *schema, *ecClass);
+            succeeded = relRule.Validate(issueReporter, *schema, *ecClass);
             if (!succeeded)
                 valid = false;
 
@@ -52,26 +46,19 @@ bool SchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::
             //per property rules
             for (ECPropertyCP prop : ecClass->GetProperties(false))
                 {
-                if (!validPropertyRule.Validate(issues, *ecClass, *prop))
+                if (!validPropertyRule.Validate(issueReporter, *ecClass, *prop))
                     valid = false;
 
-                if (!classHasNoDupNavPropRule.Validate(classHasNoDupNavPropRuleCtx, issues, *prop))
-                    valid = false;
-
-                if (!relsHaveNavPropsRule.Validate(relsHaveNavPropsRuleCtx, issues, *ecClass, *prop))
+                if (!classHasNoDupNavPropRule.Validate(classHasNoDupNavPropRuleCtx, issueReporter, *prop))
                     valid = false;
                 }
 
-            if (!classHasNoDupNavPropRule.PostProcessValidation(classHasNoDupNavPropRuleCtx, issues))
+            if (!classHasNoDupNavPropRule.PostProcessValidation(classHasNoDupNavPropRuleCtx, issueReporter))
                 valid = false;
             }
         }
 
-    if (!relsHaveNavPropsRule.PostProcessValidation(relsHaveNavPropsRuleCtx, issues))
-        valid = false;
-
     PERFLOG_FINISH("ECDb", "SchemaValidation");
-
     return valid;
     }
 
@@ -81,7 +68,7 @@ bool SchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidBaseClassesRule::Validate(IssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass, bool doNotFailForLegacyIssues) const
+bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& ctx, IssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
     ECBaseClassesList const& baseClasses = ecClass.GetBaseClasses();
     if (baseClasses.empty())
@@ -93,7 +80,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(IssueReporter const& issueR
         {
         if (isAbstract && baseClass->GetClassModifier() == ECClassModifier::None)
             {
-            if (doNotFailForLegacyIssues)
+            if (ctx.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
                 {
                 //in legacy mode we log all issues as warning, so do not return on first issue
                 LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
@@ -115,7 +102,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(IssueReporter const& issueR
         ECEntityClassCP entityBaseClass = baseClass->GetEntityClassCP();
         if (entityBaseClass == nullptr || !entityBaseClass->IsMixin())
             {
-            if (doNotFailForLegacyIssues && ecClass.IsEntityClass())
+            if (ctx.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues && ecClass.IsEntityClass())
                 {
                 //in legacy mode entity class multi-inheritance must be supported, but  not for other class types
                 LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported. Use mixins instead.",
@@ -181,95 +168,6 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter co
 
     return valid;
     }
-
-
-//*************************************************************************
-//SchemaValidator::RelationshipHasNavigationPropertyRule
-//*************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-bool SchemaValidator::RelationshipHasNavigationPropertyRule::Validate(Context& ctx, IssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
-    {
-    if (!ecClass.IsRelationshipClass())
-        return true;
-
-    //Rule: End table root relationships must have a nav prop
-    ECRelationshipClassCR relClass = *ecClass.GetRelationshipClassCP();
-    if (relClass.HasBaseClasses() || RelationshipMappingInfo::RequiresLinkTableMapping(relClass))
-        return true;
-    
-    ECRelationshipEnd fkEnd;
-    if (SUCCESS != RelationshipMappingInfo::TryDetermineFkEnd(fkEnd, relClass, issueReporter))
-        return false;
-
-    ctx.AddCandidateRelationship(relClass, fkEnd);
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-bool SchemaValidator::RelationshipHasNavigationPropertyRule::Validate(Context& ctx, IssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
-    {
-    if (!prop.GetIsNavigation())
-        return true;
-
-    BeAssert(prop.GetAsNavigationProperty()->GetRelationshipClass() != nullptr);
-    ctx.CacheRelationshipWithNavProp(*prop.GetAsNavigationProperty());
-    return true;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-bool SchemaValidator::RelationshipHasNavigationPropertyRule::PostProcessValidation(Context& ctx, IssueReporter const& issueReporter) const
-    {
-    bool isValid = true;
-    for (bpair<ECRelatedInstanceDirection, bset<ECRelationshipClassCP>> const& kvPair : ctx.GetCandidateRelationships())
-        {
-        const ECRelatedInstanceDirection expectedNavPropDirection = kvPair.first;
-        bset<ECRelationshipClassCP> const& navPropRelationships = ctx.GetNavPropRelationships(expectedNavPropDirection);
-        //iterate every candidate relationship and test whether it exists in the list of nav prop relationships. If not, it is a schema failure.
-        for (ECRelationshipClassCP candidateRel : kvPair.second)
-            {
-            if (navPropRelationships.find(candidateRel) == navPropRelationships.end())
-                {
-                issueReporter.Report("Invalid relationship class '%s'. A navigation property must be defined on the %s constraint class.", candidateRel->GetFullName(),
-                                     expectedNavPropDirection == ECRelatedInstanceDirection::Backward ? "target" : "source");
-                isValid = false;
-                }
-            }
-        }
-
-    return isValid;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-void SchemaValidator::RelationshipHasNavigationPropertyRule::Context::CacheRelationshipWithNavProp(ECN::NavigationECPropertyCR navProp)
-    {
-    ECRelationshipClassCP navPropRelClass = navProp.GetRelationshipClass();
-    BeAssert(navPropRelClass != nullptr);
-    if (navProp.GetDirection() == ECRelatedInstanceDirection::Forward)
-        m_navPropForwardRelationships.insert(navPropRelClass);
-    else
-        m_navPropBackwardRelationships.insert(navPropRelClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-void SchemaValidator::RelationshipHasNavigationPropertyRule::Context::AddCandidateRelationship(ECN::ECRelationshipClassCR rel, ECN::ECRelationshipEnd fkEnd)
-    {
-    const ECRelatedInstanceDirection expectedNavPropDirection = fkEnd == ECRelationshipEnd::ECRelationshipEnd_Target ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward;
-    m_candidateRels[expectedNavPropDirection].insert(&rel);
-    }
-
 
 //*************************************************************************
 //SchemaValidator::ValidPropertyRule

@@ -40,7 +40,7 @@ Utf8CP MapStrategyExtendedInfo::ToString(MapStrategy strategy)
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumnsCustomAttribute const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumnsCustomAttribute const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECClassCR ecClass, IssueReporter const& issues)
     {
     if (SUCCESS != DetermineSharedColumnsInfo(shareColumnsCA, baseMapStrategy, baseClassShareColumnsCA, ecClass, issues))
         return ERROR;
@@ -62,7 +62,7 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumns
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumnsCustomAttribute const* baseClassShareColumnsCA, ECClassCR ecClass, IssueReporter const& issues)
     {
     m_shareColumnsMode = ShareColumnsMode::No; //default
     //first check whether column sharing is inherited from base class.

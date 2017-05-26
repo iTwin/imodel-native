@@ -1148,7 +1148,6 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     {
     BeAssert(!MapStrategyExtendedInfo::IsForeignKeyMapping(GetMapStrategy()) &&
              "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
-    BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have been caught already in ClassMapInfo");
 
     ClassMappingStatus stat = DoMapPart1(ctx);
     if (stat != ClassMappingStatus::Success)
@@ -1585,7 +1584,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
 //static
 bool RelationshipClassLinkTableMap::DetermineAllowDuplicateRelationshipsFlagFromRoot(ECRelationshipClassCR baseRelClass)
     {
-    ECDbLinkTableRelationshipMap linkRelMap;
+    LinkTableRelationshipMapCustomAttribute linkRelMap;
     if (ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkRelMap, baseRelClass))
         {
         //default for AllowDuplicateRelationships: false

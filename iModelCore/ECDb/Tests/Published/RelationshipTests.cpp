@@ -1007,6 +1007,50 @@ TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, MultipleConstraintClasses)
+    {
+    ECDbCR ecdb = SetupECDb("multipleconstraintclasses.ecdb", 
+                        SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                            <ECEntityClass typeName="Parent">
+                              <ECProperty propertyName="Code" typeName="int" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Child">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="ChildProp" typeName="int" />
+                             </ECEntityClass>
+                             <ECEntityClass typeName="GrandchildA" >
+                                <BaseClass>Child</BaseClass>
+                                <ECProperty propertyName="GrandchildAProp" typeName="int" />
+                                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                             </ECEntityClass>
+                             <ECEntityClass typeName="GrandchildB" >
+                                <BaseClass>Child</BaseClass>
+                                <ECProperty propertyName="GrandchildBProp" typeName="int" />
+                                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                            </ECEntityClass>
+                            <ECRelationshipClass typeName="Rel" strength="referencing" modifier="Sealed">
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Parent Has Grandchildren">
+                                    <Class class="Parent" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Parent Has Grandchildren (Reversed)" abstractConstraint="Child">
+                                    <Class class="GrandchildA" />
+                                    <Class class="GrandchildB" />
+                                </Target>
+                             </ECRelationshipClass>
+                        </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationship)

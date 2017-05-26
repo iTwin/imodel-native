@@ -167,6 +167,10 @@ private:
 
     BentleyStatus FailIfConstraintClassIsNotMapped() const;
 
+    //! Determines whether the specified ECRelationship requires to be mapped to a link table.
+    BentleyStatus DetermineFkOrLinkTableMapping(bool& isFkMapping, ECN::ECRelationshipEnd& fkEnd, LinkTableRelationshipMapCustomAttribute const&) const;
+
+    static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
     std::set<DbTable const*> GetTablesFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
 
 public:
@@ -175,18 +179,12 @@ public:
 
     ~RelationshipMappingInfo() {}
 
-    bool IsRootClass() const { return m_isRootClass; }
     //only available for root classes. Subclasses just inherit from their base class
-    FkMappingInfo const* GetFkMappingInfo() const { BeAssert(IsRootClass() && m_fkMappingInfo != nullptr); return m_fkMappingInfo.get(); }
+    FkMappingInfo const* GetFkMappingInfo() const { BeAssert(m_isRootClass && m_fkMappingInfo != nullptr); return m_fkMappingInfo.get(); }
     //only available for root classes. Subclasses just inherit from their base class
-    LinkTableMappingInfo const* GetLinkTableMappingInfo() const { BeAssert(IsRootClass() && m_linkTableMappingInfo != nullptr); return m_linkTableMappingInfo.get(); }
-    std::set<DbTable const*> const& GetSourceTables() const { BeAssert(IsRootClass()); return m_sourceTables; }
-    std::set<DbTable const*> const& GetTargetTables() const { BeAssert(IsRootClass()); return m_targetTables;}
-
-    //! Determines whether the specified ECRelationship requires to be mapped to a link table.
-    static bool RequiresLinkTableMapping(ECN::ECRelationshipClassCR, bool considerLinkTableRelationshipMapCA = true);
-    static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
-
+    LinkTableMappingInfo const* GetLinkTableMappingInfo() const { BeAssert(m_isRootClass && m_linkTableMappingInfo != nullptr); return m_linkTableMappingInfo.get(); }
+    std::set<DbTable const*> const& GetSourceTables() const { BeAssert(m_isRootClass); return m_sourceTables; }
+    std::set<DbTable const*> const& GetTargetTables() const { BeAssert(m_isRootClass); return m_targetTables;}
     };
 
 
@@ -215,7 +213,7 @@ struct IndexMappingInfo final : RefCountedBase
 
     public:
         static IndexMappingInfoPtr Clone(Nullable<Utf8String> const& name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }
-        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>&, ECDbCR, ECN::ECClassCR, DbIndexList const&);
+        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>&, ECDbCR, ECN::ECClassCR, DbIndexListCustomAttribute const&);
 
         Nullable<Utf8String> const& GetName() const { return m_name; }
         bool GetIsUnique() const { return m_isUnique; }

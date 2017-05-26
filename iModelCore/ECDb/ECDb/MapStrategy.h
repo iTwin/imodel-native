@@ -55,7 +55,7 @@ struct TablePerHierarchyInfo final
         Nullable<uint32_t> m_maxSharedColumnsBeforeOverflow;
         JoinedTableInfo m_joinedTableInfo = JoinedTableInfo::None;
 
-        BentleyStatus DetermineSharedColumnsInfo(ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumnsCustomAttribute const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
         BentleyStatus DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IssueReporter const&);
 
     public:
@@ -65,7 +65,7 @@ struct TablePerHierarchyInfo final
             : m_isValid(true), m_shareColumnsMode(shareColumnsMode), m_maxSharedColumnsBeforeOverflow(maxSharedColumnsBeforeOverflow), m_joinedTableInfo(joinedTableInfo)
             {}
 
-        BentleyStatus Initialize(ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus Initialize(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumnsCustomAttribute const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
 
         //!@return true if the respective MapStrategy is TablePerHierarchy. false if MapStrategy is not TablePerHierarchy
         bool IsValid() const { return m_isValid; }
@@ -112,12 +112,12 @@ public:
 struct ClassMappingCACache final
     {
 private:
-    ECDbClassMap m_classMapCA;
+    ClassMapCustomAttribute m_classMapCA;
     bool m_hasMapStrategy;
     MapStrategy m_mapStrategy;
-    ShareColumns m_shareColumnsCA;
+    ShareColumnsCustomAttribute m_shareColumnsCA;
     bool m_hasJoinedTablePerDirectSubclassOption;
-    DbIndexList m_dbIndexListCA;
+    DbIndexListCustomAttribute m_dbIndexListCA;
 
     static BentleyStatus TryParse(MapStrategy&, Utf8CP str, ECN::ECClassCR);
 
@@ -128,11 +128,11 @@ public:
     ~ClassMappingCACache() {}
 
     bool HasMapStrategy() const { return m_hasMapStrategy; }
-    ECDbClassMap const& GetClassMap() const { return m_classMapCA; }
+    ClassMapCustomAttribute const& GetClassMap() const { return m_classMapCA; }
     MapStrategy GetStrategy() const { return m_mapStrategy; }
-    ShareColumns const& GetShareColumnsCA() const { return m_shareColumnsCA; }
+    ShareColumnsCustomAttribute const& GetShareColumnsCA() const { return m_shareColumnsCA; }
     bool HasJoinedTablePerDirectSubclassOption() const { return m_hasJoinedTablePerDirectSubclassOption; }
-    DbIndexList const& GetDbIndexListCA() const { return m_dbIndexListCA; }
+    DbIndexListCustomAttribute const& GetDbIndexListCA() const { return m_dbIndexListCA; }
     };
 
 

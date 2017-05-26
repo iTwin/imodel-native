@@ -1841,76 +1841,6 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
 TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
     {
     std::vector<SchemaItem> unsupportedSchemas;
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                            "  <ECEntityClass typeName='Parent' >"
-                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECEntityClass typeName='Child' >"
-                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
-                                            "        <Class class='Parent' />"
-                                            "     </Source>"
-                                            "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                                            "         <Class class='Child' />"
-                                            "     </Target>"
-                                            "  </ECRelationshipClass>"
-                                            "</ECSchema>", false, "End table relationship requires a navigation property on FK end"));
-
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                            "  <ECEntityClass typeName='Parent' >"
-                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
-                                            "    <ECNavigationProperty propertyName='Child' relationshipName='ParentHasChildren' direction='Forward'/>"
-                                            "  </ECEntityClass>"
-                                            "  <ECEntityClass typeName='Child' >"
-                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
-                                            "        <Class class='Parent' />"
-                                            "     </Source>"
-                                            "     <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                                            "         <Class class='Child' />"
-                                            "     </Target>"
-                                            "  </ECRelationshipClass>"
-                                            "</ECSchema>", false, "End table relationship requires a navigation property on FK end"));
-
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                            "  <ECEntityClass typeName='Foo' >"
-                                            "    <ECProperty propertyName='FooProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECEntityClass typeName='Goo' >"
-                                            "    <ECProperty propertyName='GooProp' typeName='long' />"
-                                            "    <ECNavigationProperty propertyName='Foo' relationshipName='FooHasGoo' direction='Forward'/>"
-                                            "  </ECEntityClass>"
-                                            "  <ECRelationshipClass typeName='FooHasGoo' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
-                                            "        <Class class='Foo' />"
-                                            "     </Source>"
-                                            "     <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                                            "         <Class class='Goo' />"
-                                            "     </Target>"
-                                            "  </ECRelationshipClass>"
-                                            "</ECSchema>", false, "End table relationship requires a navigation property on FK end"));
-
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                            "  <ECEntityClass typeName='Parent' >"
-                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECEntityClass typeName='Child' >"
-                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children'>"
-                                            "        <Class class='Parent' />"
-                                            "     </Source>"
-                                            "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                                            "         <Class class='Child' />"
-                                            "     </Target>"
-                                            "  </ECRelationshipClass>"
-                                            "</ECSchema>", false, "Cardinality N:N and Embedding is not supported"));
-
     unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                             "  <ECEntityClass typeName='Parent' >"
@@ -2107,6 +2037,23 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
                           "  </ECRelationshipClass>"
                           "</ECSchema>"));
 
+    supportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                            "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
+                                            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children'>"
+                                            "        <Class class='Parent' />"
+                                            "     </Source>"
+                                            "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
+                                            "         <Class class='Child' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>"));
+
     supportedSchemas.push_back(SchemaItem("N:N and holding",
                                             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Geometry' >"
@@ -2126,6 +2073,33 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
                                             "</ECSchema>"));
 
     AssertSchemaImport(supportedSchemas, "ecdbrelationshipmappingrules.ecdb");
+    }
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, 
+        SchemaItem("Rel w/o nav prop", "<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "  <ECEntityClass typeName='Parent' >"
+                "    <ECProperty propertyName='ParentProp' typeName='long' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='Child' >"
+                "    <ECProperty propertyName='ChildProp' typeName='long' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
+                "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
+                "        <Class class='Parent' />"
+                "     </Source>"
+                "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
+                "         <Class class='Child' />"
+                "     </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>"), "ecdbrelationshipmappingrules_relwithoutnavprop.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertColumnNames(ecdb, "ts_Parent", {"Id", "ParentProp"}, "rel w/o nav prop");
+    AssertColumnNames(ecdb, "ts_Child", {"Id", "ChildProp"}, "rel w/o nav prop");
+    AssertColumnNames(ecdb, "ts_ParentHasChildren", {"Id", "SourceId", "TargetId"}, "rel w/o nav prop");
     }
 
     {
@@ -2181,10 +2155,6 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
     ecdb.SaveChanges();
-    //WIP_REL: Fails because ECSQL DELETE is incorrectly prepared (exp: 126=129)
-    //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
-    //->SQL: UPDATE [ts_Child] SET [FK_ts_ParentHasChildren] = NULL
-    //       WHERE [ts_Child].[FK_ts_ParentHasChildren] = 1 AND 126 = 129 AND [ts_Child].[ECInstanceId] = 2 AND [ts_Child].[ECClassId] = 127
     AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", parentKey, childKey);
     }
 
@@ -2298,8 +2268,6 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
 
-    //WIP_REL: Fails because ECSQL DELETE is incorrectly prepared (exp: 126=129)
-    //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
     AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", parentKey, childKey);
     }
 
@@ -2338,63 +2306,28 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
                                      "  </ECRelationshipClass>"
                                      "</ECSchema>"));
 
-    testSchemas.push_back(SchemaItem("Children in different joined tables, FK in joined tables",
-                                     "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                     "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                     "  <ECEntityClass typeName='Parent' >"
-                                     "    <ECProperty propertyName='ParentProp' typeName='int' />"
-                                     "  </ECEntityClass>"
-                                     "  <ECEntityClass typeName='Child' >"
-                                     "     <ECCustomAttributes>"
-                                     "         <ClassMap xmlns='ECDbMap.02.00'>"
-                                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                     "         </ClassMap>"
-                                     "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                     "     </ECCustomAttributes>"
-                                     "    <ECProperty propertyName='ChildProp' typeName='int' />"
-                                     "    <ECNavigationProperty propertyName='Parent' relationshipName='Rel' direction='Backward'/>"
-                                     "  </ECEntityClass>"
-                                     "  <ECEntityClass typeName='GrandchildA' >"
-                                     "     <BaseClass>Child</BaseClass>"
-                                     "    <ECProperty propertyName='GrandchildAProp' typeName='int' />"
-                                     "  </ECEntityClass>"
-                                     "  <ECEntityClass typeName='GrandchildB' >"
-                                     "     <BaseClass>Child</BaseClass>"
-                                     "    <ECProperty propertyName='GrandchildBProp' typeName='int' />"
-                                     "  </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
-                                     "     <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Grandchildren'>"
-                                     "         <Class class='Parent' />"
-                                     "     </Source>"
-                                     "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Grandchildren (Reversed)' abstractConstraint='Child'>"
-                                     "        <Class class='GrandchildA' />"
-                                     "        <Class class='GrandchildB' />"
-                                     "     </Target>"
-                                     "  </ECRelationshipClass>"
-                                     "</ECSchema>"));
-
     for (SchemaItem const& testSchema : testSchemas)
         {
         ECDb ecdb;
         bool asserted = false;
         AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_childreninseparatetables.ecdb");
-        ASSERT_FALSE(asserted);
+        ASSERT_FALSE(asserted) << testSchema.m_name.c_str();
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "SELECT SourceECInstance,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.Rel"));
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "SELECT SourceECInstance,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.Rel")) << testSchema.m_name.c_str();
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstance,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstance,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)")) << testSchema.m_name.c_str();
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "UPDATE ts.Rel SET SourceECInstanceId=?, TargetECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "UPDATE ts.Rel SET SourceECInstanceId=?, TargetECInstanceId=?")) << testSchema.m_name.c_str();
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "DELETE FROM ts.Rel"));
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "DELETE FROM ts.Rel")) << testSchema.m_name.c_str();
         }
         }
     }

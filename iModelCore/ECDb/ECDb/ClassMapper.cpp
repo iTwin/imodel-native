@@ -167,7 +167,7 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Unset;
 
     IssueReporter const& issues = classMap.GetDbMap().GetECDb().GetECDbImplR().GetIssueReporter();
-    ECDbPropertyMap customPropMap;
+    PropertyMapCustomAttribute customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
         if (classMap.GetClass().IsEntityClass() && classMap.GetClass().GetEntityClassCP()->IsMixin())
@@ -964,7 +964,7 @@ BentleyStatus ClassMapper::TableMapper::DetermineTableName(Utf8StringR tableName
 BentleyStatus ClassMapper::TableMapper::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
     {
     ECSchemaCR schema = ecclass.GetSchema();
-    ECDbSchemaMap customSchemaMap;
+    SchemaMapCustomAttribute customSchemaMap;
 
     if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
         {

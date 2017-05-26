@@ -165,13 +165,13 @@ BentleyStatus CustomAttributeReader::TryGetBooleanValue(Nullable<bool>& val, IEC
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(ECDbSchemaMap& schemaMap, ECSchemaCR schema)
+bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(SchemaMapCustomAttribute& schemaMap, ECSchemaCR schema)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(schema, ECDBMAP_SCHEMANAME, "SchemaMap");
     if (ca == nullptr)
         return false;
 
-    schemaMap = ECDbSchemaMap(schema, ca);
+    schemaMap = SchemaMapCustomAttribute(schema, ca);
     return true;
     }
 
@@ -179,13 +179,13 @@ bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(ECDbSchemaMap& schemaMap, ECS
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetClassMap(ECDbClassMap& classMap, ECClassCR ecClass)
+bool ECDbMapCustomAttributeHelper::TryGetClassMap(ClassMapCustomAttribute& classMap, ECClassCR ecClass)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ClassMap");
     if (ca == nullptr)
         return false;
 
-    classMap = ECDbClassMap(ecClass, ca);
+    classMap = ClassMapCustomAttribute(ecClass, ca);
     return true;
     }
 
@@ -193,13 +193,13 @@ bool ECDbMapCustomAttributeHelper::TryGetClassMap(ECDbClassMap& classMap, ECClas
 //@bsimethod                                               Krischan.Eberle   08 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetShareColumns(ShareColumns& shareColumns, ECClassCR ecClass)
+bool ECDbMapCustomAttributeHelper::TryGetShareColumns(ShareColumnsCustomAttribute& shareColumns, ECClassCR ecClass)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ShareColumns");
     if (ca == nullptr)
         return false;
 
-    shareColumns = ShareColumns(ecClass, ca);
+    shareColumns = ShareColumnsCustomAttribute(ecClass, ca);
     return true;
     }
 
@@ -216,13 +216,13 @@ bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECEntityClass
 //@bsimethod                                               Krischan.Eberle   10 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexList& dbIndexList, ECClassCR ecClass)
+bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexListCustomAttribute& dbIndexList, ECClassCR ecClass)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "DbIndexList");
     if (ca == nullptr)
         return false;
 
-    dbIndexList = DbIndexList(ecClass, ca);
+    dbIndexList = DbIndexListCustomAttribute(ecClass, ca);
     return true;
     }
 
@@ -230,13 +230,13 @@ bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexList& dbIndexList, E
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(ECDbPropertyMap& propertyMap, PrimitiveECPropertyCR ecProperty)
+bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(PropertyMapCustomAttribute& propertyMap, PrimitiveECPropertyCR ecProperty)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecProperty, ECDBMAP_SCHEMANAME, "PropertyMap");
     if (ca == nullptr)
         return false;
 
-    propertyMap = ECDbPropertyMap(ecProperty, ca);
+    propertyMap = PropertyMapCustomAttribute(ecProperty, ca);
     return true;
     }
 
@@ -244,13 +244,13 @@ bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(ECDbPropertyMap& propertyMa
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(ECDbLinkTableRelationshipMap& linkTableRelationshipMap, ECRelationshipClassCR ecRelationship)
+bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(LinkTableRelationshipMapCustomAttribute& linkTableRelationshipMap, ECRelationshipClassCR ecRelationship)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMANAME, "LinkTableRelationshipMap");
     if (ca == nullptr)
         return false;
 
-    linkTableRelationshipMap = ECDbLinkTableRelationshipMap(ecRelationship, ca);
+    linkTableRelationshipMap = LinkTableRelationshipMapCustomAttribute(ecRelationship, ca);
     return true;
     }
 
@@ -258,13 +258,13 @@ bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(ECDbLinkTableR
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ECDbForeignKeyConstraint& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship)
+bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMANAME, "ForeignKeyConstraint");
     if (ca == nullptr)
         return false;
 
-    foreignKeyTableRelationshipMap = ECDbForeignKeyConstraint(ecRelationship, ca);
+    foreignKeyTableRelationshipMap = ForeignKeyConstraintCustomAttribute(ecRelationship, ca);
     return true;
     }
 
@@ -283,12 +283,12 @@ bool ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(ECRelationship
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaMap::ECDbSchemaMap(ECSchemaCR schema, IECInstanceCP ca) : m_schema(&schema), m_ca(ca) {}
+SchemaMapCustomAttribute::SchemaMapCustomAttribute(ECSchemaCR schema, IECInstanceCP ca) : m_schema(&schema), m_ca(ca) {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaMap::TryGetTablePrefix(Nullable<Utf8String>& tablePrefix) const
+BentleyStatus SchemaMapCustomAttribute::TryGetTablePrefix(Nullable<Utf8String>& tablePrefix) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -313,12 +313,12 @@ BentleyStatus ECDbSchemaMap::TryGetTablePrefix(Nullable<Utf8String>& tablePrefix
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbClassMap::ECDbClassMap(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
+ClassMapCustomAttribute::ClassMapCustomAttribute(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbClassMap::TryGetMapStrategy(Nullable<Utf8String>& mapStrategy) const
+BentleyStatus ClassMapCustomAttribute::TryGetMapStrategy(Nullable<Utf8String>& mapStrategy) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -329,7 +329,7 @@ BentleyStatus ECDbClassMap::TryGetMapStrategy(Nullable<Utf8String>& mapStrategy)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbClassMap::TryGetTableName(Nullable<Utf8String>& tableName) const
+BentleyStatus ClassMapCustomAttribute::TryGetTableName(Nullable<Utf8String>& tableName) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -340,7 +340,7 @@ BentleyStatus ECDbClassMap::TryGetTableName(Nullable<Utf8String>& tableName) con
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbClassMap::TryGetECInstanceIdColumn(Nullable<Utf8String>& ecInstanceIdColumnName) const
+BentleyStatus ClassMapCustomAttribute::TryGetECInstanceIdColumn(Nullable<Utf8String>& ecInstanceIdColumnName) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -354,12 +354,12 @@ BentleyStatus ECDbClassMap::TryGetECInstanceIdColumn(Nullable<Utf8String>& ecIns
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   10 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-DbIndexList::DbIndexList(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
+DbIndexListCustomAttribute::DbIndexListCustomAttribute(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   10 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbIndexList::GetIndexes(bvector<DbIndex>& indices) const
+BentleyStatus DbIndexListCustomAttribute::GetIndexes(bvector<DbIndex>& indices) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -465,12 +465,12 @@ BentleyStatus DbIndexList::GetIndexes(bvector<DbIndex>& indices) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbPropertyMap::ECDbPropertyMap(ECPropertyCR ecProperty, IECInstanceCP ca) : m_property(&ecProperty), m_ca(ca) {}
+PropertyMapCustomAttribute::PropertyMapCustomAttribute(ECPropertyCR ecProperty, IECInstanceCP ca) : m_property(&ecProperty), m_ca(ca) {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbPropertyMap::TryGetColumnName(Nullable<Utf8String>& columnName) const
+BentleyStatus PropertyMapCustomAttribute::TryGetColumnName(Nullable<Utf8String>& columnName) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -481,7 +481,7 @@ BentleyStatus ECDbPropertyMap::TryGetColumnName(Nullable<Utf8String>& columnName
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbPropertyMap::TryGetIsNullable(Nullable<bool>& isNullable) const
+BentleyStatus PropertyMapCustomAttribute::TryGetIsNullable(Nullable<bool>& isNullable) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -492,7 +492,7 @@ BentleyStatus ECDbPropertyMap::TryGetIsNullable(Nullable<bool>& isNullable) cons
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbPropertyMap::TryGetIsUnique(Nullable<bool>& isUnique) const
+BentleyStatus PropertyMapCustomAttribute::TryGetIsUnique(Nullable<bool>& isUnique) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -503,7 +503,7 @@ BentleyStatus ECDbPropertyMap::TryGetIsUnique(Nullable<bool>& isUnique) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbPropertyMap::TryGetCollation(Nullable<Utf8String>& collation) const
+BentleyStatus PropertyMapCustomAttribute::TryGetCollation(Nullable<Utf8String>& collation) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -518,7 +518,7 @@ BentleyStatus ECDbPropertyMap::TryGetCollation(Nullable<Utf8String>& collation) 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   08 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ShareColumns::TryGetApplyToSubclassesOnly(Nullable<bool>& applyToSubclassesOnly) const
+BentleyStatus ShareColumnsCustomAttribute::TryGetApplyToSubclassesOnly(Nullable<bool>& applyToSubclassesOnly) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -529,7 +529,7 @@ BentleyStatus ShareColumns::TryGetApplyToSubclassesOnly(Nullable<bool>& applyToS
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   08 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ShareColumns::TryGetMaxSharedColumnsBeforeOverflow(Nullable<uint32_t>& maxSharedColumnsBeforeOverflow) const
+BentleyStatus ShareColumnsCustomAttribute::TryGetMaxSharedColumnsBeforeOverflow(Nullable<uint32_t>& maxSharedColumnsBeforeOverflow) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -557,14 +557,14 @@ BentleyStatus ShareColumns::TryGetMaxSharedColumnsBeforeOverflow(Nullable<uint32
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbLinkTableRelationshipMap::ECDbLinkTableRelationshipMap(ECRelationshipClassCR relClass, IECInstanceCP ca)
+LinkTableRelationshipMapCustomAttribute::LinkTableRelationshipMapCustomAttribute(ECRelationshipClassCR relClass, IECInstanceCP ca)
     : m_relClass(&relClass), m_ca(ca)
     {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbLinkTableRelationshipMap::TryGetSourceECInstanceIdColumn(Nullable<Utf8String>& sourceECInstanceIdColumnName) const
+BentleyStatus LinkTableRelationshipMapCustomAttribute::TryGetSourceECInstanceIdColumn(Nullable<Utf8String>& sourceECInstanceIdColumnName) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -575,7 +575,7 @@ BentleyStatus ECDbLinkTableRelationshipMap::TryGetSourceECInstanceIdColumn(Nulla
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbLinkTableRelationshipMap::TryGetTargetECInstanceIdColumn(Nullable<Utf8String>& targetECInstanceIdColumnName) const
+BentleyStatus LinkTableRelationshipMapCustomAttribute::TryGetTargetECInstanceIdColumn(Nullable<Utf8String>& targetECInstanceIdColumnName) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -586,7 +586,7 @@ BentleyStatus ECDbLinkTableRelationshipMap::TryGetTargetECInstanceIdColumn(Nulla
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbLinkTableRelationshipMap::TryGetCreateForeignKeyConstraints(Nullable<bool>& createForeignKeyConstraintsFlag) const
+BentleyStatus LinkTableRelationshipMapCustomAttribute::TryGetCreateForeignKeyConstraints(Nullable<bool>& createForeignKeyConstraintsFlag) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -597,7 +597,7 @@ BentleyStatus ECDbLinkTableRelationshipMap::TryGetCreateForeignKeyConstraints(Nu
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbLinkTableRelationshipMap::TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationshipsFlag) const
+BentleyStatus LinkTableRelationshipMapCustomAttribute::TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationshipsFlag) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -611,14 +611,14 @@ BentleyStatus ECDbLinkTableRelationshipMap::TryGetAllowDuplicateRelationships(Nu
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbForeignKeyConstraint::ECDbForeignKeyConstraint(ECRelationshipClassCR relClass, IECInstanceCP ca)
+ForeignKeyConstraintCustomAttribute::ForeignKeyConstraintCustomAttribute(ECRelationshipClassCR relClass, IECInstanceCP ca)
     : m_relClass(&relClass), m_ca(ca)
     {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbForeignKeyConstraint::TryGetOnDeleteAction(Nullable<Utf8String>& onDeleteAction) const
+BentleyStatus ForeignKeyConstraintCustomAttribute::TryGetOnDeleteAction(Nullable<Utf8String>& onDeleteAction) const
     {
     if (m_ca == nullptr)
         return ERROR;
@@ -629,7 +629,7 @@ BentleyStatus ECDbForeignKeyConstraint::TryGetOnDeleteAction(Nullable<Utf8String
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbForeignKeyConstraint::TryGetOnUpdateAction(Nullable<Utf8String>& onUpdateAction) const
+BentleyStatus ForeignKeyConstraintCustomAttribute::TryGetOnUpdateAction(Nullable<Utf8String>& onUpdateAction) const
     {
     if (m_ca == nullptr)
         return ERROR;

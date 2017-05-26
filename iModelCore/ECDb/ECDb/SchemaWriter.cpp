@@ -33,9 +33,6 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb))
         return ERROR;
 
-    if (SUCCESS != ValidateSchemasPostImport())
-        return ERROR;
-
     if (SUCCESS != compareCtx.ReloadContextECSchemas(m_ecdb.Schemas()))
         return ERROR;
 
@@ -48,38 +45,8 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ValidateSchemasPreImport(bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies) const
     {
-    const bool isValid = SchemaValidator::ValidateSchemas(m_ecdb.GetECDbImplR().GetIssueReporter(), primarySchemasOrderedByDependencies, m_ctx.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
+    const bool isValid = SchemaValidator::ValidateSchemas(m_ctx, m_ecdb.GetECDbImplR().GetIssueReporter(), primarySchemasOrderedByDependencies);
     return isValid ? SUCCESS : ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                     05/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::ValidateSchemasPostImport() const
-    {
- /*  PERFLOG_START("ECDb", "ValidateSchemasPostImport");
-
-   /* Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT s.Name, c.Name FROM ec_Class c INNER JOIN ec_Schema s ON s.Id=c.SchemaId "
-                                     "INNER JOIN ec_ClassMap cm ON cm.ClassId=c.Id "
-                                     "LEFT JOIN ec_Property p ON p.NavigationRelationshipClassId=c.Id "
-                                     "LEFT JOIN ec_ClassHasBaseClasses bc ON c.Id=bc.ClassId "
-                                     "WHERE p.Id IS NULL AND bc.BaseClassId IS NULL AND cm.MapStrategy IN(" SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable ")"))
-        return ERROR;
-
-
-    bool isValid = true;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        isValid = false;
-        if (Issues().IsEnabled())
-            Issues().Report("Failed to import ECRelationshipClass '%s:%s'. A navigation property must be defined for it.", stmt.GetValueText(0), stmt.GetValueText(1));
-        }
-    PERFLOG_FINISH("ECDb", "ValidateSchemasPostImport");
-
-    return isValid ? SUCCESS : ERROR;
-    */
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
