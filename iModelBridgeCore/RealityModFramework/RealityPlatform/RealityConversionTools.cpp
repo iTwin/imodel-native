@@ -945,6 +945,7 @@ RealityDataDownload::sisterFileVector RealityConversionTools::RealityDataToSiste
         {
         if (sister->GetSource().length() > 0)
             {
+			filename.clear();
             RealityDataDownload::ExtractFileName(filename, sister->GetSource());
             sfVector.push_back(std::make_pair(sister->ToString(), filename));
             }
@@ -1009,15 +1010,20 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
     for (RealityPackage::TerrainDataPtr file : terrainFiles)
         downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
-    /*RealityPackage::RealityDataPackage::ModelGroup modelFiles = package->GetModelGroup();
+    RealityPackage::RealityDataPackage::ModelGroup modelFiles = package->GetModelGroup();
 
     for (RealityPackage::ModelDataPtr file : modelFiles)
-        downloadOrder.push_back(RealityDataToMirrorVector(*file));*/
+        downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
     RealityPackage::RealityDataPackage::PinnedGroup pinnedFiles = package->GetPinnedGroup();
 
     for (RealityPackage::PinnedDataPtr file : pinnedFiles)
         downloadOrder.push_back(RealityDataToMirrorVector(*file));
+
+	RealityPackage::RealityDataPackage::UndefinedGroup undefinedfiles = package->GetUndefinedGroup();
+
+	for (RealityPackage::UndefinedDataPtr file : undefinedfiles)
+		downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
     return downloadOrder;
     }
