@@ -210,7 +210,7 @@ BentleyStatus LinkElement::RemoveFromSource(DgnDbR dgndb, DgnElementId linkId, D
         return ERROR;
         }
 
-    return (BE_SQLITE_OK == dgndb.DeleteNonNavigationRelationships(BIS_SCHEMA(BIS_REL_ElementHasLinks), sourceElementId, linkId))? BSISUCCESS: BSIERROR;
+    return (BE_SQLITE_OK == dgndb.DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ElementHasLinks), sourceElementId, linkId))? BSISUCCESS: BSIERROR;
     }
 
 //---------------------------------------------------------------------------------------

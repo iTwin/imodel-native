@@ -45,7 +45,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
-                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
+                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this), m_elementIdSequence(*this, "bis_elementidsequence")
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
 
@@ -74,7 +74,7 @@ void DgnDb::Destroy()
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
     m_revisionManager.reset(nullptr);
-    m_ecsqlCache.Empty();
+    ClearECSqlCache();
     if (m_briefcaseManager.IsValid())
         {
         m_briefcaseManager->OnDgnDbDestroyed();
@@ -115,16 +115,126 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened(params)))
         return rc;
 
-    if (BE_SQLITE_OK != (rc = Domains().OnDbOpened(((DgnDb::OpenParams const&) params).IsSchemaUpgradeEnabled())))
+    if (BE_SQLITE_OK != (rc = InitializeSchemas(params)))
+        {
+        m_txnManager = nullptr; // Deletes ref counted ptr so that statement caches are freed
         return rc;
+        }
 
     if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
         return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
+
+    if (BE_SQLITE_OK != (rc = MergeSchemaRevision(params))) // Ensure InitializeTableHandlers() is called before this - txn related tables are necessary for any change propagation
+        return rc;
 
     Fonts().Update(); // ensure the font Id cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
     m_geoLocation.Load();
 
     return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
+    {
+    SchemaUpgradeOptions const& schemaUpgradeOptions = ((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions();
+    SchemaStatus status = Domains().InitializeSchemas(schemaUpgradeOptions);
+    return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+// static
+DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
+    {
+    switch (status)
+        {
+        case SchemaStatus::Success:
+            return BE_SQLITE_OK;
+        case SchemaStatus::SchemaTooNew:
+            return BE_SQLITE_ERROR_SchemaTooNew;
+        case SchemaStatus::SchemaTooOld:
+            return BE_SQLITE_ERROR_SchemaTooOld;
+        case SchemaStatus::SchemaUpgradeRequired:
+            return BE_SQLITE_ERROR_SchemaUpgradeRequired;
+        default:
+            return isUpgrade ? BE_SQLITE_ERROR_SchemaUpgradeFailed : BE_SQLITE_ERROR_SchemaImportFailed;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::MergeSchemaRevision(Db::OpenParams const& params)
+    {
+    DgnRevisionCP schemaRevision = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions()).GetUpgradeRevision();
+    if (schemaRevision == nullptr)
+        return BE_SQLITE_OK;
+
+    RevisionStatus revStatus = Revisions().DoMergeRevision(*schemaRevision); 
+    return (revStatus == RevisionStatus::Success) ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_OnDbOpening()
+    {
+    DbResult result = T_Super::_OnDbOpening();
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    return InitializeElementIdSequence();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
+    {
+    DbResult result = T_Super::_OnBriefcaseIdChanged(newBriefcaseId);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    return ResetElementIdSequence(newBriefcaseId);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+void DgnDb::_OnAfterSchemaImport() const
+    {
+    ClearECSqlCache();
+    Elements().ClearECCaches();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::InitializeElementIdSequence()
+    {
+    return m_elementIdSequence.Initialize();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::ResetElementIdSequence(BeBriefcaseId briefcaseId)
+    {
+    BeBriefcaseBasedId firstId(briefcaseId, 0);
+    BeBriefcaseBasedId lastId(briefcaseId.GetNextBriefcaseId(), 0);
+
+    Statement stmt;
+    stmt.Prepare(*this, "SELECT max(Id) FROM " BIS_TABLE(BIS_CLASS_Element)  " WHERE Id >= ? AND Id < ?");
+    stmt.BindInt64(1, firstId.GetValueUnchecked());
+    stmt.BindInt64(2, lastId.GetValueUnchecked());
+    stmt.Step();
+
+    uint64_t minimumId = stmt.IsColumnNull(0) ? firstId.GetValueUnchecked() : stmt.GetValueInt64(0);
+
+    return m_elementIdSequence.Reset(minimumId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,9 +264,9 @@ IBriefcaseManagerR DgnDb::BriefcaseManager()
     return *m_briefcaseManager;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/15
+//--------------------------------------------------------------------------------------
 RevisionManagerR DgnDb::Revisions() const
     {
     if (nullptr == m_revisionManager)
@@ -207,7 +317,7 @@ bool isNavigationPropertyOf(ECN::ECRelationshipClassCR relClass, DgnDbR db, BeSQ
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
+DbResult DgnDb::InsertLinkTableRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
                                      BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
 #ifdef CHECK_NON_NAVIGATION_PROPERTY_API
@@ -229,7 +339,7 @@ DbResult DgnDb::InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& rel
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::UpdateNonNavigationRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
+DbResult DgnDb::UpdateLinkTableRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
     {
     auto eclass = Schemas().GetClass(key.GetClassId());
     if (nullptr == eclass)
@@ -246,7 +356,7 @@ DbResult DgnDb::UpdateNonNavigationRelationshipProperties(EC::ECInstanceKeyCR ke
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteNonNavigationRelationship(EC::ECInstanceKeyCR key)
+DbResult DgnDb::DeleteLinkTableRelationship(EC::ECInstanceKeyCR key)
     {
     ECClassCP eclass = Schemas().GetClass(key.GetClassId());
     if (nullptr == eclass)
@@ -266,7 +376,7 @@ DbResult DgnDb::DeleteNonNavigationRelationship(EC::ECInstanceKeyCR key)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteNonNavigationRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
+DbResult DgnDb::DeleteLinkTableRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
     {
     if (!sourceId.IsValid() && !targetId.IsValid())
         {
@@ -589,6 +699,11 @@ DgnCloneContext::DgnCloneContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
+    // Pre-populate the remap table with "fixed" element IDs
+    AddElementId(source.Elements().GetRootSubjectId(), dest.Elements().GetRootSubjectId());
+    AddElementId(source.Elements().GetDictionaryPartitionId(), dest.Elements().GetDictionaryPartitionId());
+    AddElementId(source.Elements().GetRealityDataSourcesPartitionId(), dest.Elements().GetRealityDataSourcesPartitionId());
+
     ComputeGcsAdjustment();
     }
 

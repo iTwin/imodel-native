@@ -174,16 +174,23 @@ DgnDbStatus ViewAttachment::CheckValid() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ViewAttachment::GetClip() const
     {
-    return ClipVector::FromJson(Json::Value::From(GetPropertyValueString(prop_Clip())));
+    return m_jsonProperties.isMember(json_clip()) ? ClipVector::FromJson(m_jsonProperties[json_clip()]) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
+void ViewAttachment::SetClip(ClipVectorCR clipVector)
     {
-    Json::Value clipJson = clipVector.ToJson();
-    return SetPropertyValue(prop_Clip(), clipJson.ToString().c_str());
+    m_jsonProperties[json_clip()] = clipVector.ToJson();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachment::ClearClip()
+    {
+    m_jsonProperties.removeMember(json_clip());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -371,14 +378,8 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth)
 
         m_graphic = args.m_context.CreateBranch(branch, &toNpc, nullptr);
         }
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tile2dModel::_GetGraphics(DrawGraphicsR drawGraphics, int depth) const
-    {
-    drawGraphics.m_graphics.Add(*m_graphic);
+    args.m_graphics.m_graphics.Add(*m_graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -560,6 +561,7 @@ Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId at
 
     return nullptr;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -571,7 +573,7 @@ bvector<DgnElementId> Sheet::Model::GetSheetAttachmentIds() const
     stmt->BindId(1, GetModelId());
 
     while (BE_SQLITE_ROW == stmt->Step())
-        attachIds.push_back (stmt->GetValueId<DgnElementId>(0));
+        attachIds.push_back(stmt->GetValueId<DgnElementId>(0));
 
     return attachIds;
     }
@@ -630,7 +632,6 @@ AxisAlignedBox3d Sheet::Model::GetSheetExtents() const
     DPoint2d size = GetSheetSize();
     return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(size.x, size.y, 0.0));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16

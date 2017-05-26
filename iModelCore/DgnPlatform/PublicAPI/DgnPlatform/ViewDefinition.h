@@ -273,10 +273,10 @@ protected:
 
     bool EqualState(ModelSelectorCR other) const {return m_models==other.m_models;}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _OnDeleted() const override;
 
     explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
     DgnDbStatus WriteModels();
@@ -302,8 +302,6 @@ public:
     //! Drop a model from this ModelSelector. Model will no longer be displayed by views that use this ModelSelector.
     //! @return true if the model was dropped, false if it was not previously in this ModelSelector
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
-
-    static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
 
     //! Create a DgnCode for a CategorySelector given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_ModelSelector, scope, name);}
@@ -1166,7 +1164,6 @@ public:
     void SetOrigin2d(DPoint2dCR o) {m_origin = o;}
     DVec2d GetDelta2d() const {return m_delta;}
     void SetDelta2d(DVec2dCR v) {m_delta = v;}
-    static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
 };
 
 //=======================================================================================
