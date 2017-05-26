@@ -18,6 +18,8 @@
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 
+#include <DgnPlatform\TextString.h>
+
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -266,7 +268,8 @@ static bool s_waitCheckStop = false;
 static Byte s_transparency = 0;
 static bool s_applyClip = false;
 static bool s_dontShowMesh = false;
-
+static bool s_showTiles = false;
+static double s_tileSizePerIdStringSize = 10.0;
 
 
 
@@ -451,13 +454,50 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                 requestedNodes.push_back(meshNodes[nodeInd]);
             else
             */
+#ifndef NDEBUG
+            if (s_showTiles)
+                { 
+                DRange3d contentExtent(meshNodes[nodeInd]->GetContentExtent());
+                __int64  nodeId(meshNodes[nodeInd]->GetNodeId());
+
+                TextString nodeIdString;
+
+                DPoint3d stringOrigin = { (contentExtent.high.x + contentExtent.low.x) / 2, (contentExtent.high.y + contentExtent.low.y) / 2, contentExtent.high.z * 1.10};
+
+                char buffer[1000];
+                BeStringUtilities::FormatUInt64(buffer, nodeId);
+                
+                nodeIdString.SetOrigin(stringOrigin);
+                nodeIdString.SetText(buffer);
+
+                TextStringStyle stringStyle;
+                double maxExtentDim = std::max(contentExtent.XLength(), contentExtent.YLength());
+                int textSize = std::max((int)(maxExtentDim / s_tileSizePerIdStringSize), 1);
+                stringStyle.SetSize(textSize);
+                nodeIdString.SetStyle(stringStyle);                
+
+                ElemMatSymbP matSymbP = context.GetElemMatSymb();
+                matSymbP->Init();                                
+                matSymbP->SetLineColor(ColorDef::Red());
+                matSymbP->SetFillColor(ColorDef::Red());                
+                context.GetIDrawGeom().ActivateMatSymb(matSymbP);                                
+                context.GetIDrawGeom().DrawTextString(nodeIdString);
+
+                DPoint3d box[8];
+                contentExtent.Get8Corners(box);                
+                std::swap(box[6], box[7]);
+                box[3] = box[7];
+                
+                context.GetIDrawGeom().DrawLineString3d(5, &box[3], nullptr);                
+                }
+#endif
+
             bool wasDrawn = false;
           
             bvector<SmCachedDisplayMesh*> cachedMeshes;
             bvector<bpair<bool,uint64_t>> textureIDs;
             QvElem* qvElem = 0;                
-            bool isEmptyNode = false;
-
+            bool isEmptyNode = false;                            
 
             if (isOutputQuickVision && (SUCCESS == meshNodes[nodeInd]->GetCachedMeshes(cachedMeshes, textureIDs)))
                 {
