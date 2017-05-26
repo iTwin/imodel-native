@@ -1,9 +1,9 @@
 #include "testHarness.h"
 struct CurveConstruction;
 struct CurveConstraint;
-typedef struct CurveConstraint const *ConstraintCP;
-typedef struct CurveConstraint *ConstraintP;
-typedef struct CurveConstraint &ConstraintCR;
+typedef struct CurveConstraint const *CurveConstraintCP;
+typedef struct CurveConstraint *CurveConstraintP;
+typedef struct CurveConstraint &CurveConstraintCR;
 typedef struct CurveConstraint &ConstraintR;
 
 
@@ -43,7 +43,7 @@ CurveConstraint (Type type, CurveLocationDetailCR detail, DRay3dCR ray) :
 
 public:
 
-bool IsType (CurveConstraint::Type t) { return t == m_type;}
+bool IsType (CurveConstraint::Type t) const { return t == m_type;}
 DPoint3d Point () const{return m_location.point;}
 DRay3d PointAndDirection () const {return m_ray;}
 
@@ -86,64 +86,106 @@ static ICurvePrimitivePtr ConstructLines (bvector<CurveConstraint> &constraints)
 static ICurvePrimitivePtr ConstructArcs  (bvector<CurveConstraint> &constraints);
 };
 
+struct ConstraintMatchTable
+{
+friend struct ConstructionContext;
+private:
+static const int s_maxTableIndex = 6;
+
+uint32_t m_numRequested;
+uint32_t m_numMatch;
+CurveConstraint::Type m_type[s_maxTableIndex];
+uint32_t m_sourceIndex[s_maxTableIndex];
+CurveConstraintCP m_constraint[s_maxTableIndex];
+public:
+
+ConstraintMatchTable () : m_numRequested(0), m_numMatch (0) {}
+
+ConstraintMatchTable (CurveConstraint::Type type0) : m_numRequested(1), m_numMatch (0)
+    {
+    m_type[0] = type0;
+    }
+
+ConstraintMatchTable (CurveConstraint::Type type0, CurveConstraint::Type type1 ) : m_numRequested(2), m_numMatch (0)
+    {
+    m_type[0] = type0;
+    m_type[1] = type1;
+    }
+
+ConstraintMatchTable (CurveConstraint::Type type0, CurveConstraint::Type type1, CurveConstraint::Type type2) : m_numRequested(3), m_numMatch (0)
+    {
+    m_type[0] = type0;
+    m_type[1] = type1;
+    m_type[2] = type2;
+    }
+
+bool FindSourceIndex (uint32_t target)
+    {
+    for (uint32_t i = 0; i < m_numMatch; i++)
+        {
+        if (m_sourceIndex[i] == target)
+            return true;
+        }
+    return false;
+    }
+void Clear () {m_numMatch = 0;}
+// Enter the next constraint and increment m_numMatch !!!
+void Enter
+(
+uint32_t index,         // index in these arrays.  This must be identical to m_numMatch !!!!
+uint32_t hintIndex,   // index in input data
+CurveConstraintCP constraint    // the constraint
+)
+    {
+    if (index == m_numMatch && index < s_maxTableIndex)
+        {
+        m_sourceIndex[index] = hintIndex;
+        m_constraint[index] = constraint;
+        m_numMatch++;
+        }
+    }
+
+CurveConstraintCP GetCurveConstraintCP (uint32_t tableIndex){ return tableIndex < s_maxTableIndex ? m_constraint[tableIndex] : nullptr;}
+};
 
 struct ConstructionContext
 {
+
 bvector<CurveConstraint> &m_constraints;
 ConstructionContext (bvector<CurveConstraint> &constraints) : m_constraints(constraints){}
 
-ConstraintCP Deref (size_t index) const { return index < m_constraints.size () ? &m_constraints[index] : nullptr;}
+CurveConstraintCP Deref (size_t index) const { return index < m_constraints.size () ? &m_constraints[index] : nullptr;}
 
-size_t FindHint
-(
-CurveConstraint::Type type,
-size_t firstIndex = 0,
-size_t excludeIndexA = SIZE_MAX,
-size_t excludeIndexB = SIZE_MAX
-) const
+bool BuildConstraintMatchTable (ConstraintMatchTable &matchTable, bool ordered = false) const   
     {
-    for (size_t i = firstIndex; i < m_constraints.size (); i++)
+    matchTable.Clear ();
+    uint32_t nextK0 = 0;
+    size_t numConstraints = m_constraints.size ();
+    for (uint32_t requestIndex = 0; requestIndex < numConstraints; requestIndex++)
         {
-        if (i != excludeIndexA && i != excludeIndexB && m_constraints[i].IsType (type))
-            return i;
+        // note requestIndex is the index to the current target type.
+        // It is also the count of accepted hints --- must avoid reuse of prior hints
+        CurveConstraint::Type targetType = matchTable.m_type[requestIndex];
+        bool found = false;
+        for (uint32_t k = nextK0; k < numConstraints; k++)
+            {
+            if (m_constraints[k].IsType (targetType))
+                {
+                if (!matchTable.FindSourceIndex (k))
+                    {
+                    matchTable.Enter (requestIndex, k, Deref (k));
+                    found = true;
+                    if (ordered)
+                        nextK0 = k + 1;
+                    break;
+                    }
+                }
+            }
+        if (!found)
+            return false;
         }
-    return SIZE_MAX;
+    return true;
     }
-
-bool Get2UnorderedHints
-(
-CurveConstraint::Type typeA,
-CurveConstraint::Type typeB,
-ConstraintCP &hintA,
-ConstraintCP &hintB
-) const
-    {
-    size_t indexA = FindHint (typeA, 0);
-    size_t indexB = FindHint (typeB, 0, indexA);
-    hintA = Deref (indexA);
-    hintB = Deref (indexB);
-    return hintA != nullptr && hintB != nullptr;
-    }
-
-bool Get3UnorderedHints
-(
-CurveConstraint::Type typeA,
-CurveConstraint::Type typeB,
-CurveConstraint::Type typeC,
-ConstraintCP &hintA,
-ConstraintCP &hintB,
-ConstraintCP &hintC
-) const
-    {
-    size_t indexA = FindHint (typeA, 0);
-    size_t indexB = FindHint (typeB, 0, indexA);
-    size_t indexC = FindHint (typeC, 0, indexA, indexB);
-    hintA = Deref (indexA);
-    hintB = Deref (indexB);
-    hintC = Deref (indexC);
-    return hintA != nullptr && hintB != nullptr && hintC != nullptr;
-    }
-
 struct ITryConstruction
     {
     virtual ICurvePrimitivePtr TryConstruction (ConstructionContext const &) = 0;
@@ -169,11 +211,10 @@ struct FromPointPoint : ConstructionContext::ITryConstruction
     {
     ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
         {
-        ConstraintCP hintA, hintB;
-        if (searcher.Get2UnorderedHints (CurveConstraint::Type::ThroughPoint, CurveConstraint::Type::ThroughPoint,
-                hintA, hintB))
+        ConstraintMatchTable matchTable (CurveConstraint::Type::ThroughPoint, CurveConstraint::Type::ThroughPoint);
+        if (searcher.BuildConstraintMatchTable (matchTable))
             {
-            return ICurvePrimitive::CreateLine (DSegment3d::From (hintA->Point (), hintB->Point ()));
+            return ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point ()));
             }
         return nullptr;
         }
@@ -184,15 +225,15 @@ struct FromPointClosestApproach : ConstructionContext::ITryConstruction
     {
     ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
         {
-        ConstraintCP hintA, hintB;
-        if (searcher.Get2UnorderedHints (CurveConstraint::Type::ThroughPoint, CurveConstraint::Type::ClosestPoint,
-                hintA, hintB))
+        ConstraintMatchTable matchTable (CurveConstraint::Type::ThroughPoint, CurveConstraint::Type::ClosestPoint);
+        if (searcher.BuildConstraintMatchTable (matchTable))
             {
             CurveLocationDetail locationB;
-            if (hintB->m_location.curve != nullptr
-                && hintB->m_location.curve->ClosestPointBounded (hintA->Point (), locationB))
+            if (matchTable.GetCurveConstraintCP(1)->m_location.curve != nullptr
+                && matchTable.GetCurveConstraintCP(1)->m_location.curve->ClosestPointBounded (
+                        matchTable.GetCurveConstraintCP(0)->Point (), locationB))
                 {
-                return ICurvePrimitive::CreateLine (DSegment3d::From (hintA->Point (), locationB.point));
+                return ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->Point (), locationB.point));
                 }
             }
         return nullptr;
@@ -203,16 +244,15 @@ struct FromClosestApproachClosestApproach : ConstructionContext::ITryConstructio
     {
     ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
         {
-        ConstraintCP hintA, hintB;
-        if (searcher.Get2UnorderedHints (CurveConstraint::Type::ClosestPoint, CurveConstraint::Type::ClosestPoint,
-                hintA, hintB))
+        ConstraintMatchTable matchTable (CurveConstraint::Type::ClosestPoint, CurveConstraint::Type::ClosestPoint);
+        if (searcher.BuildConstraintMatchTable (matchTable))
             {
             CurveLocationDetail locationA, locationB;
-            if (   hintB->m_location.curve != nullptr
-                && hintA->m_location.curve != nullptr
+            if (   matchTable.GetCurveConstraintCP(1)->m_location.curve != nullptr
+                && matchTable.GetCurveConstraintCP(0)->m_location.curve != nullptr
                 && CurveCurve::ClosestApproach (locationA, locationB,
-                            (ICurvePrimitiveP)hintA->m_location.curve,
-                            (ICurvePrimitiveP)hintB->m_location.curve
+                            (ICurvePrimitiveP)matchTable.GetCurveConstraintCP(0)->m_location.curve,
+                            (ICurvePrimitiveP)matchTable.GetCurveConstraintCP(1)->m_location.curve
                             )
                 )
                 {
@@ -226,22 +266,19 @@ struct FromPointPerpendicularNear : ConstructionContext::ITryConstruction
     {
     ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
         {
-        ConstraintCP hintA, hintB;
-        if (searcher.Get2UnorderedHints (
-                CurveConstraint::Type::ThroughPoint,
-                CurveConstraint::Type::PerpendicularNear,
-                hintA, hintB))
+        ConstraintMatchTable matchTable (CurveConstraint::Type::ThroughPoint, CurveConstraint::Type::PerpendicularNear);
+        if (searcher.BuildConstraintMatchTable (matchTable))
             {
             CurveLocationDetail locationA, locationB;
-            if (   hintB->m_location.curve != nullptr)
+            if (   matchTable.GetCurveConstraintCP(1)->m_location.curve != nullptr)
                 {
                 DPoint3d xyz;
-                double fraction = hintB->m_location.fraction;
-                if (ImprovePerpendicularProjection (hintB->m_location.curve, hintA->m_location.point, fraction, xyz)
+                double fraction = matchTable.GetCurveConstraintCP(1)->m_location.fraction;
+                if (ImprovePerpendicularProjection (matchTable.GetCurveConstraintCP(1)->m_location.curve, matchTable.GetCurveConstraintCP(0)->m_location.point, fraction, xyz)
                     && DoubleOps::IsAlmostIn01 (fraction))
                     {
                     fraction = DoubleOps::ClampFraction (fraction);
-                    return ICurvePrimitive::CreateLine (DSegment3d::From (hintA->m_location.point, xyz));
+                    return ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->m_location.point, xyz));
                     }
                 }
             }
@@ -258,15 +295,14 @@ struct FromPointPointPoint : ConstructionContext::ITryConstruction
     {
     ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
         {
-        ConstraintCP hintA, hintB, hintC;
-        if (searcher.Get3UnorderedHints (
-                    CurveConstraint::Type::ThroughPoint,
-                    CurveConstraint::Type::ThroughPoint,
-                    CurveConstraint::Type::ThroughPoint,
-                    hintA, hintB, hintC))
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::ThroughPoint);
+        if (searcher.BuildConstraintMatchTable (matchTable))
             {
             return ICurvePrimitive::CreateArc (
-                    DEllipse3d::FromPointsOnArc (hintA->Point (), hintB->Point (), hintC->Point ()));
+                    DEllipse3d::FromPointsOnArc (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point (), matchTable.GetCurveConstraintCP(2)->Point ()));
             }
         return nullptr;
         }
@@ -276,15 +312,14 @@ struct FromCenterPointPoint: ConstructionContext::ITryConstruction
     {
     ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
         {
-        ConstraintCP hintA, hintB, hintC;
-        if (searcher.Get3UnorderedHints (
-                    CurveConstraint::Type::Center,
-                    CurveConstraint::Type::ThroughPoint,
-                    CurveConstraint::Type::ThroughPoint,
-                    hintA, hintB, hintC))
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::Center,
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::ThroughPoint);
+        if (searcher.BuildConstraintMatchTable (matchTable))
             {
             return ICurvePrimitive::CreateArc (
-                    DEllipse3d::FromArcCenterStartEnd (hintA->Point (), hintB->Point (), hintC->Point ()));
+                    DEllipse3d::FromArcCenterStartEnd (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point (), matchTable.GetCurveConstraintCP(2)->Point ()));
             }
         return nullptr;
         }
@@ -294,13 +329,14 @@ struct FromPointDirectionPoint: ConstructionContext::ITryConstruction
     {
     ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
         {
-        ConstraintCP hintA, hintB;
-        if (searcher.Get2UnorderedHints (CurveConstraint::Type::PointAndDirection, CurveConstraint::Type::ThroughPoint,
-                hintA, hintB))
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::PointAndDirection,
+                CurveConstraint::Type::ThroughPoint);
+        if (searcher.BuildConstraintMatchTable (matchTable))
             {
             DEllipse3d arc;
-            DRay3d ray = hintA->PointAndDirection ();
-            if (arc.InitArcFromPointTangentPoint (ray.origin, ray.direction, hintB->Point ()))
+            DRay3d ray = matchTable.GetCurveConstraintCP(0)->PointAndDirection ();
+            if (arc.InitArcFromPointTangentPoint (ray.origin, ray.direction, matchTable.GetCurveConstraintCP(1)->Point ()))
                 return ICurvePrimitive::CreateArc (arc);
             }
         return nullptr;
@@ -368,7 +404,7 @@ bvector<ConstructionContext::ITryConstruction *>
     };
 
 
-TEST (Construction,Hello)
+TEST (Construction,HelloLines)
     {
 
     DPoint3d point0 = DPoint3d::From (1,1,1);
@@ -409,7 +445,7 @@ TEST (Construction,Hello)
                 }
             }
         }
-    Check::ClearGeometry ("Construction.Hello");
+    Check::ClearGeometry ("Construction.HelloLines");
     }
 
 TEST (Construction,PointPerpendicularNear)
