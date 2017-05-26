@@ -25,17 +25,18 @@ static void progressFunc(Utf8String filename, double fileProgress, double repoPr
 void PrintUsage()
     {
     std::cout << "RealityDataServiceDownloader for RDS V1.0" << std::endl << std::endl;
-    std::cout << "RealityDataServiceDownloader [server] [schema] [repository] [downloadSource] [downloadDestination]" << std::endl;
+    std::cout << "RealityDataServiceDownloader [server] [schema] [repository] [downloadSource] [downloadDestination] [projectId]" << std::endl;
     std::cout << "   [server]                   : ex: dev-realitydataservices-eus.cloudapp.net" << std::endl;
     std::cout << "   [schema]                   : ex: S3MXECPlugin--Server" << std::endl;
     std::cout << "   [repository]               : ex: S3MX" << std::endl;
     std::cout << "   [downloadSource]           : ex: 5ffc6e51-edc3-4fb3-8b4f-a4becbc045dd" << std::endl;
     std::cout << "   [downloadDestination]      : ex: D:/RealityModDownload (folder must exist)" << std::endl;
+    std::cout << "   [projectId]                : ex: 72524420-7d48-4f4e-8b0f-144e5fa0aa22" << std::endl;
     }
 
 int main(int argc, char *argv[])
     {
-    if(argc < 6)
+    if(argc < 7)
         {
         PrintUsage();
         getch();
@@ -47,6 +48,7 @@ int main(int argc, char *argv[])
     WSGServer wsgServer = WSGServer(argv[1], false);
     Utf8String version = wsgServer.GetVersion(rawResponse);
     RealityDataService::SetServerComponents(argv[1], version, argv[2], argv[3]);
+    RealityDataService::SetProjectId(argv[6]);
 
     Utf8String sourceOnServer = Utf8String(argv[4]);
 

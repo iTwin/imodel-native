@@ -289,6 +289,26 @@ void RealityDataUrl::EncodeId() const
     m_encodedId = BeStringUtilities::UriEncode(m_id.c_str());
     }
 
+void RealityDataUrl::AddProjectId() const
+    {
+    Utf8String symbol = "?";
+    if (m_httpRequestString.Contains("?"))
+        symbol = "&";
+    
+        Utf8StringCR projectId = RealityDataService::GetProjectId();
+    if (!projectId.empty())
+        m_httpRequestString.append(Utf8PrintfString("%sprojectId=%s", symbol, projectId.c_str()));
+    }
+
+Utf8String RealityDataUrl::PostProjectId() const
+    {
+    Utf8String postProjectId = "";
+    Utf8StringCR projectId = RealityDataService::GetProjectId();
+    if (!projectId.empty())
+        postProjectId = Utf8PrintfString(",\"requestOptions\":{\"CustomOptions\":{\"projectId\":\"%s\"}}", projectId.c_str());
+    return postProjectId;
+    }
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
@@ -307,6 +327,7 @@ void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() con
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/EnterpriseStat/");
     m_httpRequestString.append(m_encodedId);
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -317,6 +338,7 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
     m_httpRequestString.append(m_encodedId);
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -327,6 +349,7 @@ void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
     m_httpRequestString.append(m_encodedId);
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -336,6 +359,7 @@ void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestString
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -345,6 +369,7 @@ void RealityDataProjectRelationshipByRealityDataIdRequest::_PrepareHttpRequestSt
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RealityDataId+eq+'%s'", m_encodedId));
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -355,6 +380,7 @@ void RealityDataFolderByIdRequest::_PrepareHttpRequestStringAndPayload() const
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/Folder/");
     m_httpRequestString.append(m_encodedId);
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -365,6 +391,7 @@ void RealityDataDocumentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/Document/");
     m_httpRequestString.append(m_encodedId);
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -434,6 +461,7 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
         m_httpRequestString.append("/Document/");
         m_httpRequestString.append(m_encodedId);
         m_httpRequestString.append("/$file");
+        AddProjectId();
         }
     }
 
@@ -612,6 +640,26 @@ Utf8StringCR RealityDataPagedRequest::GetServerName() const { return RealityData
 Utf8StringCR RealityDataPagedRequest::GetVersion() const { return RealityDataService::GetWSGProtocol(); }
 Utf8StringCR RealityDataPagedRequest::GetSchema() const { return RealityDataService::GetSchemaName(); }
 Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetRepoName(); }
+
+void RealityDataPagedRequest::AddProjectId() const
+    {
+    Utf8String symbol = "?";
+    if (m_httpRequestString.Contains("?"))
+        symbol = "&";
+    
+        Utf8StringCR projectId = RealityDataService::GetProjectId();
+    if (!projectId.empty())
+        m_httpRequestString.append(Utf8PrintfString("%sprojectId=%s", symbol, projectId.c_str()));
+    }
+
+Utf8String RealityDataPagedRequest::PostProjectId() const
+    {
+    Utf8String postProjectId = "";
+    Utf8StringCR projectId = RealityDataService::GetProjectId();
+    if (!projectId.empty())
+        postProjectId = Utf8PrintfString(",\"requestOptions\":{\"CustomOptions\":{\"projectId\":\"%s\"}}", projectId.c_str());
+    return postProjectId;
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -811,6 +859,7 @@ void RealityDataListByOrganizationPagedRequest::_PrepareHttpRequestStringAndPayl
 
     if (m_project.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
+    AddProjectId();
 }
 
 //=====================================================================================
@@ -833,6 +882,7 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
 
     if (m_project.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -855,6 +905,7 @@ void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequ
 
     if (m_project.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -903,6 +954,7 @@ void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
         m_httpRequestString.append(m_filter);
         }
 
+    AddProjectId();
     m_validRequestString = true;
     }
 
@@ -919,7 +971,7 @@ RealityDataCreateRequest::RealityDataCreateRequest(Utf8String realityDataId, Utf
     m_requestPayload.append(m_id);
     m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
     m_requestPayload.append(properties);
-    m_requestPayload.append("}}}");
+    m_requestPayload.append(Utf8PrintfString("}}%s}", PostProjectId()));
     }
 
 //=====================================================================================
@@ -937,7 +989,7 @@ RealityDataCreateRequest::RealityDataCreateRequest(RealityDataCR realityData)
     m_requestPayload.append(m_id);
     m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
     m_requestPayload.append(formatedProps);
-    m_requestPayload.append("}}}");
+    m_requestPayload.append(Utf8PrintfString("}}%s}", PostProjectId()));
     }
 
 
@@ -947,7 +999,7 @@ RealityDataCreateRequest::RealityDataCreateRequest(RealityDataCR realityData)
 void RealityDataCreateRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/RealityData/");
+    m_httpRequestString.append("/RealityData");
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
@@ -964,7 +1016,7 @@ RealityDataChangeRequest::RealityDataChangeRequest(Utf8String realityDataId, Utf
     m_requestPayload.append(m_id);
     m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
     m_requestPayload.append(properties);
-    m_requestPayload.append("}}}");
+    m_requestPayload.append(Utf8PrintfString("}}%s}", PostProjectId()));
     }
 
 //=====================================================================================
@@ -982,7 +1034,7 @@ RealityDataChangeRequest::RealityDataChangeRequest(RealityDataCR realityData)
     m_requestPayload.append(m_id);
     m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
     m_requestPayload.append(formatedProps);
-    m_requestPayload.append("}}}");
+    m_requestPayload.append(Utf8PrintfString("}}%s}", PostProjectId()));
     }
 
 //=====================================================================================
@@ -1009,7 +1061,7 @@ RealityDataRelationshipCreateRequest::RealityDataRelationshipCreateRequest(Utf8S
     m_requestPayload.append(projectId);
     m_requestPayload.append("\", \"RealityDataId\": \"");
     m_requestPayload.append(m_id);
-    m_requestPayload.append("\"}}}");
+    m_requestPayload.append(Utf8PrintfString("\"}}%s}", PostProjectId()));
     }
 
 //=====================================================================================
@@ -1045,6 +1097,7 @@ void RealityDataRelationshipDelete::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(m_encodedId);
     m_httpRequestString.append("~2F");
     m_httpRequestString.append(m_projectId);
+    AddProjectId();
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
@@ -1223,6 +1276,7 @@ void AzureHandshake::_PrepareHttpRequestStringAndPayload() const
     else
         m_httpRequestString.append("'Read'");
     m_httpRequestString.append("&api.singleurlperinstance=true");
+    AddProjectId();
     }
 
 //=====================================================================================
@@ -1930,6 +1984,7 @@ static Utf8String s_realityDataServer = "dev-realitydataservices-eus.cloudapp.ne
 static Utf8String s_realityDataWSGProtocol = "2.4";
 static Utf8String s_realityDataRepoName = "S3MXECPlugin--Server";
 static Utf8String s_realityDataSchemaName = "S3MX";
+static Utf8String s_projectId = "";
 static bool       s_initializedParams = false;
 
 static bool       s_verifyPeer = false;
@@ -1941,9 +1996,10 @@ Utf8StringCR RealityDataService::GetRepoName()        { return s_realityDataRepo
 Utf8StringCR RealityDataService::GetSchemaName()      { return s_realityDataSchemaName; }
 const bool   RealityDataService::GetVerifyPeer()      { return s_verifyPeer; } //TODO: verify when possible...
 Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
+Utf8StringCR RealityDataService::GetProjectId()       { return s_projectId; }
 const bool   RealityDataService::AreParametersSet()   { return s_initializedParams; }
 
-void RealityDataService::SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath)
+void RealityDataService::SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath, Utf8StringCR projectId)
     {
     BeAssert(server.size() != 0);
     BeAssert(WSGProtocol.size() != 0);
@@ -1960,7 +2016,13 @@ void RealityDataService::SetServerComponents(Utf8StringCR server, Utf8StringCR W
     else
         s_verifyPeer = true;
     s_realityDataCertificatePath = certificatePath;
+    s_projectId = projectId;
     s_initializedParams = true;
+    }
+
+void RealityDataService::SetProjectId(Utf8StringCR projectId)
+    {
+    s_projectId = projectId;
     }
 
 static void defaultErrorCallback(Utf8String basicMessage, const RawServerResponse& rawResponse)

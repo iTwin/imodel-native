@@ -13,6 +13,7 @@
 #include <RealityAdmin/RealityDataServiceConsole.h>
 #include <Bentley/BeFile.h>
 #include <Bentley/BeFilename.h>
+#include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -90,6 +91,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, ConnectivityTest)
 
     Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
         "n\n"
+        "n\n"
         "quit\n";
     Utf8String consoleOutput;
 
@@ -115,6 +117,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, HelpTest)
     Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
                         "n\n"
                         "8\n"
+                        "n\n"
                         "help\n"
                         "quit\n";
     Utf8String consoleOutput;
@@ -127,6 +130,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, HelpTest)
     ASSERT_TRUE(consoleOutput.ContainsI("Retry"));
     ASSERT_TRUE(consoleOutput.ContainsI("Help"));
     ASSERT_TRUE(consoleOutput.ContainsI("SetServer"));
+    ASSERT_TRUE(consoleOutput.ContainsI("SetProjectId"));
     ASSERT_TRUE(consoleOutput.ContainsI("List"));
     ASSERT_TRUE(consoleOutput.ContainsI("Dir"));
     ASSERT_TRUE(consoleOutput.ContainsI("Filter"));
@@ -160,6 +164,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, StatTest)
     Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
         "n\n"
         "8\n"
+        "n\n"
         "stat\n"
         "quit\n";
     Utf8String consoleOutput;
@@ -239,11 +244,31 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     fwrite("1", sizeof(char), 1, pFile);
     fclose(pFile);
 
-    Utf8String id = "945F9288 - 45C7 - 44ea - A9D4 - B05D015D4780";
+    Utf8String token = CurlConstructor().GetToken();
+    token.ReplaceAll("Authorization: Token ", "");
+    Utf8String decodedToken = Base64Utilities::Decode(token);
+    const char* charstring = decodedToken.c_str();
+    Utf8String keyword = "givenname";
+    const char* attributePosition = strstr(charstring, keyword.c_str());
+    keyword = "<saml:AttributeValue>";
+    const char* valuePosition = strstr(attributePosition, keyword.c_str());
+    valuePosition += keyword.length();
+    Utf8String idString = Utf8String(valuePosition);
+    
+    bvector<Utf8String> lines;
+    BeStringUtilities::Split(idString.c_str(), "< ", lines);
+    Utf8String id = lines[0];
+    
+    int64_t currentTime;
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+    
+    id.append(Utf8PrintfString("%ldbuildTest(DELETE THIS)", currentTime));
 
     Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
                                 "n\n"
                                 "8\n"
+                                "y\n"
+                                "72524420-7d48-4f4e-8b0f-144e5fa0aa22\n"
                                 "upload\n";
     commandString.append(dummyRoot.GetNameUtf8().c_str());
     commandString.append("\n");
@@ -297,7 +322,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
 
     ASSERT_TRUE(consoleOutput.ContainsI("New RealityData created with GUID")) << "createRD failed";
     ASSERT_TRUE(consoleOutput.ContainsI(Utf8PrintfString("Name : %s", id.c_str()))) << "filter failed";
-    ASSERT_TRUE(consoleOutput.ContainsI("1 \t 945F9288 - 45C7 - 44ea - A9D4 - B05D015D4780")) << "list did not return created RD";
+    ASSERT_TRUE(consoleOutput.ContainsI(Utf8PrintfString("1 \t %s", id.c_str()))) << "list did not return created RD";
     ASSERT_TRUE(consoleOutput.ContainsI("Visibility         : ENTERPRISE")) << "details did not return expected results";
     ASSERT_TRUE(consoleOutput.ContainsI("DummyRootDocument.json 5000001 bytes")) << "upload was unsuccessful";
     ASSERT_TRUE(consoleOutput.ContainsI("DummySubFolder/smallfile1.txt 1000001 bytes")) << "upload was unsuccessful";

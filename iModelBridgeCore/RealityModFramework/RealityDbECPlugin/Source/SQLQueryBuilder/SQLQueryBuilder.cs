@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
+#define BBOXQUERY
 
 using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Schema;
@@ -291,6 +292,7 @@ namespace IndexECPlugin.Source
         //TODO : Include the query string, the DataReadingHelper and the paramNameValueMap in a single object returned by BuildQuery
         abstract public string BuildQuery (out DataReadingHelper dataReadingHelper);
 
+#if (!BBOXQUERY)
         /// <summary>
         /// Similar to AddWhereClause, but specialised for obtaining the entries intersecting a polygon.
         /// </summary>
@@ -317,7 +319,7 @@ namespace IndexECPlugin.Source
 
             m_sqlWhereClause += AddBrackets(columnName) + @".STIntersects(geometry::STGeomFromText('" + polygonWKT + @"'," + polygonSRID + @")) = 1";
             }
-
+#endif
         /// <summary>
         /// Similar to AddWhereClause, but specialised for obtaining the entries intersecting a bbox.
         /// </summary>
@@ -354,33 +356,34 @@ namespace IndexECPlugin.Source
                 }
             }
 
-        /// <summary>
-        /// Builds a query returning the number of rows following the given criteria.
-        /// </summary>
-        /// <returns>The query string</returns>
-        public string BuildCountQuery ()
-            {
-            string completeFromStr = "FROM " + m_sqlFromClause.Name + " " + m_sqlFromClause.Alias + " ";
+        //This code is unused for now. For test coverage purpose, it is commented now, but should be kept.
+        ///// <summary>
+        ///// Builds a query returning the number of rows following the given criteria.
+        ///// </summary>
+        ///// <returns>The query string</returns>
+        //public string BuildCountQuery ()
+        //    {
+        //    string completeFromStr = "FROM " + m_sqlFromClause.Name + " " + m_sqlFromClause.Alias + " ";
 
-            //string completeLeftJoinClause = String.Join(" ", m_sqlLeftJoinClause.ToArray());
-            string completeLeftJoinClause = "";
-            foreach ( var table in m_sqlLeftJoinClause )
-                {
-                completeLeftJoinClause += "LEFT JOIN " + AddBrackets(table.Name) + " " + table.Alias
-                    + " ON " + AddBrackets(table.FirstTable.Alias) + "." + AddBrackets(table.FirstTableKey) + " = " + AddBrackets(table.Alias) + "." + AddBrackets(table.TableKey) + " ";
-                }
+        //    //string completeLeftJoinClause = String.Join(" ", m_sqlLeftJoinClause.ToArray());
+        //    string completeLeftJoinClause = "";
+        //    foreach ( var table in m_sqlLeftJoinClause )
+        //        {
+        //        completeLeftJoinClause += "LEFT JOIN " + AddBrackets(table.Name) + " " + table.Alias
+        //            + " ON " + AddBrackets(table.FirstTable.Alias) + "." + AddBrackets(table.FirstTableKey) + " = " + AddBrackets(table.Alias) + "." + AddBrackets(table.TableKey) + " ";
+        //        }
 
 
-            completeLeftJoinClause += " ";
+        //    completeLeftJoinClause += " ";
 
-            string completeWhereClause = "";
-            if ( !String.IsNullOrWhiteSpace(m_sqlWhereClause) )
-                {
-                completeWhereClause = "WHERE " + m_sqlWhereClause + " ";
-                }
+        //    string completeWhereClause = "";
+        //    if ( !String.IsNullOrWhiteSpace(m_sqlWhereClause) )
+        //        {
+        //        completeWhereClause = "WHERE " + m_sqlWhereClause + " ";
+        //        }
 
-            return "SELECT COUNT(*) " + completeFromStr + completeLeftJoinClause + completeWhereClause;
-            }
+        //    return "SELECT COUNT(*) " + completeFromStr + completeLeftJoinClause + completeWhereClause;
+        //    }
         }
 
     /// <summary>
