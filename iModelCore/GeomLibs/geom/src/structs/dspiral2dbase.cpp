@@ -1562,6 +1562,22 @@ bool DSpiral2dPlacement::ReverseInPlace ()
     std::swap (fractionA, fractionB);
     return true;
     }
+// Return a shift by a multiple of 2PI so thetaB is within 180 degrees of thetaA
+double RadianPeriodShift (double thetaA, double thetaB)
+    {
+    double pi = Angle::Pi ();
+    double twoPi = Angle::TwoPi ();
+    double delta = thetaB - thetaA;
+    if (delta > pi)
+        {
+        return Angle::TwoPi () * (int)(0.5 + delta/twoPi);
+        }
+    else if (delta < - pi)
+        {
+        return Angle::TwoPi () * (int)(0.5 - delta/twoPi);
+        }
+    return 0.0;
+    }
 static bool FluffyAlmostEqualBearing (double bearingA, double bearingB)
     {
     return fabs (bearingA - bearingB) < 1.0e-8;
@@ -1576,9 +1592,11 @@ bool DSpiral2dPlacement::AlmostEqual01 (DSpiral2dPlacement const &other, double 
     // Tolerance problems abound.
     // Caller tolerance is implicitly for coordinates.
     // We have some angles.  We have curvatures.  The frame origin might be coordinate, but the frame matrix is probably orthogonal.
-    if (!FluffyAlmostEqualBearing (spiral->mTheta0, other.spiral->mTheta0))
+    // EDL May 2017 allow bearings to float by 360?
+    double delta = RadianPeriodShift (spiral->mTheta0, other.spiral->mTheta0);
+    if (!FluffyAlmostEqualBearing (spiral->mTheta0, other.spiral->mTheta0 + delta))
         return false;
-    if (!FluffyAlmostEqualBearing (spiral->mTheta1, other.spiral->mTheta1))
+    if (!FluffyAlmostEqualBearing (spiral->mTheta1, other.spiral->mTheta1 + delta))
         return false;
     if (!DoubleOps::AlmostEqual(spiral->mCurvature0, other.spiral->mCurvature0))
         return false;
