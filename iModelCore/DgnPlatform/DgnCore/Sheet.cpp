@@ -189,7 +189,7 @@ void ViewAttachment::SetClip(ClipVectorCR clipVector)
 * @bsimethod                                                 Ramanujam.Raman   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewAttachment::ClearClip()
-    { 
+    {
     m_jsonProperties.removeMember(json_clip());
     }
 
@@ -378,14 +378,8 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth)
 
         m_graphic = args.m_context.CreateBranch(branch, &toNpc, nullptr);
         }
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tile2dModel::_GetGraphics(DrawGraphicsR drawGraphics, int depth) const
-    {
-    drawGraphics.m_graphics.Add(*m_graphic);
+    args.m_graphics.m_graphics.Add(*m_graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,6 +561,7 @@ Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId at
 
     return nullptr;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -578,7 +573,7 @@ bvector<DgnElementId> Sheet::Model::GetSheetAttachmentIds() const
     stmt->BindId(1, GetModelId());
 
     while (BE_SQLITE_ROW == stmt->Step())
-        attachIds.push_back (stmt->GetValueId<DgnElementId>(0));
+        attachIds.push_back(stmt->GetValueId<DgnElementId>(0));
 
     return attachIds;
     }
@@ -637,7 +632,6 @@ AxisAlignedBox3d Sheet::Model::GetSheetExtents() const
     DPoint2d size = GetSheetSize();
     return AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(size.x, size.y, 0.0));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16

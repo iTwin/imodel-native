@@ -298,15 +298,15 @@ void WebMercatorModel::FromJson(Json::Value const& value)
 
     Utf8String providerName = value[json_providerName()].asString();
 
-    if (0 == providerName.CompareToI (WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
+    if (0 == providerName.CompareToI(WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
         {
         m_provider = new MapBoxImageryProvider();
         }
-    else if (0 == providerName.CompareToI (WebMercator::BingImageryProvider::prop_BingProvider()))
+    else if (0 == providerName.CompareToI(WebMercator::BingImageryProvider::prop_BingProvider()))
         {
         m_provider = new BingImageryProvider();
         }
-    else if (0 == providerName.CompareToI (WebMercator::HereImageryProvider::prop_HereProvider()))
+    else if (0 == providerName.CompareToI(WebMercator::HereImageryProvider::prop_HereProvider()))
         {
         m_provider = new HereImageryProvider();
         }
@@ -372,7 +372,7 @@ void WebMercatorModel::Load(SystemP renderSys) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params)
+WebMercatorModel::WebMercatorModel(CreateParams const& params) : T_Super(params)
     {
     // if the jsonParameters aren't filled in, that's because this is creating an existing the model from the DgnDb.
     // We will get the json parameters later when _OnLoadedJsonProperties() is called.
@@ -380,7 +380,7 @@ WebMercatorModel::WebMercatorModel (CreateParams const& params) : T_Super(params
         return;
 
     // if not null, this is a new model creation. Get the parameters from those passed in to the constructor of CreateParams.
-    FromJson (params.m_jsonParameters);
+    FromJson(params.m_jsonParameters);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -554,7 +554,6 @@ void    BingImageryProvider::_FromJson(Json::Value const& value)
     {
     // the only thing currently stored in the BingImageryProvider Json is the MapType.
     m_mapType = (BingImageryProvider::MapType) value[json_mapType()].asInt((int)BingImageryProvider::MapType::Road);
-
     }
 
 /*---------------------------------------------------------------------------------**//**
