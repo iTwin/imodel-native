@@ -4215,7 +4215,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
                 //diffSet = current;
                 diffsetPtr->Replace(&diffSet - &(*diffsetPtr->begin()), current);
                 }
-            }
+            }   
     }
 
 #if 0
@@ -4447,6 +4447,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
         else if (it->clientID == (uint64_t)-1)
             {
             const_cast<DifferenceSet&>(*it).upToDate = false;
+            diffSetPtr->SetDirty(true);
             }
         }
     if (found)
@@ -4480,12 +4481,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
             const_cast<DifferenceSet&>(*it).clientID = clipId;
             const_cast<DifferenceSet&>(*it).toggledForID = setToggledWhenIdIsOn;
             found = true;
-
+            diffSetPtr->SetDirty(true);
             }
 
         else if (it->clientID == (uint64_t)-1)
             {
             const_cast<DifferenceSet&>(*it).upToDate = false;
+            diffSetPtr->SetDirty(true);
             }
 
         }
