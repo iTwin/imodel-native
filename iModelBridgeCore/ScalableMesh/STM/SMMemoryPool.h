@@ -1086,6 +1086,8 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         size_t newSize = GetSizeInMemory((DataType*)&val);
         *((DataType*)m_data + index) = val;
         m_size += newSize - oldSize;
+        m_dirty = true;
+
         NotifySizeChangePoolItem(newSize - oldSize, newSize - oldSize);
         }
 
@@ -1099,7 +1101,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
 
         NotifySizeChangePoolItem(-1 * (int64_t)erasedSize, -1 * (int64_t)erasedSize);
         }
-
+   
     virtual bool push_back(const DataType& newObject)
         {
         if (m_allocatedSize < (m_nbItems + 1) * sizeof(DataType))
