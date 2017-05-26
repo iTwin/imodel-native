@@ -755,7 +755,7 @@
         <Directories DirectoryListName="RealityModFramework-GtestDir"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/RealityModFramework-Gtest/RealityModFrameworkTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModFramework" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealityModFramework-Gtest -dGTEST_NAME=RealityModFrameworkTest  -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModFramework" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="RealityModFramework-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
