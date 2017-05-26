@@ -23,4 +23,5 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 #Nav prop mapping issue with abstract constraint base class
 SchemaRulesTestFixture.RelationshipMappingLimitations_InvalidInECSql
 
-
+#WIP
+DbMappingTestFixture.SimpleFK
