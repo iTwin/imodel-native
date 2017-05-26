@@ -1211,15 +1211,17 @@ void ScalableMeshModel::Cleanup(bool isModelDelete)
         ScalableMeshTerrainModelAppData::Delete(GetDgnDb());
     ClearProgressiveQueriesInfo();
 
-    if (isModelDelete && m_smPtr.IsValid())
+    if (m_smPtr.IsValid())
         {                
         bvector<BeFileName> extraFileNames;
 
-        m_smPtr->GetExtraFileNames(extraFileNames);
+        if (isModelDelete)
+            m_smPtr->GetExtraFileNames(extraFileNames);
+
         //Close the 3SM file, to close extra clip files.
 		m_currentDrawingInfoPtr = nullptr;
-		m_progressiveQueryEngine = nullptr;
-        m_smPtr = nullptr;
+		m_progressiveQueryEngine = nullptr;        
+        m_smPtr = nullptr;        
 
         for (auto& extraFileName : extraFileNames)
             {
