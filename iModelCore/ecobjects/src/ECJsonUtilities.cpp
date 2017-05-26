@@ -1143,6 +1143,22 @@ StatusInt     JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& val
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
+StatusInt     JsonEcInstanceWriter::WritePrimitiveValueForPresentation(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString)
+    {
+    return JsonEcInstanceWriter::WritePrimitivePropertyValue(valueToPopulate, primitiveProperty, ecInstance, baseAccessString, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  02/2016
+//---------------------------------------------------------------------------------------
+StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString)
+    {
+    return JsonEcInstanceWriter::WritePrimitivePropertyValue(valueToPopulate, primitiveProperty, ecInstance, baseAccessString, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  02/2016
+//---------------------------------------------------------------------------------------
 StatusInt     JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopulate, ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
     {
     ArrayKind       arrayKind = arrayProperty.GetKind();
@@ -1254,6 +1270,22 @@ StatusInt     JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2017
+//---------------------------------------------------------------------------------------
+StatusInt     JsonEcInstanceWriter::WriteEmbeddedStructValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString)
+    {
+    return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty, ecInstance, baseAccessString, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2017
+//---------------------------------------------------------------------------------------
+StatusInt     JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString)
+    {
+    return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty,ecInstance, baseAccessString, true);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                    12/2016
 //---------------------------------------------------------------------------------------
 StatusInt     JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR structProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
@@ -1265,7 +1297,7 @@ StatusInt     JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& va
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt     JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
+    StatusInt     JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
     {
     ECPropertyIterableCR    collection = ecClass.GetProperties(true);
     for (ECPropertyP ecProperty : collection)
@@ -1298,7 +1330,7 @@ StatusInt     JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMembe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt     JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool writeFormattedQuanties)
+StatusInt     JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId)
     {
     ECClassCR   ecClass = ecInstance.GetClass();
     ECSchemaCR  ecSchema = ecClass.GetSchema();
@@ -1313,7 +1345,37 @@ StatusInt     JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopu
         valueToPopulate[ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
-    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, writeFormattedQuanties);
+    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, false);
+    if (status != BSISUCCESS)
+        return status;
+
+    if (nullptr != instanceName)
+        valueToPopulate[instanceName] = instanceObj;
+    else
+        valueToPopulate[className.c_str()] = instanceObj;
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  02/2016
+//---------------------------------------------------------------------------------------
+StatusInt     JsonEcInstanceWriter::WriteInstanceToPresentationJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId)
+    {
+    ECClassCR   ecClass = ecInstance.GetClass();
+    ECSchemaCR  ecSchema = ecClass.GetSchema();
+    Utf8String  className = ecClass.GetName();
+    Utf8String  fullSchemaName;
+
+    valueToPopulate[ECINSTANCE_CLASS_ATTRIBUTE] = className.c_str();
+    fullSchemaName.Sprintf("%s.%02" PRIu32 ".%02" PRIu32, ecSchema.GetName().c_str(), ecSchema.GetVersionRead(), ecSchema.GetVersionMinor());
+    valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
+
+    if (writeInstanceId)
+        valueToPopulate[ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
+
+    Json::Value instanceObj(Json::objectValue);
+    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, true);
     if (status != BSISUCCESS)
         return status;
 

@@ -185,10 +185,57 @@ struct JsonEcInstanceWriter
         static StatusInt     WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECN::ECValueCR ecValue, ECN::PrimitiveType propertyType, Utf8CP fusSpec = nullptr);
         static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false);
         static StatusInt     WriteNavigationPropertyValue(Json::Value& valueToPopulate, ECN::NavigationECPropertyR navigationProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false);
+        static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false);
+        static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false);
+
     public:
-        ECOBJECTS_EXPORT static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties=false);
-        ECOBJECTS_EXPORT static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties=false);
-        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool writeFormattedQuanties=false);
+        //! Write the supplied primitive property value as JSON
+        //! @param[out] valueToPopulate the JSON object to populate
+        //! @param[in] structProperty the property to write
+        //! @param[in] ecInstance the IEInstance containing the structProperty
+        //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct's name.
+        //! @return SUCCESS or error status.
+        ECOBJECTS_EXPORT static StatusInt     WriteEmbeddedStructValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+
+        //! Write the supplied primitive property value as JSON and include presentation data such as KOQ info in the Json
+        //! @param[out] valueToPopulate the JSON object to populate
+        //! @param[in] structProperty the property to write
+        //! @param[in] ecInstance the IEInstance containing the structProperty value
+        //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct's name.
+        //! @return SUCCESS or error status.
+        ECOBJECTS_EXPORT static StatusInt     WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+
+        //! Write the supplied primitive property value as JSON
+        //! @param[out] valueToPopulate the JSON object to populate
+        //! @param[in] primitiveProperty the property to write
+        //! @param[in] ecInstance the IEInstance containing the property value
+        //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct name.
+        //! @return SUCCESS or error status.
+        ECOBJECTS_EXPORT static StatusInt   WritePrimitiveValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString);
+
+        //! Write the supplied primitive property value as JSON and include presentation data such as KOQ info in the Json
+        //! @param[out] valueToPopulate the JSON object to populate
+        //! @param[in] primitiveProperty the property to write
+        //! @param[in] ecInstance the IEInstance containing the property value
+        //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct name.
+        //! @return SUCCESS or error status.
+        ECOBJECTS_EXPORT static StatusInt   WritePrimitiveValueForPresentation(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString);
+
+        //! Write the supplied instance as JSON
+        //! @param[out] valueToPopulate the JSON object to populate
+        //! @param[in] ecInstance the IEInstance containing the property values
+        //! @param[in] instanceName the name of the JSON object that will contain the IEInstance values. This allows the valueToPopulate to contain multiple instances.
+        //! @param[in] writeInstanceId if true the instance Id is saved in the JSON data.
+        //! @return SUCCESS or error status.
+        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId);
+
+        //! Write the supplied instance as JSON and include presentation data such as KOQ info in the Json
+        //! @param[out] valueToPopulate the JSON object to populate
+        //! @param[in] ecInstance the IEInstance containing the property values
+        //! @param[in] instanceName the name of the JSON object that will contain the IEInstance values. This allows the valueToPopulate to contain multiple instances.
+        //! @param[in] writeInstanceId if true the instance Id is saved in the JSON data.
+        //! @return SUCCESS or error status.
+        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToPresentationJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId);
     };
 
 
