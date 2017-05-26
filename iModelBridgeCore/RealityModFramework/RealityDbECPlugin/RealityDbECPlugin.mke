@@ -179,7 +179,6 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/SQLQueryBuilder/IParamNameValueMap.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLMergeUpsertStatementBuilder.cs \
-            $(baseDir)Source/SQLQueryBuilder/PagedSQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLServerInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLServerMergeUpsertStatementBuilder.cs \
