@@ -822,6 +822,8 @@ $(OUT_DIR)CurveCurveProcessor$(OUT_EXT) : $(geomSrcCurvePrimitive)CurveCurveProc
 
 $(OUT_DIR)CurvePlaneIntersection$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurvePlaneIntersection.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+$(OUT_DIR)CurveConstraint$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveConstraint.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
 $(OUT_DIR)cp_child$(OUT_EXT)    : $(geomSrcCurvePrimitive)cp_child.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)cp_line$(OUT_EXT)    : $(geomSrcCurvePrimitive)cp_line.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
