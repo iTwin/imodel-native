@@ -130,7 +130,8 @@ namespace IndexECPlugin.Source.Helpers
 
             if ( m_instanceCount )
                 {
-                sqlCountString = m_sqlQueryBuilder.BuildCountQuery();
+                throw new NotImplementedException("Instance Count queries are deactivated.");
+                //sqlCountString = m_sqlQueryBuilder.BuildCountQuery();
                 }
             else
                 {
@@ -574,77 +575,84 @@ namespace IndexECPlugin.Source.Helpers
                         }
                     else
                         {
-                        relationshipKeys = relationshipClass.GetCustomAttributes("ManyToManyRelationshipKeys");
 
-                        string dbColumnOfBaseQueriedClass;
-                        string dbColumnIntermediateQueried;
-                        string dbColumnIntermediateRelated;
-                        string dbColumnOfBaseRelatedClass;
+                        throw new NotImplementedException("ManyToManyRelationshipKeys are not activated");
 
-                        string baseQueriedClassName;
-                        string baseRelatedClassName;
+                        //THE FOLLOWING CODE SHOULD NOT BE REMOVED. AS OF NOW, ManyToManyRelationshipKeys ARE ABSENT
+                        //FROM THE SCHEMA, WHICH MEANS THIS CODE IS HARD TO TEST. FOR BETTER CODE COVERAGE %. IT HAS
+                        //BEEN COMMENTED. IF THIS IS USED ONCE AGAIN, UNCOMMENT AND PLEASE WRITE TESTS FOR IT.
 
-                        IECClass baseQueriedClass;
-                        IECClass baseRelatedClass;
+                        //relationshipKeys = relationshipClass.GetCustomAttributes("ManyToManyRelationshipKeys");
+
+                        //string dbColumnOfBaseQueriedClass;
+                        //string dbColumnIntermediateQueried;
+                        //string dbColumnIntermediateRelated;
+                        //string dbColumnOfBaseRelatedClass;
+
+                        //string baseQueriedClassName;
+                        //string baseRelatedClassName;
+
+                        //IECClass baseQueriedClass;
+                        //IECClass baseRelatedClass;
 
 
-                        if ( classSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
-                            {
-                            baseQueriedClassName = relationshipKeys["ContainerClassName"].StringValue;
-                            dbColumnOfBaseQueriedClass = relationshipKeys["ContainerKey"].StringValue;
+                        //if ( classSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                        //    {
+                        //    baseQueriedClassName = relationshipKeys["ContainerClassName"].StringValue;
+                        //    dbColumnOfBaseQueriedClass = relationshipKeys["ContainerKey"].StringValue;
 
-                            dbColumnIntermediateQueried = relationshipKeys["IntermediateContainerKey"].StringValue;
+                        //    dbColumnIntermediateQueried = relationshipKeys["IntermediateContainerKey"].StringValue;
 
-                            baseRelatedClassName = relationshipKeys["ContainedClassName"].StringValue;
-                            dbColumnOfBaseRelatedClass = relationshipKeys["ContainedKey"].StringValue;
+                        //    baseRelatedClassName = relationshipKeys["ContainedClassName"].StringValue;
+                        //    dbColumnOfBaseRelatedClass = relationshipKeys["ContainedKey"].StringValue;
 
-                            dbColumnIntermediateRelated = relationshipKeys["IntermediateContainedKey"].StringValue;
-                            }
-                        else
-                            {
-                            baseQueriedClassName = relationshipKeys["ContainedClassName"].StringValue;
-                            dbColumnOfBaseQueriedClass = relationshipKeys["ContainedKey"].StringValue;
+                        //    dbColumnIntermediateRelated = relationshipKeys["IntermediateContainedKey"].StringValue;
+                        //    }
+                        //else
+                        //    {
+                        //    baseQueriedClassName = relationshipKeys["ContainedClassName"].StringValue;
+                        //    dbColumnOfBaseQueriedClass = relationshipKeys["ContainedKey"].StringValue;
 
-                            dbColumnIntermediateQueried = relationshipKeys["IntermediateContainedKey"].StringValue;
+                        //    dbColumnIntermediateQueried = relationshipKeys["IntermediateContainedKey"].StringValue;
 
-                            baseRelatedClassName = relationshipKeys["ContainerClassName"].StringValue;
-                            dbColumnOfBaseRelatedClass = relationshipKeys["ContainerKey"].StringValue;
+                        //    baseRelatedClassName = relationshipKeys["ContainerClassName"].StringValue;
+                        //    dbColumnOfBaseRelatedClass = relationshipKeys["ContainerKey"].StringValue;
 
-                            dbColumnIntermediateRelated = relationshipKeys["IntermediateContainerKey"].StringValue;
-                            }
+                        //    dbColumnIntermediateRelated = relationshipKeys["IntermediateContainerKey"].StringValue;
+                        //    }
 
-                        baseQueriedClass = m_schema.GetClass(baseQueriedClassName);
-                        baseRelatedClass = m_schema.GetClass(baseRelatedClassName);
+                        //baseQueriedClass = m_schema.GetClass(baseQueriedClassName);
+                        //baseRelatedClass = m_schema.GetClass(baseRelatedClassName);
 
-                        string intermediateTableName = relationshipKeys["IntermediateTableName"].StringValue;
-                        string relatedBaseTableName = baseRelatedClass.GetCustomAttributes("SQLEntity")["FromTableName"].StringValue;
+                        //string intermediateTableName = relationshipKeys["IntermediateTableName"].StringValue;
+                        //string relatedBaseTableName = baseRelatedClass.GetCustomAttributes("SQLEntity")["FromTableName"].StringValue;
 
-                        //We go up the hierarchy of the base queried class
-                        TableDescriptor baseQueriedTableDescriptor = table;
+                        ////We go up the hierarchy of the base queried class
+                        //TableDescriptor baseQueriedTableDescriptor = table;
 
-                        baseQueriedTableDescriptor = SqlQueryHelpers.JoinBaseTables(queriedClass, baseQueriedTableDescriptor, baseQueriedClass, m_sqlQueryBuilder, m_tac);
+                        //baseQueriedTableDescriptor = SqlQueryHelpers.JoinBaseTables(queriedClass, baseQueriedTableDescriptor, baseQueriedClass, m_sqlQueryBuilder, m_tac);
 
-                        TableDescriptor intermediateTableDescriptor = new TableDescriptor(intermediateTableName, m_tac.GetNewTableAlias());
-                        intermediateTableDescriptor.SetTableJoined(baseQueriedTableDescriptor, dbColumnOfBaseQueriedClass, dbColumnIntermediateQueried);
+                        //TableDescriptor intermediateTableDescriptor = new TableDescriptor(intermediateTableName, m_tac.GetNewTableAlias());
+                        //intermediateTableDescriptor.SetTableJoined(baseQueriedTableDescriptor, dbColumnOfBaseQueriedClass, dbColumnIntermediateQueried);
 
-                        TableDescriptor similarTable;
+                        //TableDescriptor similarTable;
 
-                        bool joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(intermediateTableDescriptor, out similarTable);
-                        if ( !joinSuccessful )
-                            {
-                            intermediateTableDescriptor = similarTable;
-                            }
+                        //bool joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(intermediateTableDescriptor, out similarTable);
+                        //if ( !joinSuccessful )
+                        //    {
+                        //    intermediateTableDescriptor = similarTable;
+                        //    }
 
-                        TableDescriptor relatedBaseTableDescriptor = new TableDescriptor(relatedBaseTableName, m_tac.GetNewTableAlias());
-                        relatedBaseTableDescriptor.SetTableJoined(intermediateTableDescriptor, dbColumnIntermediateRelated, dbColumnOfBaseRelatedClass);
+                        //TableDescriptor relatedBaseTableDescriptor = new TableDescriptor(relatedBaseTableName, m_tac.GetNewTableAlias());
+                        //relatedBaseTableDescriptor.SetTableJoined(intermediateTableDescriptor, dbColumnIntermediateRelated, dbColumnOfBaseRelatedClass);
 
-                        joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(relatedBaseTableDescriptor, out similarTable);
-                        if ( !joinSuccessful )
-                            {
-                            relatedBaseTableDescriptor = similarTable;
-                            }
+                        //joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(relatedBaseTableDescriptor, out similarTable);
+                        //if ( !joinSuccessful )
+                        //    {
+                        //    relatedBaseTableDescriptor = similarTable;
+                        //    }
 
-                        finalTableDescriptor = JoinDerivedTables(baseRelatedClass, relatedBaseTableDescriptor, relatedClass);
+                        //finalTableDescriptor = JoinDerivedTables(baseRelatedClass, relatedBaseTableDescriptor, relatedClass);
 
                         }
 
