@@ -79,6 +79,8 @@ ASSEMBLY_STRONGNAME = 1
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Common/SetupHelpers.cs \
 			$(baseDir)Common/DataReaderStub.cs \
+			$(baseDir)Common/FakeDbCommand.cs \
+			$(baseDir)Common/FakeDataParameterCollection.cs \
             $(baseDir)Tests/DataExtractorTests.cs \
             $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
@@ -87,6 +89,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/SqlServerInsertStatementBuilderTests.cs \
             $(baseDir)Tests/USGSDataExtractorsTests.cs\
             $(baseDir)Tests/USGSDataFetcherTests.cs \
+			$(baseDir)Tests/Helpers/DataReadingHelperTests.cs \
             $(baseDir)Tests/Helpers/DbConnectionHelperTests.cs \
             $(baseDir)Tests/Helpers/DBGeometryHelpersTests.cs \
             $(baseDir)Tests/Helpers/DownloadReportHelperTests.cs \
@@ -102,7 +105,11 @@ ASSEMBLY_SOURCE_LIST = \
 			$(baseDir)Tests/Helpers/RetrievalControllerTests.cs \
             $(baseDir)Tests/Helpers/SourceStringMapTests.cs \
             $(baseDir)Tests/Helpers/TableAliasCreatorTests.cs \
-            $(baseDir)Tests/Helpers/TableDescriptorTests.cs
+            $(baseDir)Tests/Helpers/TableDescriptorTests.cs \
+			$(baseDir)Tests/SQLQueryBuilder/GenericParamNameValueMapTests.cs \
+			$(baseDir)Tests/SQLQueryBuilder/SQLQueryBuilderTests.cs \
+			$(baseDir)Tests/SQLQueryBuilder/SqlServerParamNameValueMapTests.cs \
+			$(baseDir)Tests/SQLQueryBuilder/StandardSQLQueryBuilderTests.cs
             
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx

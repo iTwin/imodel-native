@@ -101,8 +101,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\DataReaderStub.cs" />
+    <Compile Include="Common\FakeDataParameterCollection.cs" />
+    <Compile Include="Common\FakeDbCommand.cs" />
     <Compile Include="Common\SetupHelpers.cs" />
     <Compile Include="Tests\DataExtractorTests.cs" />
+    <Compile Include="Tests\Helpers\DataReadingHelperTests.cs" />
     <Compile Include="Tests\Helpers\DbConnectionHelperTests.cs" />
     <Compile Include="Tests\Helpers\DBGeometryHelpersTests.cs" />
     <Compile Include="Tests\Helpers\DownloadReportHelperTests.cs" />
@@ -123,6 +126,10 @@
     <Compile Include="Tests\Helpers\PackagerTests.cs" />
     <Compile Include="Tests\Helpers\IDbQuerierTests.cs" />
     <Compile Include="Tests\PolygonModelTests.cs" />
+    <Compile Include="Tests\SQLQueryBuilder\GenericParamNameValueMapTests.cs" />
+    <Compile Include="Tests\SQLQueryBuilder\SQLQueryBuilderTests.cs" />
+    <Compile Include="Tests\SQLQueryBuilder\StandardSQLQueryBuilderTests.cs" />
+    <Compile Include="Tests\SQLQueryBuilder\SqlServerParamNameValueMapTests.cs" />
     <Compile Include="Tests\SqlQueryProviderTests.cs" />
     <Compile Include="Tests\SqlServerInsertStatementBuilderTests.cs" />
     <Compile Include="Tests\USGSDataExtractorsTests.cs" />
