@@ -417,6 +417,7 @@ int main(int argc, char* argv[])
 
     // List root
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetProjectId("72524420-7d48-4f4e-8b0f-144e5fa0aa22");
 
     // List head by default only
     std::cout << "RealityData commander..." << std::endl;

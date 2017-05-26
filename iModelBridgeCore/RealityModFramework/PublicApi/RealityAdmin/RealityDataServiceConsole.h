@@ -40,6 +40,7 @@ enum class Command
     ChoiceIndex,
     ChoiceValue,
     SetServer,
+    SetProjectId,
     List,
     ListAll,
     Details,
@@ -76,6 +77,7 @@ public:
 private:
     void _Run();
     void ConfigureServer();
+    void SetProjectId();
     void PrintResults(bvector<Utf8String> results);
     void PrintResults(bmap<Utf8String, bvector<Utf8String>> results);
     void Usage();
