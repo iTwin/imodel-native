@@ -77,10 +77,20 @@ typedef RelationshipClassMap const& RelationshipClassMapCR;
 
 //struct RelationshipClassEndTableMapEx final : RelationshipClassMap
 //    {
-//    RelationshipClassEndTableMapEx()
-//        {
-//
-//        }
+//    private:
+//        RelationshipClassEndTableMapEx(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& ms)
+//            : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecClass, ms)
+//            {}
+//        
+//        ClassMappingStatus _Map(ClassMappingContext&) override;
+//        BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
+//        BentleyStatus ValidateMapping() const;
+//    public:
+//        BentleyStatus AppendForeignEnd(NavigationPropertyMap& propertyMap);
+//        BentleyStatus SetPrimaryEnd(ClassMapCR classMap);
+//        BentleyStatus Finish();
+//        ECN::ECRelationshipEnd GetForeignEnd() const { GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECN::ECRelationshipEnd_Source : ECN::ECRelationshipEnd_Target; }
+//        ECN::ECRelationshipEnd GetReferencedEnd() const { GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECN::ECRelationshipEnd_Target : ECN::ECRelationshipEnd_Source; }
 //    };
 
 
@@ -230,7 +240,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             }
 
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
-        static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, updatableViewInfo); }
         Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
             {
             Utf8String temp = GetRelationshipClass().GetFullName();
