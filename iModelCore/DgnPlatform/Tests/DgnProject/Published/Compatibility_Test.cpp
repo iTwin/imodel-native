@@ -896,7 +896,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
 //========================================================================================
 // @bsiclass                           Maha Nasir                               04/2017
 //========================================================================================
-struct CompatibilityTest2 : public DgnDbTestFixture
+struct ECInstancesCompatibility : public DgnDbTestFixture
     {
     std::vector<ECClassCP> List;
     std::vector<ECClassCP> ValidClassesForInstanceInsertion;
@@ -920,7 +920,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                            Maha.Nasir                04/17
     ! Returns a vector over all the derived classes of the specified class.
     +---------------+---------------+---------------+---------------+--------------+---*/
-    std::vector<ECClassCP> CompatibilityTest2::getDerivedClasses(ECClassCP classToTraverse)
+    std::vector<ECClassCP> ECInstancesCompatibility::getDerivedClasses(ECClassCP classToTraverse)
         {
         const ECDerivedClassesList& DerivedClasses = classToTraverse->GetDerivedClasses();
 
@@ -942,7 +942,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                            Maha.Nasir                04/17
     ! Creates the elemnt from the supplied instance.
     +---------------+---------------+---------------+---------------+--------------+---*/
-    DgnElementPtr CompatibilityTest2::createElement(ECN::StandaloneECInstancePtr instance)
+    DgnElementPtr ECInstancesCompatibility::createElement(ECN::StandaloneECInstancePtr instance)
         {
         DgnElementPtr element = m_db->Elements().CreateElement(*instance);
         EXPECT_TRUE(element != nullptr);
@@ -953,7 +953,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts the instances(For only BisCore schema) for GeometricElement2d class heirarchy.
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForGeometricElement2d(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForGeometricElement2d(ECClassCP className)
         {
         //Emptying vector
         List.clear();
@@ -1031,7 +1031,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts the instances(For only BisCore schema) for GeometricElement3d class heirarchy.
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForGeometricElement3d(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForGeometricElement3d(ECClassCP className)
         {
         //Emptying vector
         List.clear();
@@ -1084,7 +1084,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts the instances(For only BisCore schema classes) of GeometricElement class heirarchy.
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForGeometricElementHeirarchy(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForGeometricElementHeirarchy(ECClassCP className)
         {
         //Getting the immediate derived classes of GeometricElement
         const ECDerivedClassesList& GeometricElementHeirarchy = className->GetDerivedClasses();
@@ -1107,7 +1107,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts instances for the Document class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForDocument(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForDocument(ECClassCP className)
         {
         printf("\n\nInserting Instances for Document heirarchy:\n\n");
 
@@ -1158,7 +1158,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts instances for the InformationReferenceElement class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForInformationReferenceElement(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForInformationReferenceElement(ECClassCP className)
         {
 
         printf("\n\nInserting instances for InformationReferenceElement heirarchy:\n\n");
@@ -1223,7 +1223,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts instances for the DefinitionElement class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForDefinitionElement(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForDefinitionElement(ECClassCP className)
         {
 
         printf("\n\nInserting instances for DefinitionElement heirarchy:\n\n");
@@ -1283,7 +1283,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts instances for the InformationReferenceElement class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForInformationPartitionElement(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForInformationPartitionElement(ECClassCP className)
         {
 
         printf("\n\nInserting instances for InformationPartitionElement heirarchy:\n\n");
@@ -1336,7 +1336,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts the instances(For only BisCore schema) for InformationContentElement heirarchy.
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForInformationContentElementHeirarchy(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForInformationContentElementHeirarchy(ECClassCP className)
         {
         //Getting thye immediate derived classes
         const ECDerivedClassesList& InformationContentElementHeirarchy = className->GetDerivedClasses();
@@ -1372,7 +1372,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Returns the list of classes in the Element heirarchy of BisCore schema for which the instance insertion is possible.
     +---------------+---------------+---------------+---------------+---------------+------------------+------------------*/
-    std::vector<ECClassCP> CompatibilityTest2::GetValidClassesForInstanceInsertion(DgnDbR db)
+    std::vector<ECClassCP> ECInstancesCompatibility::GetValidClassesForInstanceInsertion(DgnDbR db)
         {
         ECSchemaCP BisSchema = db.Schemas().GetSchema(BIS_ECSCHEMA_NAME);
         EXPECT_TRUE(BisSchema != nullptr);
@@ -1396,7 +1396,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     // @bsimethod                                   Maha Nasir                    04/2017
     // Creates and opens the copy of the perserved Bim
     //---------------------------------------------------------------------------------------
-    void CompatibilityTest2::SetUpDbFromBaselineCopy(Utf8CP versionString, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
+    void ECInstancesCompatibility::SetUpDbFromBaselineCopy(Utf8CP versionString, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
         {
         //Source File Path
         BeFileName sourceFileName;
@@ -1451,7 +1451,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
 // Note: For now the test bypasses a few classes(namely InformationPartitionElement heirarchy,
 //       Category, SubCategory, Texture and ViewDefinition ) which will be dealt later.  
 //+---------------+---------------+---------------+---------------+---------------+------------
-TEST_F(CompatibilityTest2, CompatibilityTest)
+TEST_F(ECInstancesCompatibility, InstancesCompatibilitySeed)
     {
     SetupSeedProject();
     m_db->Schemas().CreateClassViewsInDb();
@@ -1496,7 +1496,7 @@ TEST_F(CompatibilityTest2, CompatibilityTest)
 // @bsimethod                                      Maha Nasir                  04/17
 // WIP: Reads the Instances from the preserved Bim and perform CRUD oerations on it.
 //+---------------+---------------+---------------+---------------+---------------+------------
-TEST_F(CompatibilityTest2, ModifyPreservedBim)
+TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
     {
     SetUpDbFromBaselineCopy("2-0-1-36", TEST_NAME, BE_SQLITE_OK);
 
