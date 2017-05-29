@@ -1,5 +1,6 @@
 #include "ScalableMeshPCH.h"
 #include "ScalableMeshAnalysis.h"
+#include <omp.h>  
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -171,12 +172,16 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     bool *intersected = new bool[m_xSize*m_ySize];
     //SMVolumeSegment *Segments = grid.m_VolSegments;
 
-    double tolerance = std::numeric_limits<double>::min(); // intersection tolerance - SNU TODO
+    double tolerance = std::numeric_limits<double>::min(); // intersection tolerance
     double zsource = range.low.z - tolerance; // be sure to start under the range
     double m_xStep = grid.m_resolution;
     double m_yStep = grid.m_resolution;
 
-#pragma omp parallel for
+    int numProcs = omp_get_num_procs();
+    if (numProcs>1)
+        numProcs = numProcs-1; // use all available CPUs minus one
+
+#pragma omp parallel for num_threads(numProcs) 
     for (int i = 0; i < m_xSize; i++)
         {
         double x = range.low.x + m_xStep * i;
@@ -231,14 +236,16 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
     // Sum the discrete volumes
     double AreaCell = m_xStep*m_yStep;
-    for (int i = 0; i < m_xSize; i++) // need to parallelize
+    double _cutVolume=0, _fillVolume=0;
+#pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
+    for (int i = 0; i < m_xSize; i++)
         {
         for (int j = 0; j < m_ySize; j++)
             {
             if (intersected[i*m_ySize + j] != true)
                 {
-                SMVolumeSegment emptySegment;
-                grid.m_VolSegments[i*m_ySize + j] = emptySegment;
+                //SMVolumeSegment emptySegment;
+                //grid.m_VolSegments[i*m_ySize + j] = emptySegment;
                 continue;
                 }
             SMVolumeSegment &segment = grid.m_VolSegments[i*m_ySize + j];
@@ -246,14 +253,17 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                 {
                 double deltaZ = segment.VolumeRanges[k + 1] - segment.VolumeRanges[k];
                 if (deltaZ > 0)
-                    grid.m_cutVolume += deltaZ * AreaCell;
+                    _cutVolume += deltaZ * AreaCell;
                 else
-                    grid.m_fillVolume += -deltaZ * AreaCell;
+                    _fillVolume += -deltaZ * AreaCell;
 
                 segment.volume += deltaZ * AreaCell; // keep sum of volume
                 }
             }
         }
+    grid.m_cutVolume = _cutVolume;
+    grid.m_fillVolume = _fillVolume;
+
     grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
 
     delete[] intersected;
@@ -274,17 +284,20 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     DRange3d rangeMesh2; // extend of the second scalable mesh
     diffMesh->GetRange(rangeMesh2);
 
+    double zmin = std::min(rangeMesh.low.z, rangeMesh2.low.z);
+    double zmax = std::max(rangeMesh.high.z, rangeMesh2.high.z);
+
     DRange3d rangeInter;
     rangeInter.IntersectionOf(rangeMesh, rangeMesh2);
+    rangeInter.low.z = zmin;
+    rangeInter.high.z = zmax;
 
     DRange3d rangeRegion; // Extend of the polygon region - extended to mesh Z
-    DPoint3d P1 = polygon[0]; P1.z = rangeInter.low.z;  // keep only xy
-    DPoint3d P2 = polygon[1]; P2.z = rangeInter.high.z;
+    DPoint3d P1 = polygon[0]; P1.z = zmin;  // keep only xy
+    DPoint3d P2 = polygon[1]; P2.z = zmax;
     rangeRegion = DRange3d::From(P1, P2);
     for (auto point : polygon)
         rangeRegion.Extend(point);
-    rangeRegion.low.z = rangeInter.low.z;
-    rangeRegion.high.z = rangeInter.high.z;
 
     // Initialize the grid volume structure
     if (!_InitGridFrom(grid, resolution, rangeInter, rangeRegion))
@@ -304,22 +317,29 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     polyfaceBuilder->AddRegion(*curveVectorPtr);
     PolyfaceHeaderPtr polyface = polyfaceBuilder->GetClientMeshPtr();
 
+    if (polyface == nullptr)
+        return DTMStatusInt::DTM_SUCCESS; // could not generate polygon from points
+
     auto draping1 = m_scmPtr->GetDTMInterface()->GetDTMDraping();
     auto draping2 = diffMesh->GetDTMInterface()->GetDTMDraping();
 
     bool *intersected = new bool[m_xSize*m_ySize];
-    SMVolumeSegment *Segments = grid.m_VolSegments;
 
     double tolerance = std::numeric_limits<double>::min(); // intersection tolerance - SNU TODO
     double zsource = range.low.z - tolerance; // be sure to start under the range
     double m_xStep = grid.m_resolution;
     double m_yStep = grid.m_resolution;
 
-#pragma omp parallel for
+    int numProcs = omp_get_num_procs();
+    if (numProcs>1)
+        numProcs = numProcs - 1; // use all available CPUs minus one
+
+#pragma omp parallel for num_threads(numProcs) 
     for (int i = 0; i < m_xSize; i++)
         {
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
+
         for (int j = 0; j < m_ySize; j++)
             {
             intersected[i*m_ySize + j] = false;
@@ -331,26 +351,17 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
             if (bret)
                 {
-                DPoint3d source_local = source;
-                auto classif = curveVectorPtr->PointInOnOutXY(source_local);
+                auto classif = curveVectorPtr->PointInOnOutXY(source);
                 if (classif == CurveVector::InOutClassification::INOUT_In) // we are inside the restriction
                     {
-                    DRay3d ray = DRay3d::FromOriginAndVector(source_local, grid.m_direction);
-                    DPoint3d polyHit; polyHit.Zero();
-
                     DPoint3d interP2;
                     bret = draping2->IntersectRay(interP2, grid.m_direction, source);
                     if (bret)
                         {
-                        SMVolumeSegment aSegment; // only one segment for 1st version
-                        aSegment.VolumeRanges.push_back(interP1.z);
-                        aSegment.VolumeRanges.push_back(interP2.z);
-
-                        if (aSegment.VolumeRanges.size() > 0)
-                            {
-                            Segments[i*m_ySize + j] = aSegment;
-                            intersected[i*m_ySize + j] = true;
-                            }
+                        // Add one segment
+                        grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interP1.z);
+                        grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interP2.z);
+                        intersected[i*m_ySize + j] = true;
                         }
                     }
                 }
@@ -359,29 +370,33 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
     // Sum the discrete volumes
     double AreaCell = m_xStep*m_yStep;
+    double _cutVolume = 0, _fillVolume = 0;
+#pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
     for (int i = 0; i < m_xSize; i++) // need to parallelize
         {
         for (int j = 0; j < m_ySize; j++)
             {
             if (intersected[i*m_ySize + j] != true)
                 {
-                SMVolumeSegment emptySegment;
-                grid.m_VolSegments[i*m_ySize + j] = emptySegment;
                 continue;
                 }
+         
             SMVolumeSegment &segment = grid.m_VolSegments[i*m_ySize + j];
+            
             for (int k = 0; k < segment.VolumeRanges.size() - 1; k += 2)
                 {
                 double deltaZ = segment.VolumeRanges[k + 1] - segment.VolumeRanges[k];
                 if (deltaZ > 0)
-                    grid.m_cutVolume += deltaZ * AreaCell;
+                    _cutVolume += deltaZ * AreaCell;
                 else
-                    grid.m_fillVolume += -deltaZ * AreaCell;
+                    _fillVolume += -deltaZ * AreaCell;
 
                 segment.volume += deltaZ * AreaCell; // keep sum of volume
                 }
             }
         }
+    grid.m_fillVolume = _fillVolume;
+    grid.m_cutVolume = _cutVolume;
     grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
 
     delete[] intersected;
