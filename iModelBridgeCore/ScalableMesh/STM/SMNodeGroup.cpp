@@ -1,4 +1,3 @@
-#include "SMNodeGroup.h"
 //:>--------------------------------------------------------------------------------------+
 //:>
 //:>     $Source: STM/SMNodeGroup.cpp $
@@ -23,8 +22,177 @@ size_t s_max_group_size = 256 << 10; // 256 KB
 uint32_t s_max_group_depth = 4;
 uint32_t s_max_group_common_ancestor = 2;
 
-map<uint64_t, SMNodeGroup::Ptr> SMNodeGroup::s_downloadedGroups;
 mutex SMNodeGroup::s_mutex;
+
+void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
+    {
+    assert(!m_oldMasterHeader.empty()); // Old master header must be set!
+
+                                        // NEEDS_WORK_SM_STREAMING : use new CloudDataSource
+    wchar_t buffer[10000];
+    switch (m_parametersPtr->GetStrategyType())
+        {
+        case SMGroupGlobalParameters::StrategyType::NORMAL:
+        {
+        swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"");
+        break;
+        }
+        case SMGroupGlobalParameters::StrategyType::VIRTUAL:
+        {
+        swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"Virtual");
+        break;
+        }
+        case SMGroupGlobalParameters::StrategyType::CESIUM:
+        {
+        swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"Cesium");
+        break;
+        }
+        default:
+        {
+        assert(!"Unknown grouping type");
+        return;
+        }
+        }
+
+    // Put group information in a single binary blob
+    bvector<uint8_t> masterBlob(20 * 1000 * 1000);
+
+    // Old Master Header part
+    auto const oldMasterHeaderSize = m_oldMasterHeader.size();
+    size_t totalSize = 0;
+
+    memcpy(masterBlob.data(), &oldMasterHeaderSize, sizeof(oldMasterHeaderSize));
+    totalSize += sizeof(uint32_t);
+
+    memcpy(masterBlob.data() + totalSize, m_oldMasterHeader.data(), oldMasterHeaderSize);
+    totalSize += m_oldMasterHeader.size();
+
+    short mode = (short)m_parametersPtr->GetStrategyType();
+    memcpy(masterBlob.data() + totalSize, &mode, sizeof(mode));
+    totalSize += sizeof(mode);
+
+    // Append group information
+    for (auto& group : *this)
+        {
+        auto const& groupInfo = group.second;
+        auto const gid = group.first;
+        auto const gNumNodes = groupInfo.size();
+
+        uint64_t group_size = sizeof(gid) + sizeof(groupInfo.m_sizeOfRawHeaders) + sizeof(gNumNodes) + gNumNodes * sizeof(uint64_t);
+        if (totalSize + group_size > masterBlob.size())
+            {
+            // increase the size of the blob
+            size_t oldSize = masterBlob.size();
+            size_t newSize = oldSize + 1000 * 1000;
+            masterBlob.resize(newSize);
+            }
+        memcpy(masterBlob.data() + totalSize, &gid, sizeof(gid));
+        totalSize += sizeof(gid);
+
+        // Group total size of headers
+        if (m_parametersPtr->GetStrategyType() == SMGroupGlobalParameters::StrategyType::VIRTUAL)
+            {
+            memcpy(masterBlob.data() + totalSize, &groupInfo.m_sizeOfRawHeaders, sizeof(groupInfo.m_sizeOfRawHeaders));
+            totalSize += sizeof(groupInfo.m_sizeOfRawHeaders);
+            }
+
+        // Group number of nodes
+        memcpy(masterBlob.data() + totalSize, &gNumNodes, sizeof(gNumNodes));
+        totalSize += sizeof(gNumNodes);
+
+        // Group node ids
+        memcpy(masterBlob.data() + totalSize, groupInfo.data(), gNumNodes * sizeof(uint64_t));
+        totalSize += gNumNodes * sizeof(uint64_t);
+        }
+    HCDPacket uncompressedPacket, compressedPacket;
+    uncompressedPacket.SetBuffer(masterBlob.data(), totalSize);
+    uncompressedPacket.SetDataSize(totalSize);
+    WriteCompressedPacket(uncompressedPacket, compressedPacket);
+
+    std::wstring group_header_filename(buffer);
+    BeFile file;
+    if (OPEN_OR_CREATE_FILE(file, group_header_filename.c_str(), BeFileAccess::Write))
+        {
+        uint32_t NbChars = 0;
+        file.Write(&NbChars, &totalSize, (uint32_t)sizeof(totalSize));
+        assert(NbChars == (uint32_t)sizeof(totalSize));
+
+        file.Write(&NbChars, compressedPacket.GetBufferAddress(), (uint32_t)compressedPacket.GetDataSize());
+        assert(NbChars == compressedPacket.GetDataSize());
+        }
+    else
+        {
+        assert(!"Could not open or create file for writing the group master header");
+        }
+    file.Close();
+    }
+
+
+StatusInt SMNodeGroup::Load()
+    {
+    unique_lock<mutex> lk(m_groupMutex);
+    if (m_isLoading)
+        {
+        m_groupCV.wait(lk, [this] {return !m_isLoading; });
+        }
+    else
+        {
+        m_isLoading = true;
+
+        if (m_parametersPtr->GetStrategyType() == SMGroupGlobalParameters::VIRTUAL)
+            {
+            this->LoadGroupParallel();
+            }
+        else
+            {
+            std::unique_ptr<DataSource::Buffer[]> dest;
+            DataSource::DataSize                  readSize;
+
+            m_isLoading = true;
+
+            if (this->DownloadFromID(dest, readSize))
+                {
+                m_isLoading = false;
+                m_groupCV.notify_all();
+                return ERROR;
+                }
+
+
+            if (readSize > 0)
+                {
+                uint32_t position = 0;
+                uint32_t id;
+                memcpy(&id, dest.get(), sizeof(uint32_t));
+                assert(m_groupHeader->GetID() == id);
+                position += sizeof(uint32_t);
+
+                uint32_t numNodes;
+                memcpy(&numNodes, dest.get() + position, sizeof(numNodes));
+                assert(m_groupHeader->size() == numNodes);
+                position += sizeof(numNodes);
+
+                memcpy(m_groupHeader->data(), dest.get() + position, numNodes * sizeof(SMNodeHeader));
+                position += numNodes * sizeof(SMNodeHeader);
+
+                const auto headerSectionSize = readSize - position;
+                m_rawHeaders.resize(headerSectionSize);
+                memcpy(m_rawHeaders.data(), dest.get() + position, headerSectionSize);
+                }
+            else
+                {
+                m_isLoading = false;
+                m_groupCV.notify_all();
+                return ERROR;
+                }
+            }
+
+        m_isLoading = false;
+        m_groupCV.notify_all();
+        }
+
+    m_isLoaded = true;
+    return SUCCESS;
+    }
 
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     {
@@ -43,7 +211,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
         }
     else
         {
-        if (m_strategyType == CESIUM)
+        if (m_parametersPtr->GetStrategyType() == SMGroupGlobalParameters::CESIUM)
             {
             assert(m_isLoading == false);
             m_isLoading = true;
@@ -113,7 +281,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                                     auto newPrefix = this->m_dataSourcePrefix;
                                     newPrefix.append(BEFILENAME(GetDirectoryName, contentURL));
                                     auto tilesetURL = BEFILENAME(GetFileNameAndExtension, contentURL);
-                                    SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), *this->m_nodeHeaders, s_currentGroupID);
+                                    SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, s_currentGroupID);
                                     newGroup->SetURL(DataSourceURL(tilesetURL.c_str()));
                                     newGroup->SetDataSourcePrefix(newPrefix);
                                     //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
@@ -192,7 +360,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                             WString extension = BEFILENAME(GetExtension, contentURL);
                             groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
                             uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
-                            SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), *this->m_nodeHeaders, groupID);
+                            SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, groupID);
                             newGroup->SetURL(DataSourceURL(contentURL.c_str()));
                             newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
                             //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
@@ -202,7 +370,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                             newGroup->SaveNode(jsonNode["SMRootID"].asUInt(), &newGroup->m_RootTileTreeNode);
 
                             //assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);
-                            //SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
+                            //SMNodeGroupPtr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
                             //newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
                             //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
                             //this->m_tileTreeChildrenGroups[groupID] = newGroup;
@@ -285,7 +453,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
 
 void SMNodeGroup::LoadGroupParallel()
     {
-    SMNodeGroup::Ptr group(this);
+    SMNodeGroupPtr group(this);
     std::thread thread([group]()
         {
 #ifdef DEBUG_GROUPS
@@ -367,6 +535,18 @@ void SMNodeGroup::SetURL(DataSourceURL url)
     m_url = url;
     }
 
+void SMNodeGroup::DownloadNodeHeader(const uint64_t & id)
+    {
+    if (!this->IsLoaded()) this->Load(id);
+    auto group = m_groupCachePtr->GetGroupForNodeIDFromCache(id);
+    if (!group->IsLoaded())
+        {
+        // Remove node from cache so that it gets replaced with appropriate node when loading the group
+        m_groupCachePtr->RemoveNodeFromCache(id);
+        group->Load(id);
+        }
+    }
+
 void SMNodeGroup::SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const uint8_t* rawHeader, const uint64_t& headerSize)
     {
     std::lock_guard<std::mutex> lock(m_groupMutex);
@@ -377,12 +557,15 @@ void SMNodeGroup::SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const u
     m_currentPosition += nodeHeader->size;
     }
 
+DataSourceAccount * SMNodeGroup::GetDataSourceAccount(void)
+    {
+    return m_parametersPtr->GetDataSourceAccount();
+    }
+
 void SMNodeGroup::SaveNode(const uint64_t & id, Json::Value * header)
     {
-    std::lock_guard<std::mutex> lock(s_mutex);
-    //this->m_tileTreeMap[id] = header;
-    (*this->m_nodeHeaders)[id] = header;
-    this->s_downloadedGroups[id] = this;
+    assert(m_groupCachePtr != nullptr);
+    m_groupCachePtr->AddNodeToGroupCache(this, id, header);
     }
 
 void SMNodeGroup::WaitFor(SMNodeHeader& pi_pNode)
@@ -453,7 +636,7 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
         }
     }
 
-void SMNodeGroup::MergeChild(SMNodeGroup::Ptr child)
+void SMNodeGroup::MergeChild(SMNodeGroupPtr child)
     {
     assert(child->m_ParentGroup == this);
     assert(child->m_RootTileTreeNode.isMember("SMHeader") && child->m_RootTileTreeNode["SMHeader"].isMember("parentID"));
@@ -471,5 +654,52 @@ void SMNodeGroup::MergeChild(SMNodeGroup::Ptr child)
     this->m_tileTreeMap.insert(child->m_tileTreeMap.begin(), child->m_tileTreeMap.end());
     }
 
+void SMGroupCache::AddNodeToGroupCache(SMNodeGroupPtr group, const uint64_t & id, Json::Value * header)
+    {
+    std::lock_guard<std::mutex> lock(m_cacheMutex);
 
+    m_nodeHeadersPtr->operator[](id) = header;
+
+    assert(m_downloadedGroupsPtr != nullptr && m_downloadedGroupsPtr->count(id) == 0);
+    m_downloadedGroupsPtr->operator[](id) = group;
+    }
+
+SMGroupCache::SMGroupCache(node_header_cache* nodeCache)
+    : m_nodeHeadersPtr(nodeCache),
+      m_downloadedGroupsPtr(std::make_shared<group_cache>())
+    {}
+
+SMNodeGroupPtr SMGroupCache::GetGroupForNodeIDFromCache(const uint64_t& nodeId)
+    {
+    std::lock_guard<std::mutex> lock(m_cacheMutex);
+    assert(m_downloadedGroupsPtr->count(nodeId) == 1);
+    return m_downloadedGroupsPtr->operator[](nodeId);
+    }
+
+void SMGroupCache::RemoveNodeFromCache(const uint64_t & nodeId)
+    {
+    std::lock_guard<std::mutex> lock(m_cacheMutex);
+    m_nodeHeadersPtr->erase(nodeId);
+    m_downloadedGroupsPtr->erase(nodeId);
+    }
+
+SMGroupCache::Ptr SMGroupCache::Create(node_header_cache* nodeCache)
+    {
+    return new SMGroupCache(nodeCache);
+    }
+
+SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account)
+    : m_strategyType(strategy),
+      m_account(account)
+    {}
+
+DataSourceAccount * SMGroupGlobalParameters::GetDataSourceAccount()
+    {
+    return m_account;
+    }
+
+SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account)
+    {
+    return new SMGroupGlobalParameters(strategy, account);
+    }
 

@@ -6904,7 +6904,7 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroupPtr pi_pGroup)
     {
     if (!IsLoaded())
         Load();
@@ -6914,7 +6914,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
     if (!m_nodeHeader.m_IsLeaf)
         {
         pi_pGroup->IncreaseDepth();
-        SMNodeGroup::Ptr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup(this->m_nodeHeader, pi_pGroup);
+        SMNodeGroupPtr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup(this->m_nodeHeader, pi_pGroup);
 
         static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
             {
@@ -7720,6 +7720,8 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
 //=====================================================================================================================
 //=====================================================================================================================
 
+template <class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::m_nextSMID = 0;
+
 /**----------------------------------------------------------------------------------------------
  Constructor for this class. The split threshold is used to indicate the maximum
  amount of spatial objects to be indexed by an index node after which the node is
@@ -7737,7 +7739,8 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
 -------------------------------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(ISMDataStoreTypePtr<EXTENT>& dataStore, size_t pi_SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter,bool balanced, bool propagatesDataDown, bool shouldCreateRoot)
   : m_dataStore(dataStore),
-    m_filter (filter)
+    m_filter (filter),
+    m_smID(m_nextSMID++)
     {
     m_isCanceled = false;
     m_nextNodeID = 0;
@@ -7761,6 +7764,9 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     // If a store is provided ...
     if (m_dataStore != NULL)
         {
+        // Register new index to the store
+        m_dataStore->Register(m_smID);
+
         // Try to load master header
         if (0 != m_dataStore->LoadMasterHeader(&m_indexHeader, sizeof(m_indexHeader)))
             {
@@ -7803,6 +7809,8 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::~SMPointIndex()
 
     m_pRootNode = NULL;
 
+    m_dataStore->Unregister(m_smID);
+
     // Close store
     m_dataStore->Close();
 
@@ -7833,7 +7841,7 @@ This method saves the points for streaming.
 template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode, bool pi_pCompress)
     {
     BeFileName path(pi_pOutputDirPath.c_str());
-    if (pi_pGroupMode != SMNodeGroup::VIRTUAL)
+    if (pi_pGroupMode != SMGroupGlobalParameters::VIRTUAL)
         {
         BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
         if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
@@ -7848,13 +7856,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-    SMNodeGroup::Ptr group(
-#ifndef VANCOUVER_API
-        new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode))
-#else
-        SMNodeGroup::Create(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode))
-#endif
-    );
+    SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType(pi_pGroupMode), dataSourceAccount);
+    SMGroupCache::Ptr groupCache = nullptr;
+    SMNodeGroupPtr group = SMNodeGroup::Create(groupParameters, groupCache, pi_pOutputDirPath, 0, nullptr);
 
     group->SetMaxGroupDepth(this->GetDepth() % s_max_group_depth + 1);
 
@@ -7881,7 +7885,7 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceManager *dataSourceManager, const WString& pi_pOutputDirPath, bool pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(const WString& pi_pOutputDirPath, bool pi_pCompress)
     {
     BeFileName path(pi_pOutputDirPath.c_str());
     BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
@@ -7892,9 +7896,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
 
     ISMDataStoreTypePtr<Extent3dType> dataStore(
  #ifndef VANCOUVER_API
-    new SMStreamingStore<Extent3dType>(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
+    new SMStreamingStore<Extent3dType>(pi_pOutputDirPath, pi_pCompress)
    #else
-   SMStreamingStore<Extent3dType>::Create(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
+   SMStreamingStore<Extent3dType>::Create(pi_pOutputDirPath, pi_pCompress)
    #endif
     );                    
 

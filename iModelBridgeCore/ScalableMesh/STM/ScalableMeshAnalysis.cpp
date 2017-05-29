@@ -103,7 +103,7 @@ bool ScalableMeshAnalysis::_InitGridFrom(ISMGridVolume& grid, double _resolution
     {
     grid.m_range.IntersectionOf(_rangeMesh, _rangeRegion);
     if (grid.m_range.IsNull())
-        return DTMStatusInt::DTM_ERROR; // cannot compute volume, no intersection
+        return false; // cannot compute volume, no intersection
 
     grid.m_resolution = _resolution;
     double maxLength = std::max(grid.m_range.XLength(), grid.m_range.YLength());

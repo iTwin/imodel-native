@@ -757,11 +757,6 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
 +----------------------------------------------------------------------------*/
 ScalableMeshBase::~ScalableMeshBase ()
     {
-
-        if (GetDataSourceAccount())
-            {
-            GetDataSourceManager().getService(GetDataSourceAccount()->getServiceName())->destroyAccount(GetDataSourceAccount()->getAccountName());
-            }
     }
 
 /*----------------------------------------------------------------------------+
@@ -1076,10 +1071,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     stream_settings->m_url = localDataFilesPath.GetNameUtf8().c_str();
                     }
 #ifndef VANCOUVER_API                                       
-                dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceManager(), stream_settings);
+                dataStore = new SMStreamingStore<Extent3dType>(stream_settings);
 #else
-                dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceManager(), stream_settings);
+                dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings);
 #endif
+
                 m_scmIndexPtr = new MeshIndexType(dataStore,
                     ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
                     10000,
@@ -2809,8 +2805,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     
     //s_stream_from_grouped_store = false;
 
-    //return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
-    return m_scmIndexPtr->Publish3DTiles(&this->GetDataSourceManager(), path, this->_GetGCS().GetGeoRef().GetBasePtr());
+    return m_scmIndexPtr->Publish3DTiles(path, this->_GetGCS().GetGeoRef().GetBasePtr());
     }
 
 template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
@@ -3081,7 +3076,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
 
     //s_stream_from_grouped_store = false;
 
-    return m_scmIndexPtr->ChangeGeometricError(&this->GetDataSourceManager(), path, true, newGeometricErrorValue);
+    return m_scmIndexPtr->ChangeGeometricError(path, true, newGeometricErrorValue);
     }
 
 /*----------------------------------------------------------------------------+
@@ -3112,9 +3107,9 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
 
     //s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
-    s_is_virtual_grouping = pi_pGroupMode == SMNodeGroup::VIRTUAL;
+    s_is_virtual_grouping = pi_pGroupMode == SMGroupGlobalParameters::VIRTUAL;
 
-    //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMNodeGroup::VIRTUAL);
+    //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMGroupGlobalParameters::VIRTUAL);
 
     m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, pi_pGroupMode, true);
     return SUCCESS;

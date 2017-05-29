@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: STM/ImportPlugins/DEMRasterImporter.cpp $
+|     $Source: STM/ImportPlugins/TextureImporter.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -32,29 +32,24 @@ namespace { //BEGIN UNAMED NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsiclass                                                  Raymond.Gauthier   10/2010
+* @bsiclass                                                  Mathieu.St-Pierre   05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-class DEMRasterSource : public SourceMixinBase<DEMRasterSource>
+class TextureSource : public SourceMixinBase<TextureSource>
     {
 public:
-    HUTDEMRasterXYZPointsExtractor& GetPointExtractor      () { return *m_extractorP; }
-
+    
 private:
-    friend class                    DEMRasterFileSourceCreator;
-    friend class                    DEMRasterElementSourceCreator;
-
-    auto_ptr<HUTDEMRasterXYZPointsExtractor>
-                                    m_extractorP;
+    friend class                    TextureFileSourceCreator;
+    friend class                    TextureElementSourceCreator;
+    
     ContentDescriptor               m_descriptor;
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   10/2010
+    * @bsimethod                                                  Mathieu.St-Pierre   05/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit                        DEMRasterSource        (HUTDEMRasterXYZPointsExtractor*     extractor,
-                                                            const ContentDescriptor&            descriptor)
-        :   m_extractorP(extractor),
-            m_descriptor(descriptor)
+    explicit                        TextureSource(const ContentDescriptor&            descriptor)
+        :   m_descriptor(descriptor)
         {
 
         }
@@ -62,16 +57,15 @@ private:
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   10/2010
+    * @bsimethod                                                  Mathieu.St-Pierre   05/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Close                 () override
-        {
-        m_extractorP.reset();
+        {        
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   10/2010
+    * @bsimethod                                                  Mathieu.St-Pierre   05/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual ContentDescriptor          _CreateDescriptor  () const override
         {
@@ -80,11 +74,11 @@ private:
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   08/2011
+    * @bsimethod                                                  Mathieu.St-Pierre   08/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual const WChar*             _GetType               () const override
         {
-        return L"DEM Raster";
+        return L"Texture";
         }
 
     };
@@ -95,7 +89,7 @@ const double ANGULAR_TO_LINEAR_RATIO = GetAngularToLinearRatio(Unit::GetMeter(),
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsimethod                                                  Raymond.Gauthier   11/2011
+* @bsimethod                                                  Mathieu.St-Pierre   11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 const HFCPtr<HPMPool>&              GetPoolInstance                        ()
     {
@@ -104,24 +98,6 @@ const HFCPtr<HPMPool>&              GetPoolInstance                        ()
     return POOL_INSTANCE_PTR;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-HUTDEMRasterXYZPointsExtractor*     CreateDEMExtractor                     (const WChar*              path)
-    {
-    const WString adaptedPath(WString(L"file://") + WString(path));
-
-    try
-        {
-        return new HUTDEMRasterXYZPointsExtractor(adaptedPath, GetPoolInstance(), false);
-        }
-    catch (...) // TDORAY: Catch only IPP exceptions
-        {
-        throw FileIOException();
-        }
-    }
 
 bool                                ExtractUnitFromGeoTiffKeys             (Unit&                 unit,
                                                                             const IRasterBaseGcs& geoCoding)
@@ -156,13 +132,12 @@ bool                                ExtractUnitFromGeoTiffKeys             (Unit
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsimethod                                                  Raymond.Gauthier   11/2011
+* @bsimethod                                                  Mathieu.St-Pierre   11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-GCS                                 GetDEMFileGCS                          (const HUTDEMRasterXYZPointsExtractor&
-                                                                                                            extractor)
+GCS                                 GetTextureFileGCS                          (HFCPtr<HRFRasterFile>& pRasterFile)
     {
-    const IRasterBaseGcsCP geoCodingP = extractor.GetDEMRasterCoordSysCP ();
-    
+    const IRasterBaseGcsCP geoCodingP = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+        
     if (0 == geoCodingP)
         return GCS::GetNull();
     
@@ -185,45 +160,104 @@ GCS                                 GetDEMFileGCS                          (cons
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsimethod                                                  Raymond.Gauthier   11/2011
+* @bsimethod                                                  Mathieu.St-Pierre   11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                                IsDEMFileGeoreferenced                 (const HUTDEMRasterXYZPointsExtractor&
-                                                                                                        extractor)
-    {        
-    return 0 != extractor.GetDEMRasterCoordSysCP();
+//NEEDS_WORK_SM : Copied from Imagepp\all\gra\hut\src\HUTDEMRasterXYZPointsExtractor.cpp - Should create a utility function
+#if 0 
+void Get2DCoordMinMaxValues(HFCPtr<HRFRasterFile> pRasterFile,
+                            double* po_pXMin, double* po_pXMax,
+                            double* po_pYMin, double* po_pYMax)
+{
+    HPRECONDITION((po_pXMin != 0) && (po_pXMax != 0) && (po_pYMin != 0) && (po_pYMax != 0));
+
+    HFCPtr<HRFPageDescriptor> pPageDescriptor(pRasterFile->GetPageDescriptor(0));
+
+    HFCPtr<HGFHMRStdWorldCluster> worldCluster(new HGFHMRStdWorldCluster());    
+
+    HFCPtr<HGF2DCoordSys>     pCoordSys(worldCluster->
+        GetCoordSysReference(pRasterFile->
+            GetWorldIdentificator()));
+
+    HFCPtr<HGF2DTransfoModel> pTransfoModel;
+
+    if (pPageDescriptor->HasTransfoModel() != 0)
+    {
+        pTransfoModel = pPageDescriptor->GetTransfoModel();
+    }
+    else
+    {
+        pTransfoModel = new HGF2DIdentity();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d                            GetDEMFileRange                        (const HUTDEMRasterXYZPointsExtractor&
-                                                                                                        extractor,
-                                                                            const GCS&                  targetGCS)
-    {
-    DRange3d range = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    pTransfoModel = pTransfoModel->ComposeInverseWithDirectOf(*(pCoordSys->
+        GetTransfoModelTo(m_pXYCoordSys)));
 
-    extractor.Get2DCoordMinMaxValues(&range.low.x, &range.high.x, &range.low.y, &range.high.y);
-    if (!extractor.GetZCoordMinMaxValues(&range.low.z, &range.high.z))
+    *po_pXMin = DBL_MAX;
+    *po_pXMax = (-DBL_MAX);
+    *po_pYMin = DBL_MAX;
+    *po_pYMax = (-DBL_MAX);
+
+
+    HFCPtr<HGF2DCoordSys> pLogical;
+
+    HFCPtr<HRARaster> pRaster;
+
+    pLogical = worldCluster->GetCoordSysReference(pRasterFile->GetPageWorldIdentificator(0));
+    HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(nullptr, pRasterFile, 0, pLogical);
+
+    // Get the raster from the store
+    pRaster = pStore->LoadRaster();
+    HASSERT(pRaster != NULL);
+
+    UInt64 heightInPixels;
+    UInt64 widthInPixels;
+
+    ((HFCPtr<HRAStoredRaster>&)pRaster)->GetRasterSize(&widthInPixels, &heightInPixels);
+    
+    double LogicCoordinateX;
+    double LogicCoordinateY;
+
+    for (UInt64 PhysicalCoordinateX = 0; PhysicalCoordinateX < widthInPixels;)
+    {
+        for (UInt64 PhysicalCoordinateY = 0; PhysicalCoordinateY < heightInPixels;)
         {
-        assert(0.0 == range.low.z && 0.0 == range.high.z);
+            pTransfoModel->ConvertDirect((double)PhysicalCoordinateX,
+                (double)PhysicalCoordinateY,
+                &LogicCoordinateX,
+                &LogicCoordinateY);
+
+            *po_pXMin = MIN(*po_pXMin, LogicCoordinateX);
+            *po_pXMax = MAX(*po_pXMax, LogicCoordinateX);
+            *po_pYMin = MIN(*po_pYMin, LogicCoordinateY);
+            *po_pYMax = MAX(*po_pYMax, LogicCoordinateY);
+
+            PhysicalCoordinateY += heightInPixels - 1;
         }
 
-    // TDORAY: Take into account that units have been rectified to meter (which is the base of linear units) or
-    // degree (which is the base of angular units). Convert range to target units.
+        PhysicalCoordinateX += widthInPixels - 1;
+    }
+}
+#endif
 
+DRange3d                            GetTextureFileRange                        (HFCPtr<HRFRasterFile> rasterFile,
+                                                                                const GCS&            targetGCS)
+    {
+    DRange3d range = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    
+    //Get2DCoordMinMaxValues(pRasterFile, &range.low.x, &range.high.x, &range.low.y, &range.high.y);
+                        
     return range;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsiclass                                                  Raymond.Gauthier   01/2011
+* @bsiclass                                                  Mathieu.St-Pierre   01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
+class TextureFileSourceCreator : public LocalFileSourceCreatorBase
     {
     virtual ExtensionFilter         _GetExtensions                         () const override
         {
-        return L"*.img;*.dim;*.dt0;*.dt1;*.dt2;*.tif;*.tiff;*.itiff;*.itiff64;*.dem;*catd.ddf;*.adf;*.asc";
+        return L"*.img;*.tif;*.tiff;*.itiff;*.itiff64";
         }
 
     virtual bool                    _Supports                              (const LocalFileSourceRef&   pi_rSourceRef) const override
@@ -231,14 +265,18 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         try
             {
             const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+            const HRFRasterFileCreator* foundCreatorP = HRFRasterFileFactory::GetInstance()->FindCreator(urlPtr, HFC_READ_ONLY);
+
+            if (foundCreatorP == nullptr)
+                return false;
                         
             HUTDEMRasterXYZPointsExtractor extractor(urlPtr->GetURL(), GetPoolInstance(), false);
 
-            return true;
+            return false;
             }
         catch (const HFCException&)
             {
-            return false;
+            return true;
             }
         }
 
@@ -247,22 +285,22 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
     virtual SourceBase*             _Create                                (const LocalFileSourceRef&   sourceRef,
                                                                             Log&                        warningLog) const override
         {
-        auto_ptr<HUTDEMRasterXYZPointsExtractor> pointExtractorP(CreateDEMExtractor(sourceRef.GetPathCStr()));
+        const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + sourceRef.GetPathCStr());
+        const HFCPtr<HRFRasterFile> rasterFile(HRFRasterFileFactory::GetInstance()->OpenFile(urlPtr, HFC_READ_ONLY));
+                        
+        ContentDescriptor descriptor(CreateDescriptor(rasterFile));
 
-        ContentDescriptor descriptor(CreateDescriptor(*pointExtractorP));
-
-        return new DEMRasterSource(pointExtractorP.release(), descriptor);
+        return new TextureSource(descriptor);
         }
 
 
-    static ContentDescriptor        CreateDescriptor                       (const HUTDEMRasterXYZPointsExtractor&
-                                                                                                        extractor)
-        {
-        const GCS gcs(GetDEMFileGCS(extractor));
-        DRange3d range(GetDEMFileRange(extractor, gcs));
+    static ContentDescriptor        CreateDescriptor                       (HFCPtr<HRFRasterFile> pRasterFile)
+        {        
+        const GCS gcs(GetTextureFileGCS(pRasterFile));
+        DRange3d range(GetTextureFileRange(pRasterFile, gcs));
         ScalableMeshData data = ScalableMeshData::GetNull();
         data.SetIsGridData(true);
-        data.AddExtent(range);
+        //data.AddExtent(range);
 
         return ContentDescriptor
             (
@@ -277,13 +315,13 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
 
     };
 
-
+#if 0
 
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsiclass                                                Jean-Francois.Cote   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
+class TextureElementSourceCreator : public DGNElementSourceCreatorBase
     {
     virtual uint32_t                    _GetElementType                    () const override
         {
@@ -318,20 +356,17 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
         if (BSISUCCESS != mdlRaster_handleFromElementRefGet(&dgnRasterP, sourceRef.GetElementRef(), sourceRef.GetModelRef()))
             throw CustomException(L"Could not find raster handle");
 
-        auto_ptr<HUTDEMRasterXYZPointsExtractor> pointExtractorP(CreateDEMExtractor(sourceRef.GetLocalFileP()->GetPathCStr()));
+        //auto_ptr<HUTDEMRasterXYZPointsExtractor> pointExtractorP(CreateDEMExtractor(sourceRef.GetLocalFileP()->GetPathCStr()));
 
-        ContentDescriptor descriptor(CreateDescriptor(*pointExtractorP, dgnRasterP, sourceRef.GetModelRef()));
+        ContentDescriptor descriptor(CreateDescriptor(dgnRasterP, sourceRef.GetModelRef()));
 
-
-
-
-        return new DEMRasterSource(pointExtractorP.release(), descriptor);
+        return new TextureSource(descriptor);
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @description  NTERAY: Incomplete implementation. Not used yet. See TR #336048
     *                       for more details.
-    * @bsimethod                                                  Raymond.Gauthier   03/2012
+    * @bsimethod                                                  Mathieu.St-Pierre   03/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
     static HFCPtr<HVEClipShape>     GetClipShapeFor                        (DgnRasterP                  dgnRasterP)
         {
@@ -389,11 +424,12 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   11/2011
+    * @bsimethod                                                  Mathieu.St-Pierre   11/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static TransfoMatrix            GetExtractorAPIToRasterPixelTransform  (const HUTDEMRasterXYZPointsExtractor&
-                                                                                                        extractor)
+    static TransfoMatrix            GetExtractorAPIToRasterPixelTransform  (/*const HUTDEMRasterXYZPointsExtractor&
+                                                                                                        extractor*/)
         {
+#if 0 
         HFCPtr<HGF2DTransfoModel>
             apiToRasterPixelsTransfoModelPtr(extractor.GetXYCoordSysPtr()->GetTransfoModelTo(extractor.GetPhysicalLowerLeftPixelCoordSysPtr()));
 
@@ -407,11 +443,12 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
            (apiToRasterPixelsMatrix2d[0][0],    apiToRasterPixelsMatrix2d[0][1],    0.0,    apiToRasterPixelsMatrix2d[0][2],
             apiToRasterPixelsMatrix2d[1][0],    apiToRasterPixelsMatrix2d[1][1],    0.0,    apiToRasterPixelsMatrix2d[1][2],
             0.0,                                0.0,                                1.0,    0.0);
+#endif
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   11/2011
+    * @bsimethod                                                  Mathieu.St-Pierre   11/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     static TransfoModel             GetExtractorAPIToModelGlobalTransform  (const HUTDEMRasterXYZPointsExtractor&
                                                                                                         extractor,
@@ -440,7 +477,7 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   11/2011
+    * @bsimethod                                                  Mathieu.St-Pierre   11/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     static BaseGCSCPtr              GetRasterBaseGCS                       (DgnRasterP                  dgnRasterP)
         {            
@@ -452,7 +489,7 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   11/2011
+    * @bsimethod                                                  Mathieu.St-Pierre   11/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     static GCS                      GetDgnRasterGCSAsSeenFromModel         (const HUTDEMRasterXYZPointsExtractor&
                                                                                                         extractor,
@@ -504,7 +541,7 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   11/2011
+    * @bsimethod                                                  Mathieu.St-Pierre   11/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     static ContentDescriptor        CreateDescriptor                       (const HUTDEMRasterXYZPointsExtractor&
                                                                                                         extractor,
@@ -528,13 +565,14 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
             );        
         }
     };
+#endif
 
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsiclass                                                  Raymond.Gauthier   10/2010
+* @bsiclass                                                  Mathieu.St-Pierre   05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-class DEMRasterPointExtractor : public InputExtractorBase
+class TexturePointExtractor : public InputExtractorBase
     {
     // Dimension groups definition
     enum
@@ -542,30 +580,34 @@ class DEMRasterPointExtractor : public InputExtractorBase
         DG_XYZ,
         DG_QTY,
         };
-
+/*
     auto_ptr<HUTDEMRasterXYZPointsIterator>
                                     m_pPtsIterator;
+*/
 
     PODPacketProxy<DPoint3d>        m_pointPacket;
     size_t                          m_maxPtQty;
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   10/2010
+    * @bsimethod                                                  Mathieu.St-Pierre   05/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Assign                        (PacketGroup&     pi_rRawEntities) override
         {
-        m_pointPacket.AssignTo(pi_rRawEntities[DG_XYZ]);
+        assert(!"Texturing use different pipeline than terrain data. Not expected to be called");
+        //m_pointPacket.AssignTo(pi_rRawEntities[DG_XYZ]);
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   10/2010
+    * @bsimethod                                                  Mathieu.St-Pierre   05/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                          () override
         {
+        assert(!"Texturing use different pipeline than terrain data. Not expected to be called");
+/*
         const size_t PtQty = m_pPtsIterator->GetXYZPoints(m_pointPacket.Edit(), m_maxPtQty);
-        m_pointPacket.SetSize(PtQty);
+        m_pointPacket.SetSize(PtQty);*/
         }
 
     virtual size_t              _GetPhysicalSize() override
@@ -580,32 +622,32 @@ class DEMRasterPointExtractor : public InputExtractorBase
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   10/2010
+    * @bsimethod                                                  Mathieu.St-Pierre   05/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool                    _Next                          () override
         {
-        return m_pPtsIterator->NextBlock();
+        assert(!"Texturing use different pipeline than terrain data. Not expected to be called");
+        return false;
+        //return m_pPtsIterator->NextBlock();
         }
 
 public:
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   10/2010
+    * @bsimethod                                                  Mathieu.St-Pierre   05/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit                        DEMRasterPointExtractor              (HUTDEMRasterXYZPointsIterator*   pi_pPointIterator)
-        :   m_pPtsIterator(pi_pPointIterator),
-            m_maxPtQty(pi_pPointIterator->GetMaxXYZPointQty())
+    explicit                        TexturePointExtractor              ()        
         {
-
+        assert(!"Texturing use different pipeline than terrain data. Not expected to be called");
         }
     };
 
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsiclass                                                  Raymond.Gauthier   10/2010
+* @bsiclass                                                  Mathieu.St-Pierre   05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEMRasterSource>
+class TexturePointExtractorCreator : public InputExtractorCreatorMixinBase<TextureSource>
     {
     virtual bool                                _Supports                          (const DataType&             type) const override
         {
@@ -615,25 +657,31 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    * @bsimethod                                                  Mathieu.St-Pierre   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual RawCapacities                       _GetOutputCapacities               (DEMRasterSource&                      sourceBase,
+    virtual RawCapacities                       _GetOutputCapacities               (TextureSource&                      sourceBase,
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source& source,
                                                                                     const ExtractionQuery&                selection) const override
         {
-        return RawCapacities (sourceBase.GetPointExtractor().GetMaxPointQtyForXYZPointsIterator()*sizeof(DPoint3d));
+        assert(!"Texturing use different pipeline than terrain data. Not expected to be called");
+        return RawCapacities(0);
+        //return RawCapacities (sourceBase.GetPointExtractor().GetMaxPointQtyForXYZPointsIterator()*sizeof(DPoint3d));
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @description
-    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    * @bsimethod                                                  Mathieu.St-Pierre   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual InputExtractorBase*                 _Create                            (DEMRasterSource&                      sourceBase,
+    virtual InputExtractorBase*                 _Create                            (TextureSource&                      sourceBase,
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source& source,
                                                                                     const ExtractionQuery&                selection,
                                                                                     const ExtractionConfig&               config,
                                                                                     Log&                                  log) const override
         {
+        assert(!"Texturing use different pipeline than terrain data. Not expected to be called");
+        return nullptr;
+
+#if 0
         const WString DestCoordSysKeyName = L"";
                         
         double scaleFactor = 1;
@@ -644,7 +692,8 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
         if (0 == pIterator.get())
             return 0;
 
-        return new DEMRasterPointExtractor(pIterator.release());
+        return new TexturePointExtractor(pIterator.release());
+#endif
         }
 
     };
@@ -657,10 +706,10 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsimethod                                                  Raymond.Gauthier   02/2012
+* @bsimethod                                                  Mathieu.St-Pierre   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-const SourceRegistry::AutoRegister<DEMRasterFileSourceCreator> s_RegisterDEMRasterFileSource;
-const SourceRegistry::AutoRegister<DEMRasterElementSourceCreator> s_RegisterDEMRasterElementSource;
-const ExtractorRegistry::AutoRegister<DEMRasterPointExtractorCreator> s_RegisterDEMRasterPointExtractor;
+const SourceRegistry::AutoRegister<TextureFileSourceCreator> s_RegisterTextureFileSource;
+//const SourceRegistry::AutoRegister<TextureElementSourceCreator> s_RegisterTextureElementSource;
+const ExtractorRegistry::AutoRegister<TexturePointExtractorCreator> s_RegisterTexturePointExtractor;
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

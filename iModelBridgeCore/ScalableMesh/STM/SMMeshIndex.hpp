@@ -5021,7 +5021,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
 /**----------------------------------------------------------------------------
 Publish Cesium ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS)
     {
     typedef SMStreamingStore<EXTENT>::SMStreamingSettings StreamingSettingsType;
     SMStreamingStore<EXTENT>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
@@ -5032,11 +5032,14 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     settings->m_isPublishing = true;
     ISMDataStoreTypePtr<EXTENT>     pDataStore(
 #ifndef VANCOUVER_API
-        new SMStreamingStore<EXTENT>(*dataSourceManager, settings)
+        new SMStreamingStore<EXTENT>(settings)
 #else
-        SMStreamingStore<EXTENT>::Create(*dataSourceManager, settings)
+        SMStreamingStore<EXTENT>::Create(settings)
 #endif
     );
+
+    // Register this index to the store
+    pDataStore->Register(m_smID);
 
     //this->SaveMasterHeaderToCloud(pDataStore);
     // NEEDS_WORK_SM : publish Cesium 3D tiles tileset
@@ -5051,13 +5054,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
     
-    SMNodeGroup::Ptr group(
-#ifndef VANCOUVER_API
-        new SMNodeGroup(static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), path, 0, nullptr, SMNodeGroup::StrategyType::CESIUM)
-#else
-        SMNodeGroup::Create(static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), path, 0, nullptr, SMNodeGroup::StrategyType::CESIUM)
-#endif
-    );
+    SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount());
+    SMGroupCache::Ptr groupCache = nullptr;
+    SMNodeGroupPtr group = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
 
     group->SetMaxGroupDepth(this->GetDepth() % s_max_group_depth + 1);
 
@@ -5093,10 +5092,10 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
 /**----------------------------------------------------------------------------
 Publish Cesium ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::ChangeGeometricError(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue)
     {
 #ifndef VANCOUVER_API
-    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
 
     //this->SaveMasterHeaderToCloud(pDataStore);
     // NEEDS_WORK_SM : publish Cesium 3D tiles tileset
@@ -5122,12 +5121,12 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Change
 /**----------------------------------------------------------------------------
 Save cloud ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(const WString& path, const bool& pi_pCompress)
     {
     assert(false && "Please correct topaz build");
     //NEEDS_WORK_STREAMING: can't use new IRefCounted on vancouver
   #if 0
-    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, SMStreamingStore<EXTENT>::FormatType::Binary, pi_pCompress);
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(path, SMStreamingStore<EXTENT>::FormatType::Binary, pi_pCompress);
 
     this->SaveMasterHeaderToCloud(pDataStore);
 

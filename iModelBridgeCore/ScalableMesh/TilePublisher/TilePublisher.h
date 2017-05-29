@@ -271,9 +271,10 @@ private:
 public:
     TILEPUBLISHER_EXPORT TilePublisher(PublisherContextPtr context);
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
-    TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile);
+    TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS);
 
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
+    TILEPUBLISHER_EXPORT PublisherContext::Status Publish(bvector<Byte>& outData);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish(TileMeshR mesh, bvector<Byte>& outData);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish(TileMeshR mesh, Utf8StringR sceneStr);
 
