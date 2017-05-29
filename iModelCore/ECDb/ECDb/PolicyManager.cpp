@@ -94,19 +94,10 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
 
     BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
 
-    if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && !assertion.GetClassMap().IsMappedToSingleTable()
-        && assertion.GetECSqlType() != ECSqlType::Select)
-        {
-        Utf8String notSupportedMessage;
-        notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",
-                                    className.c_str());
-        return Policy::CreateNotSupported(notSupportedMessage);
-        }
-
     //if policy for specific ECSQL type was requested, check that now
-    if (assertion.UseECSqlTypeFilter())
+    if (!assertion.GetECSqlType().IsNull())
         {
-        const ECSqlType ecsqlType = assertion.GetECSqlType();
+        const ECSqlType ecsqlType = assertion.GetECSqlType().Value();
         if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
             {
             if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
@@ -120,20 +111,17 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
 
             if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
                 {
-                std::vector<DbTable*> tables = assertion.GetClassMap().GetTables();
-                if (tables.empty())
+                if (!assertion.GetClassMap().IsMappedToSingleTable())
                     {
-                    BeAssert(false && "ClassMap.GetTables is not expected to be empty.");
                     Utf8String notSupportedMessage;
-                    notSupportedMessage.Sprintf("Programmer error: ECRelationshipClass '%s' is not mapped to a table.",
+                    notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",
                                                 className.c_str());
                     return Policy::CreateNotSupported(notSupportedMessage);
                     }
-
-                if (tables[0]->GetType() == DbTable::Type::Existing)
+                else if (assertion.GetClassMap().GetTables()[0]->GetType() == DbTable::Type::Existing)
                     {
                     Utf8String notSupportedMessage;
-                    notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table on its Foreign Key end, not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the relationship class.",
+                    notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
                                                 className.c_str());
                     return Policy::CreateNotSupported(notSupportedMessage);
                     }

@@ -1649,7 +1649,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
             itor = m_sharedBlock.end();
             }
 
-        DbColumn* col = rootClassMap->GetColumnFactory().Allocate(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.GetAcccessStringForId());
+        DbColumn* col = rootClassMap->GetColumnFactory().Allocate(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.GetAccessStringForId());
         if (itor != m_sharedBlock.end())
             {
             rootClassMap->GetColumnFactory().ReleaseSharedColumnReservation();
@@ -1659,7 +1659,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
         return col;
         }
 
-    return rootClassMap->GetColumnFactory().Allocate(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.GetAcccessStringForId());
+    return rootClassMap->GetColumnFactory().Allocate(*constraintECInstanceIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.GetAccessStringForId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1704,7 +1704,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
             itor = m_sharedBlock.end();
             }
 
-        DbColumn* col = rootClassMap->GetColumnFactory().Allocate(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.GetAcccessStringForRelClassId());
+        DbColumn* col = rootClassMap->GetColumnFactory().Allocate(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.GetAccessStringForRelClassId());
         if (itor != m_sharedBlock.end())
             {
             rootClassMap->GetColumnFactory().ReleaseSharedColumnReservation();
@@ -1714,7 +1714,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
         return col;
         }
 
-    return rootClassMap->GetColumnFactory().Allocate(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.GetAcccessStringForRelClassId());
+    return rootClassMap->GetColumnFactory().Allocate(*relECClassIdProp, colType, DbColumn::CreateParams(colName.c_str()), m_relMap.GetAccessStringForRelClassId());
     }
 
 //---------------------------------------------------------------------------------------
