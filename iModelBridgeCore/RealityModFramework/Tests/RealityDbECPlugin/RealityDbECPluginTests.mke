@@ -84,6 +84,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/DataExtractorTests.cs \
             $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
+			$(baseDir)Tests/JTokenExtensionTests.cs \
             $(baseDir)Tests/PolygonModelTests.cs \
             $(baseDir)Tests/SqlQueryProviderTests.cs \
             $(baseDir)Tests/SqlServerInsertStatementBuilderTests.cs \
@@ -108,6 +109,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/Helpers/TableDescriptorTests.cs \
 			$(baseDir)Tests/SQLQueryBuilder/GenericParamNameValueMapTests.cs \
 			$(baseDir)Tests/SQLQueryBuilder/SQLQueryBuilderTests.cs \
+			$(baseDir)Tests/SQLQueryBuilder/SQLServerMergeUpsertStatementBuilderTests.cs \
 			$(baseDir)Tests/SQLQueryBuilder/SqlServerParamNameValueMapTests.cs \
 			$(baseDir)Tests/SQLQueryBuilder/StandardSQLQueryBuilderTests.cs
             
