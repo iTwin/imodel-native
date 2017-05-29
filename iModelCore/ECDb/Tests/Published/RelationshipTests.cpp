@@ -2060,6 +2060,7 @@ TEST_F(RelationshipMappingTestFixture, AmbigousRelationshipProperty)
     ASSERT_STREQ("GHP1", stmt.GetValueText(4));
     }//===============
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     02/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2134,10 +2135,10 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
             Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
             ASSERT_FALSE(ddl.empty());
 
-            ASSERT_TRUE(ddl.ContainsI("[AId_Rel0NId] INTEGER,"));
-            ASSERT_TRUE(ddl.ContainsI("[AId_Rel1NId] INTEGER NOT NULL,"));
-            ASSERT_TRUE(ddl.ContainsI("[AId_RelN0Id] INTEGER,"));
-            ASSERT_TRUE(ddl.ContainsI("[AId_RelN1Id] INTEGER NOT NULL,"));
+            ASSERT_TRUE(ddl.ContainsI("[AId_Rel0NId] INTEGER,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
+            ASSERT_TRUE(ddl.ContainsI("[AId_Rel1NId] INTEGER NOT NULL,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
+            ASSERT_TRUE(ddl.ContainsI("[AId_RelN0Id] INTEGER,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
+            ASSERT_TRUE(ddl.ContainsI("[AId_RelN1Id] INTEGER NOT NULL,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
             }
 
             {
@@ -2213,10 +2214,10 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
             Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
             ASSERT_FALSE(ddl.empty());
 
-            ASSERT_TRUE(ddl.ContainsI("[A1Id] INTEGER NOT NULL,"));
-            ASSERT_TRUE(ddl.ContainsI("[A2Id] INTEGER,"));
-            ASSERT_TRUE(ddl.ContainsI("[A3Id] INTEGER,"));
-            ASSERT_TRUE(ddl.ContainsI("[A4Id] INTEGER NOT NULL,"));
+            ASSERT_TRUE(ddl.ContainsI("[A1Id] INTEGER NOT NULL,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
+            ASSERT_TRUE(ddl.ContainsI("[A2Id] INTEGER,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
+            ASSERT_TRUE(ddl.ContainsI("[A3Id] INTEGER,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
+            ASSERT_TRUE(ddl.ContainsI("[A4Id] INTEGER NOT NULL,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
             }
 
 
@@ -2261,11 +2262,55 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
             Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
             ASSERT_FALSE(ddl.empty());
 
-            ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,"));
+            ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
             }
 
             {
-            SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+            SchemaItem testItem("Logical FK", "<?xml version='1.0' encoding='utf-8'?>"
+                                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                "    <ECEntityClass typeName='A'>"
+                                "        <ECProperty propertyName='AName' typeName='string' />"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+                                "      <ECCustomAttributes>"
+                                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                "        </ClassMap>"
+                                "      </ECCustomAttributes>"
+                                "       <ECProperty propertyName='BaseName' typeName='string' />"
+                                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'/>"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
+                                "        <BaseClass>Base</BaseClass>"
+                                "        <ECProperty propertyName='SubName' typeName='string' />"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='SubSub'>"
+                                "        <BaseClass>Sub</BaseClass>"
+                                "        <ECProperty propertyName='SubSubName' typeName='string' />"
+                                "    </ECEntityClass>"
+                                "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
+                                "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                "      <Class class = 'A' />"
+                                "    </Source>"
+                                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                "      <Class class = 'Base' />"
+                                "    </Target>"
+                                "  </ECRelationshipClass>"
+                                "</ECSchema>");
+
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfk.ecdb");
+            ASSERT_FALSE(asserted);
+
+            Utf8String ddl = RetrieveDdl(ecdb, "ts_Base");
+            ASSERT_FALSE(ddl.empty());
+            ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER NOT NULL,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
+            }
+
+            {
+            SchemaItem testItem("Logical FK with dropped not null constraint", "<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                 "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                 "    <ECEntityClass typeName='A'>"
@@ -2305,51 +2350,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
 
             Utf8String ddl = RetrieveDdl(ecdb, "ts_Base");
             ASSERT_FALSE(ddl.empty());
-            ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Actual DDL: " << ddl.c_str();
-            }
-
-            {
-            SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                "    <ECEntityClass typeName='A'>"
-                                "        <ECProperty propertyName='AName' typeName='string' />"
-                                "    </ECEntityClass>"
-                                "    <ECEntityClass typeName='Base' modifier='Abstract'>"
-                                "      <ECCustomAttributes>"
-                                "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                "        </ClassMap>"
-                                "      </ECCustomAttributes>"
-                                "       <ECProperty propertyName='BaseName' typeName='string' />"
-                                "    </ECEntityClass>"
-                                "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
-                                "        <BaseClass>Base</BaseClass>"
-                                "        <ECProperty propertyName='SubName' typeName='string' />"
-                                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'/>"
-                                "    </ECEntityClass>"
-                                "    <ECEntityClass typeName='SubSub'>"
-                                "        <BaseClass>Sub</BaseClass>"
-                                "        <ECProperty propertyName='SubSubName' typeName='string' />"
-                                "    </ECEntityClass>"
-                                "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-                                "    <Source cardinality='(1,1)' polymorphic='True'>"
-                                "      <Class class = 'A' />"
-                                "    </Source>"
-                                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                                "      <Class class = 'Sub' />"
-                                "    </Target>"
-                                "  </ECRelationshipClass>"
-                                "</ECSchema>");
-
-            ECDb ecdb;
-            bool asserted = false;
-            AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfk.ecdb");
-            ASSERT_FALSE(asserted);
-
-            Utf8String ddl = RetrieveDdl(ecdb, "ts_Base");
-            ASSERT_FALSE(ddl.empty());
-            ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Actual DDL: " << ddl.c_str();
+            ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << testItem.m_name.c_str() << " Actual DDL: " << ddl.c_str();
             }
 
     }

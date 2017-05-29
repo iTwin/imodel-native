@@ -342,74 +342,58 @@
 
     ## Foreign Key mapping versus Link Table mapping
     ECDb always attempts to map an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" using a 
-    <b>Foreign Key</b> mapping, because this type is more performant and less complex.
-    For those cases where a Foreign Key mapping is not possible (because a Link Table is required), 
+    @ref ECDbForeignKeyMapping "Foreign Key mapping", because this type is more performant and less complex.
+    For those cases where a Foreign Key mapping is not possible (because a <i>link table</i> is required), 
     ECDb chooses the <b>Link Table</b> mapping.
 
-    Two flavors of Foreign Key mapping exist:
-    If the ECRelationshipClass has the @b ForeignKeyConstraint custom attribute:
-    - <b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
-    If the custom attribute is not present:
-    - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
-
-    @note This does not affect how ECDb enforces cardinality.
-
-    #### Rule
+    @section ECDbRelationshipMappingRules ECRelationship Mapping Rules
 
     <b>Link Table</b> mapping is chosen if
-    - the cardinality is N:N
+    - the cardinality is M:N
     - ECProperties are defined for the ECRelationshipClass
     - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref CustomRelationshipMapDescription)
+    - no @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" is defined for the relationship class on the constraint class
+      on the foreign key end of the relationship (see below for what the foreign key end is).
 
-    Otherwise, the <b>Foreign Key</b> mapping is chosen:
+    Otherwise, the @ref ECDbForeignKeyMapping is chosen:
     - <b>Physical Foreign Key</b> mapping if the @b ForeignKeyConstraint custom attribute exists on the ECRelationshipClass. 
     - <b>Logical Foreign Key</b> mapping otherwise.
 
     The ECRelationshipClass is rejected
     - if it evaluates to <b>Link Table</b> mapping and
-        - has the strength @em Embedding
         - has the @b ForeignKeyConstraint custom attribute (see also @ref CustomRelationshipMapDescription)
     - if it evaluates to <b>Physical Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
     (see @ref CustomClassMapDescription) and 
             - in the @b ForeignKeyConstraint custom attribute the property @b OnDeleteAction is set to @b Cascade or
             - the strength is @b Embedding
 
-    ## Foreign Key ECRelationshipClasses require NavigationProperty on Foreign Key end
+    @subsection ECDbForeignKeyMapping Foreign Key Mapping
+    Foreign key mapping means that a foreign key column (and sometimes an additional column for the relationship class id) 
+    is created in the table of the class on the <i>foreign key constraint end</i>. It is used to store the id of the related instance.
     
-    ECRelationshipClasses with the Foreign Key mapping require that a navigation property is defined on the foreign key end constraint class.
+    #### How ECDb determines the foreign key end of a relationship
     
     The foreign key end of a relationship is determined by cardinality and, only if the cardinality is 1:1, by the strength direction:
 
-    Cardinality  | Strength Direction | End requiring a nav prop
+    Cardinality  | Strength Direction | Foreign Key end
     ------------ | ------------------ | ------------------------
     1:1          | Forward            | Target
     &nbsp;       | Backward           | Source
     1:N          | not relevant       | Target
     N:1          | not relevant       | Source
 
-    
-    ####Example
+    ## Foreign Key Mapping Types
 
-        <ECEntityClass typeName="Folder">
-            <ECProperty propertyName="Name" typeName="string"/>
-        </ECEntityClass>
+    Two flavors of Foreign Key mapping exist:
+    If the ECRelationshipClass has the @b ForeignKeyConstraint custom attribute:
+    - <b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
 
-        <ECEntityClass typeName="File">
-            <ECProperty propertyName="Name" typeName="string"/>
-            <ECNavigationProperty propertyName="Folder" relationshipName="FolderHasFiles" direction="Backward" />
-        </ECEntityClass>
+    If the custom attribute is not present:
+    - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
 
-        <ECRelationshipClass typeName="FolderHasFiles" strength="embedding">
-            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
-                <Class class="Folder" />
-            </Source>
-            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is in">
-                <Class class="File" />
-            </Target>
-        </ECRelationshipClass>
-        
+    @note This does not affect how ECDb enforces cardinality.
 
-    ## Mapping Rules
+    ## Mapping Restrictions
     The <b>number of tables to which the two relationship ends map to</b> is the key criterion for ECDb to decide whether
     an ECRelationshipClass is supported or not.
 
@@ -463,14 +447,14 @@
     In addition to the rules for @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" inheritance specified by the EC specification, 
     %ECDb has some more:
 
-    - The @b ForeignKeyRelationshipMap and @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
+    - The @b ForeignKeyConstraint and @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
     be applied to the @b root of the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" hierarchy. The @b root is the ECRelationshipClass which
     does not have a base class itself.
     - The mapping type must not change within a relationship class hierarchy. In other words, the @ref BentleyApi::ECN::ECRelationshipClass "Root ECRelationshipClass"
     determines the mapping for the entire hierarchy.
     - This implies in particular that if the root class implies a <em>foreign key type mapping</em>, the subclasses must 
     not add ECProperties, because ECRelationshipClasses with ECProperties are only supported when mapped as link tables.
-    - Link tables implicity use the @b TablePerHierarchy strategy if they store an ECRelationshipClass hierarchy.
+    - Link tables implicitly use the @b TablePerHierarchy strategy if they store an ECRelationshipClass hierarchy.
     - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
 
     @see @ref ECDbRelationshipRules
@@ -485,7 +469,7 @@
     are exposed to ECSQL as structs with the two system members @b Id and @b RelECClassId.
 
     The RelECClassId is mandatory if the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" backing 
-    the Navigation Property has subclasses. Callers must make sure
+    the navigation property has subclasses. Callers must make sure
     to set the RelECClassId along with the Id when inserting an ECInstance. ECDb does not enforce that, nor validate the specified
     values.
     Likewise ECDb's referential integrity does not clean up the RelECClassId values. If for an ECRelationshipClass with OnDelete action 'SetNull', a parent is deleted,
@@ -511,13 +495,7 @@
     - Type of ECClasses that are mapped using the @b OwnTable strategy by default.
         - Entity ECClasses
     - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
-    or to a link table.
-        - ECRelationshipClasses with cardinality 1:1 or 0:N
-            - If source or target constraints end-up in a single table on each side then @b ForeignKey mapping will be used.
-            - If source or target constraints end-up in more then one table on any side then @b LinkTable mapping will be used.
-            - If relationship has at least one ECProperty it will be mapped using @b LinkTable mapping
-        - Relationship with cardinality N:N is always mapped using the @b LinkTable mapping.
-        - A default index is created on the key columns in accordance with the cardinality.
+    or to a link table (see @ref ECDbRelationshipRules for details).
 
     @section CustomSchemaMapDescription Custom mapping or ECSchemas
 
@@ -669,35 +647,34 @@
 
     Please read @ref ECDbRelationshipRules before.
 
-    Customizing the mapping for an ECRelationshipClass is done by applying either the @b ForeignKeyRelationshipMap or the @b LinkTableRelationshipMap
-    custom attribute to the respective ECRelationshipClass. (ECDb will only look for it in local attributes on the ECRelationshipClass)
-
-    @note You have to decide upfront whether the relationship class should be mapped as a foreign key relationship or as a link table. Once decided you
-    apply the respective custom attribute to the ECRelationshipClass.
-    @note Any ECRelationship can be mapped as a link table. However not all ECRelationships can be mapped as foreign key relationships. In that
-    case ECDb will fail the schema import and log the reason why it couldn't import the schema.
-
-    Description of the @b ForeignKeyRelationshipMap properties:
-    - <b>OnDeleteAction</b>: Possible values: NoAction (default), Cascade (deletes child rows when parent row is deleted), SetNull(foreign key property in child is set to NULL), Restrict (cannot delete parent if it still has children).
-    - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated).
-
-    @note ECDb by default creates a Foreign Key column with a Foreign Key constraint for the relationship and implies its NOT NULL and UNIQUE constraints 
-    from the ECRelationshipClass' cardinality. If, however, the ECRelationshipClass specifies to use an existing column (because of using the MapStrategy 'ExistingTable'), the following
-    restrictions exist:
-        - the Foreign Key constraint will not be created and a warning will be logged.
-        - if the existing column is nullable but the relationship's cardinality implies it to be not nullable, or vice versa, the ECSchema import will fail.
+    ### LinkTableRelationshipMap custom attribute
+    If you apply the @b LinkTableRelationshipMap custom attribute to a relationship, it is forced to be mapped to
+    a link table - even if a @ref ECDbForeignKeyMapping "foreign key mapping" would have been possible as well.
     
-    @note If the cardinality implies unique-ness of the foreign key column a @em partial unique index will be created that applies to the ECRelationshipClass' rows of the shared column
-    only.
-
     Description of the @b LinkTableRelationshipMap properties:
     - <b>SourceECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the source constraint is mapped to.
     If not set, %ECDb generates a column with a default name.
     - <b>TargetECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the target constraint is mapped to.
     If not set, %ECDb generates a column with a default name.
+    - <b>CreateForeignKeyConstraints</b>: (optional) if true (default), ECDb creates foreign key constraints in the SourceECInstanceId
+    and TargetECInstanceId columns in the link table. This ensures that, when deleting the source or target instance, the respective
+    link table entry is deleted as well.
+    If false, no FK constraints are created. Applications must then care for deleting the link table entries themselves. 
     - <b>AllowDuplicateRelationship</b>: (optional) If false (default), no duplicate entries for a given relationship instance
     can be inserted. If true, duplicate relationship instances can be inserted. Cardinality must not be violated though. E.g.
-    there cannot be duplicate relationships with a cardinality of 1:1. @b Note: The flag is applied to subclasses of this relationship class, too.
+    there cannot be duplicate relationships with a cardinality of 1:1. 
+    @b Note: The flag is applied to subclasses of this relationship class, too.
+    
+    
+    ### ForeignKeyConstraint custom attribute
+    For relationships with @ref ECDbForeignKeyMapping "foreign key mapping" you can apply the @b ForeignKeyConstraint custom attribute 
+    if you want a <b>foreign key constraint</b> to be created on the foreign key column. 
+    A foreign key constraint ensures that the ECInstanceId of the related instance you want to insert exists. 
+    And it allows you to specify actions for when the instance on the other end is updated or deleted:
+    
+    Description of the @b ForeignKeyConstraint properties:
+    - <b>OnDeleteAction</b>: Possible values: NoAction (default), Cascade (deletes child rows when parent row is deleted), SetNull(foreign key property in child is set to NULL), Restrict (cannot delete parent if it still has children).
+    - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated).
 
     ####Examples
 
