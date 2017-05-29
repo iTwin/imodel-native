@@ -907,7 +907,7 @@ void QuadTree::Tile::TryHigherRes(DrawGraphicsR args) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const 
     {
-     _GetGraphics(args.m_graphics, depth);
+    _GetGraphics(args.m_graphics, depth);
 
     if (!IsReady() && !IsNotFound())
         args.m_missing.Insert(depth, this);
@@ -922,7 +922,6 @@ void QuadTree::Tile::_GetGraphics(DrawGraphicsR args, int depth) const
         {
         TryLowerRes(args, 10);
         TryHigherRes(args);
-
         return;
         }
 
