@@ -334,6 +334,15 @@
         <ECNavigationProperty propertyName="PSA1" relationshipName="PSAHasTHBase_0N" direction="Backward" />
         <ECNavigationProperty propertyName="PSA2" relationshipName="PSAHasOnlyTHBase_0N" direction="Backward" />
     </ECEntityClass>
+    <ECEntityClass typeName="MyMixin" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <AppliesToEntityClass>THBase</AppliesToEntityClass>            
+            </IsMixin>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MixinCode" typeName="string"/>
+    </ECEntityClass>
+        
     <ECRelationshipClass typeName="PSAHasOnlyTHBase_0N" strength="referencing" modifier="Sealed">
 		<ECCustomAttributes>
 			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
@@ -414,6 +423,24 @@
             <Class class="THBase"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasMyMixin" strength="referencing" modifier="Abstract">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has">
+            <Class class="PSA"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
+            <Class class="MyMixin"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasTH2" strength="referencing" modifier="Sealed">
+        <BaseClass>PSAHasMyMixin</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has">
+            <Class class="PSA"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is referenced by">
+            <Class class="TH2"/>
+        </Target>
+    </ECRelationshipClass>
+    
     <ECEntityClass typeName="PUnmapped" modifier="Sealed" description="Class not mapped to a DB table">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -477,6 +504,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="TH2">
         <BaseClass>TH1</BaseClass>
+        <BaseClass>MyMixin</BaseClass>
         <ECProperty propertyName="S2" typeName="string"/>
     </ECEntityClass>
     <ECEntityClass typeName="TH3">
@@ -498,4 +526,5 @@
         <ECProperty propertyName="ABC_" typeName="string"/>
         <ECProperty propertyName="A_B_C_" typeName="int"/>
     </ECEntityClass>
+    
 </ECSchema>
