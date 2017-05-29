@@ -490,6 +490,7 @@ public:
 
     //! Set proxy informations
     REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
+    //REALITYDATAPLATFORM_EXPORT void SetProxyAutoConfig(Utf8String PACLocation);
 
     REALITYDATAPLATFORM_EXPORT CurlConstructor();
     REALITYDATAPLATFORM_EXPORT virtual ~CurlConstructor(){}
@@ -498,6 +499,7 @@ protected:
 
     Utf8String          m_proxyUrl;
     Utf8String          m_proxyCreds;
+    //Utf8String          m_pacFile;
     Utf8String          m_token;
     BeFileName          m_certificatePath;
     time_t              m_tokenRefreshTimer;

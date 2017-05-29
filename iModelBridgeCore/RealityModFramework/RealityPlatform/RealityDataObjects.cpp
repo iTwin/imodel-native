@@ -524,6 +524,8 @@ void RealityDataBase::SetVisibility(RealityDataBase::Visibility visibility) { m_
 //-------------------------------------------------------------------------------------
 Utf8String RealityDataBase::GetVisibilityTag() const
     {
+    if(m_visibilityString == "PUBLIC")
+        return m_visibilityString;
     return GetTagFromVisibility(m_visibility);
     }
 
@@ -574,6 +576,7 @@ Utf8String RealityDataBase::GetTagFromVisibility(RealityDataBase::Visibility vis
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataBase::SetVisibilityByTag(Utf8CP visibilityTag)
     {
+    m_visibilityString = visibilityTag;
     return GetVisibilityFromTag(m_visibility, visibilityTag);
     }
 

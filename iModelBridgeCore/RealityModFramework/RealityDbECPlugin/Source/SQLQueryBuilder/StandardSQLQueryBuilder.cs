@@ -55,8 +55,8 @@ namespace IndexECPlugin.Source
             string completeLeftJoinClause = "";
             foreach ( var table in m_sqlLeftJoinClause )
                 {
-                completeLeftJoinClause += "LEFT JOIN " + AddBrackets(table.Name) + " " + table.Alias
-                    + " ON " + AddBrackets(table.FirstTable.Alias) + "." + AddBrackets(table.FirstTableKey) + " = " + AddBrackets(table.Alias) + "." + AddBrackets(table.TableKey) + " ";
+                completeLeftJoinClause += "LEFT JOIN " + table.Name + " " + table.Alias
+                    + " ON " + table.FirstTable.Alias + "." + table.FirstTableKey + " = " + table.Alias + "." + table.TableKey + " ";
                 }
 
 
@@ -69,7 +69,7 @@ namespace IndexECPlugin.Source
                 }
 
             string completeOrderByClause = "";
-            if ( !(m_sqlOrderByClause.Count == 0) )
+            if ( m_sqlOrderByClause.Count != 0 )
                 {
                 completeOrderByClause = "ORDER BY ";
                 completeOrderByClause += String.Join(", ", m_sqlOrderByClause.ToArray());

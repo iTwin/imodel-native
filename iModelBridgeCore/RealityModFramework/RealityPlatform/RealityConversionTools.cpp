@@ -643,8 +643,8 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         data->SetClassificationByTag(Utf8CP(properties["Classification"].asString().c_str()));
 
     // Thumbnail URL
-    if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
-        data->SetThumbnailURL(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
+    if (properties.isMember("ThumbnailURL") && !properties["ThumbnailURL"].isNull())
+        data->SetThumbnailURL(Utf8CP(properties["ThumbnailURL"].asString().c_str()));
 
     // MetadataURL
     if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
@@ -662,8 +662,12 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         data->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
 
     // Provider
+    if(properties.isMember("DataProvider") && !properties["DataProvider"].isNull())
+        data->SetProvider(Utf8CP(properties["DataProvider"].asString().c_str()));
+
+    // ProviderName
     if(properties.isMember("DataProviderName") && !properties["DataProviderName"].isNull())
-        data->SetProvider(Utf8CP(properties["DataProviderName"].asString().c_str()));
+        data->SetProviderName(Utf8CP(properties["DataProviderName"].asString().c_str()));
 
     // Visibility
     if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
@@ -941,6 +945,7 @@ RealityDataDownload::sisterFileVector RealityConversionTools::RealityDataToSiste
         {
         if (sister->GetSource().length() > 0)
             {
+			filename.clear();
             RealityDataDownload::ExtractFileName(filename, sister->GetSource());
             sfVector.push_back(std::make_pair(sister->ToString(), filename));
             }
@@ -1005,15 +1010,20 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
     for (RealityPackage::TerrainDataPtr file : terrainFiles)
         downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
-    /*RealityPackage::RealityDataPackage::ModelGroup modelFiles = package->GetModelGroup();
+    RealityPackage::RealityDataPackage::ModelGroup modelFiles = package->GetModelGroup();
 
     for (RealityPackage::ModelDataPtr file : modelFiles)
-        downloadOrder.push_back(RealityDataToMirrorVector(*file));*/
+        downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
     RealityPackage::RealityDataPackage::PinnedGroup pinnedFiles = package->GetPinnedGroup();
 
     for (RealityPackage::PinnedDataPtr file : pinnedFiles)
         downloadOrder.push_back(RealityDataToMirrorVector(*file));
+
+	RealityPackage::RealityDataPackage::UndefinedGroup undefinedfiles = package->GetUndefinedGroup();
+
+	for (RealityPackage::UndefinedDataPtr file : undefinedfiles)
+		downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
     return downloadOrder;
     }

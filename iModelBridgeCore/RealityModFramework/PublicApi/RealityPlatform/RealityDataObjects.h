@@ -337,6 +337,7 @@ protected:
     mutable Utf8String m_coordSys;
 
     Visibility m_visibility;
+    Utf8String m_visibilityString;
     }; 
 
 
@@ -369,6 +370,7 @@ enum class RealityDataField
     OwnedBy,
     Group
     };
+
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016

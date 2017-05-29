@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<xs:schema targetNamespace="http://www.bentley.com/RealityDataServer/v1" 
+<xs:schema targetNamespace="http://www.bentley.com/RealityDataServer/v2" 
            elementFormDefault="qualified"
-           xmlns="http://www.bentley.com/RealityDataServer/v1"
+           xmlns="http://www.bentley.com/RealityDataServer/v2"
            xmlns:xs="http://www.w3.org/2001/XMLSchema" >
 
     <!-- Type Definition -->
@@ -65,9 +65,9 @@
                 specified at the moment of the package ordering.
             </xs:documentation>
         </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="SourceType">
-                <xs:attribute name="typeKey" type="xs:string">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="type" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
                             The type of the metadata referenced. This type can be ISO-19115 or FGDC or anyother string but usually 'text' indicating
@@ -78,7 +78,7 @@
                 </xs:attribute>
             </xs:extension>
 
-        </xs:complexContent>
+        </xs:simpleContent>
     </xs:complexType>
     
     <!-- =========================================================== -->
@@ -123,15 +123,6 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="Id" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                    Identifier of the source. This ID is sufficient to obtain additional data from the Context Services at least
-                    a relatively short time after the creation of the package. If some time elapsed it would be wise to validate the
-                    content fits with other fields prior to interpreting additional data.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="Copyright" type="xs:string" minOccurs="0" maxOccurs="1">
             <xs:annotation>
                 <xs:documentation>
@@ -145,6 +136,15 @@
                 Term of use for data source in the requested language or the default language it is written in. This 'Term of use' text can contain text or links to external documentation or both.
                 </xs:documentation>
             </xs:annotation>
+            </xs:element>
+            <xs:element name="Id" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    Identifier of the source. This ID is sufficient to obtain additional data from the Context Services at least
+                    a relatively short time after the creation of the package. If some time elapsed it would be wise to validate the
+                    content fits with other fields prior to interpreting additional data.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
             <xs:element name="Provider" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -198,7 +198,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="Size" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:element name="Size" type="xs:unsignedLong" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                     The size of the data source in kilobytes. This value can be approximative. If absent or zero it indicates that the size of the data cannot be determined either because unknown or because
@@ -273,7 +273,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="type" use="required" type="xs:string">
+        <xs:attribute name="type" use="optional" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
                 The type of the data source. This string indicates the type of the final data and not necessarily the type of the distribution file.
@@ -347,7 +347,7 @@
                             </xs:documentation>
                         </xs:annotation>                    
                     </xs:element>   
-                    <xs:element name="PanChromatic" type="BandType" minOccurs="0" maxOccurs="1">
+                    <xs:element name="Panchromatic" type="BandType" minOccurs="0" maxOccurs="1">
                         <xs:annotation>
                             <xs:documentation>
                             The optional panchromatic band.
@@ -791,7 +791,7 @@
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="PackageOrigin" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:element name="Origin" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>
                         String that contains the Context Service server that was used in the creation of the package if any.
@@ -844,7 +844,7 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                <xs:element name="PackageId" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:element name="Id" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>
                         Package ID. Technically all packages are stored in the Context Service server so it is technically recoverable from server
