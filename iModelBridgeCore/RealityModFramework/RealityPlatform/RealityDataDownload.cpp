@@ -147,45 +147,46 @@ RealityDataDownloadPtr RealityDataDownload::Create(const Link_File_wMirrors_wSis
         return NULL;
 }
 
-RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName)
+RealityDataDownload::RealityDataDownload() : m_pProgressFunc(nullptr), m_pHeartbeatFunc(nullptr), m_pStatusFunc(nullptr),
+    m_pProxyFunc(nullptr), m_pTokenFunc(nullptr), m_certPath(WString()), m_curEntry(0)
     {
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    m_pCurlHandle = NULL;
+    }
 
-    m_pCurlHandle = curl_multi_init();
-    m_pProgressFunc = nullptr;
-    m_pHeartbeatFunc = nullptr;
-    m_pStatusFunc = nullptr;
-    m_certPath = WString();
-
-    m_curEntry = 0;
-    m_nbEntry = pi_Link_FileName.size();
-    m_pEntries = new FileTransfer[m_nbEntry];
-    for (size_t i=0; i<m_nbEntry; ++i)
-        {
-        m_pEntries[i].InsertMirror(pi_Link_FileName[i], 0, 0);
-        m_pEntries[i].iAppend = 0;
+void RealityDataDownload::InitEntry(size_t i)
+    {
+    m_pEntries[i].iAppend = 0;
         m_pEntries[i].nbRetry = 0;
         m_pEntries[i].index = i;
-        m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
 
         m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
         m_pEntries[i].filesize = 0;
         m_pEntries[i].fromCache = true;                                 // from cache if possible by default
         m_pEntries[i].progressStep = 0.01;
-        }
     }
 
-RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors)
+RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName) : RealityDataDownload()
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
     m_pCurlHandle = curl_multi_init();
-    m_pProgressFunc = nullptr;
-    m_pHeartbeatFunc = nullptr;
-    m_pStatusFunc = nullptr;
-    m_certPath = WString();
+    
+    m_nbEntry = pi_Link_FileName.size();
+    m_pEntries = new FileTransfer[m_nbEntry];
+    for (size_t i=0; i<m_nbEntry; ++i)
+        {
+        m_pEntries[i].InsertMirror(pi_Link_FileName[i], 0, 0);
+        InitEntry(i);
+        m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
+        }
+    }
 
-    m_curEntry = 0;
+RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors) : RealityDataDownload()
+    {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    m_pCurlHandle = curl_multi_init();
+    
     m_nbEntry = pi_Link_File_wMirrors.size();
     m_pEntries = new FileTransfer[m_nbEntry];
     for (size_t i = 0; i<m_nbEntry; ++i)
@@ -193,15 +194,8 @@ RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_
         size_t mirrorCount = pi_Link_File_wMirrors[i].size();
         for(size_t j = 0; j < mirrorCount; ++j)
             m_pEntries[i].InsertMirror(pi_Link_File_wMirrors[i][j], j, 0);
-        m_pEntries[i].iAppend = 0;
-        m_pEntries[i].nbRetry = 0;
-        m_pEntries[i].index = i;
+        InitEntry(i);
         m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
-
-        m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
-        m_pEntries[i].filesize = 0;
-        m_pEntries[i].fromCache = true;                                 // from cache if possible by default
-        m_pEntries[i].progressStep = 0.01;
         }
     }
 
@@ -209,8 +203,9 @@ void RealityDataDownload::AddSisterFiles(FileTransfer* ft, bvector<url_file_pair
     {
     FileTransfer* sisFT = new FileTransfer(ft);
     Mirror_struct ms;
-    ms.url = sisters[index].first;
-    sisFT->filename = ms.filename = sisters[index].second;
+    ms.url = sisters[index].m_url;
+    sisFT->filename = ms.filename = sisters[index].m_filePath;
+    ms.tokenType = sisters[index].m_tokenType;
     ms.nextSister = nullptr;
     ms.totalSisters = sisterCount;
     ms.sisterIndex = sisterIndex;
@@ -225,30 +220,19 @@ void RealityDataDownload::AddSisterFiles(FileTransfer* ft, bvector<url_file_pair
         AddSisterFiles(sisFT, sisters, index, sisterCount, sisterIndex + 1);
     }
 
-RealityDataDownload::RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters)
+RealityDataDownload::RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters) :
+    RealityDataDownload()
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
     m_pCurlHandle = curl_multi_init();
-    m_pProgressFunc = nullptr;
-    m_pHeartbeatFunc = nullptr;
-    m_pStatusFunc = nullptr;
-    m_certPath = WString();
-
-    m_curEntry = 0;
+    
     m_nbEntry = pi_Link_File_wMirrors_wSisters.size();
     m_pEntries = new FileTransfer[m_nbEntry];
     size_t sisterCount, mirrorCount;
     for (size_t i = 0; i<m_nbEntry; ++i)
         {
-        m_pEntries[i].iAppend = 0;
-        m_pEntries[i].nbRetry = 0;
-        m_pEntries[i].index = i;
-
-        m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
-        m_pEntries[i].filesize = 0;
-        m_pEntries[i].fromCache = true;                                 // from cache if possible by default
-        m_pEntries[i].progressStep = 0.01;
+        InitEntry(i);
 
         mirrorCount = pi_Link_File_wMirrors_wSisters[i].size();
         
@@ -428,6 +412,16 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
     return &m_dlReport;
     }
 
+void RealityDataDownload::SetProxy(CURL* pCurl, Utf8StringCR proxyUrl, Utf8StringCR proxyCreds)
+    {
+    curl_easy_setopt(pCurl, CURLOPT_PROXY, proxyUrl.c_str());
+    curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+    if (!proxyCreds.empty())
+        {
+        curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, proxyCreds.c_str());
+        }
+    }
+
 //
 // false --> Curl error or file already there, skip download.
 //
@@ -457,26 +451,60 @@ SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft, bool isR
     CURL *pCurl = NULL;
 
     pCurl = curl_easy_init();
+    Mirror_struct& currentMirror = ft->mirrors.front();
+
     if (pCurl)
         {
-        curl_easy_setopt(pCurl, CURLOPT_URL, ft->mirrors.front().url); 
+        Utf8String header = "";
+        if(m_pTokenFunc != nullptr && !currentMirror.tokenType.empty())
+            {
+            m_pTokenFunc(currentMirror.tokenType, currentMirror.url, header);
+            }
+
+        curl_easy_setopt(pCurl, CURLOPT_URL, currentMirror.url);
         if (!WString::IsNullOrEmpty(m_certPath.c_str()))
             {
             curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
             curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
             }
-        curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
+
+        if(!header.empty())
+            {
+            struct curl_slist *headers = NULL;
+            headers = curl_slist_append(headers, header.c_str());
+            curl_easy_setopt(pCurl, CURLOPT_HTTPHEADER, headers);
+            curl_easy_setopt(pCurl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+            }
+        else
+            curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
+
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
-        if (!m_proxyUrl.empty())
+        if (m_pProxyFunc != nullptr)
             {
-            curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
-            curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
-            if (!m_proxyCreds.empty())
+            Utf8String proxyUrl, proxyCreds;
+            ProxyStatus proxyResult = m_pProxyFunc(currentMirror.url, proxyUrl, proxyCreds);
+            switch(proxyResult)
                 {
-                curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
+            case ProxyStatus::ReturnedProxy:
+                    {
+                    SetProxy(pCurl, proxyUrl, proxyCreds);
+                    break;
+                    }
+                case ProxyStatus::DefaultProxy:
+                    {
+                    SetProxy(pCurl, m_proxyUrl, m_proxyCreds);
+                    break;
+                    }
+                case ProxyStatus::NoProxy:
+                    break;
+                default: //ProxyStatus::Abort
+                    return SetupCurlStatus::Error;
                 }
             }
+        else if (!m_proxyUrl.empty())
+            SetProxy(pCurl, m_proxyUrl, m_proxyCreds);
+
         curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
         curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
 
@@ -641,8 +669,6 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
                 if(status > 0)
                     fwrite( read_buffer, status, 1, out );
                 } while (status > 0 );
-
-            
             fclose( out );
             // Set the date to original file
             DateTime fileTime(DateTime::Kind::Local, (uint16_t)file_info.tmu_date.tm_year, (uint8_t)(file_info.tmu_date.tm_mon + 1), (uint8_t)file_info.tmu_date.tm_mday, (uint8_t)file_info.tmu_date.tm_hour, (uint8_t)file_info.tmu_date.tm_min, (uint8_t)file_info.tmu_date.tm_sec);
