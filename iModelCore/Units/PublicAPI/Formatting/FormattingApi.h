@@ -27,7 +27,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameter)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatDictionary)
-//DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
@@ -617,37 +616,5 @@ public:
 //
 //    };
 
-/*
-!!!!!!!!!This section will be removed as soon as the correction for KOQ will be completed 
-struct KindOfQuantity
-    {
-    friend struct ECSchema;
-    friend struct SchemaXmlWriter;
-    friend struct SchemaXmlReaderImpl;
-
-    private:
-        ECSchemaCR m_schema;
-        Utf8String m_fullName; //cached nsprefix:name representation
-        ECValidatedName m_validatedName; //wraps name and displaylabel
-        Utf8String m_description;
-
-        //! Unit used for persisting the information
-        Utf8String m_persistenceUnit;
-        //! Precision
-        uint32_t m_persistencePrecision;
-        //! Unit used for presenting the information
-        Utf8String m_defaultPresentationUnit;
-        bvector<Utf8String> m_alternativePresentationUnitList;
-
-        
-        ////Quantity m_persistenceResolution;     // 1.0e-6 M   100.000003 1.100001
-        double m_relativeError;   // a parameter related to the accuracy of the measurement methods.
-        // Certainty, Accuracy, MarginOfError, Error, Tolerance, 
-
-        FormatUnitSet m_persistenceFUS;
-        bvector<FormatUnitSet> m_presentationFUS;  
-
-        mutable KindOfQuantityId m_kindOfQuantityId;
-*/
 
 END_BENTLEY_FORMATTING_NAMESPACE
