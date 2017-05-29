@@ -410,6 +410,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
     else
         {
         //default name: FK_<schema alias>_<rel class name>
+        //BeAssert(false && "Deprecated code. Should not be reached anymore as a nav prop is always needed");
         fkColName.assign(DEFAULT_FK_COL_PREFIX).append(relClass.GetSchema().GetAlias()).append("_").append(relClass.GetName());
         }
 
@@ -496,7 +497,10 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& 
         relECClassIdColName.append(RELECCLASSID_COLNAME_TOKEN);
         }
     else if (!fkCol.GetName().StartsWithIAscii(DEFAULT_FK_COL_PREFIX) && !fkCol.IsShared())
+        {
+        BeAssert(false && "Deprecated code. Should not be reached anymore as a nav prop is always needed");
         relECClassIdColName.assign(fkCol.GetName()).append(RELECCLASSID_COLNAME_TOKEN);
+        }
     else
         {
         //default name: RelECClassId_<schema alias>_<rel class name>

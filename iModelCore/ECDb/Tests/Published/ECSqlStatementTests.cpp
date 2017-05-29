@@ -5337,46 +5337,28 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     ASSERT_EQ(2, rowCount) << stmt.GetECSql();
     }
 
-    //UPDATE Mixin non-polymorphically (-> noop)
+    //UPDATE Mixin non-polymorphically (not allowed)
     {
-    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
-    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "UPDATE ONLY ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
     }
 
-    //UPDATE Mixin polymorphically
+    //UPDATE Mixin polymorphically (not allowed)
     {
-    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
-    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "UPDATE ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
     }
 
-    //DELETE Mixin non-polymorphically (-> noop)
+    //DELETE Mixin non-polymorphically (not allowed)
     {
-    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ts.IIsGeometricModel WHERE Is2d=False"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    //the ECSQL deletes 2 models which results in 4 rows deleted (2 in primary and 2 in joined table)
-    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
-    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "DELETE FROM ONLY ts.IIsGeometricModel WHERE Is2d=False"));
     }
 
-    //DELETE Mixin polymorphically
+    //DELETE Mixin polymorphically (not allowed)
     {
-    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ts.IIsGeometricModel WHERE Is2d=False"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    //the ECSQL deletes 2 models which results in 4 rows deleted (2 in primary and 2 in joined table)
-    ASSERT_EQ(4, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
-    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "DELETE FROM ts.IIsGeometricModel WHERE Is2d=False"));
     }
     }
 

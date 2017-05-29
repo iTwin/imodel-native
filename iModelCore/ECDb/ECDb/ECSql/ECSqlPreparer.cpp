@@ -483,6 +483,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     const ECSqlType currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
     ClassMap const& classMap = exp.GetInfo().GetMap();
 
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.IsPolymorphic()));
+    if (!policy.IsSupported())
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;

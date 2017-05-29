@@ -87,26 +87,21 @@ struct ClassIsValidInECSqlPolicyAssertion final : PolicyAssertion
     {
     private:
         ClassMap const& m_classMap;
-        Nullable<ECSqlType> m_ecSqlTypeFilter;
+        ECSqlType m_ecSqlTypeFilter;
         bool m_isPolymorphicClassExpression = false;
 
     public:
         ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
-            : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression)
-            {}
-        ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter)
-            : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_ecSqlTypeFilter(ecSqlTypeFilter) {}
-        explicit ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap) : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap) {}
+            : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression) {}
 
         ClassMap const& GetClassMap() const { return m_classMap; }
 
         //! Gets the ECSQL type for which the policy is requested.
         //! @return ECSQL type filter
-        Nullable<ECSqlType> GetECSqlType() const { return m_ecSqlTypeFilter; }
+        ECSqlType GetECSqlType() const { return m_ecSqlTypeFilter; }
 
         //! Gets a value indicating whether the policy is requested for a polymorphic class expression or
         //! not
-        //! @remarks Don't call this if The ECSqlType filter is unset.
         //! @return true if the policy for a polymorphic class expression is requested. false otherwise
         bool IsPolymorphicClassExpression() const { return m_isPolymorphicClassExpression; }
     };

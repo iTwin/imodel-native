@@ -85,8 +85,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
     private:
         static Utf8CP DEFAULT_FK_COL_PREFIX;
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
-        mutable Nullable<Utf8String>  m_idAccessString;
-        mutable Nullable<Utf8String>  m_relClassIdAccessString;
 
         //======================================================================================
         // @bsiclass                                                     Affan.Khan      01/2015
@@ -205,28 +203,11 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ECN::ECRelationshipEnd GetForeignEnd() const;
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
-        Utf8CP GetAccessStringForId() const
-            {
-            if (m_idAccessString.IsNull())
-                m_idAccessString.ValueR().assign(GetClass().GetFullName()).append("." ECDBSYS_PROP_NavPropId);
-
-            return m_idAccessString.Value().c_str();
-            }
-        Utf8CP GetAccessStringForRelClassId() const
-            {
-            if (m_relClassIdAccessString.IsNull())
-                m_relClassIdAccessString.ValueR().assign(GetClass().GetFullName()).append("." ECDBSYS_PROP_NavPropRelECClassId);
-
-            return m_relClassIdAccessString.Value().c_str();
-            }
 
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
-        Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
-            {
-            Utf8String temp = GetRelationshipClass().GetFullName();
-            temp.append(".").append(accessString);
-            return temp;
-            }
+        //WIP: This code must go elsewhere. It is only used by the column factory
+        Utf8String GetAccessStringForId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropId); }
+        Utf8String GetAccessStringForRelClassId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropRelECClassId); }
     };
 
 /*==========================================================================
