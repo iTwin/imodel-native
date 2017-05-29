@@ -1132,7 +1132,7 @@ ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult
     if (NULL != outer)
         return outer->GetValue(evalResult, primaryList, Stack(contextsStack, *this), startIndex);
 
-    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "SymbolExpressionContext::_GetValue: UnknownSymbol");
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UnknownSymbol: %s", ident).c_str());
     return ExpressionStatus::UnknownSymbol;
     }
 
@@ -1159,7 +1159,7 @@ ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalRe
     if (NULL != outer)
         return outer->GetValue(evalResult, primaryList, Stack(contextsStack, *this), startIndex);
 
-    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "SymbolExpressionContext::_GetReference: UnknownSymbol");
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UnknownSymbol: %s", ident).c_str());
     return ExpressionStatus::UnknownSymbol;
     }
 
