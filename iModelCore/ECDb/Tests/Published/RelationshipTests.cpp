@@ -1300,6 +1300,7 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
                          "          </IsMixin>"
                          "      </ECCustomAttributes>"
                          "      <ECProperty propertyName='www' typeName='long' />"
+                         "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward' />"
                          "  </ECEntityClass>"
                          "  <ECRelationshipClass typeName='CarHasEndPoint' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
                          "        <ECCustomAttributes>"
@@ -1319,13 +1320,11 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
                          "      <BaseClass>Equipment</BaseClass>"
                          "      <BaseClass>IEndPoint</BaseClass>"
                          "      <ECProperty propertyName='Volumn' typeName='double' />"
-                         "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward' />"
                          "  </ECEntityClass>"
                          "  <ECEntityClass typeName='Sterring'>"
                          "      <BaseClass>Equipment</BaseClass>"
                          "      <BaseClass>IEndPoint</BaseClass>"
                          "      <ECProperty propertyName='Type' typeName='string' />"
-                         "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward' />"
                          "  </ECEntityClass>"
                          "  <ECEntityClass typeName='Tire'>"
                          "      <BaseClass>Equipment</BaseClass>"
@@ -1336,16 +1335,16 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     GetECDb().SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Car            (Name                ) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id        ) VALUES ('CODE-1','www1', 2000.0,1 )"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Sterring       (Code, www, Type,Car.Id          ) VALUES ('CODE-2','www2', 'S-Type',1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter      ) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Car(Name) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Engine(Code, www, Volumn,Car.Id) VALUES ('CODE-1','www1', 2000.0,1 )"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Sterring(Code, www, Type,Car.Id) VALUES ('CODE-2','www2', 'S-Type',1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Tire(Code, Diameter) VALUES ('CODE-3', 15.0)"));
 
 
     GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT  SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1, stmt.GetValueInt64(0));
     ASSERT_EQ(50, stmt.GetValueInt64(1));

@@ -473,7 +473,7 @@ TEST_F(ECSqlExecutionFrameworkTests, IntoTests)
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.TH5 (S, S1, S3, S5) VALUES ('hello', 'hello1', 'hello3', 'hello5')");
     STATEMENT_EXECUTE_SUCCESS();
 
-    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.TH3 VALUES ('hello', NULL, NULL, 'hello1', 'hello2', 'hello3')");
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.TH3 VALUES ('hello', NULL, NULL, NULL, 'hello1', 'hello2', 'hello3')");
     STATEMENT_EXECUTE_SUCCESS();
 
     //*******************************************************

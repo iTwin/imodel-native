@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlUpdateTestDataset.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlUpdateTestDataset.h"
@@ -850,78 +850,64 @@ ECSqlTestDataset ECSqlUpdateTestDataset::TargetClassTests (int rowCountPerClass)
     //*******************************************************
     //Updating classes with base classes
     //*******************************************************
-    Utf8CP ecsql = "UPDATE ONLY ecsql.TH5 SET S='hello', S1='hello1', S3='hello3', S5='hello5'";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
+    ECSqlTestFrameworkHelper::AddNonSelect (dataset, "UPDATE ONLY ecsql.TH5 SET S='hello', S1='hello1', S3='hello3', S5='hello5'", true);
+
+    //*******************************************************
+    // Abstract classes
+    //by contract non-polymorphic updates on abstract classes are valid, but are a no-op
+    //*******************************************************
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, "UPDATE ecsql.Abstract SET I=123, S='hello'", true);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, "UPDATE ONLY ecsql.Abstract SET I=123, S='hello'", true);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, "UPDATE ecsql.AbstractNoSubclasses SET I=123, S='hello'", true);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, "UPDATE ONLY ecsql.AbstractNoSubclasses SET I=123, S='hello'", true);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "UPDATE ecsql.PSAHasMyMixin SET SourceECInstanceId=?", ECSqlExpectedResult::Category::Invalid, "ECRels cannot be updated.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "UPDATE ONLY ecsql.PSAHasMyMixin SET SourceECInstanceId=?", ECSqlExpectedResult::Category::Invalid, "ECRels cannot be updated.");
+    //*******************************************************
+    // mixins
+    //*******************************************************
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "UPDATE ecsql.MyMixin SET MixinCode='new'", ECSqlExpectedResult::Category::Invalid, "Mixins are invalid in UPDATE statements.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "UPDATE ONLY ecsql.MyMixin SET MixinCode='new'", ECSqlExpectedResult::Category::Invalid, "Mixins are invalid in UPDATE statements.");
 
     //*******************************************************
     // Updating structs
     //*******************************************************
-    //structs which are domain classes
-    ecsql = "UPDATE ONLY ecsql.SAStruct SET PStructProp.i=123, PStructProp.l=100000, PStructProp.dt=DATE '2013-10-10', PStructProp.b=False";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in UPDATE statements.");
-
-    //structs which are not domain classes. They cannot be updated, so this always returns 0 rows affected.
-    ecsql = "UPDATE ONLY ecsql.PStruct SET i=123, l=10000, dt=DATE '2013-10-10', b=False";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in UPDATE statements.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "UPDATE ONLY ecsql.SAStruct SET PStructProp.i=123, PStructProp.l=100000, PStructProp.dt=DATE '2013-10-10', PStructProp.b=False", ECSqlExpectedResult::Category::Invalid, "Structs are invalid in UPDATE statements.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "UPDATE ONLY ecsql.PStruct SET i=123, l=10000, dt=DATE '2013-10-10', b=False", ECSqlExpectedResult::Category::Invalid, "Structs are invalid in UPDATE statements.");
 
     //*******************************************************
     // Updating CAs
     //*******************************************************
-    ecsql = "UPDATE ONLY bsca.DateTimeInfo SET DateTimeKind='Utc'";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Custom Attributes classes are invalid in UPDATE statements.");
-
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, "UPDATE ONLY bsca.DateTimeInfo SET DateTimeKind='Utc'", ECSqlExpectedResult::Category::Invalid, "Custom Attributes classes are invalid in UPDATE statements.");
 
     //*******************************************************
     // Unmapped classes
     //*******************************************************
-    ecsql = "UPDATE ONLY ecsql.PUnmapped SET I=123, D=3.14";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Unmapped classes cannot be used in UPDATE statements.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, "UPDATE ONLY ecsql.PUnmapped SET I=123, D=3.14", ECSqlExpectedResult::Category::Invalid, "Unmapped classes cannot be used in UPDATE statements.");
 
-    //*******************************************************
-    // Abstract classes
-    //*******************************************************
-    //by contract non-polymorphic updates on abstract classes are valid, but are a no-op
-    ecsql = "UPDATE ONLY ecsql.Abstract SET I=123, S='hello'";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
-
-    ecsql = "UPDATE ONLY ecsql.AbstractNoSubclasses SET I=123, S='hello'";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
 
     //*******************************************************
     // Subclasses of abstract class
     //*******************************************************
-    ecsql = "UPDATE ONLY ecsql.Sub1 SET I=123, S='hello', Sub1I=100123";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
+    ECSqlTestFrameworkHelper::AddNonSelect (dataset, "UPDATE ONLY ecsql.Sub1 SET I=123, S='hello', Sub1I=100123", true);
 
     //*******************************************************
     // Empty classes
     //*******************************************************
-    ecsql = "UPDATE ONLY ecsql.Empty SET ECInstanceId = ?";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Empty classes cannot be used in UPDATE statements.");
-
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, "UPDATE ONLY ecsql.Empty SET ECInstanceId = ?", ECSqlExpectedResult::Category::Invalid, "Empty classes cannot be used in UPDATE statements.");
 
     //*******************************************************
     // Unsupported classes
     //*******************************************************
     //AnyClass is unsupported, but doesn't have properties, so it cannot be used in an UPDATE statement because of that in the first place
-
-    ecsql = "UPDATE ONLY bsm.InstanceCount SET ECSchemaName='Foo', ECClassName='Goo', Count=103";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, "UPDATE ONLY bsm.InstanceCount SET ECSchemaName='Foo', ECClassName='Goo', Count=103", ECSqlExpectedResult::Category::Invalid);
 
     //*******************************************************
     // Missing schema alias / not existing ECClasses / not existing ECProperties
     //*******************************************************
-    ecsql = "UPDATE ONLY PSA SET I=123, L=100000";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema alias.");
-
-    ecsql = "UPDATE ONLY ecsql.BlaBla SET I=123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY blabla.PSA SET I=123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.PSA SET Garbage='bla', I=123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "One of the properties does not exist in the target class.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, "UPDATE ONLY PSA SET I=123, L=100000", ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema alias.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, "UPDATE ONLY ecsql.BlaBla SET I=123", ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, "UPDATE ONLY blabla.PSA SET I=123", ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, "UPDATE ONLY ecsql.PSA SET Garbage='bla', I=123", ECSqlExpectedResult::Category::Invalid, "One of the properties does not exist in the target class.");
 
     return dataset;
     }

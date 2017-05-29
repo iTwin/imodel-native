@@ -75,25 +75,6 @@ struct RelationshipClassMap : ClassMap
 
 typedef RelationshipClassMap const& RelationshipClassMapCR;
 
-//struct RelationshipClassEndTableMapEx final : RelationshipClassMap
-//    {
-//    private:
-//        RelationshipClassEndTableMapEx(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& ms)
-//            : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecClass, ms)
-//            {}
-//        
-//        ClassMappingStatus _Map(ClassMappingContext&) override;
-//        BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
-//        BentleyStatus ValidateMapping() const;
-//    public:
-//        BentleyStatus AppendForeignEnd(NavigationPropertyMap& propertyMap);
-//        BentleyStatus SetPrimaryEnd(ClassMapCR classMap);
-//        BentleyStatus Finish();
-//        ECN::ECRelationshipEnd GetForeignEnd() const { GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECN::ECRelationshipEnd_Source : ECN::ECRelationshipEnd_Target; }
-//        ECN::ECRelationshipEnd GetReferencedEnd() const { GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECN::ECRelationshipEnd_Target : ECN::ECRelationshipEnd_Source; }
-//    };
-
-
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      06/2012
 +===============+===============+===============+===============+===============+======*/
@@ -104,8 +85,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
     private:
         static Utf8CP DEFAULT_FK_COL_PREFIX;
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
-        mutable std::unique_ptr<Utf8String>  m_idAccessstring;
-        mutable std::unique_ptr<Utf8String>  m_relClassIdAccessstring;
 
         //======================================================================================
         // @bsiclass                                                     Affan.Khan      01/2015
@@ -224,28 +203,11 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ECN::ECRelationshipEnd GetForeignEnd() const;
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
-        Utf8CP GetAcccessStringForId() const
-            {
-            if (m_idAccessstring == nullptr)
-                m_idAccessstring = std::unique_ptr<Utf8String>(new Utf8String(GetClass().GetFullName() + Utf8String(".Id")));
-
-            return m_idAccessstring->c_str();
-            }
-        Utf8CP GetAcccessStringForRelClassId() const
-            {
-            if (m_relClassIdAccessstring == nullptr)
-                m_relClassIdAccessstring = std::unique_ptr<Utf8String>(new Utf8String(GetClass().GetFullName() + Utf8String(".RelClassId")));
-
-            return m_relClassIdAccessstring->c_str();
-            }
 
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
-        Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
-            {
-            Utf8String temp = GetRelationshipClass().GetFullName();
-            temp.append(".").append(accessString);
-            return temp;
-            }
+        //WIP: This code must go elsewhere. It is only used by the column factory
+        Utf8String GetAccessStringForId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropId); }
+        Utf8String GetAccessStringForRelClassId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropRelECClassId); }
     };
 
 /*==========================================================================

@@ -25,6 +25,19 @@ ECSqlTestDataset ECSqlDeleteTestDataset::FromTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
 
     //*******************************************************
+    // Delete abstract classes
+    //*******************************************************
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, "DELETE FROM ecsql.Abstract", true);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, "DELETE FROM ONLY ecsql.Abstract", true);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, "DELETE FROM ecsql.PSAHasMyMixin", true);
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, "DELETE FROM ONLY ecsql.PSAHasMyMixin", true);
+    //*******************************************************
+    // Delete mixins
+    //*******************************************************
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "DELETE FROM ecsql.MyMixin", ECSqlExpectedResult::Category::Invalid, "Mixins are invalid in DELETE statements.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "DELETE FROM ONLY ecsql.MyMixin", ECSqlExpectedResult::Category::Invalid, "Mixins are invalid in DELETE statements.");
+
+    //*******************************************************
     // Delete structs
     //*******************************************************
     //structs which are domain classes

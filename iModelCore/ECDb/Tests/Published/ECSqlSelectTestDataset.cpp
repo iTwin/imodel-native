@@ -2465,16 +2465,16 @@ ECSqlTestDataset ECSqlSelectTestDataset::PolymorphicTests( int rowCountPerClass 
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TH2";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 2, rowCountPerClass);
-
-    ecsql = "SELECT * FROM ONLY ecsql.TH3";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 2, rowCountPerClass);
 
-    ecsql = "SELECT * FROM ONLY ecsql.TH4";
+    ecsql = "SELECT * FROM ONLY ecsql.TH3";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 7 + 2, rowCountPerClass);
 
-    ecsql = "SELECT * FROM ONLY ecsql.TH5";
+    ecsql = "SELECT * FROM ONLY ecsql.TH4";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 8 + 2, rowCountPerClass);
+
+    ecsql = "SELECT * FROM ONLY ecsql.TH5";
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 9 + 2, rowCountPerClass);
 
     //Do polymorphic query on TablePerHierarchy    
     ecsql = "SELECT * FROM ecsql.THBase";
@@ -2484,16 +2484,16 @@ ECSqlTestDataset ECSqlSelectTestDataset::PolymorphicTests( int rowCountPerClass 
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 2, rowCountPerClass * 5);
 
     ecsql = "SELECT * FROM ecsql.TH2";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 2, rowCountPerClass * 4);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 2, rowCountPerClass * 4);
 
     ecsql = "SELECT * FROM ecsql.TH3";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 2, rowCountPerClass * 3);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 7 + 2, rowCountPerClass * 3);
 
     ecsql = "SELECT * FROM ecsql.TH4";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 7 + 2, rowCountPerClass * 2);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 8 + 2, rowCountPerClass * 2);
 
     ecsql = "SELECT * FROM ecsql.TH5";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 8 + 2, rowCountPerClass * 1);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 9 + 2, rowCountPerClass * 1);
 
     //Do non-polymorphic query on TablePerClass    
     ecsql = "SELECT * FROM ONLY ecsql.TCBase";

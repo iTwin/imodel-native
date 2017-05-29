@@ -26,26 +26,25 @@ void ColumnMaps::Insert(SingleColumnDataPropertyMap const& propertyMap)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-Utf8CP ColumnMaps::Copy(Utf8CP str)
+Utf8StringCR ColumnMaps::Copy(Utf8StringCR str)
     {
-    Utf8String strObject = str;
-    auto itor = m_strings.find(strObject);
+    auto itor = m_strings.find(str);
     if (itor != m_strings.end())
-        return (*itor).c_str();
+        return *itor;
 
-    return (*(m_strings.insert(strObject).first)).c_str();
+    return *(m_strings.insert(str).first);
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-void ColumnMaps::Insert(Utf8CP accessString, DbColumn const& column, bool newlyMappedColumn)
+void ColumnMaps::Insert(Utf8StringCR accessString, DbColumn const& column, bool newlyMappedColumn)
     {
-    //Assert(accessString);
-    accessString = Copy(accessString);
-    m_maps.insert(make_bpair(accessString, &column));
+    Utf8StringCR copiedAccessString = Copy(accessString);
+    m_maps.insert(make_bpair(copiedAccessString.c_str(), &column));
     n_columns.insert(&column);
     if (newlyMappedColumn)
-        m_newMappedColumns.insert(accessString);
+        m_newMappedColumns.insert(copiedAccessString.c_str());
     }
 
 //------------------------------------------------------------------------------------------
@@ -163,8 +162,8 @@ void ColumnMapContext::AppendRelationshipColumnMaps(ColumnMaps& columnMaps, Clas
 
     if (relClassId != nullptr || id != nullptr)
         {
-        columnMaps.Insert(endTableMap.GetAcccessStringForId(), id->GetColumn());
-        columnMaps.Insert(endTableMap.GetAcccessStringForRelClassId(), relClassId->GetColumn());
+        columnMaps.Insert(endTableMap.GetAccessStringForId(), id->GetColumn());
+        columnMaps.Insert(endTableMap.GetAccessStringForRelClassId(), relClassId->GetColumn());
         }
     }
 
@@ -488,7 +487,7 @@ ECDbCR ClassMapColumnFactory::GetECDb() const { return m_classMap.GetDbMap().Get
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8CP accessString) const
+DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     std::function<ECN::ECClassId(ECN::ECPropertyCR, Utf8StringCR)> getPersistenceClassId = [&] (ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString)
         {
@@ -606,7 +605,7 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, DbColumn::CreateParams const& params, Utf8CP accessString) const
+DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     //Defining a col name for a shared column is a DB thing and DB CAs are taken strictly.
     if (params.IsColumnNameFromPropertyMapCA())
@@ -734,7 +733,7 @@ bool ClassMapColumnFactory::IsColumnInUse(DbColumn const& column) const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8CP accessString, DbColumn* column) const
+DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const
     {
     GetColumnMaps()->Insert(accessString, *column, true);
     return column;
@@ -743,9 +742,9 @@ DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8CP accessString, DbColumn
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8CP accessString) const
+DbColumn* ClassMapColumnFactory::Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const
     {
-    if (DbColumn* column = GetColumnMaps()->FindP(accessString))
+    if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
         if (IsCompatible(*column, type, param))
             return column;

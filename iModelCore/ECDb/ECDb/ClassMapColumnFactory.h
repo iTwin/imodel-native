@@ -26,23 +26,23 @@ struct ColumnMaps
     typedef std::unique_ptr<ColumnMaps> Ptr;
     private:
         bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> m_maps;
-        bset< DbColumn const*> n_columns;
-        bset< Utf8CP, CompareIUtf8Ascii> m_newMappedColumns;
+        bset<DbColumn const*> n_columns;
+        bset<Utf8CP, CompareIUtf8Ascii> m_newMappedColumns;
         bset<Utf8String, CompareIUtf8Ascii> m_strings;
 
-    private:
-        Utf8CP Copy(Utf8CP);
+        Utf8StringCR Copy(Utf8StringCR);
 
     public:
         ColumnMaps() {}
         ~ColumnMaps() {}
+
         bool IsNew(Utf8CP accessString) const { return m_newMappedColumns.find(accessString) != m_newMappedColumns.end(); }
         bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> const& GetEntries() const { return m_maps; }
         bset< Utf8CP, CompareIUtf8Ascii>  const& GetNewlyAddedAccessStrings() const { return m_newMappedColumns; }
         bool IsColumnInUsed(DbColumn const& column) const;
-        void Insert(Utf8CP accessString, DbColumn const& column, bool newlyMappedColumn = false);
+        void Insert(Utf8StringCR accessString, DbColumn const& column, bool newlyMappedColumn = false);
         void Insert(SingleColumnDataPropertyMap const& propertyMap);
-        DbColumn * FindP(Utf8CP accessString) const
+        DbColumn* FindP(Utf8CP accessString) const
             {
             auto itor = m_maps.find(accessString);
             if (itor != m_maps.end())
@@ -129,10 +129,10 @@ struct ClassMapColumnFactory : NonCopyableClass
         bool IsColumnInUse(DbColumn const& column) const;
         ColumnMaps* GetColumnMaps() const;
         ECDbCR GetECDb() const;
-        DbColumn* RegisterColumnMap(Utf8CP accessString, DbColumn* column) const;
+        DbColumn* RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const;
         bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
-        DbColumn* AllocateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8CP) const;
-        DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8CP) const;
+        DbColumn* AllocateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR) const;
+        DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8StringCR) const;
 
         static uint32_t MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
 
@@ -143,7 +143,7 @@ struct ClassMapColumnFactory : NonCopyableClass
         void ReserveSharedColumns(Utf8StringCR propertyName) const;
         void ReserveSharedColumns(uint32_t columnsRequired) const;
         void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }
-        DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8CP accessString) const;
+        DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const;
     };
 
 //======================================================================================

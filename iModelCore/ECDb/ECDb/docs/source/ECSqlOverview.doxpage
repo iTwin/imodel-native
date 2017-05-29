@@ -32,6 +32,18 @@
 
     @ref ECSQLSamples provides ECSQL @b example statements to illustrate the various features of ECSQL.
 
+    @section ECSqlAndClassKinds ECSQL and ECClass kinds
+
+    |ECClass kind    | SELECT (polym.) | SELECT (non-polym.) | INSERT | UPDATE (polym.) | UPDATE (non-polym.) | DELETE (polym.) | DELETE (non-polym.)|
+    |----------------|-----------------|---------------------|--------|-----------------|---------------------|-----------------|--------------------|
+    | Entity         | yes             | yes                 | yes    | yes             | yes                 | yes             | yes                |
+    | Abstract entity| yes             | yes                 | no     | yes             | yes (affects 0 rows) | yes            | yes (affects 0 rows) |
+    | Mixin          | yes             | yes                 | no     | no              | no                  | no              | no                 |
+    | Relationship   | yes             | yes                 | yes    | no              | no                  | yes             | yes                |
+    | Abstract relationship | yes      | yes                 | no     | no              | no                  | yes             | yes (affects 0 rows) |
+    | Struct         | no              | no                  | no     | no              | no                  | no              | no                 |
+    | Custom attribute | no            | no                  | no     | no              | no                  | no              | no                 |
+
     @section ECSqlECInstanceIdDetails ECInstanceId
     The ECInstanceId is the unique identifier for an ECInstance. In @ref ECSQLOverview you use the
     reserved token @c %ECInstanceId to refer to the ECInstanceId of an instance,

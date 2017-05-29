@@ -455,7 +455,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     PrepareInfo prepareInfo(ctx, exp.GetAs<InsertStatementExp>());
 
     ClassMap const& classMap = prepareInfo.GetClassNameExp().GetInfo().GetMap();
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, false /* INSERT is always non-polymorphic*/));
     if (!policy.IsSupported())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());

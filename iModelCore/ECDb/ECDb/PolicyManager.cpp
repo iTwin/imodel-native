@@ -94,81 +94,74 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
 
     BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
 
-    if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && !assertion.GetClassMap().IsMappedToSingleTable()
-        && assertion.GetECSqlType() != ECSqlType::Select)
+    const ECSqlType ecsqlType = assertion.GetECSqlType();
+    if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
         {
-        Utf8String notSupportedMessage;
-        notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",
-                                    className.c_str());
-        return Policy::CreateNotSupported(notSupportedMessage);
-        }
-
-    //if policy for specific ECSQL type was requested, check that now
-    if (assertion.UseECSqlTypeFilter())
-        {
-        const ECSqlType ecsqlType = assertion.GetECSqlType();
-        if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
+        if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
             {
-            if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
+            Utf8String notSupportedMessage;
+            notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
+                                        className.c_str());
+
+            return Policy::CreateNotSupported(notSupportedMessage);
+            }
+
+        if (ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin())
+            {
+            Utf8String notSupportedMessage;
+            notSupportedMessage.Sprintf("ECClass '%s' is a mixin which cannot be modified via ECSQL. Therefore only ECSQL SELECT statements can be used against a mixin class.",
+                                        className.c_str());
+
+            return Policy::CreateNotSupported(notSupportedMessage);
+            }
+
+        if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
+            {
+            if (!assertion.GetClassMap().IsMappedToSingleTable())
                 {
                 Utf8String notSupportedMessage;
-                notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
+                notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",
+                                            className.c_str());
+                return Policy::CreateNotSupported(notSupportedMessage);
+                }
+            else if (assertion.GetClassMap().GetTables()[0]->GetType() == DbTable::Type::Existing)
+                {
+                Utf8String notSupportedMessage;
+                notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
+                                            className.c_str());
+                return Policy::CreateNotSupported(notSupportedMessage);
+                }
+            }
+
+        if (ecsqlType == ECSqlType::Insert)
+            {
+            //Inserting into abstract classes is not possible (by definition of abstractness)
+            if (ecClass.GetClassModifier() == ECClassModifier::Abstract)
+                {
+                Utf8String notSupportedMessage;
+                notSupportedMessage.Sprintf("ECClass '%s' is an abstract class which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.",
                                             className.c_str());
 
                 return Policy::CreateNotSupported(notSupportedMessage);
                 }
 
-            if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
-                {
-                std::vector<DbTable*> tables = assertion.GetClassMap().GetTables();
-                if (tables.empty())
-                    {
-                    BeAssert(false && "ClassMap.GetTables is not expected to be empty.");
-                    Utf8String notSupportedMessage;
-                    notSupportedMessage.Sprintf("Programmer error: ECRelationshipClass '%s' is not mapped to a table.",
-                                                className.c_str());
-                    return Policy::CreateNotSupported(notSupportedMessage);
-                    }
-
-                if (tables[0]->GetType() == DbTable::Type::Existing)
-                    {
-                    Utf8String notSupportedMessage;
-                    notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table on its Foreign Key end, not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the relationship class.",
-                                                className.c_str());
-                    return Policy::CreateNotSupported(notSupportedMessage);
-                    }
-                }
-
-            if (ecsqlType == ECSqlType::Insert)
-                {
-                //Inserting into abstract classes is not possible (by definition of abstractness)
-                if (ecClass.GetClassModifier() == ECClassModifier::Abstract)
-                    {
-                    Utf8String notSupportedMessage;
-                    notSupportedMessage.Sprintf("ECClass '%s' is an abstract class which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.",
-                                                className.c_str());
-
-                    return Policy::CreateNotSupported(notSupportedMessage);
-                    }
-
-                }
-
-            if (assertion.IsPolymorphicClassExpression())
-                {
-                for (Partition const& horizPartition : assertion.GetClassMap().GetStorageDescription().GetHorizontalPartitions())
-                    {
-                    if (horizPartition.GetTable().GetType() == DbTable::Type::Existing)
-                        {
-                        Utf8String notSupportedMessage;
-                        notSupportedMessage.Sprintf("A subclass of ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore polymorphic ECSQL UPDATEs or DELETEs cannot be performed against that class.",
-                                                    className.c_str());
-
-                        return Policy::CreateNotSupported(notSupportedMessage);
-                        }
-                    }
-                }
-
             }
+
+        if (assertion.IsPolymorphicClassExpression())
+            {
+            for (Partition const& horizPartition : assertion.GetClassMap().GetStorageDescription().GetHorizontalPartitions())
+                {
+                if (horizPartition.GetTable().GetType() == DbTable::Type::Existing)
+                    {
+                    Utf8String notSupportedMessage;
+                    notSupportedMessage.Sprintf("A subclass of ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore polymorphic ECSQL UPDATEs or DELETEs cannot be performed against that class.",
+                                                className.c_str());
+
+                    return Policy::CreateNotSupported(notSupportedMessage);
+                    }
+                }
+            }
+
         }
 
     return Policy::CreateSupported();

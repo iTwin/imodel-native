@@ -284,8 +284,19 @@ ECSqlTestDataset ECSqlInsertTestDataset::IntoTests()
     ecsql = "INSERT INTO ecsql.TH5 (S, S1, S3, S5) VALUES ('hello', 'hello1', 'hello3', 'hello5')";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql);
 
-    ecsql = "INSERT INTO ecsql.TH3 VALUES ('hello', NULL, NULL, 'hello1', 'hello2', 'hello3')";
+    ecsql = "INSERT INTO ecsql.TH3 VALUES ('hello', NULL, NULL, NULL, 'hello1', 'hello2', 'hello3')";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql);
+
+    //*******************************************************
+    // Abstract classes
+    //*******************************************************
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "INSERT INTO ecsql.Abstract (I, S) VALUES (123, 'hello')", ECSqlExpectedResult::Category::Invalid, "Abstract classes cannot be used in INSERT statements.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "INSERT INTO ecsql.AbstractNoSubclasses (I, S) VALUES (123, 'hello')", ECSqlExpectedResult::Category::Invalid, "Abstract classes cannot be used in INSERT statements.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "INSERT INTO ecsql.PSAHasMyMixin(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)", ECSqlExpectedResult::Category::Invalid, "Anstract ECRels cannot be inserted.");
+    //*******************************************************
+    // mixins
+    //*******************************************************
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, "INSERT INTO ecsql.MyMixin(MixinCode) VALUES('new')", ECSqlExpectedResult::Category::Invalid, "Mixins are invalid in INSERT statements.");
 
     //*******************************************************
     // Inserting into structs
@@ -310,16 +321,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::IntoTests()
     ecsql = "INSERT INTO ecsql.PUnmapped (I, D) VALUES (123, 3.14)";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Unmapped classes cannot be used in INSERT statements.");
 
-    //*******************************************************
-    // Abstract classes
-    //*******************************************************
-    ecsql = "INSERT INTO ecsql.Abstract (I, S) VALUES (123, 'hello')";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Abstract classes cannot be used in INSERT statements.");
-
-    ecsql = "INSERT INTO ecsql.AbstractNoSubclasses (I, S) VALUES (123, 'hello')";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Abstract classes cannot be used in INSERT statements.");
-
-    //*******************************************************
+     //*******************************************************
     // Subclasses of abstract class
     //*******************************************************
     ecsql = "INSERT INTO ecsql.Sub1 (I, S, Sub1I) VALUES (123, 'hello', 100123)";

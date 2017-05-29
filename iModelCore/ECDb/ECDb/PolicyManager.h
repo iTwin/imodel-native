@@ -87,37 +87,21 @@ struct ClassIsValidInECSqlPolicyAssertion final : PolicyAssertion
     {
     private:
         ClassMap const& m_classMap;
-        bool m_useECSqlTypeFilter;
         ECSqlType m_ecSqlTypeFilter;
-        bool m_isPolymorphicClassExpression;
+        bool m_isPolymorphicClassExpression = false;
 
     public:
         ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
-            : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression)
-            {}
-        ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter)
-            : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(false)
-            {}
-        explicit ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap) 
-                : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(false), m_isPolymorphicClassExpression(false), m_ecSqlTypeFilter(ECSqlType::Unset)
-            {}
+            : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression) {}
 
         ClassMap const& GetClassMap() const { return m_classMap; }
 
-        //! Gets a value indicating whether the requested policy should consider the ECSQL type filter or not.
-        //! @remarks IsValidInECSqlPolicyAssertion::IsPolymorphicClassExpression is to be ignored, too, if the type filter is not considered.
-        //! @return true if the policy is requested for the ECSQL type only specified by IsValidInECSqlPolicyAssertion::GetECSqlType.
-        //!         false if the policy is requested for ignoring the ECSQL type filter.
-        bool UseECSqlTypeFilter() const { return m_useECSqlTypeFilter; }
-
         //! Gets the ECSQL type for which the policy is requested.
-        //! @remarks Don't call this if IsValidInECSqlPolicyAssertion::UseECSqlTypeFilter is false.
         //! @return ECSQL type filter
         ECSqlType GetECSqlType() const { return m_ecSqlTypeFilter; }
 
         //! Gets a value indicating whether the policy is requested for a polymorphic class expression or
         //! not
-        //! @remarks Don't call this if IsValidInECSqlPolicyAssertion::UseECSqlTypeFilter is false.
         //! @return true if the policy for a polymorphic class expression is requested. false otherwise
         bool IsPolymorphicClassExpression() const { return m_isPolymorphicClassExpression; }
     };
