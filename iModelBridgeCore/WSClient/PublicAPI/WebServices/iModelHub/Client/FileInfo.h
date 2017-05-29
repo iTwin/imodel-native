@@ -41,6 +41,7 @@ enum class InitializationState
 struct FileInfo : RefCountedBase
 {
 friend struct iModelConnection;
+friend struct iModelConnectionImpl;
 
 private:
     int32_t     m_index;
@@ -102,6 +103,7 @@ private:
     DateTime    m_createDate;
 
     friend struct iModelConnection;
+    friend struct iModelConnectionImpl;
 
     static Utf8String GetProperty(RapidJsonValueCR properties, Utf8StringCR member);
 
