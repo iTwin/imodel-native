@@ -553,7 +553,7 @@ void RealityDataConsole::SetProjectId()
 
 void RealityDataConsole::List()
     {
-    if (m_currentNode != nullptr && m_currentNode->node.GetClassName() == "Document")
+    if (m_currentNode != nullptr && m_currentNode->node.GetECClassName() == "Document")
         {
         DisplayInfo("You are currently on a document, there are no files beneath this point\n", DisplayOption::Error);
         return;
@@ -577,7 +577,7 @@ void RealityDataConsole::List()
         for (NavNode node : m_serverNodes)
             {
             nodeString = node.GetLabel();
-            if (node.GetClassName() == "Folder")
+            if (node.GetECClassName() == "Folder")
                 nodeString.append("/");
             nodeStrings.push_back(nodeString);
             }   
@@ -919,7 +919,7 @@ void RealityDataConsole::Details()
         return;
         }
     RawServerResponse rawResponse = RawServerResponse();
-    Utf8String className = m_currentNode->node.GetClassName();
+    Utf8String className = m_currentNode->node.GetECClassName();
 
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
     instanceId.ReplaceAll("/", "~2F");
@@ -1066,7 +1066,7 @@ void RealityDataConsole::ChangeProps()
         DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
         return;
         }
-    else if (m_currentNode->node.GetClassName() != "RealityData")
+    else if (m_currentNode->node.GetECClassName() != "RealityData")
         {
         DisplayInfo("can only change properties of RealityData at root, use \"cd ..\" to navigate back\n", DisplayOption::Error);
         return;
@@ -1177,7 +1177,7 @@ void RealityDataConsole::Delete()
     if (m_currentNode == nullptr)
         return MassDelete();
 
-    Utf8String className = m_currentNode->node.GetClassName();
+    Utf8String className = m_currentNode->node.GetECClassName();
 
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
     instanceId.ReplaceAll("/", "~2F");
