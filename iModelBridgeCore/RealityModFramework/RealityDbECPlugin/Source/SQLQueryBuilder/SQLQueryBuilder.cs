@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
-#define BBOXQUERY
 
 using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Schema;
@@ -93,18 +92,18 @@ namespace IndexECPlugin.Source
             {
             if ( columnCategory == ColumnCategory.spatialInstanceData )
                 {
-                m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName) + ".STAsText()");
-                m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName) + ".STSrid");
+                m_sqlSelectClause.Add(table.Alias + "." + columnName + ".STAsText()");
+                m_sqlSelectClause.Add(table.Alias + "." + columnName + ".STSrid");
                 m_dataReadingHelper.AddColumn(columnCategory, property, 2);
                 }
             else if (columnCategory == ColumnCategory.nonPropertyData)
                 {
-                m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName));
+                m_sqlSelectClause.Add(table.Alias + "." + columnName);
                 m_dataReadingHelper.AddNonPropertyDataColumn(columnName);
                 }
             else
                 {
-                m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName));
+                m_sqlSelectClause.Add(table.Alias + "." + columnName);
                 m_dataReadingHelper.AddColumn(columnCategory, property, 1);
                 }
             
@@ -207,7 +206,7 @@ namespace IndexECPlugin.Source
             {
             if ( !String.IsNullOrWhiteSpace(tableName) )
                 {
-                m_sqlWhereClause += AddBrackets(tableName) + ".";
+                m_sqlWhereClause += tableName + ".";
                 }
 
             string sqlOp = ECToSQLMap.ECRelationalOperatorToSQL(op);
@@ -224,18 +223,18 @@ namespace IndexECPlugin.Source
                         paramNameList.Add(paramName);
                         m_paramNameValueMap.AddParamNameValue(paramName, rightSideStringPart, dbType);
                         }
-                    m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + " (" + String.Join(",", paramNameList.ToArray()) + ") ";
+                    m_sqlWhereClause += columnName + " " + sqlOp + " (" + String.Join(",", paramNameList.ToArray()) + ") ";
                     }
                 else
                     {
                     string paramName = GetNewParamName();
-                    m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + paramName + " ";
+                    m_sqlWhereClause += columnName + " " + sqlOp + paramName + " ";
                     m_paramNameValueMap.AddParamNameValue(paramName, rightSideString, dbType);
                     }
                 }
             else
                 {
-                m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + " ";
+                m_sqlWhereClause += columnName + " " + sqlOp + " ";
                 }
 
             }
@@ -250,7 +249,7 @@ namespace IndexECPlugin.Source
             {
             string ascOrDesc = sortAscending ? "ASC" : "DESC";
 
-            m_sqlOrderByClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName) + " " + ascOrDesc + " ");
+            m_sqlOrderByClause.Add(table.Alias + "." + columnName + " " + ascOrDesc + " ");
             }
 
         /// <summary>
@@ -263,28 +262,6 @@ namespace IndexECPlugin.Source
             }
 
         /// <summary>
-        /// Does not do anything for now. Should be removed
-        /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
-        protected string AddBrackets (string str)
-            {
-            string tempString = str;
-            //TODO : verify if adding brackets is useful!
-            //if (!str.StartsWith("["))
-            //{
-            //    tempString = "[" + tempString;
-            //}
-            //if (!str.EndsWith("]"))
-            //{
-            //    tempString = tempString + "]";
-            //}
-
-            return tempString;
-            }
-
-
-        /// <summary>
         /// Builds the query according to the clauses added
         /// </summary>
         /// <returns>The SQL query string</returns>
@@ -292,7 +269,6 @@ namespace IndexECPlugin.Source
         //TODO : Include the query string, the DataReadingHelper and the paramNameValueMap in a single object returned by BuildQuery
         abstract public string BuildQuery (out DataReadingHelper dataReadingHelper);
 
-#if (!BBOXQUERY)
         /// <summary>
         /// Similar to AddWhereClause, but specialised for obtaining the entries intersecting a polygon.
         /// </summary>
@@ -314,12 +290,12 @@ namespace IndexECPlugin.Source
 
             if ( !String.IsNullOrWhiteSpace(tableName) )
                 {
-                m_sqlWhereClause += AddBrackets(tableName) + ".";
+                m_sqlWhereClause += tableName + ".";
                 }
 
-            m_sqlWhereClause += AddBrackets(columnName) + @".STIntersects(geometry::STGeomFromText('" + polygonWKT + @"'," + polygonSRID + @")) = 1";
+            m_sqlWhereClause += columnName + @".STIntersects(geometry::STGeomFromText('" + polygonWKT + @"'," + polygonSRID + @")) = 1";
             }
-#endif
+
         /// <summary>
         /// Similar to AddWhereClause, but specialised for obtaining the entries intersecting a bbox.
         /// </summary>
@@ -334,7 +310,7 @@ namespace IndexECPlugin.Source
             string tN = "";
             if ( !String.IsNullOrWhiteSpace(tableName) )
                 {
-                tN += AddBrackets(tableName) + ".";
+                tN += tableName + ".";
                 }
 
             m_sqlWhereClause += "(" + tN + minXColName + " < " + bbox.maxX + " AND " + tN + maxXColName + " > " + bbox.minX + " AND " + tN + minYColName + " < " + bbox.maxY + " AND " + tN + maxYColName + " > " + bbox.minY + ")";
@@ -356,34 +332,32 @@ namespace IndexECPlugin.Source
                 }
             }
 
-        //This code is unused for now. For test coverage purpose, it is commented now, but should be kept.
-        ///// <summary>
-        ///// Builds a query returning the number of rows following the given criteria.
-        ///// </summary>
-        ///// <returns>The query string</returns>
-        //public string BuildCountQuery ()
-        //    {
-        //    string completeFromStr = "FROM " + m_sqlFromClause.Name + " " + m_sqlFromClause.Alias + " ";
+        /// <summary>
+        /// Builds a query returning the number of rows following the given criteria.
+        /// </summary>
+        /// <returns>The query string</returns>
+        public string BuildCountQuery ()
+            {
+            string completeFromStr = "FROM " + m_sqlFromClause.Name + " " + m_sqlFromClause.Alias + " ";
 
-        //    //string completeLeftJoinClause = String.Join(" ", m_sqlLeftJoinClause.ToArray());
-        //    string completeLeftJoinClause = "";
-        //    foreach ( var table in m_sqlLeftJoinClause )
-        //        {
-        //        completeLeftJoinClause += "LEFT JOIN " + AddBrackets(table.Name) + " " + table.Alias
-        //            + " ON " + AddBrackets(table.FirstTable.Alias) + "." + AddBrackets(table.FirstTableKey) + " = " + AddBrackets(table.Alias) + "." + AddBrackets(table.TableKey) + " ";
-        //        }
+            //string completeLeftJoinClause = String.Join(" ", m_sqlLeftJoinClause.ToArray());
+            string completeLeftJoinClause = "";
+            foreach ( var table in m_sqlLeftJoinClause )
+                {
+                completeLeftJoinClause += "LEFT JOIN " + table.Name + " " + table.Alias
+                    + " ON " + table.FirstTable.Alias + "." + table.FirstTableKey + " = " + table.Alias + "." + table.TableKey + " ";
+                }
 
+            completeLeftJoinClause += " ";
 
-        //    completeLeftJoinClause += " ";
+            string completeWhereClause = "";
+            if ( !String.IsNullOrWhiteSpace(m_sqlWhereClause) )
+                {
+                completeWhereClause = "WHERE " + m_sqlWhereClause + " ";
+                }
 
-        //    string completeWhereClause = "";
-        //    if ( !String.IsNullOrWhiteSpace(m_sqlWhereClause) )
-        //        {
-        //        completeWhereClause = "WHERE " + m_sqlWhereClause + " ";
-        //        }
-
-        //    return "SELECT COUNT(*) " + completeFromStr + completeLeftJoinClause + completeWhereClause;
-        //    }
+            return "SELECT COUNT(*) " + completeFromStr + completeLeftJoinClause + completeWhereClause;
+            }
         }
 
     /// <summary>

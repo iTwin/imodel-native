@@ -938,7 +938,7 @@ RealityDataDownload::sisterFileVector RealityConversionTools::RealityDataToSiste
     WString filename;
 
     RealityDataDownload::ExtractFileName(filename, mainFile.GetSource());
-    sfVector.push_back(std::make_pair(mainFile.ToString(), filename));
+    sfVector.push_back(RealityDataDownload::url_file_pair(mainFile.ToString(), filename));
 
     sisters = dataSource.GetSisterFiles();
     for (RealityPackage::UriPtr sister : sisters)
@@ -947,7 +947,7 @@ RealityDataDownload::sisterFileVector RealityConversionTools::RealityDataToSiste
             {
 			filename.clear();
             RealityDataDownload::ExtractFileName(filename, sister->GetSource());
-            sfVector.push_back(std::make_pair(sister->ToString(), filename));
+            sfVector.push_back(RealityDataDownload::url_file_pair(sister->ToString(), filename));
             }
         }
 

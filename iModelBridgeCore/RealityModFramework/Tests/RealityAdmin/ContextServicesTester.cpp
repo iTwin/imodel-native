@@ -565,7 +565,7 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
     for(RealityPlatform::RealityDataDownload::mirrorWSistersVector mirrorVec : downloadOrder)
         for(RealityPlatform::RealityDataDownload::sisterFileVector sisterVec : mirrorVec)
             for(RealityPlatform::RealityDataDownload::url_file_pair ufPair : sisterVec)
-                BeFileName::BeDeleteFile(ufPair.second.c_str());
+                BeFileName::BeDeleteFile(ufPair.m_filePath.c_str());
 
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(downloadOrder);
     ASSERT_TRUE(pDownload != NULL);
@@ -613,6 +613,6 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
     for (RealityPlatform::RealityDataDownload::mirrorWSistersVector mirrorVec : downloadOrder)
         for (RealityPlatform::RealityDataDownload::sisterFileVector sisterVec : mirrorVec)
             for (RealityPlatform::RealityDataDownload::url_file_pair ufPair : sisterVec)
-                BeFileName::BeDeleteFile(ufPair.second.c_str());
+                BeFileName::BeDeleteFile(ufPair.m_filePath.c_str());
     ASSERT_TRUE(fileCount >= 4);
     }

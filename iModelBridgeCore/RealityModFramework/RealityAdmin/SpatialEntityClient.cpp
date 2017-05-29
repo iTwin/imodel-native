@@ -121,7 +121,7 @@ SpatialEntityHandlerStatus SpatialEntityClient::DownloadContent(Utf8CP outputDir
         WString localFilename(workingDir.c_str(), BentleyCharEncoding::Utf8);
         localFilename.append(shortUrl + L' ' + WString(GetDataset().c_str(), true) + L'_' + filename);
 
-        urlList.push_back(std::make_pair(fileList[i], localFilename));
+        urlList.push_back(RealityDataDownload::url_file_pair(fileList[i], localFilename));
     }
 
     // Download files.

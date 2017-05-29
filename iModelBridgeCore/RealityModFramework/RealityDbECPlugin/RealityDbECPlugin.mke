@@ -162,14 +162,13 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/MimicTableAccessor.cs \
             $(baseDir)Source/Helpers/MimicTableWriter.cs \
             $(baseDir)Source/Helpers/Packager.cs \
+			$(baseDir)Source/Helpers/RetrievalController.cs \
             $(baseDir)Source/Helpers/SourceStringMap.cs \
             $(baseDir)Source/Helpers/SqlQueryHelpers.cs \
             $(baseDir)Source/Helpers/TableAliasCreator.cs \
             $(baseDir)Source/Helpers/TableDescriptor.cs \
             $(baseDir)Source/IECInstanceExtension.cs \
-            $(baseDir)Source/FileRetrievalControllers/DRStreamRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageRetrievalController.cs \
-            $(baseDir)Source/FileRetrievalControllers/PackageStreamRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/SQLThumbnailRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/USGSThumbnailRetrievalController.cs \
             $(baseDir)Source/QueryProviders/IECQueryProvider.cs \
@@ -180,7 +179,6 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/SQLQueryBuilder/IParamNameValueMap.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLMergeUpsertStatementBuilder.cs \
-            $(baseDir)Source/SQLQueryBuilder/PagedSQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLServerInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLServerMergeUpsertStatementBuilder.cs \

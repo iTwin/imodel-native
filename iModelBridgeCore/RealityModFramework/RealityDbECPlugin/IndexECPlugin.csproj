@@ -142,8 +142,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\AssemblyProperties.cs" />
-    <Compile Include="Source\FileRetrievalControllers\DRStreamRetrievalController.cs" />
-    <Compile Include="Source\FileRetrievalControllers\PackageStreamRetrievalController.cs" />
+    <Compile Include="Source\Helpers\RetrievalController.cs" />
     <Compile Include="Source\Helpers\DataReadingHelper.cs" />
     <Compile Include="Source\Helpers\DbConnectionCreator.cs" />
     <Compile Include="Source\Helpers\DbConnectionHelper.cs" />
