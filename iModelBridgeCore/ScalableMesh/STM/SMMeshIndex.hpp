@@ -50,6 +50,8 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
     m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    m_displayMeshVideoPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    
     m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_featurePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
@@ -265,6 +267,9 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
             std::lock_guard<std::mutex> lock(m_displayMeshLock);
             GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
             m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+            SMMemoryPool::GetInstanceVideo()->RemoveItem(m_displayMeshVideoPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshVideoPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
 
         GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
@@ -391,6 +396,9 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
             std::lock_guard<std::mutex> lock(m_displayMeshLock);
             GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
             m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+            SMMemoryPool::GetInstanceVideo()->RemoveItem(m_displayMeshVideoPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshVideoPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
 
         if (m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
@@ -1189,7 +1197,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveM
             ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->RemovePoolIdForTexture(textureId);
             GetMemoryPool()->RemoveItem(displayTexturePoolItemId, textureId, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
             }
-
+               
         displayTexturePoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(textureId);
 
         if (displayTexturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
@@ -1200,6 +1208,19 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveM
         }
 
     m_textureIds.clear();
+
+    for (auto textureVideoId : m_textureVideoIds)
+        {
+        SMMemoryPoolItemId displayTextureVideoPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureVideo(textureVideoId);
+
+        if (displayTextureVideoPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+            {
+            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->RemovePoolIdForTextureVideo(textureVideoId);
+            SMMemoryPool::GetInstanceVideo()->RemoveItem(displayTextureVideoPoolItemId, textureVideoId, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            }
+        }
+
+    m_textureVideoIds.clear();        
     }
 
 //=======================================================================================
@@ -4228,7 +4249,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
                 //diffSet = current;
                 diffsetPtr->Replace(&diffSet - &(*diffsetPtr->begin()), current);
                 }
-            }
+            }   
     }
 
 #if 0
@@ -4460,6 +4481,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
         else if (it->clientID == (uint64_t)-1)
             {
             const_cast<DifferenceSet&>(*it).upToDate = false;
+            diffSetPtr->SetDirty(true);
             }
         }
     if (found)
@@ -4493,12 +4515,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
             const_cast<DifferenceSet&>(*it).clientID = clipId;
             const_cast<DifferenceSet&>(*it).toggledForID = setToggledWhenIdIsOn;
             found = true;
-
+            diffSetPtr->SetDirty(true);
             }
 
         else if (it->clientID == (uint64_t)-1)
             {
             const_cast<DifferenceSet&>(*it).upToDate = false;
+            diffSetPtr->SetDirty(true);
             }
 
         }

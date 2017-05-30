@@ -315,6 +315,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
             }
         }
 
+
     if (totalNumberOfPoints < 10)
         {
         // There are far too few points to start decimating them towards the root.
@@ -414,11 +415,34 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 			otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
 			polylines.insert(polylines.end(), newLines.begin(), newLines.end());
 			types = otherNewTypes;
+
+			newTypes.clear();
+			otherNewTypes.clear();
+			newLines.clear();
+			MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
+			{
+				if (types[i] != DTMFeatureType::Island)
+				{
+					newLines.push_back(vec);
+					newTypes.push_back(types[i]);
+					return false;
+				}
+				else return true;
+			},
+				[&otherNewTypes](const bvector<DPoint3d>& vec)
+			{
+				otherNewTypes.push_back(DTMFeatureType::Island);
+			});
+			otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
+			polylines.insert(polylines.end(), newLines.begin(), newLines.end());
+			types = otherNewTypes;
+
 			SimplifyPolylines(polylines);
 		}
 
 		for (auto& polyline : polylines)
 		{
+			if (polyline.empty()) continue;
 			DRange3d extent2 = DRange3d::From(polyline);
 			pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent2);
 		}
