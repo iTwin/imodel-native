@@ -3971,7 +3971,7 @@ DgnDbStatus DgnElement::GenericUniqueAspect::_UpdateProperties(Dgn::DgnElementCR
     m_instance->SetInstanceId(ecinstidstr);
 
     // Set the UniqueAspect's "Element" navigation property. This is what links the aspect to its host element. The IDs are not the same.
-    m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), ECN::ECClassId(el.GetElementClassId().GetValue())));
+    m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)));
 
     return (BE_SQLITE_OK == updater->Update(*m_instance))? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
