@@ -22,12 +22,8 @@ struct DgnColorTests : public DgnDbTestFixture
 TEST_F(DgnColorTests, ColorBook)
     {
     SetupSeedProject();
-    DgnDbR db = GetDgnDb();
-    DefinitionModelR dictionary = db.GetDictionaryModel();
 
-    ColorBook colorBook(dictionary, "TestBook1");
-    ASSERT_TRUE(colorBook.Insert().IsValid());
-
+    DgnElementId elementId;
     ColorDef color1(255, 254, 253);
     ColorDef color2(2, 3, 33);
     ColorDef color3(2, 3, 33); // It is legal to have two colors with the same RGB value
@@ -35,35 +31,84 @@ TEST_F(DgnColorTests, ColorBook)
     ColorDef color5(55, 5, 55);
     ColorDef color6(6, 6, 66);
 
-    colorBook.AddColor("Color1", color1);
-    colorBook.AddColor("Color2", color2);
-    colorBook.AddColor("Color3", color3);
-    colorBook.AddColor("Color4", color4);
-    colorBook.AddColor("Color Five", color5);
-    colorBook.AddColor("6", color6);
+    if (true)
+       {
+        DgnDbR db = GetDgnDb();
+        DefinitionModelR dictionary = db.GetDictionaryModel();
+        ColorBook colorBook(dictionary, "TestBook1");
 
-    ASSERT_TRUE(colorBook.Update().IsValid());
+        colorBook.AddColor("Color1", color1);
+        colorBook.AddColor("Color2", color2);
+        colorBook.AddColor("Color3", color3);
+        colorBook.AddColor("Color4", color4);
+        colorBook.AddColor("Color Five", color5);
+        colorBook.AddColor("6", color6);
 
-    ASSERT_EQ(color1, colorBook.GetColor("Color1"));
-    ASSERT_EQ(color2, colorBook.GetColor("Color2"));
-    ASSERT_EQ(color3, colorBook.GetColor("Color3"));
-    ASSERT_EQ(color4, colorBook.GetColor("Color4"));
-    ASSERT_EQ(color5, colorBook.GetColor("Color Five"));
-    ASSERT_EQ(color6, colorBook.GetColor("6"));
+        //Set Descripion of ColorBook
+        ASSERT_EQ(DgnDbStatus::Success, colorBook.SetDescription("Descr"));
+        ASSERT_EQ("Descr",colorBook.GetDescription());
 
-    int colorCount = 0;
-    for (Utf8StringCR colorName : colorBook.GetColorNames())
+        ASSERT_TRUE(colorBook.Insert().IsValid());
+
+        ASSERT_EQ(color1, colorBook.GetColor("Color1"));
+        ASSERT_EQ(color2, colorBook.GetColor("Color2"));
+        ASSERT_EQ(color3, colorBook.GetColor("Color3"));
+        ASSERT_EQ(color4, colorBook.GetColor("Color4"));
+        ASSERT_EQ(color5, colorBook.GetColor("Color Five"));
+        ASSERT_EQ(color6, colorBook.GetColor("6"));
+
+        int colorCount = 0;
+        for (Utf8StringCR colorName : colorBook.GetColorNames())
         {
         ColorDef color = colorBook.GetColor(colorName.c_str());
         ASSERT_NE(0, color.GetValue());
         ++colorCount;
         }
-    ASSERT_EQ(6, colorCount);
+        ASSERT_EQ(6, colorCount);
 
-    ASSERT_STREQ("Color1", colorBook.FindColorName(color1).c_str());
-    ASSERT_STREQ("Color4", colorBook.FindColorName(color4).c_str());
-    ASSERT_STREQ("6", colorBook.FindColorName(color6).c_str());
-    ASSERT_TRUE(colorBook.FindColorName(ColorDef(19, 19, 19)).empty());
+        ASSERT_STREQ("Color1", colorBook.FindColorName(color1).c_str());
+        ASSERT_STREQ("Color4", colorBook.FindColorName(color4).c_str());
+        ASSERT_STREQ("6", colorBook.FindColorName(color6).c_str());
+        ASSERT_TRUE(colorBook.FindColorName(ColorDef(19, 19, 19)).empty());
+        //Remove color from ColorBook
+        colorBook.RemoveColor("6");
+        ASSERT_TRUE(colorBook.FindColorName(ColorDef(6, 6, 66)).empty());
+        DgnDbStatus stat;
+        //Update ColorBook
+        DgnElementCPtr persistentEl = colorBook.Update(&stat);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        ASSERT_TRUE(persistentEl.IsValid());
+        elementId = persistentEl->GetElementId();
+        db.SaveChanges();
+    }
+    //Check what stored in DB
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    auto colorBook=m_db->Elements().GetForEdit<ColorBook>(elementId);
+    int colorCount = 0;
+    for (Utf8StringCR colorName : colorBook->GetColorNames())
+    {
+        ColorDef color = colorBook->GetColor(colorName.c_str());
+        ASSERT_NE(0, color.GetValue());
+        ++colorCount;
+    }
+    ASSERT_EQ(5, colorCount);
+
+    ASSERT_EQ(color1, colorBook->GetColor("Color1"));
+    ASSERT_EQ(color2, colorBook->GetColor("Color2"));
+    ASSERT_EQ(color3, colorBook->GetColor("Color3"));
+    ASSERT_EQ(color4, colorBook->GetColor("Color4"));
+    ASSERT_EQ(color5, colorBook->GetColor("Color Five"));
+
+    ASSERT_TRUE(colorBook->FindColorName(ColorDef(6, 6, 66)).empty());
+    }
+    auto colorBook = m_db->Elements().GetForEdit<ColorBook>(elementId);
+    ASSERT_EQ(DgnDbStatus::Success, colorBook->Delete());
+    DgnCode code=ColorBook::CreateCode(m_db->GetDictionaryModel(), "TestBook1");
+    ASSERT_FALSE(m_db->Elements().QueryElementIdByCode(code).IsValid());
     }
 
 #define VERIFY_HSV_TO_RGB(R,G,B ,H,S,V) { \
