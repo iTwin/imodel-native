@@ -124,6 +124,9 @@ BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
  //    if (!IsTerrain())
  //       return SUCCESS;
 
+	if (!m_terrainParts.empty())
+		for (auto& part : m_terrainParts)
+			part->StartClipMaskBulkInsert();
     if (nullptr == m_smPtr.get()) return ERROR;
     m_isInsertingClips = true;
     m_startClipCount++;
@@ -138,6 +141,10 @@ BentleyStatus ScalableMeshModel::_StopClipMaskBulkInsert()
     {
 //     if (!IsTerrain())
 //        return SUCCESS;
+
+	if (!m_terrainParts.empty())
+		for (auto& part : m_terrainParts)
+			part->StopClipMaskBulkInsert();
 
     if (nullptr == m_smPtr.get()) return ERROR;
     m_startClipCount--;
