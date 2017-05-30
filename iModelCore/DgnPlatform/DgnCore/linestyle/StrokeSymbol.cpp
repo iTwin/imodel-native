@@ -251,6 +251,15 @@ void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, C
                 symbParams.SetLineStyle(nullptr);
 
             viewContext.CookGeometryParams(symbParams, *symbolGraphic);
+
+            // NOTE: Symbols need to be independent of ViewFlags, treat FillDisplay::ByView as FillDisplay::Always...
+            if (FillDisplay::Never != symbParams.GetFillDisplay() && GeometricPrimitive::GeometryType::CurveVector == geometry->GetGeometryType())
+                {
+                CurveVectorCR curveVector = *geometry->GetAsCurveVector();
+
+                symbolGraphic->AddCurveVector(curveVector, curveVector.IsAnyRegionType());
+                continue;
+                }
             }
 
         geometry->AddToGraphic(*symbolGraphic);
