@@ -294,6 +294,7 @@ void RealityDataConsole::Run(BeFileName infile, BeFileName outfile)
     if(s_inputSource == nullptr || s_outputDestination == nullptr)
         return;
 
+    ConfigureServer();
     _Run();
     s_outputDestination->flush();
     (dynamic_cast<std::ifstream*>(s_inputSource))->close();
@@ -306,12 +307,23 @@ void RealityDataConsole::Run()
     {
     s_inputSource = &std::cin;
     s_outputDestination = &std::cout;
+    ConfigureServer();
+    _Run();
+    }
+
+void RealityDataConsole::Run(Utf8String server, Utf8String projectId)
+    {
+    s_inputSource = &std::cin;
+    s_outputDestination = &std::cout;
+    m_server = WSGServer(server, false);
+    RawServerResponse versionResp = RawServerResponse();
+    RealityDataService::SetServerComponents(server, m_server.GetVersion(versionResp), "S3MXECPlugin--Server", "S3MX", "", projectId);
+    DisplayInfo(Utf8PrintfString("Console started with server: %s and projectId: %s\n", server, projectId), DisplayOption::Tip);
     _Run();
     }
 
 void RealityDataConsole::_Run()
     {
-    ConfigureServer();
     while (m_lastCommand != Command::Quit)
         {
         if (m_currentNode != nullptr)
@@ -560,8 +572,6 @@ void RealityDataConsole::ConfigureServer()
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
     else
         RealityDataService::SetServerComponents(server, version, repo, schema);
-
-    m_server = WSGServer(RealityDataService::GetServerName(), verifyCertificate);
 
     DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     }
