@@ -46,7 +46,7 @@ private:
     uint32_t m_weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
     uint32_t m_styles:1;           //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines).
     uint32_t m_transparency:1;     //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
-    uint32_t m_fill:1;             //!< Controls whether the fills on filled elements are displayed.
+    uint32_t m_fill:1;             //!< Controls whether the fills on filled elements are displayed. Only applies in wireframe mode.
     uint32_t m_textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
     uint32_t m_materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
     uint32_t m_acsTriad:1;         //!< Shows or hides the ACS triad.
@@ -2051,7 +2051,7 @@ struct DecorationList : RefCounted<NonCopyableClass>
         GraphicPtr          m_graphic;
         OvrGraphicParams    m_overrides;
 
-        Node(GraphicR graphic, OvrGraphicParamsCR ovr) : m_graphic(&graphic), m_overrides(ovr) { }
+        Node(GraphicR graphic, OvrGraphicParamsCR ovr) : m_graphic(&graphic), m_overrides(ovr) { BeAssert(m_graphic.IsValid()); }
     };
 
     using List = bvector<Node>;
@@ -2066,7 +2066,7 @@ public:
     bool empty() const { return m_list.empty(); }
     void clear() { m_list.clear(); }
 
-    void Add(GraphicR graphic, OvrGraphicParamsCR ovr) { m_list.push_back(Node(graphic, ovr)); }
+    void Add(GraphicR graphic, OvrGraphicParamsCR ovr) { BeAssert(nullptr != &graphic); m_list.push_back(Node(graphic, ovr)); }
     void Add(GraphicR graphic, OvrGraphicParamsCP ovr=nullptr) { Add(graphic, nullptr != ovr ? *ovr : OvrGraphicParams()); }
     uint32_t GetCount() const { return static_cast<uint32_t>(size()); }
 };
