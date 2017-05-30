@@ -396,24 +396,30 @@ void RealityDataConsole::ConfigureServer()
     if (server.length() == 0)
         server = "dev-realitydataservices-eus.cloudapp.net";
     bool verifyCertificate = false;
-    while (1)
+    Utf8String certificatePath = "";
+
+    DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
+    Utf8String temp;
+    std::getline(*s_inputSource, input);
+    temp = Utf8String(input.c_str()).Trim();
+    if (temp.EqualsI("y"))
         {
-        DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
-        Utf8String temp;
+        verifyCertificate = true;
+        DisplayInfo("If you need to use a custom certificate file, enter the path to it now. Otherwise input blank\n ?", DisplayOption::Question);
         std::getline(*s_inputSource, input);
-        temp = Utf8String(input.c_str()).Trim();
-        if (temp.EqualsI("y"))
+        certificatePath = Utf8String(input.c_str()).Trim();
+        BeFileName fileName = BeFileName(certificatePath);
+        if (!certificatePath.empty() && !BeFileName::DoesPathExist(fileName))
             {
-            verifyCertificate = true;
-            break;
+            DisplayInfo("Could not validate specified path. Please verify that it is correct and try again\n", DisplayOption::Error);
+            return;
             }
-        else if (temp.EqualsI("n"))
-            {
-            verifyCertificate = false;
-            break;
-            }
-        else
-            DisplayInfo("invalid answer\n", DisplayOption::Error);
+        WSGRequest::GetInstance().SetCertificatePath(certificatePath.c_str());
+        }
+    else if (temp.EqualsI("quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
         }
 
     DisplayInfo("Retrieving version information. One moment...\n\n", DisplayOption::Tip);
@@ -523,14 +529,18 @@ void RealityDataConsole::ConfigureServer()
                 }
             }
 
-        if (schema.length() > 0)
+        if (schema.empty())
             {
-            RealityDataService::SetServerComponents(server, version, repo, schema);
-            m_server = WSGServer(RealityDataService::GetServerName(), verifyCertificate);
+            DisplayInfo("Server configuration failed, invalid parameters passed\n", DisplayOption::Error);
+            return;
             }
         }
+    else
+        {
+        DisplayInfo("Server configuration failed, invalid parameters passed\n", DisplayOption::Error);
+        return;
+        }
 
-    DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     DisplayInfo("ProjectId required for multiple operations. Set ProjectId now?\n", DisplayOption::Question);
     std::string str;
     std::getline(*s_inputSource, str);
@@ -540,7 +550,20 @@ void RealityDataConsole::ConfigureServer()
         return;
         }
     else if (str == "y")
-        SetProjectId();
+        {
+        DisplayInfo("Please set project id\n ?", DisplayOption::Question);
+        std::string input;
+        std::getline(*s_inputSource, input);
+        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(input.c_str()).Trim());
+        }
+    else if (verifyCertificate)
+        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
+    else
+        RealityDataService::SetServerComponents(server, version, repo, schema);
+
+    m_server = WSGServer(RealityDataService::GetServerName(), verifyCertificate);
+
+    DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     }
     
 void RealityDataConsole::SetProjectId()
