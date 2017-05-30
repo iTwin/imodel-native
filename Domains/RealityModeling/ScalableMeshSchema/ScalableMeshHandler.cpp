@@ -1743,6 +1743,8 @@ void ScalableMeshModel::DeactivateClip(uint64_t clipId)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::RefreshClips()
     {
+    if (!m_smPtr.IsValid())
+        return;
 
     bset<uint64_t> toActivate;
     bset<uint64_t> notActivated;
