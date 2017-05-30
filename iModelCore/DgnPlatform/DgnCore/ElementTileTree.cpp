@@ -230,7 +230,8 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
+//static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -1615,22 +1616,26 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
     {
     // Might be more efficient to modify input in-place.
     Strokes output(*input.m_displayParams, input.m_disjoint);
-    output.m_strokes.reserve(input.m_strokes.size());
-    enum State { kInside, kOutside, kCrossedOutside };
+    enum    State { kInside, kOutside, kCrossedOutside };
 
-    for (bvector<DPoint3d> const& points : input.m_strokes)
+    output.m_strokes.reserve(input.m_strokes.size());
+
+    for (auto const& inputStroke : input.m_strokes)
         {
+        auto const&     points = inputStroke.m_points;
+
         if (points.size() <= 1)
             continue;
 
         DPoint3d prevPt = points.front();
-        State prevState = m_tileRange.IsContained(prevPt) ? kInside : kOutside;
+        State   prevState = m_tileRange.IsContained(prevPt) ? kInside : kOutside;
         if (kInside == prevState)
             {
-            output.m_strokes.resize(output.m_strokes.size()+1);
-            output.m_strokes.back().push_back(prevPt);
+            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance));
+            output.m_strokes.back().m_points.push_back(prevPt);
             }
 
+        double   length = inputStroke.m_startDistance;       // Cumulative length along polyline.
         for (size_t i = 1; i < points.size(); i++)
             {
             auto nextPt = points[i];
@@ -1651,19 +1656,19 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
                 if (kOutside == prevState)
                     {
                     // back inside - start a new line string...
-                    output.m_strokes.resize(output.m_strokes.size()+1);
-                    output.m_strokes.back().push_back(prevPt);
+                    output.m_strokes.push_back(Strokes::PointList(length));
+                    output.m_strokes.back().m_points.push_back(prevPt);
                     }
 
                 BeAssert(!output.m_strokes.empty());
-                output.m_strokes.back().push_back(nextPt);
+                output.m_strokes.back().m_points.push_back(nextPt);
                 }
-
+            length += prevPt.Distance(nextPt);
             prevState = nextState;
             prevPt = nextPt;
             }
 
-        BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().size());
+        BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().m_points.size());
         }
 
     return output;
@@ -1712,10 +1717,10 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
 
     uint32_t fillColor = displayParams.GetFillColor();
     DgnElementId elemId = GetElementId(geom);
-    for (auto& strokePoints : strokes.m_strokes)
+    for (auto& stroke : strokes.m_strokes)
         {
-        m_contentRange.Extend(strokePoints);
-        builder.AddPolyline(strokePoints, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor);
+        m_contentRange.Extend(stroke.m_points);
+        builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor, stroke.m_startDistance);
         }
     }
 

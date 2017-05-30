@@ -50,7 +50,7 @@ static FPoint2d toFPoint2d(DPoint2dCR dpoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
+static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
     {                    
     bvector <bvector<bvector<DPoint3d>>> strokesArray;
 
@@ -61,7 +61,7 @@ static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVecto
         for (auto& loopStrokes : loop)
             {
             transform.Multiply(loopStrokes, loopStrokes);
-            strokes.push_back (std::move(loopStrokes));
+            strokes.push_back (Strokes::PointList(std::move(loopStrokes)));
             }
         }
     }
@@ -810,9 +810,9 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor)
+void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance)
     {
-    Polyline    newPolyline;
+    Polyline    newPolyline(startDistance);
 
     for (auto& point : points)
         {
@@ -1022,7 +1022,7 @@ PolyfaceList Geometry::GetPolyfaces(double chordTolerance, NormalMode normalMode
 void Strokes::Transform(TransformCR transform)
     {
     for (auto& stroke : m_strokes)
-        transform.Multiply (stroke, stroke);
+        transform.Multiply (stroke.m_points, stroke.m_points);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1080,10 +1080,10 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
     {
-    CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
-    StrokesList         tileStrokes;
+    CurveVectorPtr          curveVector = m_geometry->GetAsCurveVector();
+    StrokesList             tileStrokes;
+    Strokes::PointLists     strokePoints;
 
-    bvector<bvector<DPoint3d>>  strokePoints;
     if (curveVector.IsValid() && ! curveVector->IsAnyRegionType())
         {
         strokePoints.clear();
@@ -1100,7 +1100,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
         if (!disjoint && 1 == strokePoints.size())
             {
             // A 'point' is actually a zero-length line...
-            auto const& points = strokePoints.front();
+            auto const& points = strokePoints.front().m_points;
             switch (points.size())
                 {
                 case 1:
@@ -1423,7 +1423,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 
                 uint32_t fillColor = displayParams->GetFillColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline(strokePoints, geom->GetFeature(), false, fillColor);
+                    meshBuilder->AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance);
                 }
             }
         }
@@ -1580,7 +1580,7 @@ StrokesList TextStringGeometry::_GetStrokes (IFacetOptionsR facetOptions)
 
     InitGlyphCurves();
 
-    bvector<bvector<DPoint3d>>  strokePoints;
+    Strokes::PointLists         strokePoints;
     Transform                   transform = Transform::FromProduct (GetTransform(), m_text->ComputeTransform());
 
     for (auto& glyphCurve : m_glyphCurves)
