@@ -27,6 +27,7 @@ BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 DEFINE_POINTER_SUFFIX_TYPEDEFS(iModelConnection);
 typedef RefCountedPtr<struct iModelConnection> iModelConnectionPtr;
 
+struct iModelConnectionImpl;
 struct CodeLockSetResultInfo;
 struct CodeSequence;
 struct CodeSequenceSetResultInfo;
