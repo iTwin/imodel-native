@@ -119,7 +119,6 @@ void IScalableMeshProgressiveQueryEngine::InitScalableMesh(IScalableMeshPtr& sca
     return _InitScalableMesh(scalableMeshPtr);
     }
 
-
 void IScalableMeshProgressiveQueryEngine::ClearOverviews(IScalableMesh* scalableMeshP)
     {
     return _ClearOverviews(scalableMeshP);
@@ -436,6 +435,7 @@ private:
 
     int                           m_numWorkingThreads;
     std::thread*                  m_workingThreads;           
+    DgnPlatformLib::Host*         m_host; 
                
     struct InLoadingNode;
 
@@ -709,6 +709,8 @@ public:
                 
         m_run = false;
         m_processingQueryIndexes.resize(m_numWorkingThreads);
+
+        m_host = nullptr;        
         }
 
     virtual ~QueryProcessor()
@@ -870,6 +872,9 @@ public:
             
         void Start()
             { 
+            if (m_host == nullptr)
+                m_host = DgnPlatformLib::QueryHost();
+
             if (m_run == false)
                 {
                 m_run = true;
@@ -879,14 +884,14 @@ public:
                     {                                                        
                     if (!s_delayJoinThread)
                         {                
-                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
+                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, m_host, threadId);
                         }
                     else
                         {                                              
                         if (m_workingThreads[threadId].joinable())                            
                             m_workingThreads[threadId].join();
 
-                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);                        
+                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, m_host, threadId);
                         }
                     }
                 }
@@ -952,6 +957,11 @@ public:
     };
 
 static QueryProcessor s_queryProcessor;
+
+void IScalableMeshProgressiveQueryEngine::CancelAllQueries()
+    {
+    s_queryProcessor.CancelAllQueries();
+    }
 
 #define MAX_PRELOAD_OVERVIEW_LEVEL 1
 
