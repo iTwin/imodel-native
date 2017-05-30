@@ -34,7 +34,7 @@
         <ECProperty propertyName="CreateForeignKeyConstraints" typeName="boolean" description="Default: true. If set to false, no foreign key constraints are created on the link table. In that case, deleting instance does not delete its relationships in the link table."/>
         <ECProperty propertyName="AllowDuplicateRelationships" typeName="boolean" description="Default: false. If set to true duplicate relationships are allowed."/>
     </ECCustomAttributeClass>
-    <ECCustomAttributeClass typeName="ForeignKeyConstraint" modifier="Sealed" appliesTo="RelationshipClass">
+    <ECCustomAttributeClass typeName="ForeignKeyConstraint" modifier="Sealed" appliesTo="NavigationProperty" description="Creates a foreign key for this navigation property.">
         <ECProperty propertyName="OnDeleteAction" typeName="string" description="Possible values: NoAction (default), Cascade (which deletes child rows when parent row is deleted), SetNull(foreign key property in child is set to NULL), Restrict (cannot delete parent if it still has children)."/>
         <ECProperty propertyName="OnUpdateAction" typeName="string" description="Possible values: NoAction (default), Cascade (which updates child foreign key when parent primary key is updated)."/>
     </ECCustomAttributeClass>

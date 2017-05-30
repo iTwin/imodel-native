@@ -48,6 +48,22 @@ void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::uniqu
     m_classMappingInfoCache[&classMap] = std::move(info);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   05/2017
+//---------------------------------------------------------------------------------------
+void SchemaImportContext::CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp)
+    {
+    ForeignKeyConstraintCustomAttribute ca;
+    if (!ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ca, navProp))
+        return;
+
+    BeAssert(navProp.GetRelationshipClass() != nullptr);
+    ECClassId relClassId = navProp.GetRelationshipClass()->GetId();
+    BeAssert(relClassId.IsValid() && "Navigation property's relationship class is expected to have been persisted already by this time");
+    BeAssert(m_fkConstraintCACache.find(relClassId) == m_fkConstraintCACache.end());
+    m_fkConstraintCACache[relClassId] = ca;
+    }
+
 //****************************************************************************************** 
 //ECSchemaCompareContext
 //****************************************************************************************** 

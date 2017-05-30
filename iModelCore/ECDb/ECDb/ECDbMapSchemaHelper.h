@@ -74,11 +74,11 @@ struct ECDbMapCustomAttributeHelper final
         //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
         static bool TryGetLinkTableRelationshipMap(LinkTableRelationshipMapCustomAttribute& linkTableRelationshipMap, ECN::ECRelationshipClassCR ecRelationship);
 
-        //! Tries to retrieve the ForeignKeyConstraint custom attribute from the specified ECRelationshipClass.
+        //! Tries to retrieve the ForeignKeyConstraint custom attribute from the specified navigation property.
         //! @param[out] foreignKeyConstraint Retrieved foreign key constraint CA
-        //! @param[in] ecRelationship ECRelationshipClass to retrieve the custom attribute from.
-        //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
-        static bool TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyConstraint, ECN::ECRelationshipClassCR ecRelationship);
+        //! @param[in] navProp Navigation property to retrieve the custom attribute from.
+        //! @return true if @p navProp has the custom attribute. false, if @p navProp doesn't have the custom attribute
+        static bool TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyConstraint, ECN::NavigationECPropertyCR navProp);
 
         //! Indicates whether the specified ECRelationshipClass has the UseECInstanceIdAsForeignKey custom attribute or not.
         //! @param[in] relClass ECRelationshipClass to retrieve the custom attribute from.
@@ -96,13 +96,13 @@ struct SchemaMapCustomAttribute final
     friend struct ECDbMapCustomAttributeHelper;
 
     private:
-        ECN::ECSchemaCP m_schema;
-        ECN::IECInstanceCP m_ca;
+        ECN::ECSchemaCP m_schema = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
 
-        SchemaMapCustomAttribute(ECN::ECSchemaCR, ECN::IECInstanceCP ca);
+        SchemaMapCustomAttribute(ECN::ECSchemaCR schema, ECN::IECInstancePtr ca) : m_schema(&schema), m_ca(ca) {}
 
     public:
-        SchemaMapCustomAttribute() : m_schema(nullptr), m_ca(nullptr) {}
+        SchemaMapCustomAttribute() {}
         //! Tries to get the value of the TablePrefix property in the SchemaMap.
         //! @param[out] tablePrefix Table prefix. IsNull() is true, if the TablePrefix property wasn't set in the SchemaMap.
         //! @return SUCCESS if TablePrefix was set or unset in the SchemaMap. ERROR if TablePrefix didn't have a valid value,
@@ -120,13 +120,13 @@ struct ClassMapCustomAttribute final
     friend struct ECDbMapCustomAttributeHelper;
 
     private:
-        ECN::ECClassCP m_class;
-        ECN::IECInstanceCP m_ca;
+        ECN::ECClassCP m_class = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
 
-        ClassMapCustomAttribute(ECN::ECClassCR, ECN::IECInstanceCP ca);
+        ClassMapCustomAttribute(ECN::ECClassCR ecClass, ECN::IECInstancePtr ca) : m_class(&ecClass), m_ca(ca) {}
 
     public:
-        ClassMapCustomAttribute() : m_class(nullptr), m_ca(nullptr) {}
+        ClassMapCustomAttribute() {}
 
         //! @return true if the ClassMap CA exists on the ECClass, false if it doesn't exist on the ECClass.
         bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
@@ -154,13 +154,13 @@ struct ShareColumnsCustomAttribute final
     friend struct ECDbMapCustomAttributeHelper;
 
     private:
-        ECN::ECClassCP m_class;
-        ECN::IECInstanceCP m_ca;
+        ECN::ECClassCP m_class = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
 
-        ShareColumnsCustomAttribute(ECN::ECClassCR ecClass, ECN::IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
+        ShareColumnsCustomAttribute(ECN::ECClassCR ecClass, ECN::IECInstancePtr ca) : m_class(&ecClass), m_ca(ca) {}
 
     public:
-        ShareColumnsCustomAttribute() : m_class(nullptr), m_ca(nullptr) {}
+        ShareColumnsCustomAttribute() {}
 
         //! @return true if ShareColumns exists on the ECClass, false if it doesn't exist on the ECClass.
         bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
@@ -218,13 +218,13 @@ struct DbIndexListCustomAttribute final
             };
 
     private:
-        ECN::ECClassCP m_class;
-        ECN::IECInstanceCP m_ca;
+        ECN::ECClassCP m_class = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
 
-        DbIndexListCustomAttribute(ECN::ECClassCR, ECN::IECInstanceCP ca);
+        DbIndexListCustomAttribute(ECN::ECClassCR ecClass, ECN::IECInstancePtr ca) : m_class(&ecClass), m_ca(ca) {}
 
     public:
-        DbIndexListCustomAttribute() : m_class(nullptr), m_ca(nullptr) {}
+        DbIndexListCustomAttribute() {}
 
         //! @return true if the ClassMap CA exists on the ECClass, false if it doesn't exist on the ECClass.
         bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
@@ -245,13 +245,13 @@ struct PropertyMapCustomAttribute final
     friend struct ECDbMapCustomAttributeHelper;
 
     private:
-        ECN::ECPropertyCP m_property;
-        ECN::IECInstanceCP m_ca;
+        ECN::PrimitiveECPropertyCP m_property = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
 
-        PropertyMapCustomAttribute(ECN::ECPropertyCR, ECN::IECInstanceCP ca);
+        PropertyMapCustomAttribute(ECN::PrimitiveECPropertyCR prop, ECN::IECInstancePtr ca) : m_property(&prop), m_ca(ca) {}
 
     public:
-        PropertyMapCustomAttribute() : m_property(nullptr), m_ca(nullptr) {}
+        PropertyMapCustomAttribute() {}
 
         //! Tries to get the value of the ColumnName property from the PropertyMap.
         //! @param[out] columnName Column name. IsNull() is true, if the ColumnName property wasn't set in the PropertyMap.
@@ -271,6 +271,37 @@ struct PropertyMapCustomAttribute final
         BentleyStatus TryGetCollation(Nullable<Utf8String>& collation) const;
     };
 
+//=======================================================================================    
+//! ForeignKeyConstraintCustomAttribute is a convenience wrapper around the ForeignKeyConstraint 
+//! custom attribute that simplifies reading the values of that custom attribute
+//! @bsiclass
+//=======================================================================================    
+struct ForeignKeyConstraintCustomAttribute final
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+    private:
+        ECN::NavigationECPropertyCP m_navProp = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
+
+        ForeignKeyConstraintCustomAttribute(ECN::NavigationECPropertyCR navProp, ECN::IECInstancePtr ca) : m_navProp(&navProp), m_ca(ca) {}
+
+    public:
+        ForeignKeyConstraintCustomAttribute() {}
+
+        //! Tries to get the value of the OnDeleteAction property from the ForeignKeyConstraint.
+        //! @param[out] onDeleteAction OnDelete action. IsNull() is true, if the OnDeleteAction property 
+        //! wasn't set in the ForeignKeyConstraint.
+        //! @return SUCCESS if OnDeleteAction was set or unset in the ForeignKeyConstraint, ERROR otherwise
+        BentleyStatus TryGetOnDeleteAction(Nullable<Utf8String>& onDeleteAction) const;
+
+        //! Tries to get the value of the OnUpdateAction property from the ForeignKeyConstraint.
+        //! @param[out] onUpdateAction OnUpdate action. IsNull() is true, if the OnUpdateAction property 
+        //! wasn't set in the ForeignKeyConstraint.
+        //! @return SUCCESS if OnUpdateAction was set or unset in the ForeignKeyConstraint, ERROR otherwise
+        BentleyStatus TryGetOnUpdateAction(Nullable<Utf8String>& onUpdateAction) const;
+    };
+
 
 //=======================================================================================    
 //! LinkTableRelationshipMapCustomAttribute is a convenience wrapper around the LinkTableRelationshipMap 
@@ -282,13 +313,13 @@ struct LinkTableRelationshipMapCustomAttribute final
     friend struct ECDbMapCustomAttributeHelper;
 
     private:
-        ECN::ECRelationshipClassCP m_relClass;
-        ECN::IECInstanceCP m_ca;
+        ECN::ECRelationshipClassCP m_relClass = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
 
-        LinkTableRelationshipMapCustomAttribute(ECN::ECRelationshipClassCR, ECN::IECInstanceCP ca);
+        LinkTableRelationshipMapCustomAttribute(ECN::ECRelationshipClassCR relClass, ECN::IECInstancePtr ca) : m_relClass(&relClass), m_ca(ca) {}
 
     public:
-        LinkTableRelationshipMapCustomAttribute() : m_relClass(nullptr), m_ca(nullptr) {}
+        LinkTableRelationshipMapCustomAttribute() {}
 
         //! @return true if the LinkTableRelationshipMap CA exists on the ECClass, false if it doesn't exist on the ECClass.
         bool IsValid() const { return m_relClass != nullptr && m_ca != nullptr; }
@@ -317,35 +348,23 @@ struct LinkTableRelationshipMapCustomAttribute final
 
     };
 
-//=======================================================================================    
-//! ForeignKeyConstraintCustomAttribute is a convenience wrapper around the ForeignKeyConstraint 
-//! custom attribute that simplifies reading the values of that custom attribute
-//! @bsiclass
-//=======================================================================================    
-struct ForeignKeyConstraintCustomAttribute final
+//*****************************************************************
+//CustomAttributeReader
+//*****************************************************************
+struct CustomAttributeReader final
     {
-    friend struct ECDbMapCustomAttributeHelper;
-
     private:
-        ECN::ECRelationshipClassCP m_relClass;
-        ECN::IECInstanceCP m_ca;
+        CustomAttributeReader();
+        ~CustomAttributeReader();
 
-        ForeignKeyConstraintCustomAttribute(ECN::ECRelationshipClassCR, ECN::IECInstanceCP ca);
+        static BentleyStatus TryGetTrimmedValue(Nullable<Utf8String>& strVal, ECN::ECValueCR val);
 
     public:
-        ForeignKeyConstraintCustomAttribute() : m_relClass(nullptr), m_ca(nullptr) {}
-
-        //! Tries to get the value of the OnDeleteAction property from the ForeignKeyConstraint.
-        //! @param[out] onDeleteAction OnDelete action. IsNull() is true, if the OnDeleteAction property 
-        //! wasn't set in the ForeignKeyConstraint.
-        //! @return SUCCESS if OnDeleteAction was set or unset in the ForeignKeyConstraint, ERROR otherwise
-        BentleyStatus TryGetOnDeleteAction(Nullable<Utf8String>& onDeleteAction) const;
-
-        //! Tries to get the value of the OnUpdateAction property from the ForeignKeyConstraint.
-        //! @param[out] onUpdateAction OnUpdate action. IsNull() is true, if the OnUpdateAction property 
-        //! wasn't set in the ForeignKeyConstraint.
-        //! @return SUCCESS if OnUpdateAction was set or unset in the ForeignKeyConstraint, ERROR otherwise
-        BentleyStatus TryGetOnUpdateAction(Nullable<Utf8String>& onUpdateAction) const;
+        static ECN::IECInstancePtr Read(ECN::IECCustomAttributeContainer const& caContainer, Utf8CP customAttributeSchemaName, Utf8CP customAttributeName) { return caContainer.GetCustomAttributeLocal(customAttributeSchemaName, customAttributeName); }
+        static BentleyStatus TryGetTrimmedValue(Nullable<Utf8String>& val, ECN::IECInstanceCR ca, Utf8CP ecPropertyAccessString);
+        static BentleyStatus TryGetTrimmedValue(Nullable<Utf8String>& val, ECN::IECInstanceCR ca, uint32_t propIndex, uint32_t arrayIndex);
+        static BentleyStatus TryGetIntegerValue(Nullable<int>&, ECN::IECInstanceCR ca, Utf8CP ecPropertyAccessString);
+        static BentleyStatus TryGetBooleanValue(Nullable<bool>&, ECN::IECInstanceCR ca, Utf8CP ecPropertyAccessString);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

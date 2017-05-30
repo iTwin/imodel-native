@@ -1210,12 +1210,13 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
                 <ECEntityClass typeName="Course" modifier="None">
                     <ECProperty propertyName="LastMod1" typeName="DateTime"/>
                     <ECProperty propertyName="LastMod2" typeName="DateTime"/>
-                    <ECNavigationProperty propertyName="School" relationshipName="SchoolHasCourses" direction="Backward"/>
+                    <ECNavigationProperty propertyName="School" relationshipName="SchoolHasCourses" direction="Backward">
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
                 </ECEntityClass>
                 <ECRelationshipClass typeName="SchoolHasCourses" modifier="Sealed" strength="embedding">
-                    <ECCustomAttributes>
-                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                    </ECCustomAttributes>
                     <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has">
                         <Class class="School"/>
                     </Source>
@@ -1271,30 +1272,36 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
                         <Purpose>Test2</Purpose>
                     </SupplementalSchema>
                 </ECCustomAttributes>
+                <ECEntityClass typeName="School" modifier="None"/>
                 <ECEntityClass typeName="Course" modifier="None">
                     <ECCustomAttributes>
                         <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
                             <PropertyName>LastMod2</PropertyName>
                         </ClassHasCurrentTimeStampProperty>
                     </ECCustomAttributes>
-                </ECEntityClass>
-                <ECRelationshipClass typeName="SchoolHasCourses" modifier="Sealed" strength="embedding">
-                    <ECCustomAttributes>
+                    <ECNavigationProperty propertyName="School" relationshipName="SchoolHasCourses" direction="Backward">
+                        <ECCustomAttributes>
                         <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                             <OnDeleteAction>Cascade</OnDeleteAction>
                         </ForeignKeyConstraint>
-                    </ECCustomAttributes>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="SchoolHasCourses" modifier="Sealed" strength="embedding">
+                    <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has">
+                        <Class class="School"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="true" roleLabel="belongs to">
+                        <Class class="Course"/>
+                    </Target>
                 </ECRelationshipClass>
                 </ECSchema>)xml"}, true, ""));
-
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECClassCP schoolClass = ecdb.Schemas().GetClass("SchoolSchema", "School");
     ASSERT_TRUE(schoolClass != nullptr);
     ECClassCP courseClass = ecdb.Schemas().GetClass("SchoolSchema", "Course");
     ASSERT_TRUE(courseClass != nullptr);
-    ECClassCP relClass = ecdb.Schemas().GetClass("SchoolSchema", "SchoolHasCourses");
-    ASSERT_TRUE(relClass != nullptr);
 
     int caCount = 0;
     for (IECInstancePtr ca : schoolClass->GetCustomAttributes(false))
@@ -1329,16 +1336,18 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
     ASSERT_EQ(1, caCount) << "ECClass Course";
 
     caCount = 0;
-    for (IECInstancePtr ca : relClass->GetCustomAttributes(false))
+    ECPropertyCP schoolProp = courseClass->GetPropertyP("School");
+    ASSERT_TRUE(schoolProp != nullptr);
+    caCount = 0;
+    for (IECInstancePtr ca : schoolProp->GetCustomAttributes(false))
         {
         caCount++;
-        ASSERT_STREQ("ForeignKeyConstraint", ca->GetClass().GetName().c_str()) << "RelationshipECClass SchoolHasCourses";
+        ASSERT_STREQ("ForeignKeyConstraint", ca->GetClass().GetName().c_str()) << "ECProperty Course.School";
         ECValue v;
-        ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "OnDeleteAction")) << "RelationshipECClass SchoolHasCourses";
-        ASSERT_STREQ("Cascade", v.GetUtf8CP()) << "RelationshipECClass SchoolHasCourses";
+        ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "OnDeleteAction")) << "ECProperty Course.School";
+        ASSERT_STREQ("Cascade", v.GetUtf8CP()) << "ECProperty Course.School";
         }
-
-    ASSERT_EQ(1, caCount) << "RelationshipECClass SchoolHasCourses";
+    ASSERT_EQ(1, caCount) << "ECProperty Course.School";
     }
 
 //---------------------------------------------------------------------------------------

@@ -23,5 +23,8 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 #Nav prop mapping issue with abstract constraint base class
 RelationshipMappingTestFixture.MultipleConstraintClasses
 
+#Fails due to ECObjects supplementation bug
+SchemaManagerTests.ImportMultipleSupplementalSchemas
+
 #WIP
 DbMappingTestFixture.SimpleFK

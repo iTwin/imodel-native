@@ -203,6 +203,13 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
     std::vector<ECPropertyCP> propertiesToMap;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
+        if (property->GetIsNavigation() && &property->GetClass() == &m_ecClass)
+            {
+            //WIP_RELMAP_REFACTOR extract ForeignKeyConstraint on nav prop for later use during mapping the relationship
+            //WIP this can be changed once relationship mapping is refactored
+            ctx.GetImportCtx().CacheFkConstraintCA(*property->GetAsNavigationProperty());
+            }
+
         if (&property->GetClass() == &m_ecClass ||
             inheritanceMode == ClassMapper::PropertyMapInheritanceMode::NotInherited)
             {

@@ -642,8 +642,9 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext
     ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMapCA, *relClass);
     const bool hasLinkTableRelMapCA = linkTableRelationMapCA.IsValid();
 
-    ForeignKeyConstraintCustomAttribute foreignKeyConstraintCA;
-    const bool hasForeignKeyConstraintCA = ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(foreignKeyConstraintCA, *relClass);
+    auto fkConstraintCAIt = ctx.GetFkConstraintCACache().find(relClass->GetId());
+    const bool hasForeignKeyConstraintCA = fkConstraintCAIt != ctx.GetFkConstraintCACache().end();
+    ForeignKeyConstraintCustomAttribute const* foreignKeyConstraintCA = hasForeignKeyConstraintCA ? &fkConstraintCAIt->second : nullptr;
     const bool useECInstanceIdAsFk = ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(*relClass);
 
     if (relClass->HasBaseClasses())
@@ -700,8 +701,9 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext
             return SUCCESS;
             }
 
+        BeAssert(foreignKeyConstraintCA != nullptr);
         Nullable<Utf8String> onDeleteActionStr;
-        if (SUCCESS != foreignKeyConstraintCA.TryGetOnDeleteAction(onDeleteActionStr))
+        if (SUCCESS != foreignKeyConstraintCA->TryGetOnDeleteAction(onDeleteActionStr))
             return ERROR;
 
         ForeignKeyDbConstraint::ActionType onDeleteAction;
@@ -713,7 +715,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext
             }
 
         Nullable<Utf8String> onUpdateActionStr;
-        if (SUCCESS != foreignKeyConstraintCA.TryGetOnUpdateAction(onUpdateActionStr))
+        if (SUCCESS != foreignKeyConstraintCA->TryGetOnUpdateAction(onUpdateActionStr))
             return ERROR;
 
         ForeignKeyDbConstraint::ActionType onUpdateAction;

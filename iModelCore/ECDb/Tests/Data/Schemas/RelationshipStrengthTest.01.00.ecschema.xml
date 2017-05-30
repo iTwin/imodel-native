@@ -4,15 +4,28 @@
     <ECEntityClass typeName="Person" modifier="None">
         <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
-        <ECNavigationProperty propertyName="Parent1" relationshipName="SingleParentHasChildren" direction="Backward" />
-        <ECNavigationProperty propertyName="Parent2" relationshipName="SingleParentHasChildren_backward" direction="Forward" />
-        <ECNavigationProperty propertyName="Spouse1" relationshipName="ParentHasSpouse" direction="Backward" />
-        <ECNavigationProperty propertyName="Spouse2" relationshipName="ParentHasSpouse_backward" direction="Forward" />
+        <ECNavigationProperty propertyName="Parent1" relationshipName="SingleParentHasChildren" direction="Backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="Parent2" relationshipName="SingleParentHasChildren_backward" direction="Forward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="Spouse1" relationshipName="ParentHasSpouse" direction="Backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="Spouse2" relationshipName="ParentHasSpouse_backward" direction="Forward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="SingleParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward">
-		<ECCustomAttributes>
-			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
-		</ECCustomAttributes>		
         <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -21,9 +34,6 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SingleParentHasChildren_backward" modifier="Sealed" strength="embedding" strengthDirection="backward">
-		<ECCustomAttributes>
-			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
-		</ECCustomAttributes>					
         <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -48,9 +58,6 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ParentHasSpouse" modifier="Sealed" strength="referencing" strengthDirection="forward">
-		<ECCustomAttributes>
-			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
-		</ECCustomAttributes>		
         <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -59,9 +66,6 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="Sealed" strength="referencing" strengthDirection="backward">
-		<ECCustomAttributes>
-			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
-		</ECCustomAttributes>		
         <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>

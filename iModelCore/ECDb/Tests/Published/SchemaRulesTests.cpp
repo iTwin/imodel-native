@@ -617,6 +617,46 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                        <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
                      </ECEntityClass>
                      <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A nav prop cannot be applied for a link table rel"),
+
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <ECCustomAttributes>
+                            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "A nav prop cannot be applied for a link table rel"),
+
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
                         <Source multiplicity="(0..2)" polymorphic="True" roleLabel="has">
                          <Class class="Parent"/>
                         </Source>
@@ -1220,12 +1260,13 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='Code' typeName='string' />"
-                "   <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward' />"
+                "   <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward' >"
+                "       <ECCustomAttributes>"
+                "          <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                "       </ECCustomAttributes>"
+                "    </ECNavigationProperty>"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
-                "    <ECCustomAttributes>"
-                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                "    </ECCustomAttributes>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -1291,12 +1332,13 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='Code' typeName='string' />"
-                "   <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward' />"
+                "   <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'>"
+                "       <ECCustomAttributes>"
+                "          <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                "       </ECCustomAttributes>"
+                "    </ECNavigationProperty>"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
-                "    <ECCustomAttributes>"
-                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                "    </ECCustomAttributes>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -1359,12 +1401,13 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
                 "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
-                "   <ECNavigationProperty propertyName='Partner' relationshipName='Rel' direction='Backward' />"
+                "   <ECNavigationProperty propertyName='Partner' relationshipName='Rel' direction='Backward'>"
+                "       <ECCustomAttributes>"
+                "          <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                "       </ECCustomAttributes>"
+                "    </ECNavigationProperty>"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
-                "    <ECCustomAttributes>"
-                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                "    </ECCustomAttributes>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -1841,49 +1884,6 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
 TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
     {
     std::vector<SchemaItem> unsupportedSchemas;
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                            "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                            "  <ECEntityClass typeName='Parent' >"
-                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECEntityClass typeName='Child' >"
-                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                                            "     <ECCustomAttributes>"
-                                            "         <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
-                                            "     </ECCustomAttributes>"
-                                            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children'>"
-                                            "        <Class class='Parent' />"
-                                            "     </Source>"
-                                            "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                                            "         <Class class='Child' />"
-                                            "     </Target>"
-                                            "  </ECRelationshipClass>"
-                                            "</ECSchema>", false, "ForeignKeyConstraint CA cannot applied to link table (as implied from cardinality N:N)"));
-
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema6' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                            "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                            "  <ECEntityClass typeName='Parent' >"
-                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECEntityClass typeName='Child' >"
-                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
-                                            "  </ECEntityClass>"
-                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                                            "     <ECCustomAttributes>"
-                                            "         <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
-                                            "     </ECCustomAttributes>"
-                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
-                                            "        <Class class='Parent' />"
-                                            "     </Source>"
-                                            "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                                            "         <Class class='Child' />"
-                                            "     </Target>"
-                                            "    <ECProperty propertyName='RelProp' typeName='long' />"
-                                            "  </ECRelationshipClass>"
-                                            "</ECSchema>", false, "ForeignKeyConstraint CA cannot applied to link table (as implied from additional property on relationship class)"));
-
     unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"

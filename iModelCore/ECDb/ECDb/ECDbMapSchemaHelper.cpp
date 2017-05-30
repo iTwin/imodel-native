@@ -14,152 +14,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECDBMAP_SCHEMANAME "ECDbMap"
 
 //*****************************************************************
-//ECDbMapHelper
-//*****************************************************************
-struct CustomAttributeReader final
-    {
-    private:
-        CustomAttributeReader();
-        ~CustomAttributeReader();
-
-        static BentleyStatus TryGetTrimmedValue(Nullable<Utf8String>& strVal, ECValueCR val);
-
-    public:
-        static IECInstanceCP Read(IECCustomAttributeContainer const& caContainer, Utf8CP customAttributeSchemaName, Utf8CP customAttributeName);
-
-        static BentleyStatus TryGetTrimmedValue(Nullable<Utf8String>& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString);
-        static BentleyStatus TryGetTrimmedValue(Nullable<Utf8String>& val, IECInstanceCR ca, uint32_t propIndex, uint32_t arrayIndex);
-        static BentleyStatus TryGetIntegerValue(Nullable<int>&, IECInstanceCR ca, Utf8CP ecPropertyAccessString);
-        static BentleyStatus TryGetBooleanValue(Nullable<bool>&, IECInstanceCR ca, Utf8CP ecPropertyAccessString);
-    };
-
-
-
-//*****************************************************************
-//CustomAttributeReader
-//*****************************************************************
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-IECInstanceCP CustomAttributeReader::Read(IECCustomAttributeContainer const& caContainer, Utf8CP customAttributeSchemaName, Utf8CP customAttributeName)
-    {
-    IECInstancePtr ca = caContainer.GetCustomAttributeLocal(customAttributeSchemaName, customAttributeName);
-    if (ca != nullptr)
-        return ca.get();
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-BentleyStatus CustomAttributeReader::TryGetTrimmedValue(Nullable<Utf8String>& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString)
-    {
-    ECValue v;
-    ECObjectsStatus stat = ca.GetValue(v, ecPropertyAccessString);
-    if (ECObjectsStatus::Success != stat)
-        {
-        LOG.errorv("Could not retrieve value of ECProperty '%s' of the '%s' custom attribute ECInstance.",
-                   ecPropertyAccessString, ca.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    return TryGetTrimmedValue(val, v);
-    }
-
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-BentleyStatus CustomAttributeReader::TryGetTrimmedValue(Nullable<Utf8String>& val, IECInstanceCR ca, uint32_t propIndex, uint32_t arrayIndex)
-    {
-    ECValue v;
-    if (ECObjectsStatus::Success != ca.GetValue(v, propIndex, arrayIndex))
-        {
-        LOG.errorv("Could not retrieve array element #%d value of ECProperty with property index %d of the '%s' custom attribute ECInstance.",
-                   arrayIndex, propIndex, ca.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    return TryGetTrimmedValue(val, v);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-BentleyStatus CustomAttributeReader::TryGetTrimmedValue(Nullable<Utf8String>& strVal, ECValueCR val)
-    {
-    if (!val.IsNull())
-        {
-        strVal = Nullable<Utf8String>(val.GetUtf8CP());
-        strVal.ValueR().Trim();
-        
-        //if the string property was specified but without a string, we consider this null as well
-        if (strVal.Value().empty())
-            strVal = Nullable<Utf8String>();
-        }
-    else
-        strVal = Nullable<Utf8String>();
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   02 / 2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-BentleyStatus CustomAttributeReader::TryGetIntegerValue(Nullable<int>& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString)
-    {
-    ECValue v;
-    if (ECObjectsStatus::Success != ca.GetValue(v, ecPropertyAccessString))
-        {
-        LOG.errorv("Could not retrieve value of ECProperty '%s' of the '%s' custom attribute ECInstance.",
-                   ecPropertyAccessString, ca.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (!v.IsNull())
-        val = Nullable<int>(v.GetInteger());
-    else
-        val = Nullable<int>();
-
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-BentleyStatus CustomAttributeReader::TryGetBooleanValue(Nullable<bool>& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString)
-    {
-    ECValue v;
-    ECObjectsStatus stat = ca.GetValue(v, ecPropertyAccessString);
-    if (ECObjectsStatus::Success != stat)
-        {
-        LOG.errorv("Could not retrieve value of ECProperty '%s' of the '%s' custom attribute ECInstance.",
-                   ecPropertyAccessString, ca.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (!v.IsNull())
-        val = Nullable<bool>(v.GetBoolean());
-    else
-        val = Nullable<bool>();
-
-    return SUCCESS;
-    }
-
-
-
-//*****************************************************************
 //ECDbMapCustomAttributeHelper
 //*****************************************************************
-
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
@@ -167,7 +23,7 @@ BentleyStatus CustomAttributeReader::TryGetBooleanValue(Nullable<bool>& val, IEC
 //static
 bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(SchemaMapCustomAttribute& schemaMap, ECSchemaCR schema)
     {
-    IECInstanceCP ca = CustomAttributeReader::Read(schema, ECDBMAP_SCHEMANAME, "SchemaMap");
+    IECInstancePtr ca = CustomAttributeReader::Read(schema, ECDBMAP_SCHEMANAME, "SchemaMap");
     if (ca == nullptr)
         return false;
 
@@ -181,7 +37,7 @@ bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(SchemaMapCustomAttribute& sch
 //static
 bool ECDbMapCustomAttributeHelper::TryGetClassMap(ClassMapCustomAttribute& classMap, ECClassCR ecClass)
     {
-    IECInstanceCP ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ClassMap");
+    IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ClassMap");
     if (ca == nullptr)
         return false;
 
@@ -195,7 +51,7 @@ bool ECDbMapCustomAttributeHelper::TryGetClassMap(ClassMapCustomAttribute& class
 //static
 bool ECDbMapCustomAttributeHelper::TryGetShareColumns(ShareColumnsCustomAttribute& shareColumns, ECClassCR ecClass)
     {
-    IECInstanceCP ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ShareColumns");
+    IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ShareColumns");
     if (ca == nullptr)
         return false;
 
@@ -218,7 +74,7 @@ bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECEntityClass
 //static
 bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexListCustomAttribute& dbIndexList, ECClassCR ecClass)
     {
-    IECInstanceCP ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "DbIndexList");
+    IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "DbIndexList");
     if (ca == nullptr)
         return false;
 
@@ -232,7 +88,7 @@ bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexListCustomAttribute&
 //static
 bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(PropertyMapCustomAttribute& propertyMap, PrimitiveECPropertyCR ecProperty)
     {
-    IECInstanceCP ca = CustomAttributeReader::Read(ecProperty, ECDBMAP_SCHEMANAME, "PropertyMap");
+    IECInstancePtr ca = CustomAttributeReader::Read(ecProperty, ECDBMAP_SCHEMANAME, "PropertyMap");
     if (ca == nullptr)
         return false;
 
@@ -246,7 +102,7 @@ bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(PropertyMapCustomAttribute&
 //static
 bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(LinkTableRelationshipMapCustomAttribute& linkTableRelationshipMap, ECRelationshipClassCR ecRelationship)
     {
-    IECInstanceCP ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMANAME, "LinkTableRelationshipMap");
+    IECInstancePtr ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMANAME, "LinkTableRelationshipMap");
     if (ca == nullptr)
         return false;
 
@@ -258,13 +114,13 @@ bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(LinkTableRelat
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship)
+bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyTableRelationshipMap, NavigationECPropertyCR navProp)
     {
-    IECInstanceCP ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMANAME, "ForeignKeyConstraint");
+    IECInstancePtr ca = CustomAttributeReader::Read(navProp, ECDBMAP_SCHEMANAME, "ForeignKeyConstraint");
     if (ca == nullptr)
         return false;
 
-    foreignKeyTableRelationshipMap = ForeignKeyConstraintCustomAttribute(ecRelationship, ca);
+    foreignKeyTableRelationshipMap = ForeignKeyConstraintCustomAttribute(navProp, ca);
     return true;
     }
 
@@ -277,14 +133,10 @@ bool ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(ECRelationship
     return relClass.GetCustomAttributeLocal(ECDBMAP_SCHEMANAME, "UseECInstanceIdAsForeignKey") != nullptr;
     }
 
-//*****************************************************************
-//ECDbSchemaMap
-//*****************************************************************
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-SchemaMapCustomAttribute::SchemaMapCustomAttribute(ECSchemaCR schema, IECInstanceCP ca) : m_schema(&schema), m_ca(ca) {}
 
+//*****************************************************************
+//SchemaMapCustomAttribute
+//*****************************************************************
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -308,12 +160,8 @@ BentleyStatus SchemaMapCustomAttribute::TryGetTablePrefix(Nullable<Utf8String>& 
 
 
 //*****************************************************************
-//ECDbClassMap
+//ClassMapCustomAttribute
 //*****************************************************************
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMapCustomAttribute::ClassMapCustomAttribute(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
@@ -349,13 +197,8 @@ BentleyStatus ClassMapCustomAttribute::TryGetECInstanceIdColumn(Nullable<Utf8Str
     }
 
 //*****************************************************************
-//DbIndexList
+//DbIndexListCustomAttribute
 //*****************************************************************
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   10 / 2016
-//+---------------+---------------+---------------+---------------+---------------+------
-DbIndexListCustomAttribute::DbIndexListCustomAttribute(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   10 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -460,13 +303,8 @@ BentleyStatus DbIndexListCustomAttribute::GetIndexes(bvector<DbIndex>& indices) 
 
 
 //*****************************************************************
-//ECDbPropertyMap
+//PropertyMapCustomAttribute
 //*****************************************************************
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-PropertyMapCustomAttribute::PropertyMapCustomAttribute(ECPropertyCR ecProperty, IECInstanceCP ca) : m_property(&ecProperty), m_ca(ca) {}
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -511,9 +349,36 @@ BentleyStatus PropertyMapCustomAttribute::TryGetCollation(Nullable<Utf8String>& 
     return CustomAttributeReader::TryGetTrimmedValue(collation, *m_ca, "Collation");
     }
 
+//*****************************************************************
+//ForeignKeyConstraintCustomAttribute
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ForeignKeyConstraintCustomAttribute::TryGetOnDeleteAction(Nullable<Utf8String>& onDeleteAction) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(onDeleteAction, *m_ca, "OnDeleteAction");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ForeignKeyConstraintCustomAttribute::TryGetOnUpdateAction(Nullable<Utf8String>& onUpdateAction) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(onUpdateAction, *m_ca, "OnUpdateAction");
+    }
+
+
+
 
 //*****************************************************************
-//ShareColumns
+//ShareColumnsCustomAttribute
 //*****************************************************************
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   08 / 2016
@@ -552,15 +417,8 @@ BentleyStatus ShareColumnsCustomAttribute::TryGetMaxSharedColumnsBeforeOverflow(
 
 
 //*****************************************************************
-//ECDbLinkTableRelationshipMap
+//LinkTableRelationshipMapCustomAttribute
 //*****************************************************************
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-LinkTableRelationshipMapCustomAttribute::LinkTableRelationshipMapCustomAttribute(ECRelationshipClassCR relClass, IECInstanceCP ca)
-    : m_relClass(&relClass), m_ca(ca)
-    {}
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -605,36 +463,111 @@ BentleyStatus LinkTableRelationshipMapCustomAttribute::TryGetAllowDuplicateRelat
     return CustomAttributeReader::TryGetBooleanValue(allowDuplicateRelationshipsFlag, *m_ca, "AllowDuplicateRelationships");
     }
 
-//*****************************************************************
-//ECDbForeignKeyConstraint
-//*****************************************************************
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ForeignKeyConstraintCustomAttribute::ForeignKeyConstraintCustomAttribute(ECRelationshipClassCR relClass, IECInstanceCP ca)
-    : m_relClass(&relClass), m_ca(ca)
-    {}
 
+//*****************************************************************
+//CustomAttributeReader
+//*****************************************************************
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ForeignKeyConstraintCustomAttribute::TryGetOnDeleteAction(Nullable<Utf8String>& onDeleteAction) const
+//static 
+BentleyStatus CustomAttributeReader::TryGetTrimmedValue(Nullable<Utf8String>& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString)
     {
-    if (m_ca == nullptr)
+    ECValue v;
+    ECObjectsStatus stat = ca.GetValue(v, ecPropertyAccessString);
+    if (ECObjectsStatus::Success != stat)
+        {
+        LOG.errorv("Could not retrieve value of ECProperty '%s' of the '%s' custom attribute ECInstance.",
+                   ecPropertyAccessString, ca.GetClass().GetFullName());
         return ERROR;
+        }
 
-    return CustomAttributeReader::TryGetTrimmedValue(onDeleteAction, *m_ca, "OnDeleteAction");
+    return TryGetTrimmedValue(val, v);
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+BentleyStatus CustomAttributeReader::TryGetTrimmedValue(Nullable<Utf8String>& val, IECInstanceCR ca, uint32_t propIndex, uint32_t arrayIndex)
+    {
+    ECValue v;
+    if (ECObjectsStatus::Success != ca.GetValue(v, propIndex, arrayIndex))
+        {
+        LOG.errorv("Could not retrieve array element #%d value of ECProperty with property index %d of the '%s' custom attribute ECInstance.",
+                   arrayIndex, propIndex, ca.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    return TryGetTrimmedValue(val, v);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ForeignKeyConstraintCustomAttribute::TryGetOnUpdateAction(Nullable<Utf8String>& onUpdateAction) const
+//static 
+BentleyStatus CustomAttributeReader::TryGetTrimmedValue(Nullable<Utf8String>& strVal, ECValueCR val)
     {
-    if (m_ca == nullptr)
-        return ERROR;
+    if (!val.IsNull())
+        {
+        strVal = Nullable<Utf8String>(val.GetUtf8CP());
+        strVal.ValueR().Trim();
 
-    return CustomAttributeReader::TryGetTrimmedValue(onUpdateAction, *m_ca, "OnUpdateAction");
+        //if the string property was specified but without a string, we consider this null as well
+        if (strVal.Value().empty())
+            strVal = Nullable<Utf8String>();
+        }
+    else
+        strVal = Nullable<Utf8String>();
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   02 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+BentleyStatus CustomAttributeReader::TryGetIntegerValue(Nullable<int>& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString)
+    {
+    ECValue v;
+    if (ECObjectsStatus::Success != ca.GetValue(v, ecPropertyAccessString))
+        {
+        LOG.errorv("Could not retrieve value of ECProperty '%s' of the '%s' custom attribute ECInstance.",
+                   ecPropertyAccessString, ca.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (!v.IsNull())
+        val = Nullable<int>(v.GetInteger());
+    else
+        val = Nullable<int>();
+
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+BentleyStatus CustomAttributeReader::TryGetBooleanValue(Nullable<bool>& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString)
+    {
+    ECValue v;
+    ECObjectsStatus stat = ca.GetValue(v, ecPropertyAccessString);
+    if (ECObjectsStatus::Success != stat)
+        {
+        LOG.errorv("Could not retrieve value of ECProperty '%s' of the '%s' custom attribute ECInstance.",
+                   ecPropertyAccessString, ca.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (!v.IsNull())
+        val = Nullable<bool>(v.GetBoolean());
+    else
+        val = Nullable<bool>();
+
+    return SUCCESS;
     }
 
 

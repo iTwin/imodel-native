@@ -230,6 +230,112 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  05/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, Overriding)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="Sealed">
+                   <ECProperty propertyName="Name" typeName="string" />
+               </ECEntityClass>
+               <ECEntityClass typeName="Child" modifier="Abstract">
+                 <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                 </ECCustomAttributes>
+                   <ECProperty propertyName="Name" typeName="string" />
+                   <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChild" direction="Backward" />
+               </ECEntityClass>
+               <ECEntityClass typeName="SubChild" modifier="Abstract">
+                   <BaseClass>Child</BaseClass>
+                   <ECProperty propertyName="SubProp" typeName="string" />
+                   <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChild" direction="Backward" >
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                        </ECCustomAttributes>
+                   </ECNavigationProperty>
+               </ECEntityClass>
+              <ECRelationshipClass typeName="ParentHasChild" strength="Referencing"  modifier="None">
+                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
+                    <Class class ="Parent" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                    <Class class ="Child" />
+                </Target>
+             </ECRelationshipClass>
+            </ECSchema>)xml", false, "Overriding nav prop adds ForeignKeyConstraint CA causes duplicate nav prop error"));
+
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="Sealed">
+                   <ECProperty propertyName="Name" typeName="string" />
+               </ECEntityClass>
+               <ECEntityClass typeName="Child" modifier="Abstract">
+                 <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                 </ECCustomAttributes>
+                   <ECProperty propertyName="Name" typeName="string" />
+                   <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChild" direction="Backward" />
+               </ECEntityClass>
+               <ECEntityClass typeName="SubChild" modifier="Abstract">
+                   <BaseClass>Child</BaseClass>
+                   <ECProperty propertyName="SubProp" typeName="string" />
+                   <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasSubChild" direction="Backward" />
+               </ECEntityClass>
+              <ECRelationshipClass typeName="ParentHasChild" strength="Referencing" modifier="None">
+                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
+                    <Class class ="Parent" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                    <Class class ="Child" />
+                </Target>
+             </ECRelationshipClass>
+              <ECRelationshipClass typeName="ParentHasSubChild" strength="Referencing"  modifier="None">
+                <BaseClass>ParentHasChild</BaseClass>
+                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
+                    <Class class ="Parent" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                    <Class class ="SubChild" />
+                </Target>
+             </ECRelationshipClass>
+            </ECSchema>)xml", false, "Overriding nav prop changes relationship which is not supported"));
+
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Element" modifier="Abstract">
+                 <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                 </ECCustomAttributes>
+                   <ECProperty propertyName="Name" typeName="string" />
+                   <ECNavigationProperty propertyName="Parent" relationshipName="ElementHasPartnerElement" direction="Backward" />
+               </ECEntityClass>
+                <ECEntityClass typeName="SubElement" modifier="Abstract">
+                   <BaseClass>Element</BaseClass>
+                   <ECProperty propertyName="SubProp" typeName="string" />
+                   <ECNavigationProperty propertyName="Parent" relationshipName="ElementHasPartnerElement" direction="Forward" />
+               </ECEntityClass>
+               <ECRelationshipClass typeName="ElementHasPartnerElement" strength="Referencing"  modifier="None">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Parent Element">
+                    <Class class ="Element" />
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="Child Element">
+                    <Class class ="Element" />
+                </Target>
+             </ECRelationshipClass>
+            </ECSchema>)xml", false, "Overriding nav prop changes direction which is not supported"));
+
+    AssertSchemaImport(testSchemas, "navpropoverriding.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
     {
     ECDbCR ecdb = SetupECDb("navpropcolumnorder.ecdb", SchemaItem(
@@ -248,8 +354,16 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
                     </ClassMap>
                 </ECCustomAttributes>
                    <ECProperty propertyName="Name" typeName="string" />
-                   <ECNavigationProperty propertyName="CodeSpec" relationshipName="CodeSpecHasFoo" direction="Backward" />
-                   <ECNavigationProperty propertyName="CodeScope" relationshipName="CodeScopeHasFoo" direction="Backward" />
+                   <ECNavigationProperty propertyName="CodeSpec" relationshipName="CodeSpecHasFoo" direction="Backward" >
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                        </ECCustomAttributes>
+                   </ECNavigationProperty>
+                   <ECNavigationProperty propertyName="CodeScope" relationshipName="CodeScopeHasFoo" direction="Backward" >
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                        </ECCustomAttributes>
+                   </ECNavigationProperty>
                    <ECProperty propertyName="LastMod" typeName="DateTime" />
                </ECEntityClass>
                <ECEntityClass typeName="HasNavPropsWithoutRelECClassId" modifier="Abstract">
@@ -259,14 +373,19 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
                     </ClassMap>
                 </ECCustomAttributes>
                    <ECProperty propertyName="Name" typeName="string" />
-                   <ECNavigationProperty propertyName="CodeSpec" relationshipName="CodeSpecHasFoo_Sealed" direction="Backward" />
-                   <ECNavigationProperty propertyName="CodeScope" relationshipName="CodeScopeHasFoo_Sealed" direction="Backward" />
+                   <ECNavigationProperty propertyName="CodeSpec" relationshipName="CodeSpecHasFoo_Sealed" direction="Backward" >
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                        </ECCustomAttributes>
+                   </ECNavigationProperty>
+                   <ECNavigationProperty propertyName="CodeScope" relationshipName="CodeScopeHasFoo_Sealed" direction="Backward" >
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
+                        </ECCustomAttributes>
+                   </ECNavigationProperty>
                    <ECProperty propertyName="LastMod" typeName="DateTime" />
                </ECEntityClass>
              <ECRelationshipClass typeName="CodeSpecHasFoo" strength="Referencing"  modifier="None">
-                <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-                </ECCustomAttributes>
                 <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
                     <Class class ="CodeSpec" />
                 </Source>
@@ -275,9 +394,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
                 </Target>
              </ECRelationshipClass>
              <ECRelationshipClass typeName="CodeScopeHasFoo" strength="Referencing"  modifier="None">
-                <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-                </ECCustomAttributes>
                 <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
                     <Class class ="CodeScope" />
                 </Source>
@@ -286,9 +402,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
                 </Target>
              </ECRelationshipClass>
              <ECRelationshipClass typeName="CodeSpecHasFoo_Sealed" strength="Referencing"  modifier="Sealed">
-                <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-                </ECCustomAttributes>
                 <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
                     <Class class ="CodeSpec" />
                 </Source>
@@ -297,9 +410,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
                 </Target>
              </ECRelationshipClass>
              <ECRelationshipClass typeName="CodeScopeHasFoo_Sealed" strength="Referencing"  modifier="Sealed">
-                <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-                </ECCustomAttributes>
                 <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Parent Element">
                     <Class class ="CodeScope" />
                 </Source>
@@ -459,7 +569,11 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithOptionalRelClassId)
                                        "            </ClassMap>"
                                        "        </ECCustomAttributes>"
                                        "        <ECProperty propertyName='Code' typeName='string' />"
-                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' >"
+                                       "          <ECCustomAttributes>"
+                                       "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                       "          </ECCustomAttributes>"
+                                       "        </ECNavigationProperty>"
                                        "    </ECEntityClass>"
                                        "    <ECEntityClass typeName='InfoElement'>"
                                        "        <BaseClass>Element</BaseClass>"
@@ -470,9 +584,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithOptionalRelClassId)
                                        "        <ECProperty propertyName='Geometry' typeName='string' />"
                                        "    </ECEntityClass>"
                                        "   <ECRelationshipClass typeName='ModelHasElements' strength='Embedding'  modifier='Sealed'>"
-                                        "        <ECCustomAttributes>"
-                                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                        "        </ECCustomAttributes>"
                                        "      <Source multiplicity='(1..1)' polymorphic='False' roleLabel='Model'>"
                                        "          <Class class ='Model' />"
                                        "      </Source>"
@@ -641,7 +752,11 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
                                        "            </ClassMap>"
                                        "        </ECCustomAttributes>"
                                        "        <ECProperty propertyName='Code' typeName='string' />"
-                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward' />"
+                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward' >"
+                                       "          <ECCustomAttributes>"
+                                       "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                       "          </ECCustomAttributes>"
+                                       "        </ECNavigationProperty>"
                                        "    </ECEntityClass>"
                                        "    <ECEntityClass typeName='InfoElement'>"
                                        "        <BaseClass>Element</BaseClass>"
@@ -652,9 +767,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
                                        "        <ECProperty propertyName='Geometry' typeName='string' />"
                                        "    </ECEntityClass>"
                                        "   <ECRelationshipClass typeName='ElementOwnsChildElements' strength='Embedding'  modifier='Abstract'>"
-                                        "        <ECCustomAttributes>"
-                                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                        "        </ECCustomAttributes>"
                                        "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Element'>"
                                        "          <Class class ='Element' />"
                                        "      </Source>"
@@ -1180,17 +1292,22 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
                                        "            </ClassMap>"
                                        "        </ECCustomAttributes>"
                                        "        <ECProperty propertyName='Code' typeName='string' />"
-                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
-                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward' />"
+                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward'>"
+                                       "          <ECCustomAttributes>"
+                                       "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                       "          </ECCustomAttributes>"
+                                       "        </ECNavigationProperty>"
+                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward' >"
+                                       "          <ECCustomAttributes>"
+                                       "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                       "          </ECCustomAttributes>"
+                                       "        </ECNavigationProperty>"
                                        "    </ECEntityClass>"
                                        "    <ECEntityClass typeName='SubElement'>"
                                        "        <BaseClass>Element</BaseClass>"
                                        "        <ECProperty propertyName='SubProp1' typeName='int' />"
                                        "    </ECEntityClass>"
                                        "   <ECRelationshipClass typeName='ModelHasElements' strength='Embedding'  modifier='Sealed'>"
-                                        "        <ECCustomAttributes>"
-                                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                        "        </ECCustomAttributes>"
                                        "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
                                        "          <Class class ='Model' />"
                                        "      </Source>"
@@ -1199,9 +1316,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
                                        "      </Target>"
                                        "   </ECRelationshipClass>"
                                        "   <ECRelationshipClass typeName='ElementOwnsChildElements' strength='Embedding'  modifier='Abstract'>"
-                                        "        <ECCustomAttributes>"
-                                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                        "        </ECCustomAttributes>"
                                        "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Element'>"
                                        "          <Class class ='Element' />"
                                        "      </Source>"

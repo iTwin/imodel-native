@@ -46,6 +46,8 @@ private:
 
     mutable std::map<ECN::ECClassCP, std::unique_ptr<ClassMappingCACache>> m_classMappingCACache;
     std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
+    bmap<ECN::ECClassId, ForeignKeyConstraintCustomAttribute> m_fkConstraintCACache;
+
     ClassMapLoadContext m_loadContext;
     bset<ECN::ECClassId> m_classMapsToSave;
 
@@ -57,6 +59,8 @@ public:
 
     void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
     std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
+    void CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp);
+    bmap<ECN::ECClassId, ForeignKeyConstraintCustomAttribute> const& GetFkConstraintCACache() const { return m_fkConstraintCACache; }
 
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
     void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }

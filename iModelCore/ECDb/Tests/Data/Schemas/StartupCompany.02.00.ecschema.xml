@@ -325,15 +325,16 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="Phone">
         <BaseClass>Asset</BaseClass>
-        <ECNavigationProperty propertyName="Employee" relationshipName="EmployeePhone" direction="Backward"/>
+        <ECNavigationProperty propertyName="Employee" relationshipName="EmployeePhone" direction="Backward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
         <ECProperty propertyName="Number" typeName="string"/>
         <ECProperty propertyName="Owner" typeName="string"/>
         <ECProperty propertyName="User" typeName="int"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="EmployeePhone" modifier="Sealed" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="Phone used by employee" polymorphic="true">
             <Class class="Employee"/>
         </Source>

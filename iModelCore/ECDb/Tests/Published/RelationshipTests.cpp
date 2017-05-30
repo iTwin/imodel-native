@@ -20,7 +20,9 @@ struct RelationshipMappingTestFixture : DbMappingTestFixture
 TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
     {
     std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem(
+
+    testSchemas.push_back(
+        SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
             "  <ECEntityClass typeName='Model' >"
@@ -28,11 +30,11 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECEntityClass>"
             "  <ECEntityClass typeName='Element' >"
             "    <ECProperty propertyName='Code' typeName='string' />"
+            "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward'/>"
             "  </ECEntityClass>"
             "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
             "    <ECCustomAttributes>"
             "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'/>"
-            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
             "    </ECCustomAttributes>"
             "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
             "      <Class class='Model' />"
@@ -41,8 +43,150 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "      <Class class='Element' />"
             "    </Target>"
             "  </ECRelationshipClass>"
-            "</ECSchema>", false, "RelationshipClass has the violating custom attributes 'ForeignKeyConstraint' and 'LinkTableRelationshipMap' "));
+            "</ECSchema>", false, "Cannot define a nav prop for a link table relationship class"));
 
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward'>"
+            "       <ECCustomAttributes>"
+            "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "       </ECCustomAttributes>"
+            "    </ECNavigationProperty>"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+            "    <ECCustomAttributes>"
+            "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "Cannot define a nav prop (with a ForeignKeyConstraint) for a link table relationship"));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "  <ECEntityClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward'/>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Child2' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
+            "    <Source cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "Cannot define a nav prop when a link table (implied by cardinality) is required."));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "  <ECEntityClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward'>"
+            "      <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "      </ECCustomAttributes>"
+            "    </ECNavigationProperty>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Child2' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
+            "    <Source cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "Cannot define a nav prop (with ForeignKeyConstraint) when a link table (implied by cardinality) is required"));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "  <ECEntityClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward'/>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Child2' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
+            "    <Source cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "    <ECProperty propertyName='ForcingToLinkTable' typeName='string' />"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "Cannot define a nav prop when a link table (implied by additional prop.) is required."));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "  <ECEntityClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward'>"
+            "      <ECCustomAttributes>"
+            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "      </ECCustomAttributes>"
+            "    </ECNavigationProperty>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Child2' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
+            "    <Source cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "    <ECProperty propertyName='ForcingToLinkTable' typeName='string' />"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "Cannot define a nav prop (with ForeignKeyConstraint) when a link table (implied by additional prop.) is required."));
+    
     testSchemas.push_back(
         SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -79,29 +223,6 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECEntityClass>"
             "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
             "    <ECCustomAttributes>"
-            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-            "    </ECCustomAttributes>"
-            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements'>"
-            "      <Class class='Model' />"
-            "    </Source>"
-            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-            "      <Class class='Element' />"
-            "    </Target>"
-            "  </ECRelationshipClass>"
-            "</ECSchema>", false, "Relationship mapping failed as it has a ForeignKey constraint CA but implies a link table mapping because of its cardinality."));
-
-    testSchemas.push_back(
-        SchemaItem(
-            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-            "  <ECEntityClass typeName='Model' >"
-            "    <ECProperty propertyName='Name' typeName='string' />"
-            "  </ECEntityClass>"
-            "  <ECEntityClass typeName='Element' >"
-            "    <ECProperty propertyName='Code' typeName='string' />"
-            "  </ECEntityClass>"
-            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-            "    <ECCustomAttributes>"
             "        <UseECInstanceIdAsForeignKey xmlns = 'ECDbMap.02.00'/>"
             "    </ECCustomAttributes>"
             "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements'>"
@@ -124,7 +245,6 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "    <ECProperty propertyName='Code' typeName='string' />"
             "  </ECEntityClass>"
             "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-            "    <ECProperty propertyName='RelProp' typeName='string' />"
             "    <ECCustomAttributes>"
             "        <UseECInstanceIdAsForeignKey xmlns = 'ECDbMap.02.00'/>"
             "    </ECCustomAttributes>"
@@ -134,8 +254,32 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
             "      <Class class='Element' />"
             "    </Target>"
+            "    <ECProperty propertyName='RelProp' typeName='string' />"
             "  </ECRelationshipClass>"
-            "</ECSchema>", false, "Mapping failed because the RelationshipClass has UseECInstanceIdAsForeignKey CA and also defines a property."));
+            "</ECSchema>", false, "Mapping failed because the RelationshipClass has UseECInstanceIdAsForeignKey CA and implies a link table mapping because it also defines a property."));
+
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' >"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+            "    <ECCustomAttributes>"
+            "        <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+            "      <Class class='Model' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+            "      <Class class='Element' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "Relationship mapping failed as it has a UseECInstanceIdAsForeignKey CA but implies a link table mapping because of it is missing a nav prop."));
 
     testSchemas.push_back(
         SchemaItem(
@@ -150,7 +294,6 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECEntityClass>"
             "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
             "    <ECCustomAttributes>"
-            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
             "        <ClassMap xmlns='ECDbMap.02.00'>"
             "            <MapStrategy>OwnTable</MapStrategy>"
             "        </ClassMap>"
@@ -163,39 +306,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "    </Target>"
             "  </ECRelationshipClass>"
             "</ECSchema>", false, "ForeignKey mapping can only have a CA when the mapping strategy is set to NotMapped."));
-
-    testSchemas.push_back(
-        SchemaItem(
-            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-            "    <ECEntityClass typeName='A'>"
-            "        <ECProperty propertyName='Price' typeName='double'/>"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='B'>"
-            "        <ECProperty propertyName='Name' typeName='string'/>"
-            "       <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
-            "    </ECEntityClass>"
-            "    <ECRelationshipClass typeName='Rel' modifier='None' strength='referencing' >"
-            "       <Source multiplicity='(1..1)' polymorphic='true' roleLabel='A'>"
-            "           <Class class='A' />"
-            "       </Source>"
-            "       <Target multiplicity='(0..*)' polymorphic='true' roleLabel='B'>"
-            "           <Class class='B' />"
-            "       </Target>"
-            "     </ECRelationshipClass>"
-            "    <ECRelationshipClass typeName='Rel1' modifier='None' strength='referencing' >"
-            "       <ECCustomAttributes>"
-            "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-            "       </ECCustomAttributes>"
-            "       <BaseClass>Rel</BaseClass>"
-            "       <Source multiplicity='(1..1)' polymorphic='true' roleLabel='As'>"
-            "           <Class class='A' />"
-            "       </Source>"
-            "       <Target multiplicity='(0..*)' polymorphic='true' roleLabel='Bs'>"
-            "           <Class class='B' />"
-            "       </Target>"
-            "     </ECRelationshipClass>"
-            "</ECSchema>", false, "ForeignKeyConstraint CA on child RelationshipClass is not supported. Only the root class can have it."));
-
+    
     AssertSchemaImport(testSchemas, "RelationshipMappingTests.ecdb");
     }
 
@@ -212,7 +323,11 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="A" modifier="None" >
                         <ECProperty propertyName="AId" typeName="string" />
-                        <ECNavigationProperty propertyName="PartnerB" relationshipName="Rel11Backwards" direction="Forward"/>
+                        <ECNavigationProperty propertyName="PartnerB" relationshipName="Rel11Backwards" direction="Forward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
                     </ECEntityClass>
                     <ECEntityClass typeName="B" modifier="None">
                         <ECCustomAttributes>
@@ -220,8 +335,16 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                                 <MapStrategy>TablePerHierarchy</MapStrategy>
                             </ClassMap>
                         </ECCustomAttributes>
-                        <ECNavigationProperty propertyName="AId" relationshipName="Rel" direction="Backward"/>
-                        <ECNavigationProperty propertyName="PartnerA" relationshipName="Rel11" direction="Backward"/>
+                        <ECNavigationProperty propertyName="AId" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
+                        <ECNavigationProperty propertyName="PartnerA" relationshipName="Rel11" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
                         <ECProperty propertyName="BId" typeName="long" />
                     </ECEntityClass>
                     <ECEntityClass typeName="BB" modifier="None">
@@ -229,9 +352,6 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                         <ECProperty propertyName="BBId" typeName="long" />
                     </ECEntityClass>
                    <ECRelationshipClass typeName="Rel" strength="embedding" modifier="Sealed">
-                        <ECCustomAttributes>
-                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
                     <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
                       <Class class="A" />
                     </Source>
@@ -240,9 +360,6 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                     </Target>
                   </ECRelationshipClass>
                    <ECRelationshipClass typeName="Rel11" strength="embedding" modifier="Sealed">
-                        <ECCustomAttributes>
-                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
                     <Source multiplicity="(1..1)" polymorphic="True" roleLabel="relates">
                       <Class class="A" />
                     </Source>
@@ -251,9 +368,6 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                     </Target>
                   </ECRelationshipClass>
                    <ECRelationshipClass typeName="Rel11Backwards" strength="embedding" strengthDirection="Backward" modifier="Sealed">
-                        <ECCustomAttributes>
-                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
                     <Source multiplicity="(1..1)" polymorphic="True" roleLabel="relates">
                       <Class class="A" />
                     </Source>
@@ -301,7 +415,11 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                             <ShareColumns xmlns="ECDbMap.02.00"/>
                         </ECCustomAttributes>
                         <ECProperty propertyName="AId" typeName="long" />
-                        <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                        <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
                         <ECProperty propertyName="BId" typeName="long" />
                     </ECEntityClass>
                     <ECEntityClass typeName="BB" modifier="None">
@@ -309,9 +427,6 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                         <ECProperty propertyName="BBId" typeName="long" />
                     </ECEntityClass>
                    <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="embedding">
-                        <ECCustomAttributes>
-                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
                     <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
                       <Class class="A" />
                     </Source>
@@ -351,12 +466,13 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                 "    <ECEntityClass typeName='BB' modifier='None'>"
                 "        <BaseClass>B</BaseClass>"
                 "        <ECProperty propertyName='BBId' typeName='long' />"
-                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
+                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' >"
+                "           <ECCustomAttributes>"
+                "               <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
+                "           </ECCustomAttributes>"
+                "        </ECNavigationProperty>"
                 "    </ECEntityClass>"
                 "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-                "        <ECCustomAttributes>"
-                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                "        </ECCustomAttributes>"
                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                 "      <Class class='A' />"
                 "    </Source>"
@@ -389,7 +505,11 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                 "            </ClassMap>"
                 "            <ShareColumns xmlns='ECDbMap.02.00'/>"
                 "        </ECCustomAttributes>"
-                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel11' direction='Backward' />"
+                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel11' direction='Backward' >"
+                "           <ECCustomAttributes>"
+                "               <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
+                "           </ECCustomAttributes>"
+                "        </ECNavigationProperty>"
                 "        <ECProperty propertyName='BId' typeName='long' />"
                 "    </ECEntityClass>"
                 "    <ECEntityClass typeName='BB' modifier='None'>"
@@ -397,9 +517,6 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                 "        <ECProperty propertyName='BBId' typeName='long' />"
                 "    </ECEntityClass>"
                 "   <ECRelationshipClass typeName='Rel11' modifier='Sealed' >"
-                "        <ECCustomAttributes>"
-                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                "        </ECCustomAttributes>"
                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                 "      <Class class='A' />"
                 "    </Source>"
@@ -431,16 +548,17 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                                 <MapStrategy>TablePerHierarchy</MapStrategy>
                              </ClassMap>
                         </ECCustomAttributes>
-                        <ECNavigationProperty propertyName="A" relationshipName="RelBase" direction="Backward" />
+                        <ECNavigationProperty propertyName="A" relationshipName="RelBase" direction="Backward">
+                           <ECCustomAttributes>
+                               <ForeignKeyConstraint xmlns="ECDbMap.02.00" />
+                           </ECCustomAttributes>
+                        </ECNavigationProperty>
                     </ECEntityClass>
                     <ECEntityClass typeName="B1" modifier="None">
                         <BaseClass>B</BaseClass>
                         <ECProperty propertyName="B1Id" typeName="long" />
                     </ECEntityClass>
                    <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="referencing">
-                        <ECCustomAttributes>
-                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
                     <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
                       <Class class="A"/>
                     </Source>
@@ -485,16 +603,17 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "             </ClassMap>"
                 "        </ECCustomAttributes>"
-                "        <ECNavigationProperty propertyName='AId' relationshipName='RelBase' direction='Backward' />"
+                "        <ECNavigationProperty propertyName='AId' relationshipName='RelBase' direction='Backward'>"
+                "           <ECCustomAttributes>"
+                "               <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
+                "           </ECCustomAttributes>"
+                "        </ECNavigationProperty>"
                 "    </ECEntityClass>"
                 "    <ECEntityClass typeName='B1' modifier='None'>"
                 "        <BaseClass>B</BaseClass>"
                 "        <ECProperty propertyName='B1Id' typeName='long' />"
                 "    </ECEntityClass>"
                 "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
-                "        <ECCustomAttributes>"
-                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                "        </ECCustomAttributes>"
                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -539,16 +658,17 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                 "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                 "             </ClassMap>"
                 "        </ECCustomAttributes>"
-                "        <ECNavigationProperty propertyName='AInstance' relationshipName='RelBase' direction='Backward' />"
+                "        <ECNavigationProperty propertyName='AInstance' relationshipName='RelBase' direction='Backward' >"
+                "           <ECCustomAttributes>"
+                "               <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
+                "           </ECCustomAttributes>"
+                "        </ECNavigationProperty>"
                 "    </ECEntityClass>"
                 "    <ECEntityClass typeName='B1' modifier='None'>"
                 "        <BaseClass>B</BaseClass>"
                 "        <ECProperty propertyName='B1Id' typeName='long' />"
                 "    </ECEntityClass>"
                 "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
-                "        <ECCustomAttributes>"
-                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                "        </ECCustomAttributes>"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -658,8 +778,16 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                     <ECEntityClass typeName="B1" modifier="None">
                         <BaseClass>B</BaseClass>
                         <ECProperty propertyName="B1Code" typeName="long" />
-                        <ECNavigationProperty propertyName="A1" relationshipName="RelPoly" direction="Backward" />
-                        <ECNavigationProperty propertyName="A2" relationshipName="RelNonPoly" direction="Backward" />
+                        <ECNavigationProperty propertyName="A1" relationshipName="RelPoly" direction="Backward" >
+                           <ECCustomAttributes>
+                               <ForeignKeyConstraint xmlns="ECDbMap.02.00" />
+                           </ECCustomAttributes>
+                        </ECNavigationProperty>
+                        <ECNavigationProperty propertyName="A2" relationshipName="RelNonPoly" direction="Backward" >
+                           <ECCustomAttributes>
+                               <ForeignKeyConstraint xmlns="ECDbMap.02.00" />
+                           </ECCustomAttributes>
+                        </ECNavigationProperty>
                     </ECEntityClass>
                     <ECEntityClass typeName="B11" modifier="None">
                         <BaseClass>B1</BaseClass>
@@ -670,9 +798,6 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                         <ECProperty propertyName="B2Code" typeName="long" />
                     </ECEntityClass>
                    <ECRelationshipClass typeName="RelNonPoly" modifier="Sealed" strength="referencing">
-                        <ECCustomAttributes>
-                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
                     <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
                       <Class class="A" />
                     </Source>
@@ -681,9 +806,6 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                     </Target>
                   </ECRelationshipClass>
                    <ECRelationshipClass typeName="RelPoly" modifier="Sealed" strength="referencing">
-                        <ECCustomAttributes>
-                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
                     <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
                       <Class class="A" />
                     </Source>
@@ -792,14 +914,15 @@ TEST_F(RelationshipMappingTestFixture, CascadeDeletion)
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='ClassB' modifier='None'>"
                         "        <ECProperty propertyName='BB' typeName='string' />"
-                        "        <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward'/>"
-                        "    </ECEntityClass>"
-                        "    <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='embedding'>"
-                        "        <ECCustomAttributes>"
+                        "        <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward'>"
+                        "          <ECCustomAttributes>"
                         "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                         "               <OnDeleteAction>Cascade</OnDeleteAction>"
                         "            </ForeignKeyConstraint>"
-                        "        </ECCustomAttributes>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
+                        "    </ECEntityClass>"
+                        "    <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='embedding'>"
                         "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                         "           <Class class='ClassA' />"
                         "       </Source>"
@@ -809,12 +932,15 @@ TEST_F(RelationshipMappingTestFixture, CascadeDeletion)
                         "     </ECRelationshipClass>"
                         "    <ECEntityClass typeName='ClassC' modifier='None'>"
                         "        <ECProperty propertyName='CC' typeName='string' />"
-                        "        <ECNavigationProperty propertyName='B' relationshipName='BHasC' direction='Backward'/>"
+                        "        <ECNavigationProperty propertyName='B' relationshipName='BHasC' direction='Backward'>"
+                        "          <ECCustomAttributes>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                        "               <OnDeleteAction>Cascade</OnDeleteAction>"
+                        "            </ForeignKeyConstraint>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='BHasC' modifier='Sealed' strength='embedding'>"
-                        "        <ECCustomAttributes>"
-                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                        "        </ECCustomAttributes>"
                         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                         "      <Class class = 'ClassB' />"
                         "    </Source>"
@@ -923,16 +1049,17 @@ TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
                             </ECEntityClass>
                             <ECEntityClass typeName="Child">
                               <ECProperty propertyName="Name" typeName="string" />
-                              <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward"/>
+                              <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward">
+                                <ECCustomAttributes>
+                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                                </ECCustomAttributes>
+                              </ECNavigationProperty>
                             </ECEntityClass>
                             <ECEntityClass typeName="SpecialChild">
                               <BaseClass>Child</BaseClass>
                               <ECProperty propertyName="SpecialName" typeName="string" />
                             </ECEntityClass>
                             <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
-                                <ECCustomAttributes>
-                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                                </ECCustomAttributes>
                                 <Source multiplicity="(0..1)" polymorphic="False" roleLabel="Parent">
                                    <Class class ="Parent" />
                                 </Source>
@@ -1300,12 +1427,13 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
                          "          </IsMixin>"
                          "      </ECCustomAttributes>"
                          "      <ECProperty propertyName='www' typeName='long' />"
-                         "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward' />"
+                         "      <ECNavigationProperty propertyName='Car' relationshipName='CarHasEndPoint' direction='Backward'>"
+                        "          <ECCustomAttributes>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
                          "  </ECEntityClass>"
                          "  <ECRelationshipClass typeName='CarHasEndPoint' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
-                         "        <ECCustomAttributes>"
-                         "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                         "        </ECCustomAttributes>"
                          "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
                          "         <Class class='Car' />"
                          "     </Source>"
@@ -2075,15 +2203,36 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    </ECEntityClass>"
                                 "    <ECEntityClass typeName='B'>"
                                 "        <ECProperty propertyName='BName' typeName='string' />"
-                                "        <ECNavigationProperty propertyName='AId_Rel1N' relationshipName='Rel1N' direction='Backward' />"
-                                "        <ECNavigationProperty propertyName='AId_Rel0N' relationshipName='Rel0N' direction='Backward' />"
-                                "        <ECNavigationProperty propertyName='AId_RelN1' relationshipName='RelN1' direction='Forward' />"
-                                "        <ECNavigationProperty propertyName='AId_RelN0' relationshipName='RelN0' direction='Forward' />"
+                                "        <ECNavigationProperty propertyName='AId_Rel1N' relationshipName='Rel1N' direction='Backward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                                "               <OnDeleteAction>Cascade</OnDeleteAction>"
+                                "            </ForeignKeyConstraint>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
+                                "        <ECNavigationProperty propertyName='AId_Rel0N' relationshipName='Rel0N' direction='Backward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                                "               <OnDeleteAction>Cascade</OnDeleteAction>"
+                                "            </ForeignKeyConstraint>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
+                                "        <ECNavigationProperty propertyName='AId_RelN1' relationshipName='RelN1' direction='Forward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                                "               <OnDeleteAction>Cascade</OnDeleteAction>"
+                                "            </ForeignKeyConstraint>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
+                                "        <ECNavigationProperty propertyName='AId_RelN0' relationshipName='RelN0' direction='Forward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                                "               <OnDeleteAction>Cascade</OnDeleteAction>"
+                                "            </ForeignKeyConstraint>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
                                 "    </ECEntityClass>"
                                 "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                                 "      <Class class = 'A' />"
                                 "    </Source>"
@@ -2092,9 +2241,6 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    </Target>"
                                 "  </ECRelationshipClass>"
                                 "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(0,N)' polymorphic='True'>"
                                 "      <Class class = 'B' />"
                                 "    </Source>"
@@ -2103,9 +2249,6 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    </Target>"
                                 "  </ECRelationshipClass>"
                                 "  <ECRelationshipClass typeName='Rel0N' strength='embedding' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                                 "      <Class class = 'A' />"
                                 "    </Source>"
@@ -2114,9 +2257,6 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    </Target>"
                                 "  </ECRelationshipClass>"
                                 "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(0,N)' polymorphic='True'>"
                                 "      <Class class = 'B' />"
                                 "    </Source>"
@@ -2150,16 +2290,28 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    </ECEntityClass>"
                                 "    <ECEntityClass typeName='B'>"
                                 "        <ECProperty propertyName='BName' typeName='string' />"
-                                "        <ECNavigationProperty propertyName='A1' relationshipName='Rel1N' direction='Backward' />"
-                                "        <ECNavigationProperty propertyName='A2' relationshipName='Rel0N' direction='Backward' />"
-                                "        <ECNavigationProperty propertyName='A3' relationshipName='RelN0' direction='Forward' />"
-                                "        <ECNavigationProperty propertyName='A4' relationshipName='RelN1' direction='Forward' />"
+                                "        <ECNavigationProperty propertyName='A1' relationshipName='Rel1N' direction='Backward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
+                                "        <ECNavigationProperty propertyName='A2' relationshipName='Rel0N' direction='Backward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
+                                "        <ECNavigationProperty propertyName='A3' relationshipName='RelN0' direction='Forward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
+                                "        <ECNavigationProperty propertyName='A4' relationshipName='RelN1' direction='Forward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
                                 "    </ECEntityClass>"
                                 "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-                                "        </ForeignKeyConstraint>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                                 "      <Class class = 'A' />"
                                 "    </Source>"
@@ -2168,10 +2320,6 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    </Target>"
                                 "  </ECRelationshipClass>"
                                 "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-                                "        </ForeignKeyConstraint>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(0,N)' polymorphic='True'>"
                                 "      <Class class = 'B' />"
                                 "    </Source>"
@@ -2180,10 +2328,6 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    </Target>"
                                 "  </ECRelationshipClass>"
                                 "  <ECRelationshipClass typeName='Rel0N' strength='embedding' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-                                "        </ForeignKeyConstraint>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                                 "      <Class class = 'A' />"
                                 "    </Source>"
@@ -2192,10 +2336,6 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    </Target>"
                                 "  </ECRelationshipClass>"
                                 "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-                                "        </ForeignKeyConstraint>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(0,N)' polymorphic='True'>"
                                 "      <Class class = 'B' />"
                                 "    </Source>"
@@ -2238,12 +2378,13 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                 "    <ECEntityClass typeName='BSub'>"
                                 "        <BaseClass>B</BaseClass>"
                                 "        <ECProperty propertyName='BSubName' typeName='string' />"
-                                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
+                                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' >"
+                                "          <ECCustomAttributes>"
+                                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                "          </ECCustomAttributes>"
+                                "        </ECNavigationProperty>"
                                 "    </ECEntityClass>"
                                 "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-                                "    <ECCustomAttributes>"
-                                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                "    </ECCustomAttributes>"
                                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                                 "      <Class class = 'A' />"
                                 "    </Source>"
@@ -2403,7 +2544,11 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='B'>"
                         "        <BaseClass>Base</BaseClass>"
-                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' />"
+                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' >"
+                        "          <ECCustomAttributes>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
                         "        <ECProperty propertyName='BProp1' typeName='string' />"
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='AA'>"
@@ -2415,9 +2560,6 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-                        "        <ECCustomAttributes>"
-                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                        "        </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -2462,16 +2604,17 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                         "    <ECEntityClass typeName='B'>"
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='BProp1' typeName='string' />"
-                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' />"
+                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward'>"
+                        "          <ECCustomAttributes>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='C'>"
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-                        "        <ECCustomAttributes>"
-                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                        "        </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -2515,17 +2658,22 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                         "    <ECEntityClass typeName='B'>"
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='BProp1' typeName='string' />"
-                        "        <ECNavigationProperty propertyName='Parent1' relationshipName='Rel1' direction='Backward' />"
-                        "        <ECNavigationProperty propertyName='Parent2' relationshipName='Rel2' direction='Backward' />"
+                        "        <ECNavigationProperty propertyName='Parent1' relationshipName='Rel1' direction='Backward' >"
+                        "          <ECCustomAttributes>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
+                        "        <ECNavigationProperty propertyName='Parent2' relationshipName='Rel2' direction='Backward' >"
+                        "          <ECCustomAttributes>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='C'>"
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel1' strength='embedding' modifier='Sealed'>"
-                        "        <ECCustomAttributes>"
-                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                        "        </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -2534,9 +2682,6 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                         "    </Target>"
                         "  </ECRelationshipClass>"
                         "  <ECRelationshipClass typeName='Rel2' strength='embedding' modifier='Sealed'>"
-                        "        <ECCustomAttributes>"
-                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                        "        </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -2582,16 +2727,17 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='B'>"
                         "        <BaseClass>Base</BaseClass>"
-                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' />"
+                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' >"
+                        "          <ECCustomAttributes>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='C'>"
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-                        "        <ECCustomAttributes>"
-                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                        "        </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -2637,17 +2783,17 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='B'>"
                         "        <BaseClass>Base</BaseClass>"
-                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' />"
+                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' >"
+                        "          <ECCustomAttributes>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                        "          </ECCustomAttributes>"
+                        "        </ECNavigationProperty>"
                         "    </ECEntityClass>"
                         "    <ECEntityClass typeName='C'>"
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-                        "    <ECCustomAttributes>"
-                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-                        "        </ForeignKeyConstraint>"
-                        "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -2679,22 +2825,51 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
                                      "        <ECProperty propertyName='AName' typeName='string' />"
-                                     "        <ECNavigationProperty propertyName='B1' relationshipName='Rel11back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B2' relationshipName='Rel01back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B3' relationshipName='Rel10back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B4' relationshipName='Rel00back' direction='Forward' />"
+                                     "        <ECNavigationProperty propertyName='B1' relationshipName='Rel11back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B2' relationshipName='Rel01back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B3' relationshipName='Rel10back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B4' relationshipName='Rel00back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "    <ECEntityClass typeName='B'>"
                                      "        <ECProperty propertyName='BName' typeName='string' />"
-                                     "        <ECNavigationProperty propertyName='A1' relationshipName='Rel11' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A2' relationshipName='Rel01' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A3' relationshipName='Rel10' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A4' relationshipName='Rel00' direction='Backward' />"
+                                     "        <ECNavigationProperty propertyName='A1' relationshipName='Rel11' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A2' relationshipName='Rel01' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A3' relationshipName='Rel10' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A4' relationshipName='Rel00' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "  <ECRelationshipClass typeName='Rel11' strength='embedding' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2703,9 +2878,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel01' strength='embedding' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2714,9 +2886,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel10' strength='embedding' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2725,9 +2894,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel00' strength='embedding' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2736,9 +2902,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel11back' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2747,9 +2910,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel01back' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2758,9 +2918,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel10back' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2769,9 +2926,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel00back' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2786,22 +2940,51 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
                                      "        <ECProperty propertyName='AName' typeName='string' />"
-                                     "        <ECNavigationProperty propertyName='B1' relationshipName='Rel11back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B2' relationshipName='Rel01back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B3' relationshipName='Rel10back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B4' relationshipName='Rel00back' direction='Forward' />"
+                                     "        <ECNavigationProperty propertyName='B1' relationshipName='Rel11back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B2' relationshipName='Rel01back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B3' relationshipName='Rel10back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B4' relationshipName='Rel00back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "    <ECEntityClass typeName='B'>"
                                      "        <ECProperty propertyName='BName' typeName='string' />"
-                                     "        <ECNavigationProperty propertyName='A1' relationshipName='Rel11' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A2' relationshipName='Rel01' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A3' relationshipName='Rel10' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A4' relationshipName='Rel00' direction='Backward' />"
+                                     "        <ECNavigationProperty propertyName='A1' relationshipName='Rel11' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A2' relationshipName='Rel01' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A3' relationshipName='Rel10' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A4' relationshipName='Rel00' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "  <ECRelationshipClass typeName='Rel11' strength='holding' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2810,9 +2993,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel01' strength='holding' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2821,9 +3001,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel10' strength='holding' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2832,9 +3009,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel00' strength='holding' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2843,9 +3017,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel11back' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2854,9 +3025,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel01back' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2865,9 +3033,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel10back' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2876,9 +3041,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel00back' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
-                                     "        <ECCustomAttributes>"
-                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "        </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2893,22 +3055,51 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
                                      "        <ECProperty propertyName='AName' typeName='string' />"
-                                     "        <ECNavigationProperty propertyName='B1' relationshipName='Rel11back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B2' relationshipName='Rel01back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B3' relationshipName='Rel10back' direction='Forward' />"
-                                     "        <ECNavigationProperty propertyName='B4' relationshipName='Rel00back' direction='Forward' />"
+                                     "        <ECNavigationProperty propertyName='B1' relationshipName='Rel11back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B2' relationshipName='Rel01back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B3' relationshipName='Rel10back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='B4' relationshipName='Rel00back' direction='Forward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "    <ECEntityClass typeName='B'>"
                                      "        <ECProperty propertyName='BName' typeName='string' />"
-                                     "        <ECNavigationProperty propertyName='A1' relationshipName='Rel11' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A2' relationshipName='Rel01' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A3' relationshipName='Rel10' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A4' relationshipName='Rel00' direction='Backward' />"
+                                     "        <ECNavigationProperty propertyName='A1' relationshipName='Rel11' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A2' relationshipName='Rel01' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A3' relationshipName='Rel10' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
+                                     "        <ECNavigationProperty propertyName='A4' relationshipName='Rel00' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "  <ECRelationshipClass typeName='Rel11' strength='referencing' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2917,9 +3108,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel01' strength='referencing' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2928,9 +3116,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel10' strength='referencing' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2939,9 +3124,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel00' strength='referencing' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2950,9 +3132,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel11back' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2961,9 +3140,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel01back' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2972,9 +3148,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel10back' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -2983,9 +3156,6 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel00back' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
-                                     "    <ECCustomAttributes>"
-                                     "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                                     "    </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -3043,12 +3213,24 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "     </ECCustomAttributes>"
                                      "        <ECProperty propertyName='BName' typeName='string' />"
                                      "        <ECNavigationProperty propertyName='A1' relationshipName='Rel1' direction='Backward' />"
-                                     "        <ECNavigationProperty propertyName='A2' relationshipName='Rel2' direction='Backward' />"
+                                     "        <ECNavigationProperty propertyName='A2' relationshipName='Rel2' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "             <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                                     "               <OnDeleteAction>Cascade</OnDeleteAction>"
+                                     "             </ForeignKeyConstraint>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "    <ECEntityClass typeName='B1'>"
                                      "        <BaseClass>B</BaseClass>"
                                      "        <ECProperty propertyName='B1Name' typeName='string' />"
-                                     "        <ECNavigationProperty propertyName='A3' relationshipName='Rel3' direction='Backward' />"
+                                     "        <ECNavigationProperty propertyName='A3' relationshipName='Rel3' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "             <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                                     "               <OnDeleteAction>Restrict</OnDeleteAction>"
+                                     "             </ForeignKeyConstraint>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "    <ECEntityClass typeName='B2'>"
                                      "        <BaseClass>B</BaseClass>"
@@ -3063,11 +3245,6 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel2' strength='embedding' modifier='Sealed'>"
-                                     "      <ECCustomAttributes>"
-                                     "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-                                     "          <OnDeleteAction>Cascade</OnDeleteAction>"
-                                     "        </ForeignKeyConstraint>"
-                                     "     </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -3076,11 +3253,6 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel3' strength='embedding' modifier='Sealed'>"
-                                     "      <ECCustomAttributes>"
-                                     "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-                                     "          <OnDeleteAction>Restrict</OnDeleteAction>"
-                                     "        </ForeignKeyConstraint>"
-                                     "     </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -3144,18 +3316,19 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "    <ECEntityClass typeName='B1'>"
                                      "        <BaseClass>B</BaseClass>"
                                      "        <ECProperty propertyName='B1Name' typeName='string' />"
-                                     "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward' />"
+                                     "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward' >"
+                                     "          <ECCustomAttributes>"
+                                     "             <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                                     "               <OnDeleteAction>Cascade</OnDeleteAction>"
+                                     "             </ForeignKeyConstraint>"
+                                     "          </ECCustomAttributes>"
+                                     "        </ECNavigationProperty>"
                                      "    </ECEntityClass>"
                                      "    <ECEntityClass typeName='B2'>"
                                      "        <BaseClass>B</BaseClass>"
                                      "        <ECProperty propertyName='B2Name' typeName='string' />"
                                      "    </ECEntityClass>"
                                      "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-                                     "      <ECCustomAttributes>"
-                                     "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
-                                     "          <OnDeleteAction>Cascade</OnDeleteAction>"
-                                     "        </ForeignKeyConstraint>"
-                                     "     </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -3169,41 +3342,7 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
     AssertSchemaImport(testSchemas, "nocascadingdeleteonjoinedtables.ecdb");
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipMappingTestFixture, ForeignKeyConstraintWhereLinkTableIsRequired)
-    {
-    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-                        "  <ECEntityClass typeName='Parent' >"
-                        "    <ECProperty propertyName='Name' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='Child' >"
-                        "    <ECProperty propertyName='ParentId' typeName='long' />"
-                        "    <ECProperty propertyName='ChildName' typeName='string' />"
-                        "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='Child2' >"
-                        "    <ECProperty propertyName='ParentId' typeName='long' />"
-                        "    <ECProperty propertyName='ChildName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                        "    <ECCustomAttributes>"
-                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                        "    </ECCustomAttributes>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'Parent' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' />"
-                        "    </Target>"
-                        "    <ECProperty propertyName='ForcingToLinkTable' typeName='string' />"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", false, "Cannot apply ForeignKeyConstraint when a link table is required.");
 
-    AssertSchemaImport(testItem, "ForeignKeyConstraintWhereLinkTableIsRequired.ecdb");
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  12/16
@@ -3218,12 +3357,15 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECEntityClass typeName="Child" >
                                 <ECProperty propertyName="ChildName" typeName="string" />
-                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward"/>
+                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward">
+                                 <ECCustomAttributes>
+                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+                                 </ECCustomAttributes>
+                                </ECNavigationProperty>
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                                  <ECCustomAttributes>
                                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
-                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
                                   <Class class="Parent" />
@@ -3246,13 +3388,16 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECEntityClass typeName="Child" >
                                 <ECProperty propertyName="ChildName" typeName="string" />
-                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward"/>
-                              </ECEntityClass>
-                              <ECRelationshipClass typeName="ParentHasChildren" strength="embedding" modifier="Sealed">
+                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward">
                                  <ECCustomAttributes>
                                     <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
                                         <OnDeleteAction>Cascade</OnDeleteAction>
                                     </ForeignKeyConstraint>
+                                 </ECCustomAttributes>
+                                </ECNavigationProperty>
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="ParentHasChildren" strength="embedding" modifier="Sealed">
+                                 <ECCustomAttributes>
                                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
@@ -3287,13 +3432,16 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               <ECEntityClass typeName="SubChild" >
                                 <BaseClass>Child</BaseClass>
                                 <ECProperty propertyName="SubChildName" typeName="string" />
-                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasSubChildren" direction="Backward"/>
+                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasSubChildren" direction="Backward">
+                                  <ECCustomAttributes>
+                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
+                                        <OnDeleteAction>SetNull</OnDeleteAction>
+                                    </ForeignKeyConstraint>
+                                   </ECCustomAttributes>
+                                 </ECNavigationProperty>
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="Sealed">
                                  <ECCustomAttributes>
-                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                                        <OnDeleteAction>SetNull</OnDeleteAction>
-                                    </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
@@ -3327,13 +3475,16 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               <ECEntityClass typeName="SubChild" >
                                 <BaseClass>Child</BaseClass>
                                 <ECProperty propertyName="SubChildName" typeName="string" />
-                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasSubChildren" direction="Backward"/>
-                              </ECEntityClass>
-                              <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="None">
+                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasSubChildren" direction="Backward">
                                  <ECCustomAttributes>
                                     <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                                         <OnDeleteAction>SetNull</OnDeleteAction>
                                     </ForeignKeyConstraint>
+                                 </ECCustomAttributes>
+                                </ECNavigationProperty>
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="None">
+                                 <ECCustomAttributes>
                                     <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
@@ -3370,7 +3521,13 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                                     </ClassMap>                               
                                  </ECCustomAttributes>
                                  <ECProperty propertyName="Name" typeName="string" />
-                                 <ECNavigationProperty propertyName="Element" relationshipName="ModelModelsElement" direction="Forward"/>
+                                 <ECNavigationProperty propertyName="Element" relationshipName="ModelModelsElement" direction="Forward">
+                                  <ECCustomAttributes>
+                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
+                                        <OnDeleteAction>NoAction</OnDeleteAction>
+                                    </ForeignKeyConstraint>
+                                   </ECCustomAttributes>
+                                 </ECNavigationProperty>
                               </ECEntityClass>
                               <ECEntityClass typeName="PhysicalModel">
                                 <BaseClass>Model</BaseClass>
@@ -3391,9 +3548,6 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
                                  <ECCustomAttributes>
-                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                                        <OnDeleteAction>NoAction</OnDeleteAction>
-                                    </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(0..1)" polymorphic="True" roleLabel="models">
@@ -3431,11 +3585,14 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="Child" >
                <ECProperty propertyName="ChildName" typeName="string" />
-               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" >
+                 <ECCustomAttributes>
+                  <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                  </ECCustomAttributes>
+               </ECNavigationProperty>                 
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
                 </ECCustomAttributes>
                 <Source multiplicity="(0..*)" polymorphic="True" roleLabel="is parent of">
@@ -3479,12 +3636,15 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="Child" >
                <ECProperty propertyName="ChildName" typeName="string" />
-               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" >
+                  <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+                  </ECCustomAttributes>
+                </ECNavigationProperty>                
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                 <ECCustomAttributes>
                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
-                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
                 </ECCustomAttributes>
                 <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
                     <Class class="Parent" />
@@ -4454,9 +4614,6 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
                 <ECNavigationProperty propertyName="Model" relationshipName="ModelHasElements" direction="Backward" />
               </ECEntityClass>
               <ECRelationshipClass typeName="ModelHasElements" modifier="None" strength="embedding" strengthDirection="Backward">
-                <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                </ECCustomAttributes>
                 <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Model Has Elements">
                   <Class class="Model" />
                 </Source>
@@ -4478,9 +4635,6 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
                 <ECNavigationProperty propertyName="Model" relationshipName="ModelHasElements" direction="Backward" />
               </ECEntityClass>
               <ECRelationshipClass typeName="ModelHasElements" modifier="None" strength="embedding" strengthDirection="Forward">
-                <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                </ECCustomAttributes>
                 <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Model Has Elements">
                   <Class class="Model" />
                 </Source>
@@ -4502,9 +4656,6 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
                 <ECProperty propertyName="Code" typeName="string" />
               </ECEntityClass>
               <ECRelationshipClass typeName="ModelHasElements" modifier="None" strength="embedding" strengthDirection="Backward">
-                <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                </ECCustomAttributes>
                 <Source multiplicity="(0..*)" polymorphic="True" roleLabel="Model Has Elements">
                   <Class class="Model" />
                 </Source>
@@ -4526,9 +4677,6 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
             "    <ECProperty propertyName='Code' typeName='string' />"
             "  </ECEntityClass>"
             "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' strengthDirection='Forward'>"
-            "    <ECCustomAttributes>"
-            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-            "    </ECCustomAttributes>"
             "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements'>"
             "      <Class class='Model' />"
             "    </Source>"
@@ -4550,9 +4698,6 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
             "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
             "  </ECEntityClass>"
             "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' strengthDirection='Forward'>"
-            "    <ECCustomAttributes>"
-            "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-            "    </ECCustomAttributes>"
             "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
             "      <Class class='Model' />"
             "    </Source>"
@@ -4691,12 +4836,9 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
                            </ECEntityClass>
                            <ECEntityClass typeName="GeometryPart" >
                              <ECProperty propertyName="Stream" typeName="binary" />
-                            <ECNavigationProperty propertyName="Geometry" relationshipName="GeometryHoldsParts" direction="Backward"/>
+                             <ECNavigationProperty propertyName="Geometry" relationshipName="GeometryHoldsParts" direction="Backward"/>
                            </ECEntityClass>
                            <ECRelationshipClass typeName="GeometryHoldsParts" strength="holding" strengthDirection="Forward" modifier="Sealed">
-                              <ECCustomAttributes>
-                                  <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                              </ECCustomAttributes>
                               <Source cardinality="(0,1)" polymorphic="True">
                                   <Class class="Geometry" />
                               </Source>
@@ -4759,7 +4901,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
     ASSERT_TRUE(InstanceExists("ts.Geometry", geomKey2));
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1));
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey2));
-    ASSERT_FALSE(RelationshipExists("ts.GeometryHoldsParts", geomKey1, partKey1)) << "ECSQL DELETE deletes affected relationships";
+    ASSERT_TRUE(RelationshipExists("ts.GeometryHoldsParts", geomKey1, partKey1)) << "ForeignKeyConstraint is missing, therefore ECSQL DELETE doesn't delete affected relationships";
     }
 
 //---------------------------------------------------------------------------------------
@@ -4779,9 +4921,6 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
                             <ECNavigationProperty propertyName="Geometry" relationshipName="PartHeldByGeometry" direction="Forward"/>
                            </ECEntityClass>
                            <ECRelationshipClass typeName="PartHeldByGeometry" strength="holding" strengthDirection="Backward" modifier="Sealed">
-                             <ECCustomAttributes>
-                                 <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                             </ECCustomAttributes>
                              <Source cardinality="(0,1)" polymorphic="True">
                                  <Class class="GeometryPart" />
                               </Source>
@@ -4845,7 +4984,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
     ASSERT_TRUE(InstanceExists("ts.Geometry", geomKey2));
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1));
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey2));
-    ASSERT_FALSE(RelationshipExists("ts.PartHeldByGeometry", partKey1, geomKey1)) << "ECSQL DELETE deletes affected relationships";
+    ASSERT_TRUE(RelationshipExists("ts.PartHeldByGeometry", partKey1, geomKey1)) << "ForeignKeyConstraint is missing, therefore ECSQL DELETE doesn't delete affected relationships";
     }
 
 //---------------------------------------------------------------------------------------
@@ -5711,13 +5850,18 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     </ECEntityClass>
     <ECEntityClass typeName="Goo" >
         <ECProperty propertyName="gooProp" typeName="string" />
-        <ECNavigationProperty propertyName="PartnerFoo" relationshipName="OneFooHasOneGoo" direction="Backward"/>
-        <ECNavigationProperty propertyName="ParentFoo" relationshipName="OneFooHasManyGoo" direction="Backward"/>
+        <ECNavigationProperty propertyName="PartnerFoo" relationshipName="OneFooHasOneGoo" direction="Backward">
+          <ECCustomAttributes>
+            %s
+          </ECCustomAttributes>
+        </ECNavigationProperty>                
+        <ECNavigationProperty propertyName="ParentFoo" relationshipName="OneFooHasManyGoo" direction="Backward">
+          <ECCustomAttributes>
+            %s
+          </ECCustomAttributes>
+        </ECNavigationProperty>                
     </ECEntityClass>
     <ECRelationshipClass typeName="OneFooHasOneGoo" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            %s
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
             <Class class="Foo" />
         </Source>
@@ -5726,9 +5870,6 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="OneFooHasManyGoo" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            %s
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
             <Class class="Foo" />
         </Source>

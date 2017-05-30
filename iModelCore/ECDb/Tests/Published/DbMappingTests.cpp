@@ -2974,7 +2974,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                   "<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='A' modifier='None'>"
                                    "        <ECProperty propertyName='AA' typeName='double' />"
@@ -2987,31 +2987,32 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                    "            </ForeignKeyConstraint>"
                                    "        </ECCustomAttributes>"
-                                   "       <Source cardinality='(0,N)' polymorphic='True'>"
+                                   "       <Source cardinality='(0,1)' polymorphic='True'>"
                                    "           <Class class='A' />"
                                    "       </Source>"
                                    "       <Target cardinality='(0,N)' polymorphic='True'>"
                                    "           <Class class='B' />"
                                    "       </Target>"
                                    "     </ECRelationshipClass>"
-                                   "</ECSchema>", false, "ForeignKeyConstraint on N:N relationship is not supported"));
+                                   "</ECSchema>", false, "ForeignKeyConstraint on relationship is not supported"));
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                   "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='A' modifier='None'>"
                                    "        <ECProperty propertyName='AA' typeName='double' />"
                                    "    </ECEntityClass>"
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
-                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
-                                   "    </ECEntityClass>"
-                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-                                   "        <ECCustomAttributes>"
+                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'>"
+                                   "          <ECCustomAttributes>"
                                    "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
                                    "            </ForeignKeyConstraint>"
-                                   "        </ECCustomAttributes>"
+                                   "          </ECCustomAttributes>"
+                                   "        </ECNavigationProperty>"
+                                   "    </ECEntityClass>"
+                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                                    "       <Source cardinality='(0,1)' polymorphic='True'>"
                                    "           <Class class='A' />"
                                    "       </Source>"
@@ -3022,21 +3023,22 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "</ECSchema>", true, "Cascading delete only supported for embedding relationships"));
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                   "<ECSchema schemaName='TestSchema3' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='A' modifier='None'>"
                                    "        <ECProperty propertyName='AA' typeName='double' />"
                                    "    </ECEntityClass>"
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
-                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
-                                   "    </ECEntityClass>"
-                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
-                                   "        <ECCustomAttributes>"
+                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'>"
+                                   "          <ECCustomAttributes>"
                                    "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
                                    "            </ForeignKeyConstraint>"
-                                   "        </ECCustomAttributes>"
+                                   "          </ECCustomAttributes>"
+                                   "        </ECNavigationProperty>"
+                                   "    </ECEntityClass>"
+                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
                                    "       <Source cardinality='(0,1)' polymorphic='True'>"
                                    "           <Class class='A' />"
                                    "       </Source>"
@@ -3047,21 +3049,22 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "</ECSchema>", false, "Cascading delete only supported for embedding relationships"));
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                   "<ECSchema schemaName='TestSchema4' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='A' modifier='None'>"
                                    "        <ECProperty propertyName='AA' typeName='double' />"
                                    "    </ECEntityClass>"
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
-                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
-                                   "    </ECEntityClass>"
-                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='holding'>"
-                                   "        <ECCustomAttributes>"
+                                   "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'>"
+                                   "          <ECCustomAttributes>"
                                    "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
                                    "            </ForeignKeyConstraint>"
-                                   "        </ECCustomAttributes>"
+                                   "          </ECCustomAttributes>"
+                                   "        </ECNavigationProperty>"
+                                   "    </ECEntityClass>"
+                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='holding'>"
                                    "       <Source cardinality='(0,1)' polymorphic='True'>"
                                    "           <Class class='A' />"
                                    "       </Source>"
@@ -3071,7 +3074,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "     </ECRelationshipClass>"
                                    "</ECSchema>", false, "Cascading delete only supported for embedding relationships"));
 
-    AssertSchemaImport(testItems, "sharedtablecatests.ecdb");
+    AssertSchemaImport(testItems, "ForeignKeyMapCATests.ecdb");
     }
 
 //---------------------------------------------------------------------------------------
@@ -4754,12 +4757,13 @@ TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
         "  <ECEntityClass typeName='Element' >"
         "    <BaseClass>Model</BaseClass>"
         "    <ECProperty propertyName='Code' typeName='string' />"
-        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward'/>"
+        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward'>"
+        "      <ECCustomAttributes>"
+        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+        "      </ECCustomAttributes>"
+        "    </ECNavigationProperty>"
         "  </ECEntityClass>"
         "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
-        "    <ECCustomAttributes>"
-        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-        "    </ECCustomAttributes>"
         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
         "      <Class class='Model' />"
         "    </Source>"
@@ -4784,14 +4788,15 @@ TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
         "  <ECEntityClass typeName='Element' >"
         "    <BaseClass>Model</BaseClass>"
         "    <ECProperty propertyName='Prop' typeName='string' />"
-        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward'/>"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='referencing' direction='Forward'>"
-        "    <ECCustomAttributes>"
+        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward'>"
+        "      <ECCustomAttributes>"
         "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
         "         <OnDeleteAction>Cascade</OnDeleteAction>"
         "        </ForeignKeyConstraint>"
-        "    </ECCustomAttributes>"
+        "      </ECCustomAttributes>"
+        "    </ECNavigationProperty>"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='referencing' direction='Forward'>"
         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
         "      <Class class='Model' />"
         "    </Source>"
@@ -5638,12 +5643,13 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
                 "</ECEntityClass>"
                 "<ECEntityClass typeName='Goo' modifier='None' >"
                 "   <ECProperty propertyName='GooProp' typeName='int' />"
-                "   <ECNavigationProperty propertyName='Foo' relationshipName='FooHasGoo' direction='Backward'/>"
-                "</ECEntityClass>"
-                "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
+                "   <ECNavigationProperty propertyName='Foo' relationshipName='FooHasGoo' direction='Backward'>"
                 "        <ECCustomAttributes>"
                 "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                 "        </ECCustomAttributes>"
+                "    </ECNavigationProperty>"
+                "</ECEntityClass>"
+                "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
                 "    <Source multiplicity='(0..1)' polymorphic='false' roleLabel='Foo'>"
                 "      <Class class = 'Foo' />"
                 "    </Source>"
@@ -5682,12 +5688,13 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
                 "<ECEntityClass typeName='Child' modifier='None' >"
                 "   <BaseClass>Parent</BaseClass>"
                 "   <ECProperty propertyName='ChildAProp' typeName='int' />"
-                "   <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChild' direction='Backward'/>"
-                "</ECEntityClass>"
-                "<ECRelationshipClass typeName='ParentHasChild' modifier='Sealed' strength='referencing'>"
+                "   <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChild' direction='Backward'>"
                 "        <ECCustomAttributes>"
                 "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                 "        </ECCustomAttributes>"
+                "   </ECNavigationProperty>"
+                "</ECEntityClass>"
+                "<ECRelationshipClass typeName='ParentHasChild' modifier='Sealed' strength='referencing'>"
                 "    <Source cardinality='(0,1)' polymorphic='false'>"
                 "      <Class class = 'Parent' />"
                 "    </Source>"
@@ -9308,21 +9315,22 @@ TEST_F(DbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
         </ECEntityClass>
         <ECEntityClass typeName="Child" >
             <ECCustomAttributes>
-                <ClassMap xmlns='ECDbMap.02.00'>
+                <ClassMap xmlns="ECDbMap.02.00">
                     <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
             <ECProperty propertyName="ChildName" typeName="string" />
-            <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildrenBase" direction="Backward" />
+            <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildrenBase" direction="Backward" >
+                <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                    <OnDeleteAction>Cascade</OnDeleteAction>
+                </ForeignKeyConstraint>
+                </ECCustomAttributes>
+            </ECNavigationProperty>
             <ECProperty propertyName="Phone" typeName="string" />
             <ECProperty propertyName="Address" typeName="string" />
         </ECEntityClass>
         <ECRelationshipClass typeName="ParentHasChildrenBase" strength="embedding" modifier="Abstract">
-            <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
-                    <OnDeleteAction>Cascade</OnDeleteAction>
-                </ForeignKeyConstraint>
-            </ECCustomAttributes>
             <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
                 <Class class="Parent" />
             </Source>
