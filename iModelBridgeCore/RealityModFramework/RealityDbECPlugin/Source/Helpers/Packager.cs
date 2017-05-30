@@ -364,6 +364,12 @@ namespace IndexECPlugin.Source.Helpers
 
                 GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
 
+                if ( genericInfo.URI == null )
+                    {
+                    //This should not happen, as the database entries should always contain the URI. Just to make sure, we'll skip these entries.
+                    continue;
+                    }
+
                 if ( (major == 1) && (genericInfo.Streamed == true) )
                     {
                     //We don't put streamed data in a v1 package
@@ -636,7 +642,7 @@ namespace IndexECPlugin.Source.Helpers
 
             long fileSize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
             genericInfo.FileSize = (fileSize < 0) ? 0 : (ulong) fileSize;
-            genericInfo.URI = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
+            genericInfo.URI = (firstSpatialDataSource.GetPropertyValue("MainURL") == null || firstSpatialDataSource.GetPropertyValue("MainURL").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
             genericInfo.ParameterizedURI = (firstSpatialDataSource.GetPropertyValue("ParameterizedURL") == null || firstSpatialDataSource.GetPropertyValue("ParameterizedURL").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("ParameterizedURL").NativeValue;
             genericInfo.Type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
             genericInfo.Streamed = (firstSpatialDataSource.GetPropertyValue("Streamed") == null || firstSpatialDataSource.GetPropertyValue("Streamed").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("Streamed").NativeValue;
@@ -949,6 +955,12 @@ namespace IndexECPlugin.Source.Helpers
                 //IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
 
                 GenericInfo genericInfo = ExtractGenericInfo(entity, subAPIRequestedEntities.First(e => e.ID == entity.InstanceId));
+
+                if(genericInfo.URI == null)
+                    {
+                    //The URI can be null in some entries of the rds subAPI. We skip these and don't include them in the package
+                    continue;
+                    }
 
                 if ( (major == 1) && (genericInfo.Streamed == true) )
                     {
