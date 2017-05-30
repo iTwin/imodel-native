@@ -400,13 +400,23 @@ void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> resu
 void RealityDataConsole::ConfigureServer()
     {
     DisplayInfo("Welcome to the RealityDataService Navigator. Please enter your server name\n", DisplayOption::Question);
-    DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net\n  ?", DisplayOption::Question);
+    DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net,\n", DisplayOption::Question);
+    DisplayInfo("                   qa-connect-realitydataservices.bentley.com\n  ?", DisplayOption::Question);
     Utf8String server;
     std::string input;
     std::getline(*s_inputSource, input);
     server = Utf8String(input.c_str()).Trim();
-    if (server.length() == 0)
+    if (server.length() == 0 || server.EqualsI("dev"))
         server = "dev-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("qa"))
+        server = "qa-connect-realitydataservices.bentley.com";
+    else if (server.EqualsI("ll"))
+        server = "prod-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("perf"))
+        server = "perf-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("prod"))
+        server = "connect-realitydataservices.bentley.com";
+
     bool verifyCertificate = false;
     Utf8String certificatePath = "";
 
