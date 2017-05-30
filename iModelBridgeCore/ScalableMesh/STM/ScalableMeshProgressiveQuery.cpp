@@ -969,7 +969,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
             node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
             assert(node->HasCorrectClipping(m_activeClips));                 
             }
-        }        
+        }   
     }
 
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)

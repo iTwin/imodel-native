@@ -89,6 +89,11 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsDiffset[2] = {
     };
 
 
+SMSQLiteDiffsetFile::SMSQLiteDiffsetFile()
+    {
+
+    }
+
 SMSQLiteDiffsetFile::~SMSQLiteDiffsetFile()
     {
     

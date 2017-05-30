@@ -14,6 +14,8 @@ class SMSQLiteDiffsetFile : public SMSQLiteFile
     {
     public:
 
+             SMSQLiteDiffsetFile();
+
     virtual ~SMSQLiteDiffsetFile();
 
     virtual void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize);
