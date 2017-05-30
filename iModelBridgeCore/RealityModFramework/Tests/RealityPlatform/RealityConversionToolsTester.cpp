@@ -731,7 +731,7 @@ TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityMetadata)
 
 	ASSERT_EQ(ERROR, status);
 	}
-#if 0
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
@@ -739,7 +739,7 @@ TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrder)
 	{
 	WString parseError;
 
-	BeFileName fileName(R"(RealityDataPackageSample.xml)");
+	BeFileName fileName(R"(D:\Dev\Bim2-0r1\RealityModFramework\Tests\data\RealityPlatform\RealityConversionToolsTester\RealityDataPackageSample.xml)");
 	auto linkFile = RealityConversionTools::PackageFileToDownloadOrder(fileName, &parseError);
 
 	//for (RealityDataDownload::mirrorWSistersVector link : linkFile)
@@ -760,82 +760,85 @@ TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrder)
 
 	// Imagery Group
 	// Imagery Data 1
-	EXPECT_EQ(linkFile[0][0][0].first, "http://uri1.com/");
-	EXPECT_EQ(linkFile[0][0][1].first, "http://uri1.com/url1.html");
-	EXPECT_EQ(linkFile[0][0][2].first, "http://uri1.com/url2.html");
-	EXPECT_EQ(linkFile[0][0][3].first, "http://uri1.com/url3.html");
+	EXPECT_EQ(linkFile[0][0][0].m_url, "http://uri1.com/");
+	EXPECT_EQ(linkFile[0][0][1].m_url, "http://uri1.com/url1.html");
+	EXPECT_EQ(linkFile[0][0][2].m_url, "http://uri1.com/url2.html");
+	EXPECT_EQ(linkFile[0][0][3].m_url, "http://uri1.com/url3.html");
 
-	EXPECT_EQ(linkFile[0][0][0].second, L"uri1.com");
-	EXPECT_EQ(linkFile[0][0][1].second, L"url1.html");
-	EXPECT_EQ(linkFile[0][0][2].second, L"url2.html");
-	EXPECT_EQ(linkFile[0][0][3].second, L"url3.html");
+	EXPECT_EQ(linkFile[0][0][0].m_filePath, L"uri1.com");
+	EXPECT_EQ(linkFile[0][0][1].m_filePath, L"url1.html");
+	EXPECT_EQ(linkFile[0][0][2].m_filePath, L"url2.html");
+	EXPECT_EQ(linkFile[0][0][3].m_filePath, L"url3.html");
 
 	// Imagery data 2 Multiband test
-	EXPECT_EQ(linkFile[1][0][0].first, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B4.TIF");
-	EXPECT_EQ(linkFile[1][0][1].first, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B2.TIF");
-	EXPECT_EQ(linkFile[1][0][2].first, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B3.TIF");
-	EXPECT_EQ(linkFile[1][0][3].first, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B8.TIF");
+	EXPECT_EQ(linkFile[1][0][0].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B4.TIF");
+	EXPECT_EQ(linkFile[1][0][1].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B2.TIF");
+	EXPECT_EQ(linkFile[1][0][2].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B3.TIF");
+	EXPECT_EQ(linkFile[1][0][3].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B8.TIF");
 
-	EXPECT_EQ(linkFile[1][0][0].second, L"LC80130282015007LGN00_B4.TIF");
-	EXPECT_EQ(linkFile[1][0][1].second, L"LC80130282015007LGN00_B2.TIF");
-	EXPECT_EQ(linkFile[1][0][2].second, L"LC80130282015007LGN00_B3.TIF");
-	EXPECT_EQ(linkFile[1][0][3].second, L"LC80130282015007LGN00_B8.TIF");
+	EXPECT_EQ(linkFile[1][0][0].m_filePath, L"LC80130282015007LGN00_B4.TIF");
+	EXPECT_EQ(linkFile[1][0][1].m_filePath, L"LC80130282015007LGN00_B2.TIF");
+	EXPECT_EQ(linkFile[1][0][2].m_filePath, L"LC80130282015007LGN00_B3.TIF");
+	EXPECT_EQ(linkFile[1][0][3].m_filePath, L"LC80130282015007LGN00_B8.TIF");
 
 	// Terrain Group
 	// Terrain data 1
-	EXPECT_EQ(linkFile[2][0][0].first, "http://uri28");
-	EXPECT_EQ(linkFile[2][0][1].first, "http://uri82");
+	EXPECT_EQ(linkFile[2][0][0].m_url, "http://uri28");
+	EXPECT_EQ(linkFile[2][0][1].m_url, "http://uri82");
 
-	EXPECT_EQ(linkFile[2][0][0].second, L"uri28");
-	EXPECT_EQ(linkFile[2][0][1].second, L"uri82");
+	EXPECT_EQ(linkFile[2][0][0].m_filePath, L"uri28");
+	EXPECT_EQ(linkFile[2][0][1].m_filePath, L"uri82");
 
 	// Model group
 	// Model data 1
-	EXPECT_EQ(linkFile[3][0][0].first, "http://uri10");
-	EXPECT_EQ(linkFile[3][0][1].first, "http://uri28");
+	EXPECT_EQ(linkFile[3][0][0].m_url, "http://uri10");
+	EXPECT_EQ(linkFile[3][0][1].m_url, "http://uri28");
 
-	EXPECT_EQ(linkFile[3][0][0].second, L"uri10");
-	EXPECT_EQ(linkFile[3][0][1].second, L"uri28");
+	EXPECT_EQ(linkFile[3][0][0].m_filePath, L"uri10");
+	EXPECT_EQ(linkFile[3][0][1].m_filePath, L"uri28");
 
 	// Pinned group
 	// Pinned data 1
-	EXPECT_EQ(linkFile[4][0][0].first, "http://uri19");
-	EXPECT_EQ(linkFile[4][0][1].first, "http://uri55");
-	EXPECT_EQ(linkFile[4][0][2].first, "http://uri56");
-	EXPECT_EQ(linkFile[4][0][3].first, "http://uri57");
+	EXPECT_EQ(linkFile[4][0][0].m_url, "http://uri19");
+	EXPECT_EQ(linkFile[4][0][1].m_url, "http://uri55");
+	EXPECT_EQ(linkFile[4][0][2].m_url, "http://uri56");
+	EXPECT_EQ(linkFile[4][0][3].m_url, "http://uri57");
 
-	EXPECT_EQ(linkFile[4][0][0].second, L"uri19");
-	EXPECT_EQ(linkFile[4][0][1].second, L"uri55");
-	EXPECT_EQ(linkFile[4][0][2].second, L"uri56");
-	EXPECT_EQ(linkFile[4][0][3].second, L"uri57");
+	EXPECT_EQ(linkFile[4][0][0].m_filePath, L"uri19");
+	EXPECT_EQ(linkFile[4][0][1].m_filePath, L"uri55");
+	EXPECT_EQ(linkFile[4][0][2].m_filePath, L"uri56");
+	EXPECT_EQ(linkFile[4][0][3].m_filePath, L"uri57");
 
 	// Pinned data 2 source 1
-	EXPECT_EQ(linkFile[5][0][0].first, "http://uri22");
-	EXPECT_EQ(linkFile[5][0][0].second, L"uri22");
+	EXPECT_EQ(linkFile[5][0][0].m_url, "http://uri22");
+	EXPECT_EQ(linkFile[5][0][0].m_filePath, L"uri22");
 
 	// Pinned data 2 source 2
-	EXPECT_EQ(linkFile[5][1][0].first, "http://uri23");
-	EXPECT_EQ(linkFile[5][1][1].first, "http://uri67");
+	EXPECT_EQ(linkFile[5][1][0].m_url, "http://uri23");
+	EXPECT_EQ(linkFile[5][1][1].m_url, "http://uri67");
 
-	EXPECT_EQ(linkFile[5][1][0].second, L"uri23");
-	EXPECT_EQ(linkFile[5][1][1].second, L"uri67");
+	EXPECT_EQ(linkFile[5][1][0].m_filePath, L"uri23");
+	EXPECT_EQ(linkFile[5][1][1].m_filePath, L"uri67");
 	
 	// Pinned data 2 source 3
-	EXPECT_EQ(linkFile[5][2][0].first, "http://uri24");
-	EXPECT_EQ(linkFile[5][2][1].first, "http://uri70");
-	EXPECT_EQ(linkFile[5][2][2].first, "http://uri71");
-	EXPECT_EQ(linkFile[5][2][3].first, "http://uri72");
+	EXPECT_EQ(linkFile[5][2][0].m_url, "http://uri24");
+	EXPECT_EQ(linkFile[5][2][1].m_url, "http://uri70");
+	EXPECT_EQ(linkFile[5][2][2].m_url, "http://uri71");
+	EXPECT_EQ(linkFile[5][2][3].m_url, "http://uri72");
 
-	EXPECT_EQ(linkFile[5][2][0].second, L"uri24");
-	EXPECT_EQ(linkFile[5][2][1].second, L"uri70");
-	EXPECT_EQ(linkFile[5][2][2].second, L"uri71");
-	EXPECT_EQ(linkFile[5][2][3].second, L"uri72");
+	EXPECT_EQ(linkFile[5][2][0].m_filePath, L"uri24");
+	EXPECT_EQ(linkFile[5][2][1].m_filePath, L"uri70");
+	EXPECT_EQ(linkFile[5][2][2].m_filePath, L"uri71");
+	EXPECT_EQ(linkFile[5][2][3].m_filePath, L"uri72");
 
 	// Undefined Group
 	// Undefined data 1
-	EXPECT_EQ(linkFile[6][0][0].first, "http://uri37");
-	EXPECT_EQ(linkFile[6][0][0].second, L"uri37");
+	EXPECT_EQ(linkFile[6][0][0].m_url, "http://uri37");
+	EXPECT_EQ(linkFile[6][0][0].m_filePath, L"uri37");
 	}
+
+
+#if 0
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017

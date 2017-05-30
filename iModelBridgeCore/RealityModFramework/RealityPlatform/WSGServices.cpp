@@ -814,7 +814,7 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName, RawServerResp
     serverName.append("/v");
     RawServerResponse versionResponse = RawServerResponse();
     serverName.append(GetVersion(versionResponse));
-    if (responseObject.responseCode > 399)
+    if (versionResponse.responseCode > 399)
         {
         responseObject = versionResponse;
         return returnVec;
