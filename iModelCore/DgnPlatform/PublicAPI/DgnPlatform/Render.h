@@ -345,7 +345,7 @@ struct NonSceneTask : Task
 };
 
 //=======================================================================================
-//! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
+//! The Render::Queue is accessed through DgnViewport::RenderQueue(). It holds an array of Render::Tasks waiting
 //! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
 //! on the main (work) thread, and may only be processed on the Render thread.
 // @bsiclass                                                    Keith.Bentley   09/15
