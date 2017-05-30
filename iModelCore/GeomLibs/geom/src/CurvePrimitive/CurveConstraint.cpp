@@ -169,18 +169,18 @@ bool BuildConstraintMatchTable (ConstraintMatchTable &matchTable, bool ordered =
     }
 struct ITryConstruction
     {
-    virtual ICurvePrimitivePtr TryConstruction (ConstructionContext const &) = 0;
+    virtual void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) = 0;
     };
 
-static ICurvePrimitivePtr TryConstruction (bvector<CurveConstraint>&constraints, bvector<ITryConstruction*> methods)
+static void TryConstruction (bvector<CurveConstraint>&constraints, bvector<ITryConstruction*> methods, bvector<ICurvePrimitivePtr> &result)
     {
     for (auto &method : methods)
         {
-        auto cp = method->TryConstruction (constraints);
-        if (cp.IsValid ())
-            return cp;
+        method->TryConstruction (constraints, result);
+        if (result.size () > 0)
+            return;
         }
-    return nullptr;
+    return;
     }
 };
 
@@ -190,21 +190,20 @@ struct LineConstructions
 {
 struct FromPointPoint : ConstructionContext::ITryConstruction
     {
-    ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
         {
         ConstraintMatchTable matchTable (CurveConstraint::Type::ThroughPoint, CurveConstraint::Type::ThroughPoint);
         if (searcher.BuildConstraintMatchTable (matchTable))
             {
-            return ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point ()));
+            result.push_back (ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point ())));
             }
-        return nullptr;
         }
     };
 
 
 struct FromPointClosestApproach : ConstructionContext::ITryConstruction
     {
-    ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
         {
         ConstraintMatchTable matchTable (CurveConstraint::Type::ThroughPoint, CurveConstraint::Type::ClosestPoint);
         if (searcher.BuildConstraintMatchTable (matchTable))
@@ -214,16 +213,15 @@ struct FromPointClosestApproach : ConstructionContext::ITryConstruction
                 && matchTable.GetCurveConstraintCP(1)->Location ().curve->ClosestPointBounded (
                         matchTable.GetCurveConstraintCP(0)->Point (), locationB))
                 {
-                return ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->Point (), locationB.point));
+                result.push_back (ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->Point (), locationB.point)));
                 }
             }
-        return nullptr;
         }
     };
 
 struct FromClosestApproachClosestApproach : ConstructionContext::ITryConstruction
     {
-    ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
         {
         ConstraintMatchTable matchTable (CurveConstraint::Type::ClosestPoint, CurveConstraint::Type::ClosestPoint);
         if (searcher.BuildConstraintMatchTable (matchTable))
@@ -237,15 +235,14 @@ struct FromClosestApproachClosestApproach : ConstructionContext::ITryConstructio
                             )
                 )
                 {
-                return ICurvePrimitive::CreateLine (DSegment3d::From (locationA.point, locationB.point));
+                result.push_back (ICurvePrimitive::CreateLine (DSegment3d::From (locationA.point, locationB.point)));
                 }
             }
-        return nullptr;
         }
     };
 struct FromPointPerpendicularNear : ConstructionContext::ITryConstruction
     {
-    ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
         {
         ConstraintMatchTable matchTable (CurveConstraint::Type::ThroughPoint, CurveConstraint::Type::PerpendicularNear);
         if (searcher.BuildConstraintMatchTable (matchTable))
@@ -259,11 +256,10 @@ struct FromPointPerpendicularNear : ConstructionContext::ITryConstruction
                     && DoubleOps::IsAlmostIn01 (fraction))
                     {
                     fraction = DoubleOps::ClampFraction (fraction);
-                    return ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->Location ().point, xyz));
+                    result.push_back (ICurvePrimitive::CreateLine (DSegment3d::From (matchTable.GetCurveConstraintCP(0)->Location ().point, xyz)));
                     }
                 }
             }
-        return nullptr;
         }
     };
 };
@@ -274,7 +270,7 @@ struct CircleConstructions
 
 struct FromPointPointPoint : ConstructionContext::ITryConstruction
     {
-    ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
         {
         ConstraintMatchTable matchTable (
                 CurveConstraint::Type::ThroughPoint,
@@ -282,16 +278,15 @@ struct FromPointPointPoint : ConstructionContext::ITryConstruction
                 CurveConstraint::Type::ThroughPoint);
         if (searcher.BuildConstraintMatchTable (matchTable))
             {
-            return ICurvePrimitive::CreateArc (
-                    DEllipse3d::FromPointsOnArc (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point (), matchTable.GetCurveConstraintCP(2)->Point ()));
+            result.push_back (ICurvePrimitive::CreateArc (
+                    DEllipse3d::FromPointsOnArc (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point (), matchTable.GetCurveConstraintCP(2)->Point ())));
             }
-        return nullptr;
         }
     };
 
 struct FromCenterPointPoint: ConstructionContext::ITryConstruction
     {
-    ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
         {
         ConstraintMatchTable matchTable (
                 CurveConstraint::Type::Center,
@@ -299,16 +294,15 @@ struct FromCenterPointPoint: ConstructionContext::ITryConstruction
                 CurveConstraint::Type::ThroughPoint);
         if (searcher.BuildConstraintMatchTable (matchTable))
             {
-            return ICurvePrimitive::CreateArc (
-                    DEllipse3d::FromArcCenterStartEnd (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point (), matchTable.GetCurveConstraintCP(2)->Point ()));
+            result.push_back (ICurvePrimitive::CreateArc (
+                    DEllipse3d::FromArcCenterStartEnd (matchTable.GetCurveConstraintCP(0)->Point (), matchTable.GetCurveConstraintCP(1)->Point (), matchTable.GetCurveConstraintCP(2)->Point ())));
             }
-        return nullptr;
         }
     };
 
 struct FromPointDirectionPoint: ConstructionContext::ITryConstruction
     {
-    ICurvePrimitivePtr TryConstruction (ConstructionContext const &searcher) override
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
         {
         ConstraintMatchTable matchTable (
                 CurveConstraint::Type::PointAndDirection,
@@ -318,9 +312,8 @@ struct FromPointDirectionPoint: ConstructionContext::ITryConstruction
             DEllipse3d arc;
             DRay3d ray = matchTable.GetCurveConstraintCP(0)->PointAndDirection ();
             if (arc.InitArcFromPointTangentPoint (ray.origin, ray.direction, matchTable.GetCurveConstraintCP(1)->Point ()))
-                return ICurvePrimitive::CreateArc (arc);
+                result.push_back (ICurvePrimitive::CreateArc (arc));
             }
-        return nullptr;
         }
     };
 };
@@ -347,17 +340,12 @@ bvector<ConstructionContext::ITryConstruction *>
 void ConstrainedConstruction::ConstructLines (bvector<CurveConstraint> &constraints, bvector<ICurvePrimitivePtr> &result)
     {
     result.clear ();
-    auto cp0 = ConstructionContext::TryConstruction  (constraints, s_lineBuilders);
-    if (cp0.IsValid ())
-        result.push_back (cp0);
+    ConstructionContext::TryConstruction  (constraints, s_lineBuilders, result);
     }
 
 void ConstrainedConstruction::ConstructCircularArcs (bvector<CurveConstraint> &constraints, bvector<ICurvePrimitivePtr> &result)
     {
-    result.clear ();
-    auto cp0 = ConstructionContext::TryConstruction  (constraints, s_circleBuilders);
-    if (cp0.IsValid ())
-        result.push_back (cp0);
+    ConstructionContext::TryConstruction  (constraints, s_circleBuilders, result);
     }
 
 
