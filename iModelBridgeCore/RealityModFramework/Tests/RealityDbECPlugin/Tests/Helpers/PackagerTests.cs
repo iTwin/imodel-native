@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
+using Bentley.Collections;
 using Bentley.EC.Persistence.Query;
 using Bentley.EC.PluginBuilder;
 using Bentley.EC.PluginBuilder.Modules;
@@ -8,6 +10,7 @@ using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
 using Bentley.ECSystem.Repository;
 using Bentley.ECSystem.Session;
+using Bentley.Exceptions;
 using IndexECPlugin.Source;
 using IndexECPlugin.Source.Helpers;
 using IndexECPlugin.Tests.Common;
@@ -25,6 +28,15 @@ namespace IndexECPlugin.Tests.Tests.Helpers
         ECPlugin m_plugin;
         IECInstance m_packageRequest;
         RepositoryConnection m_repositoryConnection;
+
+        ECQuery query;
+        IDbConnectionCreator dbConnectionCreatorStub;
+        IDbConnection dbConnectionMock;
+        FakeDbCommand fakeDbCommand;
+        IDbDataParameter dataParameterStub1;
+        IDbDataParameter dataParameterStub2;
+        List<IECInstance> returnedList;
+        ECProperty creationTimeProperty = new ECProperty("CreationTime", Bentley.ECObjects.ECObjects.StringType);
 
         [SetUp]
         public void SetUp ()
@@ -362,7 +374,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                 Assert.IsTrue(packageContent.Contains(m_metadata["Legal"].StringValue));
                 Assert.IsTrue(packageContent.Contains(m_metadata["TermsOfUse"].StringValue));
 
-                
+
                 Assert.IsTrue(packageContent.Contains(((long) m_wmsDataSource["FileSize"].NativeValue).ToString()));
                 Assert.IsTrue(packageContent.Contains(m_wmsDataSource["CoordinateSystem"].StringValue));
                 Assert.IsTrue(packageContent.Contains(m_wmsDataSource["NoDataValue"].StringValue));
@@ -373,6 +385,165 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                 Assert.IsTrue(packageContent.Contains(m_wmsserver["RegistrationPage"].StringValue));
                 Assert.IsTrue(packageContent.Contains(m_wmsserver["OrganisationPage"].StringValue));
 
+                }
+            }
+
+        [Test]
+        public void ExtractStatsNonNullValuesTest ()
+            {
+            object[][] records = new object[2][];
+            records[0] = new object[] { "package 1", "polygon 1", new DateTime(), "user id 1" };
+            records[1] = new object[] { "package 2", "polygon 2", new DateTime(), "user id 2" };
+
+            SetFakes(records);
+
+            SetExpectations();
+            ExtractStats();
+
+            Assert.That(fakeDbCommand.CommandText, Is.EqualTo("SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.UserId FROM dbo.Packages AS" +
+                                                              " t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime AND" +
+                                                              " t.BentleyInternal = 0 "));
+            Assert.That(fakeDbCommand.CommandType, Is.EqualTo(CommandType.Text));
+            Assert.That(fakeDbCommand.Connection, Is.EqualTo(dbConnectionMock));
+            Assert.That(fakeDbCommand.Parameters.Contains(dataParameterStub1));
+            Assert.That(fakeDbCommand.Parameters.Contains(dataParameterStub2));
+
+            Assert.That(dataParameterStub1.DbType, Is.EqualTo(DbType.DateTime));
+            Assert.That(dataParameterStub1.ParameterName, Is.EqualTo("@startTime"));
+            Assert.That(dataParameterStub1.Value, Is.EqualTo(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-1)));
+
+            Assert.That(dataParameterStub2.DbType, Is.EqualTo(DbType.DateTime));
+            Assert.That(dataParameterStub2.ParameterName, Is.EqualTo("@endTime"));
+            Assert.That(dataParameterStub2.Value, Is.EqualTo(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)));
+
+            Assert.That(returnedList.Count, Is.EqualTo(records.Length));
+            for ( int i = 0; i < returnedList.Count; i++ )
+                {
+                Assert.That(returnedList[i]["Name"].StringValue, Is.EqualTo(records[i][0]));
+                Assert.That(returnedList[i]["BoundingPolygon"].StringValue, Is.EqualTo(records[i][1]));
+                Assert.That(returnedList[i]["CreationTime"].NativeValue, Is.EqualTo(records[i][2]));
+                Assert.That(returnedList[i]["UserId"].StringValue, Is.EqualTo(records[i][3]));
+                }
+            }
+
+        [Test]
+        public void ExtractStatsWithNullValuesTest ()
+            {
+            object[][] records = new object[1][];
+            records[0] = new object[] { null, null, null, null };
+
+            SetFakes(records);
+
+            SetExpectations();
+            ExtractStats();
+
+            Assert.That(returnedList[0]["Name"].IsNull);
+            Assert.That(returnedList[0]["BoundingPolygon"].IsNull);
+            Assert.That(returnedList[0]["CreationTime"].IsNull);
+            Assert.That(returnedList[0]["UserId"].IsNull);
+            }
+
+        [Test]
+        public void ExtractStatsWithWhereClauseTest ()
+            {
+            DateTime startTime = new DateTime(2017, 1, 1);
+            DateTime endTime = new DateTime();
+
+            WhereCriteria whereClause = new WhereCriteria();
+            whereClause.Add(new PropertyExpression(RelationalOperator.LT, creationTimeProperty, endTime));
+            whereClause.Add(new PropertyExpression(RelationalOperator.GTEQ, creationTimeProperty, startTime));
+
+            object[][] records = new object[2][];
+            records[0] = new object[] { "package 1", "polygon 1", new DateTime(), "user id 1" };
+            records[1] = new object[] { "package 2", "polygon 2", new DateTime(), "user id 2" };
+
+            SetFakes(records);
+
+            query.WhereClause = whereClause;
+
+            SetExpectations();
+            ExtractStats();
+
+            Assert.That(dataParameterStub1.Value, Is.EqualTo(startTime));
+            Assert.That(dataParameterStub2.Value, Is.EqualTo(endTime));
+            }
+
+        [Test]
+        public void ExtractStatsQueryContainsBentleyInternalStatement ()
+            {
+            SetFakes(null);
+            query.ExtendedDataValueSetter.Add("includebentleyinternal", true);
+
+            SetExpectations();
+            ExtractStats();
+
+            Assert.That(fakeDbCommand.CommandText, Is.EqualTo("SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.UserId FROM dbo.Packages AS" +
+                                                              " t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime"));
+            }
+
+        [Test]
+        public void ExtractStatsOrLogicalOperatorExceptionTest ()
+            {
+            query = new ECQuery();
+            IECSchema schemaStub = m_mock.Stub<IECSchema>();
+            dbConnectionCreatorStub = m_mock.Stub<IDbConnectionCreator>();
+
+            WhereCriteria whereClause = new WhereCriteria();
+            whereClause.Add(new PropertyExpression(RelationalOperator.LT, creationTimeProperty, new DateTime()));
+            whereClause.Add(new PropertyExpression(RelationalOperator.GTEQ, creationTimeProperty, new DateTime(2017, 1, 1)));
+            whereClause.SetLogicalOperatorAfter(0, LogicalOperator.OR);
+
+            query.WhereClause = whereClause;
+
+            Assert.That(() => Packager.ExtractStats(query, "connection string", schemaStub, dbConnectionCreatorStub),
+                Throws.TypeOf<UserFriendlyException>().With.Message.EqualTo("This query only uses AND logical operators"));
+            }
+
+        [Test]
+        public void ExtractStatsOnlyOneDateSpecifiedExceptionTest ()
+            {
+            query = new ECQuery();
+            IECSchema schemaStub = m_mock.Stub<IECSchema>();
+            dbConnectionCreatorStub = m_mock.Stub<IDbConnectionCreator>();
+
+            WhereCriteria whereClause = new WhereCriteria();
+            whereClause.Add(new PropertyExpression(RelationalOperator.LT, creationTimeProperty, new DateTime()));
+
+            query.WhereClause = whereClause;
+
+            Assert.That(() => Packager.ExtractStats(query, "connection string", schemaStub, dbConnectionCreatorStub),
+                Throws.TypeOf<UserFriendlyException>().With.Message.EqualTo("Please specify both start and end times."));
+            }
+
+        private void SetFakes (object[][] dataReaderRecords)
+            {
+            query = new ECQuery();
+            dbConnectionCreatorStub = m_mock.Stub<IDbConnectionCreator>();
+            dbConnectionMock = m_mock.DynamicMock<IDbConnection>();
+            fakeDbCommand = new FakeDbCommand();
+            dataParameterStub1 = m_mock.Stub<IDbDataParameter>();
+            dataParameterStub2 = m_mock.Stub<IDbDataParameter>();
+            fakeDbCommand.DbDataParametersToCreate.Add(dataParameterStub1);
+            fakeDbCommand.DbDataParametersToCreate.Add(dataParameterStub2);
+            DataReaderStub dataReaderStub = new DataReaderStub(dataReaderRecords);
+            fakeDbCommand.DataReaderStub = dataReaderStub;
+            }
+
+        private void SetExpectations ()
+            {
+            using ( m_mock.Record() )
+                {
+                SetupResult.For(dbConnectionCreatorStub.CreateDbConnection(Arg<string>.Is.Anything)).Return(dbConnectionMock);
+                Expect.Call(dbConnectionMock.Open).Repeat.Once();
+                Expect.Call(dbConnectionMock.CreateCommand()).Repeat.Once().Return(fakeDbCommand);
+                }
+            }
+
+        private void ExtractStats ()
+            {
+            using ( m_mock.Playback() )
+                {
+                returnedList = Packager.ExtractStats(query, "connection string", m_schema, dbConnectionCreatorStub);
                 }
             }
         }

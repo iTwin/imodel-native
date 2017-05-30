@@ -82,6 +82,7 @@ ASSEMBLY_SOURCE_LIST = \
 			$(baseDir)Common/FakeDbCommand.cs \
 			$(baseDir)Common/FakeDataParameterCollection.cs \
             $(baseDir)Tests/DataExtractorTests.cs \
+			$(baseDir)Tests/IECInstanceExtensionTests.cs \
             $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
 			$(baseDir)Tests/JTokenExtensionTests.cs \

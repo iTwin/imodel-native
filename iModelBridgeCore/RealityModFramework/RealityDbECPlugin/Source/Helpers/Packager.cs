@@ -1245,7 +1245,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="schema">The schema containing the stats ECClass</param>
         /// <param name="dbConnectionCreator">The factory creating the database connection.</param>
         /// <returns></returns>
-        public static List<IECInstance> ExtractStats (ECQuery query, string connectionString, IECSchema schema, IDbConnectionCreator dbConnectionCreator)  //TODO: add dependancy injection here
+        public static List<IECInstance> ExtractStats (ECQuery query, string connectionString, IECSchema schema, IDbConnectionCreator dbConnectionCreator)
             {
             List<IECInstance> StatsList = new List<IECInstance>();
 
@@ -1304,7 +1304,7 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 throw new UserFriendlyException("Please specify both start and end times.");
                 }
-            using ( IDbConnection sqlConnection = dbConnectionCreator.CreateDbConnection(connectionString) )    //TODO: use injected dependancy here
+            using ( IDbConnection sqlConnection = dbConnectionCreator.CreateDbConnection(connectionString) )
                 {
                 sqlConnection.Open();
                 using ( IDbCommand dbCommand = sqlConnection.CreateCommand() )
