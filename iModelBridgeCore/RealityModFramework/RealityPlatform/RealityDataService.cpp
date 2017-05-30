@@ -1958,7 +1958,7 @@ Utf8StringCR RealityDataService::GetRepoName()
     return s_realityDataRepoNameWProjectId;
     }
 
-void RealityDataService::SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath, Utf8StringCR projectId)
+void RealityDataService::SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath)
     {
     BeAssert(server.size() != 0);
     BeAssert(WSGProtocol.size() != 0);
@@ -1976,8 +1976,14 @@ void RealityDataService::SetServerComponents(Utf8StringCR server, Utf8StringCR W
     else
         s_verifyPeer = true;
     s_realityDataCertificatePath = certificatePath;
-    s_projectId = projectId;
+    s_realityDataRepoNameWProjectId = s_realityDataRepoName;
     s_initializedParams = true;
+    }
+
+void RealityDataService::SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath, Utf8StringCR projectId)
+    {
+    SetServerComponents(server, WSGProtocol, repoName, schemaName, certificatePath);
+    s_projectId = projectId;
     }
 
 void RealityDataService::SetProjectId(Utf8StringCR projectId)
