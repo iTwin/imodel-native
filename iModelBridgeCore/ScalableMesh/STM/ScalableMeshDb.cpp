@@ -5,6 +5,13 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
+/*
+Here is how the version logic works. All files (including secondary files) have individual 4-part version numbers.
+All files with an inferior version number get automatically upgraded.
+On platforms that support version checks, we also refuse to open too-recent files (files that have higher major or minor versions).
+This is consistent with other BeSQLite profiles.
+*/
+
 const SchemaVersion ScalableMeshDb::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
 static bool s_checkShemaVersion = true;
 
@@ -44,7 +51,7 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
     SchemaVersion databaseSchema(schemaVs.c_str());
    
     SchemaVersion currentVersion = GetCurrentVersion();
-    if (s_checkShemaVersion && databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) != 0)
+    if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_MajorMinor) != 0))
         return BE_SQLITE_SCHEMA;
 
     return BE_SQLITE_OK;

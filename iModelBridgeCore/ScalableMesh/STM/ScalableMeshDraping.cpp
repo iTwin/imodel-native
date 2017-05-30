@@ -1003,9 +1003,10 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
             }
         else
             {
-            drapedType = 0;
+            *drapedType = 0;
             if (IntersectRay3D(*endPt, vecDirection, transformedPt, node))
                 {
+                *drapedType = 3;
                 m_transform.Multiply(*endPt);
                 ret = true;
                 break;

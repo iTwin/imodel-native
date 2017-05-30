@@ -258,7 +258,7 @@ uint64_t SMMemoryPool::RemoveAllItemsOfType(SMStoreDataType dataType, uint64_t s
     uint64_t nRemoved = 0;
     for (size_t binIndToDelete = 0; binIndToDelete < m_nbBins; binIndToDelete++)
         {
-        for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems[binIndToDelete].size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
+        for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems[binIndToDelete].size(); itemIndToDelete++)
             {
             std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);
 

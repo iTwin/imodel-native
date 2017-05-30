@@ -91,7 +91,8 @@ void SMSQLiteClipDefinitionExtOps::LoadClipWithParameters(bvector<DPoint3d>& cli
     pi_compressedPacket.SetDataSize(data.size());
 
     clipData.resize(uncompressedSize / sizeof(DPoint3d));
-    pi_uncompressedPacket.SetBuffer(clipData.data(), clipData.size() * sizeof(DPoint3d));
+    if(!clipData.empty())
+        pi_uncompressedPacket.SetBuffer(clipData.data(), clipData.size() * sizeof(DPoint3d));
     pi_uncompressedPacket.SetBufferOwnership(false);
 
 
