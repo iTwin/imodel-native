@@ -48,7 +48,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CameraDeviceModelId" relationshipName="CameraDeviceIsDefinedByCameraDeviceModel" direction="Forward"/>
+        <ECNavigationProperty propertyName="CameraDeviceModelId" relationshipName="CameraDeviceIsDefinedByCameraDeviceModel" direction="Forward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
         <ECProperty         propertyName="ImageWidth"           typeName="int"                  displayLabel="Image Width" />
         <ECProperty         propertyName="ImageHeight"          typeName="int"                  displayLabel="Image Height" />
         <ECProperty         propertyName="AspectRatio"          typeName="double"               displayLabel="Aspect Ratio" />
@@ -58,9 +62,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
     </ECEntityClass>
 
     <ECRelationshipClass typeName="CameraDeviceIsDefinedByCameraDeviceModel" displayLabel="CameraDevice is a type of cameraDevice model type" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="False">
             <Class class="CameraDevice" />
         </Source>
@@ -89,8 +90,16 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CameraDeviceId" relationshipName="ShotIsTakenByCameraDevice" direction="Forward"/>
-        <ECNavigationProperty propertyName="PoseId" relationshipName="ShotIsTakenAtPose" direction="Forward"/>
+        <ECNavigationProperty propertyName="CameraDeviceId" relationshipName="ShotIsTakenByCameraDevice" direction="Forward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="PoseId" relationshipName="ShotIsTakenAtPose" direction="Forward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
     <!-- END Shot element classes -->
 
@@ -100,9 +109,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
     <!-- END Photogroup element classes -->
 
     <ECRelationshipClass typeName="ShotIsTakenByCameraDevice" displayLabel="Shot is taken by CameraDevice" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="False">
             <Class class="Shot" />
         </Source>
@@ -112,9 +118,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ShotIsTakenAtPose" displayLabel="Shot is taken at Pose" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
         <Source cardinality="(1,N)" polymorphic="False">
             <Class class="Shot" />
         </Source>
