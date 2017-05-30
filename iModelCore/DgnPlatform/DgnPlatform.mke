@@ -223,7 +223,7 @@ $(CoreObjs)RangeIndex$(oext) :                      $(DgnCoreDir)RangeIndex.cpp 
 
 $(CoreObjs)VecMathDGNTolerances$(oext) :            $(DgnCoreDir)VecMathDGNTolerances.cpp $(DgnPlatformAPISrc)VecMath.h ${MultiCompileDepends}
 
-$(coreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $(DgnPlatformAPISrc)ColorUtil.h $(DgnPlatformAPISrc)DgnTrueColor.h ${MultiCompileDepends}
+$(coreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $(DgnPlatformAPISrc)ColorUtil.h $(DgnPlatformAPISrc)ColorBook.h ${MultiCompileDepends}
 
 $(CoreObjs)ViewController$(oext) :                  $(DgnCoreDir)ViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 

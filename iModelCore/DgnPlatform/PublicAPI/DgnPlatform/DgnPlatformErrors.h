@@ -170,6 +170,8 @@ enum class RevisionStatus : int
     ParentMismatch, //!< Parent revision of the Db does not match the parent id of the revision
     SQLiteError, //!< Error performing a SQLite operation on the Db
     WrongDgnDb, //!< Revision originated in a different Db
+    CouldNotOpenDgnDb, //!< Could not open the DgnDb to merge revision
+    MergeSchemaChangesOnOpen, //! Cannot merge schema change in a previously opened DgnDb. Merge it when the file is opened. 
     };
 
 //=======================================================================================

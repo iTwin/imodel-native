@@ -465,7 +465,7 @@ TEST_F(DgnModelTests, ModelIterator)
         ASSERT_EQ(physicalModel1->GetModeledElementId(), entry.GetModeledElementId());
         ASSERT_EQ(physicalModelClassId, entry.GetClassId());
         ASSERT_TRUE(!entry.IsPrivate());
-        ASSERT_FALSE(entry.GetIsTemplate());
+        ASSERT_FALSE(entry.IsTemplate());
         ++count;
         }
 
@@ -634,6 +634,7 @@ TEST_F(DgnModelTests, DefinitionModelCreation)
     RefCountedCPtr<InformationPartitionElement> Infele2 = m_db->Elements().Get<InformationPartitionElement>(eleId2);
     ASSERT_EQ(Infele2->GetDescription(), "This is second DefinitionPartition");
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -643,28 +644,89 @@ TEST_F(DgnModelTests, GenericGroupModelCreation)
     GroupInformationPartitionPtr ginfop=GroupInformationPartition::Create(*m_db->Elements().GetRootSubject(), "GroupInformationPartitionElement", "This is GroupInformationPartitionElement");
     DgnElementCPtr elep = ginfop->Insert();
     ASSERT_TRUE(elep.IsValid());
-    GenericGroupModelPtr genricgroupmodel=GenericGroupModel::CreateAndInsert(*elep);
-    ASSERT_TRUE(genricgroupmodel.IsValid());
-    GenericGroupPtr group=GenericGroup::Create(*genricgroupmodel);
+    GenericGroupModelPtr genericgroupmodel=GenericGroupModel::CreateAndInsert(*elep);
+    ASSERT_TRUE(genericgroupmodel.IsValid());
+    GenericGroupPtr group=GenericGroup::Create(*genericgroupmodel);
     DgnElementCPtr ele=group->Insert();
     ASSERT_TRUE(ele.IsValid());
-    ASSERT_EQ(ele->GetModelId(), genricgroupmodel->GetModeledElementId());
+    ASSERT_EQ(ele->GetModelId(), genericgroupmodel->GetModeledElementId());
 
     GroupInformationPartitionCPtr ginfop2 = GroupInformationPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "GroupInformationPartitionElement2", "GroupInformationPartitionElement2");
     ASSERT_TRUE(ginfop2.IsValid());
-    GenericGroupModelPtr genricgroupmodelc = GenericGroupModel::Create(*ginfop2);
-    ASSERT_EQ(DgnDbStatus::Success, genricgroupmodelc->Insert());
-    GenericGroupPtr group2 = GenericGroup::Create(*genricgroupmodelc);
+    GenericGroupModelPtr genericgroupmodelc = GenericGroupModel::Create(*ginfop2);
+    ASSERT_EQ(DgnDbStatus::Success, genericgroupmodelc->Insert());
+    GenericGroupPtr group2 = GenericGroup::Create(*genericgroupmodelc);
     DgnElementCPtr ele2 = group2->Insert();
     ASSERT_TRUE(ele2.IsValid());
-    ASSERT_EQ(ele2->GetModelId(), genricgroupmodelc->GetModeledElementId());
-    GenericGroupPtr group3 = GenericGroup::Create(*genricgroupmodelc);
+    ASSERT_EQ(ele2->GetModelId(), genericgroupmodelc->GetModeledElementId());
+    GenericGroupPtr group3 = GenericGroup::Create(*genericgroupmodelc);
     DgnElementCPtr ele3 = group3->Insert();
     ASSERT_TRUE(ele3.IsValid());
-    ASSERT_EQ(ele3->GetModelId(), genricgroupmodelc->GetModeledElementId());
+    ASSERT_EQ(ele3->GetModelId(), genericgroupmodelc->GetModeledElementId());
     bvector<DgnModelId> idList;
     idList =m_db->Models().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_GroupModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
     ASSERT_EQ(2,idList.size());
-    ASSERT_EQ(genricgroupmodel->GetModelId(), idList[0]);
-    ASSERT_EQ(genricgroupmodelc->GetModelId(), idList[1]);
+    ASSERT_EQ(genericgroupmodel->GetModelId(), idList[0]);
+    ASSERT_EQ(genericgroupmodelc->GetModelId(), idList[1]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, ModelSelectorAndDelete)
+    {
+    SetupSeedProject();
+    ASSERT_EQ(0, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_REL_ModelSelectorRefersToModels)));
+
+    PhysicalModelPtr physicalModel1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysical1");
+    PhysicalModelPtr physicalModel2 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysical2");
+    PhysicalModelPtr physicalModel3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysical3");
+
+    DefinitionModelPtr definitionModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "TestDefinitions");
+    DgnElementId modelSelectorId;
+
+    // Insert ModelSelector
+        {
+        ModelSelector modelSelector(*definitionModel, "TestModelSelector");
+        modelSelector.AddModel(physicalModel1->GetModelId());
+        modelSelector.AddModel(physicalModel2->GetModelId());
+        modelSelector.AddModel(physicalModel3->GetModelId());
+        ASSERT_TRUE(modelSelector.Insert().IsValid());
+        modelSelectorId = modelSelector.GetElementId();
+        ASSERT_TRUE(modelSelectorId.IsValid());
+        ASSERT_EQ(3, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels)));
+        ASSERT_EQ(3, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_REL_ModelSelectorRefersToModels)));
+        }
+
+    // Verify ModelSelector was persisted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        ModelSelectorCPtr modelSelector = m_db->Elements().Get<ModelSelector>(modelSelectorId);
+        ASSERT_TRUE(modelSelector.IsValid());
+        ASSERT_TRUE(modelSelector->ContainsModel(physicalModel1->GetModelId()));
+        ASSERT_TRUE(modelSelector->ContainsModel(physicalModel2->GetModelId()));
+        ASSERT_TRUE(modelSelector->ContainsModel(physicalModel3->GetModelId()));
+        }
+
+    // Verify DgnModel::Delete is handled properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        ASSERT_EQ(DgnDbStatus::Success, physicalModel2->Delete());
+        ModelSelectorCPtr modelSelector = m_db->Elements().Get<ModelSelector>(modelSelectorId);
+        ASSERT_TRUE(modelSelector.IsValid());
+        ASSERT_TRUE(modelSelector->ContainsModel(physicalModel1->GetModelId()));
+        ASSERT_FALSE(modelSelector->ContainsModel(physicalModel2->GetModelId()));
+        ASSERT_TRUE(modelSelector->ContainsModel(physicalModel3->GetModelId()));
+        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels)));
+        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_REL_ModelSelectorRefersToModels)));
+        }
+
+    // Verify ModelSelector::Delete is handled properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().Delete(modelSelectorId);
+        ASSERT_FALSE(m_db->Elements().Get<ModelSelector>(modelSelectorId).IsValid());
+        ASSERT_EQ(0, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels)));
+        ASSERT_EQ(0, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_REL_ModelSelectorRefersToModels)));
+        }
     }

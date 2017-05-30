@@ -28,7 +28,6 @@
             </Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Functional.ecschema.xml
-                ECSchemas/Script.ecschema.xml
             </Files>
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
@@ -146,7 +145,7 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
-        <RequiredRepository>CompatibilityTestFiles-2-0-1-36</RequiredRepository>
+        <RequiredRepository>CompatibilityTestFiles-2-0-1-46</RequiredRepository>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script" SourceName="Delivery/UnitTests/Script" />
@@ -435,7 +434,7 @@
                 CompatibilityTestFiles/CompatibilityTestSeed.bim
             </Files>
 			<Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
-                CompatibilityTestFiles/CompatibilityTest.bim
+                CompatibilityTestFiles/InstancesCompatibilitySeed.bim
             </Files>
         </Bindings>
     </Part>

@@ -235,16 +235,16 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
 
 #define TABLE_Codes "Codes"
 #define TABLE_UnavailableCodes "UnavailableCodes"
-#define CODE_CodeSpecId "CodeSpecId"
-#define CODE_Scope "Scope"
+#define CODE_SpecId "SpecId"
+#define CODE_Scope "ScopeElementId"
 #define CODE_Value "CodeValue"
-#define CODE_Columns CODE_CodeSpecId "," CODE_Scope "," CODE_Value
+#define CODE_Columns CODE_SpecId "," CODE_Scope "," CODE_Value
 #define CODE_Values "(" CODE_Columns ")"
 #define STMT_InsertCode "INSERT INTO " TABLE_Codes " " CODE_Values " Values (?,?,?)"
 #define STMT_InsertUnavailableCode "INSERT INTO " TABLE_UnavailableCodes " " CODE_Values " Values (?,?,?)"
 #define STMT_SelectUnavailableCodesInSet "SELECT " CODE_Columns " FROM " TABLE_UnavailableCodes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_DeleteCodesInSet "DELETE FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
-#define STMT_SelectCode "SELECT * FROM " TABLE_Codes " WHERE " CODE_CodeSpecId "=? AND " CODE_Scope "=? AND " CODE_Value "=?"
+#define STMT_SelectCode "SELECT * FROM " TABLE_Codes " WHERE " CODE_SpecId "=? AND " CODE_Scope "=? AND " CODE_Value "=?"
 
 enum CodeColumn { CodeSpec=0, Scope, Value };
 
@@ -352,8 +352,8 @@ bool BriefcaseManager::InitializeLocalDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BriefcaseManager::CreateCodesTable(Utf8CP tableName)
     {
-    return BE_SQLITE_OK == m_localDb.CreateTable(tableName, CODE_CodeSpecId " INTEGER,"
-                                                            CODE_Scope " TEXT,"
+    return BE_SQLITE_OK == m_localDb.CreateTable(tableName, CODE_SpecId " INTEGER,"
+                                                            CODE_Scope " INTEGER,"
                                                             CODE_Value " TEXT,"
                                                             "PRIMARY KEY" CODE_Values);
     }
@@ -467,7 +467,7 @@ void BriefcaseManager::InsertCodes(DgnCodeSet const& codes, TableType tableType)
             }
 
         stmt->BindId(CodeColumn::CodeSpec+1, code.GetCodeSpecId());
-        stmt->BindText(CodeColumn::Scope+1, code.GetScope(), Statement::MakeCopy::No);
+        stmt->BindId(CodeColumn::Scope+1, code.GetScopeElementId());
         stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
         stmt->Step();
         stmt->Reset();
@@ -488,7 +488,7 @@ struct VirtualCodeSet : VirtualSet
         return m_codes.end() != std::find_if(m_codes.begin(), m_codes.end(), [&](DgnCode const& arg)
             {
             return arg.GetCodeSpecId().GetValueUnchecked() == vals[CodeColumn::CodeSpec].GetValueUInt64()
-                && arg.GetScope().Equals(vals[CodeColumn::Scope].GetValueText())
+                && arg.GetScopeElementId().GetValueUnchecked() == vals[CodeColumn::Scope].GetValueUInt64()
                 && arg.GetValue().Equals(vals[CodeColumn::Value].GetValueText());
             });
         }
@@ -514,7 +514,7 @@ void BriefcaseManager::Cull(DgnCodeSet& codes)
             }
 
         stmt->BindId(CodeColumn::CodeSpec+1, code.GetCodeSpecId());
-        stmt->BindText(CodeColumn::Scope+1, code.GetScope(), Statement::MakeCopy::No);
+        stmt->BindId(CodeColumn::Scope+1, code.GetScopeElementId());
         stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
         if (BE_SQLITE_ROW == stmt->Step())
             iter = codes.erase(iter);
@@ -964,7 +964,7 @@ RepositoryStatus BriefcaseManager::FastQueryCodes(Response& response, DgnCodeSet
             break;
 
         // NB: FastQuery cannot supply all ownership/revision details...callers who care can check the RequestPurpose of the Response and query server for details.
-        DgnCode code(stmt->GetValueId<CodeSpecId>(CodeColumn::CodeSpec), stmt->GetValueText(CodeColumn::Value), stmt->GetValueText(CodeColumn::Scope));
+        DgnCode code(stmt->GetValueId<CodeSpecId>(CodeColumn::CodeSpec), stmt->GetValueId<DgnElementId>(CodeColumn::Scope), stmt->GetValueText(CodeColumn::Value));
         DgnCodeInfo details(code);
         details.SetReserved(BeSQLite::BeBriefcaseId());
         response.CodeStates().insert(details);
@@ -2064,8 +2064,8 @@ bool DgnLockInfo::FromJson(JsonValueCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCode::ToJson(JsonValueR value) const
     {
-    RepositoryJson::BeInt64IdToJson(value[JSON_Id], m_codeSpecId);
-    value[JSON_Scope] = m_scope;
+    RepositoryJson::BeInt64IdToJson(value[JSON_Id], m_specId);
+    RepositoryJson::BeInt64IdToJson(value[JSON_Scope], m_scopeElementId);
     value[JSON_Name] = m_value;
     }
 
@@ -2074,13 +2074,18 @@ void DgnCode::ToJson(JsonValueR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnCode::FromJson(JsonValueCR value)
     {
-    if (!RepositoryJson::BeInt64IdFromJson(m_codeSpecId, value[JSON_Id]))
+    if (!RepositoryJson::BeInt64IdFromJson(m_specId, value[JSON_Id]))
         {
         *this = DgnCode();
         return false;
         }
 
-    m_scope = value[JSON_Scope].asString();
+    if (!RepositoryJson::BeInt64IdFromJson(m_scopeElementId, value[JSON_Scope]))
+        {
+        *this = DgnCode();
+        return false;
+        }
+
     m_value = value[JSON_Name].asString();
     return true;
     }

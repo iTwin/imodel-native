@@ -106,7 +106,7 @@ DgnCode TestCodeAdmin::_ReserveNextCodeInSequence(DgnElementCR element, CodeSpec
 
     Utf8String codeValue(sequenceMask);
     codeValue.ReplaceAll("*", sequenceNumberString.c_str());
-    return DgnCode(codeSpec.GetCodeSpecId(), codeValue, codeSpec.GetScopeElementId(element));
+    return DgnCode(codeSpec.GetCodeSpecId(), codeSpec.GetScopeElementId(element), codeValue);
     }
 
 //---------------------------------------------------------------------------------------
@@ -200,9 +200,13 @@ TEST_F(CodeAdminTests, CodeAdmin)
         CodeScopeSpec repositoryScope = CodeScopeSpec::CreateRepositoryScope();
         CodeScopeSpec modelScope = CodeScopeSpec::CreateModelScope();
         CodeScopeSpec parentElementScope = CodeScopeSpec::CreateParentElementScope();
+        Utf8CP relationship = BIS_SCHEMA("ShouldBeRelationshipName"); // in production this would be a valid ECRelationshipClass name
+        CodeScopeSpec relatedElementScope = CodeScopeSpec::CreateRelatedElementScope(relationship);
         ASSERT_EQ(CodeScopeSpec::Type::Repository, repositoryScope.GetType());
         ASSERT_EQ(CodeScopeSpec::Type::Model, modelScope.GetType());
         ASSERT_EQ(CodeScopeSpec::Type::ParentElement, parentElementScope.GetType());
+        ASSERT_EQ(CodeScopeSpec::Type::RelatedElement, relatedElementScope.GetType());
+        ASSERT_STREQ(relationship, relatedElementScope.GetRelationship().c_str());
         }
     
     ECN::ECClassCP informationPartitionElementClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_InformationPartitionElement);

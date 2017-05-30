@@ -39,7 +39,7 @@ struct CompatibilityTests : public DgnDbTestFixture
     static Utf8String GetDrawingName(int index) {return Utf8PrintfString(BIS_CLASS_Drawing "%" PRIi32, index);}
     static Utf8String GetDrawingGraphicName(int index) {return Utf8PrintfString(BIS_CLASS_DrawingGraphic "%" PRIi32, index);}
     static Utf8String GetSheetName(int index) {return Utf8PrintfString(BIS_CLASS_Sheet "%" PRIi32, index);}
-    static Utf8String BuildWhereModelIdEquals(DgnModelId modelId) {return Utf8PrintfString("WHERE Model.Id=%" PRIi64, modelId.GetValue());}
+    static Utf8String BuildWhereModelIdEquals(DgnModelId modelId) {return Utf8PrintfString("WHERE Model.Id=%" PRIu64, modelId.GetValue());}
 
     static void SetUpTestCase();
     void SetUpFromBaselineCopy(Utf8CP, Utf8CP, DbResult);
@@ -136,9 +136,9 @@ TEST_F(CompatibilityTests, ModifyCurrent)
 // This unit test runs the "Modify" and "Insert" tests using the current DgnPlatform against saved baselines of the DgnDb file format.
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-TEST_F(CompatibilityTests, ModifyBaseline)
+TEST_F(CompatibilityTests, ModifyBaseline) // Must disable this test in the "Holdouts" branch
     {
-    SetUpFromBaselineCopy("2-0-1-36", TEST_NAME, BE_SQLITE_OK);
+    SetUpFromBaselineCopy("2-0-1-46", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
@@ -218,7 +218,7 @@ void CompatibilityTests::InsertDrawingCategory()
 //---------------------------------------------------------------------------------------
 DgnCategoryId CompatibilityTests::GetSpatialCategoryId()
     {
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(GetDgnDb(), SpatialCategory::CreateCode(GetDgnDb(), GetSpatialCategoryName()));
+    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), GetSpatialCategoryName());
     BeAssert(categoryId.IsValid());
     return categoryId;
     }
@@ -401,7 +401,7 @@ void CompatibilityTests::ModifyElementCode(DgnDbR db, DgnElementId elementId)
     ASSERT_TRUE(element.IsValid());
     ASSERT_FALSE(element->GetUserProperties(json_inserted()).isNull());
     DgnCode oldCode = element->GetCode();
-    DgnCode newCode(oldCode.GetCodeSpecId(), oldCode.GetValue() + "Updated", oldCode.GetScope());
+    DgnCode newCode(oldCode.GetCodeSpecId(), oldCode.GetScopeElementId(), oldCode.GetValue() + "Updated");
     element->SetCode(newCode);
     element->SetUserProperties(json_updated(), DateTime::GetCurrentTime().ToString());
     ASSERT_TRUE(element->Update().IsValid());
@@ -831,7 +831,8 @@ GenericGroupCPtr CompatibilityTests::GetSpatialLocationGroup(SubjectCR subject)
 void CompatibilityTests::ImportFunctionalSchema()
     {
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    ASSERT_EQ(BE_SQLITE_OK, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb()));
+    FlushLocalChanges(); // Flush any un-committed or committed transactions before importing the schema
+    ASSERT_EQ(SchemaStatus::Success, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -879,12 +880,10 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
 
     if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
         {
-        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
-        openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
+        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly));
         DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
         ASSERT_EQ(BE_SQLITE_OK, openStatus);
         ASSERT_TRUE(db.IsValid());
-        ASSERT_EQ(BE_SQLITE_OK, db->Domains().ImportSchemas());
         ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges("SchemaUpgrade"));
         db->CloseDb();
         }
@@ -897,7 +896,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
 //========================================================================================
 // @bsiclass                           Maha Nasir                               04/2017
 //========================================================================================
-struct CompatibilityTest2 : public DgnDbTestFixture
+struct ECInstancesCompatibility : public DgnDbTestFixture
     {
     std::vector<ECClassCP> List;
     std::vector<ECClassCP> ValidClassesForInstanceInsertion;
@@ -921,7 +920,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                            Maha.Nasir                04/17
     ! Returns a vector over all the derived classes of the specified class.
     +---------------+---------------+---------------+---------------+--------------+---*/
-    std::vector<ECClassCP> CompatibilityTest2::getDerivedClasses(ECClassCP classToTraverse)
+    std::vector<ECClassCP> ECInstancesCompatibility::getDerivedClasses(ECClassCP classToTraverse)
         {
         const ECDerivedClassesList& DerivedClasses = classToTraverse->GetDerivedClasses();
 
@@ -943,7 +942,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                            Maha.Nasir                04/17
     ! Creates the elemnt from the supplied instance.
     +---------------+---------------+---------------+---------------+--------------+---*/
-    DgnElementPtr CompatibilityTest2::createElement(ECN::StandaloneECInstancePtr instance)
+    DgnElementPtr ECInstancesCompatibility::createElement(ECN::StandaloneECInstancePtr instance)
         {
         DgnElementPtr element = m_db->Elements().CreateElement(*instance);
         EXPECT_TRUE(element != nullptr);
@@ -954,7 +953,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts the instances(For only BisCore schema) for GeometricElement2d class heirarchy.
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForGeometricElement2d(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForGeometricElement2d(ECClassCP className)
         {
         //Emptying vector
         List.clear();
@@ -1007,7 +1006,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Category", ECN::ECValue(categoryId)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
                 //Creating Element of the specified instance
@@ -1032,7 +1031,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts the instances(For only BisCore schema) for GeometricElement3d class heirarchy.
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForGeometricElement3d(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForGeometricElement3d(ECClassCP className)
         {
         //Emptying vector
         List.clear();
@@ -1059,7 +1058,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
                 ASSERT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
 
@@ -1085,7 +1084,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts the instances(For only BisCore schema classes) of GeometricElement class heirarchy.
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForGeometricElementHeirarchy(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForGeometricElementHeirarchy(ECClassCP className)
         {
         //Getting the immediate derived classes of GeometricElement
         const ECDerivedClassesList& GeometricElementHeirarchy = className->GetDerivedClasses();
@@ -1108,7 +1107,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts instances for the Document class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForDocument(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForDocument(ECClassCP className)
         {
         printf("\n\nInserting Instances for Document heirarchy:\n\n");
 
@@ -1134,7 +1133,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(drawingModel->GetModelId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
                 //Creating Element of the specified instance
@@ -1159,7 +1158,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts instances for the InformationReferenceElement class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForInformationReferenceElement(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForInformationReferenceElement(ECClassCP className)
         {
 
         printf("\n\nInserting instances for InformationReferenceElement heirarchy:\n\n");
@@ -1198,7 +1197,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                     }
 
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
 
@@ -1224,7 +1223,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts instances for the DefinitionElement class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForDefinitionElement(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForDefinitionElement(ECClassCP className)
         {
 
         printf("\n\nInserting instances for DefinitionElement heirarchy:\n\n");
@@ -1259,7 +1258,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(model_id)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 
                 //Creating Element of the specified instance
@@ -1284,7 +1283,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts instances for the InformationReferenceElement class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForInformationPartitionElement(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForInformationPartitionElement(ECClassCP className)
         {
 
         printf("\n\nInserting instances for InformationPartitionElement heirarchy:\n\n");
@@ -1312,7 +1311,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
                 DgnCode code = DgnCode::CreateEmpty();
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(DgnModel::RepositoryModelId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScope().c_str())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Parent", ECN::ECValue(rootSubject->GetElementId())));
 
@@ -1337,7 +1336,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Inserts the instances(For only BisCore schema) for InformationContentElement heirarchy.
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void CompatibilityTest2::InsertInstancesForInformationContentElementHeirarchy(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForInformationContentElementHeirarchy(ECClassCP className)
         {
         //Getting thye immediate derived classes
         const ECDerivedClassesList& InformationContentElementHeirarchy = className->GetDerivedClasses();
@@ -1373,7 +1372,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     * @bsimethod                                    Maha.Nasir                          04/17
     //Returns the list of classes in the Element heirarchy of BisCore schema for which the instance insertion is possible.
     +---------------+---------------+---------------+---------------+---------------+------------------+------------------*/
-    std::vector<ECClassCP> CompatibilityTest2::GetValidClassesForInstanceInsertion(DgnDbR db)
+    std::vector<ECClassCP> ECInstancesCompatibility::GetValidClassesForInstanceInsertion(DgnDbR db)
         {
         ECSchemaCP BisSchema = db.Schemas().GetSchema(BIS_ECSCHEMA_NAME);
         EXPECT_TRUE(BisSchema != nullptr);
@@ -1397,14 +1396,14 @@ struct CompatibilityTest2 : public DgnDbTestFixture
     // @bsimethod                                   Maha Nasir                    04/2017
     // Creates and opens the copy of the perserved Bim
     //---------------------------------------------------------------------------------------
-    void CompatibilityTest2::SetUpDbFromBaselineCopy(Utf8CP versionString, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
+    void ECInstancesCompatibility::SetUpDbFromBaselineCopy(Utf8CP versionString, Utf8CP destBaseName, DbResult expectedFirstOpenStatus)
         {
         //Source File Path
         BeFileName sourceFileName;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(sourceFileName);
         sourceFileName.AppendToPath(L"CompatibilityTestFiles");
         sourceFileName.AppendToPath(BeFileName(versionString, BentleyCharEncoding::Utf8));
-        sourceFileName.AppendToPath(L"CompatibilityTest.bim");
+        sourceFileName.AppendToPath(L"InstancesCompatibilitySeed.bim");
         ASSERT_TRUE(sourceFileName.DoesPathExist());
 
         //Destination file path
@@ -1434,12 +1433,10 @@ struct CompatibilityTest2 : public DgnDbTestFixture
         if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
             {
             DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite);
-            openParams.SetEnableSchemaUpgrade(DgnDb::OpenParams::EnableSchemaUpgrade::Yes);
+            openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
             DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
             ASSERT_EQ(BE_SQLITE_OK, openStatus);
             ASSERT_TRUE(db.IsValid());
-            ASSERT_EQ(BE_SQLITE_OK, db->Domains().ImportSchemas());
-            ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges("SchemaUpgrade"));
             db->CloseDb();
             }
 
@@ -1454,7 +1451,7 @@ struct CompatibilityTest2 : public DgnDbTestFixture
 // Note: For now the test bypasses a few classes(namely InformationPartitionElement heirarchy,
 //       Category, SubCategory, Texture and ViewDefinition ) which will be dealt later.  
 //+---------------+---------------+---------------+---------------+---------------+------------
-TEST_F(CompatibilityTest2, CompatibilityTest)
+TEST_F(ECInstancesCompatibility, InstancesCompatibilitySeed)
     {
     SetupSeedProject();
     m_db->Schemas().CreateClassViewsInDb();
@@ -1499,9 +1496,9 @@ TEST_F(CompatibilityTest2, CompatibilityTest)
 // @bsimethod                                      Maha Nasir                  04/17
 // WIP: Reads the Instances from the preserved Bim and perform CRUD oerations on it.
 //+---------------+---------------+---------------+---------------+---------------+------------
-TEST_F(CompatibilityTest2, ModifyPreservedBim)
+TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
     {
-    SetUpDbFromBaselineCopy("2-0-1-36", TEST_NAME, BE_SQLITE_OK);
+    SetUpDbFromBaselineCopy("2-0-1-46", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db= GetDgnDb();
 

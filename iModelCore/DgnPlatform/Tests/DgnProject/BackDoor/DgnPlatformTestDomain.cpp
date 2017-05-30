@@ -458,7 +458,7 @@ void TestElementDrivesElementHandler::SetProperty1(DgnDbR db, Utf8CP value, EC::
     {
     auto inst = db.Schemas().GetClass(key.GetClassId())->GetDefaultStandaloneEnabler()->CreateInstance();
     inst->SetValue("Property1", ECN::ECValue(value));
-    ASSERT_EQ(BE_SQLITE_OK, db.UpdateNonNavigationRelationshipProperties(key, *inst));
+    ASSERT_EQ(BE_SQLITE_OK, db.UpdateLinkTableRelationshipProperties(key, *inst));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -479,7 +479,7 @@ Utf8String TestElementDrivesElementHandler::GetProperty1(DgnDbR db, EC::ECInstan
 ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId root, DgnElementId dependent)
     {
     ECInstanceKey rkey;
-    db.InsertNonNavigationRelationship(rkey, (ECN::ECRelationshipClassCR)(GetECClass(db)), root, dependent);
+    db.InsertLinkTableRelationship(rkey, (ECN::ECRelationshipClassCR)(GetECClass(db)), root, dependent);
     return rkey;
     }
 

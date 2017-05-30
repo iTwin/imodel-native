@@ -39,6 +39,7 @@ HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(DocumentList)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
+HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(Repository)
 };
@@ -76,6 +77,7 @@ HANDLER_DEFINE_MEMBERS(TemplateRecipe3d)
 HANDLER_DEFINE_MEMBERS(GraphicalType2d)
 HANDLER_DEFINE_MEMBERS(TemplateRecipe2d)
 HANDLER_DEFINE_MEMBERS(SpatialLocationType)
+HANDLER_DEFINE_MEMBERS(ColorBook)
 HANDLER_DEFINE_MEMBERS(Subject)
 HANDLER_DEFINE_MEMBERS(InformationPartition)
 HANDLER_DEFINE_MEMBERS(DefinitionPartition)
@@ -116,6 +118,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::Spatial::GetHandler());
     RegisterHandler(dgn_ModelHandler::SpatialLocation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::Drawing::GetHandler());
     RegisterHandler(Sheet::Handlers::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
@@ -167,7 +170,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::DrawingCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
-    RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
+    RegisterHandler(dgn_ElementHandler::ColorBook::GetHandler());
     RegisterHandler(dgn_ElementHandler::Subject::GetHandler());
     RegisterHandler(dgn_ElementHandler::Role::GetHandler());
     RegisterHandler(dgn_ElementHandler::InformationPartition::GetHandler());
@@ -224,5 +227,5 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 void BisCoreDomain::_OnSchemaImported(DgnDbR db) const
     {
     BeAssert(m_createParams != nullptr && "SetCreateParams() before importing the BisCoreDomain");
-    db.SetupNewDgnDb(*m_createParams);
+    db.OnBisCoreSchemaImported(*m_createParams);
     }

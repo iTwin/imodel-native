@@ -34,7 +34,7 @@ void ChangeTestFixture::SetUpTestCase()
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, ChangeTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
 
-    ASSERT_EQ(BE_SQLITE_OK, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
+    ASSERT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
     TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
@@ -98,7 +98,7 @@ void ChangeTestFixture::CloseDgnDb()
 //---------------------------------------------------------------------------------------
 DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
     {
-    SpatialCategory category(*m_db, categoryName, DgnCategory::Rank::Application);
+    SpatialCategory category(m_db->GetDictionaryModel(), categoryName, DgnCategory::Rank::Application);
 
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
