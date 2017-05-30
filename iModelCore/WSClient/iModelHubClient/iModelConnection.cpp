@@ -2319,9 +2319,6 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 StatusTaskPtr  iModelConnectionImpl::UnsubscribeToEvents()
     {
-    if (nullptr == this)
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
-
     BeMutexHolder lock(m_eventServiceClientMutex);
 
     const Utf8String methodName = "iModelConnection::UnsubscribeToEvents";
