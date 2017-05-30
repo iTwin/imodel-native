@@ -159,7 +159,15 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
     SQLiteNodeHeader nodeHeader;
     if (header->m_meshComponents != nullptr) delete[] header->m_meshComponents;
     nodeHeader.m_nodeID = blockID.m_integerID;
-    if (!m_smSQLiteFile->GetNodeHeader(nodeHeader)) return 1;
+    if (!m_smSQLiteFile->GetNodeHeader(nodeHeader))
+        {
+        // return a valid (empty) node header
+        header->m_apSubNodeID.clear();
+        header->m_nodeExtent = ExtentOp<EXTENT>::Create(0, 0, 0, 0, 0, 0);
+        header->m_contentExtent = header->m_nodeExtent;
+        header->m_totalCount = 0;
+        return 1;
+        }
     //nodeHeader.m_nbPoints = GetBlockDataCount(blockID);
     *header = nodeHeader;
     if (nodeHeader.m_parentNodeID == -1)  m_totalExtent = header->m_contentExtentDefined ? header->m_contentExtent : header->m_nodeExtent;

@@ -59,9 +59,6 @@ protected:
 
     DataSourceStatus                    getDataSourceStatus                 (TimeoutStatus status);
 
-    void                                setTransferStatus                   (DataSourceStatus status);
-    DataSourceStatus                    getTransferStatus                   (void);
-
 public:
 
                                         DataSourceBuffer                    (void);
@@ -97,6 +94,10 @@ public:
 
     void                                updateReadSize                      (DataSourceBuffer::BufferSize readSize);
     DataSourceBuffer::BufferSize        getReadSize                         (void);
+
+    void                                setTransferStatus(DataSourceStatus status);
+    DataSourceStatus                    getTransferStatus(void);
+
 
 };
 

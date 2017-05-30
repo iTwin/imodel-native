@@ -84,18 +84,20 @@ private:
     DataSourceAccount*   m_account;
     };
 
-struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase {
+struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase 
+    {
 
 public:
     typedef std::map<uint64_t, SMNodeGroupPtr> group_cache;
-    typedef std::map<uint32_t, Json::Value*>     node_header_cache;
+    typedef std::map<uint64_t, Json::Value*>   node_header_cache;
     typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMGroupCache> Ptr;
 
 public:
-    // Add node to cache
-    void                    AddNodeToGroupCache(SMNodeGroupPtr group, const uint64_t & id, Json::Value * header);
+
+    StatusInt               AddNodeToGroupCache(SMNodeGroupPtr group, const uint64_t & id, Json::Value * header);
     SMNodeGroupPtr          GetGroupForNodeIDFromCache(const uint64_t& nodeId);
     void                    RemoveNodeFromCache(const uint64_t& nodeId);
+    Json::Value*            GetNodeFromCache(const uint64_t& nodeId);
 
     static SMGroupCache::Ptr Create(node_header_cache* nodeCache);
 
@@ -184,20 +186,15 @@ public:
         this->CancelAll();
         {
         std::unique_lock<std::mutex> lock(*this);
+        static std::atomic<uint64_t> lastNumberOfItems = Queue::size();
         while (!wait_for(lock, 1000ms, [this]
             {
             return Queue::empty();
             }))
             {
-                    {
-                    std::lock_guard<mutex> clk(s_consoleMutex);
-                    std::cout << std::setw(100) << "\r  Queue size (" << Queue::size() << ")                          ";
-                    }
-
-            }
-            {
             std::lock_guard<mutex> clk(s_consoleMutex);
-            std::cout << std::setw(100) << "\r  Queue size (" << Queue::size() << ")                          \n";
+            std::cout << std::setw(100) << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
+            lastNumberOfItems = Queue::size();
             }
         }
         for (auto &&thread : m_threads) if (thread.joinable()) thread.join();
@@ -215,18 +212,15 @@ public:
         std::unique_lock<std::mutex> lock(*this);
         if (Queue::size() == capacity)
             {
+            static std::atomic<uint64_t> lastNumberOfItems = Queue::size();
             while (!wait_for(lock, 1000ms, [this]
                 {
                 return Queue::size() < capacity / 2;
                 }))
                 {
-//#ifdef DEBUG_GROUPS
-                        {
-                        std::lock_guard<mutex> clk(s_consoleMutex);
-                        std::cout << "\r  Queue size (" << Queue::size() << ")                          ";
-                        }
-//#endif
-
+                std::lock_guard<mutex> clk(s_consoleMutex);
+                std::cout << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
+                lastNumberOfItems = Queue::size();
                 }
             }
         Queue::push(std::forward<Type>(value));
@@ -346,9 +340,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         DataSourceURL m_url;
         bvector<uint8_t> m_rawHeaders;
         unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
-        //map<uint64_t, SMNodeGroupPtr> m_tileTreeChildrenGroups;
         SMNodeGroupPtr m_ParentGroup;
-        Json::Value m_RootTileTreeNode;
+        Json::Value m_tilesetRootNode;
         WString m_outputDirPath;
         WString m_dataSourcePrefix;
         WString m_dataSourceExtension = L".bin";
@@ -436,7 +429,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             return *m_tileTreeMap[id];
             }
 
-        void DownloadNodeHeader(const uint64_t& id);
+        Json::Value* DownloadNodeHeader(const uint64_t& id);
 
         unordered_map<uint64_t, Json::Value*>& GetJsonNodeHeaders()
             {
@@ -511,27 +504,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsLoaded() { return m_isLoaded; }
 
-        //void SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
-        //    {
-        //    m_dataSourceAccount = dataSourceAccount;
-        //    }
-        //
         DataSourceAccount *GetDataSourceAccount(void);
-
-        //bool HasChildGroups()
-        //    {
-        //    return !m_tileTreeChildrenGroups.empty();
-        //    }
-
-        //map<uint64_t, SMNodeGroupPtr>& GetChildGroups()
-        //    {
-        //    return m_tileTreeChildrenGroups;
-        //    }
-
-        //void ClearChildGroups()
-        //    {
-        //    m_tileTreeChildrenGroups.clear();
-        //    }
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {
@@ -569,21 +542,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             assert(!"Please use a strategy to save a group!");
             }
 
-        DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize)
-            {
-            assert(this->GetDataSourceAccount() != nullptr);
-
-            // Get the thread's DataSource or create a new one
-            DataSource *dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource();
-            if (dataSource == nullptr)
-                return nullptr;
-            // Make sure caching is enabled for this DataSource
-            dataSource->setCachingEnabled(s_stream_enable_caching);
-
-            dest.reset(new unsigned char[destSize]);
-            // Return the DataSource
-            return dataSource;
-            }
+        DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
 
         StatusInt Load();
 
@@ -675,93 +634,24 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             wchar_t buffer[10000];
             swprintf(buffer, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
 
-            return DownloadGroup(dest, readSize, DataSourceURL(buffer));
+            return DownloadBlob(dest, readSize, DataSourceURL(buffer));
             }
 
-        bool DownloadCesiumTileset(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize, const DataSourceURL& url)
-            {
-            return DownloadGroup(dest, readSize, url);
-            }
+        bool DownloadCesiumTileset(const DataSourceURL& url, Json::Value& tileset);
 
-        bool DownloadGroup(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize, const DataSourceURL& url)
-            {
-            DataSource*                           dataSource;
-            DataSourceBuffer::BufferSize          destSize = 5 * 1024 * 1024;
-            dataSource = this->InitializeDataSource(dest, destSize);
-            if (dataSource == nullptr)
-                {
-                assert(!"Invalid data source");
-                return false;
-                }
+        bool DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize, const DataSourceURL& url);
 
-            if (dataSource->open(url, DataSourceMode_Read).isFailed())
-                {
-                assert(!"Couldn't open data source.");
-                return false;
-                }
+        uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData);
 
-            if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
-                {
-                assert(!"Couldn't read data source.");
-                return false;
-                }
+        StatusInt SaveNode(const uint64_t& id, Json::Value* header);
 
-            if (dataSource->close().isFailed())
-                {
-                assert(!"Couldn't close data source.");
-                return false;
-                }
-            return true;
-            }
+        StatusInt SaveTilesetToCache(Json::Value& tileset, const uint64_t& priorityNodeID, bool generateIDs = true);
 
-        uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData)
-            {
+        StatusInt SaveTileToCacheWithNewTileIDs(Json::Value& tile, uint64_t tileID, uint64_t parentID, bool isRootNode, uint64_t level);
 
-            std::unique_ptr<DataSource::Buffer[]>dest;
-            DataSource*                          dataSource;
-            DataSource::DataSize                 readSize;
-            DataSourceBuffer::BufferSize         destSize = 5 * 1024 * 1024;
+        StatusInt SaveTileToCacheWithExistingTileIDs(Json::Value& tile);
 
-            DataSourceURL dataSourceURL(m_dataSourcePrefix.c_str());
-            dataSourceURL += std::to_wstring(pi_pNodeID) + m_dataSourceExtension.c_str();
-
-            dataSource = this->InitializeDataSource(dest, destSize);
-            if (dataSource == nullptr)
-                {
-                assert(false);
-                return 0;
-                }
-
-            if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-                {
-                assert(false);
-                return 0;
-                }
-
-            if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
-                {
-                assert(false);
-                return 0;
-                }
-
-            if (dataSource->close().isFailed())
-                {
-                assert(false);
-                return 0;
-                }
-
-            //          this->GetDataSourceAccount()->destroyDataSource(dataSource);
-
-            if (readSize > 0)
-                {
-                pi_pData.resize(readSize);
-                memmove(pi_pData.data(), reinterpret_cast<char *>(dest.get()), readSize);
-                }
-
-            return readSize;
-            }
-
-        void SaveNode(const uint64_t& id, Json::Value* header);
+        StatusInt SaveTileToCache(Json::Value& tile, uint64_t tileID);
 
         void WaitFor(SMNodeHeader& pi_pNode);
     };
@@ -1209,7 +1099,7 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
     {
     Json::Value tileSet;
     tileSet["asset"]["version"] = "0.0";
-    tileSet["root"] = pi_Group->m_RootTileTreeNode;
+    tileSet["root"] = pi_Group->m_tilesetRootNode;
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;
 

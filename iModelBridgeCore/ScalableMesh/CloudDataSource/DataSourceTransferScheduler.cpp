@@ -278,82 +278,88 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                                                             // Get the Account
             if ((account = locator.getAccount()) == nullptr)
                 {
-                assert(false);
-                return DataSourceStatus(DataSourceStatus::Status_Error);
-                }
+                //assert(false);
+                buffer->setTransferStatus(DataSourceStatus::Status_Error);
 
-                                                            // Download or Upload blob based on mode
-            if (locator.getMode() == DataSourceMode_Read)
-                {
-#ifdef SM_STREAMING_PERF
-                std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
-#endif
-
-                                                            // Attempt to download a single segment
-                if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize)).isFailed())
-                    {
-                    assert(false);
-                    return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
-                    }
-
-#ifdef SM_STREAMING_PERF
-                std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
-                s_nDownloadTime += std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-                s_nTotalSize += readSize;
-                if (true/*std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() > 500*/)
-                    {
-                    std::lock_guard<std::mutex> clk(s_consoleMutex);
-                    //std::cout << s_nWorkThreads << "    " << dataSourceBuffers.size() << "    " << s_nTotalTransfers << std::endl;
-#ifndef NDEBUG
-                    FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_debug.txt", "a+");
-#else
-                    FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_release.txt", "a+");
-#endif
-                    char TempBuffer[500];
-                    int  NbChars;
-
-                    NbChars = sprintf(TempBuffer, "Segment name: %ls   Number of threads doing work: %i   Queue size: %lli   Ideal queue size: %i   Total work done: %i   size: %lli   total size: %i   download speed: %fMB/s\n", segmentName.c_str(), (int)s_nWorkThreads, dataSourceBuffers.size(), (int)s_nIdealQueueSize, (int)s_nTotalTransfers, readSize, (int)s_nTotalSize, (double)((double)(readSize)/(double)s_nDownloadTime)/8000);
-
-                    size_t NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
-                    assert(NbWrittenChars == NbChars);
-                    fclose(pOutputFileStream);
-
-                    // restart timer
-                    start_time = std::chrono::steady_clock::now();
-                    }
-#endif
-
-                buffer->updateReadSize(readSize);
+                //return DataSourceStatus(DataSourceStatus::Status_Error);
                 }
             else
-                if (locator.getMode() == DataSourceMode_Write_Segmented || locator.getMode() == DataSourceMode_Write)
-                    {
-                                                            // Attempt to upload a single segment
-                    std::wstring filename = locator.getSubPath();
-                    std::size_t found = filename.find_last_of(L"/\\");
-                    if (found != std::wstring::npos)
-                        {
-                        filename = filename.substr(found);
-                        }
-                    found = filename.find(L"~2F");
-                    if (found != std::wstring::npos)
-                        {
-                        filename = filename.substr(found+3);
-                        }
+                {
 
-                    if (buffer->isSegmented())
+                // Download or Upload blob based on mode
+                if (locator.getMode() == DataSourceMode_Read)
+                    {
+#ifdef SM_STREAMING_PERF
+                    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+#endif
+
+                    // Attempt to download a single segment
+                    if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize)).isFailed())
                         {
-                        filename += L"-" + std::to_wstring(segmentIndex);
+                        buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Download);
                         }
-                    if ((status = account->uploadBlobSync(segmentName, filename, segmentBuffer, segmentSize)).isFailed())
+                    else
                         {
-                        if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
+
+#ifdef SM_STREAMING_PERF
+                        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+                        s_nDownloadTime += std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+                        s_nTotalSize += readSize;
+                        if (true/*std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() > 500*/)
                             {
-                            assert(false);
-                            return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
-                            }
+                            std::lock_guard<std::mutex> clk(s_consoleMutex);
+                            //std::cout << s_nWorkThreads << "    " << dataSourceBuffers.size() << "    " << s_nTotalTransfers << std::endl;
+#ifndef NDEBUG
+                            FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_debug.txt", "a+");
+#else
+                            FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_release.txt", "a+");
+#endif
+                            char TempBuffer[500];
+                            int  NbChars;
+
+                            NbChars = sprintf(TempBuffer, "Segment name: %ls   Number of threads doing work: %i   Queue size: %lli   Ideal queue size: %i   Total work done: %i   size: %lli   total size: %i   download speed: %fMB/s\n", segmentName.c_str(), (int)s_nWorkThreads, dataSourceBuffers.size(), (int)s_nIdealQueueSize, (int)s_nTotalTransfers, readSize, (int)s_nTotalSize, (double)((double)(readSize) / (double)s_nDownloadTime) / 8000);
+
+                            size_t NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
+                            assert(NbWrittenChars == NbChars);
+                            fclose(pOutputFileStream);
+
+                            // restart timer
+                            start_time = std::chrono::steady_clock::now();
+                    }
+#endif
+
+                        buffer->updateReadSize(readSize);
                         }
                     }
+                else
+                    if (locator.getMode() == DataSourceMode_Write_Segmented || locator.getMode() == DataSourceMode_Write)
+                        {
+                        // Attempt to upload a single segment
+                        std::wstring filename = locator.getSubPath();
+                        std::size_t found = filename.find_last_of(L"/\\");
+                        if (found != std::wstring::npos)
+                            {
+                            filename = filename.substr(found);
+                            }
+                        found = filename.find(L"~2F");
+                        if (found != std::wstring::npos)
+                            {
+                            filename = filename.substr(found + 3);
+                            }
+
+                        if (buffer->isSegmented())
+                            {
+                            filename += L"-" + std::to_wstring(segmentIndex);
+                            }
+                        if ((status = account->uploadBlobSync(segmentName, filename, segmentBuffer, segmentSize)).isFailed())
+                            {
+                            if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
+                                {
+                                buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+                                }
+                            }
+                        }
+                }
 
                                                             // Segment has been processed, so signal this. Waiting threads are signalled once all are completed.
             if (buffer->signalSegmentProcessed())
