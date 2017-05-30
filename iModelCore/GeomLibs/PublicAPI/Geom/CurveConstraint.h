@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-/*__PUBLISH_SECTION_START__*/
+/*__BENTLEY_INTERNAL_ONLY__*/
 #include <Bentley/BeTimeUtilities.h>
 
 //! @file CurveConstraints.h contains API for building curves with mixed constraints.
@@ -25,7 +25,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //!<li>ConstrainedConstruction::ConstructArcs
 //!</ul>
 //!</ul>
-//! The following
+//! The following are the constraint types:
 //!<ul>
 //!<li> CreateThroughPoint(DPoint3d): The constructed curve must bass through the point
 //!<li> CreatePointAndDirection (DPoint3d, DVec3d): The constructed curve must bass through the point with indicated direction

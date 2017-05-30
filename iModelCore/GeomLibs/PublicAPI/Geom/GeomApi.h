@@ -729,7 +729,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "BsplineStructs.h"
 #include <Geom/CurveDetails.h>
 #include "OperatorOverload.h"
-#include "CurveConstraint.h"
 #ifndef SmallGeomLib
 #include "MSBsplineCurve.h"
 #include "MSInterpolationCurve.h"
@@ -739,6 +738,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "DPoint3dOps.h"
 
 /*__PUBLISH_SECTION_END__*/
+#include "CurveConstraint.h"
 #include "DBilinearPatch3d.h"
 #include "DTriangle3d.h"
 #include "GeometryNode.h"
