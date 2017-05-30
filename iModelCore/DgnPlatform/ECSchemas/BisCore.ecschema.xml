@@ -62,12 +62,6 @@
 
     <ECRelationshipClass typeName="CodeSpecSpecifiesCode" strength="referencing" modifier="Sealed">
         <!-- @see Element.CodeSpec ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the CodeSpecId foreign key column in the bis_Element table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="specified code for" polymorphic="true">
             <Class class="CodeSpec"/>
         </Source>
@@ -78,12 +72,6 @@
 
     <ECRelationshipClass typeName="ElementScopesCode" strength="referencing" modifier="Sealed">
         <!-- @see Element.CodeScope ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the CodeScopeId foreign key column in the bis_Element table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="scopes code for" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -110,9 +98,19 @@
         <ECNavigationProperty propertyName="ParentModel" relationshipName="ModelOwnsSubModel" direction="Backward" readOnly="True" displayLabel="Parent Model" description="The Parent Model (which contains the Modeled Element) is above this model in the information hierarchy.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the ParentModelId foreign key column in the bis_Model table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="ModeledElement" relationshipName="ModelModelsElement" direction="Forward" readOnly="True" displayLabel="Modeled Element" description="This Model is modeling (describing or breaking down) this element which is at a higher level of the information hierarchy.">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the ModeledElementId foreign key column in the bis_Model table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
@@ -245,12 +243,6 @@
 
     <ECRelationshipClass typeName="ModelOwnsSubModel" strength="embedding" modifier="Sealed">
         <!-- @see Model.ParentModel ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the ParentModelId foreign key column in the bis_Model table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="owns sub" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -261,12 +253,6 @@
 
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
         <!-- @see Element.Model ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the ModelId foreign key column in the bis_Element table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -285,12 +271,6 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
         <!-- @see Model.ModeledElement ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the ModeledElementId foreign key column in the bis_Model table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -373,6 +353,10 @@
                 <CustomHandledProperty>
                     <StatementTypes>2</StatementTypes>
                 </CustomHandledProperty>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the ModelId foreign key column in the bis_Element table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True" displayLabel="Last Modified" description="The last modified time of the element. This is maintained by the core framework and should not be set directly by applications.">
@@ -392,6 +376,10 @@
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the CodeSpecId foreign key column in the bis_Element table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="CodeScope" displayLabel="Code Scope" relationshipName="ElementScopesCode" direction="Backward"  description="Code Scope identifies the element that provides the uniqueness scope for the code value. The combination of Code Specification, Code Scope, and the Code value must be unique.">
@@ -400,6 +388,10 @@
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the CodeScopeId foreign key column in the bis_Element table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="CodeValue" typeName="string" displayLabel="Code" description="Code is the formal name (business key) for an element. The combination of Code Specification, Code Scope, and the Code value must be unique.">
@@ -431,6 +423,11 @@
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the ParentId foreign key column in the bis_Element table -->
+                    <!-- The Element API will handle cascading the delete -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" displayLabel="Federation GUID" description="The GUID used to federate this element across repositories.">
@@ -545,10 +542,6 @@
 
     <ECRelationshipClass typeName="GeometricElement2dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <!-- @see GeometricElement2d.TypeDefinition ECNavigationProperty -->
-        <ECCustomAttributes>
-            <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement2d table -->
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="GeometricElement2d" />
         </Source>
@@ -568,10 +561,6 @@
     
     <ECRelationshipClass typeName="GeometricElement3dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <!-- @see GeometricElement3d.TypeDefinition ECNavigationProperty -->
-        <ECCustomAttributes>
-            <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement3d table -->
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="GeometricElement3d" />
         </Source>
@@ -927,6 +916,10 @@
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.1.3"/>
                 <CustomHandledProperty/>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="InSpatialIndex" typeName="boolean" displayLabel="In Spatial Index" description="If true, this element will have an entry in the Spatial Index.">
@@ -982,6 +975,8 @@
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.1.3"/>
                 <CustomHandledProperty/>
+                <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement3d table -->
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
@@ -1034,6 +1029,10 @@
         <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement2dIsInCategory" direction="Forward" description="The Drawing Category used to categorize the 2D Geometric Element">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the CategoryId foreign key column in the bis_GeometricElement2d table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="Origin" typeName="point2d" description="The placement origin of the Element.">
@@ -1067,6 +1066,8 @@
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.1.3"/>
                 <CustomHandledProperty/>
+                <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement2d table -->
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
@@ -1386,13 +1387,6 @@
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
         <!-- @see Element.Parent ECNavigationProperty -->
         <!-- WIP: Should be abstract? -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the ParentId foreign key column in the bis_Element table -->
-                <!-- The Element API will handle cascading the delete -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -1443,15 +1437,13 @@
         <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsUniqueAspect" direction="Backward" description="The owning Element">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <!-- Creates the ElementId foreign key column in the bis_ElementUniqueAspect table -->
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
         <!-- @see ElementUniqueAspect.Element ECNavigationProperty -->
-        <ECCustomAttributes>
-            <!-- Creates the ElementId foreign key column in the bis_ElementUniqueAspect table -->
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -1476,15 +1468,13 @@
         <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsMultiAspects" direction="Backward" description="The owning Element">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <!-- Creates the ElementId foreign key column in the bis_ElementMultiAspect table -->
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
         <!-- @see ElementMultiAspect.Element ECNavigationProperty -->
-        <ECCustomAttributes>
-            <!-- Creates the ElementId foreign key column in the bis_ElementMultiAspect table -->
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -1665,12 +1655,6 @@
 
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
         <!-- @see GeometricElement2d.Category ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the CategoryId foreign key column in the bis_GeometricElement2d table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
             <Class class="GeometricElement2d" />
         </Source>
@@ -1680,12 +1664,6 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
         <!-- @see GeometricElement3d.Category ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
             <Class class="GeometricElement3d" />
         </Source>
