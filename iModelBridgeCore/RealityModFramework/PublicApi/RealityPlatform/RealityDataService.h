@@ -232,7 +232,7 @@ private:
 //!         else
 //!             SetAzureRedirectionUrlToContainer(blobContainerUrl);
 //!         }
-//!    // After this the request will provide the proper http ulr, header and body
+//!    // After this the request will provide the proper http url, header and body
 //!    //  either to the blob or RealityDataService
 //!
 //!    }
@@ -451,7 +451,7 @@ protected:
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason 02/2017
 //! A specialisation of a RealityDataPagedRequest that only obtains reality data
-//! for specific organization. Usually a CONENCT user only has access to its own organization 
+//! for specific organization. Usually a CONNECT user only has access to its own organization 
 //! data only so the organizationId specified should be the identifeir of its organization.
 //! This request will not return public references to reality data from other organizations
 //! marked as public.
