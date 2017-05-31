@@ -164,7 +164,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     Utf8CP tableName = table.GetName().c_str();
     Utf8CP instanceIdColName = idPropMap->FindDataPropertyMap(tableName)->GetColumn().GetName().c_str();
     Utf8CP currentTimeStampColName = currentTimeStampColumn.GetName().c_str();
-
+     
     Utf8String triggerName;
     //triggerName.Sprintf("%s_%s_SetCurrentTimeStamp", tableName, currentTimeStampColName);
     triggerName.Sprintf("%s_CurrentTimeStamp", tableName);
@@ -175,6 +175,38 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     whenCondition.Sprintf("old.%s=new.%s AND old.%s!=" CURRENTIMESTAMP_SQLEXP, currentTimeStampColName, currentTimeStampColName, currentTimeStampColName);
 
     return table.CreateTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan           06/2015
+//---------------------------------------------------------------------------------------
+ClassMappingStatus ClassMap::MapNavigationProperty(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap)
+    {
+#if 0
+    ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(navPropMap);    
+#endif
+    NavigationECPropertyCR navProp = static_cast<NavigationECPropertyCR>(navPropMap.GetProperty());
+    ECRelationshipClassCP navRel = navProp.GetRelationshipClass();
+    if (navRel == nullptr)
+        return ClassMappingStatus::Error;
+
+    ClassMapCP classMap = GetDbMap().GetClassMap(*navRel);
+    if (classMap == nullptr)
+        {
+        ClassMappingStatus r = GetDbMap().MapRelationshipClass(ctx.GetImportCtx(), *navRel);
+        if (r != ClassMappingStatus::Success)
+            return r;
+
+        classMap = GetDbMap().GetClassMap(*navRel);
+        if (classMap == nullptr)
+            return ClassMappingStatus::Error;
+        }
+
+    if (classMap->GetType() != ClassMap::Type::RelationshipEndTable)
+        return ClassMappingStatus::Error;
+    
+    return static_cast<RelationshipClassEndTableMap*>(const_cast<ClassMap*>(classMap))->UpdatePersistedEnd(ctx, navPropMap);
     }
 
 //---------------------------------------------------------------------------------------
@@ -245,7 +277,11 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             {
             NavigationPropertyMap const& navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap.IsComplete())
-                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(const_cast<NavigationPropertyMap&>(navPropertyMap));
+                {
+                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx, const_cast<NavigationPropertyMap&>(navPropertyMap));
+                if (navMapStatus != ClassMappingStatus::Success)
+                    return navMapStatus;
+                }
             }
         }
 
@@ -259,7 +295,11 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             {
             NavigationPropertyMap const& navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap.IsComplete())
-                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(const_cast<NavigationPropertyMap&>(navPropertyMap));
+                {
+                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx, const_cast<NavigationPropertyMap&>(navPropertyMap));
+                if (navMapStatus != ClassMappingStatus::Success)
+                    return navMapStatus;
+                }
             }
         }
 

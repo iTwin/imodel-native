@@ -122,7 +122,6 @@ struct ClassMap : RefCountedBase
             Utf8StringCR GetViewName() const { return m_viewName; }
             bool HasView() const { return !m_viewName.empty(); }
             };
-
     protected:
         struct ClassMappingContext final : NonCopyableClass
             {
@@ -155,6 +154,7 @@ struct ClassMap : RefCountedBase
 
         ClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, Type::Class, ecClass, mapStrat) {}
         ClassMap(ECDb const&ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat, UpdatableViewInfo const& updatableViewInfo) : ClassMap(ecdb, Type::Class, ecClass, mapStrat, updatableViewInfo) {}
+        ClassMappingStatus MapNavigationProperty(ClassMappingContext&, NavigationPropertyMap&);
 
     protected:
         ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
@@ -170,7 +170,7 @@ struct ClassMap : RefCountedBase
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         BentleyStatus MapSystemColumns();
-
+        void Modified() { if (m_state == ObjectState::Persisted) m_state = ObjectState::Modified; }
     public:
         virtual ~ClassMap() {}
 

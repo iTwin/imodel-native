@@ -837,10 +837,10 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
                             firstBaseClassMap->GetClass().GetFullName(), MapStrategyExtendedInfo::ToString(baseStrategy));
             return ClassMappingStatus::Error;
             }
-
+#if 0
         if (SUCCESS != FailIfConstraintClassIsNotMapped())
             return ClassMappingStatus::Error;
-
+#endif
         return ClassMappingStatus::Success;
         }
 
@@ -850,9 +850,10 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
         return ClassMappingStatus::Success;
         }
-
+#if 0
     if (SUCCESS != FailIfConstraintClassIsNotMapped())
         return ClassMappingStatus::Error;
+#endif
 
     if (m_linkTableMappingInfo != nullptr)
         return EvaluateLinkTableStrategy(ctx, *caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
@@ -942,9 +943,9 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportCo
 
     //root class
     BeAssert(m_isRootClass && m_fkMappingInfo != nullptr);
-    ECRelationshipClassCR relClass = *m_ecClass.GetRelationshipClassCP();
-
     MapStrategy resolvedStrategy = m_fkMappingInfo->GetFkEnd() == ECRelationshipEnd_Source ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
+#if 0
+    ECRelationshipClassCR relClass = *m_ecClass.GetRelationshipClassCP();
 
     //evaluate end tables
     const bool foreignKeyEndIsSource = resolvedStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable;
@@ -971,7 +972,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportCo
                         m_ecClass.GetFullName(), foreignKeyEndIsSource ? "Source" : "Target", foreignKeyEndIsSource ? "Target" : "Source");
         return ERROR;
         }
-
+#endif
     m_mapStrategyExtInfo = MapStrategyExtendedInfo(resolvedStrategy);
     return SUCCESS;
     }

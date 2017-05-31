@@ -245,7 +245,6 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
             return ERROR;
         }
 
-
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootRelationshipClass))
@@ -253,9 +252,10 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
         }
 
     //NavigationPropertyMaps can only be finished after all relationships have been mapped
+#if 0
     if (SUCCESS != ctx.GetClassMapLoadContext().Postprocess(*this))
         return ERROR;
-
+#endif
     for (auto& kvpair : ctx.GetClassMappingInfoCache())
         {
         if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(ctx, kvpair.second->GetIndexInfos()))
@@ -307,7 +307,10 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
 
          ctx.AddClassMapForSaving(ecClass.GetId());
          status = classMap->Map(ctx, *classMapInfo);
-         ctx.CacheClassMapInfo(*classMap, classMapInfo);
+
+         //ForeignKeyMapping is mapped partially. We must call finish on it to complete the mapping
+        //`` if (!MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
+            ctx.CacheClassMapInfo(*classMap, classMapInfo);
 
          //error
          if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
@@ -316,7 +319,14 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
          }
      else
          {
-         existingClassMap->Update();
+         if (existingClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
+             {
+            
+             if (static_cast<RelationshipClassEndTableMap*>(existingClassMap.get())->Finish(ctx) != ClassMappingStatus::Success)
+                 return ClassMappingStatus::Error;
+             }
+         else
+             existingClassMap->Update();
          }
 
      const bool isCurrentIsMixin = ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin();

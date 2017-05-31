@@ -360,8 +360,8 @@ TEST_F(DbMappingTestFixture, SimpleFK)
                   <Source multiplicity="(0..1)" polymorphic="True" roleLabel="L">
                       <Class class ="L" />
                   </Source>
-                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Rs" abstractConstraint="R">
-                      <Class class ="RL" />
+                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Rs" >
+                      <Class class ="R" />
                   </Target>
                </ECRelationshipClass>
           </ECSchema>)xml"));

@@ -75,6 +75,34 @@ struct RelationshipClassMap : ClassMap
 
 typedef RelationshipClassMap const& RelationshipClassMapCR;
 
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+//        ClassMappingStatus _Map(ClassMappingContext&) override;
+//            {
+//            return ClassMappingStatus::Success;
+//            }
+//        BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
+//            {
+//            return SUCCESS;
+//            }
+//        BentleyStatus ValidateMapping() const;
+//            {
+//            return SUCCESS;
+//            }
+//
+//        BentleyStatus AppendForeignEnd(NavigationPropertyMap& propertyMap);
+//            {
+//            return ERROR;
+//            }
+//        BentleyStatus SetPrimaryEnd(ClassMapCR classMap);
+//            {
+//            return ERROR;
+//            }
+//        BentleyStatus Finish();
+//            {
+//            return SUCCESS;
+//            }
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      06/2012
 +===============+===============+===============+===============+===============+======*/
@@ -180,30 +208,30 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 
         RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
-
         void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
-
         ClassMappingStatus _Map(ClassMappingContext&) override;
         DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, ForeignKeyColumnInfo const&, DbColumn const& fkCol) const;
-
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
         BentleyStatus DetermineFkColumns(ColumnLists&, ForeignKeyColumnInfo&, RelationshipMappingInfo const&);
         BentleyStatus MapSubClass(RelationshipMappingInfo const&);
-
         BentleyStatus TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd) const;
         BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, DbTable const&, ForeignKeyColumnInfo const&) const;
-
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
-
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
+        void GetForeignKeyColumnInfo(ForeignKeyColumnInfo& fkColInfo, NavigationPropertyMap const& navProp) const;
+
+        DbColumn* CreateForeignColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo const&fkColInfo);
+        DbColumn * CreateReferencedClassIdColumn(DbTable& fkTable) const;
+        DbColumn* CreateRelECClassIdColumn(DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap) const;
+        ClassMappingStatus CreateForiegnKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo);
     public:
         ~RelationshipClassEndTableMap() {}
-
+        ClassMappingStatus UpdatePersistedEnd(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap);
         //!Gets the end in which the ForeignKey is persisted
         ECN::ECRelationshipEnd GetForeignEnd() const;
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
-
+        ClassMappingStatus Finish(SchemaImportContext const& ctx);
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
         //WIP: This code must go elsewhere. It is only used by the column factory
         Utf8String GetAccessStringForId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropId); }

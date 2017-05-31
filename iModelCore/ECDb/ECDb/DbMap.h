@@ -55,7 +55,7 @@ struct DbMap final : NonCopyableClass
         explicit DbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_lightweightCache(ecdb) {}
         ~DbMap() {}
         void ClearCache() const;
-
+        ClassMappingStatus MapRelationshipClass(SchemaImportContext& ctx, ECN::ECRelationshipClassCR r) const { return MapClass(ctx, r); }
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
 
         BentleyStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
