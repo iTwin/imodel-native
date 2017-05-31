@@ -665,11 +665,14 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
             m_fillColor = ColorDef::White(); // Fill should be set to opaque white for gradient texture...
 
-            if (0 == (m_gradient->GetFlags() & GradientSymb::Flags::Outline))
+#if defined(TODO_ELEMENT_TILE)
+            // We need to handle GradientSymb::Flags::Outline at render-time...
+            if (0 == (m_gradient->GetFlags() & GradientSymb::Flags::Outline) && (FillDisplay::ByView != elParams.GetFillDisplay() || context.GetViewFlags().ShowFill()))
                 {
                 m_lineColor.SetAlpha(0xff); // Qvis checks for this to disable auto-outline...
                 netElemTransparency = 0.0;  // Don't override the fully transparent outline below...
                 }
+#endif
             }
         else
             {
