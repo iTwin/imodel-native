@@ -466,7 +466,7 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
             graphics.push_back(thisGraphic);
 
         if (args.m_polylineEdgesArgs.Init(*this, tileRange) &&
-            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineEdgesArgs, db)).IsValid())
             graphics.push_back(thisGraphic);
         }
     else                           
@@ -1751,6 +1751,8 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     Reset();
     MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
     m_pointParams = mesh.Points().GetParams();
+
+    initLinearGraphicParams(*this, mesh);
 
     if (!meshEdges.IsValid() || meshEdges->m_polylines.empty())
         return false;
