@@ -17,6 +17,20 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+struct SMProgressReport : public ISMAnalysisProgressListener, public ISMProgressReport
+    {
+    SMProgressReport(ISMAnalysisProgressListener* pProgressListener);
+    SMProgressReport();
+    ~SMProgressReport();
+
+    bool CheckContinueOnProgress() { return _CheckContinueOnProgress(*this); }
+
+    private:
+        virtual bool    _CheckContinueOnProgress(ISMProgressReport const& report) override;
+
+    public:
+        ISMAnalysisProgressListener*   m_pProgressListener;
+    };
 
 class ScalableMeshAnalysis : public IScalableMeshAnalysis
     {
@@ -29,14 +43,15 @@ class ScalableMeshAnalysis : public IScalableMeshAnalysis
         bool _InitGridFrom(ISMGridVolume& grid, double _resolution, const DRange3d& _rangeMesh, const DRange3d& _rangeRegion);
 
     protected:
-        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid) override;
-        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid) override;
+        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) override;
+        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) override;
 
     public:
         ScalableMeshAnalysis(IScalableMesh* scmPtr);
         ~ScalableMeshAnalysis();
 
         static ScalableMeshAnalysis* Create(IScalableMesh* scmPtr);
+
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

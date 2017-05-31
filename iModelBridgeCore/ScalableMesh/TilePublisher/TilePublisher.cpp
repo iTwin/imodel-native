@@ -127,7 +127,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr source
         {
         m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
 
-        if (sourceGCS != nullptr && sourceGCS != destinationGCS)
+        if (sourceGCS != nullptr && sourceGCS != destinationGCS && !destinationGCS->IsEquivalent(*sourceGCS))
             {
             GeoPoint inLatLong, outLatLong;
             if (sourceGCS->LatLongFromCartesian(inLatLong, m_centroid) != SUCCESS)
