@@ -860,6 +860,9 @@ void DoPick(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
 //---------------------------------------------------------------------------------------
 void ScalableMeshModel::ClearAllDisplayMem()
     {
+    if (!m_smPtr.IsValid())
+        return;
+
     IScalableMeshProgressiveQueryEngine::CancelAllQueries();
     ClearProgressiveQueriesInfo();
     m_currentDrawingInfoPtr = nullptr;
