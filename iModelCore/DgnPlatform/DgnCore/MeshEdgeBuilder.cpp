@@ -20,6 +20,7 @@ struct MeshEdgesBuilder
 {
 private:
 
+
     struct  PointComparator 
         {
         bool operator()(QPoint3dCR lhs, QPoint3dCR rhs) const
@@ -69,7 +70,7 @@ private:
         };
 
     bmap <MeshEdge, EdgeInfo>       m_edgeMap;
-    bvector<FPoint3d>               m_triangleNormals;
+    bvector<FVec3d>                 m_triangleNormals;
     MeshEdgeCreationOptionsCR       m_options;
 
 public:    
@@ -100,7 +101,7 @@ MeshEdgesBuilder (MeshCR mesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR o
             anyHidden |= !edgeInfo.m_visible;
             }
 
-        m_triangleNormals.push_back (FPoint3d::From(mesh.GetTriangleNormal(triangle)));
+        m_triangleNormals.push_back (FVec3d::From(mesh.GetTriangleNormal(triangle)));
         }
 
     if (!anyHidden)
@@ -141,7 +142,7 @@ MeshEdgesBuilder (TriMeshArgsCR args, DRange3dCR tileRange, MeshEdgeCreationOpti
             args.m_points[triIndex[2]].Unquantize(args.m_pointParams)
             };
 
-        m_triangleNormals.push_back(FPoint3d::From(DVec3d::FromNormalizedCrossProductToPoints(dpts[0], dpts[1], dpts[2])));
+        m_triangleNormals.push_back(FVec3d::From(DVec3d::FromNormalizedCrossProductToPoints(dpts[0], dpts[1], dpts[2])));
         }
     CalculateEdgeVisibility (args.m_points, tileRange, args.m_pointParams);
     }
@@ -161,7 +162,7 @@ void CalculateEdgeVisibility(QPoint3dCP points, DRange3dCR tileRange, QPoint3d::
         {
         DPoint3d const&  point0  = points[edge.second.m_edge.m_indices[0]].Unquantize(qparams);
         DPoint3d const&  point1  = points[edge.second.m_edge.m_indices[1]].Unquantize(qparams);
-        static bool s_hideSheetEdges = true; // Possibly an option (for reality mesh tile edges??).
+        static bool      s_hideSheetEdges = true; // Possibly an option (for reality mesh tile edges??).
 
         if (!tileRange.IsContained(point0) &&
             !tileRange.IsContained(point1))
@@ -171,10 +172,10 @@ void CalculateEdgeVisibility(QPoint3dCP points, DRange3dCR tileRange, QPoint3d::
             }
         else if (2 == edge.second.m_faceCount)
             {
-            FPoint3d const&  normal0 = m_triangleNormals[edge.second.m_faceIndices[0]];
-            FPoint3d const&  normal1 = m_triangleNormals[edge.second.m_faceIndices[1]];
+            FVec3d const&  normal0 = m_triangleNormals[edge.second.m_faceIndices[0]];
+            FVec3d const&  normal1 = m_triangleNormals[edge.second.m_faceIndices[1]];
 
-            if (fabs(DPoint3d::From(normal0).DotProduct(DPoint3d::From(normal1))) > minEdgeDot)
+            if (fabs(normal0.DotProduct(normal1)) > minEdgeDot)
                 edge.second.m_visible = false;
             }
         else if (m_options.m_generateSheetEdges)
@@ -190,28 +191,106 @@ void CalculateEdgeVisibility(QPoint3dCP points, DRange3dCR tileRange, QPoint3d::
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildEdges (MeshEdgesR edges) const
     {
+    struct  PolylineSegment
+        {
+        MeshEdge        m_edge;
+        bool            m_processed;
+
+        PolylineSegment(MeshEdgeCR edge) : m_edge (edge), m_processed(false) { }
+        };
+    bvector <PolylineSegment> polylineSegments;
+
     for (auto& edge : m_edgeMap)
         {
         if (edge.second.m_visible)    
             {
-            edges.m_visible.push_back(edge.second.m_edge);
+            if (1 == edge.second.m_faceCount)
+                polylineSegments.push_back (PolylineSegment(edge.second.m_edge));
+            else
+                edges.m_visible.push_back(edge.second.m_edge);
             }
         else
             {
             if (2 == edge.second.m_faceCount)
                 {
-                FPoint3d const&  normal0 = m_triangleNormals[edge.second.m_faceIndices[0]];
-                FPoint3d const&  normal1 = m_triangleNormals[edge.second.m_faceIndices[1]];
+                static  double    s_maxSilhouetteDot = .95;
 
-                if (!DPoint3d::From(normal0).IsParallelTo(DPoint3d::From(normal1)))
+                FVec3d const&  normal0 = m_triangleNormals[edge.second.m_faceIndices[0]];
+                FVec3d const&  normal1 = m_triangleNormals[edge.second.m_faceIndices[1]];
+
+                if (fabs(normal0.DotProduct(normal1)) < s_maxSilhouetteDot)
                     {
                     // Potential silhouettes.
                     edges.m_silhouette.push_back(edge.second.m_edge);
-                    edges.m_silhouetteNormals0.Add(DPoint3d::From(normal0));
-                    edges.m_silhouetteNormals1.Add(DPoint3d::From(normal1));
+                    edges.m_silhouetteNormals0.Add(*((FPoint3d*) &normal0));  // TBD -- Oct Encode
+                    edges.m_silhouetteNormals1.Add(*((FPoint3d*) &normal1));
                     }
                 }
             }
+        }
+
+    struct MapEntry
+        {
+        uint32_t            m_endIndex;
+        PolylineSegment*    m_segment;
+
+        MapEntry() { }
+        MapEntry(uint32_t endIndex, PolylineSegment* segment) : m_endIndex(endIndex), m_segment(segment) { }
+        };
+    
+    bmultimap <uint32_t, MapEntry>  segmentMap;
+
+    for (auto& polylineSegment : polylineSegments)
+        {
+        segmentMap.Insert (polylineSegment.m_edge.m_indices[0], MapEntry(polylineSegment.m_edge.m_indices[1], &polylineSegment));
+        segmentMap.Insert (polylineSegment.m_edge.m_indices[1], MapEntry(polylineSegment.m_edge.m_indices[0], &polylineSegment));
+        }
+
+    for (auto& polylineSegment : polylineSegments)
+        {
+        if (polylineSegment.m_processed)
+            continue;
+        
+        std::list<uint32_t> indexList;
+
+        indexList.push_back (polylineSegment.m_edge.m_indices[0]);
+        indexList.push_back (polylineSegment.m_edge.m_indices[1]);
+
+        polylineSegment.m_processed = true;
+        
+        bool    linkFound = false;
+        
+        do
+            {
+            linkFound = false;
+            for (bmultimap <uint32_t, MapEntry>::iterator curr = segmentMap.lower_bound (indexList.back()), end = segmentMap.upper_bound(indexList.back()); !linkFound && curr != end; curr++)
+                {
+                if (!curr->second.m_segment->m_processed)
+                    {
+                    linkFound = true;
+                    indexList.push_back(curr->second.m_endIndex);
+                    curr->second.m_segment->m_processed = true;
+                    break;
+                    }
+                }
+            for (bmultimap <uint32_t, MapEntry>::iterator curr = segmentMap.lower_bound (indexList.front()), end = segmentMap.upper_bound(indexList.front()); !linkFound && curr != end; curr++)
+                {
+                if (!curr->second.m_segment->m_processed)
+                    {
+                    linkFound = true;
+                    indexList.push_front(curr->second.m_endIndex);
+                    curr->second.m_segment->m_processed = true;
+                    break;
+                    }
+                }
+            } while (linkFound);
+
+
+        bvector<uint32_t>   polyline;
+        for (auto& index : indexList)
+            polyline.push_back(index);
+
+        edges.m_polylines.push_back(std::move(polyline));
         }
     }
 };  // MeshEdgesBuilder
