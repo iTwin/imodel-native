@@ -75,7 +75,10 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedMesh(SmCachedDispla
     {
     // shutting down
     if (nullptr == DgnPlatformLib::QueryHost())
+        { 
+        assert(!"WARNING : Possible memory leak, missing AdoptHost in thread?");
         return SUCCESS;
+        }
 
     if (NULL != cachedDisplayMesh->m_qvElem)
         {
@@ -112,7 +115,11 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
 BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture)
     {
     if (nullptr == DgnPlatformLib::QueryHost())
+        { 
+        assert(!"WARNING : Possible memory leak, missing AdoptHost in thread?");
         return SUCCESS;
+        }
+
     if (cachedDisplayTexture->m_textureID != 0)
         {
         T_HOST.GetGraphicsAdmin()._DeleteTexture(cachedDisplayTexture->m_textureID);

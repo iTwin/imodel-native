@@ -127,7 +127,8 @@ struct ScalableMeshModel : IMeshSpatialModel
     private:
 
         static IScalableMeshLocationProviderPtr m_locationProviderPtr;
-
+    
+        
         IScalableMeshPtr                        m_smPtr;
         Transform                               m_smToModelUorTransform;
         Transform                               m_modelUorToSmTransform;
@@ -271,7 +272,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);        
 
-        
+        SCALABLEMESH_SCHEMA_EXPORT void ClearAllDisplayMem();
+                
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
         
         IScalableMesh* GetScalableMeshHandle();

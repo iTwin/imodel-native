@@ -858,6 +858,20 @@ void DoPick(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void ScalableMeshModel::ClearAllDisplayMem()
+    {
+    IScalableMeshProgressiveQueryEngine::CancelAllQueries();
+    ClearProgressiveQueriesInfo();
+    m_currentDrawingInfoPtr = nullptr;
+    m_progressiveQueryEngine = nullptr;
+    m_smPtr->RemoveAllDisplayData();
+    m_clearAllDisplayMem = false;
+    RefreshClips();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {       
     if (m_smPtr == 0 && !m_tryOpen)
@@ -872,6 +886,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
         m_tryOpen = true;
         }
+
     if (m_smPtr == 0) return; //if open failed, we can't draw anything
 
 
