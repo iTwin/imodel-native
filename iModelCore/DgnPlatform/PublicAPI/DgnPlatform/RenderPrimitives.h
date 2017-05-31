@@ -907,16 +907,19 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
         m_startDistance = 0.0;
         }
 
-    bool Init(PolylineCR line)
+    bool Init(PolylineCR line) { return Init(line.GetIndices(), line.GetStartDistance()); }
+        
+    bool Init (bvector<uint32_t> const& indices, double startDistance)
         {
         Reset();
 
-        m_numIndices = static_cast<uint32_t>(line.GetIndices().size());
-        m_vertIndex = &line.GetIndices()[0];
-        m_startDistance = line.GetStartDistance();
+        m_numIndices = static_cast<uint32_t>(indices.size());
+        m_vertIndex = &indices[0];
+        m_startDistance = startDistance;
 
         return IsValid();
         }
+
 };
 
 //=======================================================================================
@@ -931,6 +934,7 @@ struct PolylineArgs : IndexedPolylineArgs
 
     void Reset();
     bool Init(MeshCR mesh);
+    void FinishInit(MeshCR mesh);
 };
 
 
@@ -959,12 +963,22 @@ struct ElementSilhouetteEdgeArgs : SilhouetteEdgeArgs
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
+struct ElementPolylineEdgeArgs : PolylineArgs
+{
+    bool Init(MeshCR mesh, DRange3dCR tileRange);
+};
+
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================
 struct GetMeshGraphicsArgs
 {
-    PolylineArgs                    m_polylineArgs;
-    MeshArgs                        m_meshArgs;
+    PolylineArgs                     m_polylineArgs;
+    MeshArgs                         m_meshArgs;
     ElementMeshEdgeArgs              m_visibleEdgesArgs;
     ElementSilhouetteEdgeArgs        m_invisibleEdgesArgs;
+    ElementPolylineEdgeArgs          m_polylineEdgesArgs;
 };
 
 //=======================================================================================

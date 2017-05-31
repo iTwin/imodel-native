@@ -2019,6 +2019,7 @@ struct MeshEdges : RefCountedBase
 {
     bvector<MeshEdge>           m_visible;
     bvector<MeshEdge>           m_silhouette;
+    bvector<bvector<uint32_t>>  m_polylines;
     QPoint3dList                m_silhouetteNormals0 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
     QPoint3dList                m_silhouetteNormals1 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
 

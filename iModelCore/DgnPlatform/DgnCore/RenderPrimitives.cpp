@@ -464,6 +464,10 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
         if (args.m_invisibleEdgesArgs.Init(*this, tileRange) &&
             (thisGraphic = system._CreateSilhouetteEdges(args.m_invisibleEdgesArgs, db)).IsValid())
             graphics.push_back(thisGraphic);
+
+        if (args.m_polylineEdgesArgs.Init(*this, tileRange) &&
+            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            graphics.push_back(thisGraphic);
         }
     else                           
         {
@@ -1740,6 +1744,33 @@ bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool  ElementPolylineEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
+    {
+    Reset();
+    MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
+    m_pointParams = mesh.Points().GetParams();
+
+    if (!meshEdges.IsValid() || meshEdges->m_polylines.empty())
+        return false;
+
+    m_disjoint = false;
+    m_polylines.reserve(meshEdges->m_polylines.size());
+
+    for (auto& polyline : meshEdges->m_polylines)
+        {
+        IndexedPolyline indexedPolyline;
+
+        if (indexedPolyline.Init(polyline, 0.0))
+            m_polylines.push_back(indexedPolyline);
+        }
+                                                
+    FinishInit(mesh);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PolylineArgs::Reset()
@@ -1762,14 +1793,10 @@ bool PolylineArgs::Init(MeshCR mesh)
     {
     Reset();
 
-    m_pointParams = mesh.Points().GetParams();
-
     initLinearGraphicParams(*this, mesh);
 
-    m_numPoints = static_cast<uint32_t>(mesh.Points().size());
-    m_points = &mesh.Points()[0];
-    m_polylines.reserve(mesh.Polylines().size());
     m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
+    m_polylines.reserve(mesh.Polylines().size());
 
     for (auto const& polyline : mesh.Polylines())
         {
@@ -1777,17 +1804,28 @@ bool PolylineArgs::Init(MeshCR mesh)
         if (indexedPolyline.Init(polyline))
             m_polylines.push_back(indexedPolyline);
         }
+    if (!IsValid())
+        return false;
 
-    if (IsValid())
-        {
-        m_numLines = static_cast<uint32_t>(m_polylines.size());
-        m_lines = &m_polylines[0];
+    FinishInit(mesh);
+    return true;
+    }
 
-        mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
-        mesh.ToFeatureIndex(m_features);
-        }
 
-    return IsValid();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineArgs::FinishInit(MeshCR mesh)
+    {
+    m_pointParams = mesh.Points().GetParams();
+    m_numPoints = static_cast<uint32_t>(mesh.Points().size());
+    m_points = &mesh.Points()[0];
+
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+    mesh.ToFeatureIndex(m_features);
+
+    m_numLines = static_cast<uint32_t>(m_polylines.size());
+    m_lines = &m_polylines[0];
     }
 
 /*---------------------------------------------------------------------------------**//**
