@@ -39,6 +39,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         bvector<ChangeGroupPtr> m_changeGroups;
         size_t m_changeGroupIndexToSyncNext;
+        ChangeGroupPtr m_currentChangeGroup;
 
         CachingDataSource::Progress::State m_uploadBytesProgress;
 
@@ -66,9 +67,9 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         void HandleSyncError(WSErrorCR error, ChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
 
-        void ReportProgress(double currentFileBytesUploaded, Utf8StringCPtr label) const;
+        void ReportProgress(double currentFileBytesUploaded, Utf8StringCPtr label, double currentFileTotalBytes = 0.0) const;
         void ReportFinalProgress() const;
-        ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress) const;
+        ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress, double currentFileTotalBytes = 0.0) const;
 
         WSChangesetPtr BuildChangeset
             (
