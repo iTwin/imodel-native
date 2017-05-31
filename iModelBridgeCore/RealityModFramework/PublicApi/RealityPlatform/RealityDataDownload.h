@@ -14,6 +14,7 @@
 #include <Bentley/bmap.h>
 #include <BeXml/BeXml.h>
 #include <Bentley/DateTime.h>
+#include <curl/curl.h>
 #include "RealityPlatformAPI.h"
 
 //! Callback function to follow the download progression.
@@ -37,6 +38,30 @@ typedef std::function<void(int index, void *pClient, int ErrorCode, const char* 
 //! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
 //! @return If RealityDataDownload_ProgressCallBack returns any other value The download is canceled for all files.
 typedef std::function<int()> RealityDataDownload_HeartbeatCallBack;
+
+enum class ProxyStatus
+    {
+    ReturnedProxy,
+    DefaultProxy,
+    NoProxy,
+    Abort
+    };
+
+//! Callback function to set proxy per URL.
+//! @param[in]  url          full url of the resource we are trying to download.
+//! @param[out] proxyUrl     url of the proxy to use.
+//! @param[out] proxyCreds   credentials to pass to the proxy.
+//! @return If RealityDataDownload_ProxyCallBack returns ReturnedProxy      The proxy info returned will be used.
+//! @return If RealityDataDownload_ProxyCallBack returns DefaultProxy       The proxy specified with SetProxyUrlAndCredentials will be used.
+//! @return If RealityDataDownload_ProxyCallBack returns NoProxy            The download will proceed without a proxy.
+//! @return If RealityDataDownload_ProxyCallBack returns Abort              The download will be aborted.
+typedef std::function<ProxyStatus(Utf8StringCR url, Utf8StringR proxyUrl, Utf8StringR proxyCreds)> RealityDataDownload_ProxyCallBack;
+
+//! Callback function to set the token for the request.
+//! @param[in]  tokenType    the type of token to add to the call 
+//! @param[out] url          url of the resource we are trying to download.
+//! @param[out] header       header passed in the rest call.
+typedef std::function<void(Utf8StringCR TokenType, AStringR url, Utf8StringR header)> RealityDataDownload_TokenCallBack;
 
 //Special Error codes
 #define REALITYDATADOWNLOAD_RETRY_TENTATIVE     -2
@@ -65,9 +90,19 @@ struct RealityDataDownload : public RefCountedBase
 public:
 
     REALITYDATAPLATFORM_EXPORT static int  s_MaxRetryTentative;
+    
+    struct url_file_pair
+        {   
+        AString m_url;
+        WString m_filePath;
+        Utf8String m_tokenType;
 
-    typedef std::pair<AString, WString>    url_file_pair; //this pair contains the url and the file name
-    typedef bvector<url_file_pair>         sisterFileVector; //this vector contains the primary file and its sister files
+        url_file_pair(AString url, WString filePath, Utf8String tokenType = "") :
+            m_url(url), m_filePath(filePath), m_tokenType(tokenType)
+            {}
+        };    
+    
+	typedef bvector<url_file_pair>         sisterFileVector; //this vector contains the primary file and its sister files
     typedef bvector<sisterFileVector>      mirrorWSistersVector; //this vector contains mirrors of a set of sister files to download
     typedef bvector<url_file_pair>         mirrorVector; //this vector contains mirrors of the same data to download
 
@@ -77,6 +112,7 @@ public:
         {
         AString url;
         WString filename;
+        Utf8String tokenType;
         FileTransfer* nextSister;
         size_t sisterIndex;
         size_t totalSisters;
@@ -104,8 +140,9 @@ public:
         void InsertMirror(url_file_pair ufPair, size_t id, size_t sisterCount)
             {
             Mirror_struct ms;
-            ms.url = ufPair.first;
-            ms.filename = ufPair.second;
+            ms.url = ufPair.m_url;
+            ms.filename = ufPair.m_filePath;
+            ms.tokenType = ufPair.m_tokenType;
             ms.nextSister = nullptr;
             ms.totalSisters = sisterCount;
             ms.sisterIndex = 0;
@@ -189,7 +226,7 @@ public:
                 writer->ToString(report);
             }
         };
-    
+
     //{{url, file},{url, file}}
     typedef bvector<url_file_pair>    UrlLink_UrlFile;
     //{{mirror set:{url, file}, {url, file}}, {mirror set: ...}} 
@@ -233,16 +270,25 @@ public:
     //! Set callback to know to status, download done or error.
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
 
+    //! Set callback to chose a proxy to use, for each url.
+    REALITYDATAPLATFORM_EXPORT void SetProxyCallBack(RealityDataDownload_ProxyCallBack pi_func) { m_pProxyFunc = pi_func; };
+
+    //! Set callback to add authentication token to REST call.
+    REALITYDATAPLATFORM_EXPORT void SetTokenCallBack(RealityDataDownload_TokenCallBack pi_func) { m_pTokenFunc = pi_func; };
+
     //! Start the download progress for all links.
     REALITYDATAPLATFORM_EXPORT DownloadReport* Perform();
 
 private:
-    RealityDataDownload() { m_pCurlHandle=NULL;};
+    RealityDataDownload();
     RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName);
     RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors);
     RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters);
     ~RealityDataDownload();
 
+    void InitEntry(size_t i);
+
+    void SetProxy(CURL* pCurl, Utf8StringCR proxyUrl, Utf8StringCR proxyCreds);
     SetupCurlStatus SetupCurlandFile(FileTransfer* ft, bool isRetry = false);
     bool SetupNextEntry();
     bool SetupMirror(size_t index, int errorCode);
@@ -262,6 +308,8 @@ private:
     RealityDataDownload_HeartbeatCallBack   m_pHeartbeatFunc;
     float                                   m_progressStep = 0.01;
     RealityDataDownload_StatusCallBack      m_pStatusFunc;
+    RealityDataDownload_ProxyCallBack       m_pProxyFunc;
+    RealityDataDownload_TokenCallBack       m_pTokenFunc;
     DownloadReport                          m_dlReport;
 
     };

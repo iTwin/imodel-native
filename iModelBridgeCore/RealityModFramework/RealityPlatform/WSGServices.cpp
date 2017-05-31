@@ -440,7 +440,7 @@ NavNode::NavNode(Utf8StringCR schema, Utf8String id, Utf8StringCR typeSystem, Ut
 Utf8String NavNode::GetNavString()  { return m_navString; }
 Utf8String NavNode::GetTypeSystem() { return m_typeSystem; }
 Utf8String NavNode::GetSchemaName() { return m_schemaName; }
-Utf8String NavNode::GetClassName()  { return m_className; }
+Utf8String NavNode::GetECClassName()  { return m_className; }
 Utf8String NavNode::GetInstanceId() { return m_instanceId; }
 Utf8String NavNode::GetLabel()      { return m_label; }
 Utf8String NavNode::GetRootNode()   { return m_rootNode; }

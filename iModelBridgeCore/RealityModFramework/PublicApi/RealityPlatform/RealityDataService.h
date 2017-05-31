@@ -49,9 +49,6 @@ public:
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT void AddProjectId() const;
-    REALITYDATAPLATFORM_EXPORT Utf8String PostProjectId() const;
-
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override; 
     REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
@@ -422,9 +419,6 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
-
-    REALITYDATAPLATFORM_EXPORT void AddProjectId() const;
-    REALITYDATAPLATFORM_EXPORT Utf8String PostProjectId() const;
 
     REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
 
@@ -890,7 +884,8 @@ public:
     //! schemaName is the name of the schema exposing the RealityData Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
     //! When accessing one of the dev or qa version of RealityData Service.
-    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath = "", Utf8StringCR projectId = "");
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath = "");
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath, Utf8StringCR projectId);
 
     REALITYDATAPLATFORM_EXPORT static void SetProjectId(Utf8StringCR projectId);
 

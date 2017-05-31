@@ -224,13 +224,13 @@ protected:
     //! Function to url encode the id, depending on which server is receiving it
     REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const;
 
-    void SetServerName(Utf8String serverName);
-    void SetPluginName(Utf8String pluginName);
-    void SetVersion(Utf8String version);
-    void SetECClassName(Utf8String className);
-    void SetSchema(Utf8String schema);
-    void SetInterface(WSGInterface _interface);
-    void SetRepoId(Utf8String repoId);
+    REALITYDATAPLATFORM_EXPORT void SetServerName(Utf8String serverName);
+    REALITYDATAPLATFORM_EXPORT void SetPluginName(Utf8String pluginName);
+    REALITYDATAPLATFORM_EXPORT void SetVersion(Utf8String version);
+    REALITYDATAPLATFORM_EXPORT void SetECClassName(Utf8String className);
+    REALITYDATAPLATFORM_EXPORT void SetSchema(Utf8String schema);
+    REALITYDATAPLATFORM_EXPORT void SetInterface(WSGInterface _interface);
+    REALITYDATAPLATFORM_EXPORT void SetRepoId(Utf8String repoId);
 
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const;
 
@@ -269,7 +269,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8String GetNavString();
     REALITYDATAPLATFORM_EXPORT Utf8String GetTypeSystem();
     REALITYDATAPLATFORM_EXPORT Utf8String GetSchemaName();
-    REALITYDATAPLATFORM_EXPORT Utf8String GetClassName();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetECClassName();
     REALITYDATAPLATFORM_EXPORT Utf8String GetInstanceId();
     REALITYDATAPLATFORM_EXPORT Utf8String GetLabel();
     REALITYDATAPLATFORM_EXPORT Utf8String GetRootNode();

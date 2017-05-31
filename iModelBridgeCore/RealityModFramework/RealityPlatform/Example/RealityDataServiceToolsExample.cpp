@@ -196,7 +196,7 @@ void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String Ro
     int count=0;
     for (NavNode subNode : subNodes)
         {
-        if (subNode.GetClassName().Contains("Document"))
+        if (subNode.GetECClassName().Contains("Document"))
             {
             if (s_cmd & CmdListAllDetail)
                 {
@@ -233,7 +233,7 @@ void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String Ro
 
     for (NavNode subNode : subNodes)
         {
-        if (subNode.GetClassName().Contains("Folder"))
+        if (subNode.GetECClassName().Contains("Folder"))
             {
             ListSubItem(Server, Repo, subNode, subNode.GetInstanceId());
             }
