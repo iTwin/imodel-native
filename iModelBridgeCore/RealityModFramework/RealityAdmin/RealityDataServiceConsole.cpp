@@ -629,6 +629,20 @@ void RealityDataConsole::List()
         }
     }
 
+Utf8String ShortenVisibility(Utf8String visibility)
+    {
+    if(visibility.EqualsI("PUBLIC"))
+        return "PUB";
+    else if (visibility.EqualsI("ENTERPRISE"))
+        return "ENT";
+    else if (visibility.EqualsI("PRIVATE"))
+        return "PRV";
+    else if (visibility.EqualsI("PERMISSION"))
+        return "PRM";
+    else
+        return "---";
+    }
+
 void RealityDataConsole::ListRoots()
     {
     RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 2500);
@@ -680,7 +694,7 @@ void RealityDataConsole::ListRoots()
             owner = rData->GetOwner();
             }
 
-        subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier(), rData->GetTotalSize()));
+        subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s / %s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", ShortenVisibility(rData->GetVisibilityTag()), rData->GetIdentifier(), rData->GetTotalSize()));
 
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
 
