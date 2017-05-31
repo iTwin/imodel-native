@@ -381,10 +381,9 @@ void RealityDataDocumentContentByIdRequest::ChangeInstanceId(Utf8String instance
 //=====================================================================================
 RawServerResponse RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() const
     {
-    RawServerResponse rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)m_handshakeRequest);
+    RawServerResponse rawResponse = RawServerResponse();
     if(m_allowAzureRedirection)
         {
-    
         if(m_handshakeRequest == nullptr)
             {
             bvector<Utf8String> lines;
@@ -393,7 +392,7 @@ RawServerResponse RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequ
 
             m_handshakeRequest = new AzureHandshake(root, false);
             }
-
+        rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)m_handshakeRequest);
 
         if (rawResponse.status != RequestStatus::BADREQ && m_handshakeRequest->ParseResponse(rawResponse.body, m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
             m_AzureRedirected = true;
