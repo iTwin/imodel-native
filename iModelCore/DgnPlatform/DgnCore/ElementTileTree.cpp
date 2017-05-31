@@ -1722,7 +1722,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
     MeshBuilderR builder = GetMeshBuilder(key);
 
-    uint32_t fillColor = displayParams.GetFillColor();
+    uint32_t fillColor = displayParams.GetLineColor();
     DgnElementId elemId = GetElementId(geom);
     for (auto& stroke : strokes.m_strokes)
         {

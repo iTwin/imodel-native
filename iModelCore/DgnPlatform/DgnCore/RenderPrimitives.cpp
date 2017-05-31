@@ -1406,7 +1406,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
                 else
                     builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, range);
 
-                uint32_t fillColor = displayParams->GetFillColor();
+                uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
                     meshBuilder->AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance);
                 }
