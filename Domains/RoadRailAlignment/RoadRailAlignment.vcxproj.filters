@@ -72,10 +72,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="RoadRailAlignment.01.00.00.ecschema.xml" />
     <Xml Include="RoadRailAlignment.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
+    <Xml Include="RoadRailAlignment.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailAlignmentInternal.cpp">

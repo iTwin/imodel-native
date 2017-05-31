@@ -40,9 +40,7 @@
     <ClInclude Include="RoadRailAlignmentInternal.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="RoadRailAlignment.01.00.00.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="RoadRailAlignment.ecschema.xml" />
     <Xml Include="RoadRailAlignment.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
