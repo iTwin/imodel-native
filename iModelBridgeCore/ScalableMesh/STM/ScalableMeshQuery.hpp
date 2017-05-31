@@ -1837,10 +1837,10 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     if (meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming && meshNode->GetParentNodePtr() != nullptr) meshNode->GetParentNodePtr()->m_sharedTexLock.lock();
     if (!meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData, true))
         meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData, false);
-
+    
     TRACEPOINT(THREAD_ID(), EventType::EVT_LOAD_NODE, meshNode->GetBlockID().m_integerID, m_cachedDisplayMeshData.IsValid() ? (uint64_t)(*m_cachedDisplayMeshData)[0].GetCachedDisplayMesh() : (uint64_t)-1, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetData()->GetTextureID() : meshNode->GetSingleTextureID(), -1, (uint64_t)this, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetRefCount() : 0)
 
-    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming &&  meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();
+    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming &&  meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();    
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform)
@@ -1856,7 +1856,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
 
     TRACEPOINT(THREAD_ID(), EventType::EVT_LOAD_NODE, meshNode->GetBlockID().m_integerID, m_cachedDisplayMeshData.IsValid() ? (uint64_t)(*m_cachedDisplayMeshData)[0].GetCachedDisplayMesh() : (uint64_t)-1, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetData()->GetTextureID() : meshNode->GetSingleTextureID(), -1, (uint64_t)this, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetRefCount() : 0)
 
-        if (meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming && meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming && meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();
+    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming && meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming && meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();    
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMesh)
@@ -1872,7 +1872,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
 
     TRACEPOINT(THREAD_ID(), EventType::EVT_LOAD_NODE, meshNode->GetBlockID().m_integerID, m_cachedDisplayMeshData.IsValid() ? (uint64_t)(*m_cachedDisplayMeshData)[0].GetCachedDisplayMesh() : (uint64_t)-1, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetData()->GetTextureID() : meshNode->GetSingleTextureID(), -1, (uint64_t)this, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetRefCount() : 0)
 
-        if (meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming && meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();
+    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::Streaming && meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();    
 }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::~ScalableMeshCachedDisplayNode()
@@ -1942,7 +1942,11 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRA
             if (!(*m_cachedDisplayMeshData)[i].IsInVRAM() && mgr->_IsUsingVideoMemory()) return false;
         }
 
-        if (!IsTextured()) return true;
+        if (!IsTextured()) return true;        
+
+        if (m_cachedDisplayTextureData.size() == 0) 
+            return false;
+
         for (auto& textureData : m_cachedDisplayTextureData)
         {
             if (!textureData.IsValid() || textureData->GetData()->GetDisplayCacheManager() != mgr || textureData->GetData() == nullptr || (!textureData->GetData()->IsInVRAM() && mgr->_IsUsingVideoMemory()))

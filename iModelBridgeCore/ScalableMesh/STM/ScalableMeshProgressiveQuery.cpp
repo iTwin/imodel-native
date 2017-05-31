@@ -1235,10 +1235,12 @@ class NewQueryStartingNodeProcessor
         bset<uint64_t>*                                     m_activeClips;
 
     
-        bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                     m_lowerResOverviewNodes;
-        bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                     m_requiredMeshNodes;    
+        bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                m_lowerResOverviewNodes;
+        bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                m_requiredMeshNodes;    
         bvector<bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>> m_toLoadNodes;
-        
+
+        DgnPlatformLib::Host* m_host;
+                        
         int          m_numWorkingThreads;
         std::thread* m_workingThreads;    
 
@@ -1246,6 +1248,7 @@ class NewQueryStartingNodeProcessor
 
         NewQueryStartingNodeProcessor()
             {
+            
 #ifndef DEACTIVATE_THREADING
             m_numWorkingThreads = std::thread::hardware_concurrency() - 2;       
             m_numWorkingThreads = max(1, m_numWorkingThreads);
@@ -1256,6 +1259,8 @@ class NewQueryStartingNodeProcessor
             m_requiredMeshNodes.resize(m_numWorkingThreads);        
             m_toLoadNodes.resize(m_numWorkingThreads);
             m_workingThreads = new std::thread[m_numWorkingThreads];
+
+            m_host = nullptr;
             }
 
         virtual ~NewQueryStartingNodeProcessor()
@@ -1273,8 +1278,10 @@ class NewQueryStartingNodeProcessor
                 }
             }
 
-        void QueryThread(/*DgnPlatformLib::Host* hostToAdopt,*/ size_t threadId, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
+        void QueryThread(DgnPlatformLib::Host* hostToAdopt, size_t threadId, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
             {       
+            DgnPlatformLib::AdoptHost(*hostToAdopt);
+            
             m_lowerResOverviewNodes[threadId].clear();
             m_toLoadNodes[threadId].clear();
             m_requiredMeshNodes[threadId].clear();
@@ -1318,7 +1325,10 @@ class NewQueryStartingNodeProcessor
                 else
                     {
                     //NEEDS_WORK_SM : Should not be duplicated.
+                    assert(meshNodePtr->IsLoaded());
+
                     m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
+                    
                     if (meshNodePtr->IsDataUpToDate() && meshNodePtr->IsClippingUpToDate() && meshNodePtr->HasCorrectClipping(*m_activeClips))
                         {                        
                         m_requiredMeshNodes[threadId].push_back(meshNodePtr);
@@ -1341,7 +1351,13 @@ class NewQueryStartingNodeProcessor
                      bset<uint64_t>&                                            activeClips,
                      IScalableMeshPtr&                                          scalableMeshPtr, 
                      IScalableMeshDisplayCacheManagerPtr&                       displayCacheManagerPtr)
-            {        
+            {       
+
+            if (m_host == nullptr)
+                {
+                m_host = DgnPlatformLib::QueryHost();
+                }
+            
             m_nodesToSearch = &nodesToSearch;
             m_nodeToSearchCurrentInd = nodeToSearchCurrentInd;
             m_foundNodes = &foundNodes;        
@@ -1350,7 +1366,7 @@ class NewQueryStartingNodeProcessor
 
             for (size_t threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
                 {                                                                                
-                m_workingThreads[threadId] = std::thread(&NewQueryStartingNodeProcessor::QueryThread, this, threadId, scalableMeshPtr, displayCacheManagerPtr);
+                m_workingThreads[threadId] = std::thread(&NewQueryStartingNodeProcessor::QueryThread, this, m_host, threadId, scalableMeshPtr, displayCacheManagerPtr);
                 }
 
             for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)

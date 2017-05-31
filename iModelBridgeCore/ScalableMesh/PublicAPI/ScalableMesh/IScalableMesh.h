@@ -287,6 +287,9 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                          _SetGroupSelectionFromPoint(DPoint3d firstPoint) = 0;
         virtual void                          _ClearGroupSelection() = 0;
+
+        virtual void                          _RemoveAllDisplayData() = 0;
+        
          
 #ifdef WIP_MESH_IMPORT
         virtual void  _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) = 0;
@@ -487,6 +490,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                          RemoveFromGroup(IScalableMeshPtr& sMesh);
         BENTLEY_SM_EXPORT void                          SetGroupSelectionFromPoint(DPoint3d firstPoint);
         BENTLEY_SM_EXPORT void                          ClearGroupSelection();
+
+        BENTLEY_SM_EXPORT void                          RemoveAllDisplayData();
 
 #ifdef SCALABLE_MESH_ATP
         BENTLEY_SM_EXPORT int                     ChangeGeometricError(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const;

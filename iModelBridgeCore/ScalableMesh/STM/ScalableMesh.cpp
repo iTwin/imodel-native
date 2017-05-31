@@ -527,11 +527,16 @@ void IScalableMesh::SetGroupSelectionFromPoint(DPoint3d firstPoint)
     return _SetGroupSelectionFromPoint(firstPoint);
     }
 
-
 void  IScalableMesh::ClearGroupSelection()
     {
     return _ClearGroupSelection();
     }
+
+void  IScalableMesh::RemoveAllDisplayData()
+    {
+    return _RemoveAllDisplayData();
+    }
+
 
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::ChangeGeometricError(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const
@@ -2453,6 +2458,17 @@ template <class POINT> void ScalableMesh<POINT>::SaveEditFiles()
     SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DiffSet, (uint64_t)m_scmIndexPtr.GetPtr());
 
     m_scmIndexPtr->GetDataStore()->SaveProjectFiles();
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_RemoveAllDisplayData()
+    {                    
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DisplayMesh, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DisplayTexture, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstanceVideo()->RemoveAllItemsOfType(SMStoreDataType::DisplayMesh, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstanceVideo()->RemoveAllItemsOfType(SMStoreDataType::DisplayTexture, (uint64_t)m_scmIndexPtr.GetPtr());    
+    
+    m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTexture();
+    m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTextureVideo();
     }
 
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)

@@ -349,6 +349,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual void                          _SetGroupSelectionFromPoint(DPoint3d firstPoint) override {}
         virtual void                          _ClearGroupSelection() override {}
+
+        virtual void                          _RemoveAllDisplayData() override;
+
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const override;
@@ -565,6 +568,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual void                          _SetGroupSelectionFromPoint(DPoint3d firstPoint) override {}
         virtual void                          _ClearGroupSelection() override{}
+
+        virtual void                          _RemoveAllDisplayData() override {}
 
 #ifdef WIP_MESH_IMPORT
         virtual void _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) override

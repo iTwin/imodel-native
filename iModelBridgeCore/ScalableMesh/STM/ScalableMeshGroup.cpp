@@ -552,10 +552,9 @@ void ScalableMeshGroup::_SetGroupSelectionFromPoint(DPoint3d firstPoint)
 }
 
 void ScalableMeshGroup::_ClearGroupSelection()
-{
+    {
     ClearSelection();
-}
-
+    }
 
 bool ScalableMeshGroup::IsRegionRestricted(IScalableMesh* sMesh)
     {
