@@ -544,7 +544,7 @@ void Render::HiddenLineParams::Style::FromJson(JsonValueCR val)
     {
     m_ovrColor = val[json_ovrColor()].asBool(m_ovrColor);
     m_color = ColorDef(val[json_color()].asUInt(m_color.GetValue()));
-    m_pattern = (GraphicParams::LinePixels) val[json_pattern()].asUInt((uint32_t) m_pattern);
+    m_pattern = (LinePixels) val[json_pattern()].asUInt((uint32_t) m_pattern);
     m_width = val[json_width()].asUInt(m_width);
     }
 

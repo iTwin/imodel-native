@@ -1413,12 +1413,12 @@ static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawD
     ColorDef lineColor = vp.MakeColorTransparency(color, GRID_LINE_Transparency);
     ColorDef dotColor = vp.MakeColorTransparency(color, GRID_DOT_Transparency);
     ColorDef planeColor = vp.MakeColorTransparency(color, GRID_PLANE_Transparency);
-    GraphicParams::LinePixels linePat = GraphicParams::LinePixels::Solid;
+    LinePixels linePat = LinePixels::Solid;
 
     if (viewZ.DotProduct(zVec) < 0.0) // Provide visual indication that grid is being viewed from the back (grid z not towards eye)...
         {
         planeColor = vp.MakeColorTransparency(ColorDef::Red(), GRID_PLANE_Transparency);
-        linePat = GraphicParams::LinePixels::Code2;
+        linePat = LinePixels::Code2;
         }
 
     int    gpr = (gridsPerRef>0) ? gridsPerRef : 1;

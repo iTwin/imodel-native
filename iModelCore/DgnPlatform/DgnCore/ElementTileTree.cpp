@@ -1270,7 +1270,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
         ColorDef color = IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
         params.SetLineColor(color);
         params.SetFillColor(color);
-        params.SetLinePixels(IsLeaf() ? GraphicParams::LinePixels::Code5 : GraphicParams::LinePixels::Code4);
+        params.SetLinePixels(IsLeaf() ? LinePixels::Code5 : LinePixels::Code4);
         gf->ActivateGraphicParams(params);
         gf->AddRangeBox(GetRange());
         }
@@ -1279,7 +1279,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
         {
         params.SetLineColor(ColorDef::DarkRed());
         params.SetFillColor(ColorDef::DarkRed());
-        params.SetLinePixels(GraphicParams::LinePixels::Solid);
+        params.SetLinePixels(LinePixels::Solid);
         gf->ActivateGraphicParams(params);
         gf->AddRangeBox(_GetContentRange());
         }

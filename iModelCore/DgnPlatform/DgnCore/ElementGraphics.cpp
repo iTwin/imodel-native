@@ -1168,7 +1168,7 @@ void WireframeGeomUtil::DrawControlPolygon(MSBsplineSurfaceCR surface, Render::G
     graphic.AddPointString((int) poles.size(), &poles.front());
 
     poleParams.SetWidth(1);
-    poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+    poleParams.SetLinePixels(LinePixels::Code2);
     graphic.ActivateGraphicParams(poleParams, nullptr);
 
     size_t uNumPoles = surface.GetNumUPoles();
@@ -1265,7 +1265,7 @@ void WireframeGeomUtil::DrawControlPolygon(ICurvePrimitiveCR curve, Render::Grap
 
             // Display dotted style start/end tangent lines...
             poleParams.SetWidth(1);
-            poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+            poleParams.SetLinePixels(LinePixels::Code2);
             graphic.ActivateGraphicParams(poleParams, nullptr);
 
             tangentPoints[1] = fitCurve->fitPoints[0];
@@ -1311,7 +1311,7 @@ void WireframeGeomUtil::DrawControlPolygon(ICurvePrimitiveCR curve, Render::Grap
     graphic.AddPointString((int) poles.size(), &poles.front());
     
     poleParams.SetWidth(1);
-    poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+    poleParams.SetLinePixels(LinePixels::Code2);
     graphic.ActivateGraphicParams(poleParams, nullptr);
 
     if (bcurve->params.closed)

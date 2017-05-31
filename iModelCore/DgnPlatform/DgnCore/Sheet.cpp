@@ -377,7 +377,7 @@ void Attachment::Tree::Draw(SceneContext& context)
     GetLocation().Multiply(&range.low, &range.low, 2);
 
     Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
-    graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
+    graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, LinePixels::Code5);
     graphicBbox->AddRangeBox(range);
     context.OutputGraphic(*graphicBbox, nullptr);
 
@@ -631,7 +631,7 @@ void Sheet::Model::DrawBorder(ViewContextR context, DPoint2dCR size)
     {
     Render::GraphicBuilderPtr border = context.CreateGraphic();
     RectanglePoints rect(0, 0, size.x, size.y);
-    border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, GraphicParams::LinePixels::Solid);
+    border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, LinePixels::Solid);
     border->AddLineString2d(5, rect, 0.0);
 
     double shadowWidth = .01 * size.Distance(DPoint2d::FromZero());

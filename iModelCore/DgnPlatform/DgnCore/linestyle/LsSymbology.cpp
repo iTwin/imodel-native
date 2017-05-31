@@ -432,29 +432,29 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnD
         LsInternalComponentCP internalComponent = (LsInternalComponentCP)topComponent;
         uint32_t lc = internalComponent->GetLineCode();
         BeAssert(MIN_LINECODE < lc && lc <= MAX_LINECODE);
-        GraphicParams::LinePixels lp;
+        LinePixels lp;
         switch(lc)
             {
             case 1:
-                lp = GraphicParams::LinePixels::Code1;
+                lp = LinePixels::Code1;
                 break;
             case 2:
-                lp = GraphicParams::LinePixels::Code2;
+                lp = LinePixels::Code2;
                 break;
             case 3:
-                lp = GraphicParams::LinePixels::Code3;
+                lp = LinePixels::Code3;
                 break;
             case 4:
-                lp = GraphicParams::LinePixels::Code4;
+                lp = LinePixels::Code4;
                 break;
             case 5:
-                lp = GraphicParams::LinePixels::Code5;
+                lp = LinePixels::Code5;
                 break;
             case 6:
-                lp = GraphicParams::LinePixels::Code6;
+                lp = LinePixels::Code6;
                 break;
             case 7:
-                lp = GraphicParams::LinePixels::Code7;
+                lp = LinePixels::Code7;
                 break;
             default:
                 return;

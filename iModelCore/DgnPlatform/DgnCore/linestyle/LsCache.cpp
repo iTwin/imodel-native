@@ -679,7 +679,7 @@ StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoin
         //  I would like to do this here but it doesn't work with geometry textures.  I don't know if that will be fixed.
         //  Need to save and restore the GraphicParams
         GraphicParamsR params = context.GetGraphicParamsR();
-        params.SetLinePixels(Render::GraphicParams::LinePixels(style));
+        params.SetLinePixels(Render::LinePixels(style));
         context.GetGraphicR().ActivateGraphicParams(params);
         context.GetGraphicR().AddLineString (nPoints, inPoints);
         return BSISUCCESS;

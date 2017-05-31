@@ -428,7 +428,7 @@ bool Mesh::HasNonPlanarNormals() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db, DRange3dCR tileRange)
+void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, GetMeshGraphicsArgs& args, DgnDbR db, DRange3dCR tileRange)
     {
     bool haveMesh = !Triangles().empty();
     bool havePolyline = !haveMesh && !Polylines().empty();
@@ -441,23 +441,23 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
     if (haveMesh)
         {
         if (args.m_meshArgs.Init(*this, system, db) &&
-            (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db)).IsValid())
             graphics.push_back (thisGraphic);
 
         MeshEdgesPtr    edges = GetEdges(tileRange, MeshEdgeCreationOptions());
 
         if (args.m_visibleEdgesArgs.Init(*this, tileRange) &&
-            (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db)).IsValid())
             graphics.push_back(thisGraphic);
 
         if (args.m_invisibleEdgesArgs.Init(*this, tileRange) &&
-            (thisGraphic = system._CreateSilhouetteEdges(args.m_invisibleEdgesArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            (thisGraphic = system._CreateSilhouetteEdges(args.m_invisibleEdgesArgs, db)).IsValid())
             graphics.push_back(thisGraphic);
         }
     else                           
         {
         if (args.m_polylineArgs.Init(*this) &&
-            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineArgs, db, GetDisplayParams().GetGraphicParams())).IsValid())
+            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineArgs, db)).IsValid())
             graphics.push_back(thisGraphic);
         }
     }
@@ -1670,6 +1670,7 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
         Set(m_normals, mesh.Normals());
 
     m_texture = mesh.GetDisplayParams().ResolveTexture(db, system);
+    m_material = mesh.GetDisplayParams().GetGraphicParams().GetMaterial();
 
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
@@ -1698,12 +1699,24 @@ void MeshArgs::Clear()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void initLinearGraphicParams(T& args, MeshCR mesh)
+    {
+    GraphicParamsCR gfParams = mesh.GetDisplayParams().GetGraphicParams();
+    args.m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels()); // ###TODO why is this stored as uint32_t?
+    args.m_width = gfParams.GetWidth();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool  ElementMeshEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     {
     MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
     m_pointParams = mesh.Points().GetParams();
+
+    initLinearGraphicParams(*this, mesh);
 
     if (!meshEdges.IsValid() || meshEdges->m_visible.empty())
         return false;
@@ -1725,6 +1738,8 @@ bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     {
     MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
     m_pointParams = mesh.Points().GetParams();
+
+    initLinearGraphicParams(*this, mesh);
 
     if (!meshEdges.IsValid() || meshEdges->m_silhouette.empty())
         return false;
@@ -1764,6 +1779,8 @@ bool PolylineArgs::Init(MeshCR mesh)
     Reset();
 
     m_pointParams = mesh.Points().GetParams();
+
+    initLinearGraphicParams(*this, mesh);
 
     m_numPoints = static_cast<uint32_t>(mesh.Points().size());
     m_points = &mesh.Points()[0];
@@ -1835,8 +1852,9 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
 
     rasterTile.m_textureUV = textUV;
     rasterTile.m_texture = const_cast<Render::Texture*>(&tile);
+    rasterTile.m_material = params.GetMaterial(); // not likely...
 
-    return _CreateTriMesh(rasterTile, db, params);
+    return _CreateTriMesh(rasterTile, db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1854,7 +1872,8 @@ void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
     {
-    GraphicPtr gf = m_system._CreateTriMesh(args, GetDgnDb(), GetGraphicParams());
+    // ###TODO: this is weird and not yet used...do we take the texture/material/etc from the args, or set them from the active GraphicParams?
+    GraphicPtr gf = m_system._CreateTriMesh(args, GetDgnDb());
     if (gf.IsValid())
         m_primitives.push_back(gf);
     }

@@ -1068,6 +1068,26 @@ public:
 };
 
 //=======================================================================================
+//! Built in line code patterns
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+enum class LinePixels : uint32_t
+    {
+    Solid = 0,
+    Code0 = Solid,      // 0
+    Code1 = 0x80808080, // 1
+    Code2 = 0xf8f8f8f8, // 2
+    Code3 = 0xffe0ffe0, // 3
+    Code4 = 0xfe10fe10, // 4
+    Code5 = 0xe0e0e0e0, // 5
+    Code6 = 0xf888f888, // 6
+    Code7 = 0xff18ff18, // 7
+    HiddenLine = 0xcccccccc,  // hidden lines 
+    Invisible = 0x00000001, // nearly invisible
+    Invalid = 0xffffffff,
+    };
+
+//=======================================================================================
 //! The "cooked" material and symbology for a Render::Graphic. This determines the appearance
 //! (e.g. texture, color, width, linestyle, etc.) used to draw Geometry.
 //=======================================================================================
@@ -1087,22 +1107,6 @@ private:
     GradientSymbPtr m_gradient;
 
 public:
-
-    enum class LinePixels : uint32_t
-        {
-        Solid = 0,
-        Code0 = Solid,      // 0
-        Code1 = 0x80808080, // 1
-        Code2 = 0xf8f8f8f8, // 2
-        Code3 = 0xffe0ffe0, // 3
-        Code4 = 0xfe10fe10, // 4
-        Code5 = 0xe0e0e0e0, // 5
-        Code6 = 0xf888f888, // 6
-        Code7 = 0xff18ff18, // 7
-        HiddenLine = 0xcccccccc,  // hidden lines 
-        Invisible = 0x00000001, // nearly invisible
-        Invalid = 0xffffffff,
-        };
 
     void Cook(GeometryParamsCR, ViewContextR);
 
@@ -1263,7 +1267,7 @@ public:
     void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
     void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
-    void SetLinePixels(GraphicParams::LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style;}
+    void SetLinePixels(LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style;}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetLineTexture(TextureP texture) {m_matSymb.SetLineTexture(texture); m_flags |= FLAGS_Style;}
     void SetTrueWidthStart(double width) {m_matSymb.SetTrueWidthStart(width); m_flags |= FLAGS_TrueWidth;}
@@ -1532,7 +1536,7 @@ public:
 
     //! Set symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
-    void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, GraphicParams::LinePixels linePixels=GraphicParams::LinePixels::Solid)
+    void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, LinePixels linePixels=LinePixels::Solid)
         {
         ActivateGraphicParams(GraphicParams::FromSymbology(lineColor, fillColor, lineWidth, linePixels));
         }
@@ -1593,7 +1597,7 @@ struct ColorIndex
     bool IsUniform() const { BeAssert(m_numColors > 0); return 1 == m_numColors; }
     bool HasAlpha() const { return IsUniform() ? 0 != (m_uniform & 0xff000000) : m_nonUniform.m_hasAlpha; }
 
-    void Reset() { SetUniform(ColorDef::Black()); }
+    void Reset() { SetUniform(ColorDef::White()); }
     void SetUniform(ColorDef color) { SetUniform(color.GetValue()); }
     void SetUniform(uint32_t color) { m_numColors = 1; m_uniform = color; }
     void SetNonUniform(uint16_t numColors, uint32_t const* colors, uint16_t const* indices, bool hasAlpha)
@@ -1935,6 +1939,7 @@ struct TriMeshArgs
     ColorIndex          m_colors;
     FeatureIndex        m_features;
     QPoint3d::Params    m_pointParams;
+    MaterialPtr         m_material;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
@@ -1963,10 +1968,12 @@ struct IndexedPolylineArgs
     ColorIndex          m_colors;
     FeatureIndex        m_features;
     QPoint3d::Params    m_pointParams;
+    uint32_t            m_width = 0;
+    LinePixels          m_linePixels = LinePixels::Solid;
     bool                m_disjoint = false;
 
     IndexedPolylineArgs() { }
-    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams, float startDistance)
+    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams)
         : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams) { }
 };
 
@@ -2016,6 +2023,8 @@ struct MeshEdgeArgs
     FeatureIndex                m_features;
     ColorIndex                  m_colors;
     QPoint3d::Params            m_pointParams;
+    uint32_t                    m_width = 0;
+    LinePixels                  m_linePixels = LinePixels::Solid;
 
     DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
 
@@ -2147,9 +2156,9 @@ struct HiddenLineParams
     {
         bool m_ovrColor;
         ColorDef m_color;
-        GraphicParams::LinePixels m_pattern;
+        LinePixels m_pattern;
         uint32_t m_width; // 0 means don't override
-        Style(bool ovrColor, ColorDef color, GraphicParams::LinePixels pattern, uint32_t width) : m_ovrColor(ovrColor), m_color(color), m_pattern(pattern), m_width(width){}
+        Style(bool ovrColor, ColorDef color, LinePixels pattern, uint32_t width) : m_ovrColor(ovrColor), m_color(color), m_pattern(pattern), m_width(width){}
         bool operator==(Style const& rhs) const {return m_ovrColor==rhs.m_ovrColor && m_color==rhs.m_color && m_pattern==rhs.m_pattern && m_width==rhs.m_width;}
         bool operator!=(Style const& rhs) const {return !(*this==rhs);}
 
@@ -2161,8 +2170,8 @@ struct HiddenLineParams
         void FromJson(JsonValueCR);
     };
 
-    Style m_visible = Style(false, ColorDef(), GraphicParams::LinePixels::Solid, 1);
-    Style m_hidden = Style(false, ColorDef(), GraphicParams::LinePixels::HiddenLine, 1);
+    Style m_visible = Style(false, ColorDef(), LinePixels::Solid, 1);
+    Style m_hidden = Style(false, ColorDef(), LinePixels::HiddenLine, 1);
     double m_transparencyThreshold = 1.0;
 
     bool operator==(HiddenLineParams const& rhs) const {return m_visible==rhs.m_visible && m_hidden==rhs.m_hidden && m_transparencyThreshold==rhs.m_transparencyThreshold;}
@@ -2550,22 +2559,22 @@ struct System
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
     // Create a triangle mesh primitive and edges (if required).
-    virtual bvector<GraphicPtr> _CreateTriMeshAndEdges (TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeOptions) const { return bvector<GraphicPtr> (1, _CreateTriMesh(args, dgndb, params)); }
+    // WIP virtual bvector<GraphicPtr> _CreateTriMeshAndEdges (TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeOptions) const { return bvector<GraphicPtr> (1, _CreateTriMesh(args, dgndb, params)); }
 
     //! Create a triangle mesh primitive
-    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const = 0;
 
     //! Create an indexed polyline primitive
-    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const = 0;
 
     //! Create visible mesh edges primitive
-    virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb) const = 0;
 
     //! Create silhouette mesh edges primitive  - these edges are displayed only if they become silhouettes.
-    virtual GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb) const = 0;
 
     //! Create a point cloud primitive
-    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
 
     //! Create a tile primitive
     DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;
