@@ -19,8 +19,8 @@ Utf8String DataTable::Value::ToString() const
         {
             case Type::Blob:
                 str.append("..."); break;
-            case Type::Float:
-                str.Sprintf("%f", GetFloat()); break;
+            case Type::Double:
+                str.Sprintf("%f", GetDouble()); break;
             case Type::Integer:
                 str.Sprintf("%d", GetInteger()); break;
             case Type::Null:
@@ -64,13 +64,13 @@ void DataTable::Value::SetValue(int64_t i)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Affan.Khan                       05/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void DataTable::Value::SetValue(double i)
+void DataTable::Value::SetValue(double val)
     {
-    if (!IsFloat())
+    if (!IsDouble())
         SetNull();
 
-    m_flt = i;
-    m_type = Type::Float;
+    m_double = val;
+    m_type = Type::Double;
     m_size = sizeof(double);
     }
 
@@ -139,8 +139,8 @@ bool DataTable::Value::Equals(DataTable::Value const& rhs) const
     if (IsInteger())
         return GetInteger() == rhs.GetInteger();
 
-    if (IsFloat())
-        return IsFloat() == rhs.IsFloat();
+    if (IsDouble())
+        return IsDouble() == rhs.IsDouble();
 
     if (IsText())
         return strcmp(rhs.GetText(), GetText()) == 0;
@@ -171,8 +171,8 @@ bool DataTable::Value::EqualsI(DataTable::Value const& rhs) const
     if (IsInteger())
         return GetInteger() == rhs.GetInteger();
 
-    if (IsFloat())
-        return IsFloat() == rhs.IsFloat();
+    if (IsDouble())
+        return IsDouble() == rhs.IsDouble();
 
     if (IsText())
         return BeStringUtilities::StricmpAscii(rhs.GetText(), GetText()) == 0;
@@ -242,8 +242,8 @@ void DataTable::Value::CopyObject(Value const& rhs)
     if (rhs.IsInteger())
         SetValue(rhs.GetInteger());
 
-    if (rhs.IsFloat())
-        SetValue(rhs.GetFloat());
+    if (rhs.IsDouble())
+        SetValue(rhs.GetDouble());
 
     SetNull();
     }
@@ -259,8 +259,8 @@ void DataTable::Value::Value::MoveObject(Value & rhs)
     if (rhs.IsInteger())
         m_i64 = rhs.m_i64;
 
-    if (rhs.IsFloat())
-        m_flt = rhs.m_flt;
+    if (rhs.IsDouble())
+        m_double = rhs.m_double;
 
     m_size = rhs.m_size;
     m_type = rhs.m_type;
@@ -581,8 +581,8 @@ void CSVAdaptor::Fill(Utf8StringR toCSVBuffer, DataTable const& fromDataTable)
                     case DataTable::Value::Type::Blob:
                         BeAssert(false);
                         break;
-                    case DataTable::Value::Type::Float:
-                        cell.Sprintf("%lf", value.GetFloat());
+                    case DataTable::Value::Type::Double:
+                        cell.Sprintf("%lf", value.GetDouble());
                         toCSVBuffer.append(cell);
                         break;
                     case DataTable::Value::Type::Integer:
@@ -743,8 +743,8 @@ BentleyStatus SqlAdaptor::Fill(DbCR db, DataTable const& table)
                 {
                     case DataTable::Value::Type::Blob:
                         stmt.BindBlob(c, v.GetBlob(), (int) v.GetSize(), Statement::MakeCopy::No); break;
-                    case DataTable::Value::Type::Float:
-                        stmt.BindDouble(c, v.GetFloat()); break;
+                    case DataTable::Value::Type::Double:
+                        stmt.BindDouble(c, v.GetDouble()); break;
                     case DataTable::Value::Type::Integer:
                         stmt.BindInt64(c, v.GetInteger()); break;
                     case DataTable::Value::Type::Text:

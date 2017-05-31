@@ -63,6 +63,19 @@ public:
     };
 
 //=======================================================================================    
+// @bsiclass                                   Krischan.Eberle                  05/17
+//=======================================================================================    
+struct PropertyAccessString final
+    {
+    Utf8String m_schemaNameOrAlias;
+    Utf8String m_className;
+    Utf8String m_propAccessString;
+
+    PropertyAccessString(Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propAccessString) : m_schemaNameOrAlias(schemaNameOrAlias), m_className(className), m_propAccessString(propAccessString) {}
+    Utf8String ToString() const { Utf8String str; str.Sprintf("%s:%s.%s", m_schemaNameOrAlias.c_str(), m_className.c_str(), m_propAccessString.c_str()); return str; }
+    };
+
+//=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  10/15
 //=======================================================================================    
 struct DbMappingTestFixture : SchemaImportTestFixture
@@ -118,15 +131,7 @@ protected:
         MapStrategyInfo(Strategy strat, TablePerHierarchyInfo const& tphInfo) : m_strategy(strat), m_tphInfo(tphInfo) {}
         };
 
-    struct PropertyAccessString final
-        {
-        Utf8String m_schemaNameOrAlias;
-        Utf8String m_className;
-        Utf8String m_propAccessString;
-
-        PropertyAccessString(Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propAccessString) : m_schemaNameOrAlias(schemaNameOrAlias), m_className(className), m_propAccessString(propAccessString) {}
-        Utf8String ToString() const { Utf8String str; str.Sprintf("%s:%s.%s", m_schemaNameOrAlias.c_str(), m_className.c_str(), m_propAccessString.c_str()); return str; }
-        };
+   
 
     struct ColumnInfo final
         {

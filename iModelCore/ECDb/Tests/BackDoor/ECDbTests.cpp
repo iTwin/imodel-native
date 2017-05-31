@@ -908,3 +908,44 @@ ECObjectsStatus ECDbTestUtility::CopyStruct(IECInstanceR target, IECInstanceCR s
     }
 
 END_ECDBUNITTESTS_NAMESPACE
+
+//************************************************************************************
+//GTest PrintTo customazations
+//************************************************************************************
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECSqlStatus stat, std::ostream* os)
+    {
+    if (stat.IsSuccess())
+        {
+        *os << "ECSqlStatus::Success";
+        return;
+        }
+
+    if (stat.IsSQLiteError())
+        {
+        *os << "ECSqlStatus::SQLiteError " << stat.GetSQLiteError();
+        return;
+        }
+
+    switch (stat.Get())
+        {
+            case ECSqlStatus::Status::Error:
+                *os << "ECSqlStatus::Error";
+                return;
+
+            case ECSqlStatus::Status::InvalidECSql:
+                *os << "ECSqlStatus::InvalidECSql";
+                return;
+
+            default:
+                *os << "Unhandled ECSqlStatus. Adjust the PrintTo method";
+                break;
+        }
+    }
+
+END_BENTLEY_SQLITE_EC_NAMESPACE

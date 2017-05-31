@@ -12,6 +12,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
 #include <json/json.h>
+#include <ostream>
 
 #define BEGIN_ECDBUNITTESTS_NAMESPACE BEGIN_BENTLEY_SQLITE_EC_NAMESPACE namespace Tests {
 #define END_ECDBUNITTESTS_NAMESPACE } END_BENTLEY_SQLITE_EC_NAMESPACE
@@ -117,4 +118,17 @@ struct ECDbTestLogger
     };
 
 #define LOG (ECDbTestLogger::Get())
+
+
 END_ECDBUNITTESTS_NAMESPACE
+
+// GTest Format customizations for types not handled by GTest
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+#define ENUM_TOSTRING(value) #value
+
+void PrintTo(ECSqlStatus stat, std::ostream* os);
+
+END_BENTLEY_SQLITE_EC_NAMESPACE
+
