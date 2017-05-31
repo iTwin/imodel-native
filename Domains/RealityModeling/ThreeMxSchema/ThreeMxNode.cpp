@@ -210,9 +210,8 @@ Geometry::Geometry(CreateParams const& args, SceneR scene, DRange3dCR tileRange,
         return;
 
     auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
-    GraphicParams gfParams = GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0, GraphicParams::LinePixels::Solid);
 
-    m_graphics.push_back(renderSys->_CreateTriMesh(trimesh, scene.GetDgnDb(), gfParams));
+    m_graphics.push_back(renderSys->_CreateTriMesh(trimesh, scene.GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
