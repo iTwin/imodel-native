@@ -1622,6 +1622,8 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
     for (auto const& inputStroke : input.m_strokes)
         {
         auto const&     points = inputStroke.m_points;
+        DRange3d        range = DRange3d::From(points);
+        DPoint3d        rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
 
         if (points.size() <= 1)
             continue;
@@ -1630,7 +1632,7 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
         State   prevState = m_tileRange.IsContained(prevPt) ? kInside : kOutside;
         if (kInside == prevState)
             {
-            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance));
+            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance, rangeCenter));
             output.m_strokes.back().m_points.push_back(prevPt);
             }
 
@@ -1655,7 +1657,7 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
                 if (kOutside == prevState)
                     {
                     // back inside - start a new line string...
-                    output.m_strokes.push_back(Strokes::PointList(length));
+                    output.m_strokes.push_back(Strokes::PointList(length, rangeCenter));
                     output.m_strokes.back().m_points.push_back(prevPt);
                     }
 
@@ -1719,7 +1721,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     for (auto& stroke : strokes.m_strokes)
         {
         m_contentRange.Extend(stroke.m_points);
-        builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor, stroke.m_startDistance);
+        builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);
         }
     }
 
