@@ -60,7 +60,7 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 // ECSchema name and relative path
 //-----------------------------------------------------------------------------------------
 #define BLR_SCHEMA_NAME                             "LinearReferencing"
-#define BLR_SCHEMA_FILE                             L"LinearReferencing.01.00.00.ecschema.xml"
+#define BLR_SCHEMA_FILE                             L"LinearReferencing.ecschema.xml"
 #define BLR_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
 #define BLR_SCHEMA_PATH                             BLR_SCHEMA_LOCATION BLR_SCHEMA_FILE
 #define BLR_SCHEMA(name)                            BLR_SCHEMA_NAME "." name

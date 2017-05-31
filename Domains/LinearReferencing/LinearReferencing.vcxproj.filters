@@ -17,10 +17,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="LinearReferencing.01.00.00.ecschema.xml" />
     <Xml Include="LinearReferencing.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
+    <Xml Include="LinearReferencing.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LinearReferencingInternal.h">

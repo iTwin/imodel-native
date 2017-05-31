@@ -2,7 +2,7 @@
 #
 #     $Source: LinearReferencing.prewire.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -10,5 +10,5 @@
 $(BuildContext)PublicAPI/LinearReferencing : $(_MakeFilePath)PublicAPI/LinearReferencing
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)ECSchemas/Domain/LinearReferencing.01.00.00.ecschema.xml : $(_MakeFilePath)LinearReferencing.01.00.00.ecschema.xml
+$(BuildContext)ECSchemas/Domain/LinearReferencing.ecschema.xml : $(_MakeFilePath)LinearReferencing.ecschema.xml
     $(LinkFirstDepToFirstTarget)
