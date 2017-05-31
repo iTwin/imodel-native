@@ -23,6 +23,11 @@ using namespace ::testing;
     EXPECT_EQ(expectedProgress.GetInstances(), actualProgress.GetInstances());  \
     EXPECT_NEAR(expectedProgress.GetSynced(), actualProgress.GetSynced(), 0.01);
 
+struct TestProgressMock
+    {
+    MOCK_METHOD1(TestProgress, void(ICachingDataSource::ProgressCR));
+    };
+
 CachedResponseKey CreateTestResponseKey(ICachingDataSourcePtr ds, Utf8StringCR rootName = "StubResponseKeyRoot", Utf8StringCR keyName = BeGuid().ToString())
     {
     auto txn = ds->StartCacheTransaction();
@@ -4057,6 +4062,107 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetFileChange(instance).GetChangeStatus());
     EXPECT_EQ("NewTag", ds->StartCacheTransaction().GetCache().ReadFileCacheTag({"TestSchema.TestClass", "Foo"}));
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_ProgressCallbackCalledWithCorrectParameters)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    auto fileContent = Utf8String("Hello world over here");
+    auto file = StubFile(fileContent);
+    auto filelength = (double)fileContent.size();
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance, file, false));
+    auto cachedFilePath = txn.GetCache().ReadFilePath(instance);
+    txn.Commit();
+
+    ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+
+    TestProgressMock testOnProgress;
+    auto onProgress = [&] (ICachingDataSource::ProgressCR progress)
+        {
+        testOnProgress.TestProgress(progress);
+        };
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR filePath, HttpRequest::ProgressCallbackCR uploadProgressCallback, ICancellationTokenPtr)
+        {
+        uploadProgressCallback(5.0, filelength);
+        uploadProgressCallback(10.0, filelength);
+        uploadProgressCallback(filelength, filelength);
+
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}));
+        }));
+
+        {
+        InSequence dummy;
+        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+            {
+            EXPECT_EQ(instance, progress.GetCurrentFileKey());
+            EXPECT_EQ(ICachingDataSource::Progress::State(), progress.GetCurrentFileBytes());
+            }));
+        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+            {
+            EXPECT_EQ(instance, progress.GetCurrentFileKey());
+            EXPECT_EQ(ICachingDataSource::Progress::State(5.0, filelength), progress.GetCurrentFileBytes());
+            }));
+        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+            {
+            EXPECT_EQ(instance, progress.GetCurrentFileKey());
+            EXPECT_EQ(ICachingDataSource::Progress::State(10.0, filelength), progress.GetCurrentFileBytes());
+            }));
+        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+            {
+            EXPECT_EQ(instance, progress.GetCurrentFileKey());
+            EXPECT_EQ(ICachingDataSource::Progress::State(filelength, filelength), progress.GetCurrentFileBytes());
+            }));
+        EXPECT_CALL(testOnProgress, TestProgress(_)).WillOnce(Invoke([&] (ICachingDataSource::ProgressCR progress)
+            {
+            EXPECT_DOUBLE_EQ(1.0, progress.GetSynced());
+            }));
+        }
+
+    auto result = ds->SyncLocalChanges(onProgress, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithout_ProgressCallbackCalledWithoutFileProgress)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+
+    txn.Commit();
+
+    ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+
+    TestProgressMock testOnProgress;
+    auto onProgress = [&] (ICachingDataSource::ProgressCR progress)
+        {
+        testOnProgress.TestProgress(progress);
+        };
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR filePath, HttpRequest::ProgressCallbackCR uploadProgressCallback, ICancellationTokenPtr)
+        {
+        uploadProgressCallback(0.0, 0.0);
+
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}));
+        }));
+
+        EXPECT_CALL(testOnProgress, TestProgress(_)).Times(2).WillRepeatedly(Invoke([&] (ICachingDataSource::ProgressCR progress)
+            {
+            EXPECT_FALSE(progress.GetCurrentFileKey().IsValid());
+            }));
+
+        auto result = ds->SyncLocalChanges(onProgress, nullptr)->GetResult();
+        ASSERT_TRUE(result.IsSuccess());
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile_ChecksIfRepositorySupportsFileAccessUrl)
