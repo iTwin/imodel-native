@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DGNModelUtilities.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -223,7 +223,7 @@ bool FindDGNLevelIDFromName    (DgnModelRefP    modelRefP,
     {
     FileLevelCacheP fileLevelCacheP = modelRefP->GetFileLevelCacheP();
     assert(fileLevelCacheP != 0);    
-    levelID = fileLevelCacheP->GetNameDictionary().GetNameId(levelName);
+    levelID = fileLevelCacheP->GetLevelByName(levelName).GetLevelId();
 
     return levelID != LEVEL_DICT_NULL_ID;
     }

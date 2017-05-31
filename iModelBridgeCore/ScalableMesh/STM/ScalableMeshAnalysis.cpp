@@ -4,6 +4,44 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+
+struct  SMDummyProgressListener : public ISMAnalysisProgressListener
+    {
+    SMDummyProgressListener() {}
+    ~SMDummyProgressListener() {}
+    }; // SMDummyProgressListener
+static SMDummyProgressListener  s_SMdummyProgressListener; //A do nothing progress listener
+
+SMProgressReport::SMProgressReport(ISMAnalysisProgressListener* pProgressListener) :
+    m_pProgressListener(pProgressListener)
+    {
+    m_workDone = 0.0;
+    m_processCanceled = false;
+    if (NULL == m_pProgressListener)
+        m_pProgressListener = &s_SMdummyProgressListener;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Stephane.Nullans                  05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SMProgressReport::SMProgressReport()
+    {
+    m_workDone = 0.0;
+    m_processCanceled = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Stephane.Nullans                  05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SMProgressReport::~SMProgressReport()
+    {
+    }
+
+bool SMProgressReport::_CheckContinueOnProgress(ISMProgressReport const& report)
+    {
+    return m_pProgressListener->_CheckContinueOnProgress(report);
+    }
+
 //=======================================================================================
 // @bsimethod                                                 Stephane.Nullans 16/05/2017
 //=======================================================================================
@@ -132,10 +170,14 @@ bool ScalableMeshAnalysis::_InitGridFrom(ISMGridVolume& grid, double _resolution
 // on a grid of given resolution
 // polygon points need to be in world coordinates
 // Returns a SMGridVolume structures
-DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid)
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener)
     {
     if (polygon.size() < 3)
         return DTMStatusInt::DTM_ERROR; // invalid region
+
+    SMProgressReport report(pProgressListener);
+    if (!report.CheckContinueOnProgress())
+        return DTMStatusInt::DTM_ERROR; //User abort
 
     DRange3d rangeMesh; // extend of the scalable mesh
     m_scmPtr->GetRange(rangeMesh);
@@ -170,7 +212,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     auto draping1 = m_scmPtr->GetDTMInterface()->GetDTMDraping();
 
     bool *intersected = new bool[m_xSize*m_ySize];
-    //SMVolumeSegment *Segments = grid.m_VolSegments;
 
     double tolerance = std::numeric_limits<double>::min(); // intersection tolerance
     double zsource = range.low.z - tolerance; // be sure to start under the range
@@ -178,14 +219,20 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     double m_yStep = grid.m_resolution;
 
     int numProcs = omp_get_num_procs();
-    if (numProcs>1)
-        numProcs = numProcs-1; // use all available CPUs minus one
+    if (numProcs > 1)
+        numProcs = numProcs - 1; // use all available CPUs minus one
+
+    //double progressStep = 1.0 / m_xSize;
 
 #pragma omp parallel for num_threads(numProcs) 
     for (int i = 0; i < m_xSize; i++)
         {
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
+
+        if (!report.CheckContinueOnProgress())
+            continue; //User abort, cannot break in parallel for
+        //report.m_workDone += progressStep;
 
         for (int j = 0; j < m_ySize; j++)
             {
@@ -214,7 +261,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                         rayInter.rayFraction = rayFraction;
                         rayInter.normal = -1.0 * grid.m_direction; // with inversed direction
                         rayInter.hasNormal = true;
-                        Hits.push_back(rayInter); 
+                        Hits.push_back(rayInter);
 
                         DTMIntersectionCompare Comparator;
                         std::sort(Hits.begin(), Hits.end(), Comparator); // sort by ray fraction
@@ -236,7 +283,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
     // Sum the discrete volumes
     double AreaCell = m_xStep*m_yStep;
-    double _cutVolume=0, _fillVolume=0;
+    double _cutVolume = 0, _fillVolume = 0;
 #pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
     for (int i = 0; i < m_xSize; i++)
         {
@@ -244,8 +291,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
             {
             if (intersected[i*m_ySize + j] != true)
                 {
-                //SMVolumeSegment emptySegment;
-                //grid.m_VolSegments[i*m_ySize + j] = emptySegment;
                 continue;
                 }
             SMVolumeSegment &segment = grid.m_VolSegments[i*m_ySize + j];
@@ -266,17 +311,24 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
     grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
 
+    report.m_workDone = 1.0;
+
     delete[] intersected;
 
     return DTMStatusInt::DTM_SUCCESS;
     }
+    
 
-DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* diffMesh, double resolution, ISMGridVolume& grid)
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* diffMesh, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener)
     {
     if (polygon.size() < 3)
         return DTMStatusInt::DTM_ERROR; // invalid region
     if (diffMesh == nullptr)
         return DTMStatusInt::DTM_ERROR; // invalid mesh
+
+   SMProgressReport report(pProgressListener);
+    if (!report.CheckContinueOnProgress())
+        return DTMStatusInt::DTM_ERROR; //User abort
 
     DRange3d rangeMesh; // extend of the scalable mesh
     m_scmPtr->GetRange(rangeMesh);
@@ -334,11 +386,17 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     if (numProcs>1)
         numProcs = numProcs - 1; // use all available CPUs minus one
 
+    //double progressStep = 1.0 / m_xSize;
+
 #pragma omp parallel for num_threads(numProcs) 
     for (int i = 0; i < m_xSize; i++)
         {
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
+
+        if (!report.CheckContinueOnProgress())
+            continue;
+        //report.m_workDone += progressStep;
 
         for (int j = 0; j < m_ySize; j++)
             {
@@ -400,6 +458,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
 
     delete[] intersected;
+
+    report.m_workDone = 1.0;
 
     return DTMStatusInt::DTM_SUCCESS;
     }

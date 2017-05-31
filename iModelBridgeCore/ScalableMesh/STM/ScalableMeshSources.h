@@ -6,7 +6,7 @@
 |       $Date: 2011/10/31 15:45:08 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -179,6 +179,14 @@ protected:
                                                                         const WChar*                  referenceName,
                                                                         const WChar*                  referenceModelName);
 
+	explicit                            Impl(DTMSourceDataType               sourceDataType,
+		const wchar_t*                 filePath,
+		uint32_t                          modelID,
+		const WChar*                  modelName,
+		const WChar*                     rootToRefPersistentPath,
+		const WChar*                  referenceName,
+		const WChar*                  referenceModelName);
+
     const WString&                  GetRootToRefPersistentPath     () const { return m_rootToRefPersistentPath; }
     const WString&                 GetReferenceName               () const { return m_referenceName; }
 
@@ -257,6 +265,16 @@ protected:
                                                                         const WChar*                  referenceModelName,
                                                                         uint32_t                          levelID,
                                                                         const WChar*                  levelName);
+
+	explicit                            Impl(DTMSourceDataType               sourceDataType,
+		const wchar_t*               filePath,
+		uint32_t                          modelID,
+		const WChar*                  modelName,
+		const WChar*                     rootToRefPersistentPath,
+		const WChar*                  referenceName,
+		const WChar*                  referenceModelName,
+		uint32_t                          levelID,
+		const WChar*                  levelName);
 
     uint32_t                              GetLevelID                     () const { return m_levelID; }
     const WString&                 GetLevelName                   () const { return m_levelName; }

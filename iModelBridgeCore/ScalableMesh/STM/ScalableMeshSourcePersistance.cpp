@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 22:19:19 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -442,12 +442,15 @@ struct IDTMDgnLevelSourceCreator : public IDTMSourceCreator
             uint32_t              levelID;
             WString             levelName;
 
+			uint32_t sourceTypeField = sourceData.GetSourceType();
+			sourceType = static_cast<DTMSourceDataType>(sourceTypeField);
+			WString fullPath = sourceData.GetMonikerString();
 
             if (LoadDGNV1LevelPart(sourceData, levelID, levelName) &&
                 LoadDGNV1ModelPart(sourceData, modelID, modelName) &&
-                LoadSourcePart(sourceData, env, sourceType, monikerPtr))
+                !fullPath.empty())
                 return new IDTMDgnLevelSource(new IDTMDgnLevelSource::Impl(sourceType,
-                    monikerPtr.get(),
+					fullPath.c_str(),
                     modelID,
                     modelName.c_str(),
                     levelID,
@@ -510,13 +513,18 @@ struct IDTMDgnReferenceLevelSourceCreator : public IDTMSourceCreator
             uint32_t              levelID;
             WString             levelName;
 
+			uint32_t sourceTypeField = sourceData.GetSourceType();
+			sourceType = static_cast<DTMSourceDataType>(sourceTypeField);
+			WString fullPath = sourceData.GetMonikerString();
 
             if (LoadDGNV1LevelPart(sourceData, levelID, levelName) &&
                 LoadDGNV1ReferencePart(sourceData, referencePersistantPath, referenceName, referenceModelName) &&
                 LoadDGNV1ModelPart(sourceData, modelID, modelName) &&
-                LoadSourcePart(sourceData, env, sourceType, monikerPtr))
+                /*LoadSourcePart(sourceData, env, sourceType, monikerPtr)*/
+				!fullPath.empty())
                 return new IDTMDgnReferenceLevelSource(new IDTMDgnReferenceLevelSource::Impl(sourceType,
-                    monikerPtr.get(),
+                    //monikerPtr.get(),
+					fullPath.c_str(),
                     modelID,
                     modelName.c_str(),
                     referencePersistantPath.c_str(),
