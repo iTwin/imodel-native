@@ -528,6 +528,7 @@ public:
     GeomPartPtr GenerateGeomPart(DgnGeometryPartCR, GeometryParamsR);
 
     RootR GetRoot() const { return m_root; }
+    System& GetRenderSystem() const { BeAssert(nullptr != m_loadContext.GetRenderSystem()); return *m_loadContext.GetRenderSystem(); }
 
     double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonalSquared; }
     bool BelowMinRange(DRange3dCR range) const
@@ -578,7 +579,7 @@ public:
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double rangeDiagonalSquared, CreateParams const& params)
-    : GeometryListBuilder(params, elemId, context.GetTransformFromDgn()), m_context(context), m_rangeDiagonalSquared(rangeDiagonalSquared)
+    : GeometryListBuilder(context.GetRenderSystem(), params, elemId, context.GetTransformFromDgn()), m_context(context), m_rangeDiagonalSquared(rangeDiagonalSquared)
     {
     SetCheckGlyphBoxes(true);
     }
@@ -587,7 +588,7 @@ TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double range
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
-    : GeometryListBuilder(CreateParams(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
+    : GeometryListBuilder(context.GetRenderSystem(), CreateParams(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
     {
     // for TileSubGraphic...
     SetCheckGlyphBoxes(true);
@@ -863,7 +864,14 @@ BentleyStatus Loader::_LoadTile()
 
     auto& tile = static_cast<TileR>(*m_tile);
     RootR root = tile.GetElementRoot();
+
     auto  system = GetRenderSystem();
+    if (nullptr == system)
+        {
+        // This is checked in _CreateTileTree()...
+        BeAssert(false && "ElementTileTree requires a Render::System");
+        return ERROR;
+        }
 
     LoadContext loadContext(this);
     auto geometry = tile.GenerateGeometry(loadContext);
@@ -1110,7 +1118,7 @@ void TileContext::AddGeomPart(Render::GraphicBuilderR graphic, DgnGeometryPartId
     Transform tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
     tf.Multiply(range, tileGeomPart->GetRange());
 
-    DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().Get(graphicParams, geomParams);
+    DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().GetForMesh(graphicParams, &geomParams);
 
     BeAssert(nullptr != dynamic_cast<TileBuilderP>(&graphic));
     auto& parent = static_cast<TileBuilderR>(graphic);
@@ -1570,7 +1578,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
     DisplayParamsCR displayParams = geom.GetDisplayParams();
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
-    bool hasTexture = displayParams.HasTexture(db);
+    bool hasTexture = displayParams.IsTextured();
 
     MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh);
     MeshBuilderR builder = GetMeshBuilder(key);
@@ -1589,7 +1597,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             {
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
-            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
+            builder.AddTriangle(*visitor, displayParams.GetRenderingAsset(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
             m_contentRange.Extend(visitor->Point());
             }
         }

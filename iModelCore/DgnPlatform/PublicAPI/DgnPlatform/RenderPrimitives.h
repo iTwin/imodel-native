@@ -18,7 +18,6 @@
 
 BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(NewDisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
@@ -42,7 +41,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(QVertex3d);
 
-DEFINE_REF_COUNTED_PTR(NewDisplayParams);
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(MeshPart);
 DEFINE_REF_COUNTED_PTR(Mesh);
@@ -90,9 +88,11 @@ struct GeometryOptions
 //! Describes the appearance of a Geometry.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct NewDisplayParams : RefCountedBase
+struct DisplayParams : RefCountedBase
 {
-    friend struct NewDisplayParamsCache;
+    friend struct DisplayParamsCache;
+
+    enum class Type { Mesh, Linear, Text };
 private:
     DgnCategoryId       m_categoryId;
     DgnSubCategoryId    m_subCategoryId;
@@ -113,12 +113,10 @@ private:
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
-    NewDisplayParamsCPtr Clone() const;
-
-    enum class Type { Mesh, Linear, Text };
+    DisplayParamsCPtr Clone() const;
     
-    DGNPLATFORM_EXPORT NewDisplayParams(Type, GraphicParamsCR, GeometryParamsCP);
-    NewDisplayParams(NewDisplayParamsCR rhs) = default;
+    DGNPLATFORM_EXPORT DisplayParams(Type, GraphicParamsCR, GeometryParamsCP);
+    DisplayParams(DisplayParamsCR rhs) = default;
     void Resolve(DgnDbR, System&);
 public:
     ColorDef GetFillColorDef() const { return m_fillColor; }
@@ -141,7 +139,7 @@ public:
     bool IgnoresLighting() const { return m_ignoreLighting; }
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
-    bool IsTextured() const { return nullptr != GetTexture(); }
+    bool IsTextured() const { BeAssert(m_resolved); return nullptr != GetTexture(); }
 
     enum class ComparePurpose
     {
@@ -149,91 +147,28 @@ public:
         Strict  //!< compares all members
     };
 
-    DGNPLATFORM_EXPORT bool IsLessThan(NewDisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
-    DGNPLATFORM_EXPORT bool IsEqualTo(NewDisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
+    DGNPLATFORM_EXPORT bool IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
+    DGNPLATFORM_EXPORT bool IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
 
-    static NewDisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, DgnDbR db, System& sys)
+    static DisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, DgnDbR db, System& sys)
         {
-        NewDisplayParamsPtr dp = new NewDisplayParams(Type::Mesh, gf, geom);
+        DisplayParamsPtr dp = new DisplayParams(Type::Mesh, gf, geom);
         dp->Resolve(db, sys);
         return dp;
         }
-    static NewDisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
+    static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
         {
-        return new NewDisplayParams(Type::Linear, gf, geom);
+        return new DisplayParams(Type::Linear, gf, geom);
         }
-    static NewDisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom)
+    static DisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom)
         {
-        return new NewDisplayParams(Type::Text, gf, geom);
+        return new DisplayParams(Type::Text, gf, geom);
         }
-};
-
-//=======================================================================================
-//! Describes the appearance of a Geometry.
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct DisplayParams : RefCountedBase
-{
-    friend struct DisplayParamsCache;
-private:
-    enum class IsTextured { Yes, No, Maybe };
-
-    Render::GraphicParams           m_graphicParams;
-    Render::GeometryParams          m_geometryParams;
-    mutable Render::TexturePtr      m_texture;
-    mutable IsTextured              m_isTextured;
-    bool                            m_ignoreLighting;
-    bool                            m_geometryParamsValid;
-
-    DGNPLATFORM_EXPORT DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting);
-
-    uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
-
-    static DisplayParamsCPtr Create() { return Create(Render::GraphicParams(), nullptr); }
-    static DisplayParamsCPtr Create(ColorDef fillColor, Render::GeometryParamsCR geometryParams, bool ignoreLighting=false)
-        { Render::GraphicParams gfParams; gfParams.SetFillColor(fillColor); return Create(gfParams, geometryParams, ignoreLighting); }
-    static DisplayParamsCPtr Create(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCR geometryParams, bool ignoreLighting=false)
-        { return Create(graphicParams, &geometryParams, ignoreLighting); }
-
-    DisplayParamsCPtr Clone() const;
-
-    DgnTextureCPtr QueryTexture(DgnDbR db) const;
-public:
-    static DisplayParamsCPtr Create(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting=false)
-        { return new DisplayParams(graphicParams, geometryParams, ignoreLighting); }
-
-    Render::GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
-    Render::GeometryParamsCP GetGeometryParams() const { return HasGeometryParams() ? &m_geometryParams : nullptr; }
-    bool GetIgnoreLighting() const { return m_ignoreLighting; }
-    bool HasGeometryParams() const { return m_geometryParamsValid; }
-    bool HasTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
-
-    DgnCategoryId GetCategoryId() const { return HasGeometryParams() ? m_geometryParams.GetCategoryId() : DgnCategoryId(); }
-    DgnSubCategoryId GetSubCategoryId() const { return HasGeometryParams() ? GetGeometryParams()->GetSubCategoryId() : DgnSubCategoryId(); }
-    DgnMaterialId GetMaterialId() const { return HasGeometryParams() ? GetGeometryParams()->GetMaterialId() : DgnMaterialId(); }
-    ColorDef GetFillColorDef() const { return GetGraphicParams().GetFillColor(); }
-    uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
-    GradientSymbCP GetGradient() const { return GetGraphicParams().GetGradientSymb(); }
-    uint32_t GetRasterWidth() const { return GetGraphicParams().GetWidth(); }
-    uint32_t GetLinePixels() const { return GetGraphicParams().GetLinePixels(); }
-    Render::DgnGeometryClass GetClass() const { return HasGeometryParams() ? GetGeometryParams()->GetGeometryClass() : Render::DgnGeometryClass::Primary; }
-
-    DGNPLATFORM_EXPORT bool HasTexture(DgnDbR db) const;
-    DGNPLATFORM_EXPORT Render::TextureP ResolveTexture(DgnDbR db, Render::System const& system) const;
-
-    enum class ComparePurpose
-    {
-        Merge,  //!< ignores category, subcategory, class, and considers fill colors equivalent if both have or both lack transparency
-        Strict  //!< compares all members
-    };
-
-    DGNPLATFORM_EXPORT bool IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
-    DGNPLATFORM_EXPORT bool IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
 };
 
 //=======================================================================================
 //! A cache of ref-counted pointers to DisplayParams objects.
-// @bsistruct                                                   Paul.Connelly   03/17
+// @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct DisplayParamsCache
 {
@@ -248,60 +183,25 @@ private:
 
     typedef bset<DisplayParamsCPtr, Comparator> Set;
 
-    Set     m_set;
-
-    DisplayParamsCR Get(DisplayParamsCR params);
-public:
-    DisplayParamsCR GetDefault()
-        {
-        return Get(Render::GraphicParams(), nullptr);
-        }
-    DisplayParamsCR Get(ColorDef fill, Render::GeometryParamsCR geomParams, bool ignoreLighting=false)
-        {
-        Render::GraphicParams graphicParams;
-        graphicParams.SetFillColor(fill);
-        return Get(graphicParams, geomParams, ignoreLighting);
-        }
-    DisplayParamsCR Get(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCR geomParams, bool ignoreLighting=false)
-        {
-        return Get(graphicParams, &geomParams, ignoreLighting);
-        }
-    DisplayParamsCR Get(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams, bool ignoreLighting=false)
-        {
-        return Get(DisplayParams(graphicParams, geomParams, ignoreLighting));
-        }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   05/17
-//=======================================================================================
-struct NewDisplayParamsCache
-{
-private:
-    struct Comparator
-    {
-        bool operator()(NewDisplayParamsCPtr const& lhs, NewDisplayParamsCPtr const& rhs) const
-            {
-            return lhs->IsLessThan(*rhs);
-            }
-    };
-
-    typedef bset<NewDisplayParamsCPtr, Comparator> Set;
-
     Set         m_set;
     DgnDbR      m_db;
     System&     m_system;
 
-    DGNPLATFORM_EXPORT NewDisplayParamsCR Get(NewDisplayParamsR);
-    NewDisplayParamsCR Get(NewDisplayParams::Type type, GraphicParamsCR gf, GeometryParamsCP geom)
+    DGNPLATFORM_EXPORT DisplayParamsCR Get(DisplayParamsR);
+public:
+    DisplayParamsCache(DgnDbR db, System& system) : m_db(db), m_system(system) { }
+
+    DisplayParamsCR GetForMesh(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Mesh, gf, geom); }
+    DisplayParamsCR GetForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Linear, gf, geom); }
+    DisplayParamsCR GetForText(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Text, gf, geom); }
+    DisplayParamsCR Get(DisplayParams::Type type, GraphicParamsCR gf, GeometryParamsCP geom)
         {
-        NewDisplayParams ndp(type, gf, geom);
+        DisplayParams ndp(type, gf, geom);
         return Get(ndp);
         }
-public:
-    NewDisplayParamsCR GetForMesh(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(NewDisplayParams::Type::Mesh, gf, geom); }
-    NewDisplayParamsCR GetForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(NewDisplayParams::Type::Linear, gf, geom); }
-    NewDisplayParamsCR GetForText(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(NewDisplayParams::Type::Text, gf, geom); }
+
+    DgnDbR GetDgnDb() const { return m_db; }
+    System& GetSystem() const { return m_system; }
 };
 
 //=======================================================================================
@@ -582,7 +482,6 @@ public:
     DGNPLATFORM_EXPORT bool         HasNonPlanarNormals() const;
 
     DisplayParamsCR                 GetDisplayParams() const { return *m_displayParams; } //!< The mesh symbology
-    DisplayParamsCPtr               GetDisplayParamsPtr() const { return m_displayParams; } //!< The mesh symbology
     TriangleList const&             Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
     PolylineList const&             Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
     QPoint3dListCR                  Points() const { return m_verts.GetQuantizedPoints(); } //!< Position vertex attribute array
@@ -690,21 +589,17 @@ private:
     TriangleSet         m_triangleSet;
     double              m_tolerance;
     double              m_areaTolerance;
-    DgnMaterialCPtr     m_materialEl;
-    RenderingAssetCP    m_material = nullptr;
 
     MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range)
         : m_mesh(Mesh::Create(params, featureTable, type, range)), m_tolerance(tolerance), m_areaTolerance(areaTolerance) { }
 
-    bool GetMaterial(DgnMaterialId materailId, DgnDbR db);
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range)
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance);
-    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor);
 
     void AddMesh(TriangleCR triangle);
     void AddTriangle(TriangleCR triangle);
@@ -786,7 +681,6 @@ protected:
     void SetFacetCount(size_t numFacets);
 public:
     DisplayParamsCR GetDisplayParams() const { return *m_params; }
-    DisplayParamsCPtr GetDisplayParamsPtr() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetTileRange() const { return m_tileRange; }
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
@@ -910,7 +804,6 @@ struct GeometryAccumulator
 private:
     GeometryList                m_geometries;
     Transform                   m_transform;
-    DgnDbR                      m_dgndb;
     DgnElementId                m_elementId;
     mutable DisplayParamsCache  m_displayParamsCache;
     bool                        m_surfacesOnly;
@@ -921,8 +814,8 @@ private:
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range);
 public:
-    GeometryAccumulator(DgnDbR db, TransformCR transform, DRange3dCR tileRange, bool surfacesOnly) : m_transform(transform), m_tileRange(tileRange), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
-    explicit GeometryAccumulator(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false), m_tileRange(DRange3d::NullRange()) { }
+    GeometryAccumulator(DgnDbR db, System& system, TransformCR transform, DRange3dCR tileRange, bool surfacesOnly) : m_transform(transform), m_tileRange(tileRange), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
+    GeometryAccumulator(DgnDbR db, System& system, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(false), m_tileRange(DRange3d::NullRange()) { }
 
     void AddGeometry(GeometryR geom) { m_geometries.push_back(geom); }
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
@@ -945,7 +838,8 @@ public:
     TransformCR GetTransform() const { return m_transform; }
     void SetTransform(TransformCR tf) { m_transform = tf; m_haveTransform = !m_transform.IsIdentity(); }
 
-    DgnDbR GetDgnDb() const { return m_dgndb; }
+    DgnDbR GetDgnDb() const { return m_displayParamsCache.GetDgnDb(); }
+    System& GetSystem() const { return m_displayParamsCache.GetSystem(); }
     DisplayParamsCacheR GetDisplayParamsCache() const { return m_displayParamsCache; }
     bool WantSurfacesOnly() const { return m_surfacesOnly; }
 
@@ -953,7 +847,7 @@ public:
     DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance=0.001) const;
 
     //! Populate a list of Graphic objects from the accumulated Geometry objects.
-    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options,double tolerance=0.001) const;
+    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, GeometryOptionsCR options,double tolerance=0.001) const;
 
     //! Clear the geometry list and reinitialize for reuse. DisplayParamsCache contents are preserved.
     void ReInitialize(TransformCR transform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId(), bool surfacesOnly=false)
@@ -995,7 +889,7 @@ struct MeshArgs : TriMeshArgs
         }
 
     void Clear();
-    bool Init(MeshCR mesh, Render::System const& system, DgnDbR db);
+    bool Init(MeshCR mesh);
 };
 
 
@@ -1090,8 +984,8 @@ private:
     bool _IsOpen() const final override { return m_isOpen; }
     DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() final override;
 protected:
-    explicit GeometryListBuilder(CreateParams const& params, DgnElementId elemId=DgnElementId(), TransformCR accumulatorTf=Transform::FromIdentity())
-        : GraphicBuilder(params), m_accum(params.m_dgndb) { m_accum.SetElementId(elemId); m_accum.SetTransform(accumulatorTf); }
+    GeometryListBuilder(System& system, CreateParams const& params, DgnElementId elemId=DgnElementId(), TransformCR accumulatorTf=Transform::FromIdentity())
+        : GraphicBuilder(params), m_accum(params.m_dgndb, system) { m_accum.SetElementId(elemId); m_accum.SetTransform(accumulatorTf); }
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(GraphicParamsCR, Render::GeometryParamsCP) override;
     DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
@@ -1131,14 +1025,21 @@ protected:
     virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0; //!< Invoked by _Finish() to obtain the finished Graphic.
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 
-    void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetDisplayParams(), GetLocalToWorldTransform()); }
+    void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetMeshDisplayParams(), GetLocalToWorldTransform()); }
     void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
 public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
     DgnElementId GetElementId() const { return m_accum.GetElementId(); }
-    DGNPLATFORM_EXPORT DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
+
     DisplayParamsCacheR GetDisplayParamsCache() const { return m_accum.GetDisplayParamsCache(); }
+    DisplayParamsCR GetDisplayParams(DisplayParams::Type type) const { return m_accum.GetDisplayParamsCache().Get(type, GetGraphicParams(), GetGeometryParams()); }
+    DisplayParamsCR GetMeshDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Mesh); }
+    DisplayParamsCR GetLinearDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Linear); }
+    DisplayParamsCR GetTextDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Text); }
+
+    System& GetSystem() const { return m_accum.GetSystem(); }
+
     void Add(GeometryR geom) { m_accum.AddGeometry(geom); }
 
     //! Reset this builder for reuse.
@@ -1153,7 +1054,6 @@ public:
 struct PrimitiveBuilder : GeometryListBuilder
 {
 protected:
-    System&             m_system;
     bvector<GraphicPtr> m_primitives;
 
     DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
@@ -1164,7 +1064,7 @@ protected:
 
     void AddTriMesh(TriMeshArgsCR args);
 public:
-    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params) : GeometryListBuilder(params), m_system(system) { }
+    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params) : GeometryListBuilder(system, params) { }
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

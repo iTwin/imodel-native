@@ -168,9 +168,8 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-NewDisplayParams::NewDisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams)
+DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams)
     {
-    m_fillColor = gfParams.GetFillColor();
     m_lineColor = gfParams.GetLineColor();
 
     if (nullptr != geomParams)
@@ -211,10 +210,12 @@ NewDisplayParams::NewDisplayParams(Type type, GraphicParamsCR gfParams, Geometry
         case Type::Linear:
             m_width = gfParams.GetWidth();
             m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels());
+            m_fillColor = m_lineColor;
             break;
         case Type::Text:
             m_ignoreLighting = true;
             m_fillFlags = FillFlags::Always;
+            m_fillColor = m_lineColor;
             break;
         }
     }
@@ -222,16 +223,16 @@ NewDisplayParams::NewDisplayParams(Type type, GraphicParamsCR gfParams, Geometry
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-NewDisplayParamsCPtr NewDisplayParams::Clone() const
+DisplayParamsCPtr DisplayParams::Clone() const
     {
     BeAssert(m_resolved);
-    return new NewDisplayParams(*this);
+    return new DisplayParams(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NewDisplayParams::Resolve(DgnDbR db, System& sys)
+void DisplayParams::Resolve(DgnDbR db, System& sys)
     {
     if (m_resolved)
         return;
@@ -257,23 +258,6 @@ void NewDisplayParams::Resolve(DgnDbR db, System& sys)
         }
 
     m_resolved = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams::DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting)
-    : m_graphicParams(graphicParams), m_ignoreLighting(ignoreLighting), m_geometryParamsValid(nullptr != geometryParams)
-    {
-    if (nullptr != geometryParams)
-        m_geometryParams = *geometryParams;
-
-    if (nullptr != graphicParams.GetMaterial() && graphicParams.GetMaterial()->HasTextures())
-        m_isTextured = IsTextured::Yes;
-    else if (GetMaterialId().IsValid())
-        m_isTextured = IsTextured::Maybe;
-    else
-        m_isTextured = nullptr != GetGradient() ? IsTextured::Yes : IsTextured::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -304,7 +288,7 @@ template<> int compareValues(bool const& lhs, bool const& rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NewDisplayParams::IsLessThan(NewDisplayParamsCR rhs, ComparePurpose purpose) const
+bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) const
     {
     if (&rhs == this)
         return false;
@@ -343,7 +327,7 @@ bool NewDisplayParams::IsLessThan(NewDisplayParamsCR rhs, ComparePurpose purpose
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NewDisplayParams::IsEqualTo(NewDisplayParamsCR rhs, ComparePurpose purpose) const
+bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     {
     if (&rhs == this)
         return true;
@@ -382,108 +366,13 @@ bool NewDisplayParams::IsEqualTo(NewDisplayParamsCR rhs, ComparePurpose purpose)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) const
-    {
-    if (&rhs == this)
-        return false;
-
-    if (GetIgnoreLighting() != rhs.GetIgnoreLighting())
-        return GetIgnoreLighting();
-
-    TEST_LESS_THAN(GetRasterWidth());
-    TEST_LESS_THAN(GetMaterialId().GetValueUnchecked());
-    TEST_LESS_THAN(GetLinePixels());
-
-    if (m_isTextured != rhs.m_isTextured && m_isTextured != IsTextured::Maybe)
-        return m_isTextured < rhs.m_isTextured;
-
-    if (GetGradient() != rhs.GetGradient())
-        {
-        if (nullptr == GetGradient() || nullptr == rhs.GetGradient() || !(*GetGradient() == *rhs.GetGradient()))
-            return GetGradient() < rhs.GetGradient();
-        }
-
-    if (ComparePurpose::Merge == purpose)
-        {
-        // We can merge meshes of differing colors, but can't mix opaque with translucent
-        return (HasTransparency() != rhs.HasTransparency()) && HasTransparency();
-        }
-
-    TEST_LESS_THAN(GetFillColor());
-    TEST_LESS_THAN(GetCategoryId().GetValueUnchecked());
-    TEST_LESS_THAN(GetSubCategoryId().GetValueUnchecked());
-    TEST_LESS_THAN(GetClass());
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
-    {
-    if (&rhs == this)
-        return true;
-
-    TEST_EQUAL(GetIgnoreLighting());
-    TEST_EQUAL(GetRasterWidth());
-    TEST_EQUAL(GetMaterialId().GetValueUnchecked());
-    TEST_EQUAL(GetLinePixels());
-
-    if ((nullptr == GetGradient()) != (nullptr == rhs.GetGradient()))
-        return false;
-    else if (nullptr != GetGradient() && GetGradient() != rhs.GetGradient() && !(*GetGradient() == *rhs.GetGradient()))
-        return false;
-    else if (m_isTextured != rhs.m_isTextured && m_isTextured != IsTextured::Maybe)
-        return false;
-
-    if (ComparePurpose::Merge == purpose)
-        return HasTransparency() == rhs.HasTransparency();
-
-    TEST_EQUAL(GetFillColor());
-    TEST_EQUAL(GetCategoryId().GetValueUnchecked());
-    TEST_EQUAL(GetSubCategoryId().GetValueUnchecked());
-    TEST_EQUAL(GetClass());
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCPtr DisplayParams::Clone() const
-    {
-    DisplayParamsPtr clone = new DisplayParams(GetGraphicParams(), GetGeometryParams(), GetIgnoreLighting());
-    clone->m_texture = m_texture;
-    clone->m_isTextured = m_isTextured;
-    return clone;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCR DisplayParamsCache::Get(DisplayParamsCR toFind)
-    {
-    BeAssert(0 == toFind.GetRefCount());    // allocated on stack...
-    toFind.AddRef();
-    DisplayParamsCPtr pToFind(&toFind);
-    auto iter = m_set.find(pToFind);
-    if (m_set.end() == iter)
-        iter = m_set.insert(toFind.Clone()).first;
-
-    return **iter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-NewDisplayParamsCR NewDisplayParamsCache::Get(NewDisplayParamsR toFind)
+DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
     {
     BeAssert(0 == toFind.GetRefCount()); // allocated on stack...
     toFind.AddRef();
-    NewDisplayParamsCPtr pToFind(&toFind);
+    DisplayParamsCPtr pToFind(&toFind);
     auto iter = m_set.find(pToFind);
     if (m_set.end() == iter)
         {
@@ -493,83 +382,6 @@ NewDisplayParamsCR NewDisplayParamsCache::Get(NewDisplayParamsR toFind)
         }
 
     return **iter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureCPtr DisplayParams::QueryTexture(DgnDbR db) const
-    {
-    BeAssert(IsTextured::No != m_isTextured);
-
-    DgnMaterialCPtr material = DgnMaterial::Get(db, GetMaterialId());
-    if (material.IsNull())
-        return nullptr;
-
-    auto& mat = material->GetRenderingAsset();
-    auto texMap = mat.GetPatternMap();
-    if (!texMap.IsValid())
-        return nullptr;
-
-    DgnTextureId texId = texMap.GetTextureId();
-    if (!texId.IsValid())
-        return nullptr;
-
-    return DgnTexture::Get(db, texId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayParams::HasTexture(DgnDbR db) const
-    {
-    if (IsTextured::Maybe != m_isTextured)
-        return IsTextured::Yes == m_isTextured;
-
-    BeAssert(nullptr == GetGradient());
-
-    auto tex = QueryTexture(db);
-
-    m_isTextured = tex.IsValid() ? IsTextured::Yes : IsTextured::No;
-    return IsTextured::Yes == m_isTextured;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::TextureP DisplayParams::ResolveTexture(DgnDbR db, Render::System const& system) const
-    {
-    if (IsTextured::No == m_isTextured || m_texture.IsValid())
-        return m_texture.get();
-    else if (nullptr != m_graphicParams.GetMaterial() && m_graphicParams.GetMaterial()->HasTextures())
-        return nullptr; // Textures already cooked into material...
-
-    // ###TODO? This will not handle an element with gradient fill and also a textured material. Do people do that?
-    Render::TexturePtr tex;
-    if (nullptr != GetGradient())
-        {
-        BeAssert(IsTextured::Yes == m_isTextured);
-        tex = system._GetTexture(*GetGradient(), db);
-        }
-    else
-        {
-        // ###TODO: Would be nice to avoid a second lookup here but meh for now...
-        DgnTextureCPtr dgnTex = QueryTexture(db);
-        if (dgnTex.IsValid())
-            tex = system._GetTexture(dgnTex->GetTextureId(), db);
-        }
-
-    m_isTextured = tex.IsValid() ? IsTextured::Yes : IsTextured::No;
-    if (IsTextured::No == m_isTextured)
-        return nullptr;
-
-    // DisplayParams potentially cross thread boundaries...need to synchronize on texture-related members
-    static BeMutex s_mutex;
-    BeMutexHolder lock(s_mutex);
-    if (m_texture.IsNull())
-        m_texture = tex;
-
-    return m_texture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -623,8 +435,6 @@ bool Mesh::HasNonPlanarNormals() const
 
     return false;
     }
-
-
      
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
@@ -641,7 +451,7 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
 
     if (haveMesh)
         {
-        if (args.m_meshArgs.Init(*this, system, db) &&
+        if (args.m_meshArgs.Init(*this) &&
             (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db)).IsValid())
             graphics.push_back (thisGraphic);
 
@@ -945,26 +755,9 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool MeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR db)
-    {
-    if (!materialId.IsValid())
-        return false;
-
-    m_materialEl = DgnMaterial::Get(db, materialId);
-    BeAssert(m_materialEl.IsValid());
-    if (m_materialEl.IsNull())
-        return false;
-
-    m_material = &m_materialEl->GetRenderingAsset();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP renderingAsset, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -983,9 +776,9 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
 
     bool haveParams = includeParams && !params.empty();
     newTriangle.SetEdgeFlags(visitor.GetVisibleCP());
-    if (haveParams && (m_material || GetMaterial(materialId, dgnDb)))
+    if (haveParams && nullptr != renderingAsset)
         {
-        auto const&         patternMap = m_material->GetPatternMap();
+        auto const&         patternMap = renderingAsset->GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
         if (patternMap.IsValid())
@@ -1023,15 +816,6 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
         }
 
     m_mesh->AddPolyline (newPolyline);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor)
-    {
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, feature, false, includeParams, fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1152,7 +936,7 @@ size_t GeomPart::GetFacetCount(FacetCounter& counter, GeometryCR instance) const
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Geometry::Geometry(TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db)
-    : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.HasTexture(db))
+    : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.IsTextured())
     {
     }
 
@@ -1243,7 +1027,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
             polyface->ClearParameters(false);
 
         BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
-        return PolyfaceList (1, Polyface(*GetDisplayParamsPtr(), *polyface));
+        return PolyfaceList (1, Polyface(GetDisplayParams(), *polyface));
         }
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
@@ -1271,7 +1055,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         if (!GetTransform().IsIdentity())
             polyface->Transform(GetTransform());
 
-        polyfaces.push_back (Polyface(*GetDisplayParamsPtr(), *polyface));
+        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface));
         }
 
     return polyfaces;
@@ -1315,7 +1099,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
             }
 
         if (!strokePoints.empty())
-            tileStrokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints), disjoint));
+            tileStrokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), disjoint));
         }
 
     return tileStrokes;
@@ -1368,8 +1152,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
                 GeometryParams faceParams;
 
                 params[i].ToGeometryParams(faceParams, baseParams);
-                DisplayParamsCPtr displayParams = GetDisplayParamsPtr();
-                tilePolyfaces.push_back (Polyface(*displayParams, *polyface));
+                tilePolyfaces.push_back (Polyface(GetDisplayParams(), *polyface));
                 }
             }
         }
@@ -1378,7 +1161,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         auto polyface = BRepUtil::FacetEntity(*m_entity, *pFacetOptions);
     
         if (polyface.IsValid() && polyface->HasFacets())
-            tilePolyfaces.push_back (Polyface(*GetDisplayParamsPtr(), *polyface));
+            tilePolyfaces.push_back (Polyface(GetDisplayParams(), *polyface));
 
         }
 
@@ -1592,7 +1375,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
                 continue;
 
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
-            bool hasTexture = displayParams.IsValid() && displayParams->HasTexture(GetDgnDb());
+            bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
             MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh);
 
@@ -1605,7 +1388,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder->AddTriangle(*visitor, displayParams->GetMaterialId(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+                meshBuilder->AddTriangle(*visitor, displayParams->GetRenderingAsset(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
             }
 
         if (!options.WantSurfacesOnly())
@@ -1646,13 +1429,13 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Render::System const& system, GeometryOptionsCR options, double tolerance) const
+void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance) const
     {
     MeshList                meshes = ToMeshes(options, tolerance);
     GetMeshGraphicsArgs     args;
 
     for (auto const& mesh : meshes)
-        mesh->GetGraphics (graphics, system, args, m_dgndb, m_tileRange);
+        mesh->GetGraphics (graphics, GetSystem(), args, GetDgnDb(), m_tileRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1769,7 +1552,7 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     if (polyface.IsValid() && polyface->HasFacets())
         {
         polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
-        polyfaces.push_back (Polyface(*GetDisplayParamsPtr(), *polyface));
+        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface));
         }
 
     return polyfaces;
@@ -1795,7 +1578,7 @@ StrokesList TextStringGeometry::_GetStrokes (IFacetOptionsR facetOptions)
             collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
 
     if (!strokePoints.empty())
-        strokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints), false));
+        strokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), false));
 
     return strokes;
     }
@@ -1849,7 +1632,7 @@ void  TextStringGeometry::InitGlyphCurves() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
+bool MeshArgs::Init(MeshCR mesh)
     {
     Clear();
     if (mesh.Triangles().empty())
@@ -1867,11 +1650,12 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
     Set(m_numIndices, m_vertIndex, m_indices);
     Set(m_numPoints, m_points, mesh.Points());
     Set(m_textureUV, mesh.Params());
-    if (!mesh.GetDisplayParams().GetIgnoreLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
+    if (!mesh.GetDisplayParams().IgnoresLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
         Set(m_normals, mesh.Normals());
 
-    m_texture = mesh.GetDisplayParams().ResolveTexture(db, system);
-    m_material = mesh.GetDisplayParams().GetGraphicParams().GetMaterial();
+    m_texture = mesh.GetDisplayParams().GetTexture();
+    m_material = mesh.GetDisplayParams().GetMaterial();
+    m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
 
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
@@ -1904,9 +1688,8 @@ void MeshArgs::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> static void initLinearGraphicParams(T& args, MeshCR mesh)
     {
-    GraphicParamsCR gfParams = mesh.GetDisplayParams().GetGraphicParams();
-    args.m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels()); // ###TODO why is this stored as uint32_t?
-    args.m_width = gfParams.GetWidth();
+    args.m_linePixels = mesh.GetDisplayParams().GetLinePixels();
+    args.m_width = mesh.GetDisplayParams().GetLineWidth();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2063,7 +1846,7 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
     {
-    GraphicPtr gf = m_system._CreateTile(tile, corners, GetDgnDb(), GetGraphicParams());
+    GraphicPtr gf = GetSystem()._CreateTile(tile, corners, GetDgnDb(), GetGraphicParams());
     if (gf.IsValid())
         m_primitives.push_back(gf);
     }
@@ -2074,7 +1857,7 @@ void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
 void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
     {
     // ###TODO: this is weird and not yet used...do we take the texture/material/etc from the args, or set them from the active GraphicParams?
-    GraphicPtr gf = m_system._CreateTriMesh(args, GetDgnDb());
+    GraphicPtr gf = GetSystem()._CreateTriMesh(args, GetDgnDb());
     if (gf.IsValid())
         m_primitives.push_back(gf);
     }
@@ -2085,7 +1868,7 @@ void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
 void GeometryListBuilder::_AddShape(int numPoints, DPoint3dCP points, bool filled)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
-    m_accum.Add(*curve, filled, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*curve, filled, GetMeshDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2123,7 +1906,7 @@ void GeometryListBuilder::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool fil
         curve->push_back(gapSegment);
         }
 
-    m_accum.Add(*curve, filled, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*curve, filled, curve->IsAnyRegionType() ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2142,7 +1925,7 @@ void GeometryListBuilder::_AddLineString2d(int numPoints, DPoint2dCP points, dou
 void GeometryListBuilder::_AddLineString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
-    m_accum.Add(*curve, false, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*curve, false, GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2161,7 +1944,7 @@ void GeometryListBuilder::_AddPointString2d(int numPoints, DPoint2dCP points, do
 void GeometryListBuilder::_AddPointString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreatePointString(points, numPoints));
-    m_accum.Add(*curve, false, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*curve, false, GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2193,7 +1976,7 @@ void GeometryListBuilder::_AddBody(IBRepEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBodyR(IBRepEntityR entity)
     {
-    m_accum.Add(entity, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(entity, GetMeshDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2221,7 +2004,7 @@ void GeometryListBuilder::_AddTextString(TextStringCR text)
 void GeometryListBuilder::_AddTextStringR(TextStringR text)
     {
     // ###TODO_ELEMENT_TILE: May want to treat as box if too small...
-    m_accum.Add(text, GetDisplayParams(true), GetLocalToWorldTransform());
+    m_accum.Add(text, GetTextDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2315,7 +2098,7 @@ void GeometryListBuilder::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddSolidPrimitiveR(ISolidPrimitiveR primitive)
     {
-    m_accum.Add(primitive, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(primitive, GetMeshDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2331,7 +2114,7 @@ void GeometryListBuilder::_AddCurveVector(CurveVectorCR curves, bool isFilled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddCurveVectorR(CurveVectorR curves, bool isFilled)
     {
-    m_accum.Add(curves, isFilled, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(curves, isFilled, curves.IsAnyRegionType() ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2366,7 +2149,7 @@ void GeometryListBuilder::_AddCurveVector2dR(CurveVectorR curves, bool isFilled,
         {
         Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
         auto cv = curves.Clone(tf);
-        m_accum.Add(*cv, isFilled, GetDisplayParams(), GetLocalToWorldTransform());
+        m_accum.Add(*cv, isFilled, cv->IsAnyRegionType() ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
         }
     }
 
@@ -2376,7 +2159,7 @@ void GeometryListBuilder::_AddCurveVector2dR(CurveVectorR curves, bool isFilled,
 void GeometryListBuilder::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
     CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(bcurve));
-    m_accum.Add(*cv, filled, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2386,7 +2169,7 @@ void GeometryListBuilder::_AddBSplineCurveR(RefCountedMSBsplineCurveR bcurve, bo
     {
     MSBsplineCurvePtr pBcurve(&bcurve);
     CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(pBcurve));
-    m_accum.Add(*cv, filled, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2445,7 +2228,7 @@ void GeometryListBuilder::_AddBSplineSurface(MSBsplineSurfaceCR surface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surf)
     {
-    m_accum.Add(surf, GetDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(surf, GetMeshDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2468,7 +2251,7 @@ void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicP
         {
         GraphicBranch branch;
         branch.Add(gf);
-        graphic = m_system._CreateBranch(std::move(branch), GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGf), clip);
+        graphic = GetSystem()._CreateBranch(std::move(branch), GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGf), clip);
         }
 
     if (graphic.IsValid())
@@ -2480,7 +2263,7 @@ void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicP
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR subToGf, ClipVectorCP clip) const
     {
-    return m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), subToGf.IsIdentity() ? GetLocalToWorldTransform() : Transform::FromIdentity()));
+    return GetSystem()._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), subToGf.IsIdentity() ? GetLocalToWorldTransform() : Transform::FromIdentity()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2510,23 +2293,15 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     if (!accum.IsEmpty())
         {
         GeometryOptions options;
-        accum.SaveToGraphicList(m_primitives, m_system, options);
+        accum.SaveToGraphicList(m_primitives, options);
         }
 
     if (1 != m_primitives.size())
-        return m_system._CreateGraphicList(std::move(m_primitives), GetDgnDb());
+        return GetSystem()._CreateGraphicList(std::move(m_primitives), GetDgnDb());
 
     GraphicPtr graphic = *m_primitives.begin();
     m_primitives.clear();
     return graphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCR GeometryListBuilder::GetDisplayParams(bool ignoreLighting) const
-    {
-    return m_accum.GetDisplayParamsCache().Get(GetGraphicParams(), GetGeometryParams(), ignoreLighting);
     }
 
 /*---------------------------------------------------------------------------------**//**
