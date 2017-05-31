@@ -142,7 +142,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         DataSourceURL m_pathToHeaders;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<SMNodeGroupPtr> m_nodeHeaderGroups;
-        map<uint32_t, Json::Value*> m_nodeHeaderCache;
+        map<uint64_t, Json::Value*> m_nodeHeaderCache;
         Transform m_transform;
 
         SMNodeGroupPtr m_CesiumGroup;

@@ -24,6 +24,9 @@ uint32_t s_max_group_common_ancestor = 2;
 
 mutex SMNodeGroup::s_mutex;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
     {
     assert(!m_oldMasterHeader.empty()); // Old master header must be set!
@@ -128,6 +131,221 @@ void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SMNodeGroup::SaveTilesetToCache(Json::Value & tileset, const uint64_t& priorityNodeID, bool generateIDs)
+    {
+    assert(tileset.isMember("root"));
+    if (generateIDs)
+        {
+        auto& currentSMHeader = m_tilesetRootNode["SMHeader"];
+        uint64_t parentID = currentSMHeader.isMember("parentID") ? currentSMHeader["parentID"].asUInt() : uint64_t(-1);
+        uint64_t rootLevel = currentSMHeader.isMember("level") ? currentSMHeader["level"].asUInt() : 0;
+
+        m_tilesetRootNode = tileset;
+
+        // Generate tileset map in the cache
+        return this->SaveTileToCacheWithNewTileIDs(m_tilesetRootNode["root"], priorityNodeID, parentID, true, rootLevel);
+        }
+
+    // Replace old root node with new one
+    m_tilesetRootNode = tileset;
+
+#ifndef NDEBUG
+    if (SUCCESS != this->SaveTileToCacheWithExistingTileIDs(m_tilesetRootNode["root"]) ||
+        m_groupCachePtr->GetGroupForNodeIDFromCache(priorityNodeID) == nullptr)
+        return ERROR;
+    return SUCCESS;
+#else
+    return this->SaveTileToCacheWithExistingTileIDs(m_tilesetRootNode["root"]);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SMNodeGroup::SaveTileToCacheWithNewTileIDs(Json::Value & tile, uint64_t tileID, uint64_t parentID, bool isRootNode, uint64_t level)
+    {
+    // Compute next tile ID
+    static std::atomic<uint32_t> s_currentNodeID = 0;
+    if (m_mustResetNodeIDGenerator)
+        {
+        s_currentNodeID = 0;
+        m_mustResetNodeIDGenerator = false;
+        }
+    tileID = isRootNode && tileID != uint64_t(-1) && parentID != uint64_t(-1) ? tileID : s_currentNodeID++;
+
+    auto& smHeader = tile["SMHeader"];
+    smHeader["parentID"] = parentID;
+    if (smHeader.isMember("id"))
+        {
+        smHeader["oldID"] = smHeader["id"];
+        }
+
+    smHeader["id"] = tileID;
+    assert((smHeader.isMember("resolution") && smHeader["resolution"].asUInt() == level) || !smHeader.isMember("resolution"));
+    smHeader["level"] = level;
+
+    if (SUCCESS != this->SaveTileToCache(tile, tileID))
+        return ERROR;
+
+    if (tile.isMember("children"))
+        {
+        for (auto& child : tile["children"])
+            {
+            // The child tileID parameter will be updated within the next call
+            if (SUCCESS != SaveTileToCacheWithNewTileIDs(child, tileID, tileID, false, level + 1))
+                return ERROR;
+            }
+        }
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SMNodeGroup::SaveTileToCacheWithExistingTileIDs(Json::Value & tile)
+    {
+    // Check availability of tile ID
+    if (!tile.isMember("SMRootID") && !(tile.isMember("SMHeader") && tile["SMHeader"].isMember("id")))
+        {
+        assert(!"Node IDs are not available in the tile");
+        return ERROR;
+        }
+
+    uint64_t tileID = tile.isMember("SMRootID") ? tile["SMRootID"].asUInt() : tile["SMHeader"]["id"].asUInt();
+
+    if (SUCCESS != this->SaveTileToCache(tile, tileID))
+        return ERROR;
+
+    if (!tile.isMember("SMRootID") && tile.isMember("children"))
+        {
+        for (auto& child : tile["children"])
+            {
+            if (SUCCESS != SaveTileToCacheWithExistingTileIDs(child))
+                return ERROR;
+            }
+        }
+//    if (jsonNode.isMember("SMHeader") && jsonNode["SMHeader"].isMember("id"))
+//        {
+//        uint32_t nodeID = jsonNode["SMHeader"]["id"].asUInt();
+//#ifndef NDEBUG
+//        nodeIDChecker(nodeID);
+//#endif
+//        //this->m_tileTreeMap[nodeID] = &jsonNode["SMHeader"];
+//        //{
+//        //    // Indicate that the header for the node with id nodeID is ready to be consumed
+//        //    // This is to unblock other threads that might be waiting for this group to complete loading.
+//        //    auto nodeHeader = this->GetNodeHeader(nodeID);
+//        //    assert(nodeHeader != nullptr);
+//        //    nodeHeader->offset = 0;
+//        //}
+//        if (SUCCESS != this->SaveNode(nodeID, &jsonNode))
+//            return ERROR;
+//
+//        if (jsonNode.isMember("children"))
+//            {
+//            for (auto& child : jsonNode["children"])
+//                {
+//                if (SUCCESS != tileTreeMapGenerator(child))
+//                    return ERROR;
+//                }
+//            }
+//        return SUCCESS;
+//        }
+//    else
+//        {
+//        assert(jsonNode.isMember("content") && jsonNode["content"].isMember("url"));
+//        BeFileName contentURL(jsonNode["content"]["url"].asString());
+//        WString groupIDStr = BEFILENAME(GetFileNameWithoutExtension, contentURL);
+//        WString prefix = groupIDStr.substr(0, 2);
+//        WString extension = BEFILENAME(GetExtension, contentURL);
+//        groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
+//        uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
+//        SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, groupID);
+//        newGroup->SetURL(DataSourceURL(contentURL.c_str()));
+//        newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
+//        //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
+//        newGroup->m_tilesetRootNode = jsonNode;
+//        assert(jsonNode.isMember("SMRootID"));
+//        nodeIDChecker(jsonNode["SMRootID"].asUInt());
+//        return newGroup->SaveNode(jsonNode["SMRootID"].asUInt(), &newGroup->m_tilesetRootNode);
+//
+//        //assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);
+//        //SMNodeGroupPtr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
+//        //newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
+//        //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
+//        //this->m_tileTreeChildrenGroups[groupID] = newGroup;
+//        }
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
+    {
+    if (tile.isMember("content"))
+        {
+        auto& content = tile["content"];
+        if (content.isMember("url"))
+            {
+            BeFileName contentURL(content["url"].asString());
+            if (L"json" == BEFILENAME(GetExtension, contentURL))
+                {
+                assert(!tile.isMember("children"));
+                // the tile references a new tileset (group)
+                static std::atomic<uint32_t> s_currentGroupID = 0;
+
+                auto newPrefix = this->m_dataSourcePrefix;
+                newPrefix.append(BEFILENAME(GetDirectoryName, contentURL));
+                auto tilesetURL = BEFILENAME(GetFileNameAndExtension, contentURL);
+                SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, s_currentGroupID);
+                newGroup->SetURL(DataSourceURL(tilesetURL.c_str()));
+                newGroup->SetDataSourcePrefix(newPrefix);
+                //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
+                newGroup->m_tilesetRootNode = tile;
+
+                // we are done processing this part of the tileset, save and exit
+                return newGroup->SaveNode(tileID, &newGroup->m_tilesetRootNode);
+                }
+            else
+                {
+                assert(L"b3dm" == BEFILENAME(GetExtension, contentURL)); // only b3dm supported at the moment
+                auto newURLUtf16 = this->m_dataSourcePrefix;
+                newURLUtf16.append(contentURL.c_str());
+                auto newURLUtf8 = Utf8String(newURLUtf16.c_str());
+                content["url"] = Json::Value(newURLUtf8.c_str());
+                }
+            }
+        }
+    return this->SaveNode(tileID, &tile);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize destSize)
+    {
+    assert(this->GetDataSourceAccount() != nullptr); // The data source account must be set
+
+                                                     // Get the thread's DataSource or create a new one
+    DataSource *dataSource = nullptr;
+    if ((dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource()) == nullptr)
+        return nullptr;
+
+    // Make sure caching is enabled for this DataSource
+    dataSource->setCachingEnabled(s_stream_enable_caching);
+
+    dest.reset(new unsigned char[destSize]);
+
+    return dataSource;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt SMNodeGroup::Load()
     {
     unique_lock<mutex> lk(m_groupMutex);
@@ -194,6 +412,9 @@ StatusInt SMNodeGroup::Load()
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     {
     unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
@@ -208,6 +429,10 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
         //    if (lk.owns_lock()) lk.unlock();
         //    this->WaitFor(*nodeHeader);
         //    }
+        if (!m_isLoaded)
+            {
+            return ERROR;
+            }
         }
     else
         {
@@ -216,180 +441,33 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
             assert(m_isLoading == false);
             m_isLoading = true;
 
-            std::unique_ptr<DataSource::Buffer[]>       dest;
-            DataSource::DataSize                        readSize;
-
             DataSourceURL url = this->m_dataSourcePrefix.c_str();
             url.append(this->GetURL());
-            if (!this->DownloadCesiumTileset(dest, readSize, url))
+
+            Json::Value tileset;
+            if (!this->DownloadCesiumTileset(url, tileset))
                 {
                 m_isLoading = false;
                 return ERROR;
                 }
 
-            if (readSize > 0)
-            {
-                char* jsonBlob = reinterpret_cast<char *>(dest.get());
-                Json::Reader    reader;
-                Json::Value tileset;
-                reader.parse(jsonBlob, jsonBlob + readSize, tileset);
-                
-                if (!(tileset.isMember("root")))
-                    {
-                    assert(!"error reading Cesium 3D tileset");
-                    return 0;
-                    }
-                //bool mustGenerateIDs = !tileset["root"].isMember("SMHeader");
-                if (true/*mustGenerateIDs*/)
+            if (!tileset.isMember("root"))
                 {
-                    uint32_t currentNodeID = m_RootTileTreeNode["SMHeader"].isMember("id") ? m_RootTileTreeNode["SMHeader"]["id"].asUInt() : uint32_t(-1);
-                    uint32_t parentID = m_RootTileTreeNode["SMHeader"].isMember("parentID") ? m_RootTileTreeNode["SMHeader"]["parentID"].asUInt() : uint32_t(-1);
-                    uint32_t rootLevel = m_RootTileTreeNode["SMHeader"].isMember("level") ? m_RootTileTreeNode["SMHeader"]["level"].asUInt() : 0;
-
-                    m_RootTileTreeNode = tileset;
-
-                    // Generate tile tree map
-                    std::function<void(Json::Value&, uint32_t, bool, uint32_t)> tileTreeMapGenerator = [this, &tileTreeMapGenerator, &currentNodeID](Json::Value& jsonNode, uint32_t parentID, bool isRootNode, uint32_t level)
-                    {
-                        jsonNode["SMHeader"]["parentID"] = parentID;
-                        static std::atomic<uint32_t> s_currentNodeID = 0;
-                        if (m_mustResetNodeIDGenerator)
-                            {
-                            s_currentNodeID = 0;
-                            m_mustResetNodeIDGenerator = false;
-                            }
-                        uint32_t nodeID = isRootNode && parentID != uint32_t(-1) && currentNodeID != uint32_t(-1) ? currentNodeID : s_currentNodeID++;
-                        if (jsonNode["SMHeader"].isMember("id"))
-                        {
-                            jsonNode["SMHeader"]["oldID"] = jsonNode["SMHeader"]["id"];
-                        }
-
-                        jsonNode["SMHeader"]["id"] = nodeID;
-                        assert((jsonNode["SMHeader"].isMember("resolution") && jsonNode["SMHeader"]["resolution"].asUInt() == level) || !jsonNode["SMHeader"].isMember("resolution"));
-                        jsonNode["SMHeader"]["level"] = level;
-                        if (jsonNode.isMember("content"))
-                            {
-                            if (jsonNode["content"].isMember("url"))
-                                {
-                                BeFileName contentURL(jsonNode["content"]["url"].asString());
-                                if (L"json" == BEFILENAME(GetExtension, contentURL))
-                                    {
-                                    assert(!jsonNode.isMember("children"));
-                                    // the tile references a new tileset (group)
-                                    static std::atomic<uint32_t> s_currentGroupID = 0;
-
-                                    auto newPrefix = this->m_dataSourcePrefix;
-                                    newPrefix.append(BEFILENAME(GetDirectoryName, contentURL));
-                                    auto tilesetURL = BEFILENAME(GetFileNameAndExtension, contentURL);
-                                    SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, s_currentGroupID);
-                                    newGroup->SetURL(DataSourceURL(tilesetURL.c_str()));
-                                    newGroup->SetDataSourcePrefix(newPrefix);
-                                    //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
-                                    newGroup->m_RootTileTreeNode = jsonNode;
-                                    newGroup->SaveNode(nodeID, &newGroup->m_RootTileTreeNode);
-
-                                    // we are done processing this part of the tileset
-                                    return;
-                                    }
-                                else 
-                                    {
-                                    assert(L"b3dm" == BEFILENAME(GetExtension, contentURL)); // only b3dm supported at the moment
-                                    auto newURLUtf16 = this->m_dataSourcePrefix;
-                                    newURLUtf16.append(contentURL.c_str());
-                                    auto newURLUtf8 = Utf8String(newURLUtf16.c_str());
-                                    jsonNode["content"]["url"] = Json::Value(newURLUtf8.c_str());
-                                    }
-                                }
-                            }
-                        if (!jsonNode.isMember("children"))
-                            {
-                            jsonNode["isLeafNode"] = true;
-                            this->SaveNode(nodeID, &jsonNode);
-
-                            // we are done processing this part of the tileset
-                            return;
-                            }
-
-                        this->SaveNode(nodeID, &jsonNode);
-                        for (auto& child : jsonNode["children"])
-                        {
-                            tileTreeMapGenerator(child, nodeID, false, level + 1);
-                        }
-                    };
-                    tileTreeMapGenerator(m_RootTileTreeNode["root"], parentID, true, rootLevel);
+                assert(!"error reading Cesium 3D tileset");
+                return ERROR;
                 }
-                else {
-                    m_RootTileTreeNode = tileset;
-                    assert(m_RootTileTreeNode["root"].isMember("SMHeader"));
-                    bool checkResult = false;
-                    auto nodeIDChecker = [priorityNodeID, &checkResult](uint64_t id = 0) -> bool
-                        {
-                        if (!checkResult) checkResult = priorityNodeID == id;
-                        return checkResult;
-                        };
-                    // Generate tile tree map
-                    std::function<void(Json::Value&)> tileTreeMapGenerator = [this, &tileTreeMapGenerator, &nodeIDChecker](Json::Value& jsonNode)
-                    {
-                        if (jsonNode.isMember("SMHeader") && jsonNode["SMHeader"].isMember("id"))
-                        {
-                            uint32_t nodeID = jsonNode["SMHeader"]["id"].asUInt();
-                            nodeIDChecker(nodeID);
-                            //this->m_tileTreeMap[nodeID] = &jsonNode["SMHeader"];
-                            //{
-                            //    // Indicate that the header for the node with id nodeID is ready to be consumed
-                            //    // This is to unblock other threads that might be waiting for this group to complete loading.
-                            //    auto nodeHeader = this->GetNodeHeader(nodeID);
-                            //    assert(nodeHeader != nullptr);
-                            //    nodeHeader->offset = 0;
-                            //}
-                            this->SaveNode(nodeID, &jsonNode);
-                            if (jsonNode.isMember("children"))
-                            {
-                                for (auto& child : jsonNode["children"])
-                                {
-                                    tileTreeMapGenerator(child);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            assert(jsonNode.isMember("content") && jsonNode["content"].isMember("url"));
-                            BeFileName contentURL(jsonNode["content"]["url"].asString());
-                            WString groupIDStr = BEFILENAME(GetFileNameWithoutExtension, contentURL);
-                            WString prefix = groupIDStr.substr(0, 2);
-                            WString extension = BEFILENAME(GetExtension, contentURL);
-                            groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
-                            uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
-                            SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, groupID);
-                            newGroup->SetURL(DataSourceURL(contentURL.c_str()));
-                            newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
-                            //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
-                            newGroup->m_RootTileTreeNode = jsonNode;
-                            assert(jsonNode.isMember("SMRootID"));
-                            nodeIDChecker(jsonNode["SMRootID"].asUInt());
-                            newGroup->SaveNode(jsonNode["SMRootID"].asUInt(), &newGroup->m_RootTileTreeNode);
 
-                            //assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);
-                            //SMNodeGroupPtr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
-                            //newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
-                            //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
-                            //this->m_tileTreeChildrenGroups[groupID] = newGroup;
-                        }
-                    };
-                    tileTreeMapGenerator(m_RootTileTreeNode["root"]);
-                    assert(nodeIDChecker());
-                }
-            }
-            else
+            bool mustGenerateIDs = true; // !tileset["root"].isMember("SMHeader") && tileset["root"]["SMHeader"].isMember("id");
+            if (SUCCESS != this->SaveTilesetToCache(tileset, priorityNodeID, mustGenerateIDs))
                 {
                 m_isLoading = false;
                 return ERROR;
                 }
-            m_isLoading = false;
-            m_isLoaded = true;
             }
         else
             {
+            // No longer supported
+            return ERROR;
             //assert(m_isLoading == false);
             //m_isLoading = true;
             //if (m_strategyType == VIRTUAL)
@@ -448,9 +526,16 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
             //assert(nodeHeader->offset != (uint32_t)-1);
             }
         }
+
+    // Loading completed successfully
+    m_isLoading = false;
+    m_isLoaded = true;
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroup::LoadGroupParallel()
     {
     SMNodeGroupPtr group(this);
@@ -492,10 +577,13 @@ void SMNodeGroup::LoadGroupParallel()
     thread.detach();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::GetWKTString(Utf8String & wkt)
     {
-    assert(m_RootTileTreeNode.isMember("root"));
-    auto const& root = m_RootTileTreeNode["root"];
+    assert(m_tilesetRootNode.isMember("root"));
+    auto const& root = m_tilesetRootNode["root"];
     if (!root.isMember("SMHeader")) return false;
     auto const& smHeader = root["SMHeader"];
     if (!smHeader.isMember("GCS")) return false;
@@ -516,6 +604,9 @@ bool SMNodeGroup::GetWKTString(Utf8String & wkt)
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceURL SMNodeGroup::GetDataURLForNode(HPMBlockID blockID)
     {
     const auto& jsonNode = *this->m_tileTreeMap[blockID.m_integerID];
@@ -525,28 +616,46 @@ DataSourceURL SMNodeGroup::GetDataURLForNode(HPMBlockID blockID)
     return DataSourceURL(dataURL.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceURL SMNodeGroup::GetURL()
     {
     return m_url;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroup::SetURL(DataSourceURL url)
     {
     m_url = url;
     }
 
-void SMNodeGroup::DownloadNodeHeader(const uint64_t & id)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value* SMNodeGroup::DownloadNodeHeader(const uint64_t & id)
     {
-    if (!this->IsLoaded()) this->Load(id);
+    // *this* is the root tileset, try to load it if needed
+    if (!this->IsLoaded() && SUCCESS != this->Load(id))
+        return nullptr;
+
+    // Find the actual group that contains the node *id* (may not be the root tileset) and then load it if needed
     auto group = m_groupCachePtr->GetGroupForNodeIDFromCache(id);
+    if (group == nullptr) return nullptr;
     if (!group->IsLoaded())
         {
         // Remove node from cache so that it gets replaced with appropriate node when loading the group
         m_groupCachePtr->RemoveNodeFromCache(id);
-        group->Load(id);
+        if (SUCCESS != group->Load(id)) return nullptr;
         }
+    return m_groupCachePtr->GetNodeFromCache(id);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroup::SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const uint8_t* rawHeader, const uint64_t& headerSize)
     {
     std::lock_guard<std::mutex> lock(m_groupMutex);
@@ -557,17 +666,81 @@ void SMNodeGroup::SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const u
     m_currentPosition += nodeHeader->size;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceAccount * SMNodeGroup::GetDataSourceAccount(void)
     {
     return m_parametersPtr->GetDataSourceAccount();
     }
 
-void SMNodeGroup::SaveNode(const uint64_t & id, Json::Value * header)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value & tileset)
     {
-    assert(m_groupCachePtr != nullptr);
-    m_groupCachePtr->AddNodeToGroupCache(this, id, header);
+    std::unique_ptr<DataSource::Buffer[]>       dest;
+    DataSource::DataSize                        readSize;
+    if (this->DownloadBlob(dest, readSize, url))
+        {
+        char* jsonBlob = reinterpret_cast<char *>(dest.get());
+        return Json::Reader().parse(jsonBlob, jsonBlob + readSize, tileset);
+        }
+
+    assert(!"A problem occured while downloading a group.");
+    return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize & readSize, const DataSourceURL & url)
+    {
+    DataSource*                           dataSource;
+    DataSourceBuffer::BufferSize          destSize = 5 * 1024 * 1024;
+    return ((dataSource = this->InitializeDataSource(dest, destSize)) != nullptr &&
+             dataSource->open(url, DataSourceMode_Read).isOK()                   &&
+             dataSource->read(dest.get(), destSize, readSize, 0).isOK()          &&
+             dataSource->close().isOK());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t SMNodeGroup::GetSingleNodeFromStore(const uint64_t & pi_pNodeID, bvector<uint8_t>& pi_pData)
+    {
+    std::unique_ptr<DataSource::Buffer[]>dest;
+    DataSource::DataSize                 readSize;
+
+    DataSourceURL dataSourceURL(m_dataSourcePrefix.c_str());
+    dataSourceURL += std::to_wstring(pi_pNodeID) + m_dataSourceExtension.c_str();
+
+    if (this->DownloadBlob(dest, readSize, dataSourceURL) && readSize > 0)
+        {
+        pi_pData.resize(readSize);
+        memmove(pi_pData.data(), reinterpret_cast<char *>(dest.get()), readSize);
+        }
+
+    assert(readSize > 0); // A problem occured while downloading a blob
+    return readSize;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SMNodeGroup::SaveNode(const uint64_t & id, Json::Value * header)
+    {
+    if (m_groupCachePtr == nullptr)
+        {
+        assert(!"Cannot save node header in invalid group cache");
+        return ERROR;
+        }
+    return m_groupCachePtr->AddNodeToGroupCache(this, id, header);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroup::WaitFor(SMNodeHeader& pi_pNode)
     {
     std::unique_lock<mutex> lk(m_groupMutex);
@@ -598,6 +771,9 @@ void SMNodeGroup::WaitFor(SMNodeHeader& pi_pNode)
     }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNodeID, const Json::Value& tile)
     {
     if (!m_tileTreeMap.empty())
@@ -613,8 +789,8 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
         { 
         // We are adding the first tile in a new group
         // So keep the tile for later reference
-        m_RootTileTreeNode = tile;
-        m_tileTreeMap[nodeID] = &m_RootTileTreeNode;
+        m_tilesetRootNode = tile;
+        m_tileTreeMap[nodeID] = &m_tilesetRootNode;
 
         if (m_ParentGroup.IsValid())
             {
@@ -625,7 +801,7 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
             auto& parentNodeTileChildren = parentNodeTile["children"];
 
             // Keep the index before updating the parent tile
-            m_RootTileTreeNode["index"] = parentNodeTileChildren.size();
+            m_tilesetRootNode["index"] = parentNodeTileChildren.size();
 
             auto& childTile = parentNodeTileChildren.append(tile);
             childTile.removeMember("children");
@@ -636,12 +812,15 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroup::MergeChild(SMNodeGroupPtr child)
     {
     assert(child->m_ParentGroup == this);
-    assert(child->m_RootTileTreeNode.isMember("SMHeader") && child->m_RootTileTreeNode["SMHeader"].isMember("parentID"));
+    assert(child->m_tilesetRootNode.isMember("SMHeader") && child->m_tilesetRootNode["SMHeader"].isMember("parentID"));
 
-    auto& childTileTreeNode = child->m_RootTileTreeNode;
+    auto& childTileTreeNode = child->m_tilesetRootNode;
     auto childIndex = childTileTreeNode["index"].asUInt();
     childTileTreeNode.removeMember("index");
 
@@ -654,21 +833,38 @@ void SMNodeGroup::MergeChild(SMNodeGroupPtr child)
     this->m_tileTreeMap.insert(child->m_tileTreeMap.begin(), child->m_tileTreeMap.end());
     }
 
-void SMGroupCache::AddNodeToGroupCache(SMNodeGroupPtr group, const uint64_t & id, Json::Value * header)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SMGroupCache::AddNodeToGroupCache(SMNodeGroupPtr group, const uint64_t & id, Json::Value * header)
     {
     std::lock_guard<std::mutex> lock(m_cacheMutex);
 
-    m_nodeHeadersPtr->operator[](id) = header;
+    // Check cache state
+    if (m_nodeHeadersPtr == nullptr || m_downloadedGroupsPtr == nullptr || m_downloadedGroupsPtr->count(id) > 0)
+        {
+        assert(!"Cannot add group to cache because cache is not setup properly or adding will corrupt existing data");
+        return ERROR;
+        }
 
-    assert(m_downloadedGroupsPtr != nullptr && m_downloadedGroupsPtr->count(id) == 0);
+    // Add to cache
+    m_nodeHeadersPtr->operator[](id) = header;
     m_downloadedGroupsPtr->operator[](id) = group;
+
+    return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 SMGroupCache::SMGroupCache(node_header_cache* nodeCache)
     : m_nodeHeadersPtr(nodeCache),
       m_downloadedGroupsPtr(std::make_shared<group_cache>())
     {}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 SMNodeGroupPtr SMGroupCache::GetGroupForNodeIDFromCache(const uint64_t& nodeId)
     {
     std::lock_guard<std::mutex> lock(m_cacheMutex);
@@ -676,6 +872,9 @@ SMNodeGroupPtr SMGroupCache::GetGroupForNodeIDFromCache(const uint64_t& nodeId)
     return m_downloadedGroupsPtr->operator[](nodeId);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMGroupCache::RemoveNodeFromCache(const uint64_t & nodeId)
     {
     std::lock_guard<std::mutex> lock(m_cacheMutex);
@@ -683,21 +882,42 @@ void SMGroupCache::RemoveNodeFromCache(const uint64_t & nodeId)
     m_downloadedGroupsPtr->erase(nodeId);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value * SMGroupCache::GetNodeFromCache(const uint64_t & nodeId)
+    {
+    assert(m_nodeHeadersPtr->count(nodeId) == 1); // Node was not properly downloaded
+    return m_nodeHeadersPtr->operator[](nodeId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 SMGroupCache::Ptr SMGroupCache::Create(node_header_cache* nodeCache)
     {
     return new SMGroupCache(nodeCache);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account)
     : m_strategyType(strategy),
       m_account(account)
     {}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceAccount * SMGroupGlobalParameters::GetDataSourceAccount()
     {
     return m_account;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account)
     {
     return new SMGroupGlobalParameters(strategy, account);

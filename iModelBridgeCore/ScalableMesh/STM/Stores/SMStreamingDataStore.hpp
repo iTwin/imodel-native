@@ -616,9 +616,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
             headerSize = readSize;
 
-            reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader);
-
-            if (!masterHeader.isMember("rootNodeBlockID"))
+            if (!reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader)
+                || !masterHeader.isMember("rootNodeBlockID"))
                 {
                 assert(false); // error reading Master Header
                 return 0;
@@ -834,7 +833,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
     {
     block["id"] = ConvertBlockID(blockID);
-    //block["resolution"] = (ISMStore::NodeID)header->m_level;
+    block["level"] = (ISMStore::NodeID)header->m_level;
     block["parentID"] = header->m_parentNodeID.IsValid() ? ConvertBlockID(header->m_parentNodeID) : ISMStore::GetNullNodeID();
     //block["isLeaf"] = header->m_IsLeaf;
     //block["isBranched"] = header->m_IsBranched;
@@ -1039,11 +1038,16 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         {
         if (s_stream_using_cesium_3d_tiles_format || s_import_from_bim_exported_cesium_3d_tiles)
             {
-            //auto group = this->GetGroup(blockID);
-            //ReadNodeHeaderFromJSON(header, group->GetJsonHeader(blockID.m_integerID));
-            m_CesiumGroup->DownloadNodeHeader(blockID.m_integerID);
-            auto jsonHeader = m_nodeHeaderCache[blockID.m_integerID];
-            assert(jsonHeader != nullptr && !jsonHeader->isNull());
+            auto jsonHeader = m_CesiumGroup->DownloadNodeHeader(blockID.m_integerID);
+            if (jsonHeader == nullptr || jsonHeader->isNull())
+                {
+                // return a valid (empty) node header
+                header->m_apSubNodeID.clear();
+                header->m_nodeExtent = ExtentOp<EXTENT>::Create(0, 0, 0, 0, 0, 0);
+                header->m_contentExtent = header->m_nodeExtent;
+                header->m_totalCount = 0;
+                return 1;
+                }
             ReadNodeHeaderFromJSON(header, *jsonHeader);
             }
         else
@@ -1064,9 +1068,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
 
         Json::Reader    reader;
         Json::Value     cesiumHeader;
-        reader.parse(reinterpret_cast<char *>(headerData.get()), reinterpret_cast<char *>(&(headerData.get()[headerSize])), cesiumHeader);
-
-        if (!(cesiumHeader.isMember("root") && cesiumHeader["root"].isMember("SMHeader")))
+        if (!reader.parse(reinterpret_cast<char *>(headerData.get()), reinterpret_cast<char *>(&(headerData.get()[headerSize])), cesiumHeader)
+            || !(cesiumHeader.isMember("root") && cesiumHeader["root"].isMember("SMHeader")))
             {
             assert(false); // error reading Master Header
             return 0;
@@ -1337,7 +1340,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         //header->m_uvID = nodeHeader["uvID"].asUInt();
         header->m_uvID = header->m_id; // Same as node ID?
 
-        uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
+        uint64_t parentNodeID = nodeHeader["parentID"].asUInt64();
         header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
 
         header->m_geometricResolution = cesiumNodeHeader["geometricError"].asFloat();
@@ -1490,7 +1493,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             int childInd = 0;
             for (auto& child : children)
                 {
-                header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMHeader"]["id"].asUInt());
+                if (child.isMember("SMHeader"))
+                    header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMHeader"]["id"].asUInt());
+                else
+                    header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMRootID"].asUInt());
                 }
             header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
             }
@@ -1614,16 +1620,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
     dataSource = this->InitializeDataSource(dest, destSize);
-    if (dataSource == nullptr)
-        return;
-
-    if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-        return;
-
-    if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
-        return;
-
-    if (dataSource->close().isFailed())
+    if (dataSource == nullptr ||
+        dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed() ||
+        dataSource->read(dest.get(), destSize, readSize, 0).isFailed()  ||
+        dataSource->close().isFailed())
         return;
 
     if (readSize > 0)
@@ -2346,8 +2346,6 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
 
 inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, const size_t& cesiumDataSize)
     {
-    Json::Reader    reader;
-    Json::Value     cesiumBatchTableHeader;
     auto batchTable = cesiumData;
     uint32_t version = *(uint32_t*)(batchTable + sizeof(uint32_t));
     assert(version == 1);
@@ -2367,9 +2365,14 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     uint32_t gltfJsonHeaderSize = *(uint32_t*)(batchTable + gltfOffset + 3 * sizeof(uint32_t));
     uint32_t gltfBinaryStartOffset = gltfJsonStartOffset + gltfJsonHeaderSize;
 
+    Json::Reader    reader;
     const char* beginGLTFJsonHeader = reinterpret_cast<const char *>(batchTable + gltfJsonStartOffset);
     const char* endGLTFJsonHeader = reinterpret_cast<const char *>(&(beginGLTFJsonHeader[gltfJsonHeaderSize]));
-    reader.parse(beginGLTFJsonHeader, endGLTFJsonHeader, cesiumBatchTableHeader);
+    Json::Value     cesiumBatchTableHeader;
+    if (!reader.parse(beginGLTFJsonHeader, endGLTFJsonHeader, cesiumBatchTableHeader))
+        {
+        assert(!"Could not parse b3dm binary batch table header into json");
+        }
 
     // Cesium accessors to data are taken from the gltf Json header : scene->nodes->meshes->primitives->attributes->{POSITION, TEXCOORD, indices, material}
     auto sceneName = cesiumBatchTableHeader["scene"].asString();

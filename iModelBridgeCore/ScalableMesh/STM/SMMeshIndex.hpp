@@ -457,15 +457,19 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     static std::atomic<uint64_t> loadDataTime = 0;
     static std::atomic<uint64_t> convertTime = 0;
     static std::atomic<uint64_t> storeTime = 0;
+    static std::atomic<uint64_t> nbProcessedNodes = 0;
+    static std::atomic<uint64_t> nbNodes = 0;
 
+    ++nbNodes;
 
     if (!IsLoaded())
         Load();
 
+    static const int nbThreads = 5;
+
     typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
     static Distribution_Type::Ptr distributor (new Distribution_Type([&pi_pDataStore, sourceGCS, destinationGCS](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
-//#ifndef VANCOUVER_API
             // Gather all data in one place
             double t = clock();
             node->GetPointsPtr();
@@ -506,10 +510,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
         //std::wcout << "[" << std::this_thread::get_id() << "] Done publishing --> " << node->m_nodeId << "    addr: "<< node <<"   ref count: " << node->GetRefCount() << std::endl;
         //}
         node = nullptr;
-//#else
-//        assert(false && "Make this compile on Vancouver!");
-//#endif
-        }, 7));
+        }, nbThreads));
 
     static auto loadChildExtentHelper = [](SMPointIndexNode<POINT, EXTENT>* parent, SMPointIndexNode<POINT, EXTENT>* child) ->void
         {
@@ -540,6 +541,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
 
     if (m_pSubNodeNoSplit != nullptr)
         {
+        assert(GetNumberOfSubNodesOnSplit() == 1);
         static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS);
         loadChildExtentHelper(this, this->m_pSubNodeNoSplit.GetPtr());
         //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
@@ -547,8 +549,10 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
         }
     else
         {
+        assert(GetNumberOfSubNodesOnSplit() > 1 || this->IsLeaf());
         for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
             {
+            assert(this->m_apSubNodes[indexNode] != nullptr); // A sub node will be skipped
             if (this->m_apSubNodes[indexNode] != nullptr)
                 {
                 static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS);
@@ -562,17 +566,23 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     if (this->m_nodeHeader.m_nodeCount > 0)
         {
         distributor->AddWorkItem(this/*, false*/);
+        ++nbProcessedNodes;
         }
 
     if (this->m_nodeHeader.m_level == 0)
         {
         //distributor->Go();
-        std::cout << "Time to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
+        std::cout << "\nTime to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
         distributor = nullptr;
-        std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / 7 << std::endl;
-        std::cout << "Time to convert data: " << (double)convertTime / CLOCKS_PER_SEC / 7 << std::endl;
-        std::cout << "Time to store data: " << (double)storeTime / CLOCKS_PER_SEC / 7 << std::endl;
-        std::cout << "Total time: " << (double)(clock() - startTime) / CLOCKS_PER_SEC << std::endl;
+        std::cout << "\nTime to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / nbThreads << std::endl;
+        std::cout << "Time to convert data: " << (double)convertTime / CLOCKS_PER_SEC / nbThreads << std::endl;
+        std::cout << "Time to store data: " << (double)storeTime / CLOCKS_PER_SEC / nbThreads << std::endl;
+        auto tTime = (double)(clock() - startTime) / CLOCKS_PER_SEC;
+        std::cout << "Total time: " << tTime << std::endl;
+        std::cout << "Number processed nodes: " << nbProcessedNodes << std::endl;
+        std::cout << "Total number of nodes: " << nbNodes << std::endl;
+        std::cout << "Convert speed (nodes/sec): " << nbNodes / tTime << std::endl;
+
         }
     }
 
@@ -4774,7 +4784,14 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
 
     if (m_mesher3d != NULL)
         delete m_mesher3d;
-    Store();
+
+    try {
+        Store();
+        }
+    catch (...)
+        {
+        assert(!"Cannot store mesh index");
+        }
 
     m_createdNodeMap.clear();
 
