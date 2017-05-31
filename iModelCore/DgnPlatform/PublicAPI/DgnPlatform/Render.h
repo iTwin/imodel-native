@@ -1566,12 +1566,42 @@ public:
 //=======================================================================================
 struct ColorIndex
 {
-    uint32_t const* m_colors = nullptr; // RGBT color values (see ColorDef), or nullptr if uniform color
-    uint16_t const* m_indices = nullptr; // per-vertex indices into m_colors
-    uint16_t        m_numColors = 0;    // Number of colors in m_colors, if m_colors is non-null. Otherwise, at least 2 (non-uniform color)
-    bool            m_hasAlpha = false; // true if any value in m_colors has transparency
+    struct NonUniform
+    {
+        uint32_t const* m_colors; // RGBT color values (see ColorDef), or nullptr if uniform color.
+        uint16_t const* m_indices; // per-vertex indices into m_colors
+        bool            m_hasAlpha; // true if any value in m_colors has transparency
 
-    void Reset() { *this = ColorIndex(); }
+        void Set(uint32_t const* colors, uint16_t const* indices, bool hasAlpha)
+            {
+            m_colors = colors;
+            m_indices = indices;
+            m_hasAlpha = hasAlpha;
+            }
+    };
+
+    union
+    {
+        uint32_t    m_uniform;    // if m_numColors == 1
+        NonUniform  m_nonUniform; // if m_numColors > 1
+    };
+
+    uint16_t        m_numColors;
+
+    ColorIndex() { Reset(); }
+
+    bool IsUniform() const { BeAssert(m_numColors > 0); return 1 == m_numColors; }
+    bool HasAlpha() const { return IsUniform() ? 0 != (m_uniform & 0xff000000) : m_nonUniform.m_hasAlpha; }
+
+    void Reset() { SetUniform(ColorDef::Black()); }
+    void SetUniform(ColorDef color) { SetUniform(color.GetValue()); }
+    void SetUniform(uint32_t color) { m_numColors = 1; m_uniform = color; }
+    void SetNonUniform(uint16_t numColors, uint32_t const* colors, uint16_t const* indices, bool hasAlpha)
+        {
+        BeAssert(numColors > 1);
+        m_numColors = numColors;
+        m_nonUniform.Set(colors, indices, hasAlpha);
+        }
 };
 
 //=======================================================================================

@@ -503,8 +503,9 @@ uint32_t Mesh::AddVertex(QVertex3dCR vert, QPoint3dCP normal, DPoint2dCP param, 
                                                                                                                  
     if (nullptr != param)
         m_uvParams.push_back(toFPoint2d(*param));
-    else
-        insertVertexAttribute(m_colors, m_colorTable, fillColor, m_verts);
+
+    insertVertexAttribute(m_colors, m_colorTable, fillColor, m_verts);
+    BeAssert(nullptr == param || m_colorTable.IsUniform());
 
     return index;
     }
@@ -1485,19 +1486,24 @@ uint16_t ColorTable::GetIndex(uint32_t color)
 void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvector<uint16_t> const& indices) const
     {
     index.Reset();
-    if (IsUniform() || empty())
-        return;
+    if (empty())
+        {
+        BeAssert(false && "empty color table");
+        }
+    else if (IsUniform())
+        {
+        index.SetUniform(m_map.begin()->first);
+        }
+    else
+        {
+        BeAssert(!indices.empty());
 
-    BeAssert(!indices.empty());
+        colors.resize(size());
+        for (auto const& kvp : *this)
+            colors[kvp.second] = kvp.first;
 
-    colors.resize(size());
-    for (auto const& kvp : *this)
-        colors[kvp.second] = kvp.first;
-
-    index.m_hasAlpha = m_hasAlpha;
-    index.m_colors = colors.data();
-    index.m_numColors = GetNumIndices();
-    index.m_indices = indices.data();
+        index.SetNonUniform(GetNumIndices(), colors.data(), indices.data(), m_hasAlpha);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
