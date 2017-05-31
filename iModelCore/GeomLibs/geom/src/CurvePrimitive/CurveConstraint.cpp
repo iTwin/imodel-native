@@ -84,6 +84,7 @@ ConstraintMatchTable () : m_numRequested(0), m_numMatch (0) {}
 
 ConstraintMatchTable (CurveConstraint::Type type0) : m_numRequested(1), m_numMatch (0)
     {
+    m_numRequested = 1; // *** NEEDS WORK: This is to work around what looks like a bug in clang on Linux. If I don't do this, I get: CurveConstraint.cpp:76:10: error: private field 'm_numRequested' is not used [-Werror,-Wunused-private-field]
     m_type[0] = type0;
     }
 

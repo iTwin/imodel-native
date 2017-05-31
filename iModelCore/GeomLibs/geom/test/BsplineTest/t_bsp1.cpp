@@ -536,7 +536,7 @@ TEST(Spiral,OffsetConstruction0)
                                 frame1, 0.0, 1.0);
 
         auto endRay2 = spiral2->FractionToPointAndUnitTangent (1.0).Value ();
-        DPoint3d center2 = endRay2.origin + r1 * DVec3d::FromUnitPerpendicularXY (endRay2.direction);
+        //DPoint3d center2 = endRay2.origin + r1 * DVec3d::FromUnitPerpendicularXY (endRay2.direction);
         DEllipse3d arc2 = DEllipse3d::FromStartTangentNormalRadiusSweep (endRay2.origin, endRay2.direction, DVec3d::UnitZ (), r1, sweep0);
 
         // translate the whole spiral+arc so the arc midpoint is on midray0
