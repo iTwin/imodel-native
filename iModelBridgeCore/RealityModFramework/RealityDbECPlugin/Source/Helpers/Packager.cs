@@ -364,6 +364,12 @@ namespace IndexECPlugin.Source.Helpers
 
                 GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
 
+                if ( genericInfo.URI == null )
+                    {
+                    //This should not happen, as the database entries should always contain the URI. Just to make sure, we'll skip these entries.
+                    continue;
+                    }
+
                 if ( (major == 1) && (genericInfo.Streamed == true) )
                     {
                     //We don't put streamed data in a v1 package
@@ -636,7 +642,7 @@ namespace IndexECPlugin.Source.Helpers
 
             long fileSize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
             genericInfo.FileSize = (fileSize < 0) ? 0 : (ulong) fileSize;
-            genericInfo.URI = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
+            genericInfo.URI = (firstSpatialDataSource.GetPropertyValue("MainURL") == null || firstSpatialDataSource.GetPropertyValue("MainURL").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
             genericInfo.ParameterizedURI = (firstSpatialDataSource.GetPropertyValue("ParameterizedURL") == null || firstSpatialDataSource.GetPropertyValue("ParameterizedURL").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("ParameterizedURL").NativeValue;
             genericInfo.Type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
             genericInfo.Streamed = (firstSpatialDataSource.GetPropertyValue("Streamed") == null || firstSpatialDataSource.GetPropertyValue("Streamed").IsNull) ? false : (bool) firstSpatialDataSource.GetPropertyValue("Streamed").NativeValue;
@@ -950,6 +956,12 @@ namespace IndexECPlugin.Source.Helpers
 
                 GenericInfo genericInfo = ExtractGenericInfo(entity, subAPIRequestedEntities.First(e => e.ID == entity.InstanceId));
 
+                if(genericInfo.URI == null)
+                    {
+                    //The URI can be null in some entries of the rds subAPI. We skip these and don't include them in the package
+                    continue;
+                    }
+
                 if ( (major == 1) && (genericInfo.Streamed == true) )
                     {
                     //We don't put streamed data in a v1 package
@@ -1245,7 +1257,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="schema">The schema containing the stats ECClass</param>
         /// <param name="dbConnectionCreator">The factory creating the database connection.</param>
         /// <returns></returns>
-        public static List<IECInstance> ExtractStats (ECQuery query, string connectionString, IECSchema schema, IDbConnectionCreator dbConnectionCreator)  //TODO: add dependancy injection here
+        public static List<IECInstance> ExtractStats (ECQuery query, string connectionString, IECSchema schema, IDbConnectionCreator dbConnectionCreator)
             {
             List<IECInstance> StatsList = new List<IECInstance>();
 
@@ -1304,7 +1316,7 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 throw new UserFriendlyException("Please specify both start and end times.");
                 }
-            using ( IDbConnection sqlConnection = dbConnectionCreator.CreateDbConnection(connectionString) )    //TODO: use injected dependancy here
+            using ( IDbConnection sqlConnection = dbConnectionCreator.CreateDbConnection(connectionString) )
                 {
                 sqlConnection.Open();
                 using ( IDbCommand dbCommand = sqlConnection.CreateCommand() )

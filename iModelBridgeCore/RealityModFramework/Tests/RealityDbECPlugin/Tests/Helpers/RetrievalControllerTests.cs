@@ -32,6 +32,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
         private const string connectionString = "connection string";
         private const int numBytesInStream = 8192;
         private readonly byte[] bytes = Enumerable.Repeat((byte) 0xA5, numBytesInStream).ToArray();
+        private object[][] records;
 
         [SetUp]
         public void SetUp ()
@@ -45,14 +46,15 @@ namespace IndexECPlugin.Tests.Tests.Helpers
             dbCommandMock = mocks.DynamicMock<IDbCommand>();
             dbDataParameterCollection = mocks.Stub<DbParameterCollection>();
             dbDataParameterStub = mocks.Stub<IDbDataParameter>();
-            dataReaderStub = new DataReaderStub();
+
+            records = new object[1][];
+            records[0] = new object[] { bytes };
             }
 
         [Test]
         public void RetrievePackageTest ()
             {
-            dataReaderStub.CanRead = true;
-            dataReaderStub.ByteBuffer = bytes;
+            dataReaderStub = new DataReaderStub(records);
 
             SetExpectations();
 
@@ -68,8 +70,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
         [Test]
         public void RetrieveDownloadReportTest ()
             {
-            dataReaderStub.CanRead = true;
-            dataReaderStub.ByteBuffer = bytes;
+            dataReaderStub = new DataReaderStub(records);
 
             SetExpectations();
 
@@ -85,7 +86,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
         [Test]
         public void InstanceDoesNotExistExceptionTest ()
             {
-            dataReaderStub.CanRead = false;
+            dataReaderStub = new DataReaderStub(null);
 
             SetExpectations();
 

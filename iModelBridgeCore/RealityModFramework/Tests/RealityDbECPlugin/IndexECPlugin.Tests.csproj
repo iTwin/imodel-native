@@ -115,6 +115,7 @@
     <Compile Include="Tests\Helpers\SourceStringMapTests.cs" />
     <Compile Include="Tests\Helpers\TableAliasCreatorTests.cs" />
     <Compile Include="Tests\Helpers\TableDescriptorTests.cs" />
+    <Compile Include="Tests\IECInstanceExtensionTests.cs" />
     <Compile Include="Tests\IndexECPluginRDSTests.cs" />
     <Compile Include="Tests\IndexECPluginUSGSTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -125,9 +126,11 @@
     <Compile Include="Tests\Helpers\MimicTableWriterTests.cs" />
     <Compile Include="Tests\Helpers\PackagerTests.cs" />
     <Compile Include="Tests\Helpers\IDbQuerierTests.cs" />
+    <Compile Include="Tests\JTokenExtensionTests.cs" />
     <Compile Include="Tests\PolygonModelTests.cs" />
     <Compile Include="Tests\SQLQueryBuilder\GenericParamNameValueMapTests.cs" />
     <Compile Include="Tests\SQLQueryBuilder\SQLQueryBuilderTests.cs" />
+    <Compile Include="Tests\SQLQueryBuilder\SQLServerMergeUpsertStatementBuilderTests.cs" />
     <Compile Include="Tests\SQLQueryBuilder\StandardSQLQueryBuilderTests.cs" />
     <Compile Include="Tests\SQLQueryBuilder\SqlServerParamNameValueMapTests.cs" />
     <Compile Include="Tests\SqlQueryProviderTests.cs" />

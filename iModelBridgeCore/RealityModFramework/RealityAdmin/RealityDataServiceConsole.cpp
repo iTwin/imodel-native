@@ -294,6 +294,7 @@ void RealityDataConsole::Run(BeFileName infile, BeFileName outfile)
     if(s_inputSource == nullptr || s_outputDestination == nullptr)
         return;
 
+    ConfigureServer();
     _Run();
     s_outputDestination->flush();
     (dynamic_cast<std::ifstream*>(s_inputSource))->close();
@@ -306,12 +307,23 @@ void RealityDataConsole::Run()
     {
     s_inputSource = &std::cin;
     s_outputDestination = &std::cout;
+    ConfigureServer();
+    _Run();
+    }
+
+void RealityDataConsole::Run(Utf8String server, Utf8String projectId)
+    {
+    s_inputSource = &std::cin;
+    s_outputDestination = &std::cout;
+    m_server = WSGServer(server, false);
+    RawServerResponse versionResp = RawServerResponse();
+    RealityDataService::SetServerComponents(server, m_server.GetVersion(versionResp), "S3MXECPlugin--Server", "S3MX", "", projectId);
+    DisplayInfo(Utf8PrintfString("Console started with server: %s and projectId: %s\n", server, projectId), DisplayOption::Tip);
     _Run();
     }
 
 void RealityDataConsole::_Run()
     {
-    ConfigureServer();
     while (m_lastCommand != Command::Quit)
         {
         if (m_currentNode != nullptr)
@@ -388,32 +400,48 @@ void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> resu
 void RealityDataConsole::ConfigureServer()
     {
     DisplayInfo("Welcome to the RealityDataService Navigator. Please enter your server name\n", DisplayOption::Question);
-    DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net\n  ?", DisplayOption::Question);
+    DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net,\n", DisplayOption::Question);
+    DisplayInfo("                   qa-connect-realitydataservices.bentley.com\n  ?", DisplayOption::Question);
     Utf8String server;
     std::string input;
     std::getline(*s_inputSource, input);
     server = Utf8String(input.c_str()).Trim();
-    if (server.length() == 0)
+    if (server.length() == 0 || server.EqualsI("dev"))
         server = "dev-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("qa"))
+        server = "qa-connect-realitydataservices.bentley.com";
+    else if (server.EqualsI("ll"))
+        server = "prod-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("perf"))
+        server = "perf-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("prod"))
+        server = "connect-realitydataservices.bentley.com";
+
     bool verifyCertificate = false;
-    while (1)
+    Utf8String certificatePath = "";
+
+    DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
+    Utf8String temp;
+    std::getline(*s_inputSource, input);
+    temp = Utf8String(input.c_str()).Trim();
+    if (temp.EqualsI("y"))
         {
-        DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
-        Utf8String temp;
+        verifyCertificate = true;
+        DisplayInfo("If you need to use a custom certificate file, enter the path to it now. Otherwise input blank\n ?", DisplayOption::Question);
         std::getline(*s_inputSource, input);
-        temp = Utf8String(input.c_str()).Trim();
-        if (temp.EqualsI("y"))
+        certificatePath = Utf8String(input.c_str()).Trim();
+        BeFileName fileName = BeFileName(certificatePath);
+        if (!certificatePath.empty() && !BeFileName::DoesPathExist(fileName))
             {
-            verifyCertificate = true;
-            break;
+            DisplayInfo("Could not validate specified path. Please verify that it is correct and try again\n", DisplayOption::Error);
+            return;
             }
-        else if (temp.EqualsI("n"))
-            {
-            verifyCertificate = false;
-            break;
-            }
-        else
-            DisplayInfo("invalid answer\n", DisplayOption::Error);
+        WSGRequest::GetInstance().SetCertificatePath(certificatePath.c_str());
+        }
+    else if (temp.EqualsI("quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
         }
 
     DisplayInfo("Retrieving version information. One moment...\n\n", DisplayOption::Tip);
@@ -523,14 +551,18 @@ void RealityDataConsole::ConfigureServer()
                 }
             }
 
-        if (schema.length() > 0)
+        if (schema.empty())
             {
-            RealityDataService::SetServerComponents(server, version, repo, schema);
-            m_server = WSGServer(RealityDataService::GetServerName(), verifyCertificate);
+            DisplayInfo("Server configuration failed, invalid parameters passed\n", DisplayOption::Error);
+            return;
             }
         }
+    else
+        {
+        DisplayInfo("Server configuration failed, invalid parameters passed\n", DisplayOption::Error);
+        return;
+        }
 
-    DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     DisplayInfo("ProjectId required for multiple operations. Set ProjectId now?\n", DisplayOption::Question);
     std::string str;
     std::getline(*s_inputSource, str);
@@ -540,7 +572,18 @@ void RealityDataConsole::ConfigureServer()
         return;
         }
     else if (str == "y")
-        SetProjectId();
+        {
+        DisplayInfo("Please set project id\n ?", DisplayOption::Question);
+        std::string input;
+        std::getline(*s_inputSource, input);
+        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(input.c_str()).Trim());
+        }
+    else if (verifyCertificate)
+        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
+    else
+        RealityDataService::SetServerComponents(server, version, repo, schema);
+
+    DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     }
     
 void RealityDataConsole::SetProjectId()
@@ -584,6 +627,20 @@ void RealityDataConsole::List()
 
         PrintResults(nodeStrings);
         }
+    }
+
+Utf8String ShortenVisibility(Utf8String visibility)
+    {
+    if(visibility.EqualsI("PUBLIC"))
+        return "PUB";
+    else if (visibility.EqualsI("ENTERPRISE"))
+        return "ENT";
+    else if (visibility.EqualsI("PRIVATE"))
+        return "PRV";
+    else if (visibility.EqualsI("PERMISSION"))
+        return "PRM";
+    else
+        return "---";
     }
 
 void RealityDataConsole::ListRoots()
@@ -637,7 +694,7 @@ void RealityDataConsole::ListRoots()
             owner = rData->GetOwner();
             }
 
-        subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier(), rData->GetTotalSize()));
+        subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s / %s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", ShortenVisibility(rData->GetVisibilityTag()), rData->GetIdentifier(), rData->GetTotalSize()));
 
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
 
