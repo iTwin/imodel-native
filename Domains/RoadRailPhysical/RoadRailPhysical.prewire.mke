@@ -2,7 +2,7 @@
 #
 #     $Source: RoadRailPhysical.prewire.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -10,5 +10,5 @@
 $(BuildContext)PublicAPI/RoadRailPhysical : $(_MakeFilePath)PublicAPI/RoadRailPhysical
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)ECSchemas/Domain/RoadRailPhysical.01.00.00.ecschema.xml : $(_MakeFilePath)RoadRailPhysical.01.00.00.ecschema.xml
+$(BuildContext)ECSchemas/Domain/RoadRailPhysical.ecschema.xml : $(_MakeFilePath)RoadRailPhysical.ecschema.xml
     $(LinkFirstDepToFirstTarget)

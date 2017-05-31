@@ -24,9 +24,7 @@
     <None Include="RoadRailPhysical.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="RoadRailPhysical.01.00.00.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="RoadRailPhysical.ecschema.xml" />
     <Xml Include="RoadRailPhysical.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
