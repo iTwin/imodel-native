@@ -1922,6 +1922,20 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint3dList)
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint2dList)
 
 //=======================================================================================
+//! Describes the type of fill associated with a mesh.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+enum class FillFlags : uint8_t
+{
+    ByView = 0, //!< Use element fill color, when fill enabled by view
+    Always = 1 << 0, //!< Use element fill color, even when fill is disabled by view
+    Blanking = 1 << 1, //!< Use element fill color, always rendered behind non-blanking geometry of the same element
+    Background = 1 << 2, //!< Use background color specified by view
+};
+
+ENUM_IS_FLAGS(FillFlags);
+
+//=======================================================================================
 //! Information needed to draw a triangle mesh
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
@@ -1940,6 +1954,7 @@ struct TriMeshArgs
     FeatureIndex        m_features;
     QPoint3d::Params    m_pointParams;
     MaterialPtr         m_material;
+    FillFlags           m_fillFlags = FillFlags::ByView;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };

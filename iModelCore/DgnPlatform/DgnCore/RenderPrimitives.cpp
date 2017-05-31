@@ -166,6 +166,100 @@ public:
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+NewDisplayParams::NewDisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams)
+    {
+    m_fillColor = gfParams.GetFillColor();
+    m_lineColor = gfParams.GetLineColor();
+
+    if (nullptr != geomParams)
+        {
+        m_categoryId = geomParams->GetCategoryId();
+        m_subCategoryId = geomParams->GetSubCategoryId();
+        m_class = geomParams->GetGeometryClass();
+        }
+
+    switch (type)
+        {
+        case Type::Mesh:
+            m_fillColor = gfParams.GetFillColor();
+            m_material = gfParams.GetMaterial();
+            m_gradient = gfParams.GetGradientSymb();
+
+            // We need these as well as line color for edges. Unfortunate side effect: may cause mesh params to compare inequal despite mesh itself not requiring these.
+            m_width = gfParams.GetWidth();
+            m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels());
+
+            if (gfParams.IsBlankingRegion())
+                m_fillFlags = FillFlags::Blanking;
+
+            if (nullptr != geomParams)
+                {
+                m_materialId = geomParams->GetMaterialId();
+                if (FillDisplay::Always == geomParams->GetFillDisplay())
+                    m_fillFlags = m_fillFlags | FillFlags::Always;
+
+                if (geomParams->IsFillColorFromViewBackground())
+                    m_fillFlags = m_fillFlags | FillFlags::Background;
+                }
+
+            if (m_material.IsNull() || !m_material->HasTextures()) // textures baked into material...
+                m_resolved = !m_materialId.IsValid() && m_gradient.IsNull();
+
+            break;
+        case Type::Linear:
+            m_width = gfParams.GetWidth();
+            m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels());
+            break;
+        case Type::Text:
+            m_ignoreLighting = true;
+            m_fillFlags = FillFlags::Always;
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+NewDisplayParamsCPtr NewDisplayParams::Clone() const
+    {
+    BeAssert(m_resolved);
+    return new NewDisplayParams(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void NewDisplayParams::Resolve(DgnDbR db, System& sys)
+    {
+    if (m_resolved)
+        return;
+
+    if (m_gradient.IsValid())
+        m_texture = sys._GetTexture(*m_gradient, db);
+
+    if (m_materialId.IsValid())
+        {
+        m_dgnMaterial = DgnMaterial::Get(db, m_materialId);
+        if (m_dgnMaterial.IsValid())
+            {
+            // This will also be used later by MeshBuilder...
+            m_renderingAsset = &m_dgnMaterial->GetRenderingAsset();
+            if (m_texture.IsNull())
+                {
+                DgnTextureId texId;
+                auto texMap = m_renderingAsset->GetPatternMap();
+                if (texMap.IsValid() && texMap.GetTextureId().IsValid())
+                    m_texture = sys._GetTexture(texMap.GetTextureId(), db);
+                }
+            }
+        }
+
+    m_resolved = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayParams::DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting)
@@ -190,11 +284,101 @@ template<typename T> static int compareValues(T const& lhs, T const& rhs)
     return lhs == rhs ? 0 : (lhs < rhs ? -1 : 1);
     }
 
-#define TEST_LESS_THAN(LHS, RHS) \
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> int compareValues(bool const& lhs, bool const& rhs)
+    {
+    return compareValues(static_cast<uint8_t>(lhs), static_cast<uint8_t>(rhs));
+    }
+
+#define TEST_LESS_THAN(MEMBER) \
     { \
-    int cmp = compareValues(LHS, RHS); \
+    int cmp = compareValues(MEMBER, rhs.MEMBER); \
     if (0 != cmp) \
         return cmp < 0; \
+    }
+
+#define TEST_EQUAL(MEMBER) if (MEMBER != rhs.MEMBER) return false
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NewDisplayParams::IsLessThan(NewDisplayParamsCR rhs, ComparePurpose purpose) const
+    {
+    if (&rhs == this)
+        return false;
+
+    TEST_LESS_THAN(IgnoresLighting());
+    TEST_LESS_THAN(GetLineWidth());
+    TEST_LESS_THAN(GetMaterialId());
+    TEST_LESS_THAN(GetLinePixels());
+    TEST_LESS_THAN(GetFillFlags());
+
+    if (m_resolved && rhs.m_resolved)
+        {
+        TEST_LESS_THAN(GetTexture());
+        }
+    else if (m_gradient.get() != rhs.m_gradient.get())
+        {
+        if (m_gradient.IsNull() || rhs.m_gradient.IsNull() || !(*m_gradient == *rhs.m_gradient))
+            return m_gradient.get() < rhs.m_gradient.get();
+        }
+
+    if (ComparePurpose::Merge == purpose)
+        {
+        TEST_LESS_THAN(HasFillTransparency());
+        TEST_LESS_THAN(HasLineTransparency());
+        }
+
+    TEST_LESS_THAN(GetFillColor());
+    TEST_LESS_THAN(GetLineColor());
+    TEST_LESS_THAN(GetCategoryId().GetValueUnchecked());
+    TEST_LESS_THAN(GetSubCategoryId().GetValueUnchecked());
+    TEST_LESS_THAN(GetClass());
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NewDisplayParams::IsEqualTo(NewDisplayParamsCR rhs, ComparePurpose purpose) const
+    {
+    if (&rhs == this)
+        return true;
+
+    TEST_EQUAL(IgnoresLighting());
+    TEST_EQUAL(GetLineWidth());
+    TEST_EQUAL(GetMaterialId().GetValueUnchecked());
+    TEST_EQUAL(GetLinePixels());
+    TEST_EQUAL(GetFillFlags());
+
+    if (m_resolved && rhs.m_resolved)
+        {
+        TEST_EQUAL(GetTexture());
+        }
+    else
+        {
+        if (m_gradient.IsNull() != rhs.m_gradient.IsNull())
+            return false;
+        else if (m_gradient.IsValid() && m_gradient.get() != rhs.m_gradient.get() && !(*m_gradient == *rhs.m_gradient))
+            return false;
+        }
+
+    if (ComparePurpose::Merge == purpose)
+        {
+        TEST_EQUAL(HasFillTransparency());
+        TEST_EQUAL(HasLineTransparency());
+        }
+
+    TEST_EQUAL(GetFillColor());
+    TEST_EQUAL(GetLineColor());
+    TEST_EQUAL(GetCategoryId().GetValueUnchecked());
+    TEST_EQUAL(GetSubCategoryId().GetValueUnchecked());
+    TEST_EQUAL(GetClass());
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,9 +392,9 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     if (GetIgnoreLighting() != rhs.GetIgnoreLighting())
         return GetIgnoreLighting();
 
-    TEST_LESS_THAN(GetRasterWidth(), rhs.GetRasterWidth());
-    TEST_LESS_THAN(GetMaterialId().GetValueUnchecked(), rhs.GetMaterialId().GetValueUnchecked());
-    TEST_LESS_THAN(GetLinePixels(), rhs.GetLinePixels());
+    TEST_LESS_THAN(GetRasterWidth());
+    TEST_LESS_THAN(GetMaterialId().GetValueUnchecked());
+    TEST_LESS_THAN(GetLinePixels());
 
     if (m_isTextured != rhs.m_isTextured && m_isTextured != IsTextured::Maybe)
         return m_isTextured < rhs.m_isTextured;
@@ -227,15 +411,13 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         return (HasTransparency() != rhs.HasTransparency()) && HasTransparency();
         }
 
-    TEST_LESS_THAN(GetFillColor(), rhs.GetFillColor());
-    TEST_LESS_THAN(GetCategoryId().GetValueUnchecked(), rhs.GetCategoryId().GetValueUnchecked());
-    TEST_LESS_THAN(GetSubCategoryId().GetValueUnchecked(), rhs.GetSubCategoryId().GetValueUnchecked());
-    TEST_LESS_THAN(static_cast<uint32_t>(GetClass()), static_cast<uint32_t>(rhs.GetClass()));
+    TEST_LESS_THAN(GetFillColor());
+    TEST_LESS_THAN(GetCategoryId().GetValueUnchecked());
+    TEST_LESS_THAN(GetSubCategoryId().GetValueUnchecked());
+    TEST_LESS_THAN(GetClass());
 
     return false;
     }
-
-#define TEST_EQUAL(MEMBER) if (MEMBER != rhs.MEMBER) return false
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
@@ -290,6 +472,25 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsCR toFind)
     auto iter = m_set.find(pToFind);
     if (m_set.end() == iter)
         iter = m_set.insert(toFind.Clone()).first;
+
+    return **iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+NewDisplayParamsCR NewDisplayParamsCache::Get(NewDisplayParamsR toFind)
+    {
+    BeAssert(0 == toFind.GetRefCount()); // allocated on stack...
+    toFind.AddRef();
+    NewDisplayParamsCPtr pToFind(&toFind);
+    auto iter = m_set.find(pToFind);
+    if (m_set.end() == iter)
+        {
+        toFind.Resolve(m_db, m_system);
+        BeAssert(toFind.m_resolved);
+        iter = m_set.insert(toFind.Clone()).first;
+        }
 
     return **iter;
     }

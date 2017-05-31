@@ -18,6 +18,7 @@
 
 BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(NewDisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
@@ -41,6 +42,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(QVertex3d);
 
+DEFINE_REF_COUNTED_PTR(NewDisplayParams);
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(MeshPart);
 DEFINE_REF_COUNTED_PTR(Mesh);
@@ -82,6 +84,88 @@ struct GeometryOptions
         : m_normalMode(normals), m_surfaces(surfaces) { }
 
     bool WantSurfacesOnly() const { return SurfacesOnly::Yes == m_surfaces; }
+};
+
+//=======================================================================================
+//! Describes the appearance of a Geometry.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct NewDisplayParams : RefCountedBase
+{
+    friend struct NewDisplayParamsCache;
+private:
+    DgnCategoryId       m_categoryId;
+    DgnSubCategoryId    m_subCategoryId;
+    TexturePtr          m_texture; // meshes only
+    MaterialPtr         m_material; // meshes only
+    DgnMaterialCPtr     m_dgnMaterial;
+    RenderingAssetCP    m_renderingAsset = nullptr;
+    GradientSymbCPtr    m_gradient;
+    DgnMaterialId       m_materialId;
+    ColorDef            m_lineColor = ColorDef::White(); // all types of geometry (edge color for meshes)
+    ColorDef            m_fillColor = ColorDef::White(); // meshes only
+    uint32_t            m_width = 0; // linear and mesh (edges)
+    LinePixels          m_linePixels = LinePixels::Solid; // linear and mesh (edges)
+    FillFlags           m_fillFlags = FillFlags::ByView; // meshes only
+    DgnGeometryClass    m_class = DgnGeometryClass::Primary;
+    bool                m_ignoreLighting = false; // always true for text and linear geometry; true for meshes only if normals not desired
+    bool                m_resolved = true;
+
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
+
+    NewDisplayParamsCPtr Clone() const;
+
+    enum class Type { Mesh, Linear, Text };
+    
+    DGNPLATFORM_EXPORT NewDisplayParams(Type, GraphicParamsCR, GeometryParamsCP);
+    NewDisplayParams(NewDisplayParamsCR rhs) = default;
+    void Resolve(DgnDbR, System&);
+public:
+    ColorDef GetFillColorDef() const { return m_fillColor; }
+    uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
+    ColorDef GetLineColorDef() const { return m_lineColor; }
+    uint32_t GetLineColor() const { return GetLineColorDef().GetValue(); }
+
+    TextureP GetTexture() const { return m_texture.get(); }
+    MaterialP GetMaterial() const { return m_material.get(); }
+    uint32_t GetLineWidth() const { return m_width; }
+    LinePixels GetLinePixels() const { return m_linePixels; }
+    FillFlags GetFillFlags() const { return m_fillFlags; }
+
+    DgnGeometryClass GetClass() const { return m_class; }
+    DgnCategoryId GetCategoryId() const { return m_categoryId; }
+    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
+    DgnMaterialId GetMaterialId() const { return m_materialId; }
+    RenderingAssetCP GetRenderingAsset() const { return m_renderingAsset; }
+
+    bool IgnoresLighting() const { return m_ignoreLighting; }
+    bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
+    bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
+    bool IsTextured() const { return nullptr != GetTexture(); }
+
+    enum class ComparePurpose
+    {
+        Merge,  //!< ignores category, subcategory, class, and considers colors equivalent if both have or both lack transparency
+        Strict  //!< compares all members
+    };
+
+    DGNPLATFORM_EXPORT bool IsLessThan(NewDisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
+    DGNPLATFORM_EXPORT bool IsEqualTo(NewDisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
+
+    static NewDisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, DgnDbR db, System& sys)
+        {
+        NewDisplayParamsPtr dp = new NewDisplayParams(Type::Mesh, gf, geom);
+        dp->Resolve(db, sys);
+        return dp;
+        }
+    static NewDisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
+        {
+        return new NewDisplayParams(Type::Linear, gf, geom);
+        }
+    static NewDisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom)
+        {
+        return new NewDisplayParams(Type::Text, gf, geom);
+        }
 };
 
 //=======================================================================================
@@ -186,6 +270,38 @@ public:
         {
         return Get(DisplayParams(graphicParams, geomParams, ignoreLighting));
         }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct NewDisplayParamsCache
+{
+private:
+    struct Comparator
+    {
+        bool operator()(NewDisplayParamsCPtr const& lhs, NewDisplayParamsCPtr const& rhs) const
+            {
+            return lhs->IsLessThan(*rhs);
+            }
+    };
+
+    typedef bset<NewDisplayParamsCPtr, Comparator> Set;
+
+    Set         m_set;
+    DgnDbR      m_db;
+    System&     m_system;
+
+    DGNPLATFORM_EXPORT NewDisplayParamsCR Get(NewDisplayParamsR);
+    NewDisplayParamsCR Get(NewDisplayParams::Type type, GraphicParamsCR gf, GeometryParamsCP geom)
+        {
+        NewDisplayParams ndp(type, gf, geom);
+        return Get(ndp);
+        }
+public:
+    NewDisplayParamsCR GetForMesh(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(NewDisplayParams::Type::Mesh, gf, geom); }
+    NewDisplayParamsCR GetForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(NewDisplayParams::Type::Linear, gf, geom); }
+    NewDisplayParamsCR GetForText(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(NewDisplayParams::Type::Text, gf, geom); }
 };
 
 //=======================================================================================
