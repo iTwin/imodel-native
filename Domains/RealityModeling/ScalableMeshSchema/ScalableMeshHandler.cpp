@@ -864,8 +864,7 @@ void ScalableMeshModel::ClearAllDisplayMem()
     ClearProgressiveQueriesInfo();
     m_currentDrawingInfoPtr = nullptr;
     m_progressiveQueryEngine = nullptr;
-    m_smPtr->RemoveAllDisplayData();
-    m_clearAllDisplayMem = false;
+    m_smPtr->RemoveAllDisplayData();    
     RefreshClips();
     }
 
