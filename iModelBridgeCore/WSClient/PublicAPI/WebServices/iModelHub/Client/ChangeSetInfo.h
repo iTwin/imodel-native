@@ -46,6 +46,7 @@ private:
     BeSQLite::BeBriefcaseId m_briefcaseId;
     ContainingChanges       m_containingChanges;
 
+    friend struct iModelConnectionImpl;
     friend struct iModelConnection;
     friend struct PredownloadManager;
     FileAccessKeyPtr m_fileAccessKey;
