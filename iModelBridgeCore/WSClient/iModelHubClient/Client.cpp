@@ -195,9 +195,9 @@ ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-iModelsTaskPtr Client::GetRepositories(ICancellationTokenPtr cancellationToken) const
+iModelsTaskPtr Client::GetiModels(ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "Client::GetRepositories";
+    const Utf8String methodName = "Client::GetiModels";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (m_serverUrl.empty())
         {
@@ -211,11 +211,11 @@ iModelsTaskPtr Client::GetRepositories(ICancellationTokenPtr cancellationToken) 
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::iModel, "");
+    ObjectId iModelsObject(ServerSchema::Schema::Project, ServerSchema::Class::iModel, "");
 
     IWSRepositoryClientPtr client = CreateProjectConnection();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repositories from project %s.", m_projectId.c_str());
-    return client->SendGetObjectRequest(repositoriesObject, nullptr, cancellationToken)->Then<iModelsResult>
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", m_projectId.c_str());
+    return client->SendGetObjectRequest(iModelsObject, nullptr, cancellationToken)->Then<iModelsResult>
         ([=](const WSObjectsResult& response)
         {
         if (!response.IsSuccess())
@@ -262,9 +262,7 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR iModelName, ICancellationToke
     filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, iModelName.c_str());
     query.SetFilter(filter);
 
-    ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::iModel, "");
     IWSRepositoryClientPtr client = CreateProjectConnection();
-
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
@@ -302,10 +300,10 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR iModelId, ICancellationTokenPtr
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModel with id %s.", iModelId.c_str());
 
-    ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelId);
+    ObjectId iModelsObject(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelId);
     IWSRepositoryClientPtr client = CreateProjectConnection();
 
-    return client->SendGetObjectRequest(repositoriesObject, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
+    return client->SendGetObjectRequest(iModelsObject, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
             {
@@ -470,8 +468,8 @@ iModelTaskPtr Client::CreateNewiModel(Dgn::DgnDbCR db, Utf8StringCR iModelName, 
                 return;
                 }
             iModelConnectionPtr connection = connectionResult.GetValue();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Uploading new master file.");
-            connection->UploadNewMasterFile(filePath, *fileInfo, waitForInitialized, callback, cancellationToken)->Then([=] (FileResultCR fileUploadResult)
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Uploading new seed file.");
+            connection->UploadNewSeedFile(filePath, *fileInfo, waitForInitialized, callback, cancellationToken)->Then([=] (FileResultCR fileUploadResult)
                 {
                 if (!fileUploadResult.IsSuccess())
                     {
@@ -568,7 +566,7 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
             if (doSync)
                 {
                 LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Calling PullAndMerge for briefcase %d.", briefcase->GetBriefcaseId().GetValue());
-                briefcase->PullAndMerge(callback, cancellationToken)->Then([=] (const DgnRevisionsResult& result)
+                briefcase->PullAndMerge(callback, cancellationToken)->Then([=] (const ChangeSetsResult& result)
                     {
                     if (result.IsSuccess())
                         {
@@ -724,8 +722,8 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return result;
         }
 
-    DgnRevisionsTaskPtr pullTask = connection->DownloadChangeSetsAfterId(db->Revisions().GetParentRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
-    DgnRevisionsResult pullResult = pullTask->GetResult();
+    ChangeSetsTaskPtr pullTask = connection->DownloadChangeSetsAfterId(db->Revisions().GetParentRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
+    ChangeSetsResult pullResult = pullTask->GetResult();
     if (!pullResult.IsSuccess())
         {
         if (db.IsValid())
@@ -741,7 +739,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterOpenBriefcaseForMerge);
 #endif
-    DgnRevisions changeSets = pullTask->GetResult().GetValue();
+    ChangeSets changeSets = pullTask->GetResult().GetValue();
     RevisionStatus mergeStatus = RevisionStatus::Success;
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets.");
     if (!changeSets.empty())
