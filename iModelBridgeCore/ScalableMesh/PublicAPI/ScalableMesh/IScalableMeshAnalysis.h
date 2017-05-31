@@ -27,13 +27,29 @@ struct SMVolumeSegment {
     double volume; // the integrated volume (sum of volume ranges)
     };
 
+struct ISMProgressReport
+    {
+    double  m_workDone; //between 0-1
+    bool    m_processCanceled;
+    };
+
+// For cancellation and progress report
+struct ISMAnalysisProgressListener
+    {
+    ISMAnalysisProgressListener() {}
+    ~ISMAnalysisProgressListener() {}
+    public:
+        //Return true to continue process, false to abort
+        virtual bool _CheckContinueOnProgress(ISMProgressReport const& report) { return true; }
+    };
+
 class ISMGridVolume
     {
     public:
         BENTLEY_SM_EXPORT ISMGridVolume() { 
             m_direction = DVec3d::From(0, 0, 1); // fixed to Z for now
-            m_resolution = 0.1; // 10 cm
-            m_gridSizeLimit = 1000;
+            m_resolution = 1.0; // 1 meter
+            m_gridSizeLimit = 5000;
             m_totalVolume = m_cutVolume = m_fillVolume = 0;
             m_VolSegments = NULL;
             m_bInitialised = false;
@@ -91,19 +107,28 @@ class ISMGridVolume
 class IScalableMeshAnalysis abstract : public RefCountedBase
     {
     protected:
-        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid) = 0;
-        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid) = 0;
+        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) = 0;
+        virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) = 0;
 
     public:
         // Compute Volume between the 3SM and a given polygon
         // returns different values (fill, cut, per grid node values) in the ISMGridVolume object
-        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid) {
-            return _ComputeDiscreteVolume(polygon, resolution, grid); }
+        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, 
+                                                            double resolution, 
+                                                            ISMGridVolume& grid, 
+                                                            ISMAnalysisProgressListener* pProgressListener=NULL) 
+            {
+            return _ComputeDiscreteVolume(polygon, resolution, grid, pProgressListener);
+            }
 
         // Compute Volume difference with another 3SM in a polygon restriction
         // returns different values (fill, cut, per grid node values) in the ISMGridVolume object
-        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid) {
-            return _ComputeDiscreteVolume(polygon, anotherMesh, resolution, grid);
+        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, 
+                                                            IScalableMesh* anotherMesh, 
+                                                            double resolution, ISMGridVolume& grid, 
+                                                            ISMAnalysisProgressListener* pProgressListener=NULL) 
+            {
+            return _ComputeDiscreteVolume(polygon, anotherMesh, resolution, grid, pProgressListener);
             }
     };
 
