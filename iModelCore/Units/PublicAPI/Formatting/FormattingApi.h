@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-
+#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Formatting/FormattingDefinitions.h>
 #include <Formatting/FormattingEnum.h>
 #include <Formatting/FormattingParsing.h>
@@ -16,6 +16,7 @@
 namespace BEU = BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
+struct StdFormatSet;
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameterSet)
@@ -31,6 +32,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
+
 
 struct FactorPower
     {
@@ -209,6 +211,8 @@ public:
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
 
+    UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
+
     //FormatDoubleStd
 
     UNITS_EXPORT int FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen);
@@ -369,15 +373,33 @@ struct FormatUnitSet
         FormatProblemDetail m_problem;
 
     public:
+        FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}
         UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
-        UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty);
+        FormatUnitSet(FormatUnitSetCR other)
+            {
+            m_formatSpec = other.m_formatSpec;
+            m_unit = other.m_unit;
+            m_problem = FormatProblemDetail(other.m_problem);
+            }
+        FormatUnitSet(FormatUnitSetCP other)
+            {
+            m_formatSpec = other->m_formatSpec;
+            m_unit = other->m_unit;
+            m_problem = FormatProblemDetail(other->m_problem);
+            }
+
+        UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
         UNITS_EXPORT FormatUnitSet(Utf8CP description);
         bool HasProblem() const { return m_problem.IsProblem(); }
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         UNITS_EXPORT Utf8String ToText(bool useAlias) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
+        UNITS_EXPORT bool IsComparable(BEU::QuantityCR qty);
+        UNITS_EXPORT Json::Value ToJson(bool useAlias) const;
+        UNITS_EXPORT Utf8String ToJsonString(bool useAlias) const;
+        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
     };
 
 struct FormatUnitGroup
@@ -406,11 +428,13 @@ private:
 public:
 
     UNITS_EXPORT static NumericFormatSpecCP DefaultDecimal();
+    static NamedFormatSpecCP DefaultFormatSpec() { return FindFormatSpec(FormatConstant::DefaultFormatName()); }
     static size_t GetFormatSetSize() { return Set().m_formatSet.size(); }
     UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name);
     UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
+    static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
     };
 
 //=======================================================================================

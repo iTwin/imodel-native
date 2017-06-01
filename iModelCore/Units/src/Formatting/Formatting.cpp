@@ -930,6 +930,13 @@ Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8CP stdName, double dval, Ut
     return str;
     }
 
+const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
+    {
+    static NumericFormatSpec nfs = NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatConstant::DefaultFormatTraits(), FormatConstant::DefaultDecimalPrecisionIndex());
+    return &nfs;
+    }
+
+
 
 
 Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr, Utf8CP space, int prec, double round)
@@ -1280,10 +1287,8 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
 void StdFormatSet::StdInit()
     {
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
-    //NumericFormatSpec nfs(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
-    //AddFormat("DefaultReal", &nfs, "real");
-
-    AddFormat("DefaultReal", new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()), "real");
+    //AddFormat("DefaultReal", new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()), "real");
+    AddFormat(FormatConstant::DefaultFormatName(), new NumericFormatSpec(NumericFormatSpec::DefaultFormat()), FormatConstant::DefaultFormatAlias());
     AddFormat("Real2",       new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2),"real2");
     AddFormat("Real3",       new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 3),"real3");
     AddFormat("Real4",       new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4),"real4");
@@ -1314,7 +1319,6 @@ void StdFormatSet::StdInit()
     cvs->SetUnitLabels("'", "\"");
     AddFormat("AmerFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "fi8");
     AddFormat("AmerFI16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), cvs, "fi16");
-
     cvs = new CompositeValueSpec("YRD", "FT", "IN");
     cvs->SetUnitLabels("yrd(s)", "'", "\"");
     AddFormat("AmerYFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "yfi8");

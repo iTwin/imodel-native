@@ -1108,11 +1108,57 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty)
+bool FormatUnitSet::IsComparable(BEU::QuantityCR qty)
     {
-    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, qty.ConvertTo(m_unit), nullptr, " ");
+    return Utils::AreUnitsComparable(qty.GetUnit(), m_unit);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+Json::Value FormatUnitSet::ToJson(bool useAlias) const
+    {
+    Json::Value jval = Json::objectValue;
+    if (useAlias)
+        jval[FormatConstant::FUSJsonAlias()] = m_formatSpec->GetAlias();
+    else
+        jval[FormatConstant::FUSJsonName()] = m_formatSpec->GetName();
+    jval[FormatConstant::FUSJsonUnit()] = m_unit->GetName();
+    return jval;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+Utf8String FormatUnitSet::ToJsonString(bool useAlias) const
+    {
+    Utf8String str;
+    Json::Value jval = ToJson(useAlias);
+    str = jval.ToString();
+    return str;
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const
+    {
+    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, qty.ConvertTo(m_unit), nullptr, space);
     return txt;
     }
+
+Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const
+    {
+    Utf8String str;
+    Json::Value jval = ToJson(useAlias);
+    BEU::Quantity conv = qty.ConvertTo(m_unit);
+    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, conv, nullptr, " ");
+    jval[FormatConstant::FUSJsonValue()] = conv.GetMagnitude();
+    jval[FormatConstant::FUSJsonDispValue()] = txt.c_str();
+    return jval;
+    }
+
 
 //===================================================
 //

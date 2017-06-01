@@ -90,6 +90,9 @@ public:
             LOG.infov("Invalid KOQ: >%s<", koq);
         else
             LOG.infov("KOQ: >%s<  Normilized: >%s< WithAlias: >%s< ", koq, fus.ToText(false).c_str(), fus.ToText(true).c_str());
+        Utf8String strA = fus.ToJsonString(true);
+        Utf8String strN = fus.ToJsonString(false);
+        LOG.infov("JSON: >%s<   (aliased) >%s<", strN.c_str(), strA.c_str());
         }
 
     static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
@@ -106,7 +109,7 @@ public:
         EXPECT_STREQ (aliased, fug.ToText(true).c_str());
         }
 
-    static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat)
+    static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space)
         {
         BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
         if (nullptr == unit)
@@ -122,8 +125,13 @@ public:
             return;
             }
 
-        Utf8String fmtQ = fus.FormatQuantity(q);
-        LOG.infov("%f of %s = %s", dval, uom, fmtQ.c_str());
+        Utf8String fmtQ = fus.FormatQuantity(q, space);
+        LOG.infov("===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
+        Json::Value jval = fus.FormatQuantityJson(q, true);
+        Utf8String jsonQ = jval.ToString();
+        LOG.infov("JSON: %s", jsonQ.c_str());
+        FormatUnitSet deFUS = StdFormatSet::DefaultFUS(q);
+        LOG.infov("Default FUS JSON: %s", deFUS.ToJsonString(true).c_str());
         }
 
     static NumericAccumulator* NumericAccState(NumericAccumulator* nacc, Utf8CP txt)
@@ -177,9 +185,9 @@ TEST(FormattingTest, Preliminary)
     //else
     //    LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText().c_str());
 
-    FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi8");
-    FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi16");
-    FormattingTestFixture::ShowQuantity(20.0, "M", "FT", "fi8");
+    FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi8", " ");
+    FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi16", "");
+    FormattingTestFixture::ShowQuantity(20.0, "M", "FT", "fi8", nullptr);
 
     FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_");
     if (nacc.HasProblem())
@@ -221,8 +229,8 @@ TEST(FormattingTest, Preliminary)
 
     //FormattingTestFixture::ShowFUS("MM");
     //FormattingTestFixture::ShowFUS("MM|fract8");
-    //FormattingTestFixture::ShowFUS("MM|fract8|");
-    //FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
+    FormattingTestFixture::ShowFUS("MM|fract8|");
+    FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
     //FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal|");
     //FormattingTestFixture::ShowFUS("W/(M*C)(DefaultReal)");
     //FormattingTestFixture::ShowFUS("W/(M*C)");
@@ -300,7 +308,7 @@ TEST(FormattingTest, PhysValues)
 
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32)");
     //LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
-    EXPECT_STREQ ("74 15/32 FT", fusYF.FormatQuantity(len).c_str());
+    EXPECT_STREQ ("74 15/32FT", fusYF.FormatQuantity(len, nullptr).c_str());
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
@@ -442,6 +450,7 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::StdFormatDouble("sciN", 2.0*testV, 5).c_str());
 
     NumericFormatSpecP fmtP = (NumericFormatSpecP)StdFormatSet::GetNumericFormat("real");
+    fmtP =  new NumericFormatSpec(NumericFormatSpec::DefaultFormat());
     fmtP->SetKeepTrailingZeroes(true);
     fmtP->SetUse1000Separator(true);
 

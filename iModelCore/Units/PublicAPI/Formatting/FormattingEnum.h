@@ -14,7 +14,7 @@
 namespace BEU = BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
-
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatProblemDetail)
 //===================================================
 //
 // Enumerations
@@ -317,11 +317,7 @@ struct FormatProblemDetail
     public:
 
         FormatProblemDetail() { m_code = FormatProblemCode::NoProblems; }
-
-        FormatProblemDetail(FormatProblemCode code)
-            {
-            m_code = code;
-            }
+        FormatProblemDetail(FormatProblemCode code) {  m_code = code;  }
         bool IsCritical() const { return (static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Critical)); }
         bool IsWarning() const {
             return (static_cast<int>(m_code) < static_cast<int>(FormatProblemLevel::Critical) &&
@@ -509,6 +505,14 @@ struct FormatConstant
         static const Utf8CP ASCIIprintable() { return " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
         static const Utf8CP ASCIImap() { return "b!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
         UNITS_EXPORT static const size_t* FractionCodes();
+        static const Utf8CP DefaultFormatName() { return "DefaultReal"; }
+        static const Utf8CP DefaultFormatAlias() { return "real"; }
+        static const Utf8CP FUSJsonName() { return "name"; }
+        static const Utf8CP FUSJsonAlias() { return "alias"; }
+        static const Utf8CP FUSJsonUnit() { return "unit"; }
+        static const Utf8CP FUSJsonValue() { return "value"; }
+        static const Utf8CP FUSJsonDispValue() { return "displayValue"; }
+
         static const size_t* SpecialUOM()
             {
             // the array of codes holds integer codes of several special unicode characters that could be used in a specific
@@ -518,6 +522,7 @@ struct FormatConstant
             static size_t cod[9] = { 0x22, 0x24, 0x25, 0x27, 0x5e, 0xB0, 0x2103, 0x2109, 0x0};
             return cod;
             }
+
         static const bool IsFractionSymbol(size_t code)
             {
             const size_t* p = FractionCodes();
