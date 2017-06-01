@@ -31,7 +31,11 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
     auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *vertAlignVecPtr);
-    ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
+    ASSERT_TRUE(verticalAlignmPtr->Insert().IsValid());
+
+    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->SetHorizontal(*horizAlignmPtr));
+    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->SetMainVertical(*verticalAlignmPtr));
+    ASSERT_TRUE(alignmentPtr->Update().IsValid());
 #pragma endregion
 
 #pragma region Create Road Elements
@@ -49,10 +53,11 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     // Create Roadway
     auto roadwayPtr = Roadway::Create(*physicalModelPtr);
     StatusAspect::Set(*roadwayPtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
-    auto roadwayCPtr = roadwayPtr->InsertWithAlignment(*alignmentPtr);
+    roadwayPtr->SetAlignment(alignmentPtr.get());
+    auto roadwayCPtr = roadwayPtr->Insert();
     ASSERT_TRUE(roadwayCPtr.IsValid());    
     ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadwayCPtr)->GetStatus());
-    ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->QueryAlignmentId());
+    ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetAlignmentId());
 
     auto designSpeedDefPtr = InsertRoadDesignSpeedDefinition(*projectPtr);
     auto designSpeedPtr = RoadDesignSpeed::Create(*roadwayCPtr, *designSpeedDefPtr, 0, 150);

@@ -52,9 +52,9 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="MainAlignment" relationshipName="PathwayRefersToMainAlignment" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PathwayRefersToMainAlignment" strength="referencing" strengthDirection="Backward" modifier="Sealed">
-        <BaseClass>rralign:SpatialElementRefersToAlignment</BaseClass>
+    <ECRelationshipClass typeName="PathwayRefersToMainAlignment" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Pathways">
             <Class class="PathwayElement"/>
         </Source>
