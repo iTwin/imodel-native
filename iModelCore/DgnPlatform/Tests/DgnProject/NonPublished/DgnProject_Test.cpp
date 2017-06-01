@@ -268,7 +268,7 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
     SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
 
-    dgndb->ChangeBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    dgndb->AssignBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     dgndb->Txns().EnableTracking(true);
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
