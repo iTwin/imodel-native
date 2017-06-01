@@ -353,7 +353,10 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args) const
         m_graphic = args.m_context.CreateBranch(branch, vp->GetViewControllerR().GetDgnDb(), toNpc, nullptr);
         }
 
-    args.m_graphics.m_graphics.Add(*m_graphic);
+    args.m_graphics.Add(*m_graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Attachment::Tree::Draw(SceneContext& context)
