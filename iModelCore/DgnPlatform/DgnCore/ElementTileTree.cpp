@@ -822,6 +822,24 @@ public:
     double ComputeLeafTolerance() const;
 };
 
+/*---------------------------------------------------------------------------------**//**
+* This exists because DRange3d::IntersectionOf() treats a zero-thickness intersection as
+* null - so if the intersection in any dimension is zero, it nulls out the entire range.
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clipContentRangeToTileRange(DRange3dR content, DRange3dCR tile)
+    {
+    content.low.x = std::max(content.low.x, tile.low.x);
+    content.low.y = std::max(content.low.y, tile.low.y);
+    content.low.z = std::max(content.low.z, tile.low.z);
+    content.high.x = std::min(content.high.x, tile.high.x);
+    content.high.y = std::min(content.high.y, tile.high.y);
+    content.high.z = std::min(content.high.z, tile.high.z);
+
+    if (content.low.x > content.high.x || content.low.y > content.high.y || content.low.z > content.high.z)
+        content.Init();
+    }
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -1610,9 +1628,6 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         // Make sure the mesh's display params match one (any) mesh which actually contributed vertices, so that if the result is a uniform color,
         // we will use the fill color of the (only) mesh which contributed.
         builder.SetDisplayParams(displayParams);
-
-        // Do not allow vertices outside of this tile's range to expand its content range
-        m_contentRange.IntersectionOf(m_contentRange, m_tileRange);
         }
     }
 
@@ -1746,6 +1761,9 @@ MeshList MeshGenerator::GetMeshes()
             meshes.push_back(mesh);
             }
         }
+
+    // Do not allow vertices outside of this tile's range to expand its content range
+    clipContentRangeToTileRange(m_contentRange, m_tileRange);
 
     meshes.m_features = std::move(m_featureTable);
     return meshes;
