@@ -1176,3 +1176,40 @@ TEST_F(BeSQLiteDbTests, ApplyChangeSetAfterSchemaChanges)
     stmt.Finalize();
     m_db.CloseDb();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, SaveQueryDelBreifCaselocalValue)
+{
+    SetupDb (L"testb.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    Utf8CP name = "test";
+    EXPECT_EQ (BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue (name, 2));
+
+    uint64_t value;
+    EXPECT_EQ (BE_SQLITE_ROW, m_db.QueryBriefcaseLocalValue (value, name));
+    ASSERT_EQ (value, 2);
+
+    EXPECT_EQ (BE_SQLITE_DONE, m_db.DeleteBriefcaseLocalValue (name));
+    EXPECT_NE (BE_SQLITE_ROW, m_db.QueryBriefcaseLocalValue (value, name));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Taslim.Murad                   05/17
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, DelProperties)
+{
+    SetupDb (L"Props3.db");
+
+    PropertySpec spec1 ("TestSpec", "TestApplication");
+    m_result = m_db.SaveProperty (spec1, L"Any Value", 10, 400, 10);
+    EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveProperty failed";
+    EXPECT_TRUE (m_db.HasProperty (spec1, 400, 10));
+
+    uint64_t * mid = 0;
+    m_result = m_db.DeleteProperties (spec1, mid);
+    EXPECT_EQ (BE_SQLITE_DONE, m_result) << "DeleteProperty failed";
+    EXPECT_FALSE (m_db.HasProperty (spec1, 400, 10));
+}
