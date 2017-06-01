@@ -731,11 +731,18 @@
         </Bindings>
     </Part>
 
+	<Part Name="RealityFrameworkTestsData" BentleyBuildMakeFile="Tests/prewire.mke">
+        <Bindings>
+            <Files SubPartDirectory="TestData/RealityPlatform" ProductDirectoryName="RealityFrameworkTestDataRealityPlatform">Delivery/TestData/RealityPlatform/*xml</Files>
+        </Bindings>
+    </Part>
+	
     <!-- Define a gtest program to run the tests -->
     <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModFrameworkTest -dTEST_COLLECTION_PRODUCT=RealityModFramework-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="RealityModFramework-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="BentleyDesktopClient-Api" />
+		<SubPart PartName="RealityFrameworkTestsData"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RealityModFrameworkTest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RealityModFrameworkTest/Assets" />
@@ -747,6 +754,7 @@
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
         <ProductDirectory Name="BentleyDesktopClientApi"        Path=""/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""/>
+		<ProductDirectory Name="RealityFrameworkTestDataRealityPlatform"          Path="TestData/RealityPlatform"/>
     </ProductDirectoryList>
 
     <Product Name="RealityModFramework-Gtest" >

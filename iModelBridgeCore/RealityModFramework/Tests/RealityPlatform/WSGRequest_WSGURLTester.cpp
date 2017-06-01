@@ -43,6 +43,9 @@ TEST(WSGURLBase, ConstructorWithFullDetails)
     EXPECT_STREQ(wsgUrlToTest.GetRequestPayload().c_str(), "");
     }
 
+//=====================================================================================
+//! @bsiclass                         Remi.Charbonneau                        05/2017
+//=====================================================================================
 struct WSGURLTester: public WSGURL
 	{
 public:
@@ -76,3 +79,30 @@ TEST(WSGURLBase, Setter)
 	EXPECT_STREQ(wsgUrlToTest.GetId().c_str(), "myNewID");
 	}
 
+//=====================================================================================
+//! @bsimethod                          Remi.Charbonneau                        05/2017
+//=====================================================================================
+TEST(WSGURLBase, AssignmentOperator)
+	{
+	auto basedURL = WSGURL("myserver.com", "Version1", "RepoID", "schema", WSGURL::WSGInterface::NavNode, "MyClassName", "MyID", true);
+
+	WSGURL wsgUrlToTest;
+	
+	wsgUrlToTest = basedURL;
+
+	EXPECT_TRUE(wsgUrlToTest.GetRequestType() == WSGURL::HttpRequestType::GET_Request);
+    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com");
+    EXPECT_TRUE(wsgUrlToTest.GetInterface() == WSGURL::WSGInterface::NavNode);
+    EXPECT_STREQ(wsgUrlToTest.GetServerName().c_str(), "myserver.com");
+    EXPECT_STREQ(wsgUrlToTest.GetVersion().c_str(), "Version1");
+    EXPECT_STREQ(wsgUrlToTest.GetRepoId().c_str(), "RepoID");
+    EXPECT_STREQ(wsgUrlToTest.GetSchema().c_str(), "schema");
+    EXPECT_STREQ(wsgUrlToTest.GetECClassName().c_str(), "MyClassName");
+    EXPECT_STREQ(wsgUrlToTest.GetId().c_str(), "MyID");
+
+    EXPECT_TRUE(wsgUrlToTest.GetContentFlag());
+
+    EXPECT_STREQ(wsgUrlToTest.GetRequestHeaders().c_str(), "");
+    EXPECT_STREQ(wsgUrlToTest.GetRequestPayload().c_str(), "");
+
+	}
