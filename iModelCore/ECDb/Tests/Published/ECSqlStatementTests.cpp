@@ -851,6 +851,7 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembers)
 TEST_F(ECSqlStatementTestFixture, DateTimeCast)
     {
     ECDbCR ecdb = SetupECDb("datetimecast.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     DateTime expectedDateOnly(2017, 2, 22);
     DateTime expectedDtUtc(DateTime::Kind::Utc, 2017, 2, 22, 10, 4, 2);
