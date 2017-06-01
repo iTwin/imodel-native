@@ -516,7 +516,7 @@ private:
     ECDbCR m_ecdb;
     DbSchemaNameGenerator m_nameGenerator;
     mutable std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> m_tableMapByName;
-    mutable bmap<DbTableId, Utf8String> m_tableMapById;
+    mutable bmap<DbTableId, Utf8StringCP> m_tableNamesById;
 
     mutable DbTable* m_nullTable = nullptr;
     mutable std::vector<std::unique_ptr<DbIndex>> m_indexes;

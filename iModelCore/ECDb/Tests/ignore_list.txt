@@ -25,6 +25,3 @@ RelationshipMappingTestFixture.MultipleConstraintClasses
 
 #Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
-
-#WIP
-DbMappingTestFixture.SimpleFK

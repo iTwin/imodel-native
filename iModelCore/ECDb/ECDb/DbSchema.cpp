@@ -62,7 +62,7 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Ty
 
     DbTable* tableP = table.get();
     m_tableMapByName[tableP->GetName()] = std::move(table);
-    m_tableMapById[tableId] = tableP->GetName();
+    m_tableNamesById[tableId] = &tableP->GetName();
     return tableP;
     }
 
@@ -184,13 +184,11 @@ DbTable const* DbSchema::FindTable(Utf8CP name) const
 DbTable const* DbSchema::FindTable(DbTableId id) const
     {
     UpdateTableCache();
-    auto itor = m_tableMapById.find(id);
-    if (itor != m_tableMapById.end())
-        {
-        return FindTable(itor->second.c_str());
-        }
+    auto itor = m_tableNamesById.find(id);
+    if (itor == m_tableNamesById.end())
+        return nullptr;
 
-    return nullptr;
+    return FindTable(itor->second->c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -544,8 +542,9 @@ void DbSchema::UpdateTableCache() const
         {
         if (m_tableMapByName.find(tableKey.first) == m_tableMapByName.end())
             {
-            m_tableMapByName.insert(std::make_pair(tableKey.first, std::unique_ptr<DbTable>()));
-            m_tableMapById.insert(bpair<DbTableId, Utf8String>(tableKey.second, tableKey.first));
+            auto ret = m_tableMapByName.insert(std::make_pair(tableKey.first, std::unique_ptr<DbTable>()));
+            Utf8StringCR tableName = ret.first->first;
+            m_tableNamesById.insert(bpair<DbTableId, Utf8StringCP>(tableKey.second, &tableName));
             }
         }
 
@@ -559,7 +558,7 @@ void DbSchema::Reset() const
     {
     m_nullTable = nullptr;
     m_tableMapByName.clear();
-    m_tableMapById.clear();
+    m_tableNamesById.clear();
     m_indexesLoaded = false;
     m_indexes.clear();
     m_usedIndexNames.clear();

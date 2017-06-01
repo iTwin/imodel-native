@@ -6,7 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlTestFrameworkHelper.h"
+#include "ECDbPublishedTests.h"
+
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================
@@ -19,7 +20,7 @@ struct DataTable final : NonCopyableClass
         enum class Type : int
             {
             Integer = 1,
-            Float = 2,
+            Double = 2,
             Text = 3,
             Blob = 4,
             Null = 5,
@@ -31,7 +32,7 @@ struct DataTable final : NonCopyableClass
             union
                 {
                 int64_t m_i64;
-                double m_flt;
+                double m_double;
                 void* m_buff;
                 };
 
@@ -53,14 +54,14 @@ struct DataTable final : NonCopyableClass
             bool IsBlob() const { return m_type == Type::Blob; }
             bool IsText() const { return m_type == Type::Text; }
             bool IsInteger() const { return m_type == Type::Integer; }
-            bool IsFloat() const { return m_type == Type::Float; }
+            bool IsDouble() const { return m_type == Type::Double; }
             void SetNull();
             void SetValue(int64_t i);
             void SetValue(double i);
             void SetValue(Utf8CP str);
             void SetValue(const void* blob, size_t n);
             int64_t GetInteger() const { BeAssert(IsInteger()); return m_i64; }
-            double GetFloat() const { BeAssert(IsFloat()); return m_flt; }
+            double GetDouble() const { BeAssert(IsDouble()); return m_double; }
             void* GetBlob() const { BeAssert(IsBlob()); return m_buff; }
             Utf8CP GetText() const { BeAssert(IsText()); return (Utf8CP) m_buff; }
             size_t GetSize() const { return m_size; }

@@ -233,7 +233,7 @@
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
         - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
-            - mapped to a shared column (see ShareColumns custom attribute in @ref CustomClassMapDescription)
+            - mapped to a shared column (see ShareColumns custom attribute in @ref ClassMapCustomAttributeDescription)
             - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
             - not overridden
     - @b CustomAttributes on the ECClass
@@ -351,20 +351,20 @@
     <b>Link Table</b> mapping is chosen if
     - the cardinality is M:N
     - ECProperties are defined for the ECRelationshipClass
-    - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref CustomRelationshipMapDescription)
+    - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref LinkTableRelationshipMapCustomAttributeDescription)
     - no @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" is defined for the relationship class on the constraint class
       on the foreign key end of the relationship (see below for what the foreign key end is).
 
     Otherwise, the @ref ECDbForeignKeyMapping is chosen:
-    - <b>Physical Foreign Key</b> mapping if the @b ForeignKeyConstraint custom attribute exists on the ECRelationshipClass. 
+    - <b>Physical Foreign Key</b> mapping if the respective navigation property has the @b ForeignKeyConstraint custom attribute. 
     - <b>Logical Foreign Key</b> mapping otherwise.
 
     The ECRelationshipClass is rejected
     - if it evaluates to <b>Link Table</b> mapping and
-        - has the @b ForeignKeyConstraint custom attribute (see also @ref CustomRelationshipMapDescription)
+        - has a navigation property defined for it
     - if it evaluates to <b>Physical Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
-    (see @ref CustomClassMapDescription) and 
-            - in the @b ForeignKeyConstraint custom attribute the property @b OnDeleteAction is set to @b Cascade or
+    (see @ref ClassMapCustomAttributeDescription) and 
+            - in the navigation property's @b ForeignKeyConstraint custom attribute @b OnDeleteAction is set to @b Cascade or
             - the strength is @b Embedding
 
     @subsection ECDbForeignKeyMapping Foreign Key Mapping
@@ -385,10 +385,11 @@
     ## Foreign Key Mapping Types
 
     Two flavors of Foreign Key mapping exist:
-    If the ECRelationshipClass has the @b ForeignKeyConstraint custom attribute:
+    If the ECRelationshipClass's @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" has 
+    the @ref ForeignKeyConstraintCustomAttributeDescription "ForeignKeyConstraint custom attribute":
     - <b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
 
-    If the custom attribute is not present:
+    If the ForeignKeyConstraint custom attribute is not present:
     - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
 
     @note This does not affect how ECDb enforces cardinality.
@@ -421,10 +422,10 @@
     #### How to fix unsupported ECRelationshipClasses
     - For a polymorphic @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" consider to apply
     the mapping strategy <b>TablePerHierarchy</b> to the root class of the class hierarchy. 
-    See @ref CustomClassMapDescription for details.
+    See @ref ClassMapCustomAttributeDescription for details.
     - If the classes specified in the @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" are not members
     of the same class hierarchy, consider to apply the mapping strategy <b>TablePerHierarchy</b> to 
-    each class of the constraint. See @ref CustomClassMapDescription for details.
+    each class of the constraint. See @ref ClassMapCustomAttributeDescription for details.
     - If the <i>TablePerHierarchy</i> strategy cannot be applied, consider breaking the ECRelationshipClass apart into several separate
     ECRelationshipClasses.
        
@@ -447,7 +448,7 @@
     In addition to the rules for @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" inheritance specified by the EC specification, 
     %ECDb has some more:
 
-    - The @b ForeignKeyConstraint and @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
+    - The @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
     be applied to the @b root of the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" hierarchy. The @b root is the ECRelationshipClass which
     does not have a base class itself.
     - The mapping type must not change within a relationship class hierarchy. In other words, the @ref BentleyApi::ECN::ECRelationshipClass "Root ECRelationshipClass"
@@ -497,13 +498,13 @@
     - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
     or to a link table (see @ref ECDbRelationshipRules for details).
 
-    @section CustomSchemaMapDescription Custom mapping or ECSchemas
+    @section SchemaMapCustomAttributeDescription The SchemaMap custom attribute
 
     Customizing the mapping on the schema level is done by applying the @b SchemaMap custom attribute to the respective ECSchema.
     Description of the SchemaMap properties:
     - TablePrefix: Specifies a prefix for generated tables. If not specified, the alias of the ECSchema is used.
     The prefix should be 2-4 letters long followed by an underbar, e.g. plnt_. This setting will affect all tables that are created
-    for this ECSchema unless it is overwritten on the ECClass level via the @ref CustomClassMapDescription "ClassMap" property @b TableName.
+    for this ECSchema unless it is overwritten on the ECClass level via the @ref ClassMapCustomAttributeDescription "ClassMap" property @b TableName.
 
     ####Example
 
@@ -513,13 +514,16 @@
             </SchemaMap>
         </ECCustomAttributes>
 
-    @section CustomClassMapDescription Custom mapping for ECClasses
+    @section ClassMapCustomAttributeDescription The ClassMap custom attribute for Entity ECClasses and link table ECRelationshipClasses
 
-    Customizing the mapping for an ECClass is done by applying the @b ClassMap custom attribute to the respective ECClass.
+    Customizing the mapping for an @ref BentleyApi::ECN::ECEntityClass "ECEntityClass" or
+    <b>LinkTable ECRelationshipClasses</b> (see @ref ECDbRelationshipMappingRules) is done by applying 
+    the @b ClassMap custom attribute to the respective ECClass.
     (ECDb will only look for it in local attributes on the ECClass).
+    
     Indexes are defined using the @b DbIndexList custom attribute. 
       
-    @note The @b ClassMap custom attribute cannot be applied to Mixin Entity classes.
+    @note The @b ClassMap custom attribute cannot be applied to Mixin classes.
 
     Description of the ClassMap properties:
 
@@ -567,7 +571,7 @@
             <ECProperty propertyName="Name" typeName="string" />
         </ECEntityClass>
 
-    #### MapStrategy  TablePerHierarchy for a class hierarchy
+    #### MapStrategy TablePerHierarchy for a class hierarchy
 
         <ECEntityClass typeName="Foo">
             <ECCustomAttributes>
@@ -609,9 +613,9 @@
             ...
         </ECEntityClass>
 
-    @section CustomPropertyMapDescription Custom mapping for ECProperties
+    @section PropertyMapCustomAttributeDescription The PropertyMap custom attribute for primitive ECProperties
 
-    Customizing the mapping for an ECProperty is done by applying the @b PropertyMap custom attribute to the respective ECProperty.
+    Customizing the mapping for a @ref BentleyApi::ECN::PrimitiveECProperty "PrimitiveECProperties" is done by applying the @b PropertyMap custom attribute to the respective ECProperty.
     (ECDb will only look for it in local attributes on the ECProperty)
 
     Description of the PropertyMap properties:
@@ -628,8 +632,8 @@
         @note 
         - the @b PropertyMap custom attribute cannot be applied to Mixin Entity classes.
         - @em IsNullable is ignored if the ECProperty maps to a shared column 
-        or if the ECProperty has base classes mapping to the same table (see ShareColumns custom attribute in section @ref CustomClassMapDescription).
-        - @em IsUnique is ignored if the ECProperty maps to a shared column (see ShareColumns custom attribute in section @ref CustomClassMapDescription).
+        or if the ECProperty has base classes mapping to the same table (see ShareColumns custom attribute in section @ref ClassMapCustomAttributeDescription).
+        - @em IsUnique is ignored if the ECProperty maps to a shared column (see ShareColumns custom attribute in section @ref ClassMapCustomAttributeDescription).
 
     ###Example
 
@@ -643,13 +647,53 @@
             </ECCustomAttributes>
         </ECProperty>
 
-    @section CustomRelationshipMapDescription Custom mapping for ECRelationshipClasses
+    @section ForeignKeyConstraintCustomAttributeDescription The ForeignKeyConstraint custom attribute for navigation ECProperties
+    
+    Please read @ref ECDbRelationshipRules before.
+
+    For @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperties" you can apply the @b ForeignKeyConstraint custom attribute 
+    if you want a <b>foreign key constraint</b> to be created on the foreign key column to which the navigation property is mapped. 
+    A foreign key constraint ensures that the ECInstanceId of the related instance you want to insert exists. 
+    And it allows you to specify actions for when the instance on the other end is updated or deleted:
+    
+    Description of the @b ForeignKeyConstraint properties:
+    - <b>OnDeleteAction</b>: Possible values: NoAction (default), Cascade (deletes child rows when parent row is deleted), SetNull(foreign key property in child is set to NULL), Restrict (cannot delete parent if it still has children).
+    - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated).
+    
+    
+    ####Example
+
+         <ECEntityClass typeName="Folder">
+             <ECProperty propertyName="Name" typeName="string">
+         </ECEntityClass>
+
+         <ECEntityClass typeName="File">
+             <ECNavigationProperty propertyName="Folder" relationshipName="FolderHasFiles" direction="Backward">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                        <OnDeleteAction>Cascade</OnDeleteAction>
+                    </ForeignKeyConstraint>
+                </ECCustomAttributes>
+             </ECNavigationProperty>
+             <ECProperty propertyName="Name" typeName="string">
+         </ECEntityClass>
+  
+        <ECRelationshipClass typeName="FolderHasFiles" modifier="Sealed" strength="embedding" >
+            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="contains">
+                <Class class="Folder" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is in">
+                <Class class="File" />
+            </Target>
+        </ECRelationshipClass>
+
+
+    @section LinkTableRelationshipMapCustomAttributeDescription The LinkTableRelationshipMap custom attribute for ECRelationshipClasses
 
     Please read @ref ECDbRelationshipRules before.
 
-    ### LinkTableRelationshipMap custom attribute
-    If you apply the @b LinkTableRelationshipMap custom attribute to a relationship, it is forced to be mapped to
-    a link table - even if a @ref ECDbForeignKeyMapping "foreign key mapping" would have been possible as well.
+    If you apply the @b LinkTableRelationshipMap custom attribute to an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass", 
+    it is forced to be mapped to a link table - even if a @ref ECDbForeignKeyMapping "foreign key mapping" would have been possible as well.
     
     Description of the @b LinkTableRelationshipMap properties:
     - <b>SourceECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the source constraint is mapped to.
@@ -665,46 +709,20 @@
     there cannot be duplicate relationships with a cardinality of 1:1. 
     @b Note: The flag is applied to subclasses of this relationship class, too.
     
-    
-    ### ForeignKeyConstraint custom attribute
-    For relationships with @ref ECDbForeignKeyMapping "foreign key mapping" you can apply the @b ForeignKeyConstraint custom attribute 
-    if you want a <b>foreign key constraint</b> to be created on the foreign key column. 
-    A foreign key constraint ensures that the ECInstanceId of the related instance you want to insert exists. 
-    And it allows you to specify actions for when the instance on the other end is updated or deleted:
-    
-    Description of the @b ForeignKeyConstraint properties:
-    - <b>OnDeleteAction</b>: Possible values: NoAction (default), Cascade (deletes child rows when parent row is deleted), SetNull(foreign key property in child is set to NULL), Restrict (cannot delete parent if it still has children).
-    - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated).
+    ####Example
 
-    ####Examples
-
-        <ECRelationshipClass typeName="HardwareUsedByEmployee" strength="referencing">
+        <ECRelationshipClass typeName="HardwareUsedByEmployee" modifier="Sealed" strength="referencing">
             <ECCustomAttributes>
                 <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                     <SourceECInstanceIdColumn>EmployeeId</SourceECInstanceIdColumn>
                     <TargetECInstanceIdColumn>HardwareId</TargetECInstanceIdColumn>
                 </LinkTableRelationshipMap>
             </ECCustomAttributes>
-            <Source multiplicity="(0..*)" roleLabel="Employee using hardware" polymorphic="True">
+            <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="True">
                 <Class class="Employee" />
             </Source>
-            <Target multiplicity="(0..*)" roleLabel="Hardware assigned to employee" polymorphic="True">
+            <Target multiplicity="(0..*)" roleLabel="is used by" polymorphic="True">
                 <Class class="Hardware" />
-            </Target>
-        </ECRelationshipClass>
-
-
-        <ECRelationshipClass typeName="FolderHasFiles" strength="embedding">
-            <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                    <OnDeleteAction>Cascade</OnDeleteAction>
-                </ForeignKeyConstraint>
-            </ECCustomAttributes>
-            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Folder">
-                <Class class="Folder" />
-            </Source>
-            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="File">
-                <Class class="File" />
             </Target>
         </ECRelationshipClass>
 
