@@ -434,6 +434,105 @@ static void LoadArcs (bvector<ICurvePrimitivePtr> &result, DPoint3dCP center, do
         }
     }
 
+
+static void BranchToTangencySolver
+(
+bvector<ICurvePrimitivePtr> &result,
+bvector<DPoint3d> &points,
+bvector<DSegment3d> &segments,
+bvector<DEllipse3d> &arcs,
+TransformCR localToWorld
+)
+    {
+    static const int MaxIn = 3;
+    DPoint3d centerIn[3];
+    double   radiusIn[3];
+    DRay3d ray[3];
+    int numRay = 0;
+    int numCircle = 0;
+    for (auto &point : points)
+        {
+        if (numCircle < MaxIn)
+            {
+            centerIn[numCircle] = point;
+            radiusIn[numCircle] = 0.0;
+            numCircle++;
+            }
+        }
+    for (auto &arc : arcs)
+        {
+        double r;
+        if (arc.IsCircularXY (r) && numCircle < MaxIn)
+            {
+            centerIn[numCircle] = arc.center;
+            radiusIn[numCircle] = r;
+            numCircle++;
+            }
+        }
+
+    for (auto &segment : segments)
+        {
+        if (numRay < MaxIn)
+            {
+            ray[numRay] = DRay3d::FromOriginAndTarget (segment.point[0], segment.point[1]);
+            numRay++;
+            }
+        }
+
+    static const int MaxOut = 8;
+    DPoint3d tangentPointA[MaxOut];
+    DPoint3d tangentPointB[MaxOut];
+    DPoint3d tangentPointC[MaxOut];
+    DPoint3d centerOut[MaxOut];
+    double   radiusOut[MaxOut];
+    int numOut;
+    
+    if (numCircle == 3)
+        {
+        bsiGeom_circleTTTCircleConstruction
+            (
+            centerOut, radiusOut, &numOut, MaxOut,
+            centerIn, radiusIn
+            );
+        LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
+        }
+    else if (numCircle == 2 && numRay == 1)
+        {
+        bsiGeom_circleTTTCircleCircleLineConstruction
+            (
+            centerOut, radiusOut, &numOut, MaxOut,
+            centerIn, radiusIn,
+            &ray[0].origin, &ray[0].direction);
+        LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
+        }
+    else if (numCircle == 1 && numRay == 2)
+        {
+        bsiGeom_circleTTTLineLineCircleConstruction
+            (
+            centerOut, radiusOut,
+            tangentPointA, tangentPointB, tangentPointC,
+            numOut, MaxOut,
+            ray[0].origin, ray[0].direction,
+            ray[1].origin, ray[1].direction,
+            centerIn[0], radiusIn[0]
+            );
+        LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
+        }
+    else if (numCircle == 0 && numRay == 3)
+        {
+        bsiGeom_circleTTTLineLineLineConstruction
+            (
+            centerOut, radiusOut,
+            tangentPointA, tangentPointB, tangentPointC,
+            numOut, MaxOut,
+            ray[0].origin, ray[0].direction,
+            ray[1].origin, ray[1].direction,
+            ray[2].origin, ray[2].direction
+            );
+        LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
+        }
+    }
+
 struct FromPointPointTangent: ConstructionContext::ITryConstruction
     {
     void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
@@ -450,36 +549,8 @@ struct FromPointPointTangent: ConstructionContext::ITryConstruction
             {
             matchTable.GetPointsSegmentsArcs(points,segments, arcs);
             Transform localToWorld, worldToLocal;
-            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true)
-                && points.size () == 2)
-                {
-                DPoint3d centerIn[3] = {points[0], points[1], DPoint3d::FromZero ()}; 
-                double   radiusIn[3] = {0.0, 0.0, 0.0};
-                int numOut;
-                DPoint3d centerOut[8];
-                double   radiusOut[8];
-
-                if (segments.size () > 0)
-                    {
-                    DVec3d   lineTangent = segments[0].point[1] - segments[0].point[0];
-                    bsiGeom_circleTTTCircleCircleLineConstruction
-                        (
-                        centerOut, radiusOut, &numOut, 8,
-                        centerIn, radiusIn, &segments[0].point[0], &lineTangent
-                        );
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-                if (arcs.size () > 0 && arcs[0].IsCircularXY (radiusIn[2]))
-                    {
-                    centerIn[2] = arcs[0].center;
-                    bsiGeom_circleTTTCircleConstruction
-                        (
-                        centerOut, radiusOut, &numOut, 8,
-                        centerIn, radiusIn
-                        );
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-                }
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
+                BranchToTangencySolver (result, points, segments, arcs, localToWorld);
             }
         }
     };
@@ -501,71 +572,9 @@ struct FromPointTangentTangent: ConstructionContext::ITryConstruction
             {
             matchTable.GetPointsSegmentsArcs(points,segments, arcs);
             Transform localToWorld, worldToLocal;
-            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true)
-                && points.size () == 1)
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
                 {
-                static const int MaxOut = 8;
-                DPoint3d centerIn[3] = {points[0], DPoint3d::FromZero (), DPoint3d::FromZero ()}; 
-                double   radiusIn[3] = {0.0, 0.0, 0.0};
-                DPoint3d tangentPointA[MaxOut];
-                DPoint3d tangentPointB[MaxOut];
-                DPoint3d tangentPointC[MaxOut];
-                DPoint3d centerOut[MaxOut];
-                double   radiusOut[MaxOut];
-                DRay3d ray[3];
-                int numRay = 0;
-                int numCircle = 1;  // That's the point
-                int numOut;
-                for (auto &arc : arcs)
-                    {
-                    double r;
-                    if (arc.IsCircularXY (r))
-                        {
-                        centerIn[numCircle] = arc.center;
-                        radiusIn[numCircle] = r;
-                        numCircle++;
-                        }
-                    }
-                for (auto &segment : segments)
-                    {
-                    ray[numRay] = DRay3d::FromOriginAndTarget (segment.point[0], segment.point[1]);
-                    numRay++;
-                    }
-                if (numCircle == 3)
-                    {
-                    bsiGeom_circleTTTCircleConstruction
-                        (
-                        centerOut, radiusOut, &numOut, MaxOut,
-                        centerIn, radiusIn
-                        );
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-                else if (numCircle == 2 && numRay == 1)
-                    {
-                    DVec3d   lineTangent = segments[0].point[1] - segments[0].point[0];
-                    bsiGeom_circleTTTCircleCircleLineConstruction
-                        (
-                        centerOut, radiusOut, &numOut, MaxOut,
-                        centerIn, radiusIn,
-                        &ray[0].origin, &ray[0].direction);
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-                else if (numCircle == 1 && numRay == 2)
-                    {
-                    DVec3d   lineTangent = segments[0].point[1] - segments[0].point[0];
-
-                    bsiGeom_circleTTTLineLineCircleConstruction
-                        (
-                        centerOut, radiusOut,
-                        tangentPointA, tangentPointB, tangentPointC,
-                        numOut, MaxOut,
-                        ray[0].origin, ray[0].direction,
-                        ray[1].origin, ray[1].direction,
-                        centerIn[0], radiusIn[0]
-                        );
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-
+                BranchToTangencySolver (result, points, segments, arcs, localToWorld);
                 }
             }
         }
@@ -591,83 +600,7 @@ struct FromTangentTangentTangent: ConstructionContext::ITryConstruction
             Transform localToWorld, worldToLocal;
             if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
                 {
-                static const int MaxOut = 8;
-                DPoint3d centerIn[3];
-                double   radiusIn[3];
-                DPoint3d tangentPointA[MaxOut];
-                DPoint3d tangentPointB[MaxOut];
-                DPoint3d tangentPointC[MaxOut];
-                DPoint3d centerOut[MaxOut];
-                double   radiusOut[MaxOut];
-                DRay3d ray[3];
-                int numRay = 0;
-                int numCircle = 0;
-                int numOut;
-                for (auto &arc : arcs)
-                    {
-                    double r;
-                    if (arc.IsCircularXY (r))
-                        {
-                        centerIn[numCircle] = arc.center;
-                        radiusIn[numCircle] = r;
-                        numCircle++;
-                        }
-                    }
-                for (auto &segment : segments)
-                    {
-                    ray[numRay] = DRay3d::FromOriginAndTarget (segment.point[0], segment.point[1]);
-                    numRay++;
-                    }
-                if (numCircle == 3)
-                    {
-                    bsiGeom_circleTTTCircleConstruction
-                        (
-                        centerOut, radiusOut, &numOut, MaxOut,
-                        centerIn, radiusIn
-                        );
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-                else if (numCircle == 2 && numRay == 1)
-                    {
-                    DVec3d   lineTangent = segments[0].point[1] - segments[0].point[0];
-                    bsiGeom_circleTTTCircleCircleLineConstruction
-                        (
-                        centerOut, radiusOut, &numOut, MaxOut,
-                        centerIn, radiusIn,
-                        &ray[0].origin, &ray[0].direction);
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-                else if (numCircle == 1 && numRay == 2)
-                    {
-                    DVec3d   lineTangent = segments[0].point[1] - segments[0].point[0];
-
-                    bsiGeom_circleTTTLineLineCircleConstruction
-                        (
-                        centerOut, radiusOut,
-                        tangentPointA, tangentPointB, tangentPointC,
-                        numOut, MaxOut,
-                        ray[0].origin, ray[0].direction,
-                        ray[1].origin, ray[1].direction,
-                        centerIn[0], radiusIn[0]
-                        );
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-                else if (numCircle == 0 && numRay == 3)
-                    {
-                    DVec3d   lineTangent = segments[0].point[1] - segments[0].point[0];
-
-                    bsiGeom_circleTTTLineLineLineConstruction
-                        (
-                        centerOut, radiusOut,
-                        tangentPointA, tangentPointB, tangentPointC,
-                        numOut, MaxOut,
-                        ray[0].origin, ray[0].direction,
-                        ray[1].origin, ray[1].direction,
-                        ray[2].origin, ray[2].direction
-                        );
-                    LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
-                    }
-
+                BranchToTangencySolver (result, points, segments, arcs, localToWorld);
                 }
             }
         }
