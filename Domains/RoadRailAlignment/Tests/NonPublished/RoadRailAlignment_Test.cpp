@@ -25,17 +25,20 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_TRUE(horizAlignmPtr->GetGeometry().IsOpenPath());
 
     // Create Vertical
-    auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(*projectPtr, VerticalAlignmentModel::QueryClassId(*projectPtr),
-        alignmentPtr->GetElementId()));
+    auto verticalModelPtr = VerticalAlignmentModel::Create(VerticalAlignmentModel::CreateParams(*projectPtr, alignmentPtr->GetElementId()));
     ASSERT_EQ(DgnDbStatus::Success, verticalModelPtr->Insert());
 
     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
     auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *vertAlignVecPtr);
-    ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
+    ASSERT_TRUE(verticalAlignmPtr->Insert().IsValid());
 
-    ASSERT_EQ(horizAlignmPtr->GetElementId(), alignmentPtr->QueryHorizontal()->GetElementId());
-    ASSERT_EQ(verticalAlignmPtr->GetElementId(), alignmentPtr->QueryMainVertical()->GetElementId());
+    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->SetHorizontal(*horizAlignmPtr));
+    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->SetMainVertical(*verticalAlignmPtr));
+    ASSERT_TRUE(alignmentPtr->Update().IsValid());
+
+    ASSERT_EQ(horizAlignmPtr->GetElementId(), alignmentPtr->GetHorizontal()->GetElementId());
+    ASSERT_EQ(verticalAlignmPtr->GetElementId(), alignmentPtr->GetMainVertical()->GetElementId());
 
     auto verticalIds = alignmentPtr->QueryVerticalAlignmentIds();
     ASSERT_EQ(1, verticalIds.size());
@@ -74,8 +77,8 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->InsertWithMainPair(*alignPairPtr).IsValid());
 
-    ASSERT_TRUE(alignmentPtr->QueryHorizontal()->GetElementId().IsValid());
-    ASSERT_TRUE(alignmentPtr->QueryMainVertical()->GetElementId().IsValid());
+    ASSERT_TRUE(alignmentPtr->GetHorizontal()->GetElementId().IsValid());
+    ASSERT_TRUE(alignmentPtr->GetMainVertical()->GetElementId().IsValid());
 
     auto verticalIds = alignmentPtr->QueryVerticalAlignmentIds();
     ASSERT_EQ(1, verticalIds.size());

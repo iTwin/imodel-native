@@ -15,6 +15,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Horizontal" relationshipName="AlignmentRefersToHorizontal" direction="Forward"/>
+        <ECNavigationProperty propertyName="MainVertical" relationshipName="AlignmentRefersToMainVertical" direction="Forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="HorizontalAlignmentsPortion">
         <BaseClass>bis:SpatialLocationPortion</BaseClass>
@@ -64,15 +66,7 @@
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SpatialElementRefersToAlignment" strength="referencing" modifier="Abstract" strengthDirection="Backward">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered by N spatial elements">
-            <Class class="bis:SpatialElement"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 alignment">
-            <Class class="Alignment"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" modifier="Sealed" strengthDirection="Backward">
+    <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(1..1)" roleLabel="is main horizontal for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
