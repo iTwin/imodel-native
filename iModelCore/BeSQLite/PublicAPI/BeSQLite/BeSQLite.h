@@ -2677,8 +2677,8 @@ public:
     BE_SQLITE_EXPORT void ChangeDbGuid(BeGuid);
 
     //!< @private
-    //! Change the BeBriefcaseId of this Db.
-    BE_SQLITE_EXPORT DbResult ChangeBriefcaseId(BeBriefcaseId);
+    //! Assign the BeBriefcaseId of this Db.
+    BE_SQLITE_EXPORT DbResult AssignBriefcaseId(BeBriefcaseId);
 
     //! Set or replace the ChangeTracker for this Db.
     //! @param[in] tracker The new ChangeTracker for this Db.

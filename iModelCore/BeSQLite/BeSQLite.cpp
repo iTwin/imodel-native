@@ -1434,7 +1434,7 @@ void Db::ChangeDbGuid(BeGuid guid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::ChangeBriefcaseId(BeBriefcaseId id)
+DbResult Db::AssignBriefcaseId(BeBriefcaseId id)
     {
     if (IsReadonly())
         return BE_SQLITE_READONLY;
