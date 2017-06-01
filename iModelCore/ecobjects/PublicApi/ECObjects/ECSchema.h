@@ -22,7 +22,8 @@
 #define DEFAULT_VERSION_WRITE      0
 #define DEFAULT_VERSION_MINOR       0
 
-EC_TYPEDEFS(QualifiedECAccessor);
+EC_TYPEDEFS(QualifiedECAccessor)
+EC_TYPEDEFS(KindOfQuantityFormatting)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -1868,7 +1869,7 @@ struct KindOfQuantity : NonCopyableClass
         bool SetDefaultPresentationUnit(Formatting::FormatUnitSet value) { m_presentationFUS.insert(m_presentationFUS.begin(), value); return !value.HasProblem(); }
         //! Gets the default presentation Unit of this KindOfQuantity.
         Formatting::FormatUnitSet GetDefaultPresentationUnit() const { return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS; };
-
+        ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
         //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
         bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const { return m_presentationFUS; }
         //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
@@ -1881,7 +1882,55 @@ struct KindOfQuantity : NonCopyableClass
         //! Intended to be called by ECDb or a similar system
         void                SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; };
         bool                HasId() const { return m_kindOfQuantityId.IsValid(); };
+        ECOBJECTS_EXPORT Json::Value PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias = true) const;
     };
+
+//struct KindOfQuantityFormatting
+//    {
+//    private:
+//        Utf8String m_fullName; //cached nsprefix:name representation
+//        Formatting::FormatUnitSet m_persistenceFUS;
+//        bvector<Formatting::FormatUnitSet> m_presentationFUS;
+//
+//    public:
+//    KindOfQuantityFormatting()
+//        {
+//        m_fullName = nullptr;
+//        m_persistenceFUS = Formatting::FormatUnitSet();
+//        }
+//
+//    KindOfQuantityFormatting(KindOfQuantityCP koq)
+//        {
+//        m_fullName = koq->GetFullName();
+//        m_persistenceFUS = Formatting::FormatUnitSet(koq->GetPersistenceUnit());
+//        bvector<Formatting::FormatUnitSet> koqPresentation = koq->GetPresentationUnitList();
+//        m_presentationFUS = bvector<Formatting::FormatUnitSet>();
+//        for (Formatting::FormatUnitSetCP fus = koqPresentation.begin(); fus != koqPresentation.end(); fus++)
+//            {
+//            m_presentationFUS.push_back(Formatting::FormatUnitSet(fus));
+//            }
+//        }
+//
+//    KindOfQuantityFormatting(KindOfQuantityFormattingCP other)
+//        {
+//        m_fullName = other->m_fullName;
+//        m_persistenceFUS = Formatting::FormatUnitSet(other->GetPersistenceFUS());
+//        bvector<Formatting::FormatUnitSet> koqPresentation = other->GetPresentationFUSList();
+//        m_presentationFUS = bvector<Formatting::FormatUnitSet>();
+//        for (Formatting::FormatUnitSetCP fus = koqPresentation.begin(); fus != koqPresentation.end(); fus++)
+//            {
+//            m_presentationFUS.push_back(Formatting::FormatUnitSet(fus));
+//            }
+//        }
+//
+//    Utf8String GetFullName() { return m_fullName; }
+//    Formatting::FormatUnitSetCR GetPersistenceFUS() const { return m_persistenceFUS; }
+//
+//    bvector<Formatting::FormatUnitSet> const& GetPresentationFUSList() const { return m_presentationFUS; }
+//    ECOBJECTS_EXPORT Formatting::FormatUnitSet GetDefaultPresentationFUS() const;
+//    ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
+//    ECOBJECTS_EXPORT Json::Value PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias = true) const;
+//    };
 
 //---------------------------------------------------------------------------------------
 // The in-memory representation of an EntityClass as defined by ECSchemaXML
