@@ -2676,6 +2676,7 @@ public:
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeGuid);
 
+    //!< @private
     //! Change the BeBriefcaseId of this Db.
     BE_SQLITE_EXPORT DbResult ChangeBriefcaseId(BeBriefcaseId);
 

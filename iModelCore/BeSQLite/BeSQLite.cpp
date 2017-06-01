@@ -1439,11 +1439,19 @@ DbResult Db::ChangeBriefcaseId(BeBriefcaseId id)
     if (IsReadonly())
         return BE_SQLITE_READONLY;
 
+    BeBriefcaseId currentId = GetBriefcaseId();
+
     //If the passed id is the same as the existing one, we must not do anything. The call ClearBriefcaseLocalValues 
     //deletes all briefcase local values, which is fine if the briefcase id really changes. If it doesn't change
     //it would mean though to destroy the current state of those values.
-    if (!id.IsValid() || (GetBriefcaseId().IsValid() && GetBriefcaseId() == id))
+    if (!id.IsValid() || (currentId.IsValid() && currentId == id))
         return BE_SQLITE_ERROR;
+
+    if (!currentId.IsMasterId() || id.IsMasterId())
+        {
+        BeAssert(false && "Can only change Master -> Briefcase");
+        return BE_SQLITE_ERROR;
+        }
 
     // changing the BeBriefcaseId invalidates all BriefcaseLocalValues. Delete them.
     DbResult stat = ClearBriefcaseLocalValues();
