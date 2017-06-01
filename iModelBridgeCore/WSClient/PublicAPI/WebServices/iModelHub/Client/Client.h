@@ -78,7 +78,7 @@ public:
     //! Credentials used to authenticate to the on-premise server.
     void SetCredentials(CredentialsCR credentials) {m_credentials = credentials;}
 
-    //! ProjectId to bind repositories to. Required for IMS authentication and should be empty for Basic.
+    //! ProjectId to bind iModels to. Required for IMS authentication and should be empty for Basic.
     void SetProject(Utf8StringCR projectId) {m_projectId = projectId;}
 
     //! Returns iModel admin that caches iModelManager instances.
@@ -115,25 +115,25 @@ public:
     //! Get list of available repostiories for this client.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has a collection of iModel information as the result. See iModelInfo.
-    //! @note Does not return uninitialized repositories or repositories that the user does not have authorization to access.
-    IMODELHUBCLIENT_EXPORT iModelsTaskPtr GetRepositories(ICancellationTokenPtr cancellationToken = nullptr) const;
+    //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
+    IMODELHUBCLIENT_EXPORT iModelsTaskPtr GetiModels(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Gets iModel with the specified name.
     //! @param[in] iModelName
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has iModel information as the result. See iModelInfo.
-    //! @note Does not return uninitialized repositories or repositories that the user does not have authorization to access.
+    //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
     IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelByName(Utf8StringCR iModelName, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Gets iModel with the specified id.
     //! @param[in] iModelId
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has iModel information as the result. See iModelInfo.
-    //! @note Does not return uninitialized repositories or repositories that the user does not have authorization to access.
+    //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
     IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelById(Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new iModel on the server.
-    //! @param[in] db A DgnDb file to upload as a master file for the iModel.
+    //! @param[in] db A DgnDb file to upload as a seed file for the iModel.
     //! @param[in] waitForInitialized Wait for initialized iModel.
     //! @param[in] callback Progress callback for the file upload.
     //! @param[in] cancellationToken
@@ -143,7 +143,7 @@ public:
     IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(DgnDbCR db, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new iModel on the server.
-    //! @param[in] db A DgnDb file to upload as a master file for the iModel.
+    //! @param[in] db A DgnDb file to upload as a seed file for the iModel.
     //! @param[in] iModelName Explicit iModel name.
     //! @param[in] description Explicit description of the iModel.
     //! @param[in] waitForInitialized Wait for initialized iModel.
@@ -156,12 +156,12 @@ public:
                                                                                      Http::Request::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete a iModel from server
-    //! @param[in] iModelInfo Information of iModel to be deleted. This value should be returned by the server. See Client::GetRepositories and Client::CreateNewiModel.
+    //! @param[in] iModelInfo Information of iModel to be deleted. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
     //! @param[in] cancellationToken Cancellation is not going to prevent iModel deletion, if the request is already sent.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr DeleteiModel(iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a iModel from the server.
-    //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetRepositories and Client::CreateNewiModel.
+    //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
     //! @param[in] localFileName Path to a local file including filename and extension, where briefcase should be saved.
     //! @param[in] doSync If set to true, it will download all of the changeSets that have not been merged on server and merge locally.
     //! @param[in] callback Download progress callback.
@@ -172,7 +172,7 @@ public:
                                                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a iModel from the server using callback to provide the file path.
-    //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetRepositories and Client::CreateNewiModel.
+    //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
     //! @param[in] baseDirectory Path to a directory that will be used in callback function.
     //! @param[in] doSync If set to true, it will download all of the changeSets that have not been merged on server and merge locally.
     //! @param[in] fileNameCallback Callback function, that takes baseDirectory, briefcase Id and iModel info as arguments and returns full filename.
@@ -185,7 +185,7 @@ public:
                                                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
    
     //! Abandon a briefcase. It will abandon a briefcase and release all locks and codes associated to it. Make sure you delete briefcase BIM file after calling this.
-    //! @param[in] iModelInfo Information of iModel to connect to. This value should be returned by the server. See Client::GetRepositories and Client::CreateNewiModel.
+    //! @param[in] iModelInfo Information of iModel to connect to. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
     //! @param[in] briefcaseId id that should be abandoned.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns error if abandoning briefcase fails.

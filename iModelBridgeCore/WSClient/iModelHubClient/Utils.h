@@ -84,7 +84,7 @@ namespace ServerSchema
         static Utf8CP BriefcaseId = "BriefcaseId";
         static Utf8CP BriefcaseIds = "BriefcaseIds";
         static Utf8CP ParentId = "ParentId";
-        static Utf8CP MasterFileId = "SeedFileId";
+        static Utf8CP SeedFileId = "SeedFileId";
         static Utf8CP MergedChangeSetId = "MergedChangeSetId";
         static Utf8CP PushDate = "PushDate";
         static Utf8CP ObjectId = "ObjectId";
