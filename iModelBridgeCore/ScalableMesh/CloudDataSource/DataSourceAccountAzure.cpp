@@ -311,7 +311,8 @@ void DataSourceAccountAzureCURL::SetSASTokenGetterCallback(const std::function<s
 DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
     {
     auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
-    uriEncodedBlobUrl += ("?" + this->m_getSASToken(Utf8String(this->getAccountKey().c_str()))).c_str();
+    auto azureToken = this->m_getSASToken(Utf8String(this->getAccountKey().c_str()));
+    if (!azureToken.empty()) uriEncodedBlobUrl += ("?" + azureToken).c_str();
     DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str(), BentleyCharEncoding::Utf8).c_str()));
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
