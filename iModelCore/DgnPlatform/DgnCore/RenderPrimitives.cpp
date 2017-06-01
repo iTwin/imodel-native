@@ -61,7 +61,9 @@ static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR cur
         for (auto& loopStrokes : loop)
             {
             transform.Multiply(loopStrokes, loopStrokes);
-            strokes.push_back (Strokes::PointList(std::move(loopStrokes)));
+
+            DRange3d    range = DRange3d::From(loopStrokes);
+            strokes.push_back (Strokes::PointList(std::move(loopStrokes), DPoint3d::FromInterpolate(range.low, .5, range.high)));
             }
         }
     }
@@ -809,9 +811,9 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP renderi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance)
+void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
     {
-    Polyline    newPolyline(startDistance);
+    Polyline    newPolyline(startDistance, FPoint3d::From(rangeCenter));
 
     for (auto& point : points)
         {
@@ -1412,7 +1414,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 
                 uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance);
+                    meshBuilder->AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
                 }
             }
         }
@@ -1763,8 +1765,12 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     for (auto& polyline : meshEdges->m_polylines)
         {
         IndexedPolyline indexedPolyline;
+        DRange3d        range = DRange3d::NullRange();
 
-        if (indexedPolyline.Init(polyline, 0.0))
+        for (auto& index : polyline)
+            range.Extend(mesh.GetPoint(index));
+
+        if (indexedPolyline.Init(polyline, 0.0, FPoint3d::From(DPoint3d::FromInterpolate(range.low, .5, range.high))))
             m_polylines.push_back(indexedPolyline);
         }
                                                 
@@ -2385,5 +2391,4 @@ void QVertex3dList::Requantize()
 
     m_fpoints.clear();
     }
-
 

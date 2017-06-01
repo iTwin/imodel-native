@@ -319,12 +319,15 @@ struct Polyline
 private:
     bvector<uint32_t>   m_indices;
     float               m_startDistance;
+    FPoint3d            m_rangeCenter;
+
 public:
     Polyline () : m_startDistance(0.0) { }
-    Polyline (float startDistance) : m_startDistance(startDistance) { }
+    Polyline (float startDistance, FPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
     float GetStartDistance() const { return m_startDistance; }
+    FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
 };
@@ -599,7 +602,7 @@ public:
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
 
     void AddMesh(TriangleCR triangle);
     void AddTriangle(TriangleCR triangle);
@@ -634,10 +637,11 @@ struct Strokes
         {
         double              m_startDistance;
         bvector<DPoint3d>   m_points;
+        DPoint3d            m_rangeCenter;
 
-        PointList(double startDistance) : m_startDistance(startDistance) { }
-        PointList() : m_startDistance(0.0) { }
-        PointList(bvector<DPoint3d>&& points) : m_startDistance(), m_points(std::move(points)) { }
+        PointList(double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+        PointList() : m_startDistance(0.0), m_rangeCenter(DPoint3d::FromZero()) { }
+        PointList(bvector<DPoint3d>&& points, DPoint3dCR rangeCenter) : m_startDistance(0.0), m_points(std::move(points)), m_rangeCenter(rangeCenter) { }
         };
 
 
@@ -645,7 +649,6 @@ struct Strokes
 
     DisplayParamsCPtr   m_displayParams;
     PointLists          m_strokes;
-    bvector<double>     m_strokeStartDistance;
     bool                m_disjoint;
 
     Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint) : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
@@ -907,15 +910,16 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
         m_startDistance = 0.0;
         }
 
-    bool Init(PolylineCR line) { return Init(line.GetIndices(), line.GetStartDistance()); }
+    bool Init(PolylineCR line) { return Init(line.GetIndices(), line.GetStartDistance(), line.GetRangeCenter()); }
         
-    bool Init (bvector<uint32_t> const& indices, double startDistance)
+    bool Init (bvector<uint32_t> const& indices, double startDistance, FPoint3dCR rangeCenter)
         {
         Reset();
 
         m_numIndices = static_cast<uint32_t>(indices.size());
         m_vertIndex = &indices[0];
         m_startDistance = startDistance;
+        m_rangeCenter = rangeCenter;
 
         return IsValid();
         }
