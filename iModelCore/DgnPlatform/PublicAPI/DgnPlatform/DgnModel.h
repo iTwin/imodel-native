@@ -67,6 +67,7 @@ struct ModelIteratorEntry : ECSqlStatementEntry
     friend struct ECSqlStatementIterator<ModelIteratorEntry>;
 private:
     ModelIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+
 public:
     DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
     DGNPLATFORM_EXPORT DgnClassId GetClassId() const;

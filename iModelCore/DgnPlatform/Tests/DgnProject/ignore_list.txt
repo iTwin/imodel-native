@@ -25,8 +25,8 @@ CsvFileTests.GetSections
 #TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
-# Will be removed from ignore list once the Bim produced by CompatibilityTest is preserved by the 'CompatibilityTestFiles' product.
-CompatibilityTest2.ModifyPreservedBim
+# Will be removed from ignore list once the Bim produced by ECInstancesCompatibility is preserved by the 'CompatibilityTestFiles' product.
+ECInstancesCompatibility.ModifyPreservedBim
 
 #TFS 630732
 DgnECNavigatorTest.GetElementInfo

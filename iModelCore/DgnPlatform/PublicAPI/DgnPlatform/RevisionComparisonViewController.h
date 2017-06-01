@@ -101,10 +101,10 @@ struct PersistentState : State
 //=======================================================================================
 struct TransientState : State
 {
-    DgnElementCPtr  m_element;
+    DgnElementCPtr   m_element;
 
     TransientState() = default;
-    TransientState(DgnElementCR el, DbOpcode opcode) : State(opcode), m_element(&el) { }
+    TransientState(DgnElementCPtr el, DbOpcode opcode) : State(opcode), m_element(el) { }
 
     bool IsValid() const { return m_element.IsValid(); }
 
@@ -127,7 +127,7 @@ public:
     bset<TransientState> const& GetTransientStates() const { return m_transient; }
 
     void Clear() { m_persistent.clear(); m_transient.clear(); }
-    void Add(DgnElementCR el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
+    void Add(DgnElementCPtr el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
     void Add(DgnElementId id, DbOpcode opcode) { m_persistent.insert(PersistentState(id, opcode)); }
 };
 

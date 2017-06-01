@@ -870,7 +870,7 @@ struct GradientSymb : RefCountedBase
         None         = 0,
         Invert       = (1 << 0),
         Outline      = (1 << 1),
-        AlwaysFilled = (1 << 2),
+        Deprecated   = (1 << 2), //!< Was AlwaysFilled, now controlled by FillDisplay...
     };
 
     enum class Mode : Byte
