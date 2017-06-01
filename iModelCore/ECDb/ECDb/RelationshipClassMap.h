@@ -126,7 +126,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ClassMappingStatus CreateForiegnKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo);
         ClassMappingStatus UpdatePersistedEndForChild(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap);
         RelationshipClassEndTableMap* GetRootRelationshipMap(SchemaImportContext& ctx);
-        ClassMappingStatus FinishForChild(SchemaImportContext& ctx);
+        ClassMappingStatus FinishMappingForChild(SchemaImportContext& ctx);
     public:
 
         ~RelationshipClassEndTableMap() {}
@@ -135,7 +135,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ECN::ECRelationshipEnd GetForeignEnd() const;
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
-        ClassMappingStatus Finish(SchemaImportContext& ctx);
+        ClassMappingStatus FinishMapping(SchemaImportContext& ctx);
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
         //WIP: This code must go elsewhere. It is only used by the column factory
         Utf8String GetAccessStringForId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropId); }

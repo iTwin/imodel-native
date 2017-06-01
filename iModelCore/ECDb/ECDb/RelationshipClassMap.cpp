@@ -361,21 +361,123 @@ ClassMappingStatus RelationshipClassEndTableMap::CreateForiegnKeyConstraint(DbTa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassEndTableMap::FinishForChild(SchemaImportContext& ctx)
+ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImportContext& ctx)
     {
-    RelationshipClassEndTableMap* relationshipMap = GetRootRelationshipMap(ctx);
-    if (relationshipMap == nullptr)
+    if (GetClass().GetBaseClasses().size() != 1)
+        {
+        BeAssert(false && "Multi-inheritance of ECRelationshipclasses should have been caught before already");
+        return ClassMappingStatus::Error;
+        }
+
+    RelationshipClassEndTableMap* baseClassMap = GetRootRelationshipMap(ctx);
+    if (baseClassMap == nullptr || baseClassMap->GetType() != ClassMap::Type::RelationshipEndTable)
+        {
+        BeAssert(false && "Could not find class map of base ECRelationship class or is not of right type");
+        return ClassMappingStatus::Error;
+        }
+
+    RelationshipClassEndTableMap const& baseRelClassMap = baseClassMap->GetAs<RelationshipClassEndTableMap>();
+    //ECInstanceId property map
+    SystemPropertyMap const* basePropMap = baseRelClassMap.GetECInstanceIdPropertyMap();
+    if (basePropMap == nullptr)
+        {
+        BeAssert(false);
+        return ClassMappingStatus::Error;
+        }
+
+    if (GetPropertyMapsR().Insert(PropertyMapCopier::CreateCopy(*basePropMap, *this)) != SUCCESS)
         return ClassMappingStatus::Error;
 
+    //ECClassId property map
+    SystemPropertyMap const* classIdPropertyMap = baseRelClassMap.GetECClassIdPropertyMap();
+    if (classIdPropertyMap == nullptr)
+        {
+        BeAssert(false);
+        return ClassMappingStatus::Error;
+        }
+
+    if (GetPropertyMapsR().Insert(PropertyMapCopier::CreateCopy(*classIdPropertyMap, *this)) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+
+    //ForeignEnd
+    RelationshipConstraintMap const& baseForeignEndConstraintMap = baseRelClassMap.GetConstraintMap(GetForeignEnd());
+    if (baseForeignEndConstraintMap.GetECInstanceIdPropMap() == nullptr ||
+        baseForeignEndConstraintMap.GetECClassIdPropMap() == nullptr)
+        {
+        BeAssert(false);
+        return ClassMappingStatus::Error;
+        }
+
+    RelationshipConstraintMap& foreignEndConstraintMap = GetConstraintMapR(GetForeignEnd());
+
+    //Foreign ECInstanceId prop map
+    RefCountedPtr<SystemPropertyMap> clonedConstraintInstanceId = PropertyMapCopier::CreateCopy(*baseForeignEndConstraintMap.GetECInstanceIdPropMap(), *this);
+    if (clonedConstraintInstanceId == nullptr)
+        return ClassMappingStatus::Error;
+
+    if (GetPropertyMapsR().Insert(clonedConstraintInstanceId) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    foreignEndConstraintMap.SetECInstanceIdPropMap(&clonedConstraintInstanceId->GetAs<ConstraintECInstanceIdPropertyMap>());
+
+    GetTablesPropertyMapVisitor tableDisp;
+    clonedConstraintInstanceId->AcceptVisitor(tableDisp);
+    for (DbTable const* table : tableDisp.GetTables())
+        {
+        AddTable(*const_cast<DbTable *>(table));
+        }
+
+    //Foreign ECClassId prop map
+    RefCountedPtr<SystemPropertyMap> clonedConstraintClassId = PropertyMapCopier::CreateCopy(*baseForeignEndConstraintMap.GetECClassIdPropMap(), *this);
+    if (clonedConstraintClassId == nullptr)
+        return ClassMappingStatus::Error;
+
+    if (GetPropertyMapsR().Insert(clonedConstraintClassId) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    foreignEndConstraintMap.SetECClassIdPropMap(&clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
+
+    //ReferencedEnd
+    RelationshipConstraintMap const& baseReferencedEndConstraintMap = baseRelClassMap.GetConstraintMap(GetReferencedEnd());
+    if (baseReferencedEndConstraintMap.GetECInstanceIdPropMap() == nullptr ||
+        baseReferencedEndConstraintMap.GetECClassIdPropMap() == nullptr)
+        {
+        BeAssert(false);
+        return ClassMappingStatus::Error;
+        }
+
+    RelationshipConstraintMap& referencedEndConstraintMap = GetConstraintMapR(GetReferencedEnd());
+
+    //Referenced ECInstanceId prop map
+    clonedConstraintInstanceId = PropertyMapCopier::CreateCopy(*baseReferencedEndConstraintMap.GetECInstanceIdPropMap(), *this);
+    if (clonedConstraintInstanceId == nullptr)
+        return ClassMappingStatus::Error;
+
+    if (GetPropertyMapsR().Insert(clonedConstraintInstanceId) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    referencedEndConstraintMap.SetECInstanceIdPropMap(&clonedConstraintInstanceId->GetAs<ConstraintECInstanceIdPropertyMap>());
+
+    //Referenced ECClassId prop map
+    clonedConstraintClassId = PropertyMapCopier::CreateCopy(*baseReferencedEndConstraintMap.GetECClassIdPropMap(), *this);
+    if (clonedConstraintClassId == nullptr)
+        return ClassMappingStatus::Error;
+    if (GetPropertyMapsR().Insert(clonedConstraintClassId) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    referencedEndConstraintMap.SetECClassIdPropMap(&clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
+
+    return ClassMappingStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassEndTableMap::Finish(SchemaImportContext& ctx)
+ClassMappingStatus RelationshipClassEndTableMap::FinishMapping(SchemaImportContext& ctx)
     {
     if (GetClass().HasBaseClasses())
-        return FinishForChild(ctx);
+        return FinishMappingForChild(ctx);
 
     if (GetState() == ObjectState::Persisted)
         return ClassMappingStatus::Success;
@@ -449,7 +551,7 @@ ClassMappingStatus RelationshipClassEndTableMap::Finish(SchemaImportContext& ctx
     AddIndexToRelationshipEnd(classMappingInfo);
     return ClassMappingStatus::Success;
     }     
-\
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
