@@ -381,19 +381,22 @@ void RealityDataDocumentContentByIdRequest::ChangeInstanceId(Utf8String instance
 //=====================================================================================
 RawServerResponse RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() const
     {
-    if(m_handshakeRequest == nullptr)
+    RawServerResponse rawResponse = RawServerResponse();
+    if(m_allowAzureRedirection)
         {
-        bvector<Utf8String> lines;
-        BeStringUtilities::Split(m_id.c_str(), "~", lines);
-        Utf8String root = lines[0];
+        if(m_handshakeRequest == nullptr)
+            {
+            bvector<Utf8String> lines;
+            BeStringUtilities::Split(m_id.c_str(), "~", lines);
+            Utf8String root = lines[0];
 
-        m_handshakeRequest = new AzureHandshake(root, false);
+            m_handshakeRequest = new AzureHandshake(root, false);
+            }
+        rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)m_handshakeRequest);
+
+        if (rawResponse.status != RequestStatus::BADREQ && m_handshakeRequest->ParseResponse(rawResponse.body, m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
+            m_AzureRedirected = true;
         }
-
-    RawServerResponse rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)m_handshakeRequest);
-
-    if (rawResponse.status != RequestStatus::BADREQ && m_handshakeRequest->ParseResponse(rawResponse.body, m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
-        m_allowAzureRedirection = true;
 
     return rawResponse;
     }
@@ -412,7 +415,7 @@ bool RealityDataDocumentContentByIdRequest::IsAzureRedirectionPossible() { retur
 //=====================================================================================
 void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    if(m_allowAzureRedirection)
+    if(m_AzureRedirected)
         {
         m_httpRequestString = m_azureServer;
         bvector<Utf8String> parts;
@@ -2062,7 +2065,7 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
         return documents;
         }
     rawResponse = request.GetAzureRedirectionRequestUrl();
-    if(rawResponse.status == RequestStatus::BADREQ)
+    if (rawResponse.status != RequestStatus::OK)
         return documents;
     int64_t timer = request.GetTokenTimer();
 
@@ -2201,7 +2204,7 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     request.GetAzureRedirectionRequestUrl();
 
-    if (request.IsAzureRedirectionPossible())
+    if (request.IsAzureBlobRedirected())
         WSGRequest::GetInstance().PerformAzureRequest(request, rawResponse, RealityDataService::GetVerifyPeer(), file);
     else
         WSGRequest::GetInstance().PerformRequest(request, rawResponse, RealityDataService::GetVerifyPeer(), file);
