@@ -48,7 +48,7 @@ Utf8String ParseString(RapidJsonValueCR properties, Utf8String stringName, Utf8S
 ChangeSetInfoPtr ParseRapidJson(RapidJsonValueCR properties)
     {
     auto id = properties[ServerSchema::Property::Id].GetString();
-    auto dbGuid = ParseString(properties, ServerSchema::Property::MasterFileId, "");
+    auto dbGuid = ParseString(properties, ServerSchema::Property::SeedFileId, "");
     auto parentChangeSetId = ParseString(properties, ServerSchema::Property::ParentId, "");
     auto description = ParseString(properties, ServerSchema::Property::Description, "");
     auto userCreated = ParseString(properties, ServerSchema::Property::UserCreated, "");
