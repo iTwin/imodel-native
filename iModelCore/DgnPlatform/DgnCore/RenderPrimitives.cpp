@@ -170,9 +170,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams)
+DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams, bool filled)
     {
     m_lineColor = gfParams.GetLineColor();
+    m_fillColor = m_lineColor;
 
     if (nullptr != geomParams)
         {
@@ -184,7 +185,6 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
     switch (type)
         {
         case Type::Mesh:
-            m_fillColor = gfParams.GetFillColor();
             m_material = gfParams.GetMaterial();
             m_gradient = gfParams.GetGradientSymb();
 
@@ -192,17 +192,29 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
             m_width = gfParams.GetWidth();
             m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels());
 
-            if (gfParams.IsBlankingRegion())
-                m_fillFlags = FillFlags::Blanking;
+            if (filled)
+                {
+                m_fillFlags = FillFlags::ByView;
+                if (gfParams.IsBlankingRegion())
+                    m_fillFlags = m_fillFlags | FillFlags::Blanking;
+
+                m_fillColor = gfParams.GetFillColor();
+                }
 
             if (nullptr != geomParams)
                 {
                 m_materialId = geomParams->GetMaterialId();
-                if (FillDisplay::Always == geomParams->GetFillDisplay())
-                    m_fillFlags = m_fillFlags | FillFlags::Always;
+                if (filled)
+                    {
+                    if (FillDisplay::Always == geomParams->GetFillDisplay())
+                        {
+                        m_fillFlags = m_fillFlags | FillFlags::Always;
+                        m_fillFlags = m_fillFlags & ~FillFlags::ByView;
+                        }
 
-                if (geomParams->IsFillColorFromViewBackground())
-                    m_fillFlags = m_fillFlags | FillFlags::Background;
+                    if (geomParams->IsFillColorFromViewBackground())
+                        m_fillFlags = m_fillFlags | FillFlags::Background;
+                    }
                 }
 
             if (m_material.IsNull() || !m_material->HasTextures()) // textures baked into material...
@@ -1914,7 +1926,7 @@ void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
 void GeometryListBuilder::_AddShape(int numPoints, DPoint3dCP points, bool filled)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
-    m_accum.Add(*curve, filled, GetMeshDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*curve, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1952,7 +1964,7 @@ void GeometryListBuilder::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool fil
         curve->push_back(gapSegment);
         }
 
-    m_accum.Add(*curve, filled, curve->IsAnyRegionType() ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*curve, filled, curve->IsAnyRegionType() ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2022,7 +2034,7 @@ void GeometryListBuilder::_AddBody(IBRepEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBodyR(IBRepEntityR entity)
     {
-    m_accum.Add(entity, GetMeshDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(entity, GetMeshDisplayParams(false), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2144,7 +2156,7 @@ void GeometryListBuilder::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddSolidPrimitiveR(ISolidPrimitiveR primitive)
     {
-    m_accum.Add(primitive, GetMeshDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(primitive, GetMeshDisplayParams(false), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2160,7 +2172,7 @@ void GeometryListBuilder::_AddCurveVector(CurveVectorCR curves, bool isFilled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddCurveVectorR(CurveVectorR curves, bool isFilled)
     {
-    m_accum.Add(curves, isFilled, curves.IsAnyRegionType() ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(curves, isFilled, curves.IsAnyRegionType() ? GetMeshDisplayParams(isFilled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2195,7 +2207,7 @@ void GeometryListBuilder::_AddCurveVector2dR(CurveVectorR curves, bool isFilled,
         {
         Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
         auto cv = curves.Clone(tf);
-        m_accum.Add(*cv, isFilled, cv->IsAnyRegionType() ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
+        m_accum.Add(*cv, isFilled, cv->IsAnyRegionType() ? GetMeshDisplayParams(isFilled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
         }
     }
 
@@ -2205,7 +2217,7 @@ void GeometryListBuilder::_AddCurveVector2dR(CurveVectorR curves, bool isFilled,
 void GeometryListBuilder::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
     CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(bcurve));
-    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2215,7 +2227,7 @@ void GeometryListBuilder::_AddBSplineCurveR(RefCountedMSBsplineCurveR bcurve, bo
     {
     MSBsplineCurvePtr pBcurve(&bcurve);
     CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(pBcurve));
-    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams() : GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2274,7 +2286,7 @@ void GeometryListBuilder::_AddBSplineSurface(MSBsplineSurfaceCR surface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surf)
     {
-    m_accum.Add(surf, GetMeshDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(surf, GetMeshDisplayParams(false), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**

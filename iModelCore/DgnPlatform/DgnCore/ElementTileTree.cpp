@@ -1136,7 +1136,7 @@ void TileContext::AddGeomPart(Render::GraphicBuilderR graphic, DgnGeometryPartId
     Transform tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
     tf.Multiply(range, tileGeomPart->GetRange());
 
-    DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().GetForMesh(graphicParams, &geomParams);
+    DisplayParamsCR displayParams = m_tileBuilder->GetDisplayParamsCache().GetForMesh(graphicParams, &geomParams, false);
 
     BeAssert(nullptr != dynamic_cast<TileBuilderP>(&graphic));
     auto& parent = static_cast<TileBuilderR>(graphic);

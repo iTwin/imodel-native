@@ -106,7 +106,7 @@ private:
     ColorDef            m_fillColor = ColorDef::White(); // meshes only
     uint32_t            m_width = 0; // linear and mesh (edges)
     LinePixels          m_linePixels = LinePixels::Solid; // linear and mesh (edges)
-    FillFlags           m_fillFlags = FillFlags::ByView; // meshes only
+    FillFlags           m_fillFlags = FillFlags::None; // meshes only
     DgnGeometryClass    m_class = DgnGeometryClass::Primary;
     bool                m_ignoreLighting = false; // always true for text and linear geometry; true for meshes only if normals not desired
     bool                m_resolved = true;
@@ -115,7 +115,7 @@ private:
 
     DisplayParamsCPtr Clone() const;
     
-    DGNPLATFORM_EXPORT DisplayParams(Type, GraphicParamsCR, GeometryParamsCP);
+    DGNPLATFORM_EXPORT DisplayParams(Type, GraphicParamsCR, GeometryParamsCP, bool filled);
     DisplayParams(DisplayParamsCR rhs) = default;
     void Resolve(DgnDbR, System&);
 public:
@@ -150,19 +150,19 @@ public:
     DGNPLATFORM_EXPORT bool IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
     DGNPLATFORM_EXPORT bool IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
 
-    static DisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, DgnDbR db, System& sys)
+    static DisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys)
         {
-        DisplayParamsPtr dp = new DisplayParams(Type::Mesh, gf, geom);
+        DisplayParamsPtr dp = new DisplayParams(Type::Mesh, gf, geom, filled);
         dp->Resolve(db, sys);
         return dp;
         }
     static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
         {
-        return new DisplayParams(Type::Linear, gf, geom);
+        return new DisplayParams(Type::Linear, gf, geom, false);
         }
     static DisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom)
         {
-        return new DisplayParams(Type::Text, gf, geom);
+        return new DisplayParams(Type::Text, gf, geom, false);
         }
 };
 
@@ -191,12 +191,12 @@ private:
 public:
     DisplayParamsCache(DgnDbR db, System& system) : m_db(db), m_system(system) { }
 
-    DisplayParamsCR GetForMesh(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Mesh, gf, geom); }
-    DisplayParamsCR GetForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Linear, gf, geom); }
-    DisplayParamsCR GetForText(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Text, gf, geom); }
-    DisplayParamsCR Get(DisplayParams::Type type, GraphicParamsCR gf, GeometryParamsCP geom)
+    DisplayParamsCR GetForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled) { return Get(DisplayParams::Type::Mesh, gf, geom, filled); }
+    DisplayParamsCR GetForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Linear, gf, geom, false); }
+    DisplayParamsCR GetForText(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Text, gf, geom, false); }
+    DisplayParamsCR Get(DisplayParams::Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled)
         {
-        DisplayParams ndp(type, gf, geom);
+        DisplayParams ndp(type, gf, geom, filled);
         return Get(ndp);
         }
 
@@ -1043,7 +1043,7 @@ protected:
     virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0; //!< Invoked by _Finish() to obtain the finished Graphic.
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 
-    void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetMeshDisplayParams(), GetLocalToWorldTransform()); }
+    void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform()); }
     void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
 public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
@@ -1051,10 +1051,10 @@ public:
     DgnElementId GetElementId() const { return m_accum.GetElementId(); }
 
     DisplayParamsCacheR GetDisplayParamsCache() const { return m_accum.GetDisplayParamsCache(); }
-    DisplayParamsCR GetDisplayParams(DisplayParams::Type type) const { return m_accum.GetDisplayParamsCache().Get(type, GetGraphicParams(), GetGeometryParams()); }
-    DisplayParamsCR GetMeshDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Mesh); }
-    DisplayParamsCR GetLinearDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Linear); }
-    DisplayParamsCR GetTextDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Text); }
+    DisplayParamsCR GetDisplayParams(DisplayParams::Type type, bool filled) const { return m_accum.GetDisplayParamsCache().Get(type, GetGraphicParams(), GetGeometryParams(), filled); }
+    DisplayParamsCR GetMeshDisplayParams(bool filled) const { return GetDisplayParams(DisplayParams::Type::Mesh, filled); }
+    DisplayParamsCR GetLinearDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Linear, false); }
+    DisplayParamsCR GetTextDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Text, false); }
 
     System& GetSystem() const { return m_accum.GetSystem(); }
 
