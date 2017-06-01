@@ -248,6 +248,52 @@ TEST_F(DgnDbTest, CreateDgnDb)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                 05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, CreateTrackedDgnDb)
+    {
+    /* 
+     * Note: This test reproduces a reported problem in a very simple work flow of creating
+     * a new DgnDb, turning it into a standalone briefcase, and then making some changes. The 
+     * temporary txn tables aren't setup properly for these cases and causes an exception. 
+     */
+
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+
+    DbResult result = BE_SQLITE_ERROR;
+    CreateDgnDbParams params(TEST_NAME);
+    DgnDbPtr dgndb = DgnDb::CreateDgnDb(&result, DgnDbTestDgnManager::GetOutputFilePath(L"TrackedDb.ibim"), params);
+    ASSERT_TRUE(dgndb.IsValid());
+
+    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
+    ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
+
+    dgndb->ChangeBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    dgndb->Txns().EnableTracking(true);
+
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
+    ASSERT_TRUE(model.IsValid());
+
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*dgndb, "TestCategory");
+    ASSERT_TRUE(categoryId.IsValid());
+
+    CodeSpecId codeSpecId = DgnDbTestUtils::InsertCodeSpec(*dgndb, "TestCodeSpec");
+    ASSERT_TRUE(codeSpecId.IsValid());
+
+    CodeSpecCPtr codeSpec = dgndb->CodeSpecs().GetCodeSpec(codeSpecId);
+    BeAssert(codeSpec.IsValid());
+
+    DgnCode code = codeSpec->CreateCode("E1");
+
+    TestElementPtr testel = TestElement::Create(*dgndb, model->GetModelId(), categoryId, code);
+    testel->SetTestElementProperty("foo");
+    DgnElementCPtr el = testel->Insert();
+    ASSERT_TRUE(el.IsValid());
+
+    dgndb->SaveChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, CreateWithInvalidName)
@@ -614,10 +660,6 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     ECSchemaPtr schema;
     ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext);
     ASSERT_TRUE(schema.IsValid());
-
-    // Flush any local changes before importing schemas
-    m_db->Revisions().StartCreateRevision();
-    m_db->Revisions().FinishCreateRevision();
 
     ASSERT_EQ(SUCCESS, ImportSchema(*schema, *m_db));
 
@@ -996,10 +1038,6 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ECN::ECSchemaPtr schema = nullptr;
     ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
     ASSERT_TRUE(schema != nullptr);
-
-    // Flush any local changes before importing schemas
-    m_db->Revisions().StartCreateRevision();
-    m_db->Revisions().FinishCreateRevision();
 
     ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
     ASSERT_TRUE(m_db->IsDbOpen());

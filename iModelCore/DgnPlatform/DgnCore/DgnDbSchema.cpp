@@ -414,17 +414,13 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
     SaveDgnDbProfileVersion();
     SaveCreationDate();
 
-    Domains().OnDbOpened();
-
     SavePropertyString(DgnProjectProperty::LastEditor(), Utf8String(T_HOST.GetProductName()));
     SavePropertyString(DgnProjectProperty::Client(), params.m_client);
     m_geoLocation.Save();
-    
-    DbResult result = params.m_createStandalone ? Txns().InitializeTableHandlers() : BE_SQLITE_OK;
 
-    SaveChanges();
+    Domains().OnDbOpened();
 
-    return result;
+    return SaveChanges();
     }
 
 //=======================================================================================

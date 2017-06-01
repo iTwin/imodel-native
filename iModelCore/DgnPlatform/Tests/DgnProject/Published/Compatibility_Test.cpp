@@ -831,7 +831,6 @@ GenericGroupCPtr CompatibilityTests::GetSpatialLocationGroup(SubjectCR subject)
 void CompatibilityTests::ImportFunctionalSchema()
     {
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    FlushLocalChanges(); // Flush any un-committed or committed transactions before importing the schema
     ASSERT_EQ(SchemaStatus::Success, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb()));
     }
 

@@ -192,13 +192,6 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this)
 
     TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
     m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
-
-    if (m_dgndb.IsReadonly())
-        return;
-
-    // whenever we open a Briefcase for write access, enable tracking
-    if (m_dgndb.IsBriefcase())
-        EnableTracking(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -213,13 +206,21 @@ TxnManager::~TxnManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::InitializeTableHandlers()
     {
-    if (!m_isTracking)
-        return BE_SQLITE_OK;
+    BeAssert(m_isTracking && "Tracking must be enabled before initializing table handlers");
+    BeAssert(m_dgndb.IsBriefcase() && "No need to initialize table handlers in the master copy");
+    BeAssert(!m_dgndb.IsReadonly() && "No need to initialize table handlers in a Readonly DgnDb");
 
     for (auto table : m_tables)
         table->_Initialize();
 
-    return m_dgndb.SaveChanges(); // "Commit" the creation of temp tables, so that a subsequent call to AbandonChanges will not un-create them.
+    DbResult result = m_dgndb.SaveChanges(); // "Commit" the creation of temp tables, so that a subsequent call to AbandonChanges will not un-create them.
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        return result;
+        }
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**

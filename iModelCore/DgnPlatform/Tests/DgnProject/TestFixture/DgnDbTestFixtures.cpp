@@ -69,6 +69,7 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
 
     if (needBriefcase)
         {
+        TestDataManager::MustBeBriefcase(m_db, mode);
         ASSERT_TRUE(m_db->IsBriefcase());
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
@@ -242,14 +243,4 @@ PhysicalModelPtr DgnDbTestFixture::GetDefaultPhysicalModel()
     PhysicalModelPtr model = GetDgnDb().Models().Get<PhysicalModel>(m_defaultModelId);
     BeAssert(model.IsValid());
     return model;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                   05/17
-//---------------------------------------------------------------------------------------
-void DgnDbTestFixture::FlushLocalChanges()
-    {
-    m_db->SaveChanges();
-    m_db->Revisions().StartCreateRevision();
-    m_db->Revisions().FinishCreateRevision();
     }
