@@ -30,6 +30,17 @@ class RealityConversionTestFixture : public testing::Test
 		static Utf8CP s_EntityDataSourceJSONString;
 		static Utf8CP s_SpatialEntityServerJSONString;
 		static Utf8CP s_SpatialEntityMetadataJSONString;
+
+	WCharCP GetDirectory()
+	{
+		WChar exePath[MAX_PATH];
+		GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+		WString exeDir = exePath;
+		size_t pos = exeDir.find_last_of(L"/\\");
+		exeDir = exeDir.substr(0, pos + 1);
+		return exeDir.c_str();
+	}
     };
 
 
@@ -738,8 +749,10 @@ TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityMetadata)
 TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrder)
 	{
 	WString parseError;
-
-	BeFileName fileName(R"(D:\Dev\Bim2-0r1\RealityModFramework\Tests\data\RealityPlatform\RealityConversionToolsTester\RealityDataPackageSample.xml)");
+	
+	Utf8String samplePath(GetDirectory());
+	samplePath.append(".\\TestData\\RealityPlatform\\RealityDataPackageSample.xml");
+	BeFileName fileName(samplePath);
 	auto linkFile = RealityConversionTools::PackageFileToDownloadOrder(fileName, &parseError);
 
 	//for (RealityDataDownload::mirrorWSistersVector link : linkFile)
