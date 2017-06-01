@@ -1772,6 +1772,8 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
         return false;
 
     m_disjoint = false;
+    m_isEdge = true;
+
     m_polylines.reserve(meshEdges->m_polylines.size());
 
     for (auto& polyline : meshEdges->m_polylines)

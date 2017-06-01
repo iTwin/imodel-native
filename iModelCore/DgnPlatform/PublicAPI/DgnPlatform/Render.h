@@ -1988,6 +1988,7 @@ struct IndexedPolylineArgs
     uint32_t            m_width = 0;
     LinePixels          m_linePixels = LinePixels::Solid;
     bool                m_disjoint = false;
+    bool                m_isEdge = false;
 
     IndexedPolylineArgs() { }
     IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams)
