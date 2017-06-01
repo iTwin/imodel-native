@@ -219,12 +219,11 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooElementKey)) << stmt.GetECSql();
     }
 
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Model"), 
-        std::map<Utf8String, ColumnInfo>{{"Model.Id", ColumnInfo("ts_Element","ps5")}, 
-         {"Model.RelECClassId", ColumnInfo("ts_Element","ModelRelECClassId",true)}});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Parent"),
-                          std::map<Utf8String, ColumnInfo>{{"Parent.Id", ColumnInfo("ts_Element","ps3")},
-                                    {"Parent.RelECClassId", ColumnInfo("ts_Element","ps4")}});
+    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "Element", "Model"),
+                     ColumnInfo::List({ {"Model.Id", "ts_Element", "ps5"}, {"Model.RelECClassId", "ts_Element","ModelRelECClassId",true}}));
+
+    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "Element", "Parent"),
+                    ColumnInfo::List({ {"Parent.Id", "ts_Element", "ps3"}, {"Parent.RelECClassId", "ts_Element","ps4"}}));
     }
 
 //---------------------------------------------------------------------------------------

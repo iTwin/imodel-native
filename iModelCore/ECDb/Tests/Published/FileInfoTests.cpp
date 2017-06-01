@@ -30,7 +30,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct FileInfoTestFixture : ECDbTestFixture {};
+struct FileInfoTestFixture : DbMappingTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/14
@@ -92,6 +92,43 @@ TEST_F(FileInfoTestFixture, PolymorphicQueryRightAfterCreation)
 
     ECSqlStatement selStmt;
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT * FROM ecdbf.FileInfo"));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
+    {
+    ECDbCR ecdb = SetupECDb("subclassingexternalfileinfo.ecdb",
+                            SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbFileInfo" version="02.00" alias="ecdbf"/>
+                <ECEntityClass typeName="MyExternalFileInfo" modifier="Sealed">
+                    <BaseClass>ecdbf:ExternalFileInfo</BaseClass>
+                    <ECProperty propertyName="MyExtraInformation" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="YourExternalFileInfo">
+                    <BaseClass>ecdbf:ExternalFileInfo</BaseClass>
+                    <ECProperty propertyName="YourExtraInformation" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="YourSpecialExternalFileInfo">
+                    <BaseClass>YourExternalFileInfo</BaseClass>
+                    <ECProperty propertyName="YourSpecialExtraInformation" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ASSERT_TRUE(ecdb.TableExists("_ecdbf_FileInfo"));
+    ASSERT_TRUE(ecdb.TableExists("ecdbf_ExternalFileInfo"));
+    ASSERT_FALSE(ecdb.TableExists("ts_MyExternalFileInfo"));
+    ASSERT_FALSE(ecdb.TableExists("ts_YourExternalFileInfo"));
+    ASSERT_FALSE(ecdb.TableExists("ts_YourSpecialExternalFileInfo"));
+
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "MyExternalFileInfo", "MyExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo", "ps1"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "YourExternalFileInfo", "YourExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps1"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "YourSpecialExternalFileInfo", "YourExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps1"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "YourSpecialExternalFileInfo", "YourSpecialExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps2"));
     }
 
 //---------------------------------------------------------------------------------------

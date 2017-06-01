@@ -441,9 +441,9 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
             AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships2.ecdb");
             ASSERT_FALSE(asserted);
             AssertIndex(ecdb, "ix_ts2_B_fk_ts2_Rel_target", false, "ts2_B", {"AId"}, "([AId] IS NOT NULL)");
-            AssertPropertyMapping(ecdb, PropertyAccessString("TestSchema", "B", "A"),
-                                            {{"A.Id", ColumnInfo("ts2_b","AId")},
-                                            {"A.RelECClassId", ColumnInfo("ts2_b","ARelECClassId", true)}});
+
+            ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("TestSchema", "B", "A"),
+                                  ColumnInfo::List({ {"A.Id", "ts2_b","AId"}, {"A.RelECClassId", "ts2_b","ARelECClassId", true} }));
             }
 
             {

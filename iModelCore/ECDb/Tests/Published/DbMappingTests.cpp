@@ -913,72 +913,73 @@ TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ASSERT_FALSE(ecdb.TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_OwnTable","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_Abstract_OwnTable","ECClassId", true)});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "Prop1"), {ColumnInfo("ts_Base_Abstract_OwnTable","Prop1")});
+
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECClassId"), ColumnInfo("ts_Base_Abstract_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "Prop1"), ColumnInfo("ts_Base_Abstract_OwnTable","Prop1"));
 
     AssertColumnNames(ecdb, "ts_Sub_Of_Base_Abstract_OwnTable", {"Id","Prop1","Prop2"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","ECClassId", true)});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop1"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop1")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop2"), {ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop2")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop1"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop1"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop2"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop2"));
 
 
 
     AssertColumnNames(ecdb, "ts_Base_OwnTable", {"Id","Prop1"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_OwnTable","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_OwnTable","ECClassId", true)});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_OwnTable", "Prop1"), {ColumnInfo("ts_Base_OwnTable","Prop1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECClassId"), ColumnInfo("ts_Base_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_OwnTable", "Prop1"), ColumnInfo("ts_Base_OwnTable","Prop1"));
 
     AssertColumnNames(ecdb, "ts_Sub_Of_Base_OwnTable", {"Id","Prop1","Prop2"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECClassId"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","ECClassId", true)});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop1"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop1")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop2"), {ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop2")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECInstanceId"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECClassId"), ColumnInfo("ts_Sub_Of_Base_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop1"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop1"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop2"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop2"));
 
 
 
     ASSERT_FALSE(ecdb.TableExists("ts_Base_Abstract_NoSubclass_OwnTable")) << "is expected to be virtual";
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","ECClassId", true)});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1"), {ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Prop1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Prop1"));
 
 
 
     AssertColumnNames(ecdb, "ts_Base_Abstract_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","ECClassId")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Prop1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Prop1"));
 
 
 
     AssertColumnNames(ecdb, "ts_Base_Abstract_TPH", {"Id","ECClassId","Prop1","Prop2"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_TPH","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_TPH","ECClassId")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_TPH","Prop1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_TPH","Prop1"));
 
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_Abstract_TPH","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECClassId"), {ColumnInfo("ts_Base_Abstract_TPH","ECClassId")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop1"), {ColumnInfo("ts_Base_Abstract_TPH","Prop1")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop2"), {ColumnInfo("ts_Base_Abstract_TPH","Prop2")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_TPH","Prop1"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop2"), ColumnInfo("ts_Base_Abstract_TPH","Prop2"));
 
 
 
     AssertColumnNames(ecdb, "ts_Base_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_NoSubclass_TPH","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECClassId"), {ColumnInfo("ts_Base_NoSubclass_TPH","ECClassId")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "Prop1"), {ColumnInfo("ts_Base_NoSubclass_TPH","Prop1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECInstanceId"), ColumnInfo("ts_Base_NoSubclass_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECClassId"), ColumnInfo("ts_Base_NoSubclass_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "Prop1"), ColumnInfo("ts_Base_NoSubclass_TPH","Prop1"));
 
 
     AssertColumnNames(ecdb, "ts_Base_TPH", {"Id","ECClassId","Prop1","Prop2"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_TPH","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "ECClassId"), {ColumnInfo("ts_Base_TPH","ECClassId")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Base_TPH", "Prop1"), {ColumnInfo("ts_Base_TPH","Prop1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_TPH", "ECInstanceId"), ColumnInfo("ts_Base_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_TPH", "ECClassId"), ColumnInfo("ts_Base_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_TPH", "Prop1"), ColumnInfo("ts_Base_TPH","Prop1"));
 
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECInstanceId"), {ColumnInfo("ts_Base_TPH","Id")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECClassId"), {ColumnInfo("ts_Base_TPH","ECClassId")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop1"), {ColumnInfo("ts_Base_TPH","Prop1")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop2"), {ColumnInfo("ts_Base_TPH","Prop2")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECInstanceId"), ColumnInfo("ts_Base_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECClassId"), ColumnInfo("ts_Base_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop1"), ColumnInfo("ts_Base_TPH","Prop1"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop2"), ColumnInfo("ts_Base_TPH","Prop2"));
     }
 
 
@@ -2502,7 +2503,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Foo", "MyId"), {ColumnInfo("ts_Foo","MyId1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Foo", "MyId"), {ColumnInfo("ts_Foo","MyId1")});
     }
 
 
@@ -2527,7 +2528,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Sub", "BaseId"), {ColumnInfo("ts_Sub","BaseId1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub", "BaseId"), {ColumnInfo("ts_Sub","BaseId1")});
     }
 
 
@@ -2560,7 +2561,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Rel", "MySourceId"), {ColumnInfo("ts_Rel","MySourceId1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Rel", "MySourceId"), {ColumnInfo("ts_Rel","MySourceId1")});
     }
 
 
@@ -2593,7 +2594,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Rel", "MyTargetId"), {ColumnInfo("ts_Rel","MyTargetId1")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Rel", "MyTargetId"), {ColumnInfo("ts_Rel","MyTargetId1")});
     }
     }
 
@@ -9334,17 +9335,18 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     ASSERT_FALSE(asserted);
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
     AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Name"), {ColumnInfo("ts_Element","Name")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Code"), {ColumnInfo("ts_Element","Code")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element", "Name"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element", "Code"));
     AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3","js4","js5","js6","js7"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), {ColumnInfo("ts_GeometricElement","js1")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
-    {{"Transform.Prop1",ColumnInfo("ts_GeometricElement","js2")},
-    {"Transform.Prop2",ColumnInfo("ts_GeometricElement","js3")},
-    {"Transform.Prop3",ColumnInfo("ts_GeometricElement","js4")},
-    {"Transform.Prop4",ColumnInfo("ts_GeometricElement","js5")},
-    {"Transform.Prop5",ColumnInfo("ts_GeometricElement","js6")},
-    {"Transform.Prop6",ColumnInfo("ts_GeometricElement","js7")}});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement", "js1"));
+    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+                                    ColumnInfo::List({
+                                            {"Transform.Prop1","ts_GeometricElement","js2"},
+                                            {"Transform.Prop2","ts_GeometricElement","js3"},
+                                            {"Transform.Prop3","ts_GeometricElement","js4"},
+                                            {"Transform.Prop4","ts_GeometricElement","js5"},
+                                            {"Transform.Prop5","ts_GeometricElement","js6"},
+                                            {"Transform.Prop6","ts_GeometricElement","js7"}}));
 
     ASSERT_FALSE(ecdb.TableExists("ts_GeometricElement_Overflow"));
     ASSERT_FALSE(ecdb.TableExists("ts_Element_Overflow"));
@@ -9392,19 +9394,20 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
 
     AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Name"), {ColumnInfo("ts_Element","Name")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Code"), {ColumnInfo("ts_Element","Code")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element","Code"));
     AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), {ColumnInfo("ts_GeometricElement","js1")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Type"), {ColumnInfo("ts_GeometricElement","js2")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement","js1"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "GeometricElement", "Type"), ColumnInfo("ts_GeometricElement","js2"));
     AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
-                           {{"Transform.Prop1",ColumnInfo("ts_GeometricElement_Overflow","os1")},
-                            {"Transform.Prop2",ColumnInfo("ts_GeometricElement_Overflow","os2")},
-                            {"Transform.Prop3",ColumnInfo("ts_GeometricElement_Overflow","os3")},
-                            {"Transform.Prop4",ColumnInfo("ts_GeometricElement_Overflow","os4")},
-                            {"Transform.Prop5",ColumnInfo("ts_GeometricElement_Overflow","os5")},
-                            {"Transform.Prop6",ColumnInfo("ts_GeometricElement_Overflow","os6")}});
+    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+                           ColumnInfo::List({
+                            {"Transform.Prop1","ts_GeometricElement_Overflow","os1"},
+                            {"Transform.Prop2","ts_GeometricElement_Overflow","os2"},
+                            {"Transform.Prop3","ts_GeometricElement_Overflow","os3"},
+                            {"Transform.Prop4","ts_GeometricElement_Overflow","os4"},
+                            {"Transform.Prop5","ts_GeometricElement_Overflow","os5"},
+                            {"Transform.Prop6","ts_GeometricElement_Overflow","os6"}}));
     }
 
     {
@@ -9449,22 +9452,23 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
 
     AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Name"), {ColumnInfo("ts_Element","Name")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Code"), {ColumnInfo("ts_Element","Code")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element","Code"));
     AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), {ColumnInfo("ts_GeometricElement","js1")});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Origin"),
-                                {{"Origin.X",ColumnInfo("ts_GeometricElement","js2")},
-                                 {"Origin.Y",ColumnInfo("ts_GeometricElement","js3")}});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement","js1"));
+    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "GeometricElement", "Origin"),
+                                    ColumnInfo::List({{"Origin.X","ts_GeometricElement","js2"},
+                                                     {"Origin.Y","ts_GeometricElement","js3"}}));
     
     AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
-                                {{"Transform.Prop1",ColumnInfo("ts_GeometricElement_Overflow","os1")},
-                                {"Transform.Prop2",ColumnInfo("ts_GeometricElement_Overflow","os2")},
-                                {"Transform.Prop3",ColumnInfo("ts_GeometricElement_Overflow","os3")},
-                                {"Transform.Prop4",ColumnInfo("ts_GeometricElement_Overflow","os4")},
-                                {"Transform.Prop5",ColumnInfo("ts_GeometricElement_Overflow","os5")},
-                                {"Transform.Prop6",ColumnInfo("ts_GeometricElement_Overflow","os6")}});
+    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+                                ColumnInfo::List({
+                                        {"Transform.Prop1","ts_GeometricElement_Overflow","os1"},
+                                        {"Transform.Prop2","ts_GeometricElement_Overflow","os2"},
+                                        {"Transform.Prop3","ts_GeometricElement_Overflow","os3"},
+                                        {"Transform.Prop4","ts_GeometricElement_Overflow","os4"},
+                                        {"Transform.Prop5","ts_GeometricElement_Overflow","os5"},
+                                        {"Transform.Prop6","ts_GeometricElement_Overflow","os6"}}));
     }
 
     {
@@ -9488,7 +9492,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                    </ECSchema>)xml"), "OverflowAndJoinedTableCombinations12.ecdb");
     ASSERT_FALSE(asserted);
     AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name"});
-    AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Name"), {ColumnInfo("ts_Element","Name")});
+    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
     ASSERT_FALSE(ecdb.TableExists("ts_Element_Overflow"));
     }
     }
@@ -9538,10 +9542,10 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
         ecdb.SaveChanges();
         AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 4}});
         AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1", "os2"});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "Prop7"), {ColumnInfo("ts_Element","ps61")});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "Element", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToBeInOverflowAsWell"), {ColumnInfo("ts_Element_Overflow","os2")});
+        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Prop7"), ColumnInfo("ts_Element","ps61"));
+        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow","os1"));
+        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow","os1"));
+        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToBeInOverflowAsWell"), ColumnInfo("ts_Element_Overflow","os2"));
         }
 
         {
@@ -9582,14 +9586,14 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
         ecdb.SaveChanges();
         AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 3}});
         AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1"});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "BaseProp"), {ColumnInfo("ts_Element","BaseProp")});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop1.P1"), {{"Prop1.P1.X", ColumnInfo("ts_Element","ps1") },
-                                                                                           {"Prop1.P1.Y", ColumnInfo("ts_Element","ps2")}});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "Prop3.P2"), {{"Prop3.P2.X", ColumnInfo("ts_Element","ps23")},
-                                                                    {"Prop3.P2.Y", ColumnInfo("ts_Element","ps24")},
-                                                                    {"Prop3.P2.Z", ColumnInfo("ts_Element","ps25")}});
+        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "BaseProp"), ColumnInfo("ts_Element","BaseProp"));
+        ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "SubElement", "Prop1.P1"), ColumnInfo::List({{"Prop1.P1.X", "ts_Element","ps1"},
+                                                                                           {"Prop1.P1.Y", "ts_Element","ps2"}}));
+        ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "SubElement", "Prop3.P2"), ColumnInfo::List({{"Prop3.P2.X","ts_Element","ps23"},
+                                                                    {"Prop3.P2.Y", "ts_Element","ps24"},
+                                                                    {"Prop3.P2.Z", "ts_Element","ps25"}}));
 
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_Element_Overflow","os1")});
+        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow","os1"));
         }
 
         {
@@ -9635,7 +9639,7 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
         ecdb.SaveChanges();
         AssertColumnCount(ecdb, {{"ts_Element", 13}, {"ts_SubElement", 63}, {"ts_SubElement_Overflow", 3}});
         AssertColumnNames(ecdb, "ts_SubElement_Overflow", {"ElementId","ECClassId","os1"});
-        AssertPropertyMapping(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), {ColumnInfo("ts_SubElement_Overflow","os1")});
+        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_SubElement_Overflow","os1"));
         }
     }
 
