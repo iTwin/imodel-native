@@ -2044,7 +2044,7 @@ Utf8StringCR ChangeIterator::RowEntry::GetTableName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-bool ChangeIterator::RowEntry::IsJoinedTable() const
+bool ChangeIterator::RowEntry::IsPrimaryTable() const
     {
     if (m_tableMap == nullptr)
         {
@@ -2052,7 +2052,7 @@ bool ChangeIterator::RowEntry::IsJoinedTable() const
         return false;
         }
 
-    return m_tableMap->GetDbTable()->GetType() == DbTable::Type::Joined; 
+    return m_tableMap->GetDbTable()->GetType() == DbTable::Type::Primary; 
     }
 
 //---------------------------------------------------------------------------------------
