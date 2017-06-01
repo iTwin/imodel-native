@@ -75,34 +75,6 @@ struct RelationshipClassMap : ClassMap
 
 typedef RelationshipClassMap const& RelationshipClassMapCR;
 
-//======================================================================================
-// @bsiclass                                                     Affan.Khan      01/2015
-//===============+===============+===============+===============+===============+======
-//        ClassMappingStatus _Map(ClassMappingContext&) override;
-//            {
-//            return ClassMappingStatus::Success;
-//            }
-//        BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
-//            {
-//            return SUCCESS;
-//            }
-//        BentleyStatus ValidateMapping() const;
-//            {
-//            return SUCCESS;
-//            }
-//
-//        BentleyStatus AppendForeignEnd(NavigationPropertyMap& propertyMap);
-//            {
-//            return ERROR;
-//            }
-//        BentleyStatus SetPrimaryEnd(ClassMapCR classMap);
-//            {
-//            return ERROR;
-//            }
-//        BentleyStatus Finish();
-//            {
-//            return SUCCESS;
-//            }
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      06/2012
 +===============+===============+===============+===============+===============+======*/
@@ -113,68 +85,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
     private:
         static Utf8CP DEFAULT_FK_COL_PREFIX;
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
-
-        //======================================================================================
-        // @bsiclass                                                     Affan.Khan      01/2015
-        //===============+===============+===============+===============+===============+======
-        struct ColumnFactory final : NonCopyableClass
-            {
-            private:
-                RelationshipClassEndTableMap const& m_relMap;
-                RelationshipMappingInfo const& m_relInfo;
-                std::map<DbTable const*, std::unique_ptr<EndTableRelationshipColumnResolutionScope>> m_scopes;
-                bset<ClassMapCP> m_sharedBlock;
-
-                void Initialize();
-
-            public:
-                ColumnFactory(RelationshipClassEndTableMap const&, RelationshipMappingInfo const&);
-                ~ColumnFactory(){}
-
-                DbColumn* AllocateForeignKeyECInstanceId(DbTable&, Utf8StringCR colName, int position);
-                DbColumn* AllocateForeignKeyRelECClassId(DbTable&, Utf8StringCR colName, PersistenceType, int position);
-        
-            };
-
-        struct ColumnLists final : NonCopyableClass
-            {
-            private:
-                ColumnFactory m_columnFactory;
-
-                //Following is not created
-                std::vector<DbColumn const*> m_secondaryTableECInstanceIdColumns; //secondary table primary key
-                std::vector<DbColumn const*> m_secondaryTableECClassIdColumns;  //secondary table classId
-
-                //Following are actually create for each secondary table.
-                std::vector<DbColumn const*> m_secondaryTableFkRelECClassIdColumns; //Point to relationship classid associated with following
-                std::vector<DbColumn const*> m_secondaryTableFkECInstanceIdColumns; //Point to primary table but created in secondary 
-
-                //Following is not really created but just referenced 
-                std::vector<DbColumn const*> m_primaryTableFkECClassIdColumns;     //Point to primary table ECClassId and we just store reference to it to act as FkECClassId.
-                
-                static void Add(std::vector<DbColumn const*>& list, DbColumn const* column)
-                    {
-                    BeAssert(column != nullptr);
-                    if (std::find(list.begin(), list.end(), column) == list.end())
-                        list.push_back(column);
-                    }
-
-            public:
-                explicit ColumnLists(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo) : m_columnFactory(relMap, relInfo) {}
-
-                void AddECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableECInstanceIdColumns, &column); }
-                void AddECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableECClassIdColumns, &column); }
-                void AddFkECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableFkECInstanceIdColumns, &column); }
-                void AddFkRelECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableFkRelECClassIdColumns, &column); }
-                void AddFkECClassIdColumn(DbColumn const& column) { Add(m_primaryTableFkECClassIdColumns, &column); }
-                std::vector<DbColumn const*> const& GetECInstanceIdColumns() const { return m_secondaryTableECInstanceIdColumns; }
-                std::vector<DbColumn const*> const& GetECClassIdColumns() const { return m_secondaryTableECClassIdColumns; }
-                std::vector<DbColumn const*> const& GetFkECInstanceIdColumns() const { return m_secondaryTableFkECInstanceIdColumns; }
-                std::vector<DbColumn const*> const& GetFkRelECClassIdColumns() const { return m_secondaryTableFkRelECClassIdColumns; }
-                std::vector<DbColumn const*> const& GetFkECClassIdColumns() const { return m_primaryTableFkECClassIdColumns; }
-                ColumnFactory& GetColumnFactory() { return m_columnFactory; }
-            };
-
         struct ForeignKeyColumnInfo final: NonCopyableClass
             {
             private:
@@ -202,36 +112,30 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 Utf8StringCR GetImpliedFkColumnName() const { return m_impliedFkColName; }
                 Utf8StringCR GetImpliedRelClassIdColumnName() const { return m_impliedRelClassIdColName; }
                 bool AppendToEnd() const { return m_appendToEnd; }
-                PropertyMap const* GetPropertyMapBeforeNavProp() const { return m_propMapBeforeNavProp; }
-                PropertyMap const* GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
             };
-
         RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
         void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
         ClassMappingStatus _Map(ClassMappingContext&) override;
-        DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, ForeignKeyColumnInfo const&, DbColumn const& fkCol) const;
-        BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
-        BentleyStatus DetermineFkColumns(ColumnLists&, ForeignKeyColumnInfo&, RelationshipMappingInfo const&);
-        BentleyStatus MapSubClass(RelationshipMappingInfo const&);
-        BentleyStatus TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd) const;
-        BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, DbTable const&, ForeignKeyColumnInfo const&) const;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
         void GetForeignKeyColumnInfo(ForeignKeyColumnInfo& fkColInfo, NavigationPropertyMap const& navProp) const;
-
         DbColumn* CreateForeignColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo const&fkColInfo);
-        DbColumn * CreateReferencedClassIdColumn(DbTable& fkTable) const;
+        DbColumn* CreateReferencedClassIdColumn(DbTable& fkTable) const;
         DbColumn* CreateRelECClassIdColumn(DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap) const;
         ClassMappingStatus CreateForiegnKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo);
+        ClassMappingStatus UpdatePersistedEndForChild(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap);
+        RelationshipClassEndTableMap* GetRootRelationshipMap(SchemaImportContext& ctx);
+        ClassMappingStatus FinishForChild(SchemaImportContext& ctx);
     public:
+
         ~RelationshipClassEndTableMap() {}
         ClassMappingStatus UpdatePersistedEnd(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap);
         //!Gets the end in which the ForeignKey is persisted
         ECN::ECRelationshipEnd GetForeignEnd() const;
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
-        ClassMappingStatus Finish(SchemaImportContext const& ctx);
+        ClassMappingStatus Finish(SchemaImportContext& ctx);
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
         //WIP: This code must go elsewhere. It is only used by the column factory
         Utf8String GetAccessStringForId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropId); }
