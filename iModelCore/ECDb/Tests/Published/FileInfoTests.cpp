@@ -129,6 +129,81 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
     ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "YourExternalFileInfo", "YourExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps1"));
     ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "YourSpecialExternalFileInfo", "YourExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps1"));
     ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "YourSpecialExternalFileInfo", "YourSpecialExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps2"));
+
+    ECInstanceKey extFileKey, myExtFileKey, yourExtFileKey, yourSpecialExtFileKey;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.ExternalFileInfo(Name, RootFolder) VALUES('file1',1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(extFileKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyExternalFileInfo(Name, RootFolder, MyExtraInformation) VALUES('file2',2,'my extra')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(myExtFileKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.YourExternalFileInfo(Name, RootFolder, YourExtraInformation) VALUES('file3',3,'your extra')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(yourExtFileKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.YourSpecialExternalFileInfo(Name, RootFolder, YourExtraInformation, YourSpecialExtraInformation) VALUES('file4',3,'your extra', 'special extra')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(yourSpecialExtFileKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId,Name FROM ecdbf.FileInfo"));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ECInstanceId actualId = stmt.GetValueId<ECInstanceId>(0);
+        Utf8CP actualFileName = stmt.GetValueText(1);
+        if (actualId == extFileKey.GetInstanceId())
+            ASSERT_STREQ("file1", actualFileName) << actualId.ToString().c_str();
+        else if (actualId == myExtFileKey.GetInstanceId())
+            ASSERT_STREQ("file2", actualFileName) << actualId.ToString().c_str();
+        else if (actualId == yourExtFileKey.GetInstanceId())
+            ASSERT_STREQ("file3", actualFileName) << actualId.ToString().c_str();
+        else if (actualId == yourSpecialExtFileKey.GetInstanceId())
+            ASSERT_STREQ("file4", actualFileName) << actualId.ToString().c_str();
+        else
+            FAIL() << "FileInfo with ECInstanceId " << actualId.ToString().c_str() << " should not exist";
+        }
+
+    stmt.Finalize();
+
+    //update
+    //non-polymorphic
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY ecdbf.ExternalFileInfo SET Description='I am a file info'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecdbf.FileInfo WHERE Description = 'I am a file info'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //polymorphic
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ecdbf.ExternalFileInfo SET Description='I am a file info'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecdbf.FileInfo WHERE Description = 'I am a file info'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(4, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //delete
+    //non-polymorphic
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ecdbf.ExternalFileInfo"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecdbf.FileInfo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(3, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //polymorphic
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ecdbf.ExternalFileInfo"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecdbf.FileInfo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
