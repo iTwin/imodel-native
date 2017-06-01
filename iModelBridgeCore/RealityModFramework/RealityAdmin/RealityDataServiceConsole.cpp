@@ -1274,7 +1274,7 @@ void RealityDataConsole::Delete()
     else if (className == "RealityData")
         {
         DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
-        DisplayInfo("All project relationships attached to this RealityData will also be removed.\nConfirm ? [y / n]", DisplayOption::Question);
+        DisplayInfo("A RealityData can only be deleted if there are no project relationships attached to it.\nConfirm ? [y / n]", DisplayOption::Question);
         std::getline(*s_inputSource, str);
         if (strstr(str.c_str(), "quit"))
             {

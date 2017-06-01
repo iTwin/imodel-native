@@ -301,6 +301,8 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
                     "1\n"
                     "Unlink\n"
                     "1\n"
+                    "Unlink\n"
+                    "72524420-7d48-4f4e-8b0f-144e5fa0aa22\n"
                     "changeprops\n"
                     "5\n"
                     "CHANGE PROP TEST\n"
