@@ -115,6 +115,13 @@
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BentleyTest.log</Files>
         </Bindings>
     </Part>
+	
+	<!-- Memory leak testing of Bentley tests -->
+	<Part Name="Bentley-MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=Bentley-Gtest -dGTEST_NAME=BentleyTest" OnlyPlatforms="x64">
+		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+		<SubProduct ProductName="Bentley-Gtest" />
+    </Part>
+
 
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
@@ -196,5 +203,5 @@
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/Bentley-UwpTest.log</Files>
         </Bindings>
     </Part>
-
+	
 </BuildContext>
