@@ -254,10 +254,12 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestBasic)
 	documentUT.ChangeInstanceId("MyNewID");
 	EXPECT_STREQ(documentUT.GetId().c_str(), "MyNewID");
 
+	EXPECT_TRUE(documentUT.IsAzureRedirectionPossible());
+
+	documentUT.SetAzureRedirectionPossible(false);
 	EXPECT_FALSE(documentUT.IsAzureRedirectionPossible());
 
-	documentUT.SetAzureRedirectionPossible(true);
-	EXPECT_TRUE(documentUT.IsAzureRedirectionPossible());
+	EXPECT_FALSE(documentUT.IsAzureBlobRedirected());
 	}
 
 //=====================================================================================
