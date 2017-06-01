@@ -107,20 +107,12 @@ inline bool operator!=(RequestStatus compareStatus, RawServerResponse& response)
 struct WSGURL
     {
 public:
-
-    // enumeration for WSG interfaces
-    enum class WSGInterface
-        {
-        Repositories,
-        NavNode
-        };
-
     //! Creates a WSGURL object from the full unparsed URL. The various components
     //! can be extracted from the URL and modified.
-    REALITYDATAPLATFORM_EXPORT WSGURL(Utf8String url);
+    REALITYDATAPLATFORM_EXPORT WSGURL(Utf8String url, bool validString = true);
     
     //! Creates a WSG URL from the various provided components
-    REALITYDATAPLATFORM_EXPORT WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent);
+    REALITYDATAPLATFORM_EXPORT WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String schema, Utf8String className, Utf8String id);
 
     REALITYDATAPLATFORM_EXPORT virtual ~WSGURL() {}
 
@@ -142,12 +134,6 @@ public:
     //! Note that the method does not validate the publication of the specified schema.
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetSchema() const;
 
-    //! The interface. WSG plugins can implement one on many interfaces. We currently only support two
-    //! The Repository interface enables accessing objects related to a schema while the NavNode interface
-    //! lists an exposed tree-like structure.
-    //! Note that the method does not validate the implementation of the specified interface.
-    REALITYDATAPLATFORM_EXPORT virtual WSGInterface GetInterface() const;
-
     //! The class name. 
     //! Note that the method does not validate the class is part of the schema.
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetECClassName() const;
@@ -156,10 +142,6 @@ public:
     //! an identifier then this field should remain empty
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetId() const;
     REALITYDATAPLATFORM_EXPORT virtual void SetId(Utf8String id);
-
-    //! The object content flag indicates we want or not the content of the file associated with designated object.
-    //! The default is false.
-    REALITYDATAPLATFORM_EXPORT virtual bool GetContentFlag() const;
 
     enum HttpRequestType
         {
@@ -216,7 +198,7 @@ public:
         return headerString;
         }
 
-    WSGURL() : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_interface(WSGInterface::Repositories), m_objectContent(false) {}
+    WSGURL() : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request) {}
     WSGURL(WSGURL const& object);
     REALITYDATAPLATFORM_EXPORT WSGURL& operator=(WSGURL const & object);
 
@@ -229,7 +211,6 @@ protected:
     REALITYDATAPLATFORM_EXPORT void SetVersion(Utf8String version);
     REALITYDATAPLATFORM_EXPORT void SetECClassName(Utf8String className);
     REALITYDATAPLATFORM_EXPORT void SetSchema(Utf8String schema);
-    REALITYDATAPLATFORM_EXPORT void SetInterface(WSGInterface _interface);
     REALITYDATAPLATFORM_EXPORT void SetRepoId(Utf8String repoId);
 
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const;
@@ -238,12 +219,9 @@ protected:
     Utf8String m_version;
     Utf8String m_schema;
     Utf8String m_className;
-    WSGInterface m_interface = WSGInterface::Repositories;
     Utf8String m_repoId;
     mutable Utf8String m_id;
     mutable Utf8String m_encodedId;
-    bool m_objectContent = false;
-
 
     mutable bool m_validRequestString;
     mutable Utf8String m_httpRequestString;
@@ -490,7 +468,6 @@ public:
 
     //! Set proxy informations
     REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
-    //REALITYDATAPLATFORM_EXPORT void SetProxyAutoConfig(Utf8String PACLocation);
 
     REALITYDATAPLATFORM_EXPORT CurlConstructor();
     REALITYDATAPLATFORM_EXPORT virtual ~CurlConstructor(){}
@@ -499,7 +476,6 @@ protected:
 
     Utf8String          m_proxyUrl;
     Utf8String          m_proxyCreds;
-    //Utf8String          m_pacFile;
     Utf8String          m_token;
     BeFileName          m_certificatePath;
     time_t              m_tokenRefreshTimer;

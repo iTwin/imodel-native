@@ -303,15 +303,20 @@ void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& re
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-WSGURL::WSGURL(Utf8String url) : 
-    m_validRequestString(true), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url), m_requestHeader(bvector<Utf8String>())
-    {}
+WSGURL::WSGURL(Utf8String url, bool validString) : 
+    m_validRequestString(validString), m_requestType(HttpRequestType::GET_Request), m_requestHeader(bvector<Utf8String>())
+    {
+    if (validString)
+        m_httpRequestString = url;
+    else
+        m_serverName = url;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-WSGURL::WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent)
-    :m_serverName(server), m_version(version), m_repoId(repoId), m_schema(schema), m_interface(_interface), m_className(className), m_id(id), m_objectContent(objectContent),
+WSGURL::WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String schema, Utf8String className, Utf8String id)
+    :m_serverName(server), m_version(version), m_repoId(repoId), m_schema(schema), m_className(className), m_id(id),
     m_validRequestString(false), m_requestType(HttpRequestType::GET_Request)
     {}
 
@@ -327,16 +332,12 @@ void WSGURL::SetVersion(Utf8String version) { m_version = version; }
 Utf8StringCR WSGURL::GetSchema() const { return m_schema; }
 void WSGURL::SetSchema(Utf8String schema) { m_schema = schema; }
 
-WSGURL::WSGInterface WSGURL::GetInterface() const { return m_interface; }
-void WSGURL::SetInterface(WSGInterface _interface) { m_interface = _interface; }
-
 Utf8StringCR WSGURL::GetECClassName() const { return m_className; }
 void WSGURL::SetECClassName(Utf8String className) { m_className = className; }
 
 Utf8StringCR WSGURL::GetId() const { return m_id; }
 void WSGURL::SetId(Utf8String id) { m_id = id; }
 
-bool WSGURL::GetContentFlag() const { return m_objectContent; }
 WSGURL::HttpRequestType WSGURL::GetRequestType() const { return m_requestType; }
 
 Utf8StringCR WSGURL::GetRepoId() const { return m_repoId; }
@@ -375,10 +376,8 @@ WSGURL& WSGURL::operator=(WSGURL const & object)
         m_version = object.m_version;
         m_schema = object.m_schema;
         m_className = object.m_className;
-        m_interface = object.m_interface;
         m_repoId = object.m_repoId;
         m_id = object.m_id;
-        m_objectContent = object.m_objectContent;
 
         m_validRequestString = object.m_validRequestString;
         m_httpRequestString = object.m_httpRequestString;
@@ -557,7 +556,6 @@ WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8
     m_repoId = repoId;
     m_validRequestString = false;
     m_requestType = HttpRequestType::GET_Request;
-    m_interface = WSGInterface::NavNode;
     }
 
 //-------------------------------------------------------------------------------------
@@ -584,7 +582,6 @@ WSGNavNodeRequest::WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8
     m_id = nodeId;
     m_validRequestString = false;
     m_requestType = HttpRequestType::GET_Request;
-    m_interface = WSGInterface::NavNode;
     }
 
 //-------------------------------------------------------------------------------------
@@ -722,7 +719,7 @@ bvector<Utf8String> WSGServer::GetPlugins(RawServerResponse& responseObject) con
         }
 
     serverName.append("/Plugins");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, false);
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
@@ -749,7 +746,7 @@ Utf8String WSGServer::GetVersion(RawServerResponse& responseObject) const
 
     Utf8String serverName = m_serverName;
     serverName.append("/v2.4/Plugins");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, false);
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
@@ -787,7 +784,7 @@ bvector<Utf8String> WSGServer::GetRepositories(RawServerResponse& responseObject
         }
 
     serverName.append("/Repositories");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, false);
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
     
@@ -824,7 +821,7 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName, RawServerResp
     serverName.append(repoName);
     serverName.append("/MetaSchema/ECSchemaDef");
 
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, false);
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
@@ -862,7 +859,7 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
     serverName.append("/MetaSchema/ECClassDef?$filter=SchemaHasClass-backward-ECSchemaDef.Name+in+['");
     serverName.append(schemaName);
     serverName.append("']");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, false);
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
@@ -900,7 +897,7 @@ Utf8String WSGServer::GetJSONClassDefinition(Utf8String repoName, Utf8String sch
     serverName.append("/MetaSchema/ECClassDef?$filter=SchemaHasClass-backward-ECSchemaDef.Name+in+['");
     serverName.append(schemaName);
     serverName.append("']");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, false);
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
 
