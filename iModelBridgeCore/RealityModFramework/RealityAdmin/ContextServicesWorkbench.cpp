@@ -174,7 +174,7 @@ Utf8String ContextServicesWorkbench::getBaseUrl()
         tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.4";
         break;
     default:
-        tempRealityServerUrl = "https://qa-contextservices-eus.cloudapp.net/v2.4";
+        tempRealityServerUrl = "https://qa-connect-contextservices.bentley.com/v2.4";
         break;
     }
 
