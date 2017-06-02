@@ -211,31 +211,13 @@ private:
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataDocumentContentByIdRequest
-//! This class represents a request for specific RealityDataDocument content class object.
+//! This class represents a download attempt of a specific file.
 //! The present class provides services for the support of azure redirection to blob.
 //! The RealityDataService can query the class to check if azure redirection is possible
-//!  or not. If the object indicates the redirection is possible but is not yet
-//!  redirected then the service will fetch the azure blob redirection request
-//!  and call the WSG service. If the blob address to the container is returned
-//!  then the service will set the azure blob redirection URL. After which the
-//!  object will be set to access directly the blob.
+//! or not. It will automatically attempt to download the file directly from Azure, unless
+//! the user specifies not to do so, using SetAzureRedirectionPossible(false);
 //! Example:
-//! RealityDataDocumentContentByIdRequest myRequest("0586-358df-445-de34a-dd286", "RootDocument.3mx");
-//! ...
-//! if (myRequest.IsAzureRedirectionPossible())
-//!     {
-//!     if (!myRequest.IsAzureBlobRedirected())
-//!         {
-//!         Utf8String redirectRequest = myRequest.GetAzureRedirectionRequestUrl();
-//!         if (redirectRequest.size() == 0)
-//!             myRequest.SetAzureRedirectionPossible(false);
-//!         else
-//!             SetAzureRedirectionUrlToContainer(blobContainerUrl);
-//!         }
-//!    // After this the request will provide the proper http url, header and body
-//!    //  either to the blob or RealityDataService
-//!
-//!    }
+//! RealityDataDocumentContentByIdRequest myRequest("0586-358df-445-de34a-dd286/RootDocument.3mx");
 //=====================================================================================
 struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
     {
