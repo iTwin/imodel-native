@@ -334,7 +334,7 @@
             <Class class="bis:GeometryPart"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
-            <Class class="TemplateGeometryDefinitionElement"/>
+            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PartEncapsulatedAsEndGeometry" strength="referencing" modifier="Sealed">
@@ -342,7 +342,7 @@
             <Class class="bis:GeometryPart"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
-            <Class class="TemplateGeometryDefinitionElement"/>
+            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PartEncapsulatedAsRepeatedGeometry" strength="referencing" modifier="Sealed">
@@ -350,7 +350,7 @@
             <Class class="bis:GeometryPart"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
-            <Class class="TemplateGeometryDefinitionElement"/>
+            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PartEncapsulatedAsExtrudedGeometry" strength="referencing" modifier="Sealed">
@@ -358,7 +358,7 @@
             <Class class="bis:GeometryPart"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
-            <Class class="TemplateGeometryDefinitionElement"/>
+            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="TemplateGeometryDefinitionEncapsulatesParts" strength="embedding" modifier="Sealed">
