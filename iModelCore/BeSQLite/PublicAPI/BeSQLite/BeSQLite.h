@@ -447,6 +447,7 @@ enum DbResult
     BE_SQLITE_ERROR_SchemaLockFailed        = (BE_SQLITE_IOERR | 18 << 24), //!< Error acquiring a lock on the schemas before upgrade.
     BE_SQLITE_ERROR_SchemaUpgradeFailed     = (BE_SQLITE_IOERR | 19 << 24), //!< Error upgrading the schemas in the database.
     BE_SQLITE_ERROR_SchemaImportFailed      = (BE_SQLITE_IOERR | 20 << 24), //!< Error importing the schemas into the database.
+    BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | 21 << 24), //!< Error acquiring locks or codes
 
     BE_SQLITE_LOCKED_SHAREDCACHE      = (BE_SQLITE_LOCKED   | (1<<8)),
 
