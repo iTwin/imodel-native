@@ -337,6 +337,25 @@ TransformCR localToWorld
             }
         }
 
+    if (numCircle == 2)
+        {
+        for (double sB = -1.0; sB < 2.0; sB += 2.0)
+            {
+            double rB = sB * radiusIn[1];
+            for (double sA = -1.0; sA < 2.0; sA += 2.0)
+                {
+                double rA = sA * radiusIn[0];
+                auto segment = DSegment3d::ConstructTangent_CircleCircleXY (
+                            centerIn[0], rA, centerIn[1], rB);
+                if (segment.IsValid ())
+                    {
+                    auto worldSegment = segment.Value ();
+                    localToWorld.Multiply (worldSegment);
+                    result.push_back (ICurvePrimitive::CreateLine (worldSegment));
+                    }
+                }
+            }
+        }
     }
 
 
@@ -424,6 +443,27 @@ struct FromPointTangent: ConstructionContext::ITryConstruction
         {
         ConstraintMatchTable matchTable (
                 CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::Tangent
+                );
+        bvector<DPoint3d> points;
+        bvector<DEllipse3d>arcs;
+        bvector<DSegment3d>segments;
+        if (    searcher.BuildConstraintMatchTable (matchTable))
+            {
+            matchTable.GetPointsSegmentsArcs(points,segments, arcs);
+            Transform localToWorld, worldToLocal;
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
+                BranchToLineTangencySolver (result, points, segments, arcs, localToWorld);
+            }
+        }
+    };
+
+struct FromTangentTangent: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::Tangent,
                 CurveConstraint::Type::Tangent
                 );
         bvector<DPoint3d> points;
@@ -689,6 +729,7 @@ bvector<ConstructionContext::ITryConstruction *>
     new LineConstructions::FromPointClosestApproach (),
     new LineConstructions::FromClosestApproachClosestApproach (),
     new LineConstructions::FromPointPerpendicularNear (),
+    new LineConstructions::FromTangentTangent (),
     new LineConstructions::FromPointTangent ()
     };
 

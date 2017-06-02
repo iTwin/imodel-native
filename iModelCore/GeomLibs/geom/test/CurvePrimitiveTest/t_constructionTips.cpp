@@ -321,3 +321,70 @@ TEST (Construction,TangentCircles3)
         }
     Check::ClearGeometry ("Construction.TangentCircles3");
     }
+
+
+TEST (Construction,TangentLines1)
+    {
+    bvector<Transform> transforms
+        {
+        Transform::FromIdentity (),
+        CreateTestTransform (0.5, 0.1, 0.2, 10.0, 22.4, 3.0)
+        };
+
+    for (auto transform : transforms)
+        {
+        SaveAndRestoreCheckTransform shifter (15,0,0);
+        auto circleA = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,1), 0.8));
+        circleA->TransformInPlace (transform);
+        bvector<CurveConstraint> constraints;
+        constraints.push_back (CurveConstraint::CreateTangent (circleA.get (), 0.4));
+        constraints.push_back (CurveConstraint::CreateThroughPoint (transform * DPoint3d::From (-1,-2)));
+        SaveHints (constraints);
+        bvector<ICurvePrimitivePtr> results;
+        ConstrainedConstruction::ConstructLines (constraints, results);
+        for (auto &cp: results)
+            Check::SaveTransformed (*cp);
+        }
+    Check::ClearGeometry ("Construction.TangentLines1");
+    }
+
+
+TEST (Construction,TangentLines2)
+    {
+    bvector<DPoint3d> centers {
+        DPoint3d::From (2,2),
+        DPoint3d::From (2,-2)
+        };
+
+    bvector<Transform> transforms
+        {
+        Transform::FromIdentity (),
+        CreateTestTransform (0.5, 0.1, 0.2, 10.0, 22.4, 3.0)
+        };
+
+    for (auto transform : transforms)
+        {
+        SaveAndRestoreCheckTransform shifter (100,0,0);
+        for (double rB : bvector<double> {1.0, 3.0})
+            {
+            SaveAndRestoreCheckTransform shifter (0,15,0);
+            for (double rA : bvector<double> {1.0, 3.0})
+                {
+                auto circleA = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (centers[0], rA));
+                auto circleB = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (centers[1], rB));
+                circleA->TransformInPlace (transform);
+                circleB->TransformInPlace (transform);
+                SaveAndRestoreCheckTransform shifter (15,0,0);
+                bvector<CurveConstraint> constraints;
+                constraints.push_back (CurveConstraint::CreateTangent (circleA.get (), 0.4));
+                constraints.push_back (CurveConstraint::CreateTangent (circleB.get (), 0.4));
+                SaveHints (constraints);
+                bvector<ICurvePrimitivePtr> results;
+                ConstrainedConstruction::ConstructLines (constraints, results);
+                for (auto &cp: results)
+                    Check::SaveTransformed (*cp);
+                }
+            }
+        }
+    Check::ClearGeometry ("Construction.TangentLines2");
+    }
