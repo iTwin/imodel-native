@@ -2,20 +2,20 @@
 #
 #     $Source: gtest/TeeGtest.py $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 import os, glob, sys, string, stat, re, subprocess
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+#class bcolors:
+#    HEADER = '\033[95m'
+#    OKBLUE = '\033[94m'
+#    OKGREEN = '\033[92m'
+#    WARNING = '\033[93m'
+#    FAIL = '\033[91m'
+#    ENDC = '\033[0m'
+#    BOLD = '\033[1m'
+#    UNDERLINE = '\033[4m'
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson              04/2016
@@ -58,7 +58,8 @@ def main():
 
                 if not quiet:
                     progress = '{0}/{1}'.format(currentcount, totalcount)
-                    print bcolors.BOLD + progress.ljust(10) + bcolors.ENDC + line
+                    #print bcolors.BOLD + progress.ljust(10) + bcolors.ENDC + line
+                    print progress.ljust(10) + line
 
         except EOFError:
             exit (0)
