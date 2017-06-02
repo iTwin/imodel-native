@@ -1976,14 +1976,16 @@
         <ECProperty propertyName="FocusDistance" typeName="double" displayLabel="Focus Distance" description="Camera focus distance">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>
+        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward" displayLabel="Model Selector">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="SpatialViewDefinition" displayLabel="Spatial View Definition" description="A view of a spatially located volume.">
         <BaseClass>ViewDefinition3d</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
-        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward" displayLabel="Model Selector">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECNavigationProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="OrthographicViewDefinition" displayLabel="Orthographic Spatial View" description="A spatial view that always show an parallel projection.">
