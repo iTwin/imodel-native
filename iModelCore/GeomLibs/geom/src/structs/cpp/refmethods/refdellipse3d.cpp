@@ -5720,6 +5720,160 @@ DVec3dCR sweepDirection
         }
     return ValidatedDEllipse3d (spaceEllipse, false);
     }
+//================================================================================================================================
+// construct fractional coordinates of lines tangent to two circles.
+bool DEllipse3d::ConstructTangentLineRatios
+(
+double centerToCenterDistance,  //!< [in] distance between centers
+double radiusA,                 //!< [in] radius of first circle.
+double radiusB,                 //!< [in] radius of second circle
+bool outerTangents,             //!< [in] true for tangents from outside to ouside, false for tangents that cross between centers
+DPoint2dR uvA,                  //!< [in] fractional coordinates of tangency point on circle A, for use in DPoint3d::FromInterpolateAndPerpendicularXY 
+DPoint2dR uvB                  //!< [in] fractional coordinates of tangency point on circle B, for use in DPoint3d::FromInterpolateAndPerpendicularXY 
+)
+    {
+    if (radiusA == 0.0 && radiusB == 0.0)
+        {
+        uvA = DPoint2d::From (0.0, 0.0);
+        uvB = DPoint2d::From (1.0, 0.0);
+        return true;
+        }
+    if (outerTangents)
+        {
+        auto fraction = DoubleOps::ValidatedDivideParameter (radiusB, radiusA - radiusB);
+        if (fraction.IsValid ())
+            {
+            double distanceA = (1.0 + fraction) * centerToCenterDistance;
+            double distanceB = fraction * centerToCenterDistance;
+            double s = fabs (distanceA) > fabs (distanceB)
+                ? DoubleOps::ValidatedDivideDistance (radiusA, distanceA, 0.0).Value ()
+                : DoubleOps::ValidatedDivideDistance (radiusB, distanceB, 0.0).Value ();
+            auto divD = DoubleOps::ValidatedDivideDistance (1.0, centerToCenterDistance);
+            double eA = radiusA * s;    // distance centerA to projection of its tangency point
+            double eB = radiusB * s;
+            double qA = radiusA * radiusA - eA * eA;
+            double qB = radiusB * radiusB - eB * eB;
+            if (qA >= 0.0 && qB >= 0.0 && divD.IsValid () && fabs (s) <= 1.0)
+                {
+                double hA = sqrt (qA);
+                double hB = sqrt (qB);
+                uvA = DPoint2d::From (eA * divD, hA * divD);
+                uvB = DPoint2d::From (1.0 + eB * divD, hB * divD);
+                return true;
+                }
+            }
+        else
+            {
+            // same radii ..
+            auto radiusFraction = DoubleOps::ValidatedDivideParameter (radiusA, centerToCenterDistance);
+            if (radiusFraction.IsValid ())
+                {
+                uvA = DPoint2d::From (0.0, radiusFraction);
+                uvB = DPoint2d::From (1.0, radiusFraction);
+                return true;
+                }
+            }
+        }
+    else
+        {
+        // Tangent line crosses the x axis at this fractional coordinate from centerA to centerB
+        auto fraction = DoubleOps::ValidatedDivideParameter (radiusA, radiusA + radiusB);
+        if (fraction.IsValid ())
+            {
+            double distanceA = fraction * centerToCenterDistance;
+            double distanceB = centerToCenterDistance - distanceA;
+            // cosecant of the angle -- divide by larger of two choices
+            double s = fabs (distanceA) > fabs (distanceB)
+                ? DoubleOps::ValidatedDivideDistance (radiusA, distanceA, 0.0).Value ()
+                : DoubleOps::ValidatedDivideDistance (radiusB, distanceB, 0.0).Value ();
+            auto divD = DoubleOps::ValidatedDivideDistance (1.0, centerToCenterDistance);
+            double eA = radiusA * s;    // distance centerA to projection of its tangency point
+            double eB = radiusB * s;
+            double qA = radiusA * radiusA - eA * eA;
+            double qB = radiusB * radiusB - eB * eB;
+            if (qA >= 0.0 && qB >= 0.0 && divD.IsValid () && fabs (s) <= 1.0)
+                {
+                double hA = sqrt (qA);
+                double hB = sqrt (qB);
+                uvA = DPoint2d::From (eA * divD, hA * divD);
+                uvB = DPoint2d::From (1.0 - eB * divD, - hB * divD);
+                return true;
+                }
+            }
+        }
+    return false;
+    }
 
+bool DEllipse3d::Construct_ArcLineArc_PointTangentRadius_PointTangentRadiusXY
+(
+DPoint3dCR pointA,
+DVec3dCR   tangentAin,
+double     radiusA,
+DPoint3dCR pointB,
+DVec3dCR   tangentBin,
+double     radiusB,
+DEllipse3dR arcA,
+DSegment3dR tangentSegment,
+DEllipse3dR arcB
+)
+    {
+    auto tangentA = tangentAin; tangentA.z = 0.0;
+    auto tangentB = tangentBin; tangentB.z = 0.0;
+    DVec3d unitA, unitB;
+    double magA, magB;
+    if (unitA.TryNormalize (tangentA, magA) && unitB.TryNormalize (tangentB, magB))
+        {
+        auto perpA = DVec3d::FromUnitPerpendicularXY (unitA);
+        auto perpB  = DVec3d::FromUnitPerpendicularXY (unitB);
+        auto centerA = pointA + radiusA * perpA;
+        auto centerB = pointB + radiusB * perpB;
+        centerB.z = centerA.z;
+        DPoint2d uvA[4], uvB[4];
+        bool ok[4];
+        ok[0] = ok[1] = DEllipse3d::ConstructTangentLineRatios (centerA.Distance (centerB), fabs (radiusA), fabs (radiusB), false, uvA[0], uvB[0]);
+        uvA[1] = DPoint2d::From (uvA[0].x, - uvA[0].y);
+        uvB[1] = DPoint2d::From (uvB[0].x, - uvB[0].y);
+        ok[2] = ok[3] = DEllipse3d::ConstructTangentLineRatios (centerA.Distance (centerB), fabs (radiusA), fabs (radiusB), true,  uvA[2], uvB[2]);
+        uvA[3] = DPoint2d::From (uvA[2].x, - uvA[2].y);
+        uvB[3] = DPoint2d::From (uvB[2].x, - uvB[2].y);
+        // Look for a solution that has good tangent directions ...
+        DVec3d segmentTangent;
+        DVec3d tangentA0, tangentB0, tangentA1, tangentB1, d2A, d2B;
+        DPoint3d xyzA, xyzB;
+        for (int i = 0; i < 4; i++)
+            {
+            if (ok[i])
+                {
 
+                tangentSegment = DSegment3d::From (
+                    DPoint3d::FromInterpolateAndPerpendicularXY (centerA, uvA[i].x, centerB, uvA[i].y),
+                    DPoint3d::FromInterpolateAndPerpendicularXY (centerA, uvB[i].x, centerB, uvB[i].y)
+                    );
+                arcA = DEllipse3d::FromCenter_StartPoint_EndTarget_StartTangentBias_CircularXY (
+                        centerA, pointA, tangentSegment.point[0], unitA);
+                arcB = DEllipse3d::FromCenter_StartPoint_EndTarget_StartTangentBias_CircularXY (
+                        centerB, pointB, tangentSegment.point[1], unitB);
+                arcB.ComplementSweep ();
+
+                segmentTangent = tangentSegment.point[1] - tangentSegment.point[0];
+
+                arcA.FractionParameterToDerivatives (xyzA, tangentA0, d2A, 0.0);
+                if (tangentA0.DotProduct (tangentA) < 0.0)
+                    arcA = DEllipse3d::FromReversed (arcA);
+
+                arcB.FractionParameterToDerivatives (xyzB, tangentB1, d2B, 1.0);
+                if (tangentB1.DotProduct (tangentB) < 0.0)
+                    arcB = DEllipse3d::FromReversed (arcB);
+
+                arcA.FractionParameterToDerivatives (xyzA, tangentA1, d2A, 1.0);
+                arcB.FractionParameterToDerivatives (xyzB, tangentB0, d2B, 0.0);
+                double dotA = segmentTangent.DotProduct (tangentA1);
+                double dotB = segmentTangent.DotProduct (tangentB0);
+                if (dotA > 0.0 && dotB > 0.0)
+                    return true;
+                }
+            }
+        }
+    return false;
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE

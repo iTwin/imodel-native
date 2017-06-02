@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdsegment3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1232,5 +1232,40 @@ DSegment3dCR segment1
                 (&param0, &param1, &point0, &point1, &segment0, &segment1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Construct a segment tangent to two circles in xy plane.
+* @bsihdr                                                       EarlinLutz      10/98
++---------------+---------------+---------------+---------------+---------------+------*/
+ValidatedDSegment3d  DSegment3d::ConstructTangent_CircleCircleXY
+(
+DPoint3dCR centerA,
+double     radiusA,
+DPoint3dCR centerB,
+double     radiusB
+)
+    {
+    DPoint2d uvA, uvB;
+    bool outerTangents = radiusA * radiusB > 0.0;
+    if (radiusA == 0.0 && radiusB == 0.0)
+        return ValidatedDSegment3d (DSegment3d::From (centerA, centerB), true);
+    if (DEllipse3d::ConstructTangentLineRatios (centerA.Distance (centerB), fabs (radiusA), fabs (radiusB), outerTangents, uvA, uvB))
+        {
+        double signA = radiusA > 0.0 ? 1.0 : -1.0;
+        double signB = radiusB > 0.0 ? 1.0 : -1.0;
+        if (radiusA == 0.0)
+            signB = -signB;
+        else if (!outerTangents)
+            signB = -signB;
+        return ValidatedDSegment3d (
+                DSegment3d::From
+                    (
+                    DPoint3d::FromInterpolateAndPerpendicularXY (centerA, uvA.x, centerB, signA * uvA.y),
+                    DPoint3d::FromInterpolateAndPerpendicularXY (centerA, uvB.x, centerB, signB * uvB.y)
+                    ),
+                true
+                );
+        }
+    return ValidatedDSegment3d (DSegment3d::From (centerA, centerB), false);
+    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

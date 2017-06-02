@@ -38,6 +38,7 @@ struct CurveConstraint
 //! Type code for various constraints . . .
 enum class Type
     {
+    None,
     ThroughPoint,
     PointAndDirection,
     Center,
@@ -55,6 +56,7 @@ CurveConstraint (Type type, CurveLocationDetailCR detail);
 // constructor with detail and ray
 CurveConstraint (Type type, CurveLocationDetailCR detail, DRay3dCR ray);
 
+friend struct ConstraintMatchTable;
 public:
 //! Create a constraint to pass through a point.
 GEOMDLLIMPEXP static CurveConstraint CreateThroughPoint (DPoint3dCR point);
@@ -68,6 +70,8 @@ GEOMDLLIMPEXP static CurveConstraint CreateClosestPoint (ICurvePrimitiveCP curve
 //! Create a constraint to use a perpendicular near a fractional position on a curve
 GEOMDLLIMPEXP static CurveConstraint CreatePerpendicularNear (ICurvePrimitiveCP curve, double fraction);
 
+//! Create a constraint to be tangent to a curve, with fraction at possible bias point
+GEOMDLLIMPEXP static CurveConstraint CreateTangent (ICurvePrimitiveCP curve, double fraction);
 
 //! return the type
 GEOMDLLIMPEXP Type GetType () const;

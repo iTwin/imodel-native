@@ -35,6 +35,7 @@ void SaveHints (bvector<CurveConstraint> &constraints)
                 }
                 break;
             case CurveConstraint::Type::PerpendicularNear:
+            case CurveConstraint::Type::Tangent:
                 {
                 Check::SaveTransformed (*constraint.Location ().curve);
                 Check::SaveTransformedMarkers (bvector<DPoint3d>{constraint.Location ().point}, s_markerSize);
@@ -170,3 +171,220 @@ TEST (Construction,HelloCircles)
     Check::ClearGeometry ("Construction.HelloCircles");
     }
 
+TEST (Construction,TangentCircles1)
+    {
+
+
+    DPoint3d point0 = DPoint3d::From (0.1, 0.1);
+    DPoint3d point1 = DPoint3d::From (-1,2);
+                
+    double a = 40.0;
+
+    for (double x0 : bvector<double> {0.0, 10.0, -6.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0,a,0);
+        ICurvePrimitivePtr  arc0 = ICurvePrimitive::CreateArc (DEllipse3d::From (x0,0,0,
+                                4,0,0,
+                                0,4,0,
+                                0.0, Angle::TwoPi ()));
+
+        bvector<CurveConstraint> constraints;
+        constraints.push_back (CurveConstraint::CreateThroughPoint (point0));
+        constraints.push_back (CurveConstraint::CreateThroughPoint (point1));
+        constraints.push_back (CurveConstraint::CreateTangent (arc0.get (), 0.0));
+
+        SaveHints (constraints);
+
+        bvector<ICurvePrimitivePtr> results;
+        ConstrainedConstruction::ConstructCircularArcs (constraints, results);
+        for (auto &cp: results)
+            Check::SaveTransformed (*cp);
+        constraints.pop_back ();
+
+        Check::Shift (a,0,0);
+
+
+        results.clear ();
+        auto s0 = DSegment3d::From (x0, -1, 0, x0 + 5, 0, 0);
+        auto s1 = DSegment3d::From (s0.FractionToPoint (-2.0), s0.FractionToPoint (3.0));
+        auto line0 = ICurvePrimitive::CreateLine (s1);
+        constraints.push_back (CurveConstraint::CreateTangent (line0.get (), 0.0));
+        SaveHints (constraints);
+        ConstrainedConstruction::ConstructCircularArcs (constraints, results);
+        for (auto &cp: results)
+            Check::SaveTransformed (*cp);
+
+        }
+    Check::ClearGeometry ("Construction.TangentCircles1");
+    }
+
+
+TEST (Construction,TangentCircles2)
+    {
+    DPoint3d point0 = DPoint3d::From (0.4, 0.1);
+    auto s0 = DSegment3d::From (-5,0,0,  0,-5,0);
+    auto s0A = DSegment3d::From (s0.FractionToPoint (-2.0), s0.FractionToPoint (2.0));
+    auto s1 = DSegment3d::From ( 4,0,0,  0,-4,0);
+    auto s1A = DSegment3d::From (s1.FractionToPoint (-2.0), s1.FractionToPoint (2.0));
+    bvector<ICurvePrimitivePtr> curves {
+            ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (-2,2), 1.0)),
+            ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (3,2),  1.5)),
+            ICurvePrimitive::CreateLine (s0A),
+            ICurvePrimitive::CreateLine (s1A)
+            };
+    double a = 100.0;
+    for (size_t i0 = 0; i0 + 1 < curves.size (); i0++)
+        {
+        for (size_t i1 = i0 + 1; i1 < curves.size (); i1++)
+            {
+            SaveAndRestoreCheckTransform shifter (0,a,0);
+            bvector<CurveConstraint> constraints;
+            constraints.push_back (CurveConstraint::CreateTangent (curves[i0].get (), 0.0));
+            constraints.push_back (CurveConstraint::CreateThroughPoint (point0));
+            constraints.push_back (CurveConstraint::CreateTangent (curves[i1].get (), 0.0));
+
+            SaveHints (constraints);
+
+            bvector<ICurvePrimitivePtr> results;
+            ConstrainedConstruction::ConstructCircularArcs (constraints, results);
+            for (auto &cp: results)
+                Check::SaveTransformed (*cp);
+            }
+        }
+    Check::ClearGeometry ("Construction.TangentCircles2");
+    }
+
+// Pass g or a clip of g to Check.
+// 
+void SaveClipped (ICurvePrimitivePtr &g, CurveVectorCR clipper, DRange3dCR clipperRange)
+    {
+    DRange3d range;
+    if (g.IsValid () && g->GetRange (range))
+        {
+        if (range.IsContained (clipperRange))
+            Check::SaveTransformed (*g);
+        else
+            {
+            CurveVectorPtr collector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+            CurveVectorPtr g1 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+            g1->push_back (g);
+            g1->AppendSplitCurvesByRegion (clipper, collector.get (), nullptr, nullptr);
+            Check::SaveTransformed (*collector);
+            }
+        }
+    }
+TEST (Construction,TangentCircles3)
+    {
+    double c = 10.0;
+    auto clipper = CurveVector::CreateRectangle (-c, -c, c, c, 0.0);
+    DRange3d clipperRange;
+    clipper->GetRange (clipperRange);
+    bvector<DPoint3d> centers {
+        DPoint3d::From (2,2),
+        DPoint3d::From (2,-2),
+        DPoint3d::From (-1,0)
+        };
+    bvector<bvector<ICurvePrimitivePtr>> curves;
+    double b = 10.0;
+    double a = 40.0;
+    for (auto center : centers)
+        {
+        curves.push_back (bvector<ICurvePrimitivePtr> ());
+        curves.back ().push_back (
+                ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (center, 1.0)));
+        DVec3d normal = center - DPoint3d::FromZero ();
+        DVec3d tangent = DVec3d::FromUnitPerpendicularXY (normal);
+        curves.back ().push_back (
+                ICurvePrimitive::CreateLine (
+                   DSegment3d::From (center + b * tangent, center - b * tangent)));
+        }
+
+    for (size_t i0 = 0; i0 < 2; i0++)
+        {
+        for (size_t i1 = 0; i1 < 2; i1++)
+            {
+            for (size_t i2 = 0; i2 < 2; i2++)
+                {
+                SaveAndRestoreCheckTransform shifter (0,a,0);
+                bvector<CurveConstraint> constraints;
+                constraints.push_back (CurveConstraint::CreateTangent (curves[0][i0].get (), 0.0));
+                constraints.push_back (CurveConstraint::CreateTangent (curves[1][i1].get (), 0.0));
+                constraints.push_back (CurveConstraint::CreateTangent (curves[2][i2].get (), 0.0));
+
+                SaveHints (constraints);
+                bvector<ICurvePrimitivePtr> results;
+                ConstrainedConstruction::ConstructCircularArcs (constraints, results);
+                for (auto &cp: results)
+                    SaveClipped (cp, *clipper, clipperRange);
+                }
+            }
+        }
+    Check::ClearGeometry ("Construction.TangentCircles3");
+    }
+
+
+TEST (Construction,TangentLines1)
+    {
+    bvector<Transform> transforms
+        {
+        Transform::FromIdentity (),
+        CreateTestTransform (0.5, 0.1, 0.2, 10.0, 22.4, 3.0)
+        };
+
+    for (auto transform : transforms)
+        {
+        SaveAndRestoreCheckTransform shifter (15,0,0);
+        auto circleA = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,1), 0.8));
+        circleA->TransformInPlace (transform);
+        bvector<CurveConstraint> constraints;
+        constraints.push_back (CurveConstraint::CreateTangent (circleA.get (), 0.4));
+        constraints.push_back (CurveConstraint::CreateThroughPoint (transform * DPoint3d::From (-1,-2)));
+        SaveHints (constraints);
+        bvector<ICurvePrimitivePtr> results;
+        ConstrainedConstruction::ConstructLines (constraints, results);
+        for (auto &cp: results)
+            Check::SaveTransformed (*cp);
+        }
+    Check::ClearGeometry ("Construction.TangentLines1");
+    }
+
+
+TEST (Construction,TangentLines2)
+    {
+    bvector<DPoint3d> centers {
+        DPoint3d::From (2,2),
+        DPoint3d::From (2,-2)
+        };
+
+    bvector<Transform> transforms
+        {
+        Transform::FromIdentity (),
+        CreateTestTransform (0.5, 0.1, 0.2, 10.0, 22.4, 3.0)
+        };
+
+    for (auto transform : transforms)
+        {
+        SaveAndRestoreCheckTransform shifter (100,0,0);
+        for (double rB : bvector<double> {1.0, 3.0})
+            {
+            SaveAndRestoreCheckTransform shifter (0,15,0);
+            for (double rA : bvector<double> {1.0, 3.0})
+                {
+                auto circleA = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (centers[0], rA));
+                auto circleB = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (centers[1], rB));
+                circleA->TransformInPlace (transform);
+                circleB->TransformInPlace (transform);
+                SaveAndRestoreCheckTransform shifter (15,0,0);
+                bvector<CurveConstraint> constraints;
+                constraints.push_back (CurveConstraint::CreateTangent (circleA.get (), 0.4));
+                constraints.push_back (CurveConstraint::CreateTangent (circleB.get (), 0.4));
+                SaveHints (constraints);
+                bvector<ICurvePrimitivePtr> results;
+                ConstrainedConstruction::ConstructLines (constraints, results);
+                for (auto &cp: results)
+                    Check::SaveTransformed (*cp);
+                }
+            }
+        }
+    Check::ClearGeometry ("Construction.TangentLines2");
+    }

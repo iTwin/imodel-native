@@ -597,3 +597,49 @@ TEST(DSegment3d, TransformedSegment)
 
     Check::Near(originalSeg, afterTransform);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Earlin.Lutz                   06/17
+//---------------------------------------------------------------------------------------
+TEST(DSegment3d, TangentCC)
+    {
+    auto centerA = DPoint3d::From (-2,0,0);
+    auto centerB = DPoint3d::From ( 2,0,0);
+
+    bvector<double> radii {-1.1, -0.5, 0.0, 0.5, 1.1};
+    double a = 10.0;
+    double tinyRadius = 0.001;
+    for (auto rB : radii)
+        {
+        SaveAndRestoreCheckTransform shifter (0,a,0);
+        for (auto rA : radii)
+            {
+            Check::SaveTransformed (DEllipse3d::FromVectors (
+                            centerA, rA * DVec3d::UnitX (), rA *DVec3d::UnitY (), 0.0, Angle::Pi ()));
+            Check::SaveTransformed (DEllipse3d::FromVectors (
+                            centerB, rB * DVec3d::UnitX (), rB *DVec3d::UnitY (), 0.0, Angle::Pi ()));
+            SaveAndRestoreCheckTransform shifter (a,0,0);
+            auto segment = DSegment3d::ConstructTangent_CircleCircleXY (centerA, rA, centerB, rB);
+            if (Check::True (segment.IsValid ()))
+                {
+                Check::SaveTransformed (segment.Value ());
+                auto pointA = segment.Value ().point[0];
+                auto pointB = segment.Value ().point[1];
+                DVec3d vectorAB = pointB - pointA;
+                Check::Near (pointA.Distance (centerA), fabs (rA));
+                Check::Near (pointB.Distance (centerB), fabs (rB));
+                if (rA != 0.0)
+                    {
+                    Check::Perpendicular (pointA - centerA, vectorAB);
+                    Check::True (pointA.y * rA > 0.0, "side selection at A");
+                    }
+                if (rB != 0.0)
+                    {
+                    Check::Perpendicular (pointB - centerB, vectorAB);
+                    Check::True (pointB.y * rB > 0.0, "side selection at B");
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("DSegment3d.TangentCC");
+    }

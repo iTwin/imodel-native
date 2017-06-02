@@ -1524,6 +1524,12 @@ void Check::SaveTransformed (bvector<DSegment3d> const &data)
         }
     }
 
+void Check::SaveTransformed (DSegment3dCR data)
+    {
+    auto prim = ICurvePrimitive::CreateLine (data);
+    SaveTransformed (*prim);
+    }
+
 void Check::Shift (double dx, double dy, double dz)
     {
     s_transform = Transform::From (dx, dy, dz) * s_transform;

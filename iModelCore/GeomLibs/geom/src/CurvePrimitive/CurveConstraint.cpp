@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-
+#include <Geom/ccctangent.fdf>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 CurveConstraint::CurveConstraint (Type type, CurveLocationDetailCR detail) :
     m_type (type),
@@ -66,6 +66,12 @@ CurveConstraint CurveConstraint::CreatePerpendicularNear (ICurvePrimitiveCP curv
     return CurveConstraint (Type::PerpendicularNear, CurveLocationDetail (curve, fraction, xyz));
     }
     
+CurveConstraint CurveConstraint::CreateTangent (ICurvePrimitiveCP curve, double fraction)
+    {
+    DPoint3d xyz;
+    curve->FractionToPoint (fraction, xyz);
+    return CurveConstraint (Type::Tangent, CurveLocationDetail (curve, fraction, xyz));
+    }
 
 struct ConstraintMatchTable
 {
@@ -75,9 +81,33 @@ static const int s_maxTableIndex = 6;
 
 uint32_t m_numRequested;
 uint32_t m_numMatch;
-CurveConstraint::Type m_type[s_maxTableIndex];
-uint32_t m_sourceIndex[s_maxTableIndex];
-CurveConstraintCP m_constraint[s_maxTableIndex];
+struct RowData
+{
+CurveConstraint::Type m_type;
+uint32_t m_sourceIndex;
+CurveConstraintCP m_constraint;
+
+RowData
+    (
+    CurveConstraint::Type type,
+    uint32_t sourceIndex,
+    CurveConstraintCP constraint,
+    int sortGroup = 1000,
+    double sortSize = 0.0
+    )
+    : m_type (type), m_sourceIndex (sourceIndex), m_constraint (constraint)
+    {}
+
+RowData (CurveConstraint::Type type)
+    : m_type (type), m_sourceIndex (UINT32_MAX), m_constraint (nullptr)
+    {}
+
+RowData ()
+    : m_type (CurveConstraint::Type::None), m_sourceIndex (UINT32_MAX)
+    {}
+
+};
+RowData m_row[s_maxTableIndex];
 public:
 
 ConstraintMatchTable () : m_numRequested(0), m_numMatch (0) {}
@@ -85,27 +115,27 @@ ConstraintMatchTable () : m_numRequested(0), m_numMatch (0) {}
 ConstraintMatchTable (CurveConstraint::Type type0) : m_numRequested(1), m_numMatch (0)
     {
     m_numRequested = 1; // *** NEEDS WORK: This is to work around what looks like a bug in clang on Linux. If I don't do this, I get: CurveConstraint.cpp:76:10: error: private field 'm_numRequested' is not used [-Werror,-Wunused-private-field]
-    m_type[0] = type0;
+    m_row[0] = RowData (type0);
     }
 
 ConstraintMatchTable (CurveConstraint::Type type0, CurveConstraint::Type type1 ) : m_numRequested(2), m_numMatch (0)
     {
-    m_type[0] = type0;
-    m_type[1] = type1;
+    m_row[0] = RowData (type0);
+    m_row[1] = RowData (type1);
     }
 
 ConstraintMatchTable (CurveConstraint::Type type0, CurveConstraint::Type type1, CurveConstraint::Type type2) : m_numRequested(3), m_numMatch (0)
     {
-    m_type[0] = type0;
-    m_type[1] = type1;
-    m_type[2] = type2;
+    m_row[0] = RowData (type0);
+    m_row[1] = RowData (type1);
+    m_row[2] = RowData (type2);
     }
 
 bool FindSourceIndex (uint32_t target)
     {
     for (uint32_t i = 0; i < m_numMatch; i++)
         {
-        if (m_sourceIndex[i] == target)
+        if (m_row[i].m_sourceIndex == target)
             return true;
         }
     return false;
@@ -121,14 +151,42 @@ CurveConstraintCP constraint    // the constraint
     {
     if (index == m_numMatch && index < s_maxTableIndex)
         {
-        m_sourceIndex[index] = hintIndex;
-        m_constraint[index] = constraint;
+        m_row[index].m_sourceIndex = hintIndex;
+        m_row[index].m_constraint = constraint;
         m_numMatch++;
         }
     }
 
-CurveConstraintCP GetCurveConstraintCP (uint32_t tableIndex){ return tableIndex < s_maxTableIndex ? m_constraint[tableIndex] : nullptr;}
+CurveConstraintCP GetCurveConstraintCP (uint32_t tableIndex){ return tableIndex < s_maxTableIndex ? m_row[tableIndex].m_constraint : nullptr;}
+
+void GetPointsSegmentsArcs (bvector<DPoint3d> &points, bvector<DSegment3d> &segments, bvector<DEllipse3d> &arcs)
+    {
+    segments.clear ();
+    arcs.clear ();
+    for (uint32_t i = 0; i < m_numMatch; i++)
+        {
+        auto constraint = m_row[i].m_constraint;
+        if (constraint->IsType (CurveConstraint::Type::ThroughPoint))
+            {
+            points.push_back (constraint->Point ());
+            }
+        else if (constraint->m_location.curve != nullptr)
+            {
+            DEllipse3d arc;
+            DSegment3d segment;
+            if (constraint->m_location.curve->TryGetArc (arc))
+                {
+                arcs.push_back (arc);
+                }
+            else if (constraint->m_location.curve->TryGetLine (segment))
+                {
+                segments.push_back (segment);
+                }
+            }
+        }
+    }
 };
+
 
 struct ConstructionContext
 {
@@ -147,7 +205,7 @@ bool BuildConstraintMatchTable (ConstraintMatchTable &matchTable, bool ordered =
         {
         // note requestIndex is the index to the current target type.
         // It is also the count of accepted hints --- must avoid reuse of prior hints
-        CurveConstraint::Type targetType = matchTable.m_type[requestIndex];
+        CurveConstraint::Type targetType = matchTable.m_row[requestIndex].m_type;
         bool found = false;
         for (uint32_t k = nextK0; k < numConstraints; k++)
             {
@@ -184,6 +242,122 @@ static void TryConstruction (bvector<CurveConstraint>&constraints, bvector<ITryC
     return;
     }
 };
+
+
+static bool MapToPlane
+(
+bvector<DPoint3d> &points,
+bvector<DSegment3d> &segments,
+bvector<DEllipse3d> &arcs,
+TransformR localToWorld,
+TransformR worldToLocal,
+bool applyToAllGeometry,
+double reltol = 1.0e-10
+)
+    {
+    bvector<DPoint3d> allPoints = points;
+    for (auto &s : segments)
+        {
+        allPoints.push_back (s.point[0]);
+        allPoints.push_back (s.point[1]);
+        }
+
+    for (auto &arc: arcs)
+        {
+        allPoints.push_back (arc.center);
+        allPoints.push_back (arc.center + arc.vector0);
+        allPoints.push_back (arc.center + arc.vector90);
+        }
+
+    Transform originWithExtentVectors;
+    if (DPoint3dOps::PrincipalExtents (allPoints, originWithExtentVectors, localToWorld, worldToLocal))
+        {
+        double ax = originWithExtentVectors.ColumnX ().Magnitude ();
+        double ay = originWithExtentVectors.ColumnY ().Magnitude ();
+        double az = originWithExtentVectors.ColumnZ ().Magnitude ();
+        if (az <= reltol * (ax + ay))
+            {
+            localToWorld.SetTranslation (allPoints[0]); // make sure the origin is a real geometry point.
+            worldToLocal.InverseOf (localToWorld);      // safe incidental fixup
+            if (applyToAllGeometry)
+                {
+                worldToLocal.Multiply (points, points);
+                for (auto &segment : segments)
+                    worldToLocal.Multiply (segment);
+                for (auto &arc : arcs)
+                    worldToLocal.Multiply (arc);
+                }
+            return true;
+            }
+        return true;
+        }
+    return false;
+    }
+
+static void BranchToLineTangencySolver
+(
+bvector<ICurvePrimitivePtr> &result,
+bvector<DPoint3d> &points,
+bvector<DSegment3d> &segments,
+bvector<DEllipse3d> &arcs,
+TransformCR localToWorld
+)
+    {
+    static const int MaxIn = 3;
+    DPoint3d centerIn[3];
+    double   radiusIn[3];
+    DRay3d ray[3];
+    int numRay = 0;
+    int numCircle = 0;
+    for (auto &point : points)
+        {
+        if (numCircle < MaxIn)
+            {
+            centerIn[numCircle] = point;
+            radiusIn[numCircle] = 0.0;
+            numCircle++;
+            }
+        }
+    for (auto &arc : arcs)
+        {
+        double r;
+        if (arc.IsCircularXY (r) && numCircle < MaxIn)
+            {
+            centerIn[numCircle] = arc.center;
+            radiusIn[numCircle] = r;
+            numCircle++;
+            }
+        }
+
+    for (auto &segment : segments)
+        {
+        if (numRay < MaxIn)
+            {
+            ray[numRay] = DRay3d::FromOriginAndTarget (segment.point[0], segment.point[1]);
+            numRay++;
+            }
+        }
+
+    if (numCircle == 2)
+        {
+        for (double sB = -1.0; sB < 2.0; sB += 2.0)
+            {
+            double rB = sB * radiusIn[1];
+            for (double sA = -1.0; sA < 2.0; sA += 2.0)
+                {
+                double rA = sA * radiusIn[0];
+                auto segment = DSegment3d::ConstructTangent_CircleCircleXY (
+                            centerIn[0], rA, centerIn[1], rB);
+                if (segment.IsValid ())
+                    {
+                    auto worldSegment = segment.Value ();
+                    localToWorld.Multiply (worldSegment);
+                    result.push_back (ICurvePrimitive::CreateLine (worldSegment));
+                    }
+                }
+            }
+        }
+    }
 
 
 
@@ -263,6 +437,49 @@ struct FromPointPerpendicularNear : ConstructionContext::ITryConstruction
             }
         }
     };
+
+struct FromPointTangent: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::Tangent
+                );
+        bvector<DPoint3d> points;
+        bvector<DEllipse3d>arcs;
+        bvector<DSegment3d>segments;
+        if (    searcher.BuildConstraintMatchTable (matchTable))
+            {
+            matchTable.GetPointsSegmentsArcs(points,segments, arcs);
+            Transform localToWorld, worldToLocal;
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
+                BranchToLineTangencySolver (result, points, segments, arcs, localToWorld);
+            }
+        }
+    };
+
+struct FromTangentTangent: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::Tangent,
+                CurveConstraint::Type::Tangent
+                );
+        bvector<DPoint3d> points;
+        bvector<DEllipse3d>arcs;
+        bvector<DSegment3d>segments;
+        if (    searcher.BuildConstraintMatchTable (matchTable))
+            {
+            matchTable.GetPointsSegmentsArcs(points,segments, arcs);
+            Transform localToWorld, worldToLocal;
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
+                BranchToLineTangencySolver (result, points, segments, arcs, localToWorld);
+            }
+        }
+    };
+
 };
 
 
@@ -317,6 +534,191 @@ struct FromPointDirectionPoint: ConstructionContext::ITryConstruction
             }
         }
     };
+
+
+static void LoadArcs (bvector<ICurvePrimitivePtr> &result, DPoint3dCP center, double *radius, int numCircle, TransformCR localToWorld)
+    {
+    for (int i = 0; i < numCircle; i++)
+        {
+        DEllipse3d circle = DEllipse3d::FromCenterRadiusXY (center[i], radius[i]);
+        localToWorld.Multiply (circle);
+        result.push_back (ICurvePrimitive::CreateArc (circle));
+        }
+    }
+
+
+static void BranchToCircleTangencySolver
+(
+bvector<ICurvePrimitivePtr> &result,
+bvector<DPoint3d> &points,
+bvector<DSegment3d> &segments,
+bvector<DEllipse3d> &arcs,
+TransformCR localToWorld
+)
+    {
+    static const int MaxIn = 3;
+    DPoint3d centerIn[3];
+    double   radiusIn[3];
+    DRay3d ray[3];
+    int numRay = 0;
+    int numCircle = 0;
+    for (auto &point : points)
+        {
+        if (numCircle < MaxIn)
+            {
+            centerIn[numCircle] = point;
+            radiusIn[numCircle] = 0.0;
+            numCircle++;
+            }
+        }
+    for (auto &arc : arcs)
+        {
+        double r;
+        if (arc.IsCircularXY (r) && numCircle < MaxIn)
+            {
+            centerIn[numCircle] = arc.center;
+            radiusIn[numCircle] = r;
+            numCircle++;
+            }
+        }
+
+    for (auto &segment : segments)
+        {
+        if (numRay < MaxIn)
+            {
+            ray[numRay] = DRay3d::FromOriginAndTarget (segment.point[0], segment.point[1]);
+            numRay++;
+            }
+        }
+
+    static const int MaxOut = 8;
+    DPoint3d tangentPointA[MaxOut];
+    DPoint3d tangentPointB[MaxOut];
+    DPoint3d tangentPointC[MaxOut];
+    DPoint3d centerOut[MaxOut];
+    double   radiusOut[MaxOut];
+    int numOut;
+    
+    if (numCircle == 3)
+        {
+        bsiGeom_circleTTTCircleConstruction
+            (
+            centerOut, radiusOut, &numOut, MaxOut,
+            centerIn, radiusIn
+            );
+        LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
+        }
+    else if (numCircle == 2 && numRay == 1)
+        {
+        bsiGeom_circleTTTCircleCircleLineConstruction
+            (
+            centerOut, radiusOut, &numOut, MaxOut,
+            centerIn, radiusIn,
+            &ray[0].origin, &ray[0].direction);
+        LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
+        }
+    else if (numCircle == 1 && numRay == 2)
+        {
+        bsiGeom_circleTTTLineLineCircleConstruction
+            (
+            centerOut, radiusOut,
+            tangentPointA, tangentPointB, tangentPointC,
+            numOut, MaxOut,
+            ray[0].origin, ray[0].direction,
+            ray[1].origin, ray[1].direction,
+            centerIn[0], radiusIn[0]
+            );
+        LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
+        }
+    else if (numCircle == 0 && numRay == 3)
+        {
+        bsiGeom_circleTTTLineLineLineConstruction
+            (
+            centerOut, radiusOut,
+            tangentPointA, tangentPointB, tangentPointC,
+            numOut, MaxOut,
+            ray[0].origin, ray[0].direction,
+            ray[1].origin, ray[1].direction,
+            ray[2].origin, ray[2].direction
+            );
+        LoadArcs (result, centerOut, radiusOut, numOut, localToWorld);
+        }
+    }
+
+struct FromPointPointTangent: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::Tangent
+                );
+        bvector<DPoint3d> points;
+        bvector<DEllipse3d>arcs;
+        bvector<DSegment3d>segments;
+        if (    searcher.BuildConstraintMatchTable (matchTable))
+            {
+            matchTable.GetPointsSegmentsArcs(points,segments, arcs);
+            Transform localToWorld, worldToLocal;
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
+                BranchToCircleTangencySolver (result, points, segments, arcs, localToWorld);
+            }
+        }
+    };
+
+
+struct FromPointTangentTangent: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::Tangent,
+                CurveConstraint::Type::Tangent
+                );
+        bvector<DPoint3d> points;
+        bvector<DEllipse3d>arcs;
+        bvector<DSegment3d>segments;
+        if (    searcher.BuildConstraintMatchTable (matchTable))
+            {
+            matchTable.GetPointsSegmentsArcs(points,segments, arcs);
+            Transform localToWorld, worldToLocal;
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
+                {
+                BranchToCircleTangencySolver (result, points, segments, arcs, localToWorld);
+                }
+            }
+        }
+    };
+
+
+
+struct FromTangentTangentTangent: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::Tangent,
+                CurveConstraint::Type::Tangent,
+                CurveConstraint::Type::Tangent
+                );
+        bvector<DPoint3d> points;
+        bvector<DEllipse3d>arcs;
+        bvector<DSegment3d>segments;
+        if (    searcher.BuildConstraintMatchTable (matchTable))
+            {
+            matchTable.GetPointsSegmentsArcs(points,segments, arcs);
+            Transform localToWorld, worldToLocal;
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
+                {
+                BranchToCircleTangencySolver (result, points, segments, arcs, localToWorld);
+                }
+            }
+        }
+    };
+
+
 };
 
 
@@ -327,7 +729,9 @@ bvector<ConstructionContext::ITryConstruction *>
     new LineConstructions::FromPointPoint (),
     new LineConstructions::FromPointClosestApproach (),
     new LineConstructions::FromClosestApproachClosestApproach (),
-    new LineConstructions::FromPointPerpendicularNear ()
+    new LineConstructions::FromPointPerpendicularNear (),
+    new LineConstructions::FromTangentTangent (),
+    new LineConstructions::FromPointTangent ()
     };
 
 static bvector<ConstructionContext::ITryConstruction *> s_circleBuilders =
@@ -335,7 +739,11 @@ bvector<ConstructionContext::ITryConstruction *>
     {
     new CircleConstructions::FromPointPointPoint (),
     new CircleConstructions::FromCenterPointPoint (),
-    new CircleConstructions::FromPointDirectionPoint ()
+    new CircleConstructions::FromPointDirectionPoint (),
+    new CircleConstructions::FromPointPointTangent (),
+    new CircleConstructions::FromPointTangentTangent (),
+    new CircleConstructions::FromTangentTangentTangent ()
+    
     };
 
 void ConstrainedConstruction::ConstructLines (bvector<CurveConstraint> &constraints, bvector<ICurvePrimitivePtr> &result)

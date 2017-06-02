@@ -1291,3 +1291,141 @@ TEST(Polyface,BoundaryFromCompressedFacets)
     Check::SetMaxVolume (oldVolume);
     Check::ClearGeometry ("Polyface.BoundaryFromCompressedFacets");
     }
+
+
+
+CurveVectorPtr CS_AreaIntersectionFailure_CurveVector0 ()
+   {
+   auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+
+   cv->push_back (ICurvePrimitive::CreateArc (
+       DEllipse3d::FromScaledRotMatrix (
+           DPoint3d::From (1622450.2999150001,5425082.3315470004,0.0),
+           RotMatrix::FromColumnVectors (
+               DVec3d::From (-0.86323001432114710,0.50481079859201905,0.0),
+               DVec3d::FromCrossProduct (DVec3d::From (0.0,0.0,1.0), DVec3d::From (-0.86323001432114710,0.50481079859201905,0.0)),
+               DVec3d::From (0.0,0.0,1.0)),
+           709.73999997128647, 709.73999997128647,
+           Angle::DegreesToRadians (7.5679424323581390), Angle::DegreesToRadians (3.0956830832630517))));
+
+
+   cv->push_back (ICurvePrimitive::CreateLine (
+       DSegment3d::From (
+           DPoint3d::From (1621781.9136103140,5425321.0586197572,0.0),
+           DPoint3d::From (1621766.3321385621,5425277.4337293329,0.0))));
+
+
+   cv->push_back (ICurvePrimitive::CreateLine (
+       DSegment3d::From (
+           DPoint3d::From (1621766.3321385621,5425277.4337293329,0.0),
+           DPoint3d::From (1621784.6771173216,5425270.8814660357,0.0))));
+
+
+   cv->push_back (ICurvePrimitive::CreateLine (
+       DSegment3d::From (
+           DPoint3d::From (1621784.6771173216,5425270.8814660357,0.0),
+           DPoint3d::From (1621800.2585890735,5425314.506356460,0.0))));
+
+   cv->push_back (ICurvePrimitive::CreateArc (
+       DEllipse3d::FromScaledRotMatrix (
+           DPoint3d::From (1622450.2999150001,5425082.3315470004,0.0),
+           RotMatrix::FromColumnVectors (
+               DVec3d::From (-0.86323001432114721,0.50481079859201905,0.0),
+               DVec3d::FromCrossProduct (DVec3d::From (0.0,0.0,1.0), DVec3d::From (-0.86323001432114721,0.50481079859201905,0.0)),
+               DVec3d::From (0.0,0.0,1.0)),
+           690.25999997128645, 690.25999997128645,
+           Angle::DegreesToRadians (10.663625515621192), Angle::DegreesToRadians (-3.0956830832630517))));
+
+
+   cv->push_back (ICurvePrimitive::CreateLine (
+       DSegment3d::From (
+           DPoint3d::From (1621813.7454376416,5425349.2721113879,0.0),
+           DPoint3d::From (1621795.7810746199,5425356.8055077810,0.0))));
+
+   return cv;
+   }
+
+CurveVectorPtr CS_AreaIntersectionFailure_CurveVector1 ()
+   {
+   auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+
+   cv->push_back (ICurvePrimitive::CreateArc (
+       DEllipse3d::FromScaledRotMatrix (
+           DPoint3d::From (1621688.8786060,5425156.6849819999,0.0),
+           RotMatrix::FromColumnVectors (
+               DVec3d::From (0.28954990090512533,0.95716291971943424,0.0),
+               DVec3d::FromCrossProduct (DVec3d::From (0.0,-0.0,1.0), DVec3d::From (0.28954990090512533,0.95716291971943424,0.0)),
+               DVec3d::From (0.0,-0.0,1.0)),
+           176.50000080624326, 176.50000080624326,
+           Angle::DegreesToRadians (-10.852760536121815), Angle::DegreesToRadians (-25.246863164628909))));
+
+
+   cv->push_back (ICurvePrimitive::CreateLine (
+       DSegment3d::From (
+           DPoint3d::From (1621829.7090752404,5425263.0759083899,0.0),
+           DPoint3d::From (1621841.6899110028,5425272.1013351576,0.0))));
+
+
+   cv->push_back (ICurvePrimitive::CreateLineString (
+           bvector<DPoint3d>{
+               DPoint3d::From (1621841.6899110028,5425272.1013351576,0.0),
+               DPoint3d::From (1621841.6776703051,5425272.1176301381,0.0)}));
+
+   cv->push_back (ICurvePrimitive::CreateArc (
+       DEllipse3d::FromScaledRotMatrix (
+           DPoint3d::From (1621688.8786060,5425156.6849819999,0.0),
+           RotMatrix::FromColumnVectors (
+               DVec3d::From (0.28954990090512533,0.95716291971943435,0.0),
+               DVec3d::FromCrossProduct (DVec3d::From (0.0,-0.0,1.0), DVec3d::From (0.28954990090512533,0.95716291971943435,0.0)),
+               DVec3d::From (0.0,-0.0,1.0)),
+           191.50000080624326, 191.50000080624326,
+           Angle::DegreesToRadians (-36.099623700750726), Angle::DegreesToRadians (25.246863164628909))));
+
+
+   cv->push_back (ICurvePrimitive::CreateLineString (
+           bvector<DPoint3d>{
+               DPoint3d::From (1621777.8478308839,5425326.2630682383,0.0),
+               DPoint3d::From (1621777.8297578534,5425326.2724877214,0.0)}));
+
+
+   cv->push_back (ICurvePrimitive::CreateLine (
+       DSegment3d::From (
+           DPoint3d::From (1621777.8297578534,5425326.2724877214,0.0),
+           DPoint3d::From (1621770.8789621233,5425312.9801894771,0.0))));
+
+   return cv;
+   }
+
+
+TEST(CurveVector,AreaIntersectionFailure0)
+    {
+    auto cv0 = CS_AreaIntersectionFailure_CurveVector0 ();
+    auto cv1 = CS_AreaIntersectionFailure_CurveVector1 ();
+    Check::SaveTransformed (*cv0);
+    Check::SaveTransformed (*cv1);
+    auto cvIntersection = CurveVector::AreaIntersection (*cv0, *cv1);
+    if (cvIntersection.IsValid ())
+        Check::SaveTransformed (*cvIntersection);
+    double a = cv0->Length ();
+
+#ifdef ShowStrokes
+    auto facetOptions = IFacetOptions::Create ();
+    facetOptions->SetMaxEdgeLength (0.05 * a);
+    auto stroke0 = cv0->Stroke (*facetOptions);
+    auto stroke1 = cv1->Stroke (*facetOptions);
+    Check::SaveTransformed (*stroke0);
+    Check::SaveTransformed (*stroke1);
+#endif
+
+    Check::Shift (0.5 * a,0,0);
+    double gapTol = 1.0e-10;
+    CurveGapOptions options (gapTol, 1.0e4 * gapTol, 1.0e5 * gapTol);
+    auto cv0A = cv0->CloneWithGapsClosed (options);
+    auto cv1A = cv1->CloneWithGapsClosed (options);
+    Check::SaveTransformed (*cv0A);
+    Check::SaveTransformed (*cv1A);
+    auto cvIntersectionA = CurveVector::AreaIntersection (*cv0A, *cv1A);
+    if (cvIntersectionA.IsValid ())
+        Check::SaveTransformed (*cvIntersectionA);
+    Check::ClearGeometry ("CurveVector.AreaIntersecitonFailure0");
+    }
