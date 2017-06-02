@@ -186,6 +186,7 @@ void GetPointsSegmentsArcs (bvector<DPoint3d> &points, bvector<DSegment3d> &segm
     }
 };
 
+
 struct ConstructionContext
 {
 
@@ -240,6 +241,103 @@ static void TryConstruction (bvector<CurveConstraint>&constraints, bvector<ITryC
     return;
     }
 };
+
+
+static bool MapToPlane
+(
+bvector<DPoint3d> &points,
+bvector<DSegment3d> &segments,
+bvector<DEllipse3d> &arcs,
+TransformR localToWorld,
+TransformR worldToLocal,
+bool applyToAllGeometry,
+double reltol = 1.0e-10
+)
+    {
+    bvector<DPoint3d> allPoints = points;
+    for (auto &s : segments)
+        {
+        allPoints.push_back (s.point[0]);
+        allPoints.push_back (s.point[1]);
+        }
+
+    for (auto &arc: arcs)
+        {
+        allPoints.push_back (arc.center);
+        allPoints.push_back (arc.center + arc.vector0);
+        allPoints.push_back (arc.center + arc.vector90);
+        }
+
+    Transform originWithExtentVectors;
+    if (DPoint3dOps::PrincipalExtents (allPoints, originWithExtentVectors, localToWorld, worldToLocal))
+        {
+        double ax = originWithExtentVectors.ColumnX ().Magnitude ();
+        double ay = originWithExtentVectors.ColumnY ().Magnitude ();
+        double az = originWithExtentVectors.ColumnZ ().Magnitude ();
+        if (az <= reltol * (ax + ay))
+            {
+            localToWorld.SetTranslation (allPoints[0]); // make sure the origin is a real geometry point.
+            worldToLocal.InverseOf (localToWorld);      // safe incidental fixup
+            if (applyToAllGeometry)
+                {
+                worldToLocal.Multiply (points, points);
+                for (auto &segment : segments)
+                    worldToLocal.Multiply (segment);
+                for (auto &arc : arcs)
+                    worldToLocal.Multiply (arc);
+                }
+            return true;
+            }
+        return true;
+        }
+    return false;
+    }
+
+static void BranchToLineTangencySolver
+(
+bvector<ICurvePrimitivePtr> &result,
+bvector<DPoint3d> &points,
+bvector<DSegment3d> &segments,
+bvector<DEllipse3d> &arcs,
+TransformCR localToWorld
+)
+    {
+    static const int MaxIn = 3;
+    DPoint3d centerIn[3];
+    double   radiusIn[3];
+    DRay3d ray[3];
+    int numRay = 0;
+    int numCircle = 0;
+    for (auto &point : points)
+        {
+        if (numCircle < MaxIn)
+            {
+            centerIn[numCircle] = point;
+            radiusIn[numCircle] = 0.0;
+            numCircle++;
+            }
+        }
+    for (auto &arc : arcs)
+        {
+        double r;
+        if (arc.IsCircularXY (r) && numCircle < MaxIn)
+            {
+            centerIn[numCircle] = arc.center;
+            radiusIn[numCircle] = r;
+            numCircle++;
+            }
+        }
+
+    for (auto &segment : segments)
+        {
+        if (numRay < MaxIn)
+            {
+            ray[numRay] = DRay3d::FromOriginAndTarget (segment.point[0], segment.point[1]);
+            numRay++;
+            }
+        }
+
+    }
 
 
 
@@ -319,6 +417,28 @@ struct FromPointPerpendicularNear : ConstructionContext::ITryConstruction
             }
         }
     };
+
+struct FromPointTangent: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::Tangent
+                );
+        bvector<DPoint3d> points;
+        bvector<DEllipse3d>arcs;
+        bvector<DSegment3d>segments;
+        if (    searcher.BuildConstraintMatchTable (matchTable))
+            {
+            matchTable.GetPointsSegmentsArcs(points,segments, arcs);
+            Transform localToWorld, worldToLocal;
+            if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
+                BranchToLineTangencySolver (result, points, segments, arcs, localToWorld);
+            }
+        }
+    };
+
 };
 
 
@@ -374,55 +494,6 @@ struct FromPointDirectionPoint: ConstructionContext::ITryConstruction
         }
     };
 
-static bool MapToPlane
-(
-bvector<DPoint3d> &points,
-bvector<DSegment3d> &segments,
-bvector<DEllipse3d> &arcs,
-TransformR localToWorld,
-TransformR worldToLocal,
-bool applyToAllGeometry,
-double reltol = 1.0e-10
-)
-    {
-    bvector<DPoint3d> allPoints = points;
-    for (auto &s : segments)
-        {
-        allPoints.push_back (s.point[0]);
-        allPoints.push_back (s.point[1]);
-        }
-
-    for (auto &arc: arcs)
-        {
-        allPoints.push_back (arc.center);
-        allPoints.push_back (arc.center + arc.vector0);
-        allPoints.push_back (arc.center + arc.vector90);
-        }
-
-    Transform originWithExtentVectors;
-    if (DPoint3dOps::PrincipalExtents (allPoints, originWithExtentVectors, localToWorld, worldToLocal))
-        {
-        double ax = originWithExtentVectors.ColumnX ().Magnitude ();
-        double ay = originWithExtentVectors.ColumnY ().Magnitude ();
-        double az = originWithExtentVectors.ColumnZ ().Magnitude ();
-        if (az <= reltol * (ax + ay))
-            {
-            localToWorld.SetTranslation (allPoints[0]); // make sure the origin is a real geometry point.
-            worldToLocal.InverseOf (localToWorld);      // safe incidental fixup
-            if (applyToAllGeometry)
-                {
-                worldToLocal.Multiply (points, points);
-                for (auto &segment : segments)
-                    worldToLocal.Multiply (segment);
-                for (auto &arc : arcs)
-                    worldToLocal.Multiply (arc);
-                }
-            return true;
-            }
-        return true;
-        }
-    return false;
-    }
 
 static void LoadArcs (bvector<ICurvePrimitivePtr> &result, DPoint3dCP center, double *radius, int numCircle, TransformCR localToWorld)
     {
@@ -435,7 +506,7 @@ static void LoadArcs (bvector<ICurvePrimitivePtr> &result, DPoint3dCP center, do
     }
 
 
-static void BranchToTangencySolver
+static void BranchToCircleTangencySolver
 (
 bvector<ICurvePrimitivePtr> &result,
 bvector<DPoint3d> &points,
@@ -550,7 +621,7 @@ struct FromPointPointTangent: ConstructionContext::ITryConstruction
             matchTable.GetPointsSegmentsArcs(points,segments, arcs);
             Transform localToWorld, worldToLocal;
             if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
-                BranchToTangencySolver (result, points, segments, arcs, localToWorld);
+                BranchToCircleTangencySolver (result, points, segments, arcs, localToWorld);
             }
         }
     };
@@ -574,7 +645,7 @@ struct FromPointTangentTangent: ConstructionContext::ITryConstruction
             Transform localToWorld, worldToLocal;
             if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
                 {
-                BranchToTangencySolver (result, points, segments, arcs, localToWorld);
+                BranchToCircleTangencySolver (result, points, segments, arcs, localToWorld);
                 }
             }
         }
@@ -600,7 +671,7 @@ struct FromTangentTangentTangent: ConstructionContext::ITryConstruction
             Transform localToWorld, worldToLocal;
             if (MapToPlane (points, segments, arcs, localToWorld, worldToLocal, true))
                 {
-                BranchToTangencySolver (result, points, segments, arcs, localToWorld);
+                BranchToCircleTangencySolver (result, points, segments, arcs, localToWorld);
                 }
             }
         }
@@ -617,7 +688,8 @@ bvector<ConstructionContext::ITryConstruction *>
     new LineConstructions::FromPointPoint (),
     new LineConstructions::FromPointClosestApproach (),
     new LineConstructions::FromClosestApproachClosestApproach (),
-    new LineConstructions::FromPointPerpendicularNear ()
+    new LineConstructions::FromPointPerpendicularNear (),
+    new LineConstructions::FromPointTangent ()
     };
 
 static bvector<ConstructionContext::ITryConstruction *> s_circleBuilders =

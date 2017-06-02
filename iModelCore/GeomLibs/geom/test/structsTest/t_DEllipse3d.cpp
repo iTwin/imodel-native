@@ -2140,3 +2140,85 @@ TEST(DEllipse3d, ArcLengthTolerance)
         }
     }
 
+TEST(DEllipse3d,CircleCircleTangentLines)
+    {
+    DPoint3d centerA = DPoint3d::From (0,0,0);
+    DPoint3d centerB = DPoint3d::From (10,0,0);
+
+    for (bool flip : bvector<bool>{false, true})
+        {
+        SaveAndRestoreCheckTransform shifter (0,120,0);
+        for (double rB : bvector<double> {1.0, 0.0, 4.0})
+            {
+            SaveAndRestoreCheckTransform shifter (0,30,0);
+            for (double rA : bvector<double> {1.0, 0.0, 4.0})
+                {
+                SaveAndRestoreCheckTransform shifter (20,0,0);
+                Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (centerA, rA));
+                Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (centerB, rB));
+                DPoint2d uvA, uvB;
+                if (DEllipse3d::ConstructTangentLineRatios (centerA.Distance (centerB), rA, rB, flip, uvA, uvB))
+                    {
+                    auto pointA = DPoint3d::FromInterpolateAndPerpendicularXY (centerA, uvA.x, centerB, uvA.y);
+                    auto pointB = DPoint3d::FromInterpolateAndPerpendicularXY (centerA, uvB.x, centerB, uvB.y);
+                    Check::SaveTransformed (bvector<DPoint3d>{pointA, pointB});
+                    auto pointA1 = DPoint3d::FromInterpolateAndPerpendicularXY (centerA, uvA.x, centerB, -uvA.y);
+                    auto pointB1 = DPoint3d::FromInterpolateAndPerpendicularXY (centerA, uvB.x, centerB, -uvB.y);
+                    Check::SaveTransformed (bvector<DPoint3d>{pointA1, pointB1});
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("DEllipse3d.CircleCircleTangentLines");
+    }
+
+TEST(DEllipse3d,STurn)
+    {
+    DPoint3d pointA = DPoint3d::From (0,0,0);
+    DVec3d tangentA = DVec3d::From (0,1,0);
+    DPoint3d pointB0 = DPoint3d::From (8,10,0);
+    DVec3d tangentB0  = DVec3d::From (0,1,0);
+    double tangentLength = 3.0;
+
+    for (double uxB : bvector<double>{0.0, 0.1, -1.0, })
+        {
+        SaveAndRestoreCheckTransform shifter (150, 0 ,0);
+        for (double rA : bvector<double> {1.0, 4.0, -1.0, -4.0})
+            {
+            for (double rB : bvector<double> {1.0, 3.5, -3.5, -1.0})
+                {
+                SaveAndRestoreCheckTransform shifter (0,45,0);
+                for (double sBX : bvector<double> {1.0, -1.0})
+                    {
+                    for (double sBY : bvector<double> {1.0, -1.0})
+                        {
+                        SaveAndRestoreCheckTransform shifter (25,0,0);
+                        auto pointB = pointB0;
+                        pointB.x *= sBX;
+                        pointB.y *= sBY;
+                        DVec3d tangentB = tangentB0;
+                        tangentB.x = uxB;
+                        Check::SaveTransformed (bvector<DPoint3d>{ pointA, pointA - tangentLength * tangentA});
+                        Check::SaveTransformed (bvector<DPoint3d>{ pointB, pointB + tangentLength * tangentB});
+                        DEllipse3d arcA, arcB;
+                        DSegment3d segment;
+                        if (DEllipse3d::Construct_ArcLineArc_PointTangentRadius_PointTangentRadiusXY
+                                (
+                                pointA, tangentA, rA,
+                                pointB, tangentB, rB,
+                                arcA, segment, arcB
+                                )
+                            )
+                            {
+                            Check::SaveTransformed (arcA);
+                            Check::SaveTransformed (bvector<DPoint3d>{segment.point[0], segment.point[1]});
+                            Check::SaveTransformed (arcB);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    Check::ClearGeometry ("DEllipse3d.STurn");
+    }
