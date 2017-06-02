@@ -919,7 +919,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         reader = new SchemaXmlReader3(m_schemaContext, m_xmlDom);
 
     if (SchemaReadStatus::Success != (status = reader->ReadSchemaReferencesFromXml(schemaOut, *schemaNode)))
+        {
+        delete reader; reader = nullptr; 
         return status;
+        }
 
     readingSchemaReferences.Stop();
     LOG.tracev("Reading schema references for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingSchemaReferences.GetElapsedSeconds());
@@ -929,7 +932,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     status = reader->ReadClassStubsFromXml(schemaOut, *schemaNode, classes, ecXmlMajorVersion);
 
     if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
         return status;
+        }
 
     readingClassStubs.Stop();
     LOG.tracev("Reading class stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassStubs.GetElapsedSeconds());
@@ -938,7 +944,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     status = reader->ReadEnumerationsFromXml(schemaOut, *schemaNode);
 
     if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
         return status;
+        }
 
     readingEnumerations.Stop();
     LOG.tracev("Reading enumerations for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingEnumerations.GetElapsedSeconds());
@@ -947,7 +956,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     status = reader->ReadKindOfQuantitiesFromXml(schemaOut, *schemaNode);
 
     if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
         return status;
+        }
 
     readingKindOfQuantities.Stop();
     LOG.tracev("Reading kind of quantity elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingKindOfQuantities.GetElapsedSeconds());
@@ -955,7 +967,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     StopWatch readingClassContents("Reading class contents", true);
     if (SchemaReadStatus::Success != (status = reader->ReadClassContentsFromXml(schemaOut, classes)))
+        {
+        delete reader; reader = nullptr;
         return status;
+        }
 
     readingClassContents.Stop();
     LOG.tracev("Reading class contents for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
@@ -964,6 +979,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     if (CustomAttributeReadStatus::InvalidCustomAttributes == schemaOut->ReadCustomAttributes(*schemaNode, m_schemaContext, *schemaOut))
         {
         LOG.errorv("Failed to read schema because one or more invalid custom attributes were applied to it.", schemaOut->GetName().c_str());
+        delete reader; reader = nullptr;
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
@@ -983,12 +999,16 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     if (m_schemaContext.GetSkipValidation())
         {
         LOG.infov("Skipping validation for '%s' because the read context has skip validation property set to true", schemaOut->GetFullSchemaName().c_str());
+        delete reader; reader = nullptr;
         return SchemaReadStatus::Success;
         }
 
     if (!schemaOut->Validate(true))
+        {
+        delete reader; reader = nullptr;
         return SchemaReadStatus::InvalidECSchemaXml;
-
+        }
+    delete reader; reader = nullptr;
     return SchemaReadStatus::Success;
     }
 
