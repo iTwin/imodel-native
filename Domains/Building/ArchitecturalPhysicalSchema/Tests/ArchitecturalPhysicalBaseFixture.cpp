@@ -97,14 +97,14 @@ DgnViewLib::Host::IKnownLocationsAdmin& ArchitecturalPhysicalTestsHost::_SupplyI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ArchitecturalPhysicalBaseFixture::SetUp_CreateNewDgnDb()
     {
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetRootSubjectName("ArchitecturalPhysicalTests");
-    DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, m_seedDgnDbFileName, createProjectParams);
-    ASSERT_TRUE(db.IsValid());
+    //CreateDgnDbParams createProjectParams;
+    //createProjectParams.SetRootSubjectName("ArchitecturalPhysicalTests");
+   // DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, m_seedDgnDbFileName, createProjectParams);
+   // ASSERT_TRUE(db.IsValid());
 
     // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
-    db->ChangeBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
-    db->SaveChanges();
+  //  db->ChangeBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+   // db->SaveChanges();
 
     }
 
