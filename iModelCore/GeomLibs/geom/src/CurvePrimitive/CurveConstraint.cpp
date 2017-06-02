@@ -754,6 +754,7 @@ void ConstrainedConstruction::ConstructLines (bvector<CurveConstraint> &constrai
 
 void ConstrainedConstruction::ConstructCircularArcs (bvector<CurveConstraint> &constraints, bvector<ICurvePrimitivePtr> &result)
     {
+    result.clear ();
     ConstructionContext::TryConstruction  (constraints, s_circleBuilders, result);
     }
 
