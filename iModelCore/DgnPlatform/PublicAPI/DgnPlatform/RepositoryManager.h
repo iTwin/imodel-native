@@ -198,6 +198,11 @@ protected:
     virtual RepositoryStatus _RefreshFromRepository() = 0;
     virtual void _OnDgnDbDestroyed() { }
 
+    // Bulk operations
+    virtual void _StartBulkOperation() = 0;
+    virtual bool _IsBulkOperation() = 0;
+    virtual Response _EndBulkOperation() = 0;
+
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
     DGNPLATFORM_EXPORT RepositoryStatus PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, PrepareAction action);
@@ -392,6 +397,21 @@ public:
     void OnModelInserted(DgnModelId id); //!< @private
     //@}
 
+    //! @name Bulk Operations
+    //! @{
+    //!< Call this before starting a group of changes that will require locks and/or codes.
+    void StartBulkOperation() {_StartBulkOperation();}
+    
+    //!< Check if a bulk operation is in progress
+    void IsBulkOperation() {_IsBulkOperation();}
+
+    //! Call this to acquire all of the codes and locks were detected in change made 
+    //! during the bulk operation. If successful, this terminates the bulk operation.
+    //! If not successful, the caller should abandon all changes.
+    //! @note This must be called on the same thread that called StartBulkOperation.
+    IBriefcaseManager::Response EndBulkOperation() {return _EndBulkOperation();}
+    //! @}
+
     DgnDbStatus OnElementInsert(DgnElementCR el); //!< @private
     DgnDbStatus OnElementUpdate(DgnElementCR el); //!< @private
     DgnDbStatus OnElementDelete(DgnElementCR el); //!< @private
@@ -399,32 +419,6 @@ public:
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
     DgnDbStatus OnModelDelete(DgnModelCR model); //!< @private
     void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
-
-    DGNPLATFORM_EXPORT static IBriefcaseManagerPtr CreateMasterBriefcaseManager(DgnDbR db); 
-    DGNPLATFORM_EXPORT static IBriefcaseManagerPtr CreateBulkUpdateBriefcaseManager(DgnDbR db); 
-};
-
-/*=====================================================================================*/
-//! Interface adopted by a briefcase manager that supports efficient bulk update.
-// @bsistruct                                                    Sam.Wilson     03/17
-/*=====================================================================================*/
-struct IBulkUpdateBriefcaseOps
-{
-protected:
-    virtual void _StartBulkUpdate() = 0;
-    virtual IBriefcaseManager::Response _AcquireLocksAndCodes() = 0;
-    virtual void _EndBulkUpdate() = 0;
-
-public:
-    //!< Call this before starting the bulk update 
-    void StartBulkUpdate() {_StartBulkUpdate();}
-    
-    //! Call this to acquire all of the codes and locks were detected during the update.
-    //! @note the caller must check the response for locks and codes that could not be obtained.
-    IBriefcaseManager::Response AcquireLocksAndCodes() {return _AcquireLocksAndCodes();}
-  
-    //!< Call this when the bulk update is done.
-    void EndBulkUpdate() {_EndBulkUpdate();}
 };
 
 /*=====================================================================================*/

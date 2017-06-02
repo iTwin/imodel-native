@@ -471,11 +471,14 @@ SchemaStatus DgnDomains::UpgradeSchemas()
         domain->_OnDgnDbOpened(m_dgndb); 
         }
         
+    m_dgndb.BriefcaseManager().StartBulkOperation();
     for (DgnDomainP domain : domainsToImport)
         {
         domain->_OnSchemaImported(m_dgndb);
         domain->_OnDgnDbOpened(m_dgndb);
         }
+    if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().EndBulkOperation().Result())
+        return SchemaStatus::CouldNotAcquireLocksOrCodes;
 
     return SchemaStatus::Success;
     }

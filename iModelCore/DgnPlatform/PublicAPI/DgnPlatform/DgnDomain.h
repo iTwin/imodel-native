@@ -134,7 +134,8 @@ enum class SchemaStatus
     SchemaInvalid,
     MergeSchemaRevisionFailed,
     DbHasLocalChanges,
-    DbIsReadonly
+    DbIsReadonly,
+    CouldNotAcquireLocksOrCodes,
     };
 
 //=======================================================================================
