@@ -439,8 +439,7 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "MapStrategy INTEGER NOT NULL,"
                            "ShareColumnsMode INTEGER,"
                            "MaxSharedColumnsBeforeOverflow INTEGER,"
-                           "JoinedTableInfo INTEGER,"
-                           "UpdatableViewInfo TEXT)");
+                           "JoinedTableInfo INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -465,10 +464,9 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)"
-
-    );
-    if (BE_SQLITE_OK != stat)
+                           "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,"
+                           "UpdatableViewName TEXT)");
+if (BE_SQLITE_OK != stat)
         return stat;
 
     stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON ec_Table(ParentTableId);"

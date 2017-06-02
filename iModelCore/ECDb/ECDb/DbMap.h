@@ -81,10 +81,7 @@ private:
 
 public:
     template<typename TClassMap>
-    static ClassMapPtr CreateForLoading(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, ClassMap::UpdatableViewInfo const& updatableViewInfo)
-        {
-        return new TClassMap(ecdb, ecClass, mapStrategy, updatableViewInfo);
-        }
+    static ClassMapPtr CreateForLoading(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy) { return new TClassMap(ecdb, ecClass, mapStrategy); }
 
     template<typename TClassMap>
     static ClassMapPtr CreateForMapping(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy) { return new TClassMap(ecdb, ecClass, mapStrategy); }

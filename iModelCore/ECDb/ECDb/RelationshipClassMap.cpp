@@ -20,18 +20,6 @@ RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECC
     BeAssert(ecRelClass.IsRelationshipClass());
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
-    : ClassMap(ecdb, type, ecRelClass, mapStrategy, updatableViewInfo),
-    m_sourceConstraintMap(ecRelClass.GetRelationshipClassCP()->GetSource()),
-    m_targetConstraintMap(ecRelClass.GetRelationshipClassCP()->GetTarget())
-    {
-    BeAssert(ecRelClass.IsRelationshipClass());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                        12/13
 //---------------------------------------------------------------------------------------
@@ -101,13 +89,6 @@ Utf8CP RelationshipClassEndTableMap::RELECCLASSID_COLNAME_TOKEN = "RelECClassId"
 //+---------------+---------------+---------------+---------------+---------------+------
 RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
     : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy) {}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   06/12
-//+---------------+---------------+---------------+---------------+---------------+------
-RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
-    : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy, updatableViewInfo)
-    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
@@ -1006,13 +987,6 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECDb const& ecdb, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
     : RelationshipClassMap(ecdb, Type::RelationshipLinkTable, ecRelClass, mapStrategy)
-    {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECDb const& ecdb, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
-    : RelationshipClassMap(ecdb, Type::RelationshipLinkTable, ecRelClass, mapStrategy, updatableViewInfo)
     {}
 
 //---------------------------------------------------------------------------------------

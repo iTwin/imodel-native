@@ -457,7 +457,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         }
 
     StorageDescription const& storageDescription = classMap->GetStorageDescription();
-    if (index.AppliesToSubclassesIfPartial() && storageDescription.HierarchyMapsToMultipleTables() && classMap->GetClass().GetRelationshipClassCP() == nullptr)
+    if (index.AppliesToSubclassesIfPartial() && storageDescription.HasMultipleNonVirtualHorizontalPartitions() && classMap->GetClass().GetRelationshipClassCP() == nullptr)
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report("Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",
                                                         index.GetName().c_str(), ecclass->GetFullName());

@@ -127,9 +127,10 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
             if (classRefExp->IsPolymorphic() && exp.GetClassRefExp()->GetType() == Exp::Type::ClassName)
                 {
                 ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
-                ClassMap::UpdatableViewInfo const& updatableViewInfo = classNameExp.GetInfo().GetMap().GetUpdatableViewInfo();
+                DbTable::UpdatableViewInfo const& updatableViewInfo = classNameExp.GetInfo().GetMap().GetJoinedOrPrimaryTable().GetUpdatableViewInfo();
                 if (updatableViewInfo.HasView())
                     {
+                    BeAssert(false && "Is this code still needed?");
                     classIdentifier.assign(updatableViewInfo.GetViewName());
                     break;
                     }

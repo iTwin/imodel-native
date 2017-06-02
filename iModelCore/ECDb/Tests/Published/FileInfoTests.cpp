@@ -119,7 +119,7 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
             </ECSchema>)xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ASSERT_TRUE(ecdb.TableExists("_ecdbf_FileInfo"));
+    ASSERT_FALSE(ecdb.TableExists("_ecdbf_FileInfo")) << "FileInfo is abstract but as subclass with strategy existing and therefore is not updatable and therefore should not have an updatable view";
     ASSERT_TRUE(ecdb.TableExists("ecdbf_ExternalFileInfo"));
     ASSERT_FALSE(ecdb.TableExists("ts_MyExternalFileInfo"));
     ASSERT_FALSE(ecdb.TableExists("ts_YourExternalFileInfo"));

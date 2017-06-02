@@ -518,14 +518,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
             case ECSqlType::Update:
             {
-            if (classMap.GetUpdatableViewInfo().HasView())
-                {
-                NativeSqlBuilder nativeSqlSnippet;
-                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewInfo().GetViewName().c_str());
-                nativeSqlSnippets.push_back(nativeSqlSnippet);
-                return ECSqlStatus::Success;
-                }
-
             SingleContextTableECSqlPreparedStatement& preparedStmt = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>();
             table = &preparedStmt.GetContextTable();
             break;
@@ -533,14 +525,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
             case ECSqlType::Delete:
             {
-            if (classMap.GetUpdatableViewInfo().HasView())
-                {
-                NativeSqlBuilder nativeSqlSnippet;
-                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewInfo().GetViewName().c_str());
-                nativeSqlSnippets.push_back(nativeSqlSnippet);
-                return ECSqlStatus::Success;
-                }
-
             table = &classMap.GetPrimaryTable();
             break;
             }
@@ -560,7 +544,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         ctx.SetNativeStatementIsNoop(true);
 
     NativeSqlBuilder nativeSqlSnippet;
-    nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
+    //INSERTS must always be done into the table, no into the updatable view as we don't have INSERT triggers on the view
+    if (currentScopeECSqlType != ECSqlType::Insert && table->GetUpdatableViewInfo().HasView())
+        nativeSqlSnippet.AppendEscaped(table->GetUpdatableViewInfo().GetViewName().c_str());
+    else
+        nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
+
     nativeSqlSnippets.push_back(nativeSqlSnippet);
     return ECSqlStatus::Success;
     }
@@ -1599,7 +1588,7 @@ ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpre
     DbColumn const& classIdColumn = contextTable.GetECClassIdColumn();
 
     //if no class id column exists and the SQL is not against an updatable view (which always has a class id col) -> no system where clause
-    if (classIdColumn.GetPersistenceType() == PersistenceType::Virtual && !classMap.GetUpdatableViewInfo().HasView())
+    if (classIdColumn.GetPersistenceType() == PersistenceType::Virtual && !contextTable.GetUpdatableViewInfo().HasView())
         return ECSqlStatus::Success;
 
     StorageDescription const& desc = classMap.GetStorageDescription();
@@ -1623,7 +1612,7 @@ ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpre
 
     if (!exp.IsPolymorphic())
         {
-        if (classMap.GetUpdatableViewInfo().HasView() || partition->IsSharedTable())
+        if (contextTable.GetUpdatableViewInfo().HasView() || partition->IsSharedTable())
             filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
 
         return ECSqlStatus::Success;
