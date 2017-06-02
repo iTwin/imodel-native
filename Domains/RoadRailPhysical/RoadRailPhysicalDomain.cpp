@@ -63,11 +63,11 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createPhysicalPartition(SubjectCR subject)
+DgnDbStatus createPhysicalPartition(SubjectCR subject, Utf8CP physicalPartitionName)
     {
     DgnDbStatus status;
 
-    auto physicalPartitionPtr = PhysicalPartition::Create(subject, "Physical");
+    auto physicalPartitionPtr = PhysicalPartition::Create(subject, physicalPartitionName);
     if (physicalPartitionPtr->Insert(&status).IsNull())
         return status;
 
@@ -179,7 +179,7 @@ DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
+DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, Utf8CP physicalPartitionName)
     {
     DgnDbStatus status;
 
@@ -190,7 +190,7 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
     if (DgnDbStatus::Success != (status = createCrossSectionsPartition(subject)))
         return status;
 
-    if (DgnDbStatus::Success != (status = createPhysicalPartition(subject)))
+    if (DgnDbStatus::Success != (status = createPhysicalPartition(subject, physicalPartitionName)))
         return status;
 
     return status;
@@ -203,7 +203,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     RoadRailCategoryModel::SetUp(dgndb);
 
-    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject());    
+    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), "Roads-Rail Physical");
     if (DgnDbStatus::Success != status)
         {
         BeAssert(false);

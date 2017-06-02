@@ -25,7 +25,7 @@ protected:
 public:
     RoadRailPhysicalDomain();
 
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR, Utf8CP physicalPartitionName);
 
 private:
     WCharCP _GetSchemaRelativePath() const override { return BRRP_SCHEMA_PATH; }
