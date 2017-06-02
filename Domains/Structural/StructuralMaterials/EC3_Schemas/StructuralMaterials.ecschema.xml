@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="StructuralMaterials" alias="StrMat" version="01.00.00" description="Structural Material Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
+            <TrackingEnabled>True</TrackingEnabled>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECEnumeration typeName="Concrete_CompressiveStrengthTest" backingTypeName="int" isStrict="false">
+        <ECEnumerator value="10" displayLabel="British Standards Cube"/>
+        <ECEnumerator value="20" displayLabel="Standard Cylinder"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="Concrete_TensileStrengthCalc" backingTypeName="int" isStrict="false">
+        <ECEnumerator value="10" displayLabel="Per Code"/>
+        <ECEnumerator value="20" displayLabel="Specified"/>
+    </ECEnumeration>
+    <ECEntityClass typeName="MaterialBase" displayLabel="Material Base" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aluminum">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="CompositeDeck" displayLabel="Composite Deck">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Concrete">
+        <BaseClass>MaterialBase</BaseClass>
+        <ECProperty propertyName="UnitMassForLoads" typeName="double" displayLabel="Unit Mass for Loads"/>
+        <ECProperty propertyName="UnitMass" typeName="double" displayLabel="Unit Mass"/>
+        <ECProperty propertyName="ThermalExpansionCoefficient" typeName="double" displayLabel="Thermal Expansion Coefficient"/>
+        <ECProperty propertyName="TensileStrengthCalc" typeName="Concrete_TensileStrengthCalc" displayLabel="Tensile Strength Calculation"/>
+        <ECProperty propertyName="SpecifiedTensileStrength" typeName="double" displayLabel="Specified Tensile Strength" kindOfQuantity="STRESS"/>
+        <ECProperty propertyName="SpecifiedElasticModulus" typeName="double" displayLabel="Specified Elastic Modulus" kindOfQuantity="YOUNGS_MODULUS"/>
+        <ECProperty propertyName="PoissonsRatio" typeName="double" displayLabel="Poisson's Ratio"/>
+        <ECProperty propertyName="FirstLoadSpecifiedTensileStrength" typeName="double" displayLabel="First Load Specified Tensile Strength" kindOfQuantity="STRESS"/>
+        <ECProperty propertyName="FirstLoadSpecifiedElasticModulus" typeName="double" displayLabel="First Load Specified Elastic Modulus" kindOfQuantity="YOUNGS_MODULUS"/>
+        <ECProperty propertyName="FirstLoadCompressiveStrength" typeName="double" displayLabel="First Load Compressive Strength" kindOfQuantity="STRESS"/>
+        <ECProperty propertyName="ElasticModulusCalc" typeName="Concrete_TensileStrengthCalc" displayLabel="Elastic Modulus Calculation"/>
+        <ECProperty propertyName="CompressiveStrengthTest" typeName="Concrete_CompressiveStrengthTest" displayLabel="Compressive Strength Test"/>
+        <ECProperty propertyName="CompressiveStrength" typeName="double" displayLabel="Compressive Strength" kindOfQuantity="STRESS"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="SteelDeck" displayLabel="Steel Deck">
+        <BaseClass>MaterialBase</BaseClass>
+        <ECProperty propertyName="Thickness" typeName="double" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CustomSteelDeck" displayLabel="Custom Steel Deck">
+        <BaseClass>SteelDeck</BaseClass>
+        <ECProperty propertyName="Profile" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="OverlapWidth" typeName="double" displayLabel="Overlap Width" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Masonry">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="OtherMaterial" displayLabel="Other Material">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ParametricSteelDeck" displayLabel="Parametric Stee lDeck">
+        <BaseClass>SteelDeck</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SineWaveSteelDeck" displayLabel="Sine Wave Steel Deck">
+        <BaseClass>ParametricSteelDeck</BaseClass>
+        <ECProperty propertyName="WaveLength" typeName="double" displayLabel="Wave Length" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="StandardSteelDeck" displayLabel="Standard Steel Deck">
+        <BaseClass>ParametricSteelDeck</BaseClass>
+        <ECProperty propertyName="TopHorizontalWidth" typeName="double" displayLabel="Top Horizontal Width" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="DiagonalWidth" typeName="double" displayLabel="Diagonal Width" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="BottomHorizontalWidth" typeName="double" displayLabel="Bottom Horizontal Width" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Steel">
+        <BaseClass>MaterialBase</BaseClass>
+        <ECProperty propertyName="YieldStress" typeName="double" displayLabel="Yield Stress" kindOfQuantity="STRESS"/>
+        <ECProperty propertyName="UnitMassForLoads" typeName="double" displayLabel="Unit Mass for Loads"/>
+        <ECProperty propertyName="UnitMass" typeName="double" displayLabel="Unit Mass"/>
+        <ECProperty propertyName="ThermalExpansionCoefficient" typeName="double" displayLabel="Thermal Expansion Coefficient"/>
+        <ECProperty propertyName="TensileStrength" typeName="double" displayLabel="Tensile Strength" kindOfQuantity="STRESS"/>
+        <ECProperty propertyName="PoissonsRatio" typeName="double" displayLabel="Poisson's Ratio"/>
+        <ECProperty propertyName="ElasticModulus" typeName="double" displayLabel="Elastic Modulus" kindOfQuantity="YOUNGS_MODULUS"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TableSteelDeck" displayLabel="Table Steel Deck">
+        <BaseClass>ParametricSteelDeck</BaseClass>
+        <ECProperty propertyName="Revision" typeName="string"/>
+        <ECProperty propertyName="ProfileName" typeName="string" displayLabel="Profile Name"/>
+        <ECProperty propertyName="Organization" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Timber">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECEntityClass>
+    <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="LENGTH_SHORT" persistenceUnit="MM(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="STRESS" displayLabel="STRESS" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="YOUNGS_MODULUS" displayLabel="YOUNGS_MODULUS" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
+</ECSchema>

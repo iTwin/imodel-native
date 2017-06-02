@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="StructuralDomains" >
+        <SubProduct ProductName="StructuralMaterialsTests"/>
+    </Part>
+
+    
+    <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
+    <Part Name="StructuralDomainsWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
+        <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
+        <SubPart PartName="StructuralDomains"/>
+    </Part>
+    
+    
+    <Part Name="StructuralMaterials" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.mke" ApiNumber="B02">
+        <SubPart PartName="StructuralMaterialsAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+
+        <Bindings>
+            <Libs>Delivery/$(libprefix)StructuralMaterials$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)StructuralMaterials$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="StructuralMaterialsAPI" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="StructuralMaterials"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/StructuralMaterials.ecschema.xml
+            </Files>
+          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+        </Bindings>
+    </Part>
+
+    
+    <Part Name="StructuralMaterialsTestsExe" DeferType="StructuralMaterialsTests" BentleyBuildMakeFile="StructuralMaterials/Tests/Tests.mke" OnlyPlatforms="x64">
+        <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
+        <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
+        <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <SubPart PartName="StructuralMaterials"/>
+        <Bindings>
+              <Assemblies>Delivery/$(shlibprefix)StructuralMaterialsTests.exe</Assemblies>
+              <Files ProductDirectoryName="Assets">Delivery/StructuralMaterialsTests.logging.config.xml</Files>
+              <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/StructuralMaterialsTests_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="Tests">
+        <ProductDirectory Name="VendorNotices"                  Path="VendorNotices"/>
+        <ProductDirectory Name="Assemblies"                     Path="Assemblies"/>
+        <ProductDirectory Name="Assets"                         Path="Assemblies/Assets"/>
+        <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
+        <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
+        <ProductDirectory Name="UnitTests-Assets"               Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
+    </ProductDirectoryList>
+    
+    <Product Name="StructuralMaterialsTests" OnlyPlatforms="x64">
+        <SubPart PartName="StructuralMaterialsTestsExe"/>
+<!--        <Directories DirectoryListName="RevitBridgeDirectories" /> -->
+        <Directories DirectoryListName="Tests"/>
+    </Product>
+
+    
+    <Part Name="RunStructuralMaterialsTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/StructuralMaterialsTests/StructuralMaterialsTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="StructuralMaterialsTests" />
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/StructuralMaterialsTests.log</Files>
+        </Bindings>
+    </Part>
+
+
+</BuildContext>

@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: structural.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+CompileOptionsMki   = $(SrcRoot)DgnDomains/Building/BuildingCompileOptions.mki
+%include $(CompileOptionsMki)
+
+
+
+

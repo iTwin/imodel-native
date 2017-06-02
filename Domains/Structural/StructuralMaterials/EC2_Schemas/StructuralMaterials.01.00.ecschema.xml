@@ -1,0 +1,412 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+ $RCSfile: BuildingPhysical.01.00.ecschema.xml,v $
+ $Revision: 1.15 $
+ $Date: 2014/09/01 12:40:45 $
+ $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+
+ Warning!!! Auto Generated!.
+-->
+<ECSchema schemaName="StructuralMaterials" nameSpacePrefix="StrMat" version="1.0" description="Structural Material Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECCustomAttributes>
+        <UnitSpecifications xmlns="Unit_Attributes.01.00">
+            <UnitSpecificationList>
+                <UnitSpecification>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <DimensionName>L2</DimensionName>
+                    <UnitName>MILLIMETRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <DimensionName>L</DimensionName>
+                    <UnitName>MILLIMETRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>PLANE_ANGLE</KindOfQuantityName>
+                    <DimensionName>PA</DimensionName>
+                    <UnitName>RADIAN</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>VOLUME</KindOfQuantityName>
+                    <DimensionName>L3</DimensionName>
+                    <UnitName>METRE_CUBED</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>DIAMETER</KindOfQuantityName>
+                    <DimensionName>L</DimensionName>
+                    <UnitName>MILLIMETRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>PRESSURE</KindOfQuantityName>
+                    <DimensionName>M_PER_L_T2</DimensionName>
+                    <UnitName>PASCAL</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>FORCE</KindOfQuantityName>
+                    <DimensionName>M_L_PER_T2</DimensionName>
+                    <UnitName>NEWTON</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </UnitSpecificationList>
+        </UnitSpecifications>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="MaterialBase" displayLabel="Material Base" isDomainClass="False">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="Aluminum" isDomainClass="True">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECClass>
+    <ECClass typeName="CompositeDeck" displayLabel="Composite Deck" isDomainClass="True">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECClass>
+    <ECClass typeName="Concrete" isDomainClass="True">
+        <BaseClass>MaterialBase</BaseClass>
+        <ECProperty propertyName="UnitMassForLoads" typeName="double" displayLabel="Unit Mass for Loads">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>M_PER_L3</DimensionName>
+                    <KindOfQuantityName>DENSITY</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="UnitMass" typeName="double" displayLabel="Unit Mass">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>M_PER_L3</DimensionName>
+                    <KindOfQuantityName>DENSITY</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ThermalExpansionCoefficient" typeName="double" displayLabel="Thermal Expansion Coefficient">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>COEFFICIENT_OF_THERMAL_EXPANSION</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TensileStrengthCalc" typeName="int" displayLabel="Tensile Strength Calculation">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <MustBeFromList>False</MustBeFromList>
+                    <ValueMap>
+                        <ValueMap>
+                            <DisplayString>Per Code</DisplayString>
+                            <Value>10</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Specified</DisplayString>
+                            <Value>20</Value>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SpecifiedTensileStrength" typeName="double" displayLabel="Specified Tensile Strength">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>STRESS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SpecifiedElasticModulus" typeName="double" displayLabel="Specified Elastic Modulus">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>YOUNGS_MODULUS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="PoissonsRatio" typeName="double" displayLabel="Poisson's Ratio">
+            <ECCustomAttributes>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FirstLoadSpecifiedTensileStrength" typeName="double" displayLabel="First Load Specified Tensile Strength">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>STRESS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FirstLoadSpecifiedElasticModulus" typeName="double" displayLabel="First Load Specified Elastic Modulus">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>YOUNGS_MODULUS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FirstLoadCompressiveStrength" typeName="double" displayLabel="First Load Compressive Strength">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>STRESS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ElasticModulusCalc" typeName="int" displayLabel="Elastic Modulus Calculation">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <MustBeFromList>False</MustBeFromList>
+                    <ValueMap>
+                        <ValueMap>
+                            <DisplayString>Per Code</DisplayString>
+                            <Value>10</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Specified</DisplayString>
+                            <Value>20</Value>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CompressiveStrengthTest" typeName="int" displayLabel="Compressive Strength Test">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <MustBeFromList>False</MustBeFromList>
+                    <ValueMap>
+                        <ValueMap>
+                            <DisplayString>British Standards Cube</DisplayString>
+                            <Value>10</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Standard Cylinder</DisplayString>
+                            <Value>20</Value>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CompressiveStrength" typeName="double" displayLabel="Compressive Strength">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>STRESS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SteelDeck" displayLabel="Steel Deck" isDomainClass="True">
+        <BaseClass>MaterialBase</BaseClass>
+        <ECProperty propertyName="Thickness" typeName="double">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="CustomSteelDeck" displayLabel="Custom Steel Deck" isDomainClass="True">
+        <BaseClass>SteelDeck</BaseClass>
+        <ECProperty propertyName="Profile" typeName="Bentley.Geometry.Common.IGeometry">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="OverlapWidth" typeName="double" displayLabel="Overlap Width">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="Masonry" isDomainClass="True">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECClass>
+    <ECClass typeName="OtherMaterial" displayLabel="Other Material" isDomainClass="True">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECClass>
+    <ECClass typeName="ParametricSteelDeck" displayLabel="Parametric Stee lDeck" isDomainClass="True">
+        <BaseClass>SteelDeck</BaseClass>
+    </ECClass>
+    <ECClass typeName="SineWaveSteelDeck" displayLabel="Sine Wave Steel Deck" isDomainClass="True">
+        <BaseClass>ParametricSteelDeck</BaseClass>
+        <ECProperty propertyName="WaveLength" typeName="double" displayLabel="Wave Length">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Depth" typeName="double">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="StandardSteelDeck" displayLabel="Standard Steel Deck" isDomainClass="True">
+        <BaseClass>ParametricSteelDeck</BaseClass>
+        <ECProperty propertyName="TopHorizontalWidth" typeName="double" displayLabel="Top Horizontal Width">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DiagonalWidth" typeName="double" displayLabel="Diagonal Width">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Depth" typeName="double">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="BottomHorizontalWidth" typeName="double" displayLabel="Bottom Horizontal Width">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>L</DimensionName>
+                    <KindOfQuantityName>LENGTH_SHORT</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="Steel" isDomainClass="True">
+        <BaseClass>MaterialBase</BaseClass>
+        <ECProperty propertyName="YieldStress" typeName="double" displayLabel="Yield Stress">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>STRESS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="UnitMassForLoads" typeName="double" displayLabel="Unit Mass for Loads">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>M_PER_L3</DimensionName>
+                    <KindOfQuantityName>DENSITY</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="UnitMass" typeName="double" displayLabel="Unit Mass">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName>M_PER_L3</DimensionName>
+                    <KindOfQuantityName>DENSITY</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ThermalExpansionCoefficient" typeName="double" displayLabel="Thermal Expansion Coefficient">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>COEFFICIENT_OF_THERMAL_EXPANSION</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TensileStrength" typeName="double" displayLabel="Tensile Strength">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>STRESS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="PoissonsRatio" typeName="double" displayLabel="Poisson's Ratio">
+            <ECCustomAttributes>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ElasticModulus" typeName="double" displayLabel="Elastic Modulus">
+            <ECCustomAttributes>
+                <UnitSpecification xmlns="Unit_Attributes.01.00">
+                    <DimensionName />
+                    <KindOfQuantityName>YOUNGS_MODULUS</KindOfQuantityName>
+                    <UnitName />
+                    <AllowableUnits />
+                </UnitSpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="TableSteelDeck" displayLabel="Table Steel Deck" isDomainClass="True">
+        <BaseClass>ParametricSteelDeck</BaseClass>
+        <ECProperty propertyName="Revision" typeName="string" />
+        <ECProperty propertyName="ProfileName" typeName="string" displayLabel="Profile Name" />
+        <ECProperty propertyName="Organization" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Timber" isDomainClass="True">
+        <BaseClass>MaterialBase</BaseClass>
+    </ECClass>
+</ECSchema>
