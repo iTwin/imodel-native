@@ -1174,11 +1174,34 @@ void RealityDataConsole::ChangeProps()
         Details();
     }
 
+void RealityDataConsole::MassUnlink()
+    {
+    Utf8StringCR projectId = RealityDataService::GetProjectId();
+    DisplayInfo(Utf8PrintfString("Unlinking all %d entries. Please be patient...\n", m_serverNodes.size()), DisplayOption::Tip);
+    if(!projectId.empty())
+        {
+        RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete("", "");//dummy
+
+        RawServerResponse relationResponse = RawServerResponse();
+        WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+
+        for (int i = 0; i < m_serverNodes.size(); ++i)
+            {
+            relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), projectId);
+            WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
+            }
+        }
+
+    DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
+    }
+
 void RealityDataConsole::MassDelete()
     {
     std::string str, str2;
 
-    DisplayInfo(Utf8PrintfString("Using this command like this will delete ALL %d entries, from your most recent List/Dir command.\nAre you SURE? [ y / n ]", m_serverNodes.size()), DisplayOption::Question);
+    DisplayInfo(Utf8PrintfString("Using this command like this will delete ALL %d entries, from your most recent List/Dir command.\n"
+        "(NOTE: If the RealityData is linked to any project other than your own, it will not be deleted but it will be unlinked from your project)\n", m_serverNodes.size()), DisplayOption::Question);
+    DisplayInfo("Are you SURE? [ y / n ]", DisplayOption::Question);
     std::getline(*s_inputSource, str);
     if (strstr(str.c_str(), "quit"))
         {
@@ -1200,6 +1223,8 @@ void RealityDataConsole::MassDelete()
     else if (str != str2)
         return;
 
+    MassUnlink();
+
     DisplayInfo(Utf8PrintfString("Deleting all %d entries. Please be patient...\n", m_serverNodes.size()), DisplayOption::Tip);
 
     RawServerResponse rawResponse = RawServerResponse();
@@ -1212,7 +1237,7 @@ void RealityDataConsole::MassDelete()
         realityDataReq = RealityDataDelete(m_serverNodes[i].GetInstanceId());
         rawResponse = RealityDataService::BasicRequest(&realityDataReq);
         if (rawResponse.body.Contains("errorMessage"))
-            errors.push_back(m_serverNodes[i].GetInstanceId());
+            errors.push_back(Utf8PrintfString("%s failed to delete with error:\n%s\n",m_serverNodes[i].GetInstanceId(), rawResponse.body));
         rawResponse.clear();
         }
     
@@ -1220,7 +1245,7 @@ void RealityDataConsole::MassDelete()
         {
         DisplayInfo("There was an error removing the following items:\n", DisplayOption::Error);
         for(int i = 0 ; i < errors.size() ; ++ i ) 
-            DisplayInfo(Utf8PrintfString("%s\n", errors[i]), DisplayOption::Error);
+            DisplayInfo(errors[i], DisplayOption::Error);
         }
 
     DisplayInfo("Mass Delete Complete\n", DisplayOption::Tip);

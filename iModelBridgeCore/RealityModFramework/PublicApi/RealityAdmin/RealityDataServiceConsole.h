@@ -104,6 +104,7 @@ private:
     void CreateRD();
     void Link();
     void Unlink();
+    void MassUnlink();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 
