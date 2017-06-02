@@ -22,7 +22,16 @@
   #define BENTLEYDTMDRAINAGE_EXPORT IMPORT_ATTRIBUTE
 #endif
 
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 class DTMDrainageTables ; 
+
+enum class ZeroSlopeTraceOption
+    {
+    None = 0,
+    TraceLastAngle = 1,
+    Pond = 2,
+    };
 
 struct BcDTMDrainage
 {
@@ -84,4 +93,7 @@ struct DtmPondDesignCriteria
     BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP fillTinP = nullptr;
     double fillSlope = 0;
     };
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE
+
 #endif

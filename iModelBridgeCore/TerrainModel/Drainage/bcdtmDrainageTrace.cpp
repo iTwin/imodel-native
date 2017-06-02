@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 extern int DrainageDebug;
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -6651,3 +6654,4 @@ int bcdtmDrainage_checkTraceToDrainPointDtmObject
 
 
 
+END_BENTLEY_TERRAINMODEL_NAMESPACE

@@ -1,10 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Drainage/NewTrace.cpp $
+|     $Source: Drainage/WaterAnalysis.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#include <TerrainModel\Drainage\WaterAnalysis.h>
 
 #pragma inline_depth(255)
 #pragma inline_recursion(on)
@@ -12,18 +13,19 @@
 #pragma push_macro("NDEBUG")
 //#undef DEBUG
 //#define NDEBUG
-#include "Bentley\bvector.h"
-#include "Bentley\bmap.h"
 #pragma pop_macro("DEBUG")
 #pragma pop_macro("NDEBUG")
 
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 int bcdtmDrainage_traceMaximumDescentDtmObjectOld(BC_DTM_OBJ *dtmP, DTMDrainageTables *drainageTablesP, DTMFeatureCallback loadFunctionP, double falseLowDepth, double startX, double startY, void *userP );
 
 #ifdef DEBUG
-#define TPTRVALIDATEDEBUG
-#define DEBUGCHK
+//#define TPTRVALIDATEDEBUG
+//#define DEBUGCHK
 #endif
 
 //----------------------------------------------------------------------------------------*
@@ -73,686 +75,67 @@ struct DtmSumpLinesPtr
         }
     };
 
-#define ADDDRAINAGETYPES(t) struct t; ADD_BENTLEY_TYPEDEFS1( ,t, t, struct); typedef RefCountedPtr<t> t ## Ptr;
-
-ADDDRAINAGETYPES(DrainageTracer);
-ADDDRAINAGETYPES(TraceFeature);
-ADDDRAINAGETYPES(TraceOnPoint);
-ADDDRAINAGETYPES(TraceOnEdge);
-ADDDRAINAGETYPES(TraceInTriangle);
-ADDDRAINAGETYPES(TraceStartPoint);
-ADDDRAINAGETYPES(TracePond);
-ADDDRAINAGETYPES(TracePondLowPoint);
-ADDDRAINAGETYPES(TracePondEdge);
-ADDDRAINAGETYPES(TracePondTriangle);
-ADDDRAINAGETYPES(TracePondFromPondExit);
-ADDDRAINAGETYPES(TracePondExit);
-ADDDRAINAGETYPES(TraceZSlopeLine);
-ADDDRAINAGETYPES(PondAnalysis);
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TraceFeature : RefCountedBase
-    {
-    protected:
-        DrainageTracer& m_tracer;
-        bool m_finished = false;
-        DTMStatusInt m_errorStatus = DTM_SUCCESS;
-        WString m_errorMessage;
-
-        TraceFeature* m_parent;
-        bvector<TraceFeaturePtr> m_children;
-        bool m_isHidden = false;
-
-        double m_currentVolume = 0;
-
-        TraceFeature(DrainageTracer& tracer, TraceFeature* parent) : m_tracer(tracer), m_parent(parent)
-            {
-            }
-
-        void SetError(WCharCP message = L"")
-            {
-            m_errorMessage = message;
-            m_errorStatus = DTM_ERROR;
-            }
-        void SetErrorNotImplemented(WCharCP message = L"")
-            {
-            m_errorMessage = message;
-            m_errorStatus = DTM_ERROR;
-            }
-        void SetErrorNotImplemented2(WCharCP message = L"")
-            {
-            m_errorMessage = message;
-            m_errorStatus = DTM_ERROR;
-            }
-    public:
-        bool IsFinished() const
-            {
-            return m_finished || m_errorStatus != DTM_SUCCESS;
-            }
-        bool IsHidden() const
-            {
-            return m_isHidden;
-            }
-
-        double CurrentVolume() const
-            {
-            return m_currentVolume;
-            }
-
-
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) abstract;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) abstract;
-
-        void ClearIsHidden()
-            {
-            m_isHidden = false;
-            }
-
-        void HideChildren()
-            {
-            m_isHidden = true;
-            for (auto& child : m_children)
-                {
-                child->HideChildren();
-                }
-            }
-
-        const bvector<TraceFeaturePtr>& GetChildren() const
-            {
-            return m_children;
-            }
-
-        virtual void ReplaceChildren(TraceFeature& oldChild, TraceFeature& newChild)
-            {
-            for (auto& child : m_children)
-                {
-                if (&oldChild == child.get())
-                    child = &oldChild;
-                }
-            }
-
-        struct WaterVolumeInfo
-            {
-            TraceFeature* feature;
-            double vol;
-            WaterVolumeInfo(TraceFeature* feature, double vol) : feature(feature), vol(vol)
-                { }
-            };
-        void ProcessWaterVolume(double vol, bvector<WaterVolumeInfo>& newWaterVolume)
-            {
-            m_currentVolume += vol;
-
-            if (DTM_SUCCESS == m_errorStatus)
-                GetNewWaterVolumes(vol, newWaterVolume);
-            }
-        virtual void GetNewWaterVolumes(double totalVolume, bvector<WaterVolumeInfo>& newWaterVolume)
-            {
-            double vol = totalVolume / m_children.size();
-            for (auto&& child : m_children)
-                {
-                newWaterVolume.push_back(WaterVolumeInfo(child.get(), vol));
-                }
-            }
-
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TraceStartPoint: public TraceFeature
-    {
-    private:
-        DPoint3d m_startPoint;
-        TraceStartPoint(DrainageTracer& tracer, DPoint3dCR startPoint) : TraceFeature(tracer, nullptr), m_startPoint(startPoint)
-            {
-            }
-    public:
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
-            {
-            loadFunction(DTMFeatureType::LowPoint, 0, 0, &m_startPoint, 1, args);
-            }
-        static TraceStartPointPtr Create(DrainageTracer& tracer, DPoint3dCR startPoint)
-            {
-            return new TraceStartPoint(tracer, startPoint);
-            }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TraceInTriangle : public TraceFeature
-    {
-    private:
-        bvector<DPoint3d> m_points;
-        DPoint3d m_startPt;
-        long pnt1, pnt2, pnt3;
-
-        TraceInTriangle(DrainageTracer& tracer, TraceFeature& parent, long P1, long P2, long P3, DPoint3dCR startPt) : TraceFeature(tracer, &parent), pnt1(P1), pnt2(P2), pnt3(P3), m_startPt(startPt)
-            {
-            m_points.push_back(startPt);
-            }
-    public:
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
-            {
-            loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
-            }
-        static TraceInTrianglePtr Create(DrainageTracer& tracer, TraceFeature& parent, long P1, long P2, long P3, DPoint3dCR startPt)
-            {
-            return new TraceInTriangle(tracer, parent, P1, P2, P3, startPt);
-            }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TraceOnEdge: public TraceFeature
-    {
-    private:
-        bvector<DPoint3d> m_points; // TracePoint.
-
-        long pnt1, pnt2, pnt3;
-        DPoint3d m_pt;
-        DPoint3d m_startPt;
-
-        //long nextPnt1, nextPnt2, nextPnt3;
-        //DPoint3d nextPt;
-        double lastAngle;
-        //double saveLastAngle;
-        //long startPointType;  //
-        //long lastPoint;
-
-        TraceOnEdge(DrainageTracer& tracer, TraceFeature& parent, long P1, long P2, long P3, DPoint3dCR startPt, double lastAngle) : TraceFeature(tracer, &parent), pnt1(P1), pnt2(P2), pnt3(P3), m_pt(startPt), m_startPt(startPt), lastAngle(lastAngle)
-            {
-            m_points.push_back(startPt);
-            }
-    public:
-        const bvector<DPoint3d>& GetPoints() const
-            {
-            return m_points;
-            }
-        void ProcessZSlopeTriangle(bvector<TraceFeaturePtr>& newFeatures);
-        void ProcessZSlopeLine(bvector<TraceFeaturePtr>& newFeatures);
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
-            {
-            loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
-            }
-        static TraceOnEdgePtr Create(DrainageTracer& tracer, TraceFeature& parent, long P1, long P2, long P3, DPoint3dCR startPt, double lastAngle = -99)
-            {
-            return new TraceOnEdge(tracer, parent, P1, P2, P3, startPt, lastAngle);
-            }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TraceZSlopeLine: public TraceFeature
-    {
-    private:
-        bvector<DPoint3d> m_points; // TracePoint.
-        long pnt1, pnt2;
-
-        TraceZSlopeLine(DrainageTracer& tracer, TraceFeature& parent, long P1, long P2) : TraceFeature(tracer, &parent), pnt1(P1), pnt2(P2)
-            {
-            }
-    public:
-        const bvector<DPoint3d>& GetPoints() const
-            {
-            return m_points;
-            }
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
-            {
-            loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
-            }
-        static TraceZSlopeLinePtr Create(DrainageTracer& tracer, TraceFeature& parent, long P1, long P2)
-            {
-            return new TraceZSlopeLine(tracer, parent, P1, P2);
-            }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TraceOnPoint : public TraceFeature
-    {
-    private:
-        bvector<DPoint3d> m_points;
-        DPoint3d m_pt;
-        long m_ptNum;
-        long m_prevPtNum = -1;
-        double m_lastAngle;
-        bool m_onHullPoint = false;
-        TraceOnPoint(DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle) : TraceFeature(tracer, &parent), m_pt(startPoint), m_lastAngle(lastAngle), m_ptNum(startPtNum)
-            {
-            m_points.push_back(startPoint);
-            }
-
-        void ProcessZSlope(bvector<TraceFeaturePtr>& newFeatures, long descentPnt1, long descentPnt2);
-    public:
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
-            {
-            if (m_points.size() != 1 && !m_onHullPoint)   // One point we can ignore.
-                loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
-            }
-        static TraceOnPoint* GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle = -99);
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct PondExitInfo
-    {
-    long exitPoint;
-    long priorPoint;
-    long nextPoint;
-
-    PondExitInfo(long exitPoint, long priorPoint, long nextPoint) : exitPoint(exitPoint), priorPoint(priorPoint), nextPoint(nextPoint)
-        { }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TracePond : public TraceFeature
-    {
-    protected:
-        bvector<bvector<DPoint3d>> m_points;
-        bvector<long> m_exitPoints;
-        double m_depth;
-        DPoint3d m_pt;
-        long m_ptNum;
-        PondAnalysisPtr m_pondAnalysis;
-
-        TracePond(DrainageTracer& tracer, TraceFeature& parent, DPoint3dCR pt, long ptNum) : TraceFeature(tracer, &parent), m_pt(pt), m_ptNum(ptNum)
-            { }
-        virtual void GetExitInfo(bvector<PondExitInfo>& exits) abstract;
-        void ProcessPondExits(bvector<TraceFeaturePtr>& newFeatures, bool ignorePondDepth = false);
-        void CalculateMaxVolume();
-        double GetVolumeAtElevation(double z);
-
-    public:
-        DPoint3dCR GetLowPoint() const
-            {
-            return m_pt;
-            }
-        long GetLowPointNumber() const
-            {
-            return m_ptNum;
-            }
-        const bvector<bvector<DPoint3d>>& GetPoints() const
-            {
-            return m_points;
-            }
-        double GetDepth() const
-            {
-            return m_depth;
-            }
-        PondAnalysis& GetPondAnalysis();
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
-
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override;
-
-        bool HasExitPoint(long pnt) const
-            {
-            for (auto exitPnt : m_exitPoints)
-                {
-                if (exitPnt == pnt)
-                    return true;
-                }
-            return false;
-            }
-
-
-        double m_maxVolume = -1;
-
-        bool IsFull()
-            {
-            if (m_maxVolume == -1)
-                CalculateMaxVolume();
-            return CurrentVolume() >= m_maxVolume;
-            }
-
-        double GetRealVolume()
-            {
-            if (IsFull())
-                return m_maxVolume;
-            return CurrentVolume();
-            }
-        virtual void GetNewWaterVolumes(double totalVol, bvector<TraceFeature::WaterVolumeInfo>& newWaterVolume) override;
-
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TracePondLowPoint : public TracePond
-    {
-    private:
-        TracePondLowPoint(DrainageTracer& tracer, TraceFeature& parent, long ptNum, DPoint3dCR pt) : TracePond(tracer, parent, pt, ptNum)
-            {
-
-            }
-    protected:
-        virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
-    public:
-
-        static TracePondPtr Create(DrainageTracer& tracer, TraceFeature& parent, long ptNum, DPoint3dCR pt)
-            {
-            return new TracePondLowPoint(tracer, parent, ptNum, pt);
-            }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TracePondEdge: public TracePond
-    {
-    private:
-        long m_ptNum1, m_ptNum2;
-        bvector<bvector<DPoint3d>> m_sumpLines;
-
-        TracePondEdge(DrainageTracer& tracer, TraceFeature& parent, long ptNum1, long ptNum2, DPoint3dCR pt) : TracePond(tracer, parent, pt, ptNum1), m_ptNum1(ptNum1), m_ptNum2(ptNum2)
-            {}
-    protected:
-        virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
-
-    public:
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
-            {
-            if (!m_points.empty())
-            __super::DoTraceCallback(waterCallback, loadFunction, args);
-
-            for (auto&& sump : m_sumpLines)
-                loadFunction(DTMFeatureType::SumpLine, 0, 0, sump.data(), (long)sump.size(), args);
-            }
-
-        void GetSumpLines();
-
-        static TracePondEdgePtr Create(DrainageTracer& tracer, TraceFeature& parent, long ptNum, long ptNum2, DPoint3dCR pt)
-            {
-            return new TracePondEdge(tracer, parent, ptNum, ptNum2, pt);
-            }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TracePondTriangle : public TracePond
-    {
-    private:
-        long m_ptNum, m_ptNum2, m_ptNum3;
-
-        TracePondTriangle(DrainageTracer& tracer, TraceFeature& parent, long ptNum1, long ptNum2, long ptNum3, DPoint3dCR pt) : TracePond(tracer, parent, pt, ptNum1), m_ptNum(ptNum1), m_ptNum2(ptNum2), m_ptNum3(ptNum3)
-            {
-            }
-    protected:
-        virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
-    public:
-
-        static TracePondPtr Create(DrainageTracer& tracer, TraceFeature& parent, long ptNum, long ptNum2, long ptNum3, DPoint3dCR pt)
-            {
-            return new TracePondTriangle(tracer, parent, ptNum, ptNum2, ptNum3, pt);
-            }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TracePondFromPondExit: public TracePond
-    {
-    private:
-        TracePondExit& m_pondExit;
-        DPoint3d m_exitPt;
-
-        TracePondFromPondExit(DrainageTracer& tracer, TraceFeature& parent, TracePondExit& pondExit, DPoint3dCR lowPt, long lowPtNum, DPoint3dCR exitPt) : TracePond(tracer, parent, lowPt, lowPtNum), m_pondExit(pondExit), m_exitPt(exitPt)
-            { }
-    protected:
-        virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
-    public:
-
-        static TracePondFromPondExitPtr Create(DrainageTracer& tracer, TraceFeature& parent, TracePondExit& pondExit, DPoint3dCR lowPt, long lowPtNum, DPoint3dCR exitPt)
-            {
-            return new TracePondFromPondExit(tracer, parent, pondExit, lowPt, lowPtNum, exitPt);
-            }
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct TracePondExit : public TraceFeature
-    {
-    private:
-        bvector<DPoint3d> m_points;
-        DPoint3d m_exitPt;
-        long m_exitPnt;
-        long m_priorPnt;
-        long m_nextPnt;
-        long m_prevPtNum = -1;
-        double m_lastAngle;
-        bool m_calculated = false;
-        long m_numExitFlows = 1; // This will always start with 1 the flow which created it.
-        bvector<TracePond*> m_ponds;
-    public:bool m_hasProcessedDeadPond = false;
-    private:bool m_onHullPoint = false;
-
-        TracePondExit(DrainageTracer& tracer, TraceFeature& parent, long exitPnt, long priorPnt, long nextPnt, DPoint3dCR exitPoint) : TraceFeature(tracer, &parent), m_exitPnt(exitPnt), m_priorPnt(priorPnt), m_nextPnt(nextPnt), m_exitPt(exitPoint)
-            {
-            m_points.push_back(exitPoint);
-            }
-        virtual void GetNewWaterVolumes(double totalVol, bvector<TraceFeature::WaterVolumeInfo>& newWaterVolume) override;
-        void Process(bvector<TraceFeaturePtr>& newFeatures, bool ignoreFalseLow);
-
-    public:
-        void ProcessDeadPond(bvector<TraceFeaturePtr>& newFeatures);
-        void RecoverInnerPonds();
-        void HideInnerPonds();
-
-
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
-            {
-            loadFunction(DTMFeatureType::LowPoint, 0, 0, &m_exitPt, 1, args);
-
-            if (!m_onHullPoint)
-                loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
-            }
-
-        long GetExitPoint() const
-            {
-            return m_exitPnt;
-            }
-
-        void AddPond(TracePond& pond)
-            {
-            m_ponds.push_back(&pond);
-            }
-
-        bool IsDeadPond() const
-            {
-            return m_numExitFlows == m_ponds.size();
-            }
-
-        bvector<TracePond*>& GetPonds()
-            {
-            return m_ponds;
-            }
-
-        static TracePondExitPtr Create(DrainageTracer& tracer, TraceFeature& parent, long exitPnt, long priorPnt, long nextPnt, DPoint3dCR exitPoint)
-            {
-            return new TracePondExit(tracer, parent, exitPnt, priorPnt, nextPnt, exitPoint);
-            }
-
-    };
-
-//----------------------------------------------------------------------------------------*
-// @bsistruct                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
-struct DrainageTracer
-    {
-    private:
-        bvector<TraceFeaturePtr> m_features;
-        bvector<TracePond*> m_ponds;
-        bvector<TracePondExit*> m_pondExits;
-        BcDTMR m_dtm;
-        BC_DTM_OBJ* m_dtmObj;
-    public:
-        DTMDrainageTables* drainageTablesP = nullptr;
-        ZeroSlopeTraceOption m_zeroSlopeOption = ZeroSlopeTraceOption::TraceLastAngle;
-        double m_falseLowDepth;
-        bool m_ascentTrace = false;
-    public:
-        DrainageTracer(BcDTMR dtm) : m_dtm(dtm), m_dtmObj(dtm.GetTinHandle())
-            {
-
-            }
-
-        BcDTMR GetDTM()
-            {
-            return m_dtm;
-            }
-
-        bool AscentTrace() const
-            {
-            return m_ascentTrace;
-            }
-
-        int DoTrace(DPoint3dCR startPt)
-            {
-            auto startFeature = TraceStartPoint::Create(*this, startPt);
-            m_features.push_back(startFeature);
-            bvector<TraceFeaturePtr> featuresToProcess;
-            featuresToProcess.push_back(startFeature);
-            AddAndProcessFeatures(featuresToProcess);
-            return DTM_SUCCESS;
-            }
-
-        int AddWaterVolume(DPoint3dCR startPt, double volume)
-            {
-            auto startFeature = TraceStartPoint::Create(*this, startPt);
-            m_features.push_back(startFeature);
-            bvector<TraceFeaturePtr> featuresToProcess;
-            featuresToProcess.push_back(startFeature);
-            AddAndProcessFeatures(featuresToProcess);
-
-            bvector<TraceFeature::WaterVolumeInfo> features;
-            bvector<TraceFeature::WaterVolumeInfo> newFeatures;
-
-            newFeatures.push_back(TraceFeature::WaterVolumeInfo(startFeature.get(), volume));
-            //bmap<TraceFeature*, bool> processedFeatureMap;  // Temporary to help with debug.
-
-            while (!newFeatures.empty())
-                {
-                std::swap(features, newFeatures);
-                //for (auto&& feature : features)
-                //    {
-                //    if (processedFeatureMap.find(feature.feature) != processedFeatureMap.end())
-                //        break;
-                //    processedFeatureMap[feature.feature] = true;
-                //    }
-
-                newFeatures.clear();
-                for (auto&& feature : features)
-                    {
-                    // TODO - remove
-                    if (feature.feature->CurrentVolume() > volume)
-                        return DTM_SUCCESS;
-                    feature.feature->ProcessWaterVolume(feature.vol, newFeatures);
-                    }
-                }
-            return DTM_SUCCESS;
-            }
-
-        void DoTraceCallback(DTMFeatureCallback loadFunction, void* userArg)
-            {
-            static bool showHidden = false;
-            for (const auto& feature : m_features)
-                {
-                bool hasWater = feature->CurrentVolume() != 0;
-
-                if (showHidden || !feature->IsHidden() || hasWater)
-                    feature->DoTraceCallback(hasWater, loadFunction, userArg);
-                }
-            }
-        void AddAndProcessFeatures(bvector<TraceFeaturePtr>& featuresToAdd)
-            {
-            bool haveProcessedAFeature = false;
-            bvector<TraceFeature*> featuresToProcess;
-            bvector<TraceFeaturePtr> newFeatures;
-            bvector<TraceFeature*> newFeaturesToProcess;
-
-            for (auto&& feature : featuresToAdd)
-                {
-                m_features.push_back(feature.get());
-                featuresToProcess.push_back(feature.get());
-                }
-
-            do
-                {
-                haveProcessedAFeature = false;
-
-                newFeatures.clear();
-                newFeaturesToProcess.clear();
-
-                for (auto&& feature : featuresToProcess)
-                    {
-                    if (feature->IsFinished())
-                        continue;
-                    haveProcessedAFeature = true;
-
-                    feature->Process(newFeatures);
-                    if (!feature->IsFinished())
-                        newFeaturesToProcess.push_back(feature);
-                    }
-                for (auto&& feature : newFeatures)
-                    newFeaturesToProcess.push_back(feature.get());
-
-                featuresToProcess.swap(newFeaturesToProcess);
-                m_features.insert(m_features.end(), newFeatures.begin(), newFeatures.end());
-                if (m_features.size() > 1000)
-                    break;
-                } while (haveProcessedAFeature);
-            }
-        TracePondExit* FindPondExit(long exitPoint)
-            {
-            for (auto pondExit : m_pondExits)
-                {
-                if (pondExit->GetExitPoint() == exitPoint)
-                    return pondExit;
-                }
-            return nullptr;
-            }
-        void AddPondExit(TracePondExit& pondexit)
-            {
-            m_pondExits.push_back(&pondexit);
-            }
-        void AddPond(TracePond& pond)
-            {
-            m_ponds.push_back(&pond);
-            }
-
-        bmap<long, TraceOnPoint*> m_onPointFeatures;
-        void AddOnPoint(long pointNum, TraceOnPoint& point)
-            {
-            m_onPointFeatures[pointNum] = &point;
-            }
-
-        TraceOnPoint* FindExistingOnPoint(long pointNum)
-            {
-            auto it = m_onPointFeatures.find(pointNum);
-            if (it != m_onPointFeatures.end())
-                return it->second;
-            return nullptr;
-            }
-    };
 
 
 //#define VOLUME_DEBUG
+
+struct PondAnalysis;
+
+struct TPtrList : bvector<long>
+    {
+    long m_startPnt;
+    bvector<char> m_pointList;
+
+    TPtrList(long startPnt, BC_DTM_OBJ* dtmP) : m_startPnt(startPnt)
+        {
+        clear();
+        long sp = startPnt;
+        BeAssert(sp != dtmP->nullPnt);
+        m_pointList.resize(dtmP->numPoints, 0);
+        do
+            {
+            push_back(sp);
+            m_pointList[sp]++;
+            long np = nodeAddrP(dtmP, sp)->tPtr;
+            nodeAddrP(dtmP, sp)->tPtr = dtmP->nullPnt;
+            sp = np;
+            BeAssert(sp != dtmP->nullPnt);
+            } while (sp != startPnt && sp != dtmP->nullPnt);
+        }
+
+    TPtrList(bvector<long>::iterator first, bvector<long>::iterator second) : m_startPnt(*first)
+        {
+        insert(begin(), first, second);
+        
+        }
+    bvector<long>::iterator AddPoint(bvector<long>::iterator sp, long pnt)
+        {
+        m_pointList[pnt]++;
+        BeAssert(m_pointList[pnt] <= 2);
+        return this->insert(sp, pnt);
+        }
+
+    bool NeedsSplit(long pnt)
+        {
+        return m_pointList[pnt] == 2;
+        }
+
+    bvector<long>::iterator RemovePoint(bvector<long>::iterator sp)
+        {
+        BeAssert(m_pointList[*sp] == 1);
+        m_pointList[*sp]--;
+        // Check if they are two of the same value in this list if so we need to split.
+        return this->erase(sp);
+        }
+
+    TPtrList Split(long pnt)
+        {
+        auto first = std::find(begin(), end(), pnt);
+        auto second = std::find(first, end(), pnt);
+        TPtrList newList(first++, second--);
+        erase(first, second);
+        }
+    };
 
 //----------------------------------------------------------------------------------------*
 // @bsistruct                                                    Daryl.Holmwood  05/17
@@ -2187,8 +1570,8 @@ public:
         bcdtmList_checkForNoneNullTptrValuesDtmObject(dtmP, &hasValues);
         BeAssert(hasValues == 0);
         if (hasValues)
+            bcdtmList_nullTptrValuesDtmObject(dtmP);
 #endif
-//        bcdtmList_nullTptrValuesDtmObject(dtmP);
 
         switch (m_type)
             {
@@ -3952,6 +3335,116 @@ void TracePondExit::Process(bvector<TraceFeaturePtr>& newFeatures, bool ignoreFa
     m_numExitFlows++;
     }
 
+
+int DrainageTracer::DoTrace(DPoint3dCR startPt)
+    {
+    auto startFeature = TraceStartPoint::Create(*this, startPt);
+    m_features.push_back(startFeature);
+    bvector<TraceFeaturePtr> featuresToProcess;
+    featuresToProcess.push_back(startFeature);
+    AddAndProcessFeatures(featuresToProcess);
+    return DTM_SUCCESS;
+    }
+
+int DrainageTracer::AddWaterVolume(DPoint3dCR startPt, double volume)
+    {
+    auto startFeature = TraceStartPoint::Create(*this, startPt);
+    m_features.push_back(startFeature);
+    bvector<TraceFeaturePtr> featuresToProcess;
+    featuresToProcess.push_back(startFeature);
+    AddAndProcessFeatures(featuresToProcess);
+
+    bvector<TraceFeature::WaterVolumeInfo> features;
+    bvector<TraceFeature::WaterVolumeInfo> newFeatures;
+
+    newFeatures.push_back(TraceFeature::WaterVolumeInfo(startFeature.get(), volume));
+    //bmap<TraceFeature*, bool> processedFeatureMap;  // Temporary to help with debug.
+
+    while (!newFeatures.empty())
+        {
+        std::swap(features, newFeatures);
+        //for (auto&& feature : features)
+        //    {
+        //    if (processedFeatureMap.find(feature.feature) != processedFeatureMap.end())
+        //        break;
+        //    processedFeatureMap[feature.feature] = true;
+        //    }
+
+        newFeatures.clear();
+        for (auto&& feature : features)
+            {
+            // TODO - remove
+            if (feature.feature->CurrentVolume() > volume)
+                return DTM_SUCCESS;
+            feature.feature->ProcessWaterVolume(feature.vol, newFeatures);
+            }
+        }
+    return DTM_SUCCESS;
+    }
+
+void DrainageTracer::DoTraceCallback(DTMFeatureCallback loadFunction, void* userArg)
+    {
+    static bool showHidden = false;
+    for (const auto& feature : m_features)
+        {
+        bool hasWater = feature->CurrentVolume() != 0;
+
+        if (showHidden || !feature->IsHidden() || hasWater)
+            feature->DoTraceCallback(hasWater, loadFunction, userArg);
+        }
+    }
+
+void DrainageTracer::AddAndProcessFeatures(bvector<TraceFeaturePtr>& featuresToAdd)
+    {
+    bool haveProcessedAFeature = false;
+    bvector<TraceFeature*> featuresToProcess;
+    bvector<TraceFeaturePtr> newFeatures;
+    bvector<TraceFeature*> newFeaturesToProcess;
+
+    for (auto&& feature : featuresToAdd)
+        {
+        m_features.push_back(feature.get());
+        featuresToProcess.push_back(feature.get());
+        }
+
+    do
+        {
+        haveProcessedAFeature = false;
+
+        newFeatures.clear();
+        newFeaturesToProcess.clear();
+
+        for (auto&& feature : featuresToProcess)
+            {
+            if (feature->IsFinished())
+                continue;
+            haveProcessedAFeature = true;
+
+            feature->Process(newFeatures);
+            if (!feature->IsFinished())
+                newFeaturesToProcess.push_back(feature);
+            }
+        for (auto&& feature : newFeatures)
+            newFeaturesToProcess.push_back(feature.get());
+
+        featuresToProcess.swap(newFeaturesToProcess);
+        m_features.insert(m_features.end(), newFeatures.begin(), newFeatures.end());
+        if (m_features.size() > 1000)
+            break;
+        } while (haveProcessedAFeature);
+    }
+
+TracePondExit* DrainageTracer::FindPondExit(long exitPoint)
+    {
+    for (auto pondExit : m_pondExits)
+        {
+        if (pondExit->GetExitPoint() == exitPoint)
+            return pondExit;
+        }
+    return nullptr;
+    }
+
+
 //----------------------------------------------------------------------------------------*
 // @bsistruct                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
@@ -4059,7 +3552,6 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
 
 
 // ToDo
-
 // 1 Create class to handle depth analysis,
 //   * First find max Volume, and find ponds, add low points to list. Max Volume incs ponds.
 //   * Change to use an array of startPoints. (and volume creation)
@@ -4076,3 +3568,5 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
 // 5 Make it work with voids.
 // 6 Find sump lines on the edges.
 // Make GetPond work with ponds from pondExit.
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

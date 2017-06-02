@@ -39,8 +39,7 @@
     <ClCompile Include="..\Drainage\bcdtmDrainageTables.cpp" />
     <ClCompile Include="..\Drainage\bcdtmDrainageTrace.cpp" />
     <ClCompile Include="..\Drainage\bcdtmDrainageUtility.cpp" />
-    <ClCompile Include="..\Drainage\drainage.cpp" />
-    <ClCompile Include="..\Drainage\NewTrace.cpp" />
+    <ClCompile Include="..\Drainage\WaterAnalysis.cpp" />
     <ClCompile Include="2d\bcdtm3DModel.cpp" />
     <ClCompile Include="2d\bcdtmBtree.cpp" />
     <ClCompile Include="2d\bcdtmCheck.cpp" />
@@ -128,6 +127,7 @@
     <ClInclude Include="..\Drainage\bcdtmDrainageTrace.h" />
     <ClInclude Include="..\Drainage\bcdtmDrainageUtility.h" />
     <ClInclude Include="..\Drainage\PublicAPI\drainage.h" />
+    <ClInclude Include="..\Drainage\PublicAPI\WaterAnalysis.h" />
     <ClInclude Include="..\PublicAPI\TerrainModel\TerrainModel.h" />
     <ClInclude Include="cppwrappers\bcDTMImpl.h" />
     <ClInclude Include="PrivateAPI\base\bcConversion.h" />

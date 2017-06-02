@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "bcdtmDrainageTables.h"
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 int bcdtmDrainage_traceCatchmentForPointDtmObject(BC_DTM_OBJ *dtmP,double x,double y,double maxPondDepth,bool* catchmentDeterminedP,long *catchmentClosureP,DPoint3d **catchmentPtsPP,long *numCatchmentPtsP,DPoint3d *sumpPointP) ;
 int bcdtmDrainage_traceCatchmentForSumpLineDtmObject(BC_DTM_OBJ *dtmP,double sumpX,double sumpY,double sumpZ,long sumpPnt1,long sumpPnt2,double maxPondDepth,long useTables,DPoint3d **catchmentPtsPP,long *numCatchmentPtsP) ;
 int bcdtmDrainage_traceCatchmentFromPointOnInternalSumpLineDtmObject(BC_DTM_OBJ *dtmP,double sumpX,double sumpY,double sumpZ,long sumpPoint1,long sumpPoint2,double maxPondDepth,long useTables,DPoint3d **catchmentPtsPP,long *numCatchmentPtsP) ;
@@ -42,3 +45,5 @@ int bcdtmDrainage_checkForMaximumAscentFlowLineDtmObject(BC_DTM_OBJ *dtmP,long p
 int bcdtmDrainage_insertMaximumAscentLineFromTriangleEdgeDtmObject(BC_DTM_OBJ *dtmP,long point1,long point2) ;
 int bcdtmDrainage_insertMaximumAscentLinesFromPointOnSumpLineDtmObject(BC_DTM_OBJ *dtmP,int point1,int point2,DPoint3d point, long& drainPoint) ;
 int bcdtmDrainage_insertMaximumAscentLinesFromSumpPointDtmObject(BC_DTM_OBJ *dtmP,int sumpPoint ) ;
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

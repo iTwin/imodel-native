@@ -10,6 +10,8 @@
 #include <TerrainModel/Core/bcdtmSideSlope.h>
 //#pragma optimize('p', on )
 
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 int DrainageDebug = 0;
 
 /*-------------------------------------------------------------------+
@@ -10278,3 +10280,5 @@ errexit:
     ret = DTM_ERROR;
     goto cleanup;
     }
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

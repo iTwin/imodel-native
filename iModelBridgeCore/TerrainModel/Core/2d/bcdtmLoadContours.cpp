@@ -15,6 +15,8 @@
 #include <condition_variable>
 #include <thread>
 
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+
 #pragma float_control(precise, on, push)
 
 thread_local static DPoint3d  *conPtsP = nullptr;               /* DTM Contour Points                                      */

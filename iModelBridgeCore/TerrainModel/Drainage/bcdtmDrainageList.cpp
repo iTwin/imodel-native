@@ -8,6 +8,8 @@
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
 
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 extern int DrainageDebug ;
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -616,3 +618,4 @@ bool bcdtmDrainageList_checkForVoidsInDtmObject(BC_DTM_OBJ *dtmP)
 
     }
 
+END_BENTLEY_TERRAINMODEL_NAMESPACE
