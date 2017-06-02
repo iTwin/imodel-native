@@ -138,7 +138,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="LinearlyReferencedAtPositionRefersToReferent" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
-            <Class class="LinearlyReferencedLocation"/>
+            <Class class="LinearlyReferencedAtLocation"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
             <Class class="IReferent"/>
@@ -146,7 +146,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="LinearlyReferencedFromPositionRefersToReferent" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
-            <Class class="LinearlyReferencedLocation"/>
+            <Class class="LinearlyReferencedFromToLocation"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
             <Class class="IReferent"/>
@@ -154,7 +154,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="LinearlyReferencedToPositionRefersToReferent" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
-            <Class class="LinearlyReferencedLocation"/>
+            <Class class="LinearlyReferencedFromToLocation"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
             <Class class="IReferent"/>
