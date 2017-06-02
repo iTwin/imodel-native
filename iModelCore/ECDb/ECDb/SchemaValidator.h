@@ -33,7 +33,7 @@ struct SchemaValidator final
         struct ValidRelationshipRule final : NonCopyableClass
             {
             private:
-                bool ValidateConstraint(IssueReporter const&, ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
+                bool ValidateConstraint(IssueReporter const&, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR) const;
 
             public:
                 ValidRelationshipRule() {}

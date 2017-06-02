@@ -872,7 +872,6 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
                     singleNavProperty = navProp;
                 else
                     {
-                    BeAssert(false && "This should not be hit anymore since we disallowed multiple nav props to same relationship");
                     LOG.infov("More than one NavigationECProperty found on the %s constraint classes of the ECRelationship %s. Therefore the constraint column name cannot be implied from a navigation property. A default name will be picked.",
                               constraintEnd == ECRelationshipEnd_Source ? "source" : "target", relClass.GetFullName());
                     return SUCCESS;

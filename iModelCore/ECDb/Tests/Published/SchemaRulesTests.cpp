@@ -626,7 +626,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A nav prop cannot be applied for a link table rel"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -648,7 +648,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A nav prop cannot be applied for a link table rel"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -666,7 +666,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A nav prop must not point to a relationship end with multiplicity greater than 1"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -685,7 +685,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties for the same relationship"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -714,7 +714,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties for the same relationship (even if one is inherited from a base class)"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema6" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Foo" modifier="Abstract" >
                         <ECCustomAttributes>
@@ -740,7 +740,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class can have two navigation properties for the same relationship (if one is inherited from a base class) if the direction is different"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema6" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema7" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -768,7 +768,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy"),
 
-        SchemaItem(R"xml(<ECSchema schemaName="TestSchema7" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        SchemaItem(R"xml(<ECSchema schemaName="TestSchema8" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -806,7 +806,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy"),
 
-    SchemaItem(R"xml(<ECSchema schemaName="TestSchema8" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    SchemaItem(R"xml(<ECSchema schemaName="TestSchema9" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -842,7 +842,199 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                             <Class class="ChildSub"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy")
+                   </ECSchema>)xml", false, "A class cannot have two navigation properties to the same relationship hierarchy"),
+
+
+    SchemaItem(R"xml(<ECSchema schemaName="TestSchema10" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent1" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "Navigation property must not the abstract constraint class"),
+
+                   SchemaItem(R"xml(<ECSchema schemaName="TestSchema11" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", true, "Navigation property is on the constraint class (not on the abstract constraint class)"),
+
+                   SchemaItem(R"xml(<ECSchema schemaName="TestSchema12" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "Navigation property must not be on the abstract constraint class"),
+
+                   SchemaItem(R"xml(<ECSchema schemaName="TestSchema13" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", true, "Navigation properties on all constraint classes, having the same name"),
+
+                   SchemaItem(R"xml(<ECSchema schemaName="TestSchema14" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "Navigation properties must be on all constraint classes."),
+
+                   SchemaItem(R"xml(<ECSchema schemaName="TestSchema15" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent1" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent2" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "Navigation properties on all constraint classes must have same name.")
     };
 
     AssertSchemaImport(testItems, "ecdbschemarules_navprops.ecdb");
@@ -1467,20 +1659,24 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
     {
     std::vector <SchemaItem> testItems {
         SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "  <ECEntityClass typeName='Foo' >"
+                    "  <ECEntityClass typeName='Foo' >"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Base' modifier='Abstract'>"
+                    "  </ECEntityClass>"
                     "  <ECEntityClass typeName='Goo' >"
+                    "    <BaseClass>Base</BaseClass>"
                     "    <ECProperty propertyName='Length' typeName='long' />"
                     "  </ECEntityClass>"
                     "  <ECEntityClass typeName='Hoo' >"
-                    "    <ECProperty propertyName='Width' typeName='long' />"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
                     "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
                     "        <Class class='Foo' />"
                     "     </Source>"
-                    "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target'>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True' abstractConstraint='Base' roleLabel='Target'>"
                     "         <Class class='Goo'/>"
                     "         <Class class='Hoo'/>"
                     "     </Target>"
@@ -1491,14 +1687,18 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                     "  <ECEntityClass typeName='Foo' >"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
-                    "  <ECEntityClass typeName='Goo' >"
-                    "    <ECProperty propertyName='Length' typeName='long' />"
-                    "  </ECEntityClass>"
-                    "  <ECEntityClass typeName='Hoo' >"
-                    "    <ECProperty propertyName='Width' typeName='long' />"
-                    "  </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
-                    "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                   "  <ECEntityClass typeName='Base' modifier='Abstract'>"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Goo' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False' abstractConstraint='Base' roleLabel='Source'>"
                     "        <Class class='Foo' />"
                     "         <Class class='Hoo'/>"
                     "     </Source>"
@@ -1529,8 +1729,9 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                     "     </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
-                    false, "Multiple constraint classes without specifying abstract constraint base class"), 
-        SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                    false, "Multiple constraint classes without specifying abstract constraint base class"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "  <ECEntityClass typeName='Base' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
@@ -1538,6 +1739,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                    "  <ECEntityClass typeName='Sub' >"
                    "    <BaseClass>Base</BaseClass>"
                    "    <ECProperty propertyName='Length' typeName='long' />"
+                   "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
                    "  </ECEntityClass>"
                    "  <ECEntityClass typeName='Hoo' >"
                    "    <ECProperty propertyName='Width' typeName='long' />"
@@ -1552,19 +1754,77 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                    "     </Target>"
                    "  </ECRelationshipClass>"
                    "</ECSchema>",
-                   true, "Multiple constraint classes with abstract constraint class"),
-        SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                    "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                    "  <ECEntityClass typeName='Base' >"
-                    "     <ECCustomAttributes>"
-                    "        <ClassMap xmlns='ECDbMap.02.00'>"
-                    "            <MapStrategy>TablePerHierarchy</MapStrategy>"
-                    "        </ClassMap>"
-                    "     </ECCustomAttributes>"
-                    "    <ECProperty propertyName='Name' typeName='string' />"
+                   false, "Duplicate nav props in class hierarchy"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "  <ECEntityClass typeName='Base' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Sub1' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
                    "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
                    "  </ECEntityClass>"
-                    "  <ECEntityClass typeName='Sub' >"
+                   "  <ECEntityClass typeName='Sub2' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                   "         <Class class='Hoo'/>"
+                   "     </Source>"
+                   "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
+                   "         <Class class='Sub1'/>"
+                   "         <Class class='Sub2'/>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   true, "Every constraint class has a nav prop with same name"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema6' alias='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                    "  <ECEntityClass typeName='Base' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub1' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub2' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Hoo' >"
+                    "    <ECProperty propertyName='Width' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                    "         <Class class='Hoo'/>"
+                    "     </Source>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
+                    "         <Class class='Sub1'/>"
+                    "         <Class class='Sub2'/>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "Abstract constraint class must not have a nav prop"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                    "  <ECEntityClass typeName='Base' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub1' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub2' >"
                     "    <BaseClass>Base</BaseClass>"
                     "    <ECProperty propertyName='Length' typeName='long' />"
                     "  </ECEntityClass>"
@@ -1576,12 +1836,121 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                     "         <Class class='Hoo'/>"
                     "     </Source>"
                     "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
-                    "         <Class class='Base'/>"
-                    "         <Class class='Sub'/>"
+                    "         <Class class='Sub1'/>"
+                    "         <Class class='Sub2'/>"
                     "     </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
-                   true, "Multiple constraint classes")
+                    false, "Abstract constraint class must not have a nav prop, constraint classes must have them"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                    "  <ECEntityClass typeName='Base' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub1' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub2' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Hoo' >"
+                    "    <ECProperty propertyName='Width' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                    "         <Class class='Hoo'/>"
+                    "     </Source>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
+                    "         <Class class='Sub1'/>"
+                    "         <Class class='Sub2'/>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "Not all constraint classes have a nav prop"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                    "  <ECEntityClass typeName='Base' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub1' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                   "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                   "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub2' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Hoo' >"
+                    "    <ECProperty propertyName='Width' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                    "         <Class class='Hoo'/>"
+                    "     </Source>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
+                    "         <Class class='Sub1'/>"
+                    "         <Class class='Sub2'/>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "Not all constraint classes have a nav prop"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts10' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                    "  <ECEntityClass typeName='Base' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub1' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "    <ECNavigationProperty propertyName='Hoo1' relationshipName='Rel' direction='Backward'/>"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub2' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                   "    <ECNavigationProperty propertyName='Hoo2' relationshipName='Rel' direction='Backward'/>"
+                   "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Hoo' >"
+                    "    <ECProperty propertyName='Width' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                    "         <Class class='Hoo'/>"
+                    "     </Source>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
+                    "         <Class class='Sub1'/>"
+                    "         <Class class='Sub2'/>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "all constraint classes must have a nav prop with the same name"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts11' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "  <ECEntityClass typeName='Base' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Sub' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                   "         <Class class='Hoo'/>"
+                   "     </Source>"
+                   "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
+                   "         <Class class='Sub'/>"
+                   "         <Class class='Sub'/>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   true, "Duplicate constraint classes are already merged by ECObjects, so this is fine")
         };
 
     AssertSchemaImport(testItems, "ecdbschemarules.ecdb");

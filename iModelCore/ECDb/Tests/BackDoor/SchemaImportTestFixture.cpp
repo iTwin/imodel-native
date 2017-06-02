@@ -53,7 +53,7 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
     BeTest::SetFailOnAssert(true);
     if (SUCCESS != deserializeStat)
         {
-        ASSERT_FALSE(testItem.m_expectedToSucceed) << "ECSchema deserialization failed";
+        ASSERT_FALSE(testItem.m_expectedToSucceed) << "ECSchema deserialization failed. " << testItem.m_name.c_str() << " " << testItem.m_assertMessage.c_str();
         asserted = false;
         return;
         }
@@ -65,10 +65,10 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
     else
         sp.Cancel();
 
-    ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == schemaImportStatus) << testItem.m_assertMessage.c_str();
+    ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == schemaImportStatus) << testItem.m_name.c_str()  << " " << testItem.m_assertMessage.c_str();
 
     if (SUCCESS == schemaImportStatus)
-        ASSERT_EQ(testItem.m_expectedToSucceed, !HasDataCorruptingMappingIssues(ecdb)) << testItem.m_assertMessage.c_str();
+        ASSERT_EQ(testItem.m_expectedToSucceed, !HasDataCorruptingMappingIssues(ecdb)) << testItem.m_name.c_str() << " " << testItem.m_assertMessage.c_str();
 
     asserted = false;
     }
