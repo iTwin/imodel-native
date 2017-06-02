@@ -27,7 +27,6 @@ struct ECSqlPropertyNameExpPreparer final
         //! E.g. if the property name exp refers to a property which is mapped to a virtual column
         //! the exp can be ignored under certain circumstances.
         static bool NeedsPreparation(ECSqlPrepareContext&, ECSqlPrepareContext::ExpScope const&, PropertyMap const&);
-        static ECSqlStatus DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const&, PropertyNameExp const&, PropertyMap const&);
 
         static void PrepareDefault(NativeSqlBuilder::List&, ECSqlPrepareContext&, ECSqlType, PropertyNameExp const&, PropertyMap const&, Utf8CP classIdentifier);
 
