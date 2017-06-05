@@ -181,7 +181,6 @@ protected:
     RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override;
     RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override;
     RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override;
-    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus*) override;
     void _OnElementInserted(DgnElementId) override;
     void _OnModelInserted(DgnModelId) override;
     RepositoryStatus _ReserveCode(DgnCodeCR) override;
@@ -1431,6 +1430,9 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode)
     {
+    if (IsBulkOperation()) // In a bulk op, the "prepare" step schedules the request. We won't process it until later.
+        return DgnDbStatus::Success;
+
     Request req;
     return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, PrepareAction::Verify), req);
     }
@@ -1440,6 +1442,9 @@ DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbO
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode)
     {
+    if (IsBulkOperation()) // In a bulk op, the "prepare" step schedules the request. We won't process it until later.
+        return DgnDbStatus::Success;
+
     Request req;
     return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, PrepareAction::Verify), req);
     }
@@ -2284,10 +2289,8 @@ RepositoryStatus BulkUpdateBriefcaseManager::_Relinquish(Resources res)
     {
     if (m_inBulkUpdate)
         {
-        if (Resources::Locks == (res & Resources::Locks))
-            m_req.Locks().Clear();
-        if (Resources::Codes == (res & Resources::Codes))
-            m_req.Codes().clear();
+        BeAssert(false && "makes no sense in bulk operation mode");
+        return  RepositoryStatus::InvalidRequest;
         }
 
     return T_Super::_Relinquish(res);
@@ -2426,47 +2429,6 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForModelOperation(Request& 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BulkUpdateBriefcaseManager::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* pStatus)
-    {
-    if (!m_inBulkUpdate)
-        return T_Super::_AreResourcesHeld(locks, codes, pStatus);
-
-    // *** TRICKY: In bulk mode, we re-interpret this query to mean "have the resources been requested" rather than "are they actually held"?
-
-    //  Get the set of locks and codes that we do NOT have in the pending request
-    DgnCodeSet codesNotSeen;
-    std::set_difference(codes.begin(), codes.end(),                     
-                        m_req.Codes().begin(), m_req.Codes().end(),     
-                        std::inserter(codesNotSeen, codesNotSeen.end()));
-
-    DgnLockSet locksNotSeen;
-    DgnLockSet const& pendingLocks = m_req.Locks().GetLockSet();
-#ifdef COMMENT_OUT_WONT_COMPILE  // C:\DevTools\VisualStudio2015\VC\INCLUDE\algorithm(3275): error C2672: 'operator __surrogate_func': no matching overloaded function found
-    std::set_difference(locks.begin(), locks.end(),                     
-                        pendingLocks.begin(), pendingLocks.end(),     
-                        std::inserter(locksNotSeen, locksNotSeen.end()));
-#else
-    for (auto& lock : locks)
-        {
-        if (pendingLocks.find(lock) == pendingLocks.end())
-            locksNotSeen.insert(lock);
-        }
-#endif
-    
-    if (locksNotSeen.empty() && codesNotSeen.empty())   // quick "yes" if we have all of them scheduled
-        {
-        if (nullptr != pStatus)
-            *pStatus = RepositoryStatus::Success;
-        return true;
-        }
-
-    //  Ask if we actually have requested the locks and codes that are not in the pending request.
-    return T_Super::_AreResourcesHeld(locksNotSeen, codesNotSeen, pStatus);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnElementInserted(DgnElementId id)
@@ -2519,29 +2481,7 @@ RepositoryStatus BulkUpdateBriefcaseManager::_OnFinishRevision(DgnRevision const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnCommit(TxnManager& mgr)
     {
-    if (m_inBulkUpdate)
-        {
-        // Commit automatically ends the bulk operation and acquires locks and codes.
-
-#ifndef NDEBUG
-        BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
-#endif
-        BeAssert((1==m_inBulkUpdate) && "It makes no sense to call SaveChanges while in a nested bulk operation. Probably a library function is calling SaveChanges and should not!");
-        auto was = m_inBulkUpdate;
-        m_inBulkUpdate = 1; // Work around buggy library function! Make sure EndBulkOperation actually does the acquire.
-        if (RepositoryStatus::Success != EndBulkOperation().Result())
-            {
-            // If we can't acquire locks and codes, we have to roll back the transaction.
-            BeAssert(false);
-            TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Pending locks and codes");
-            mgr.ReportError(err);
-            return;
-            }
-        // resume bulk operations
-        m_inBulkUpdate = (was - 1); // Work around buggy library function! Stay in nested bulk operation.
-        StartBulkOperation();
-        }
-
+    BeAssert (!m_inBulkUpdate && "somebody called SaveChanges while in a NESTED bulk op");
     T_Super::_OnCommit(mgr);
     }
 
@@ -2556,7 +2496,6 @@ void BulkUpdateBriefcaseManager::_OnAppliedChanges(TxnManager& mgr)
 #ifndef NDEBUG
         BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
 #endif
-        BeAssert(false && "downloading revisions in a bulk update transaction??");
         m_inBulkUpdate = false;
         m_req.Reset();
         }

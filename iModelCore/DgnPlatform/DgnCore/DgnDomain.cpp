@@ -418,9 +418,14 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
         return status;
 
     SyncWithSchemas();
+    
+    m_dgndb.BriefcaseManager().StartBulkOperation();
 
     for (DgnDomainP domain : domainsToImport)
         domain->_OnSchemaImported(m_dgndb);
+
+    if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().EndBulkOperation().Result())
+        return SchemaStatus::CouldNotAcquireLocksOrCodes;
 
     SaveDevelopmentPhase();
 
