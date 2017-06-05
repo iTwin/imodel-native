@@ -27,7 +27,7 @@ static std::queue<User*> s_innactiveUsers = std::queue<User*>();
 static RPS s_rps = RPS();
 static bool s_keepRunning = true;
 static Stats s_stats = Stats();
-static const Utf8String s_server("https://qa-contextcapture-eus.cloudapp.net/");
+static const Utf8String s_server("https://qa-connect-contextcapture.bentley.com/");
 static bvector<Utf8String> s_guidparts = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U" };
 
 ///*---------------------------------------------------------------------------------**//**
@@ -648,11 +648,11 @@ CURL* User::CreateJob(Utf8String outputGuid)
                                 "]," 
                             "\"publicWebGL\" : true, "
                             "\"meshQuality\" : "
-                            "\"High\""
+                            "\"medium\""
                             "}, "
                             "\"resultPublisher\" : {"
                                 "\"resultPublisherType\":\"CCCS\","
-                                "\"path\" : \"https://qa-contextcapture-eus.cloudapp.net/api/v1/job-result\""
+                                "\"path\" : \"https://qa-connect-contextcapture.bentley.com/api/v1/job-result\""
                             "}"
                         "}";
     
