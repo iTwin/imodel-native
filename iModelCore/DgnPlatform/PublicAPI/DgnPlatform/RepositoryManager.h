@@ -200,7 +200,7 @@ protected:
 
     // Bulk operations
     virtual void _StartBulkOperation() = 0;
-    virtual bool _IsBulkOperation() = 0;
+    virtual bool _IsBulkOperation() const = 0;
     virtual Response _EndBulkOperation() = 0;
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
@@ -427,7 +427,7 @@ public:
     void StartBulkOperation() {_StartBulkOperation();}
     
     //! Check if a bulk operation is in progress
-    void IsBulkOperation() {_IsBulkOperation();}
+    void IsBulkOperation() const {_IsBulkOperation();}
 
     //! Call this if you want to acquire locks and codes @em before the end of the transaction.
     //! @note DgnDb::SaveChanges automatically calls this function to end the bulk operation and acquire locks and codes.

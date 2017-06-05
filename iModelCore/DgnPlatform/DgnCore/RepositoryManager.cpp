@@ -27,7 +27,7 @@ private:
     void _OnElementInserted(DgnElementId) override { }
     void _OnModelInserted(DgnModelId) override { }
     void _StartBulkOperation() override {}
-    bool _IsBulkOperation() override {return false;}
+    bool _IsBulkOperation() const override {return false;}
     Response _EndBulkOperation() override {return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);}
 
     RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
@@ -194,7 +194,7 @@ protected:
     // Note: functions like _QueryCodeStates and _QueryLockLevel do NOT look in m_req. They check what we actually have obtained from the server.
 
     void _StartBulkOperation() override;
-    bool _IsBulkOperation() override {return 0 != m_inBulkUpdate;}
+    bool _IsBulkOperation() const override {return 0 != m_inBulkUpdate;}
     Response _EndBulkOperation() override;
 
     void AccumulateRequests(Request const&);
