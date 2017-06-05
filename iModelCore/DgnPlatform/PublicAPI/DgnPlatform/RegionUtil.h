@@ -9,14 +9,8 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
-
 #include <DgnPlatform/NullContext.h>
 #include <DgnPlatform/SimplifyGraphic.h>
-
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
-#include <Regions/regionsAPI.h>
-#include <Regions/rimsbsAPI.h>
-#endif
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -62,250 +56,147 @@ struct RegionParams
     {
     private:
 
-    RegionType      m_type;
-    RegionLoops     m_regionLoops;
+    RegionType      m_type = RegionType::ExclusiveOr;
+    RegionLoops     m_regionLoops = RegionLoops::Ignore;
 
-    bool            m_associative;
-    bool            m_invisibleBoundary;
-    bool            m_interiorText;
-    bool            m_forcePlanar;
-    bool            m_dirty;
+    bool            m_associative = false;
+    bool            m_invisibleBoundary = false;
+    bool            m_forcePlanar = true;
+    bool            m_dirty = false;
 
-    uint32_t        m_reservedFlags;
-
-    double          m_gapTolerance;
-    double          m_textMarginFactor;
-
-    RotMatrix       m_flatten;
+    uint32_t        m_reservedFlags = 0;
+    double          m_gapTolerance = 0.0;
+    RotMatrix       m_flatten = RotMatrix::FromIdentity();
 
     public:
 
-    DGNPLATFORM_EXPORT                  RegionParams ();
+    void SetType(RegionType regionType) {m_type = regionType;}
+    void SetFloodParams(RegionLoops regionLoops, double gapTolerance) {m_regionLoops = regionLoops; m_gapTolerance = gapTolerance;}
+    void SetAssociative(bool yesNo) {m_associative = yesNo;}
+    void SetInvisibleBoundary(bool yesNo) {m_invisibleBoundary = yesNo;}
+    void SetFlattenBoundary(bool yesNo, RotMatrixCP flatten) {m_forcePlanar = yesNo; if (flatten) m_flatten = *flatten;}
+    void SetDirty(bool yesNo) {m_dirty = yesNo;}
+    
+    RegionType GetType() const {return m_type;}
+    RegionLoops GetFloodParams(double* gapTolerance) const {if (gapTolerance) *gapTolerance = m_gapTolerance; return m_regionLoops;}
+    bool GetAssociative() const {return m_associative;}
+    bool GetInvisibleBoundary() const {return m_invisibleBoundary;}
+    bool GetFlattenBoundary(RotMatrixP flatten) const {if (flatten) *flatten = m_flatten; return m_forcePlanar;}
+    bool GetDirty() const {return m_dirty;}
 
-    DGNPLATFORM_EXPORT void             SetType (RegionType regionType);
-    DGNPLATFORM_EXPORT void             SetFloodParams (RegionLoops regionLoops, double gapTolerance);
-    DGNPLATFORM_EXPORT void             SetInteriorText (bool interiorText, double textMarginFactor);
-    DGNPLATFORM_EXPORT void             SetAssociative (bool yesNo);
-    DGNPLATFORM_EXPORT void             SetInvisibleBoundary (bool yesNo);
-    DGNPLATFORM_EXPORT void             SetFlattenBoundary (bool yesNo, RotMatrixCP flatten);
-    DGNPLATFORM_EXPORT void             SetDirty (bool yesNo);
-
-    DGNPLATFORM_EXPORT RegionType       GetType () const;
-    DGNPLATFORM_EXPORT RegionLoops      GetFloodParams (double* gapTolerance) const;
-    DGNPLATFORM_EXPORT bool             GetInteriorText (double* textMarginFactor) const;
-    DGNPLATFORM_EXPORT bool             GetAssociative () const;
-    DGNPLATFORM_EXPORT bool             GetInvisibleBoundary () const;
-    DGNPLATFORM_EXPORT bool             GetFlattenBoundary (RotMatrixP flatten) const;
-    DGNPLATFORM_EXPORT bool             GetDirty () const;
     }; // RegionParams
 
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/09
 +===============+===============+===============+===============+===============+======*/
-struct RegionGraphicsDrawGeom : SimplifyGraphic
-{
-    DEFINE_T_SUPER(SimplifyGraphic)
-private:
-    RG_Header*          m_pRG;
-    RIMSBS_Context*     m_pCurves;
-    MTG_MarkSet         m_activeFaces;
-    int                 m_currentGeomMarkerId;
-    double              m_textMarginFactor;
-    bool                m_interiorText;
-    // clang says not used - bool m_isAssociative;
-    bool                m_isFlood;
-
-    bool                m_forcePlanar;
-    Transform           m_flattenTrans;
-    DVec3d              m_flattenDir;
-
-    RegionErrors        m_regionError;
-    CurveVectorPtr      m_textBoundaries; // Union region collected from draw
-
-    protected:
-
-    bool                ComputePostFlattenTransform (CurveVectorCR region);
-    void                ResetPostFlattenTransform ();
-    bool        _ClipPreservesRegions () const override {return false;} // Want fast open curve clip...
-    bool        _DoClipping () const override {return m_context->IsAttached ();} // Only want for initial flood create...
-    bool        _DoTextGeometry () const override {return false;}
-    bool        _DoSymbolGeometry () const override {return false;}
-    StatusInt   _ProcessCurvePrimitive (ICurvePrimitiveCR, bool closed, bool filled) override;
-    StatusInt   _ProcessCurveVector (CurveVectorCR, bool filled) override;
-    StatusInt   _ProcessSolidPrimitive (ISolidPrimitiveCR) override {return SUCCESS;}
-    StatusInt   _ProcessSurface (MSBsplineSurfaceCR surface) override {return SUCCESS;}
-    StatusInt   _ProcessBody (IBRepEntityCR entity) override {return SUCCESS;}
-    StatusInt   _ProcessFacetSet (PolyfaceQueryCR facets, bool isFilled) override {return SUCCESS;}
-
-    void        _AddTextString (TextStringCR text, double* zDepth) override;
-
-public:
-
-DGNPLATFORM_EXPORT  RegionGraphicsDrawGeom ();
-DGNPLATFORM_EXPORT  ~RegionGraphicsDrawGeom ();
-
-int                 GetCurrentGeomMarkerId ();
-
-void                SetTextMarginFactor (bool interiorText, double textMarginFactor) {m_interiorText = interiorText; m_textMarginFactor = textMarginFactor;}
-double              GetTextMarginFactor () {return m_textMarginFactor;}
-bool                GetInteriorText () {return m_interiorText;}
-
-void                SetFlattenBoundary (TransformCR flattenTrans) {m_forcePlanar = true; m_flattenTrans = flattenTrans;}
-void                SetFlattenBoundary (DVec3dCR flattenDir) {m_forcePlanar = true; m_flattenDir = flattenDir;}
-TransformCP         GetFlattenBoundary () {return m_forcePlanar ? &m_flattenTrans : NULL;}
-
-void                SetIsFlood (bool isFlood) {m_isFlood = isFlood;}
-BentleyStatus       SetupGraph (double gapTolerance, bool mergeHoles);
-void                SetAbortFunction (RGC_AbortFunction abort);
-RegionErrors        GetRegionError () {return m_regionError;}
-
-BentleyStatus       CollectBooleanFaces (RGBoolSelect boolOp, int highestOperandA, int highestOperandB);
-void                CollectFaceLoopsAtPoint (bvector<MTGNodeId>* faceNodeIds, DPoint3dCR seedPoint, RegionLoops floodSelect, bool stepOutOfHoles);
-void                CollectByInwardParitySearch (bool parityWithinComponent, bool vertexContactSufficient);
-
-void                AddFaceLoop (MTGNodeId faceNodeId);
-void                RemoveFaceLoop (MTGNodeId faceNodeId);
-bool                ToggleFaceLoop (MTGNodeId faceNodeId);
-bool                IsFaceLoopSelected (MTGNodeId faceNodeId);
-
-void                GetFaceLoops (CurveVectorPtr& region, bvector<MTGNodeId>& faceNodeIds);
-BentleyStatus       GetActiveRegions (CurveVectorPtr& region);
-BentleyStatus       GetMarkedRegions (CurveVectorPtr& region, MTG_MarkSet* markSet);
-
-BentleyStatus       GetRoots (bvector<DgnElementId>& regionRoots);               // No duplicates...
-BentleyStatus       GetRoots (bvector<DgnElementId>&, CurveVectorCR region);      // May contain duplicates...
-BentleyStatus       GetRoots (bvector<DgnElementId>&, ICurvePrimitiveCR curve);   // May contain duplicates...
-
-}; // RegionGraphicsDrawGeom
-
 struct FloodSeed
     {
-    DPoint3d            m_pt;
-    bvector<MTGNodeId>  m_faceNodeIds;
+    DPoint3d      m_pt;
+    bvector<int>  m_faceNodeIds;
     };
 
+struct IRegionData : public IRefCounted {};
+typedef RefCountedPtr<IRegionData> IRegionDataPtr;
 typedef RefCountedPtr<RegionGraphicsContext> RegionGraphicsContextPtr;
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/09
 +===============+===============+===============+===============+===============+======*/
-struct RegionGraphicsContext : RefCountedBase, NullContext
+struct RegionGraphicsContext : RefCountedBase, NullContext, IGeometryProcessor
 {
     DEFINE_T_SUPER(NullContext)
+    friend struct RegionData;
+
 protected:
 
-RefCountedPtr<RegionGraphicsDrawGeom> m_output;
+IRegionDataPtr      m_regionData;
+int                 m_currentGeomMarkerId = 0;
+bool                m_isAssociative = false;
 
-RegionType              m_operation;
-RegionLoops             m_regionLoops;
-double                  m_gapTolerance;
-bool                    m_stepOutOfHoles;
-bool                    m_setLoopSymbology;
-bool                    m_updateAssocRegion;
-bool                    m_cullRedundantLoop;
+bool                m_forcePlanar = false;
+Transform           m_flattenTrans = Transform::FromIdentity();
+DVec3d              m_flattenDir = DVec3d::UnitZ();
 
-DgnModelP               m_targetModel;
-bvector<FloodSeed>      m_floodSeeds;
-FloodSeed               m_dynamicFaceSeed;
+RegionErrors        m_regionError = REGION_ERROR_None;
+RegionType          m_operation = RegionType::Flood;
+RegionLoops         m_regionLoops = RegionLoops::Ignore;
+double              m_gapTolerance = 0.0;
+bool                m_stepOutOfHoles = false;
+bool                m_cullRedundantLoop = false;
 
-Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
+bvector<FloodSeed>  m_floodSeeds;
+FloodSeed           m_dynamicFaceSeed;
+GeometrySourceCP    m_currentGeomSource = nullptr;
 
-DgnModelP GetViewTarget () {return m_targetModel;}
+bool ComputePostFlattenTransform(CurveVectorCR region);
+void ResetPostFlattenTransform();
 
-void            _DrawAreaPattern (ClipStencil& boundary) override {}
-void            _AddTextString (TextStringCR text) override;
+Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
+bool _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled, SimplifyGraphic&) override;
+bool _ProcessCurveVector(CurveVectorCR, bool filled, SimplifyGraphic&) override;
+StatusInt _OutputGeometry(GeometrySourceCR) override;
+bool _WantAreaPatterns() override {return false;}
+bool _WantLineStyles() override {return false;}
 
-BentleyStatus           PushBooleanCandidate (GeometrySourceCR element, TransformCP trans);
-BentleyStatus           SetTargetModel (DgnModelR targetModel);
-BentleyStatus           VisitFloodCandidate (GeometrySourceCR element, TransformCP trans);
-BentleyStatus           VisitBooleanCandidate (GeometrySourceCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
+DGNPLATFORM_EXPORT RegionGraphicsContext();
 
-BentleyStatus           CreateRegionElement (DgnElementPtr& elm, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d);
-BentleyStatus           CreateRegionElements (DgnElementPtrVec& out, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d);
+RegionErrors GetRegionError() {return m_regionError;}
+//DGNPLATFORM_EXPORT void SetAbortFunction (RGC_AbortFunction abort);
+void SetCullRedundantLoops() {m_cullRedundantLoop = true;}
+BentleyStatus VisitBooleanCandidate(GeometrySourceCR element, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
 
-public:
+DGNPLATFORM_EXPORT bool IsGraphInitialized();
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in);
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph(DgnElementCPtrVec const& in);
+DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints(DPoint3dCP seedPoints, size_t numSeed);
+DGNPLATFORM_EXPORT void AddFaceLoopsByInwardParitySearch(bool parityWithinComponent, bool vertexContactSufficient);
+DGNPLATFORM_EXPORT bool ToggleFaceAtPoint(DPoint3dCR seedPoint);
+DGNPLATFORM_EXPORT bool GetFaceAtPoint(CurveVectorPtr& region, DPoint3dCR seedPoint);
+DGNPLATFORM_EXPORT int  GetCurrentFaceNodeId(); // NOTE: Valid after calling GetFaceAtPoint...
+DGNPLATFORM_EXPORT bool GetActiveFaces(CurveVectorPtr& region);
+DGNPLATFORM_EXPORT bool IsFaceAtPointSelected(DPoint3dCR seedPoint);
 
-DGNPLATFORM_EXPORT               RegionGraphicsContext ();
+DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots); // No duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, CurveVectorCR region); // May contain duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curve); // May contain duplicates...
 
-                   bool          IsGraphInitialized () {return NULL != GetViewTarget();}
-                   RegionErrors  GetRegionError () {return m_output->GetRegionError ();}
-DGNPLATFORM_EXPORT void          SetAbortFunction (RGC_AbortFunction abort);
-                   void          SetAssociativeRegionUpdate () {m_updateAssocRegion = true;}
-                   void          SetCullRedundantLoops () {m_cullRedundantLoop = true;}
-
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnViewportP vp, DgnElementCPtrVec const* in);
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans);
-DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints (DPoint3dCP seedPoints, size_t numSeed);
-DGNPLATFORM_EXPORT void          AddFaceLoopsByInwardParitySearch (bool parityWithinComponent, bool vertexContactSufficient) {m_output->CollectByInwardParitySearch (parityWithinComponent, vertexContactSufficient);}
-DGNPLATFORM_EXPORT bool          ToggleFaceAtPoint (DPoint3dCR seedPoint);
-DGNPLATFORM_EXPORT bool          GetFaceAtPoint (CurveVectorPtr& region, DPoint3dCR seedPoint);
-DGNPLATFORM_EXPORT int           GetCurrentFaceNodeId (); // NOTE: Valid after calling GetFaceAtPoint...
-DGNPLATFORM_EXPORT bool          GetActiveFaces (CurveVectorPtr& region);
-DGNPLATFORM_EXPORT bool          IsFaceAtPointSelected (DPoint3dCR seedPoint);
-
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots) {return m_output->GetRoots (regionRoots);}                                 // No duplicates...
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots, CurveVectorCR region) {return m_output->GetRoots (regionRoots, region);}   // May contain duplicates...
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curve) {return m_output->GetRoots (regionRoots, curve);} // May contain duplicates...
-
-void                             EnableOriginalLoopSymbology () {m_setLoopSymbology = true;} // Legacy behavior of create grouped hole tool...
-
-DGNPLATFORM_EXPORT bool          GetAdjustedSeedPoints (bvector<DPoint3d>* seedPoints);
-DGNPLATFORM_EXPORT BentleyStatus UpdateAssociativeRegion (DgnElementPtr& elm);
-DGNPLATFORM_EXPORT BentleyStatus BooleanWithHoles (DgnModelR targetModel, DgnElementCPtrVec const& in, DgnElementCPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation);
+DGNPLATFORM_EXPORT bool GetAdjustedSeedPoints(bvector<DPoint3d>* seedPoints);
+DGNPLATFORM_EXPORT BentleyStatus BooleanWithHoles(DgnElementCPtrVec const& in, DgnElementCPtrVec const& holes, RegionType operation);
 
 public:
 
 //! Set flood parameters for boundary gap tolerance and finding interior holes.
-DGNPLATFORM_EXPORT void SetFloodParams (RegionLoops regionLoops, double gapTolerance, bool stepOutOfHoles = false);
-
-//! Set flood parameters for treating text as holes.
-DGNPLATFORM_EXPORT void SetInteriorText (bool interiorText, double textMarginFactor);
+DGNPLATFORM_EXPORT void SetFloodParams(RegionLoops regionLoops, double gapTolerance, bool stepOutOfHoles = false);
 
 //! Set a flatten transform for producing a planar region from non-planar boundaries.
-DGNPLATFORM_EXPORT void SetFlattenBoundary (TransformCR flattenTrans);
+DGNPLATFORM_EXPORT void SetFlattenBoundary(TransformCR flattenTrans);
 
 //! Set a flatten direction for producing a planar region from non-planar boundaries.
-DGNPLATFORM_EXPORT void SetFlattenBoundary (DVec3dCR flattenDir);
+DGNPLATFORM_EXPORT void SetFlattenBoundary(DVec3dCR flattenDir);
 
 //! Find closed regions from supplied boundary candidates using flood parameters and seed point locations.
-//! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
-DGNPLATFORM_EXPORT BentleyStatus Flood (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed);
+DGNPLATFORM_EXPORT BentleyStatus Flood(DgnElementCPtrVec const& in, DPoint3dCP seedPoints, size_t numSeed);
 
-//! Create closed regions by boolean of curve vectors.
-DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, bvector<CurveVectorPtr> const& in, RegionType operation);
+//! Create closed regions by boolean of curve vectors. NOTE: CurveVector::Area methods also exist and may be more appropriate to a given use case...
+DGNPLATFORM_EXPORT BentleyStatus Boolean(DgnDbR db, bvector<CurveVectorPtr> const& in, RegionType operation);
 
 //! Create closed regions by boolean of closed boundary candidates.
-//! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
-//! @note An associative region element can be created for a single closed boundary element using a RegionType of RegionType::ExclusiveOr.
-DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans, RegionType operation);
+DGNPLATFORM_EXPORT BentleyStatus Boolean(DgnElementCPtrVec const& in, RegionType operation);
 
 //! Create closed regions by boolean between separate target and tool boundary candidates agendas.
-//! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
-DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, DgnElementCPtrVec const& target, DgnElementCPtrVec const& tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation);
+DGNPLATFORM_EXPORT BentleyStatus Boolean(DgnElementCPtrVec const& target, DgnElementCPtrVec const& tool, RegionType operation);
 
-//! Initialize associative region element parameters from current context settings for use with GetAssociativeRegion.
-DGNPLATFORM_EXPORT void InitRegionParams (RegionParams& params);
+//! Initialize associative region element parameters from current context settings.
+DGNPLATFORM_EXPORT void InitRegionParams(RegionParams& params);
 
 //! Return region result as a CurveVector that represents a closed path, parity region, or union region.
-DGNPLATFORM_EXPORT BentleyStatus GetRegion (CurveVectorPtr& region);
-
-//! Return region result as a single element that represents a closed path, parity region, or union region.
-DGNPLATFORM_EXPORT BentleyStatus GetRegion (DgnElementPtr& elm);
-
-//! Return region result as an agenda of closed elements and grouped holes.
-DGNPLATFORM_EXPORT BentleyStatus GetRegions (DgnElementPtrVec& out);
-
-//! Return region result as an associative region element.
-//! @note The supplied boundary candidates must be persistent elements or an associative region can't be created.
-DGNPLATFORM_EXPORT BentleyStatus GetAssociativeRegion (DgnElementPtr& elm, RegionParams const& params, WCharCP cellName);
+DGNPLATFORM_EXPORT BentleyStatus GetRegion(CurveVectorPtr& region);
 
 //! Create an instance of an RegionGraphicsContext for the purpose of creating closed regions by flood or boolean operation.
 //! @return A reference counted pointer to a RegionGraphicsContext.
-DGNPLATFORM_EXPORT static RegionGraphicsContextPtr Create ();
+DGNPLATFORM_EXPORT static RegionGraphicsContextPtr Create();
 
 }; // RegionGraphicsContext
-#endif
 
 END_BENTLEY_DGN_NAMESPACE
 
