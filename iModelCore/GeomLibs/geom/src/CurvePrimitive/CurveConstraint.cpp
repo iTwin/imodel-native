@@ -26,11 +26,26 @@ CurveConstraint::CurveConstraint (Type type, CurveLocationDetailCR detail, DRay3
 
     }
 
+CurveConstraint::CurveConstraint (Type type, TransformCR frame) :
+    m_type (type),
+    m_resultFrame (frame, true)
+    {
+    }
+
+CurveConstraint::CurveConstraint (Type type, double distance) :
+    m_type (type),
+    m_distance (distance, true)
+    {
+    }
+
+
 
 bool CurveConstraint::IsType (CurveConstraint::Type t) const { return t == m_type;}
 DPoint3d CurveConstraint::Point () const{return m_location.point;}
 DRay3d CurveConstraint::PointAndDirection () const {return m_ray;}
 CurveConstraint::Type CurveConstraint::GetType () const {return m_type;}
+ValidatedTransform CurveConstraint::GetResultFrame () const {return m_resultFrame;}
+ValidatedDouble CurveConstraint::GetDistance () const {return m_distance;}
 
 CurveLocationDetail const &CurveConstraint::Location () const {return m_location;}
 
@@ -47,10 +62,14 @@ CurveConstraint CurveConstraint::CreatePointAndDirection (DPoint3dCR point, DVec
                     DRay3d::FromOriginAndVector (point, direction));
     }
 
-CurveConstraint CurveConstraint::CreateCenter (DPoint3dCR point)
+CurveConstraint CurveConstraint::CreateResultFrame (TransformCR frame)
     {
-    return CurveConstraint (Type::Center, CurveLocationDetail (nullptr, 0.0, point));
+    return CurveConstraint (Type::ResultFrame, frame);
     }
+
+CurveConstraint CurveConstraint::CreateRadius (double radius) {return CurveConstraint (Type::Radius, radius);}
+
+CurveConstraint CurveConstraint::CreateCenter (DPoint3dCR point) {return CurveConstraint (Type::Center, CurveLocationDetail (nullptr, 0.0, point));}
 
 CurveConstraint CurveConstraint::CreateClosestPoint (ICurvePrimitiveCP curve)
     {
@@ -158,6 +177,8 @@ CurveConstraintCP constraint    // the constraint
     }
 
 CurveConstraintCP GetCurveConstraintCP (uint32_t tableIndex){ return tableIndex < s_maxTableIndex ? m_row[tableIndex].m_constraint : nullptr;}
+ValidatedTransform GetResultFrame (uint32_t tableIndex){return tableIndex < s_maxTableIndex ? m_row[tableIndex].m_constraint->GetResultFrame (): ValidatedTransform (Transform::FromIdentity ());}
+ValidatedDouble GetDistance (uint32_t tableIndex){return tableIndex < s_maxTableIndex ? m_row[tableIndex].m_constraint->GetDistance () : ValidatedDouble (0.0, false);}
 
 void GetPointsSegmentsArcs (bvector<DPoint3d> &points, bvector<DSegment3d> &segments, bvector<DEllipse3d> &arcs)
     {
@@ -518,6 +539,59 @@ struct FromCenterPointPoint: ConstructionContext::ITryConstruction
         }
     };
 
+struct FromCenterPointFrame: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::Center,
+                CurveConstraint::Type::ThroughPoint,
+                CurveConstraint::Type::ResultFrame);
+        if (searcher.BuildConstraintMatchTable (matchTable))
+            {
+            auto localToWorld = matchTable.GetResultFrame (2);
+            Transform worldToLocal;
+            if (localToWorld.IsValid () && worldToLocal.InverseOf (localToWorld.Value ()))
+                {
+                DPoint3d worldCenter =  matchTable.GetCurveConstraintCP(0)->Point ();
+                DPoint3d localCenter = worldToLocal * worldCenter;
+                DPoint3d localEdge   = worldToLocal * matchTable.GetCurveConstraintCP(1)->Point ();
+                DVec3d   localVector0 = localEdge - localCenter;
+                localVector0.z = 0.0;
+                DVec3d   localVector90 = DVec3d::FromCCWPerpendicularXY (localVector0);
+                result.push_back (ICurvePrimitive::CreateArc (
+                    DEllipse3d::FromVectors (worldCenter,
+                            localToWorld * localVector0,
+                            localToWorld * localVector90,
+                            0.0, Angle::TwoPi ())));
+                }
+            }
+        }
+    };
+
+struct FromCenterRadiusFrame: ConstructionContext::ITryConstruction
+    {
+    void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
+        {
+        ConstraintMatchTable matchTable (
+                CurveConstraint::Type::Center,
+                CurveConstraint::Type::Radius,
+                CurveConstraint::Type::ResultFrame);
+        if (searcher.BuildConstraintMatchTable (matchTable))
+            {
+            DPoint3d worldCenter =  matchTable.GetCurveConstraintCP(0)->Point ();
+            auto radius = matchTable.GetDistance (1).Value ();
+            auto localToWorld = matchTable.GetResultFrame (2).Value ();
+            result.push_back (ICurvePrimitive::CreateArc (
+                DEllipse3d::FromVectors (worldCenter,
+                        localToWorld.GetMatrixColumn (0) * radius,
+                        localToWorld.GetMatrixColumn (1) * radius,
+                        0.0, Angle::TwoPi ())));
+            }
+        }
+    };
+
+
 struct FromPointDirectionPoint: ConstructionContext::ITryConstruction
     {
     void TryConstruction (ConstructionContext const &searcher, bvector<ICurvePrimitivePtr> &result) override
@@ -742,7 +816,9 @@ bvector<ConstructionContext::ITryConstruction *>
     new CircleConstructions::FromPointDirectionPoint (),
     new CircleConstructions::FromPointPointTangent (),
     new CircleConstructions::FromPointTangentTangent (),
-    new CircleConstructions::FromTangentTangentTangent ()
+    new CircleConstructions::FromTangentTangentTangent (),
+    new CircleConstructions::FromCenterPointFrame (),
+    new CircleConstructions::FromCenterRadiusFrame ()
     
     };
 

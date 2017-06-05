@@ -41,10 +41,39 @@ void SaveHints (bvector<CurveConstraint> &constraints)
                 Check::SaveTransformedMarkers (bvector<DPoint3d>{constraint.Location ().point}, s_markerSize);
                 }
                 break;
+            case CurveConstraint::Type::ResultFrame:
+                {
+                Transform transform = constraint.GetResultFrame ();
+                double b = 1.0;  // use for negative coordinates to get the box asymetric.
+                bvector<DPoint3d> box
+                    {
+                    DPoint3d::From (0,1),
+                    DPoint3d::From (-b,1),
+                    DPoint3d::From (-b,-b),
+                    DPoint3d::From (1,-b),
+                    DPoint3d::From (1,1),
+                    DPoint3d::From (0,1),
+                    DPoint3d::From (0,1.1),
+                    DPoint3d::From (0,0),
+                    DPoint3d::From (1.5,0)
+                    };
+                transform.Multiply (box, box);
+
+                Check::SaveTransformed (box);
+                }
+                break;
             }
         }
     }
 
+void RunConstraints (bvector<CurveConstraint> &constraints, void (*constructionMethod) (bvector<CurveConstraint> &, bvector<ICurvePrimitivePtr> &))
+    {
+    bvector<ICurvePrimitivePtr> results;
+    SaveHints (constraints);
+    constructionMethod (constraints, results);
+    for (auto &cp: results)
+        Check::SaveTransformed (*cp);
+    }
 
 TEST (Construction,HelloLines)
     {
@@ -124,12 +153,13 @@ TEST (Construction,PointPerpendicularNear)
 
 TEST (Construction,HelloCircles)
     {
-    double a = 10.0;
+    double a = 6.0;
     bvector<ICurvePrimitivePtr> results;
 
     auto hPoint0 = CurveConstraint::CreateThroughPoint (DPoint3d::From (0.1, 0.1));
     auto hPoint1 = CurveConstraint::CreateThroughPoint (DPoint3d::From (1,0));
     auto hPoint2 = CurveConstraint::CreateThroughPoint (DPoint3d::From (0,2));
+    auto hRadius = CurveConstraint::CreateRadius (0.8);
     auto hPointTangent0 = CurveConstraint::CreatePointAndDirection (DPoint3d::From (0.1, 0.1), DVec3d::From (1,0,0));
 
     auto hCenter0 = CurveConstraint::CreateCenter (DPoint3d::From (1,1));
@@ -137,11 +167,7 @@ TEST (Construction,HelloCircles)
     constraints.push_back (hPoint0);
     constraints.push_back (hPoint1);
     constraints.push_back (hPoint2);
-    SaveHints (constraints);
-
-    ConstrainedConstruction::ConstructCircularArcs (constraints, results);
-    for (auto &cp: results)
-        Check::SaveTransformed (*cp);
+    RunConstraints (constraints, ConstrainedConstruction::ConstructCircularArcs);
 
     Check::Shift (a,0,0);
 
@@ -149,24 +175,34 @@ TEST (Construction,HelloCircles)
     constraints.push_back (hPoint0);
     constraints.push_back (hCenter0);
     constraints.push_back (hPoint2);
-    SaveHints (constraints);
-
-    ConstrainedConstruction::ConstructCircularArcs (constraints, results);
-    for (auto &cp: results)
-        Check::SaveTransformed (*cp);
+    RunConstraints (constraints, ConstrainedConstruction::ConstructCircularArcs);
 
     Check::Shift (a,0,0);
 
     constraints.clear ();
     constraints.push_back (hPointTangent0);
     constraints.push_back (hPoint2);
-    SaveHints (constraints);
-
-    ConstrainedConstruction::ConstructCircularArcs (constraints, results);
-    for (auto &cp: results)
-        Check::SaveTransformed (*cp);
+    RunConstraints (constraints, ConstrainedConstruction::ConstructCircularArcs);
 
 
+    bvector<Transform> transforms
+        {
+        Transform::FromIdentity (),
+        CreateTestTransform (-1.5, 0.1, 0.2, 10.0, 22.4, 3.0)
+        };
+    for (auto &frame : transforms)
+        {
+        Check::Shift (a,0,0);
+        constraints.clear ();
+        constraints.push_back (hPoint1);
+        constraints.push_back (hCenter0);
+        constraints.push_back (CurveConstraint::CreateResultFrame (frame));
+        RunConstraints (constraints, ConstrainedConstruction::ConstructCircularArcs);
+        Check::Shift (a,0,0);
+        constraints[0] = hRadius;
+        RunConstraints (constraints, ConstrainedConstruction::ConstructCircularArcs);
+
+        }
 
     Check::ClearGeometry ("Construction.HelloCircles");
     }
