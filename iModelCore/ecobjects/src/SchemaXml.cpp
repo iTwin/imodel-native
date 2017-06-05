@@ -36,6 +36,7 @@ struct SchemaXmlReaderImpl
 
     public:
         SchemaXmlReaderImpl(ECSchemaReadContextR context, BeXmlDomR xmlDom);
+        virtual ~SchemaXmlReaderImpl() {}
         virtual SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode) = 0;
 
         virtual SchemaReadStatus ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes, int ecXmlVersionMajor);
