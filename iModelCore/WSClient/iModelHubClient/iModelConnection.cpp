@@ -1006,8 +1006,11 @@ bool                         queryOnly
     Json::Value properties;
     DgnCode const* firstCode = codes.begin();
 
+    Utf8String scopeString;
+    scopeString.Sprintf("%" PRIu64, firstCode->GetScopeElementId().GetValue());
+
     properties[ServerSchema::Property::CodeSpecId]   = firstCode->GetCodeSpecId().GetValue();
-    properties[ServerSchema::Property::CodeScope]    = firstCode->GetScopeElementId().GetValue();
+    properties[ServerSchema::Property::CodeScope]    = scopeString;
     properties[ServerSchema::Property::BriefcaseId]  = briefcaseId.GetValue();
     properties[ServerSchema::Property::State]        = DgnCodeStateToInt(state);
     properties[ServerSchema::Property::QueryOnly]    = queryOnly;
