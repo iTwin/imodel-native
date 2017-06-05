@@ -347,6 +347,10 @@ ClassMappingStatus RelationshipClassEndTableMap::CreateForiegnKeyConstraint(DbTa
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImportContext& ctx)
     {
+    if (GetPropertyMaps().Size() == 6)
+        return ClassMappingStatus::Success;
+
+
     if (GetClass().GetBaseClasses().size() != 1)
         {
         BeAssert(false && "Multi-inheritance of ECRelationshipclasses should have been caught before already");
@@ -454,7 +458,7 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImp
         return ClassMappingStatus::Error;
 
     referencedEndConstraintMap.SetECClassIdPropMap(&clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
-
+    m_mapping = false;
     return ClassMappingStatus::Success;
     }
 
