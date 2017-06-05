@@ -100,13 +100,13 @@ Utf8CP RelationshipClassEndTableMap::RELECCLASSID_COLNAME_TOKEN = "RelECClassId"
 // @bsimethod                                   Ramanujam.Raman                   06/12
 //+---------------+---------------+---------------+---------------+---------------+------
 RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
-    : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy) {}
+    : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy), m_mapping(true) {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   06/12
 //+---------------+---------------+---------------+---------------+---------------+------
 RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
-    : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy, updatableViewInfo)
+    : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy, updatableViewInfo), m_mapping(true)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -157,7 +157,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& fkTabl
     if (persType == PersistenceType::Physical)
         {
         Utf8String accessString = navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropRelECClassId;
-        relClassIdCol = navPropMap.GetClassMap().GetColumnFactory().Allocate(navPropMap.GetProperty(), DbColumn::Type::Integer, DbColumn::CreateParams(relECClassIdColName), accessString);
+        relClassIdCol = navPropMap.GetClassMap().GetColumnFactory().Allocate(navPropMap.GetProperty(), DbColumn::Type::Integer, DbColumn::CreateParams(relECClassIdColName), accessString, navPropMap.HasForeignKeyConstraint());
         }
     else
         {
@@ -194,7 +194,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& fkTabl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn* RelationshipClassEndTableMap::CreateForeignColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo const& fkColInfo)
+DbColumn* RelationshipClassEndTableMap::CreateForeignColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo& fkColInfo)
     {
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
@@ -210,6 +210,7 @@ DbColumn* RelationshipClassEndTableMap::CreateForeignColumn(RelationshipMappingI
         }
     else
         {
+        GetForeignKeyColumnInfo(fkColInfo, navPropMap);
         const bool multiplicityImpliesNotNullOnFkCol = referencedEndConstraint.GetMultiplicity().GetLowerLimit() > 0;
         Utf8String fkColName;
         if (fkColInfo.CanImplyFromNavigationProperty() && !fkColInfo.GetImpliedFkColumnName().empty())
@@ -247,8 +248,8 @@ DbColumn* RelationshipClassEndTableMap::CreateForeignColumn(RelationshipMappingI
             }
 
 
-        Utf8String accessString = navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropId;
-        fkColumn= navPropMap.GetClassMap().GetColumnFactory().Allocate(navPropMap.GetProperty(), DbColumn::Type::Integer, DbColumn::CreateParams(fkColName), accessString);
+        Utf8String accessString = navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropId;        
+        fkColumn= navPropMap.GetClassMap().GetColumnFactory().Allocate(navPropMap.GetProperty(), DbColumn::Type::Integer, DbColumn::CreateParams(fkColName), accessString, navPropMap.HasForeignKeyConstraint());
         if (fkColumn == nullptr)
             {
             Issues().Report("Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
@@ -370,6 +371,9 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImp
         }
 
     RelationshipClassEndTableMap* baseClassMap = GetRootRelationshipMap(ctx);
+    if (baseClassMap->FinishMapping(ctx) != ClassMappingStatus::Success)
+        return ClassMappingStatus::Error;
+
     if (baseClassMap == nullptr || baseClassMap->GetType() != ClassMap::Type::RelationshipEndTable)
         {
         BeAssert(false && "Could not find class map of base ECRelationship class or is not of right type");
@@ -468,7 +472,7 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImp
 
     referencedEndConstraintMap.SetECClassIdPropMap(&clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
 
-    return ClassMappingStatus::Error;
+    return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -476,8 +480,13 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImp
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipClassEndTableMap::FinishMapping(SchemaImportContext& ctx)
     {
+    if (!m_mapping)
+        return ClassMappingStatus::Success;
+
     if (GetClass().HasBaseClasses())
+        {
         return FinishMappingForChild(ctx);
+        }
 
     if (GetState() == ObjectState::Persisted)
         return ClassMappingStatus::Success;
@@ -488,41 +497,48 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMapping(SchemaImportConte
 
     RelationshipMappingInfo const& classMappingInfo = static_cast<RelationshipMappingInfo const&> (*itor->second);
     ECRelationshipConstraintCR refConstraint = GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? GetRelationshipClass().GetSource() : GetRelationshipClass().GetTarget();
-    DbTable const* primaryTable = nullptr;
+    
+    std::set<DbTable const*> tables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(GetDbMap(), ctx, refConstraint, true);
 
-    bmap<DbTable const*, std::set<DbTable const*>> tables;
     for (ECClassCP constraintClass : refConstraint.GetConstraintClasses())
         {
         ClassMapCP constraintClassMap = GetDbMap().GetClassMap(*constraintClass);
         if (constraintClassMap == nullptr)
             return ClassMappingStatus::Error;
-
-        tables[&constraintClassMap->GetPrimaryTable()].insert(&constraintClassMap->GetJoinedOrPrimaryTable());
+    
+        if (constraintClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+            {
+            GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Its has constraint EClass '%s' which has the 'NotMapped' strategy.",
+                                                               GetClass().GetFullName(), constraintClassMap->GetClass().GetFullName());
+            return ClassMappingStatus::Error;
+            }
         }
 
     if (tables.size() > 1)
         {
-        BeAssert(false);
+        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Its referenced end maps to more then one table.",
+                                                           GetClass().GetFullName());
         return ClassMappingStatus::Error;
-        //ERROR
-        }
-    else
-        {
-        auto itor = tables.begin();
-        if (itor->second.size() > 1)
-            primaryTable = itor->first;
-        else
-            primaryTable = *itor->second.begin();
         }
 
+    if (tables.empty())
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Its referenced end does not have any physical table.",
+                                                           GetClass().GetFullName());
+        return ClassMappingStatus::Error;
+        }
+
+
+    DbTable const* primaryTable = *std::begin(tables);
     //DbColumn const* columnId = primaryTable->FindFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* columnForeignClassId = primaryTable->FindFirst(DbColumn::Kind::ECClassId);
+    DbColumn* columnForeignClassId = const_cast<DbColumn*>(primaryTable->FindFirst(DbColumn::Kind::ECClassId));
     if (columnForeignClassId == nullptr)
         {
         BeAssert(false);
         return ClassMappingStatus::Error;
         }
 
+    DbColumn::UpdateKind(*columnForeignClassId, GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId);
     Utf8CP refEndClassId = GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDBSYS_PROP_SourceECClassId : ECDBSYS_PROP_TargetECClassId;
     if (ConstraintECClassIdPropertyMap* propertyMap = static_cast<ConstraintECClassIdPropertyMap*>(const_cast<PropertyMap*>(GetPropertyMaps().Find(refEndClassId))))
         {
@@ -545,10 +561,18 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMapping(SchemaImportConte
         GetConstraintMapR(GetReferencedEnd()).SetECClassIdPropMap(propMap.get());
         }
 
+    if (GetPropertyMapsR().Size() != 6)
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass '%s'. ",
+                                                           GetClass().GetFullName());
+        return ClassMappingStatus::Error;
+        }
+
     if (CreateForiegnKeyConstraint(*primaryTable, classMappingInfo) != ClassMappingStatus::Success)
         return ClassMappingStatus::Error;
 
     AddIndexToRelationshipEnd(classMappingInfo);
+    m_mapping = false;
     return ClassMappingStatus::Success;
     }     
 
@@ -579,25 +603,56 @@ RelationshipClassEndTableMap* RelationshipClassEndTableMap::GetRootRelationshipM
 
     return  static_cast<RelationshipClassEndTableMap*>(const_cast<ClassMap*>(GetDbMap().GetClassMap(*relationshipClass)));
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEndForChild(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap)
+ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEndForChild(SchemaImportContext & ctx, NavigationPropertyMap& navPropMap)
     {
-    RelationshipClassEndTableMap* relationshipMap = GetRootRelationshipMap(ctx.GetImportCtx());
+    RelationshipClassEndTableMap* relationshipMap = GetRootRelationshipMap(ctx);
     if (relationshipMap == nullptr)
         return ClassMappingStatus::Error;
 
     return relationshipMap->UpdatePersistedEnd(ctx, navPropMap);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap)
+ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap)
     {
     BeAssert(!navPropMap.IsComplete());
     if (GetClass().HasBaseClasses())
         return UpdatePersistedEndForChild(ctx, navPropMap);
+
+    //nav prop only supported if going from foreign end (where FK column is persisted) to referenced end
+    NavigationECPropertyCP navigationProperty = navPropMap.GetProperty().GetAsNavigationProperty();
+    if (GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s'. Its NavigationECProperty '%s' refers to a relationship that has the 'NotMapped' strategy. Therefore its dependencies must have that strategy as well.",
+                                                           navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str());
+        return ClassMappingStatus::Error;
+        }
+
+    if (navPropMap.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Its NavigationECProperty '%s' come from a ECClass %s which has the 'NotMapped' strategy.",
+                                                           GetClass().GetFullName(), navigationProperty->GetName().c_str(), navigationProperty->GetClass().GetFullName());
+        return ClassMappingStatus::Error;
+        }
+
+    const ECRelatedInstanceDirection navDirection = navigationProperty->GetDirection();
+    if ((GetForeignEnd() == ECRelationshipEnd_Source && navDirection == ECRelatedInstanceDirection::Backward) ||
+        (GetForeignEnd() == ECRelationshipEnd_Target && navDirection == ECRelatedInstanceDirection::Forward))
+        {
+        Utf8CP constraintEndName = GetForeignEnd() == ECRelationshipEnd_Source ? "Source" : "Target";
+        GetDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map Navigation property '%s.%s'. "
+                                                                      "Navigation properties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
+                                                                      "The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
+                                                                      navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str(), constraintEndName,
+                                                                      GetClass().GetFullName(), constraintEndName);
+        return ClassMappingStatus::Error;
+        }
 
     SingleColumnDataPropertyMap const* idPropMap = nullptr;
     SingleColumnDataPropertyMap const* relECClassIdPropMap = nullptr;
@@ -607,7 +662,7 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(ClassMapping
 
     if (ECClassIdPropertyMap const*  classIdPropertyMap = GetECClassIdPropertyMap())
         relECClassIdPropMap = classIdPropertyMap->FindDataPropertyMap(navPropMap.GetClassMap());
-    
+
     if (idPropMap != nullptr && relECClassIdPropMap != nullptr)
         {
         if (navPropMap.SetMembers(idPropMap->GetColumn(), relECClassIdPropMap->GetColumn(), GetClass().GetId()) != SUCCESS)
@@ -622,75 +677,84 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(ClassMapping
         return ClassMappingStatus::Error;
         }
 
-   
-    auto itor = ctx.GetImportCtx().GetClassMappingInfoCache().find(this);
-    if (itor == ctx.GetImportCtx().GetClassMappingInfoCache().end())
+
+    auto itor = ctx.GetClassMappingInfoCache().find(this);
+    if (itor == ctx.GetClassMappingInfoCache().end())
         return ClassMappingStatus::Error;
 
     RelationshipMappingInfo const& classMappingInfo = static_cast<RelationshipMappingInfo const&> (*itor->second);
     DbTable& fkTable = const_cast<DbTable&>(navPropMap.GetClassMap().GetJoinedOrPrimaryTable());
-    ForeignKeyColumnInfo fkColInfo;
-    GetForeignKeyColumnInfo(fkColInfo, navPropMap);
+
+
     /*
-                                             Foo------->FooHasGoo-------->Goo
-                                       Source (Reference)        Target (Foriegn)
+                                        Foo------->FooHasGoo-------->Goo
+                                Source (Reference)        Target (Foriegn)
 
-         Foo [ts_Foo]
-         ----------------------------------------------------------------------------------------------------------------
-         ECInstanceId  |  ECClassId   | ...
-         ----------------------------------------------------------------------------------------------------------------
-              Id          ECClassId
+    Foo [ts_Foo]
+    ----------------------------------------------------------------------------------------------------------------
+    ECInstanceId  |  ECClassId   | ...
+    ----------------------------------------------------------------------------------------------------------------
+        Id          ECClassId
 
-         Goo [ts_Goo]
-         ----------------------------------------------------------------------------------------------------------------
-         ECInstanceId  |  ECClassId  |  NavProp.Id  |  NavProp.RelECClassId | ...
-         ----------------------------------------------------------------------------------------------------------------
-              Id           ECClassId       FK_Id          FK_RelECClassId     ...
+    Goo [ts_Goo]
+    ----------------------------------------------------------------------------------------------------------------
+    ECInstanceId  |  ECClassId  |  NavProp.Id  |  NavProp.RelECClassId | ...
+    ----------------------------------------------------------------------------------------------------------------
+        Id           ECClassId       FK_Id          FK_RelECClassId     ...
 
-         FooHasGoo [ts_Goo]
-         ----------------------------------------------------------------------------------------------------------------
-         ECInstanceId  |  ECClassId  |  SourceECInstanceId  |  SourceECClassId  |  TargetECInstanceId  |  TargetECClassId
-         ----------------------------------------------------------------------------------------------------------------
-          ts_Goo           ts_Goo           ts_Goo                 ts_Foo              ts_Goo                ts_Goo
-            Id         FK_RelECClassId       FK_Id                ECClassId              Id                 ECClassId
-            |                |                 |                      |                    |                     |
-            1                2                 3                      4                    5                     6
-            M                M                 M                      X                    M                     M
+    FooHasGoo [ts_Goo]
+    ----------------------------------------------------------------------------------------------------------------
+    ECInstanceId  |  ECClassId  |  SourceECInstanceId  |  SourceECClassId  |  TargetECInstanceId  |  TargetECClassId
+    ----------------------------------------------------------------------------------------------------------------
+    ts_Goo           ts_Goo           ts_Goo                 ts_Foo              ts_Goo                ts_Goo
+    Id         FK_RelECClassId       FK_Id                ECClassId              Id                 ECClassId
+    |                |                 |                      |                    |                     |
+    1                2                 3                      4                    5                     6
+    M                M                 M                      X                    M                     M
 
-            1. columnId
-            2. columnClassId
-            3. columnForeignId
-            4. columnForeignClassId
-            5. columnRefId
-            6. columnRefClassId
+    1. columnId
+    2. columnClassId
+    3. columnForeignId
+    4. columnForeignClassId
+    5. columnRefId
+    6. columnRefClassId
 
-        M  -> Map in this methiod
-        X -> Map in Finish ()
+    M  -> Map in this methiod
+    X -> Map in Finish ()
     */
 
-    //ClassMappingInfo const& endInfo = ctx.GetClassMappingInfo();
+    ForeignKeyColumnInfo fkColInfo;
     DbColumn* columnRefId = CreateForeignColumn(classMappingInfo, fkTable, navPropMap, fkColInfo);
     if (columnRefId == nullptr)
-        ClassMappingStatus::Error;
+        return ClassMappingStatus::Error;
 
+    DbColumn::UpdateKind(*columnRefId, GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
+
+    AddTable(columnRefId->GetTableR());
     DbColumn* columnId = const_cast<DbColumn*>(fkTable.FindFirst(DbColumn::Kind::ECInstanceId));
     if (columnId == nullptr)
-        ClassMappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     DbColumn* columnClassId = CreateRelECClassIdColumn(fkTable, fkColInfo, *columnRefId, navPropMap);
     if (columnClassId == nullptr)
-        ClassMappingStatus::Error;
+        return ClassMappingStatus::Error;
+
+    DbColumn::UpdateKind(*columnClassId, DbColumn::Kind::RelECClassId);
 
     DbColumn* columnForeignClassId = CreateReferencedClassIdColumn(fkTable);
     if (columnForeignClassId == nullptr)
-        ClassMappingStatus::Error;
+        return ClassMappingStatus::Error;
+
+    DbColumn::UpdateKind(*columnForeignClassId, GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId);
 
     DbColumn* columnForeignId = const_cast<DbColumn*>(fkTable.FindFirst(DbColumn::Kind::ECInstanceId));
     if (columnForeignId == nullptr)
-        ClassMappingStatus::Error;
+        return ClassMappingStatus::Error;
 
-    
-      //[+++ECInstanceId-----------------------------------------------------------------------------------------------------------------------------------]
+    DbColumn::UpdateKind(*columnForeignId, GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
+
+
+    //[+++ECInstanceId-----------------------------------------------------------------------------------------------------------------------------------]
     if (ECInstanceIdPropertyMap* propertyMap = static_cast<ECInstanceIdPropertyMap*>(const_cast<PropertyMap*>(GetPropertyMaps().Find(ECDBSYS_PROP_ECInstanceId))))
         {
         if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*propertyMap, *columnId) != SUCCESS)
@@ -699,7 +763,7 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(ClassMapping
     else
         {
         RefCountedPtr<ECInstanceIdPropertyMap> propMap = ECInstanceIdPropertyMap::CreateInstance(*this, {columnId});
-        
+
         if (propMap == nullptr)
             {
             BeAssert(false && "Failed to create PropertyMap ECInstanceId");
@@ -794,9 +858,9 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(ClassMapping
 
         GetConstraintMapR(GetForeignEnd()).SetECClassIdPropMap(propMap.get());
         }
-    
+
     //[-----------------------------------------------------------------------------------------------------------------------------------]
-    if (navPropMap.SetMembers(*columnForeignId, *columnClassId, GetClass().GetId()) != SUCCESS)
+    if (navPropMap.SetMembers(*columnRefId, *columnClassId, GetClass().GetId()) != SUCCESS)
         return ClassMappingStatus::Error;
 
     Modified();
@@ -1022,11 +1086,11 @@ void RelationshipClassEndTableMap::GetForeignKeyColumnInfo(ForeignKeyColumnInfo&
     if (tphInfo.IsValid() && tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes)
         {
         //table uses shared columns, so FK col position cannot depend on NavigationProperty position
-        fkColInfo.Assign(defaultFkColName, defaultRelClassIdColName, true, nullptr, nullptr);
+        fkColInfo.Assign(defaultFkColName, defaultRelClassIdColName);
         return;
         }
 
-    fkColInfo.Assign(defaultFkColName, defaultRelClassIdColName, false, nullptr, nullptr);
+    fkColInfo.Assign(defaultFkColName, defaultRelClassIdColName);
     return;
     }
 

@@ -171,13 +171,13 @@ private:
     BentleyStatus DetermineFkOrLinkTableMapping(bool& isFkMapping, ECN::ECRelationshipEnd& fkEnd, LinkTableRelationshipMapCustomAttribute const&) const;
 
     static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
-    std::set<DbTable const*> GetTablesFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
 
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) 
         : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()) {}
 
     ~RelationshipMappingInfo() {}
+    static std::set<DbTable const*> GetTablesFromRelationshipEnd(DbMap const&  dbMap, SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) ;
 
     //only available for root classes. Subclasses just inherit from their base class
     FkMappingInfo const* GetFkMappingInfo() const { BeAssert(m_isRootClass && m_fkMappingInfo != nullptr); return m_fkMappingInfo.get(); }

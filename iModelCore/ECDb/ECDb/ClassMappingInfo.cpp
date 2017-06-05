@@ -837,10 +837,7 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
                             firstBaseClassMap->GetClass().GetFullName(), MapStrategyExtendedInfo::ToString(baseStrategy));
             return ClassMappingStatus::Error;
             }
-#if 0
-        if (SUCCESS != FailIfConstraintClassIsNotMapped())
-            return ClassMappingStatus::Error;
-#endif
+
         return ClassMappingStatus::Success;
         }
 
@@ -850,13 +847,15 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
         return ClassMappingStatus::Success;
         }
-#if 0
-    if (SUCCESS != FailIfConstraintClassIsNotMapped())
-        return ClassMappingStatus::Error;
-#endif
 
     if (m_linkTableMappingInfo != nullptr)
+        {
+        if (SUCCESS != FailIfConstraintClassIsNotMapped())
+            return ClassMappingStatus::Error;
+
         return EvaluateLinkTableStrategy(ctx, *caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
+
+        }
 
     BeAssert(m_fkMappingInfo != nullptr);
     return EvaluateForeignKeyStrategy(ctx, *caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
@@ -883,8 +882,8 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(SchemaImportCon
     //*** root rel class
     //Table retrieval is only needed for the root rel class. Subclasses will use the tables of its base class
     //TODO: How should we handle this properly?
-    m_sourceTables = GetTablesFromRelationshipEnd(ctx, relClass->GetSource(), true);
-    m_targetTables = GetTablesFromRelationshipEnd(ctx, relClass->GetTarget(), true);
+    m_sourceTables = GetTablesFromRelationshipEnd(GetDbMap(), ctx, relClass->GetSource(), true);
+    m_targetTables = GetTablesFromRelationshipEnd(GetDbMap(), ctx, relClass->GetTarget(), true);
 
     if (m_sourceTables.empty() || m_targetTables.empty())
         {
@@ -944,35 +943,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportCo
     //root class
     BeAssert(m_isRootClass && m_fkMappingInfo != nullptr);
     MapStrategy resolvedStrategy = m_fkMappingInfo->GetFkEnd() == ECRelationshipEnd_Source ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
-#if 0
-    ECRelationshipClassCR relClass = *m_ecClass.GetRelationshipClassCP();
 
-    //evaluate end tables
-    const bool foreignKeyEndIsSource = resolvedStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable;
-
-    //For the foreign key end we want to include joined tables as we have to create FKs into them.
-    //For the referenced end we are just interested in the primary table and ignore joined tables.
-    const bool ignoreJoinedTableOnSource = !foreignKeyEndIsSource;
-    const bool ignoreJoinedTableOnTarget = foreignKeyEndIsSource;
-    m_sourceTables = GetTablesFromRelationshipEnd(ctx, relClass.GetSource(), ignoreJoinedTableOnSource);
-    m_targetTables = GetTablesFromRelationshipEnd(ctx, relClass.GetTarget(), ignoreJoinedTableOnTarget);
-    
-    if (m_sourceTables.empty() || m_targetTables.empty())
-        {
-        Issues().Report("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
-    const size_t referencedEndTableCount = foreignKeyEndIsSource ? m_targetTables.size() : m_sourceTables.size();
-    //check that the referenced end tables (excluding joined tables) are 1 at most
-    if (referencedEndTableCount > 1)
-        {
-        Issues().Report("Failed to map ECRelationshipClass %s. Its foreign key end (%s) references more than one table (%s). See API docs for details on the mapping rules.",
-                        m_ecClass.GetFullName(), foreignKeyEndIsSource ? "Source" : "Target", foreignKeyEndIsSource ? "Target" : "Source");
-        return ERROR;
-        }
-#endif
     m_mapStrategyExtInfo = MapStrategyExtendedInfo(resolvedStrategy);
     return SUCCESS;
     }
@@ -992,7 +963,6 @@ BentleyStatus RelationshipMappingInfo::FailIfConstraintClassIsNotMapped() const
             }
 
         ClassMap const* constraintClassMap = GetDbMap().GetClassMap(*constraintClass);
-        BeAssert(constraintClassMap != nullptr);
         if (constraintClassMap == nullptr || constraintClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
             {
             Issues().Report("Failed to map ECRelationshipclass '%s'. The source or target constraint contains at least one ECClass which is not mapped. Mark the ECRelationshipClass with the 'NotMapped' strategy as well.",
@@ -1012,10 +982,10 @@ BentleyStatus RelationshipMappingInfo::FailIfConstraintClassIsNotMapped() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) const
+std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(DbMap const&  dbMap,  SchemaImportContext& ctx, ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) 
     {
     bool hasAnyClass = false;
-    std::set<ClassMap const*> classMaps = GetDbMap().GetClassMapsFromRelationshipEnd(ctx, relationshipEnd, &hasAnyClass);
+    std::set<ClassMap const*> classMaps = dbMap.GetClassMapsFromRelationshipEnd(ctx, relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return std::set<DbTable const*>();

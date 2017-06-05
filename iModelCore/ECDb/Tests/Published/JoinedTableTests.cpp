@@ -1942,6 +1942,7 @@ TEST_F(JoinedTableTestFixture, RelationshipBetweenSubClasses)
     ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
     ASSERT_TRUE(db.IsDbOpen());
 
+    db.SaveChanges();
     ECClassId gooClassId = db.Schemas().GetClassId("JoinedTableTest", "Goo");
     ECClassId rooClassId = db.Schemas().GetClassId("JoinedTableTest", "Roo");
 

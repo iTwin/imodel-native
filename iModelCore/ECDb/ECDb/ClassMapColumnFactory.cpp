@@ -742,7 +742,7 @@ DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8StringCR accessString, Db
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const
+DbColumn* ClassMapColumnFactory::Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum) const
     {
     if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
@@ -750,7 +750,7 @@ DbColumn* ClassMapColumnFactory::Allocate(ECN::ECPropertyCR property, DbColumn::
             return column;
         }
 
-    if (m_useSharedColumnStrategy)
+    if (m_useSharedColumnStrategy && !forcePhysicalColum)
         return AllocatedSharedColumn(property, param, accessString);
 
     return AllocateColumn(property, type, param, accessString);

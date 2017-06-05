@@ -181,11 +181,8 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan           06/2015
 //---------------------------------------------------------------------------------------
-ClassMappingStatus ClassMap::MapNavigationProperty(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap)
+ClassMappingStatus ClassMap::MapNavigationProperty(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap)
     {
-#if 0
-    ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(navPropMap);    
-#endif
     NavigationECPropertyCR navProp = static_cast<NavigationECPropertyCR>(navPropMap.GetProperty());
     ECRelationshipClassCP navRel = navProp.GetRelationshipClass();
     if (navRel == nullptr)
@@ -194,7 +191,7 @@ ClassMappingStatus ClassMap::MapNavigationProperty(ClassMappingContext& ctx, Nav
     ClassMapCP classMap = GetDbMap().GetClassMap(*navRel);
     if (classMap == nullptr)
         {
-        ClassMappingStatus r = GetDbMap().MapRelationshipClass(ctx.GetImportCtx(), *navRel);
+        ClassMappingStatus r = GetDbMap().MapRelationshipClass(ctx, *navRel);
         if (r != ClassMappingStatus::Success)
             return r;
 
@@ -204,7 +201,11 @@ ClassMappingStatus ClassMap::MapNavigationProperty(ClassMappingContext& ctx, Nav
         }
 
     if (classMap->GetType() != ClassMap::Type::RelationshipEndTable)
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
+                                                                   navProp.GetClass().GetFullName(), navProp.GetName().c_str());
         return ClassMappingStatus::Error;
+        }
     
     return static_cast<RelationshipClassEndTableMap*>(const_cast<ClassMap*>(classMap))->UpdatePersistedEnd(ctx, navPropMap);
     }
@@ -278,7 +279,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             NavigationPropertyMap const& navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap.IsComplete())
                 {
-                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx, const_cast<NavigationPropertyMap&>(navPropertyMap));
+                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
                 if (navMapStatus != ClassMappingStatus::Success)
                     return navMapStatus;
                 }
@@ -296,7 +297,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             NavigationPropertyMap const& navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap.IsComplete())
                 {
-                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx, const_cast<NavigationPropertyMap&>(navPropertyMap));
+                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
                 if (navMapStatus != ClassMappingStatus::Success)
                     return navMapStatus;
                 }
@@ -568,7 +569,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan  01/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::Update()
+BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
     {
     if (!m_failedToLoadProperties.empty())
         {
@@ -590,7 +591,14 @@ BentleyStatus ClassMap::Update()
 
             //Nav property maps cannot be saved here as they are not yet mapped.
             if (propMap->GetType() == PropertyMap::Type::Navigation)
-                continue;
+                {
+                NavigationPropertyMap & navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
+                if (MapNavigationProperty(ctx, navPropMap) != ClassMappingStatus::Success)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+                }
 
             //! ECSchema update added new property for which we need to save property map
             DbMapSaveContext ctx(m_ecdb);
@@ -797,31 +805,6 @@ ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
     }
 
 //************************** ClassMapLoadContext ***************************************************
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    01/2016
-//------------------------------------------------------------------------------------------
-BentleyStatus ClassMapLoadContext::Postprocess(DbMap const& ecdbMap)
-    {
-    for (ECN::ECClassCP constraintClass : m_constraintClasses)
-        {
-        if (ecdbMap.GetClassMap(*constraintClass) == nullptr)
-            {
-            LOG.errorv("Finishing creation of ECRelationship class map because class map for Constraint ECClass '%s' could not be found.",
-                       constraintClass->GetFullName());
-            return ERROR;
-            }
-        }
-
-    for (NavigationPropertyMap* propMap : m_navPropMaps)
-        {
-        if (SUCCESS != ClassMapper::SetupNavigationPropertyMap(*propMap))
-            return ERROR;
-        }
-
-    m_constraintClasses.clear();
-    m_navPropMaps.clear();
-    return SUCCESS;
-    }
 //************************** NotMappedClassMap ***************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014

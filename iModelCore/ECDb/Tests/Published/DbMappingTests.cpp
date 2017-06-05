@@ -11,9 +11,180 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Rs" abstractConstraint="R">
-                      <Class class ="RL" />
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SimpleFail)
+    {
+    ECDbR ecdb = SetupECDb("SimpleFK.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName='TestSchema9' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+    <ECEntityClass typeName='Parent' >
+        <ECProperty propertyName='Name' typeName='string' />
+    </ECEntityClass>
+    <ECEntityClass typeName='ParentA' >
+        <BaseClass>Parent</BaseClass>
+        <ECProperty propertyName='PA' typeName='long' />
+    </ECEntityClass>
+    <ECEntityClass typeName='ParentB' >
+        <BaseClass>Parent</BaseClass>
+        <ECProperty propertyName='PB' typeName='long' />
+    </ECEntityClass>
+    <ECEntityClass typeName='Child' >
+        <ECProperty propertyName='C1' typeName='long' />
+        <ECNavigationProperty propertyName='Parent' relationshipName='ChildHasParent' direction='Forward'/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName='ChildHasParent' strength='embedding' strengthDirection='backward' modifier='Sealed'>
+        <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Children Has Parent'>
+            <Class class='Child' />
+        </Source>
+        <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Children Has Parent (Reversed)'>
+            <Class class='Parent' />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
+)xml"));
+    ecdb.SaveChanges();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SimpleFK_Dervied)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleFK.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="A">
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Price" typeName="double" />
+                </ECEntityClass>
+                <ECEntityClass typeName="A1">
+                    <BaseClass>A</BaseClass>
+                    <ECProperty propertyName="Tag" typeName="double" />
+                </ECEntityClass>
+                <ECEntityClass typeName="B">
+                    <ECProperty propertyName="Cost" typeName="double" />
+                    <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward">
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+                <ECEntityClass typeName="B1">
+                    <BaseClass>B</BaseClass>
+                    <ECProperty propertyName="Tag" typeName="double" />
+                </ECEntityClass>
+               <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="Abstract" strengthDirection="Backward">
+                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                      <Class class ="A" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                      <Class class ="B" />
+                  </Target>
+               </ECRelationshipClass>
+               <ECRelationshipClass typeName="A1HasB1" strength="Referencing" modifier="Sealed" strengthDirection="Backward">
+                  <BaseClass>AHasB</BaseClass>
+                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A1">
+                      <Class class ="A1" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B1">
+                      <Class class ="B1" />
+                  </Target>
+               </ECRelationshipClass>
+            </ECSchema>)xml"));
 
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    //ComparerContext a(ecdb, "SimpleFK");
+    //a.CreateBaseline(); 
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.A1HasB1")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
+
+
+    MapContext ctx(ecdb);
+
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECInstanceId"), "ts_A", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECClassId"), "ts_A", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "Price"), "ts_A", "Price");
+
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1", "ECInstanceId"), "ts_A", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1", "ECClassId"), "ts_A", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1", "Price"), "ts_A", "Price");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1", "Tag"), "ts_A", "Tag");
+    ////
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECInstanceId"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECClassId"), "ts_B", "ARelECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECInstanceId"), "ts_B", "AId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECClassId"), "ts_A", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECInstanceId"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECClassId"), "ts_B", "ECClassId");
+    ////
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "ECInstanceId"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "ECClassId"), "ts_B", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "Cost"), "ts_B", "Cost");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.Id"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.RelECClassId"), "ts_B", "ARelECClassId");
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SimpleFK)
+    {
+    ECDbCR ecdb = SetupECDb("SimpleFK.ecdb", SchemaItem(
+      R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+                <ECEntityClass typeName='A'>
+                    <ECProperty propertyName='Price' typeName='double' />
+                </ECEntityClass>
+                <ECEntityClass typeName='B'>
+                    <ECProperty propertyName='Cost' typeName='double' />
+                    <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward'>
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+               <ECRelationshipClass typeName='AHasB' strength='Referencing' modifier='Sealed' strengthDirection='Backward'>
+                  <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>
+                      <Class class ='A' />
+                  </Source>
+                  <Target multiplicity='(0..*)' polymorphic='False' roleLabel='B'>
+                      <Class class ='B' />
+                  </Target>
+               </ECRelationshipClass>
+            </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    //ComparerContext a(ecdb, "SimpleFK");
+    //a.CreateBaseline(); 
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
+
+
+    MapContext ctx(ecdb);
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECInstanceId"), "ts_A", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECClassId"), "ts_A", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "Price"), "ts_A", "Price");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECInstanceId"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECClassId"), "ts_B", "ARelECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECInstanceId"), "ts_B", "AId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECClassId"), "ts_A", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECInstanceId"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECClassId"), "ts_B", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "ECInstanceId"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "ECClassId"), "ts_B", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "Cost"), "ts_B", "Cost");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.Id"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.RelECClassId"), "ts_B", "ARelECClassId");
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4416,7 +4587,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
         "        </ClassMap>"
         "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
-        "    <ECProperty propertyName='Name' typeName='string' />"
+        "    <ECProperty propertyName='Name' typeName='string' />" 
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='Element' >"
         "    <BaseClass>Model</BaseClass>"

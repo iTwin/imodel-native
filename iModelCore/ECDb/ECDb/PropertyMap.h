@@ -470,7 +470,10 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         bool IsComplete() const { return m_isComplete; }
         IdPropertyMap const& GetIdPropertyMap() const;
         RelECClassIdPropertyMap const& GetRelECClassIdPropertyMap() const;
-
+        bool HasForeignKeyConstraint() const
+            {
+            return GetProperty().IsDefinedLocal("ECDbMap", "ForeignKeyConstraint");
+            }
         BentleyStatus SetMembers(DbColumn const& idColumn, DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId);
 
     };

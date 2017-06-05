@@ -40,7 +40,6 @@ struct ClassMapLoadContext : NonCopyableClass
     {
 private:
     std::set<ECN::ECClassCP> m_constraintClasses;
-    std::vector<NavigationPropertyMap*> m_navPropMaps;
     
 public:
     ClassMapLoadContext() {}
@@ -50,13 +49,7 @@ public:
         //LOG.debugv("ClassMapLoadContext> Added ECRelationshipConstraint ECClass '%s' to context %p.", ecClass.GetFullName(), this);
         m_constraintClasses.insert(&ecClass);
         }
-    void AddNavigationPropertyMap(NavigationPropertyMap& propMap) 
-        { 
-        //LOG.debugv("ClassMapLoadContext> Added NavPropMap '%s.%s' to context %p.",propMap.GetProperty().GetClass().GetFullName(), propMap.GetProperty().GetName().c_str(), this);
-        m_navPropMaps.push_back(&propMap); 
-        }
 
-    BentleyStatus Postprocess(DbMap const&);
     };
 
 struct NativeSqlBuilder;
@@ -154,7 +147,7 @@ struct ClassMap : RefCountedBase
 
         ClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, Type::Class, ecClass, mapStrat) {}
         ClassMap(ECDb const&ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat, UpdatableViewInfo const& updatableViewInfo) : ClassMap(ecdb, Type::Class, ecClass, mapStrat, updatableViewInfo) {}
-        ClassMappingStatus MapNavigationProperty(ClassMappingContext&, NavigationPropertyMap&);
+        ClassMappingStatus MapNavigationProperty(SchemaImportContext&, NavigationPropertyMap&);
 
     protected:
         ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
@@ -247,7 +240,7 @@ struct ClassMap : RefCountedBase
         DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
         BentleyStatus Save(SchemaImportContext&, DbMapSaveContext&);
-        BentleyStatus Update();
+        BentleyStatus Update(SchemaImportContext& ctx);
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
         void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
         void AddTable(DbTable& newTable) { BeAssert(std::find(begin(m_tables), end(m_tables), &newTable) == end(m_tables)); m_tables.push_back(&newTable); }

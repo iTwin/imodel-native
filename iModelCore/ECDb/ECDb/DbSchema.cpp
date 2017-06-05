@@ -1625,6 +1625,21 @@ int DbColumn::DeterminePosition() const
     return -1;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+void DbColumn::UpdateKind(DbColumn& column, Kind kind)
+    {
+    bool canEdit = column.GetTable().GetEditHandle().CanEdit();
+    if (!canEdit)
+        column.GetTableR().GetEditHandleR().BeginEdit();
+
+    column.AddKind(kind);
+
+    if (!canEdit)
+        column.GetTableR().GetEditHandleR().EndEdit();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------

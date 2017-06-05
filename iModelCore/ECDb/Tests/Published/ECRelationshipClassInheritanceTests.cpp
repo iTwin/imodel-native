@@ -763,7 +763,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     auto assertRelECClassId = [this] (ECDbCR ecdb, Utf8CP tableName, Utf8CP relClassIdColumnName, RelClassIdExistenceMode expectedExistenceMode, bool expectedNotNull)
         {
-        const int relClassIdColumnKind = 256;
+        const int relClassIdColumnKind = 320;
         Utf8String ddl = RetrieveDdl(ecdb, tableName);
         ASSERT_FALSE(ddl.empty());
 

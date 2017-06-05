@@ -103,19 +103,22 @@ struct MapContext final
                 std::vector<Column const*> const& GetColumns() const { return m_columnsOrdered; }
                 Column const* FindColumn(Utf8CP name) const { auto itor = m_columns.find(Utf8String(name)); return itor != m_columns.end() ? itor->second.get() : nullptr; }
             };
+
         struct PropertyMap final
             {
             private:
                 ClassMap const& m_classMap;
                 Utf8String m_accessString;
-                Column const& m_column;
+                std::set<Column const*> m_column;
 
             public:
-                PropertyMap(ClassMap const& classMap, Column const& column, Utf8StringCR accessString) :m_classMap(classMap), m_column(column), m_accessString(accessString) {}
+                PropertyMap(ClassMap const& classMap, Column const& column, Utf8StringCR accessString) :m_classMap(classMap), m_accessString(accessString) { m_column.insert(&column); }
                 ClassMap const& GetClassMap() const { return m_classMap; }
-                Column const& GetColumn() const { return m_column; }
+                std::set<Column const*> const& GetColumns() const { return m_column; }
                 Utf8StringCR GetAccessString() const { return m_accessString; }
+                void AddColumn(Column const& column) { m_column.insert(&column); }
             };
+
         struct ClassMap final
             {
             private:
@@ -390,8 +393,8 @@ struct TableComparer : DataFacetComparer
             {
             return R"(
                 SELECT [T].[Name], 
-                       CASE [T].[Type] WHEN 0 THEN 'Primary' WHEN 1 THEN 'Joined' WHEN 2 THEN 'Existing' WHEN 3 THEN 'Overflow' ELSE '<err>' END [Type], 
-                       CASE [T].[IsVirtual] WHEN 0 THEN 'False' WHEN 1 THEN 'True' ELSE '<err>' END [IsVirtual], 
+                       CASE [T].[Type] WHEN 0 THEN 'Primary' WHEN 1 THEN 'Joined' WHEN 2 THEN 'Existing' WHEN 3 THEN 'Overflow' WHEN 4 THEN 'Virtual' ELSE '<err>' END [Type], 
+                       CASE [T].[Type] WHEN 4 THEN 'True' ELSE 'False' END [IsVirtual], 
                        [TP].[Name] [ParentTable], 
                        [S].[Name] [ExclusiveRootSchema], 
                        [C].[Name] [ExclusiveRootClass]

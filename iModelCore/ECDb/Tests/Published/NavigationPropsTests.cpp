@@ -220,7 +220,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
     }
 
     ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "Element", "Model"),
-                     ColumnInfo::List({ {"Model.Id", "ts_Element", "ps5"}, {"Model.RelECClassId", "ts_Element","ModelRelECClassId",true}}));
+                     ColumnInfo::List({ {"Model.Id", "ts_Element", "ps2"}, {"Model.RelECClassId", "ts_Element","ModelRelECClassId",true}}));
 
     ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "Element", "Parent"),
                     ColumnInfo::List({ {"Parent.Id", "ts_Element", "ps3"}, {"Parent.RelECClassId", "ts_Element","ps4"}}));
@@ -1527,7 +1527,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
                          "</ECSchema>"), rowCount);
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-
+    ecdb.SaveChanges();
     ECClassId parentHasChildrenRelClassId = ecdb.Schemas().GetClassId("TestSchema", "ParentHasChildren");
     ASSERT_TRUE(parentHasChildrenRelClassId.IsValid());
 

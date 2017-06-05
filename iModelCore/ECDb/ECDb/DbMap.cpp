@@ -27,9 +27,6 @@ ClassMap const* DbMap::GetClassMap(ECN::ECClassCR ecClass) const
     if (classMap == nullptr)
         return nullptr;
 
-    if (SUCCESS != ctx.Postprocess(*this))
-        return nullptr;
-
     return classMap;
     }
 
@@ -204,6 +201,7 @@ void DbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, 
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
+    ctx.SetPhase(SchemaImportContext::Phase::Mapping);
     // Identify root classes/relationship-classes
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;
@@ -232,6 +230,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
         }
 
     // Map mixin hierarchy before everything else. It does not map primary hierarchy and all classes map to virtual tables.
+    ctx.SetPhase(SchemaImportContext::Phase::MappingMixins);
     for (ECEntityClassCP mixin : rootMixins)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *mixin))
@@ -239,23 +238,21 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
         }
 
     // Starting with the root, recursively map the entire class hierarchy. 
+    ctx.SetPhase(SchemaImportContext::Phase::MappingEntities);
     for (ECClassCP rootClass : rootClassList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootClass))
             return ERROR;
         }
 
+    ctx.SetPhase(SchemaImportContext::Phase::MappingRelationships);
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootRelationshipClass))
             return ERROR;
         }
 
-    //NavigationPropertyMaps can only be finished after all relationships have been mapped
-#if 0
-    if (SUCCESS != ctx.GetClassMapLoadContext().Postprocess(*this))
-        return ERROR;
-#endif
+    ctx.SetPhase(SchemaImportContext::Phase::CreatingUserIndexes);
     for (auto& kvpair : ctx.GetClassMappingInfoCache())
         {
         if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(ctx, kvpair.second->GetIndexInfos()))
@@ -285,6 +282,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
          BeAssert(classMapInfo != nullptr);
          MapStrategyExtendedInfo const& mapStrategy = classMapInfo->GetMapStrategy();
          ClassMapPtr classMap = nullptr;
+         bool finishMappingDerivedEndTableRelationship = false;
          if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
              classMap = ClassMapFactory::CreateForMapping<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy);
          else
@@ -293,7 +291,27 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
              if (ecRelationshipClass != nullptr)
                  {
                  if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
+                     {
+                     if (ctx.GetPhase() == SchemaImportContext::Phase::MappingRelationships)
+                         {
+                         if (!ecRelationshipClass->HasBaseClasses())
+                             {
+                             //! EndTable must be mapped during SchemaImportContext::Phase::MappingClasses
+                             //! If its not yet mapped then it mean the class that have the navigation property is marked as NotMapped and therefore the relationship was not mapped
+                             //! This is a hard error.
+                             GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Atleast one of its constraint classes has the'NotMapped' strategy.",
+                                                                                ecClass.GetFullName());
+
+                             return ClassMappingStatus::Error;
+                             }
+                         else
+                             {
+                             finishMappingDerivedEndTableRelationship = true;
+                             }
+                         }
+
                      classMap = ClassMapFactory::CreateForMapping<RelationshipClassEndTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy);
+                     }
                  else
                      classMap = ClassMapFactory::CreateForMapping<RelationshipClassLinkTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy);
                  }
@@ -308,21 +326,27 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
          ctx.AddClassMapForSaving(ecClass.GetId());
          status = classMap->Map(ctx, *classMapInfo);
          ctx.CacheClassMapInfo(*classMap, classMapInfo);
-
          //error
          if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
              return status;
+
+         if (finishMappingDerivedEndTableRelationship)
+             {
+             if (static_cast<RelationshipClassEndTableMap*>(classMap.get())->FinishMapping(ctx) != ClassMappingStatus::Success)
+                 return ClassMappingStatus::Error;
+             }
          }
      else
          {
          if (existingClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
              {
-            
+             BeAssert(ctx.GetPhase() == SchemaImportContext::Phase::MappingRelationships);
              if (static_cast<RelationshipClassEndTableMap*>(existingClassMap.get())->FinishMapping(ctx) != ClassMappingStatus::Success)
                  return ClassMappingStatus::Error;
              }
          else
-             existingClassMap->Update();
+             if (existingClassMap->Update(ctx) == ERROR)
+                 return ClassMappingStatus::Error;
          }
 
      const bool isCurrentIsMixin = ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin();

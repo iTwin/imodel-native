@@ -41,6 +41,15 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct SchemaImportContext final
     {
+    enum class Phase : int
+        {
+        ImportingSchemas = 0,
+        Mapping = 100,
+        MappingMixins = 200,
+        MappingEntities = 300,
+        MappingRelationships = 400,
+        CreatingUserIndexes = 500
+        };
 private:
     SchemaManager::SchemaImportOptions m_options;
 
@@ -50,9 +59,9 @@ private:
 
     ClassMapLoadContext m_loadContext;
     bset<ECN::ECClassId> m_classMapsToSave;
-
+    Phase m_phase;
 public:
-    explicit SchemaImportContext(SchemaManager::SchemaImportOptions options) : m_options(options) {}
+    explicit SchemaImportContext(SchemaManager::SchemaImportOptions options) : m_options(options), m_phase(Phase::ImportingSchemas) {}
 
     ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
     ClassMappingCACache* GetClassMappingCACacheP(ECN::ECClassCR) const;
@@ -61,7 +70,8 @@ public:
     std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
     void CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp);
     bmap<ECN::ECClassId, ForeignKeyConstraintCustomAttribute> const& GetFkConstraintCACache() const { return m_fkConstraintCACache; }
-
+    void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }
+    Phase GetPhase() const { return m_phase; }
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
     void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
     bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }

@@ -211,6 +211,7 @@ public:
 
     static Utf8CP TypeToSql(DbColumn::Type);
     static bool IsCompatible(Type lhs, Type rhs);
+    static void UpdateKind(DbColumn& column, Kind kind);
     };
 
 

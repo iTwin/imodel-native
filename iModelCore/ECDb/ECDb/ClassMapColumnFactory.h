@@ -143,7 +143,7 @@ struct ClassMapColumnFactory : NonCopyableClass
         void ReserveSharedColumns(Utf8StringCR propertyName) const;
         void ReserveSharedColumns(uint32_t columnsRequired) const;
         void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }
-        DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const;
+        DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;
     };
 
 //======================================================================================

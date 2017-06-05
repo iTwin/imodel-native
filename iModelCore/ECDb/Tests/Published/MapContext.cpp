@@ -143,7 +143,10 @@ MapContext::ClassMap const* MapContext::LoadClassMap(Utf8CP schemaName, Utf8CP c
         {
         Utf8CP accessString = stmt->GetValueText(0);;
         Column const* column = FindColumn(stmt->GetValueText(1), stmt->GetValueText(2));
-        cm->AddPropertyMap(std::make_unique<PropertyMap>(*cm, *column, Utf8String(accessString)));
+        if (auto pm = cm->FindPropertyMap(accessString))
+            const_cast<PropertyMap*>(pm)->AddColumn(*column);
+        else
+            cm->AddPropertyMap(std::make_unique<PropertyMap>(*cm, *column, Utf8String(accessString)));
         }
 
     if (cm->GetPropertyMaps().empty())
@@ -175,10 +178,11 @@ MapContext::PropertyMap const* MapContext::FindPropertyMap(PropertyAccessString 
     if (p == nullptr)
         return nullptr;
 
-    if (!p->GetColumn().GetTable().GetName().EqualsI(table))
-        return nullptr;
+    for (Column const* column : p->GetColumns())
+        if (column->GetTable().GetName().EqualsI(table))
+            return p;
 
-    return p;
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -190,8 +194,9 @@ MapContext::PropertyMap const* MapContext::FindPropertyMap(PropertyAccessString 
     if (p == nullptr)
         return nullptr;
 
-    if (!p->GetColumn().GetName().EqualsI(column))
-        return nullptr;
+    for (Column const* col : p->GetColumns())
+        if (col->GetTable().GetName().EqualsI(table) && col->GetName().EqualsI(column))
+            return p;
 
     return p;
     }

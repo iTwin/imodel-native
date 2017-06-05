@@ -85,33 +85,27 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
     private:
         static Utf8CP DEFAULT_FK_COL_PREFIX;
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
+        bool m_mapping;
         struct ForeignKeyColumnInfo final: NonCopyableClass
             {
             private:
                 bool m_canImplyFromNavigationProperty = false;
                 Utf8String m_impliedFkColName;
                 Utf8String m_impliedRelClassIdColName;
-                bool m_appendToEnd = true;
-                PropertyMap const* m_propMapBeforeNavProp = nullptr;
-                PropertyMap const* m_propMapAfterNavProp = nullptr;
 
             public:
                 ForeignKeyColumnInfo() {}
 
-                void Assign(Utf8StringCR impliedFkColName, Utf8StringCR impliedRelClassIdColName, bool appendToEnd, PropertyMap const* propMapBeforeNavProp, PropertyMap const* propMapAfterNavProp)
+                void Assign(Utf8StringCR impliedFkColName, Utf8StringCR impliedRelClassIdColName)
                     {
                     m_canImplyFromNavigationProperty = true;
                     m_impliedFkColName.assign(impliedFkColName);
                     m_impliedRelClassIdColName.assign(impliedRelClassIdColName);
-                    m_appendToEnd = appendToEnd;
-                    m_propMapBeforeNavProp = propMapBeforeNavProp;
-                    m_propMapAfterNavProp = propMapAfterNavProp;
                     }
 
                 bool CanImplyFromNavigationProperty() const { return m_canImplyFromNavigationProperty; }
                 Utf8StringCR GetImpliedFkColumnName() const { return m_impliedFkColName; }
                 Utf8StringCR GetImpliedRelClassIdColumnName() const { return m_impliedRelClassIdColName; }
-                bool AppendToEnd() const { return m_appendToEnd; }
             };
         RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
@@ -120,17 +114,17 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
         void GetForeignKeyColumnInfo(ForeignKeyColumnInfo& fkColInfo, NavigationPropertyMap const& navProp) const;
-        DbColumn* CreateForeignColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo const&fkColInfo);
+        DbColumn* CreateForeignColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo &fkColInfo);
         DbColumn* CreateReferencedClassIdColumn(DbTable& fkTable) const;
         DbColumn* CreateRelECClassIdColumn(DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap) const;
         ClassMappingStatus CreateForiegnKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo);
-        ClassMappingStatus UpdatePersistedEndForChild(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap);
+        ClassMappingStatus UpdatePersistedEndForChild(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap);
         RelationshipClassEndTableMap* GetRootRelationshipMap(SchemaImportContext& ctx);
         ClassMappingStatus FinishMappingForChild(SchemaImportContext& ctx);
     public:
 
         ~RelationshipClassEndTableMap() {}
-        ClassMappingStatus UpdatePersistedEnd(ClassMappingContext& ctx, NavigationPropertyMap& navPropMap);
+        ClassMappingStatus UpdatePersistedEnd(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap);
         //!Gets the end in which the ForeignKey is persisted
         ECN::ECRelationshipEnd GetForeignEnd() const;
         //!Gets the end the ForeignKey end references
