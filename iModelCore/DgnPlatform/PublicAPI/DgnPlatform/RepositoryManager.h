@@ -217,6 +217,7 @@ public:
     //! @name Managing both Locks and Codes
     //@{
     //! Process the request and return a response, forwarding the request to the repository manager if required.
+    //! @note In bulk operation mode, this function does not forward the request to the repository manager but merely adds it to the pending request.
     //! @param[in]      request The set of locks and/or codes to acquire, and options for customizing the response
     //! @return The response, containing the result and any additional details as specified by the request's ResponseOptions
     //! @remarks Note the contents of the request may be modified.
@@ -243,11 +244,13 @@ public:
     //! @remarks This method cannot be used to release locks or codes required by the briefcase's local changes.
     RepositoryStatus Relinquish(Resources which=Resources::All) { return _Relinquish(which); }
 
-    //! Returns whether the specified resources are held by this briefcase
+    //! Returns whether the specified resources are held by this briefcase.
+    //! @note In bulk operation mode, this function will return true for resources that are in the pending request but are not actually held.
     //! @param[in]      locks  A set of locks and levels
     //! @param[in]      codes  A set of codes
     //! @param[in]      status If non-null, receives the result of the operation
-    //! @return True if the operation completed successfully, all of the locks are held at or above the desired level, and all of the codes are reserved.
+    //! @return In normal mode, this function returns true if the operation completed successfully, all of the locks are held at or above the desired level, and all of the codes are reserved.
+    //! In bulk operation mode, this function returns true if the locks and codes are either held or are in the set of @em pending requests.
     //! @remarks The sets of locks and codes may be modified.
     bool AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status=nullptr) { return _AreResourcesHeld(locks, codes, status); }
 
@@ -270,12 +273,15 @@ public:
     RepositoryStatus PrepareForModelDelete(Request& request, DgnModelCR model, PrepareAction action=PrepareAction::Populate) { return PrepareForModelOperation(request, model, BeSQLite::DbOpcode::Delete, action); }
 
     //! Convenience function to acquire all locks and codes required for element insertion. Prefer batch operations instead where possible.
+    //! @note In bulk operation mode, this function does not acquire the resources but merely adds them to the pending request.
     RepositoryStatus AcquireForElementInsert(DgnElementCR el) { Request req; return PrepareForElementInsert(req, el, PrepareAction::Acquire); }
 
     //! Convenience function to acquire all locks and codes required for element update. Prefer batch operations instead where possible.
+    //! @note In bulk operation mode, this function does not acquire the resources but merely adds them to the pending request.
     RepositoryStatus AcquireForElementUpdate(DgnElementCR el) { Request req; return PrepareForElementUpdate(req, el, PrepareAction::Acquire); }
 
     //! Convenience function to acquire all locks and codes required for element deletion. Prefer batch operations instead where possible.
+    //! @note In bulk operation mode, this function does not acquire the resources but merely adds them to the pending request.
     RepositoryStatus AcquireForElementDelete(DgnElementCR el) { Request req; return PrepareForElementDelete(req, el, PrepareAction::Acquire); }
 
     //@}
@@ -283,6 +289,7 @@ public:
     //! @name Managing Locks
     //{
     //! Returns whether the specified locks are held by this briefcase
+    //! @note In bulk operation mode, this function will return true for resources that are in the pending request but are not actually held.
     //! @param[in]      locks  The set of locks and their desired levels
     //! @param[in]      status If non-null, receives the result of the operation
     //! @return True if the operation completed successfully and all of the locks are held at or above the desired level
@@ -290,17 +297,20 @@ public:
     bool AreLocksHeld(DgnLockSet& locks, RepositoryStatus* status=nullptr) { DgnCodeSet codes; return AreResourcesHeld(locks, codes, status); }
 
     //! Releases all locks held by this briefcase
+    //! @note In bulk operation mode, this function also removes locks from the pending request
     //! @return Success, or an error status
     //! @remarks This method cannot be used to release locks required by the briefcase's local changes.
     RepositoryStatus RelinquishLocks() { return _Relinquish(Resources::Locks); }
 
     //! Reduces the levels at which a set of locks are held
+    //! @note In bulk operation mode, this function also updates locks in the pending request
     //! @param[in]      locks The set of locks and their new levels
     //! @return Success, or an error status
     //! @remarks This method cannot be used to increase a lock's level or to release locks required by the briefcase's local changes. The DgnLockSet may be modified
     RepositoryStatus DemoteLocks(DgnLockSet& locks) { return _Demote(locks, DgnCodeSet()); }
 
     //! Attempts to acquire a set of locks
+    //! @note In bulk operation mode, this function does not acquire the resources but merely adds them to the pending request.
     //! @param[in]      locks   The locks to acquire
     //! @param[in]      options Options for customizing the data included in the response
     //! @return The response to the request
@@ -308,12 +318,14 @@ public:
     DGNPLATFORM_EXPORT Response AcquireLocks(LockRequestR locks, ResponseOptions options=ResponseOptions::None);
 
     //! Query the level at which a lock is held by this briefcase
+    //! @note In bulk operation mode, this function checks the lock that is actually held. It does not check the pending request.
     //! @param[in]      level   If successful, upon return holds the level at which this briefcase holds the lock
     //! @param[in]      lockId  The lock to query
     //! @return Success, or an error status
     RepositoryStatus QueryLockLevel(LockLevel& level, LockableId lockId) { return _QueryLockLevel(level, lockId); }
 
     //! Query the levels at which each of the specified locks are held by this briefcase
+    //! @note In bulk operation mode, this function checks the locks that are actually held. It does not check the pending request.
     //! @param[in]      lockLevels If successful, upon return holds the locks and the levels at which this briefcase holds them
     //! @param[in]      lockIds    The set of locks to query
     //! @return Success, or an error status
@@ -321,6 +333,7 @@ public:
     RepositoryStatus QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds) { return _QueryLockLevels(lockLevels, lockIds); }
 
     //! Directly query the level at which a lock is held
+    //! @note In bulk operation mode, this function checks the lock that is actually held. It does not check the pending request.
     LockLevel QueryLockLevel(LockableId lockId) { LockLevel level; return RepositoryStatus::Success == QueryLockLevel(level, lockId) ? level : LockLevel::None; }
     LockLevel QueryLockLevel(DgnDbCR db) { return QueryLockLevel(LockableId(db)); } //!< Query the level at which the Db is locked by this briefcase
     LockLevel QueryLockLevel(DgnElementCR el) { return QueryLockLevel(LockableId(el)); } //!< Query the level at which the element is locked by this briefcase
@@ -329,18 +342,22 @@ public:
     //! Reformulate a denied request such that it does not contain any of the locks or codes in the "denied" sets.
     //! If the request contains locks which are dependent upon other locks in the denied set (e.g., elements within a model for which the model lock was not granted),
     //! the dependent locks will be removed.
+    //! @note this function should not be called while in bulk operation mode.
     //! @param[in]      req      The original request to be reformulated
     //! @param[in]      response The response to the original request, containing the sets of locks and codes which could not be obtained
     //! @remarks This method is only effective if the original request specified ResponseOptions::LockState and ResponseOptions::CodeState
     DGNPLATFORM_EXPORT void ReformulateRequest(Request& req, Response const& response) const;
 
     //! Acquire a shared or exclusive lock on the DgnDb.
+    //! @note In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
     Response LockDb(LockLevel level) { Request req; req.Locks().Insert(GetDgnDb(), level); return Acquire(req); }
 
     //! Acquire an exclusive lock on Schemas in the DgnDb. 
+    //! @note In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
     DGNPLATFORM_EXPORT Response LockSchemas() { Request req; req.Locks().InsertSchemasLock(GetDgnDb()); return Acquire(req); }
 
     //! Obtain an iterator over the locks currently owned by this briefcase.
+    //! @note Even in bulk operation mode, this function checks the locks that are actually held. It does not return information about the pending request.
     //! By default, iteration is provided over a local cache of held locks. Specifying FastQuery::Yes will query the server for an up-to-date list of held locks.
     //! @param[in] fast Whether to iterate over local cache of held locks, or to query server for up-to-date information.
     //! @return An iterator over the locks currently owned by this briefcase, or nullptr if such an iterator cannot be created.
@@ -350,28 +367,33 @@ public:
     //! @name Managing Codes
     //@{
     //! Query the states of a set of codes
+    //! @note Even in bulk operation mode, this function checks the codes that are actually reserved. It does not return information about the pending request.
     //! @param[in]      states Upon successful return, holds the state of each code
     //! @param[in]      codes  The set of codes to query
     //! @return Success, or an error status
     RepositoryStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); }
 
     //! Attempts to reserve a single code for use by this briefcase
+    //! @note In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
     //! @param[in]      code The code to reserve
     //! @return Success if the code was reserved, or an error status
     RepositoryStatus ReserveCode(DgnCodeCR code) { return _ReserveCode(code); }
 
     //! Relinquishes all codes reserved by this briefcase
+    //! @note In bulk operation mode, this function also updates the pending request.
     //! @return Success, or an error status
     //! @remarks This method cannot be used to release codes required by the briefcase's local changes
     RepositoryStatus RelinquishCodes() { return _Relinquish(Resources::Codes); }
 
     //! Release a set of codes reserved by this briefcase
+    //! @note In bulk operation mode, this function also updates the pending request.
     //! @param[in]      codes The set of codes to release
     //! @return Success, or an error status
     //! @remarks This method cannot be used to release codes required by the briefcase's local changes
     RepositoryStatus ReleaseCodes(DgnCodeSet const& codes) { DgnLockSet locks; return _Demote(locks, codes); }
 
     //! Returns whether all of the codes have been reserved by this briefcase
+    //! @note In bulk operation mode, this function will return true for resources that are in the pending request but are not actually held.
     //! @param[in]      codes  The set of codes to query
     //! @param[in]      status If non-null, receives the result of the operation
     //! @return True if all codes have been previously reserved by this briefcase
@@ -379,6 +401,7 @@ public:
     bool AreCodesReserved(DgnCodeSet& codes, RepositoryStatus* status=nullptr) { DgnLockSet locks; return AreResourcesHeld(locks, codes, status); }
 
     //! Attempts to reserve a set of codes for this briefcase's use
+    //! @note In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
     //! @param[in]      codes   The desired codes
     //! @param[in]      options Options for customizing what data is included in the response
     //! @return The response, including the result status and any additional information as specified by the options
@@ -399,14 +422,16 @@ public:
 
     //! @name Bulk Operations
     //! @{
-    //!< Call this before starting a group of changes that will require locks and/or codes.
+    //! Call this before starting a group of changes that will require locks and/or codes.
+    //! Call DgnDb::SaveChanges to end bulk operation mode and acquire locks and codes. Or, you can call EndBulkOperation directly.
     void StartBulkOperation() {_StartBulkOperation();}
     
-    //!< Check if a bulk operation is in progress
+    //! Check if a bulk operation is in progress
     void IsBulkOperation() {_IsBulkOperation();}
 
-    //! Call this to acquire all of the codes and locks were detected in change made 
-    //! during the bulk operation. If successful, this terminates the bulk operation.
+    //! Call this if you want to acquire locks and codes @em before the end of the transaction.
+    //! @note DgnDb::SaveChanges automatically calls this function to end the bulk operation and acquire locks and codes.
+    //! If successful, this terminates the bulk operation.
     //! If not successful, the caller should abandon all changes.
     //! @note This must be called on the same thread that called StartBulkOperation.
     IBriefcaseManager::Response EndBulkOperation() {return _EndBulkOperation();}
