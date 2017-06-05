@@ -82,6 +82,20 @@ DgnDbStatus createPhysicalPartition(SubjectCR subject, Utf8CP physicalPartitionN
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr RoadRailPhysicalDomain::QueryPhysicalModel(Dgn::SubjectCR parentSubject, Utf8CP modelName)
+    {
+    DgnDbR db = parentSubject.GetDgnDb();
+    DgnCode partitionCode = PhysicalPartition::CreateCode(parentSubject, modelName);
+    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    PhysicalPartitionCPtr partition = db.Elements().Get<PhysicalPartition>(partitionId);
+    if (!partition.IsValid())
+        return nullptr;
+    return dynamic_cast<PhysicalModelP>(partition->GetSubModel().get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus createCrossSectionsPartition(SubjectCR subject)
