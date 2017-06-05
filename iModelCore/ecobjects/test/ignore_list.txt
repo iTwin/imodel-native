@@ -11,3 +11,26 @@ NavigationECPropertyTests.InstanceWithNavProp_String
 
 MixinTest.MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass
 MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass
+
+SupplementalDeserializationTests.*
+
+PresentationRulesTests.*
+SelectedNodeInstanceTest.*
+GroupingRulesTest.*
+    # bim2-0r1, x64, NDEBUG
+    # First failure: PresentationRulesTests.TestPresentationRuleSetCreation
+    # Crashes with message Critical error detected c0000374
+    # ntdll.dll!RtlReportCriticalFailure ()            Unknown
+    # ntdll.dll!RtlpHeapHandleError () Unknown
+    # ntdll.dll!RtlpLogHeapFailure ()   Unknown
+    # ntdll.dll!RtlpAnalyzeHeapFailure ()          Unknown
+    # ntdll.dll!RtlpFreeHeap() Unknown
+    # ntdll.dll!RtlFreeHeap () Unknown
+    # ucrtbase.dll!_free_base ()           Unknown
+    # ECObjectsB02.dll!BentleyB0200::ECN::PresentationKey::`scalar deleting destructor'(unsigned int)              C++
+    # ECObjectsB02.dll!BentleyB0200::ECN::CommonTools::FreePresentationRules<BentleyB0200::Bstdcxx::bvector<BentleyB0200::ECN::LocalizationResourceKeyDefinition * __ptr64,BentleyB0200::BentleyAllocator<BentleyB0200::ECN::LocalizationResourceKeyDefinition * __ptr64> > >(BentleyB0200::Bstdcxx::bvector<BentleyB0200::ECN::LocalizationResourceKeyDefinition *,BentleyB0200::BentleyAllocator<BentleyB0200::ECN::LocalizationResourceKeyDefinition *> > &) Line 59              C++
+    # ECObjectsB02.dll!BentleyB0200::ECN::PresentationRuleSet::~PresentationRuleSet() Line 48           C++
+    # ECObjectsB02.dll!BentleyB0200::ECN::PresentationRuleSet::`scalar deleting destructor'(unsigned int)      C++
+    # ECObjectsB02.dll!BentleyB0200::RefCounted<BentleyB0200::IRefCounted>::Release() Line 98      C++
+    # ECObjectsTest.exe!BentleyB0200::ECNTests::PresentationRulesTests_TestPresentationRuleSetCreation_Test::TestBody() Line 195                C++
+    # ...

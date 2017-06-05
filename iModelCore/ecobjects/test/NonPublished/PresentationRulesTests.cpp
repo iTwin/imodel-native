@@ -182,6 +182,16 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
     ruleSet->AddPresentationRule(*imageIdOverride1);
     ruleSet->AddPresentationRule(*imageIdOverride2);
     ruleSet->AddPresentationRule(*imageIdOverride3);
+
+    delete rootNodeRule1; delete rootNodeRule2; delete rootNodeRule3;
+    delete childNodeRule1; delete childNodeRule2; delete childNodeRule3;
+    delete contentRule1; delete contentRule2; delete contentRule3;
+    delete imageIdOverride1; delete imageIdOverride2; delete imageIdOverride3;
+    rootNodeRule1 = nullptr; rootNodeRule2 = nullptr; rootNodeRule3 = nullptr;
+    childNodeRule1 = nullptr; childNodeRule2 = nullptr; childNodeRule3 = nullptr;
+    contentRule1 = nullptr; contentRule2 = nullptr; contentRule3 = nullptr;
+    imageIdOverride1 = nullptr; imageIdOverride2 = nullptr; imageIdOverride3 = nullptr;
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -458,6 +468,16 @@ TEST_F(PresentationRulesTests, TestPresentationRules)
         ValidateSettingsGroup(**iter, "UserCategoryLabel", 1000/*Default*/);
         }
     EXPECT_EQ(1, settingsRulesCount);
+    delete rootNodeRule; delete childNodeRule; delete contentRule;
+    delete groupingRule; delete classGroup;  delete propertyGroup;
+    delete checkBoxRule; delete renameNodeRule;
+    delete sortingRule; delete userSettingsGroup;
+    rootNodeRule = nullptr; childNodeRule = nullptr; contentRule = nullptr;
+    groupingRule = nullptr; classGroup = nullptr;
+    propertyGroup = nullptr; checkBoxRule = nullptr;
+    renameNodeRule = nullptr; sortingRule = nullptr;
+    userSettingsGroup = nullptr;
+    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -484,6 +504,8 @@ TEST_F(PresentationRulesTests, AddPresentationRule_SortsByPriority)
     EXPECT_STREQ("TestCondition3", ruleSet->GetRootNodesRules()[0]->GetCondition().c_str());
     EXPECT_STREQ("TestCondition1", ruleSet->GetRootNodesRules()[1]->GetCondition().c_str());
     EXPECT_STREQ("TestCondition2", ruleSet->GetRootNodesRules()[2]->GetCondition().c_str());
+    delete rootNodeRule;
+    rootNodeRule = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -500,6 +522,8 @@ TEST_F(PresentationRulesTests, RemovePresentationRule)
 
     ruleSet->RemovePresentationRule(*rootNodeRule);
     EXPECT_EQ(0, ruleSet->GetRootNodesRules().size());
+    delete rootNodeRule;
+    rootNodeRule = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -512,6 +536,8 @@ TEST(ContentRuleTest, GetSetContentRule)
     contentRule->SetCustomControl("MyDisplay");
 
     ASSERT_STREQ("MyDisplay", contentRule->GetCustomControl().c_str());
+    delete contentRule;
+    contentRule = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -528,6 +554,8 @@ TEST(ImageIdOverrideTest, GetSetImageId)
 
     ASSERT_STREQ(imageIdOverride->GetCondition().c_str(), imageIdOverride1->GetCondition().c_str());
     ASSERT_STREQ(imageIdOverride->GetImageId().c_str(), imageIdOverride1->GetImageId().c_str());
+    delete imageIdOverride; delete imageIdOverride1;
+    imageIdOverride = nullptr; imageIdOverride1 = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -546,6 +574,8 @@ TEST(LabelOverrideTest, GetLabelOverrideAttributes)
     ASSERT_STREQ(lo->GetCondition().c_str(), lo1->GetCondition().c_str());
     ASSERT_STREQ(lo->GetLabel().c_str(), lo1->GetLabel().c_str());
     ASSERT_STREQ(lo->GetDescription().c_str(), lo1->GetDescription().c_str());
+    delete lo; delete lo1;
+    lo = nullptr; lo1 = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -558,6 +588,9 @@ TEST(StyleOverrideTest, GetSetForeColor)
     styleOverride->SetForeColor("White");
 
     ASSERT_STREQ("White", styleOverride->GetForeColor().c_str());
+    
+    delete styleOverride;
+    styleOverride = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -572,6 +605,8 @@ TEST(UserSettingsItemTest, CreateUserSettingsItem)
     ASSERT_STREQ("UserLabel", userSettingsItem->GetLabel().c_str());
     ASSERT_STREQ("UserSettingOption", userSettingsItem->GetOptions().c_str());
     ASSERT_STREQ("UserDefaultValue", userSettingsItem->GetDefaultValue().c_str());
+    delete userSettingsItem;
+    userSettingsItem = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -609,6 +644,9 @@ TEST(GroupingRulesTest, TestGroupingRules)
         if (menuLabel != "ClassMenuLabel" && menuLabel != "PropertyContextMenuLabel" && menuLabel != "sameLabelContextMenuLabel")
             ASSERT_TRUE(false) << group->GetContextMenuLabel().c_str();
         }
+    delete groupRuleset; delete classGroup;
+    delete propertyGroup; delete sameLabelInstanceGroup;
+    groupRuleset = nullptr; classGroup = nullptr; propertyGroup = nullptr; sameLabelInstanceGroup = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -638,6 +676,8 @@ TEST(SelectedNodeInstanceTest, VerifyDisplayRelatedItemsSpecifications)
         ValidateDisplaySpecifications(**iter, false, 0, "");
         }
     ASSERT_EQ(2, displayRelatedItemsCount);
+    delete displaySpec;
+    displaySpec = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -732,5 +772,10 @@ TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
             "<StyleOverride Priority=\"7\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\" Condition=\"TestCondition7\" OnlyIfNotHandled=\"false\"/>"
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
+    
+    delete rootNodeRule; delete childNodeRule; delete spec;
+    delete nestedChildNodeRule; delete styleOverride;
+    rootNodeRule = nullptr; childNodeRule = nullptr; spec = nullptr;
+    nestedChildNodeRule = nullptr; styleOverride = nullptr;
     }
 END_BENTLEY_ECN_TEST_NAMESPACE
