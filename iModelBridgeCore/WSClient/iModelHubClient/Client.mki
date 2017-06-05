@@ -39,8 +39,7 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelInfo.h             \
                                 $(iModelHubClientMkiPublicApiDir)Client/BriefcaseInfo.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/ChangeSetInfo.h          \
-                                $(iModelHubClientMkiPublicApiDir)Client/Configuration.h          \
-                                $(iModelHubClientMkiPublicApiDir)Client/CodeAdmin.h
+                                $(iModelHubClientMkiPublicApiDir)Client/Configuration.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -91,5 +90,3 @@ $(o)ChangeSetPrePushEvent$(oext)           : $(iModelHubClientMkiSourceDir)Event
 $(o)CodeEvent$(oext)                       : $(iModelHubClientMkiSourceDir)Events/CodeEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DeletedEvent$(oext)                    : $(iModelHubClientMkiSourceDir)Events/DeletedEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
-
-$(o)CodeAdmin$(oext)                       : $(iModelHubClientMkiSourceDir)CodeAdmin.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
