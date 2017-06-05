@@ -103,18 +103,6 @@ struct ClassMap : RefCountedBase
             ECN::ECClassId DetermineTphRootClassId() const { return m_classMap.GetPrimaryTable().GetExclusiveRootECClassId(); }
             };
 
-        struct UpdatableViewInfo final
-            {
-        private:
-            Utf8String m_viewName;
-
-        public:
-            UpdatableViewInfo() {}
-            explicit UpdatableViewInfo(Utf8StringCR viewName) : m_viewName(viewName) {}
-
-            Utf8StringCR GetViewName() const { return m_viewName; }
-            bool HasView() const { return !m_viewName.empty(); }
-            };
     protected:
         struct ClassMappingContext final : NonCopyableClass
             {
@@ -138,7 +126,6 @@ struct ClassMap : RefCountedBase
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
         PropertyMapContainer m_propertyMaps;
         mutable std::vector<DbTable*> m_tables;
-        UpdatableViewInfo m_updatableViewInfo;
         mutable std::unique_ptr<ClassMapColumnFactory> m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
         bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
@@ -146,12 +133,10 @@ struct ClassMap : RefCountedBase
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
 
         ClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, Type::Class, ecClass, mapStrat) {}
-        ClassMap(ECDb const&ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat, UpdatableViewInfo const& updatableViewInfo) : ClassMap(ecdb, Type::Class, ecClass, mapStrat, updatableViewInfo) {}
         ClassMappingStatus MapNavigationProperty(SchemaImportContext&, NavigationPropertyMap&);
 
     protected:
         ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
-        ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
 
         virtual ClassMappingStatus _Map(ClassMappingContext&);
         ClassMappingStatus DoMapPart1(ClassMappingContext&);
@@ -225,7 +210,6 @@ struct ClassMap : RefCountedBase
 
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
-        UpdatableViewInfo const& GetUpdatableViewInfo() const { return m_updatableViewInfo; }
 
         //! Returns the class maps of the classes derived from this class map's class.
         //! @return Derived classes class maps
@@ -261,7 +245,6 @@ struct NotMappedClassMap final : public ClassMap
 
 private:
     NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy) {}
-    NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const&) : NotMappedClassMap(ecdb, ecClass, mapStrategy) {}
 
     ClassMappingStatus _Map(ClassMappingContext&) override;
     BentleyStatus _Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) override;

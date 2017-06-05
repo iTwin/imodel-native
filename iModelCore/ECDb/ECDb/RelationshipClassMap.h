@@ -55,7 +55,6 @@ struct RelationshipClassMap : ClassMap
         RelationshipConstraintMap m_targetConstraintMap;
 
         RelationshipClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
-        RelationshipClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
         RelationshipConstraintMap& GetConstraintMapR(ECN::ECRelationshipEnd constraintEnd);
 
     public:
@@ -108,7 +107,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 Utf8StringCR GetImpliedRelClassIdColumnName() const { return m_impliedRelClassIdColName; }
             };
         RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
-        RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
         void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
         ClassMappingStatus _Map(ClassMappingContext&) override;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
@@ -153,7 +151,6 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
 
     private:
         RelationshipClassLinkTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
-        RelationshipClassLinkTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&, UpdatableViewInfo const&);
 
         ClassMappingStatus _Map(ClassMappingContext&) override;
         ClassMappingStatus MapSubClass(ClassMappingContext&, RelationshipMappingInfo const&);

@@ -1009,6 +1009,148 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
     AssertSchemaImport(testItems, "invalidmapstrategycatests.ecdb");
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, UpdatableViews)
+    {
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Base" modifier="Abstract">
+                    <ECProperty propertyName="BaseProp1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub1" modifier="Abstract">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Sub1Prop1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub2">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Sub2Prop1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub21">
+                    <BaseClass>Sub2</BaseClass>
+                    <ECProperty propertyName="Sub21Prop1" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml"), "updatableviews1.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ASSERT_FALSE(ecdb.TableExists("ts1_Base")) << "abstract class";
+        ASSERT_TRUE(ecdb.TableExists("_ts1_Base")) << "expects updatable view as it has at least one concrete subclass";
+
+        ASSERT_FALSE(ecdb.TableExists("ts1_Sub1")) << "abstract class";
+        ASSERT_FALSE(ecdb.TableExists("_ts1_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
+
+        ASSERT_TRUE(ecdb.TableExists("ts1_Sub2")) << "concrete class";
+        ASSERT_TRUE(ecdb.TableExists("_ts1_Sub2")) << "expects updatable view as it has at least one concrete subclass";
+
+        ASSERT_TRUE(ecdb.TableExists("ts1_Sub21")) << "concrete class";
+        ASSERT_FALSE(ecdb.TableExists("_ts1_Sub21")) << "no updatable view expected as it is leaf class";
+        }
+
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                        <ECEntityClass typeName="Base" modifier="Abstract">
+                            <ECProperty propertyName="BaseProp1" typeName="string" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="IMixin" modifier="Abstract">
+                            <ECCustomAttributes>
+                                <IsMixin xlmns="CoreCustomAttributes.01.00">
+                                    <AppliesToEntityClass>Base</AppliesToEntityClass>
+                                </IsMixin>
+                            </ECCustomAttributes>
+                         </ECEntityClass>
+                        <ECEntityClass typeName="Sub1" modifier="Abstract">
+                            <BaseClass>Base</BaseClass>
+                            <BaseClass>IMixin</BaseClass>
+                            <ECProperty propertyName="Sub1Prop1" typeName="string" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="Sub2" modifier="Abstract">
+                            <BaseClass>Base</BaseClass>
+                            <ECProperty propertyName="Sub2Prop1" typeName="string" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="Sub21">
+                            <BaseClass>Sub2</BaseClass>
+                            <ECProperty propertyName="Sub21Prop1" typeName="string" />
+                        </ECEntityClass>
+                </ECSchema>)xml"), "updatableviews2.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ASSERT_FALSE(ecdb.TableExists("ts2_Base")) << "abstract class";
+        ASSERT_TRUE(ecdb.TableExists("_ts2_Base")) << "expects updatable view as it has at least one concrete subclass";
+
+        ASSERT_FALSE(ecdb.TableExists("ts2_IMixin")) << "abstract class";
+        ASSERT_FALSE(ecdb.TableExists("_ts2_IMixin")) << "mixins never have updatable views as they are not updatable";
+
+        ASSERT_FALSE(ecdb.TableExists("ts2_Sub1")) << "abstract class";
+        ASSERT_FALSE(ecdb.TableExists("_ts2_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
+
+        ASSERT_FALSE(ecdb.TableExists("ts2_Sub2")) << "abstract class";
+        ASSERT_TRUE(ecdb.TableExists("_ts2_Sub2")) << "expects updatable view as it has at least one concrete subclass";
+
+        ASSERT_TRUE(ecdb.TableExists("ts2_Sub21")) << "concrete class";
+        ASSERT_FALSE(ecdb.TableExists("_ts2_Sub21")) << "no updatable view expected as it is leaf class";
+        }
+
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Base" modifier="Abstract">
+                    <ECProperty propertyName="BaseProp1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub1" modifier="Abstract">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Sub1Prop1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub2" modifier="Abstract">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Sub2Prop1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub21" modifier="Abstract">
+                    <BaseClass>Sub2</BaseClass>
+                    <ECProperty propertyName="Sub21Prop1" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml"), "updatableviews3.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ASSERT_FALSE(ecdb.TableExists("ts3_Base")) << "No tables expected as all classes are abstract";
+        ASSERT_FALSE(ecdb.TableExists("_ts3_Base")) << "No updatable view expected as all classes are abstract";
+
+        ASSERT_FALSE(ecdb.TableExists("ts3_Sub1")) << "No tables expected as all classes are abstract";
+        ASSERT_FALSE(ecdb.TableExists("_ts3_Sub1")) << "No updatable view expected as all classes are abstract";
+
+        ASSERT_FALSE(ecdb.TableExists("ts3_Sub2")) << "No tables expected as all classes are abstract";
+        ASSERT_FALSE(ecdb.TableExists("_ts3_Sub2")) << "No updatable view expected as all classes are abstract";
+
+        ASSERT_FALSE(ecdb.TableExists("ts3_Sub21")) << "No tables expected as all classes are abstract";
+        ASSERT_FALSE(ecdb.TableExists("_ts3_Sub21")) << "No updatable view expected as all classes are abstract";
+        }
+
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Base" modifier="Abstract">
+                    <ECProperty propertyName="BaseProp1" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml"), "updatableviews4.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ASSERT_FALSE(ecdb.TableExists("ts4_Base")) << "abstract class";
+        ASSERT_FALSE(ecdb.TableExists("_ts4_Base")) << "No updatable view expected as abstract class doesn't have subclasses";
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      05/17
 //+---------------+---------------+---------------+---------------+---------------+------

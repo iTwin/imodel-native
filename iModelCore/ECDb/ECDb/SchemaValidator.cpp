@@ -132,24 +132,26 @@ bool SchemaValidator::ValidRelationshipRule::Validate(IssueReporter const& issue
     if (relClass == nullptr)
         return true;
 
-    return ValidateConstraint(issueReporter, *relClass, relClass->GetSource()) && ValidateConstraint(issueReporter, *relClass, relClass->GetTarget());
+    return ValidateConstraint(issueReporter, *relClass, ECRelationshipEnd::ECRelationshipEnd_Source, relClass->GetSource()) && ValidateConstraint(issueReporter, *relClass, ECRelationshipEnd::ECRelationshipEnd_Target, relClass->GetTarget());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter const& issueReporter, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipConstraintCR constraint) const
+bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter const& issueReporter, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint) const
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
     //we cannot yet enforce one class per constraint.
     if (constraintClassCount == 0)
         {
-        issueReporter.Report("The relationship class '%'s is not abstract and therefore constraints must be defined.", relClass.GetFullName());
+        issueReporter.Report("The relationship class '%'s is not abstract and therefore constraints must be defined. The %s constraint is empty though.", 
+                             relClass.GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
         return false;
         }
 
     bool valid = true;
+    bset<ECClassCP> duplicateConstraintClasses;
     for (ECClassCP constraintClass : constraintClasses)
         {
         if (ClassMap::IsAnyClass(*constraintClass))
@@ -161,9 +163,20 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter co
         ECRelationshipClassCP relClassAsConstraint = constraintClass->GetRelationshipClassCP();
         if (relClassAsConstraint != nullptr)
             {
-            issueReporter.Report(" The relationship class '%s' has the constraint class '%s' which is a relationship class. This is not supported.", relClass.GetFullName(), relClassAsConstraint->GetFullName());
+            issueReporter.Report(" The relationship class '%s' has the %s constraint class '%s' which is a relationship class. This is not supported.", relClass.GetFullName(),
+                                 constraintEnd == ECRelationshipEnd_Source ? "source" : "target",
+                                 relClassAsConstraint->GetFullName());
             valid = false;
             }
+
+        if (duplicateConstraintClasses.find(constraintClass) != duplicateConstraintClasses.end())
+            {
+            issueReporter.Report(" The relationship class '%s' defines class '%s' more than once in the %s constraint. This is not supported.", 
+                                 relClass.GetFullName(), constraintClass->GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
+            valid = false;
+            }
+        else
+            duplicateConstraintClasses.insert(constraintClass);
         }
 
     return valid;

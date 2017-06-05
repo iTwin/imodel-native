@@ -25,16 +25,6 @@ ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyEx
         m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Ramanujam.Raman                06/2012
-//---------------------------------------------------------------------------------------
-ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, UpdatableViewInfo const& updatableViewInfo)
-    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_updatableViewInfo(updatableViewInfo), m_propertyMaps(*this), m_state(ObjectState::New)
-    {
-    if (m_mapStrategyExtInfo.IsTablePerHierarchy())
-        m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013

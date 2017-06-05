@@ -42,13 +42,13 @@ DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, ECCla
 
     DbTableId tableId;
     m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::TableId).GetNextValue(tableId);
-    return CreateTable(tableId, finalName, tableType, exclusiveRootClassId, parentTable);
+    return CreateTable(tableId, finalName, tableType, exclusiveRootClassId, parentTable, DbTable::UpdatableViewInfo());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
+DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId, DbTable const* parentTable, DbTable::UpdatableViewInfo const& updatableViewInfo)
     {
     if (name.empty() || !tableId.IsValid())
         {
@@ -56,7 +56,7 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Ty
         return nullptr;
         }
 
-    std::unique_ptr<DbTable> table(std::unique_ptr<DbTable>(new DbTable(tableId, name, *this, tableType, exclusiveRootClassId, parentTable)));
+    std::unique_ptr<DbTable> table(std::unique_ptr<DbTable>(new DbTable(tableId, name, *this, tableType, exclusiveRootClassId, parentTable, updatableViewInfo)));
     if (tableType == DbTable::Type::Existing)
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
@@ -1031,7 +1031,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
 BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
     {
     tableP = nullptr;
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Type, ExclusiveRootClassId, ParentTableId FROM ec_Table WHERE Name=?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Type, ExclusiveRootClassId, ParentTableId, UpdatableViewName FROM ec_Table WHERE Name=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -1054,7 +1054,9 @@ BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
         BeAssert(parentTable != nullptr && "Failed to find parent table");
         }
 
-    DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, exclusiveRootClassId, parentTable);
+    Utf8CP updatableViewName = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(4);
+    DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, exclusiveRootClassId, 
+                                                              parentTable, DbTable::UpdatableViewInfo(updatableViewName));
     if (table == nullptr)
         {
         BeAssert(false && "Failed to create table definition");
@@ -1129,9 +1131,9 @@ DbTable const* DbSchema::GetNullTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
+DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable, UpdatableViewInfo const& updatableViewInfo)
     : m_id(id), m_name(name), m_dbSchema(dbSchema), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
-    m_linkNode(*this, parentTable)
+    m_linkNode(*this, parentTable), m_updatableViewInfo(updatableViewInfo)
     {
     if (tableType != Type::Existing && tableType != Type::Virtual)
         m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(tableType));

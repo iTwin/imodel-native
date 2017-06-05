@@ -1105,13 +1105,14 @@ TEST_F(SchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
                                         </ECEntityClass>
                                         <ECEntityClass typeName="BaseElement" modifier="Abstract" >
                                             <BaseClass>Element</BaseClass>
-                                            <ECNavigationProperty propertyName="Model2" relationshipName="ModelHasFooOrGooElements" direction="Backward"/>
                                         </ECEntityClass>
                                         <ECEntityClass typeName="FooElement" modifier="Sealed" >
                                             <BaseClass>BaseElement</BaseClass>
+                                            <ECNavigationProperty propertyName="Model2" relationshipName="ModelHasFooOrGooElements" direction="Backward"/>
                                         </ECEntityClass>
                                         <ECEntityClass typeName="GooElement" modifier="Sealed" >
                                             <BaseClass>BaseElement</BaseClass>
+                                            <ECNavigationProperty propertyName="Model2" relationshipName="ModelHasFooOrGooElements" direction="Backward"/>
                                         </ECEntityClass>
                                         <ECRelationshipClass typeName="ModelHasFooOrGooElements" modifier="Sealed" >
                                             <Source multiplicity="(0..1)" polymorphic="False" roleLabel="Model">

@@ -183,7 +183,7 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
 BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
     loadContext.m_isValid = false;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy,ShareColumnsMode,MaxSharedColumnsBeforeOverflow,JoinedTableInfo,UpdatableViewInfo "
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy,ShareColumnsMode,MaxSharedColumnsBeforeOverflow,JoinedTableInfo "
                                                       "FROM ec_ClassMap WHERE ClassId=?");
     if (stmt == nullptr)
         {
@@ -213,9 +213,6 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
                  "ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy");
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
         }
-
-    if (!stmt->IsColumnNull(4))
-        loadContext.m_updatableViewInfo = ClassMap::UpdatableViewInfo(stmt->GetValueText(4));
 
     stmt = nullptr; //to release the statement.
     if (ReadPropertyMaps(loadContext, ecdb, ecClass.GetId()) != SUCCESS)

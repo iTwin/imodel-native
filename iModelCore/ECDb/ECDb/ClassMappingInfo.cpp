@@ -554,7 +554,7 @@ BentleyStatus RelationshipMappingInfo::DetermineFkOrLinkTableMapping(bool& isFkM
     const ECRelatedInstanceDirection navPropDir = fkEnd == ECRelationshipEnd::ECRelationshipEnd_Target ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward;
 
     //finally check whether the relationship requires a nav prop. If it does but doesn't have one, we also fall back to a link table
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT 1 FROM ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT ClassId, Name FROM ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=? ORDER BY ClassId");
     if (stmt == nullptr)
         return ERROR;
 
@@ -565,11 +565,84 @@ BentleyStatus RelationshipMappingInfo::DetermineFkOrLinkTableMapping(bool& isFkM
         return ERROR;
         }
 
-    isFkMapping = stmt->Step() == BE_SQLITE_ROW;
-    if (!isFkMapping)
-        LOG.debugv("ECRelationshipClass '%s' is mapped to a link table because the constraint class on the %s end doesn't define a navigation property for this relationship class.",
-                   relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+    std::vector<ECClassId> actualConstraintClassIds;
+    Utf8String expectedNavPropName;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        ECClassId constraintClassId = stmt->GetValueId<ECClassId>(0);
+        if (!actualConstraintClassIds.empty() && actualConstraintClassIds.back() == constraintClassId)
+            {
+            BeAssert(false && "This should have been checked before");
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. More than one navigation property for the same relationship is defined on %s constraint class %s.",
+                                                            relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target",
+                                                            m_ecdb.Schemas().GetClass(constraintClassId)->GetFullName());
+            return ERROR;
+            }
 
+        actualConstraintClassIds.push_back(constraintClassId);
+
+        Utf8CP actualNavPropName = stmt->GetValueText(1);
+        if (expectedNavPropName.empty())
+            expectedNavPropName.assign(actualNavPropName);
+        else if (!expectedNavPropName.EqualsIAscii(actualNavPropName))
+            {
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. The navigation properties must have the same name in all %s constraint classes. "
+                                                            "Violating names: '%s' versus '%s'",
+                                                            relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target",
+                                                            expectedNavPropName.c_str(), actualNavPropName);
+            return ERROR;
+            }
+        }
+
+    if (actualConstraintClassIds.empty())
+        {
+        LOG.debugv("ECRelationshipClass '%s' is mapped to a link table because none of the constraint classes on the %s end define a navigation property for this relationship class.",
+                   relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+        return SUCCESS;
+        }
+
+    ECRelationshipConstraintCR fkConstraint = fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
+    std::vector<ECClassCP> expectedConstraintClasses(fkConstraint.GetConstraintClasses().begin(), fkConstraint.GetConstraintClasses().end());
+    std::sort(expectedConstraintClasses.begin(), expectedConstraintClasses.end(), [] (ECClassCP lhs, ECClassCP rhs) { return lhs->GetId() < rhs->GetId(); });
+    const size_t expectedConstraintClassCount = expectedConstraintClasses.size();
+    if (actualConstraintClassIds.size() != expectedConstraintClassCount)
+        {
+        if (actualConstraintClassIds.size() < expectedConstraintClassCount)
+            {
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. Not all %s constraint classes define a navigation property for this relationship class.",
+                                                            relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+            }
+        else
+            {
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. More navigation properties found for this relationship class than expected: every %s constraint classes must define exactly one navigation property for this relationship class.",
+                                                            relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+            }
+
+        return ERROR;
+        }
+
+    for (size_t i = 0; i < expectedConstraintClassCount; i++)
+        {
+        ECClassCP expectedConstraintClass = expectedConstraintClasses[i];
+        if (expectedConstraintClass->GetId() != actualConstraintClassIds[i])
+            {
+            if (expectedConstraintClass->GetId() > actualConstraintClassIds[i])
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. No navigation property found for %s constraint class %s.",
+                                                                relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target",
+                                                                expectedConstraintClass->GetFullName());
+                }
+            else
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. Every %s constraint class must define exactly one navigation property for the relationship class.",
+                                                                relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+                }
+
+            return ERROR;
+            }
+        }
+
+    isFkMapping = true;
     return SUCCESS;
     }
 

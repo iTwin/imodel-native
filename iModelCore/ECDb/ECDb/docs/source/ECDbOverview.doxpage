@@ -349,29 +349,24 @@
     @section ECDbRelationshipMappingRules ECRelationship Mapping Rules
 
     <b>Link Table</b> mapping is chosen if
-    - the cardinality is M:N
-    - ECProperties are defined for the ECRelationshipClass
-    - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref LinkTableRelationshipMapCustomAttributeDescription)
-    - no @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" is defined for the relationship class on the constraint class
-      on the foreign key end of the relationship (see below for what the foreign key end is).
+    - the cardinality is M:N or
+    - ECProperties are defined for the ECRelationshipClass or
+    - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref LinkTableRelationshipMapCustomAttributeDescription) or
+    - no @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" is defined for the relationship class on any constraint class
+      on the foreign key end of the relationship (see @ref ECDbForeignKeyMapping for what the foreign key end is).
 
     Otherwise, the @ref ECDbForeignKeyMapping is chosen:
     - <b>Physical Foreign Key</b> mapping if the respective navigation property has the @b ForeignKeyConstraint custom attribute. 
     - <b>Logical Foreign Key</b> mapping otherwise.
 
-    The ECRelationshipClass is rejected
-    - if it evaluates to <b>Link Table</b> mapping and
-        - has a navigation property defined for it
-    - if it evaluates to <b>Physical Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
-    (see @ref ClassMapCustomAttributeDescription) and 
-            - in the navigation property's @b ForeignKeyConstraint custom attribute @b OnDeleteAction is set to @b Cascade or
-            - the strength is @b Embedding
+    @note The schema import fails if the ECRelationshipClass evaluates to <b>Link Table</b> mapping by one of the first three criteria above and
+          also has a navigation property defined for it.
 
     @subsection ECDbForeignKeyMapping Foreign Key Mapping
     Foreign key mapping means that a foreign key column (and sometimes an additional column for the relationship class id) 
     is created in the table of the class on the <i>foreign key constraint end</i>. It is used to store the id of the related instance.
     
-    #### How ECDb determines the foreign key end of a relationship
+    ## How ECDb determines the foreign key end of a relationship
     
     The foreign key end of a relationship is determined by cardinality and, only if the cardinality is 1:1, by the strength direction:
 
@@ -393,9 +388,38 @@
     - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
 
     @note This does not affect how ECDb enforces cardinality.
+    
+    ## Foreign Key Mapping Requires Navigation Properties
+    
+    @b Rules: 
+        - Every constraint class on the <i>foreign key end</i> of the relationship class must define a navigation property for this relationship class
+        - The navigation properties of each constraint class must have the same name.
+    
+    If none of the constraint classes on the <i>foreign key end</i> of the relationship defines a navigation property, the
+    <i>link table mapping</i> is chosen (see above).
+    
+    In all other cases, the schema import fails. See section <i>Foreign Key Mapping Restrictions</i> below
+    The schema import fails however, if
+         - at least one, but not all constraint classes on the <i>foreign key end</i> define a navigation property
+         - The constraint classes' navigation property names differ
+         - a navigation property for this relationship class is defined on a class other than the constraint classes (including
+         subclasses of them and the @ref BentleyApi::ECN::ECRelationshipConstraint::GetAbstractConstraint "constraint's common base class")
 
-    ## Mapping Restrictions
-    The <b>number of tables to which the two relationship ends map to</b> is the key criterion for ECDb to decide whether
+    
+    ## Foreign Key Mapping Restrictions
+
+    The schema import fails for the ECRelationshipClass, if
+        - if it evaluates to <b>Physical Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
+          (see @ref ClassMapCustomAttributeDescription) and 
+            - the relationship strength is @b Embedding
+            - in the navigation property's @b ForeignKeyConstraint custom attribute @b OnDeleteAction is set to @b Cascade or
+        - at least one, but not all constraint classes on the <i>foreign key end</i> define a navigation property
+        - The constraint classes' navigation property names differ
+        - a navigation property for this relationship class is defined on a class other than the constraint classes (including
+         subclasses of them and the @ref BentleyApi::ECN::ECRelationshipConstraint::GetAbstractConstraint "constraint's common base class") 
+        
+
+    The <b>number of tables to which the two relationship constraint ends map to</b> is another criterion for ECDb to decide whether
     an ECRelationshipClass is supported or not.
 
     <b>Rule of thumb: The ECRelationshipClass is supported, if the number of tables on either end is 1.</b>
@@ -419,16 +443,6 @@
     how to determine the table count on the relationship ends, you can attempt schema import dry-runs and 
     look at the logged errors.
     
-    #### How to fix unsupported ECRelationshipClasses
-    - For a polymorphic @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" consider to apply
-    the mapping strategy <b>TablePerHierarchy</b> to the root class of the class hierarchy. 
-    See @ref ClassMapCustomAttributeDescription for details.
-    - If the classes specified in the @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" are not members
-    of the same class hierarchy, consider to apply the mapping strategy <b>TablePerHierarchy</b> to 
-    each class of the constraint. See @ref ClassMapCustomAttributeDescription for details.
-    - If the <i>TablePerHierarchy</i> strategy cannot be applied, consider breaking the ECRelationshipClass apart into several separate
-    ECRelationshipClasses.
-       
     ## Features supported but not enforced
     - %ECDb generally only enforces the @ref BentleyApi::ECN::RelationshipMultiplicity "ECRelationshipConstraint multiplicities" 
     common to databases: (0..1), (1..1), (0..*), (1..*) (see exceptions above)

@@ -380,6 +380,19 @@ public:
             BentleyStatus Validate() const;
         };
 
+    struct UpdatableViewInfo final
+        {
+        private:
+            Utf8String m_viewName;
+
+        public:
+            UpdatableViewInfo() {}
+            explicit UpdatableViewInfo(Utf8CP viewName) : m_viewName(viewName) {}
+
+            Utf8StringCR GetViewName() const { return m_viewName; }
+            bool HasView() const { return !m_viewName.empty(); }
+        };
+
     struct EditHandle final : NonCopyableClass
         {
     private:
@@ -409,6 +422,8 @@ private:
     std::vector<std::unique_ptr<DbConstraint>> m_constraints;
     std::map<Utf8CP, std::unique_ptr<DbTrigger>, CompareIUtf8Ascii> m_triggers;
 
+    UpdatableViewInfo m_updatableViewInfo;
+
     DbSchemaNameGenerator m_sharedColumnNameGenerator;
     LinkNode m_linkNode;
 
@@ -419,7 +434,7 @@ private:
     static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
-    DbTable(DbTableId id, Utf8StringCR name, DbSchema&, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
+    DbTable(DbTableId id, Utf8StringCR name, DbSchema&, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable, UpdatableViewInfo const&);
     ~DbTable() {}
 
     void InitializeSharedColumnNameGenerator(uint32_t existingSharedColumnCount) { m_sharedColumnNameGenerator.Initialize(existingSharedColumnCount); }
@@ -455,6 +470,9 @@ public:
     ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
     std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus RemoveConstraint(DbConstraint const&);
+
+    UpdatableViewInfo const& GetUpdatableViewInfo() const { return m_updatableViewInfo; }
+    void SetUpdatableViewInfo(Utf8CP updatableViewName) { m_updatableViewInfo = UpdatableViewInfo(updatableViewName); }
     bool IsNullTable() const;
     bool IsValid() const { return m_columns.size() > 0 && m_classIdColumn != nullptr; }
     };
@@ -547,7 +565,7 @@ public:
     ~DbSchema() {}
     //! Create a table with a given name or if name is null a name will be generated
     DbTable* CreateTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
-    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable, DbTable::UpdatableViewInfo const&);
     DbTable* CreateOverflowTable(DbTable const& baseTable);
     std::vector<DbTable const*> GetCachedTables() const;
     DbTable const* FindTable(Utf8CP name) const;

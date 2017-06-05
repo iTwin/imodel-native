@@ -52,12 +52,196 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
             return ERROR;
             }
 
+        if (classMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped || classMap->GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable ||
+            classMap->GetClass().GetClassType() != ECClassType::Entity)
+            {
+            BeAssert(false && "Should have been filtered out by the SQL already");
+            continue;
+            }
+
+        if (classMap->GetClass().GetEntityClassCP()->IsMixin())
+            continue; //mixins are not updatable -> no view needed
+
         if (CreateUpdatableViewIfRequired(ecdb, *classMap) != SUCCESS)
             return ERROR;
         }
 
     return SUCCESS;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap const& classMap)
+    {
+    UpdatableViewContext ctx(ecdb);
+
+    StorageDescription const& descr = classMap.GetStorageDescription();
+
+    if (!descr.HasNonVirtualHorizontalPartitions())
+        return SUCCESS; //entire hierarchy is abstract -> no updatable view needed
+
+    std::vector<Partition> const& horizPartitions = descr.GetHorizontalPartitions();
+
+    Partition const& rootPartition = descr.GetRootHorizontalPartition();
+    DbTable const& rootTable = rootPartition.GetTable();
+    //if only root table is non-virtual and other partitions are virtual, no updatable view needed either
+    //Note, this should not happen, as a non-abstract class cannot have abstract subclass
+    if (rootTable.GetType() != DbTable::Type::Virtual && !descr.HasMultipleNonVirtualHorizontalPartitions())
+        {
+        BeAssert(horizPartitions.size() == 1);
+        return SUCCESS;
+        }
+
+    DbColumn const* rootPartitionIdColumn = rootTable.FindFirst(DbColumn::Kind::ECInstanceId);
+
+    Utf8String updatableViewName;
+    updatableViewName.Sprintf("_%s_%s", classMap.GetClass().GetSchema().GetAlias().c_str(), classMap.GetClass().GetName().c_str());
+
+    std::vector<Utf8String> triggerDdlList;
+
+    std::set<DbTable const*> updateTables;
+    std::set<DbTable const*> deleteTables;
+    std::vector<DbTable const*> joinedTables;
+    std::vector<DbTable const*> primaryTables;
+
+    for (Partition const& horizPartition : horizPartitions)
+        {
+        DbTable const& horizPartitionTable = horizPartition.GetTable();
+        if (horizPartitionTable.GetType() == DbTable::Type::Virtual)
+            continue;
+
+        //If a class map has a subclass mapping to ExistingTable the class is not updatable polymorphically
+        //and therefore doesn't need an updatable view
+        if (horizPartitionTable.GetType() == DbTable::Type::Existing)
+            return SUCCESS;
+
+        updateTables.insert(&horizPartitionTable);
+        deleteTables.insert(&horizPartitionTable);
+        if (horizPartitionTable.GetType() == DbTable::Type::Joined)
+            joinedTables.push_back(&horizPartitionTable);
+
+        if (horizPartitionTable.GetType() == DbTable::Type::Primary)
+            primaryTables.push_back(&horizPartitionTable);
+        }
+    //Remove any primary table
+    for (DbTable const* joinedTable : joinedTables)
+        {
+        BeAssert(joinedTable->GetLinkNode().GetParent() != nullptr);
+        updateTables.erase(&joinedTable->GetLinkNode().GetParent()->GetTable());
+        }
+
+    for (DbTable const* joinedTable : joinedTables)
+        {
+        BeAssert(joinedTable->GetLinkNode().GetParent() != nullptr);
+        deleteTables.insert(&joinedTable->GetLinkNode().GetParent()->GetTable());
+        deleteTables.erase(joinedTable);
+        }
+
+    for (Partition const& horizPartition : horizPartitions)
+        {
+        if (horizPartition.GetTable().GetType() == DbTable::Type::Virtual)
+            continue;
+
+        DbColumn const* partitionIdColumn = horizPartition.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
+        Utf8String triggerNamePrefix;
+        triggerNamePrefix.Sprintf("%s_%s", rootTable.GetName().c_str(), horizPartition.GetTable().GetName().c_str());
+
+        Utf8String whenClause;
+        if (horizPartition.NeedsECClassIdFilter())
+            horizPartition.AppendECClassIdFilterSql(whenClause, "OLD.ECClassId");
+        else
+            whenClause.append("OLD.ECClassId=").append(horizPartition.GetRootClassId().ToString());
+
+        if (deleteTables.find(&horizPartition.GetTable()) != deleteTables.end())
+            {//<----------DELETE trigger----------
+            Utf8String ddl("CREATE TRIGGER [");
+            ddl.append(triggerNamePrefix).append("_delete]");
+            ddl.append(" INSTEAD OF DELETE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
+
+            Utf8String body;
+            body.Sprintf(" BEGIN DELETE FROM [%s] WHERE [%s]=OLD.[%s]; END", horizPartition.GetTable().GetName().c_str(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
+            ddl.append(body);
+            triggerDdlList.push_back(ddl);
+            }
+
+        if (updateTables.find(&horizPartition.GetTable()) != updateTables.end())
+            {//<----------UPDATE trigger----------
+            ECClassCP rootClass = ecdb.Schemas().GetClass(horizPartition.GetRootClassId());
+            if (rootClass == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            ClassMapCP derviedClassMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*rootClass);
+            if (derviedClassMap == nullptr)
+                {
+                BeAssert(false && "ClassMap not found");
+                return ERROR;
+                }
+
+            Utf8String ddl("CREATE TRIGGER [");
+            ddl.append(triggerNamePrefix).append("_update]");
+
+            ddl.append(" INSTEAD OF UPDATE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
+
+            NativeSqlBuilder setClause;
+            if (SUCCESS != GenerateUpdateTriggerSetClause(setClause, classMap, *derviedClassMap))
+                continue; //nothing to update.
+
+            Utf8String body;
+            body.Sprintf(" BEGIN UPDATE [%s] SET %s WHERE [%s]=OLD.[%s]; END", horizPartition.GetTable().GetName().c_str(), setClause.ToString(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
+            ddl.append(body);
+
+            triggerDdlList.push_back(ddl);
+            }
+        }
+
+    NativeSqlBuilder viewBodySql;
+    if (GenerateViewSql(viewBodySql, ctx, classMap) != SUCCESS)
+        return ERROR;
+
+    Utf8String updatableViewDdl;
+    updatableViewDdl.Sprintf("CREATE VIEW %s AS %s", updatableViewName.c_str(), viewBodySql.ToString());
+
+    if (ctx.GetECDb().ExecuteSql(updatableViewDdl.c_str()) != BE_SQLITE_OK)
+        {
+        LOG.errorv("Failed to create updatable view for ECClass '%s'. %s (SQL: %s)", classMap.GetClass().GetFullName(),
+                   ctx.GetECDb().GetLastError().c_str(), updatableViewDdl.c_str());
+        return ERROR;
+        }
+
+    for (Utf8StringCR triggerDdl : triggerDdlList)
+        {
+        if (ctx.GetECDb().ExecuteSql(triggerDdl.c_str()) != BE_SQLITE_OK)
+            {
+            LOG.errorv("Failed to create trigger for updatable view for ECClass '%s'. %s (SQL: %s)", classMap.GetClass().GetFullName(),
+                       ctx.GetECDb().GetLastError().c_str(), triggerDdl.c_str());
+            return ERROR;
+            }
+        }
+
+    CachedStatementPtr stmt = ctx.GetECDb().GetCachedStatement("UPDATE ec_Table SET UpdatableViewName=? WHERE Id=?");
+    if (stmt == nullptr ||
+        BE_SQLITE_OK != stmt->BindText(1, updatableViewName, Statement::MakeCopy::No) ||
+        BE_SQLITE_OK != stmt->BindId(2, rootTable.GetId()) ||
+        BE_SQLITE_DONE != stmt->Step())
+        {
+        BeAssert(false && "Failed to persist UpdatableViewName in ec_Table");
+        return ERROR;
+        }
+
+    if (ctx.GetECDb().GetModifiedRowCount() != 1)
+        {
+        BeAssert(false && "ec_Table row does not exist yet for which the updatable view was created");
+        return ERROR;
+        }
+
+    const_cast<DbTable&> (rootTable).SetUpdatableViewInfo(updatableViewName.c_str());
+    return SUCCESS;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -65,15 +249,14 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
 BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
     {
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb,
-                                     "SELECT ('DROP VIEW IF EXISTS _' || s.Alias || '_' || c.Name) "
-                                     "FROM " TABLE_Class " c INNER JOIN " TABLE_Schema " s ON s.Id = c.SchemaId"))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT UpdatableViewName FROM ec_Table WHERE UpdatableViewName IS NOT NULL"))
         return ERROR;
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        Utf8CP updatableViewSQL = stmt.GetValueText(0);
-        if (ecdb.ExecuteSql(updatableViewSQL) != BE_SQLITE_OK)
+        Utf8String dropViewSql;
+        dropViewSql.Sprintf("DROP VIEW IF EXISTS %s", stmt.GetValueText(0));
+        if (ecdb.ExecuteSql(dropViewSql.c_str()) != BE_SQLITE_OK)
             return ERROR;
         }
 
@@ -211,170 +394,6 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
     }
 
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/2016
-//+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap const& classMap)
-    {
-    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped || classMap.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable ||
-        classMap.IsRelationshipClassMap())
-        return ERROR;
-
-    UpdatableViewContext ctx(ecdb);
-
-    StorageDescription const& descr = classMap.GetStorageDescription();
-    std::vector<Partition> const& partitions = descr.GetHorizontalPartitions();
-    Partition const& rootPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
-    DbColumn const* rootPartitionIdColumn = rootPartition.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
-
-    Utf8String updatableViewName;
-    updatableViewName.Sprintf("_%s_%s", classMap.GetClass().GetSchema().GetAlias().c_str(), classMap.GetClass().GetName().c_str());
-
-    std::vector<Utf8String> triggerDdlList;
-
-    std::set<DbTable const*> updateTables;
-    std::set<DbTable const*> deleteTables;
-    std::vector<DbTable const*> joinedTables;
-    std::vector<DbTable const*> primaryTables;
-
-    for (Partition const& partition : partitions)
-        {
-        if (partition.GetTable().GetType() == DbTable::Type::Virtual)
-            continue;
-
-        //WIP: If a class map has a subclass mapping to ExistingTable the class is not updatable polymorphically
-        //if (!partition.GetTable().IsOwnedByECDb())
-        //    return SUCCESS;
-
-        updateTables.insert(&partition.GetTable());
-        deleteTables.insert(&partition.GetTable());
-        if (partition.GetTable().GetType() == DbTable::Type::Joined)
-            joinedTables.push_back(&partition.GetTable());
-
-        if (partition.GetTable().GetType() == DbTable::Type::Primary)
-            primaryTables.push_back(&partition.GetTable());
-        }
-    //Remove any primary table
-    for (DbTable const* joinedTable : joinedTables)
-        {
-        BeAssert(joinedTable->GetLinkNode().GetParent() != nullptr);
-        updateTables.erase(&joinedTable->GetLinkNode().GetParent()->GetTable());
-        }
-
-    for (DbTable const* joinedTable : joinedTables)
-        {
-        BeAssert(joinedTable->GetLinkNode().GetParent() != nullptr);
-        deleteTables.insert(&joinedTable->GetLinkNode().GetParent()->GetTable());
-        deleteTables.erase(joinedTable);
-        }
-
-    int tableCount = 0;
-    for (Partition const& partition : partitions)
-        {
-        if (partition.GetTable().GetType() == DbTable::Type::Virtual)
-            continue;
-
-        tableCount++;
-        DbColumn const* partitionIdColumn = partition.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
-        Utf8String triggerNamePrefix;
-        triggerNamePrefix.Sprintf("%s_%s", rootPartition.GetTable().GetName().c_str(), partition.GetTable().GetName().c_str());
-
-        Utf8String whenClause;
-        if (partition.NeedsECClassIdFilter())
-            partition.AppendECClassIdFilterSql(whenClause, "OLD.ECClassId");
-        else
-            whenClause.append("OLD.ECClassId=").append(partition.GetRootClassId().ToString());
-
-        if (deleteTables.find(&partition.GetTable()) != deleteTables.end())
-            {//<----------DELETE trigger----------
-            Utf8String ddl("CREATE TRIGGER [");
-            ddl.append(triggerNamePrefix).append("_delete]");
-            ddl.append(" INSTEAD OF DELETE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
-
-            Utf8String body;
-            body.Sprintf(" BEGIN DELETE FROM [%s] WHERE [%s]=OLD.[%s]; END", partition.GetTable().GetName().c_str(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
-            ddl.append(body);
-            triggerDdlList.push_back(ddl);
-            }
-
-        if (updateTables.find(&partition.GetTable()) != updateTables.end())
-            {//<----------UPDATE trigger----------
-            ECClassCP rootClass = ecdb.Schemas().GetClass(partition.GetRootClassId());
-            if (rootClass == nullptr)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            ClassMapCP derviedClassMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*rootClass);
-            if (derviedClassMap == nullptr)
-                {
-                BeAssert(false && "ClassMap not found");
-                return ERROR;
-                }
-
-            Utf8String ddl("CREATE TRIGGER [");
-            ddl.append(triggerNamePrefix).append("_update]");
-
-            ddl.append(" INSTEAD OF UPDATE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
-
-            NativeSqlBuilder setClause;
-            if (SUCCESS != GenerateUpdateTriggerSetClause(setClause, classMap, *derviedClassMap))
-                continue; //nothing to update.
-
-            Utf8String body;
-            body.Sprintf(" BEGIN UPDATE [%s] SET %s WHERE [%s]=OLD.[%s]; END", partition.GetTable().GetName().c_str(), setClause.ToString(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
-            ddl.append(body);
-
-            triggerDdlList.push_back(ddl);
-            }
-        }
-
-    if (tableCount < 2)
-        return SUCCESS;
-
-    NativeSqlBuilder viewBodySql;
-    if (GenerateViewSql(viewBodySql, ctx, classMap) != SUCCESS)
-        return ERROR;
-    
-    Utf8String updatableViewDdl;
-    updatableViewDdl.Sprintf("CREATE VIEW %s AS %s", updatableViewName.c_str(), viewBodySql.ToString());
-
-    if (ctx.GetECDb().ExecuteSql(updatableViewDdl.c_str()) != BE_SQLITE_OK)
-        {
-        LOG.errorv("Failed to create updatable view for ECClass '%s'. %s (SQL: %s)", classMap.GetClass().GetFullName(), 
-                   ctx.GetECDb().GetLastError().c_str(), updatableViewDdl.c_str());
-        return ERROR;
-        }
-
-    for (Utf8StringCR triggerDdl : triggerDdlList)
-        {
-        if (ctx.GetECDb().ExecuteSql(triggerDdl.c_str()) != BE_SQLITE_OK)
-            {
-            LOG.errorv("Failed to create trigger for updatable view for ECClass '%s'. %s (SQL: %s)", classMap.GetClass().GetFullName(),
-                       ctx.GetECDb().GetLastError().c_str(), triggerDdl.c_str());
-            return ERROR;
-            }
-        }
-
-    CachedStatementPtr stmt = ctx.GetECDb().GetCachedStatement("UPDATE ec_ClassMap SET UpdatableViewInfo=? WHERE ClassId=?");
-    if (stmt == nullptr ||
-        BE_SQLITE_OK != stmt->BindText(1, updatableViewName, Statement::MakeCopy::No) ||
-        BE_SQLITE_OK != stmt->BindId(2, classMap.GetClass().GetId()) ||
-        BE_SQLITE_DONE != stmt->Step())
-        {
-        BeAssert(false && "Failed to persist UpdatableViewInfo in ec_ClassMap");
-        return ERROR;
-        }
-
-    if (ctx.GetECDb().GetModifiedRowCount() != 1)
-        {
-        BeAssert(false && "ClassMap does not exist yet for which the updatable view was created");
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016

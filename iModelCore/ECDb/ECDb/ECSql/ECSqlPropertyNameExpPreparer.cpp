@@ -27,11 +27,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     if (!NeedsPreparation(ctx, currentScope, propMap))
         return ECSqlStatus::Success;
 
-    Utf8String classIdentifier;
-    ECSqlStatus stat = DetermineClassIdentifier(classIdentifier, currentScope, exp, propMap);
-    if (!stat.IsSuccess())
-        return stat;
-
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     PropertyMap const* effectivePropMap = &propMap;
     if (currentScopeECSqlType == ECSqlType::Delete)
@@ -61,6 +56,10 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 }
             }
         }
+
+    Utf8String classIdentifier;
+    if (currentScope.GetECSqlType() == ECSqlType::Select)
+        classIdentifier.assign(exp.GetClassRefExp()->GetId());
 
     switch (effectivePropMap->GetType())
         {
@@ -107,42 +106,6 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         }
 
     return true;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    07/2016
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const& scope, PropertyNameExp const& exp, PropertyMap const& propMap)
-    {
-    switch (scope.GetECSqlType())
-        {
-            case ECSqlType::Select:
-                classIdentifier.assign(exp.GetClassRefExp()->GetId());
-                break;
-
-            case ECSqlType::Delete:
-            {
-            RangeClassRefExp const* classRefExp = exp.GetClassRefExp();
-            if (classRefExp->IsPolymorphic() && exp.GetClassRefExp()->GetType() == Exp::Type::ClassName)
-                {
-                ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
-                ClassMap::UpdatableViewInfo const& updatableViewInfo = classNameExp.GetInfo().GetMap().GetUpdatableViewInfo();
-                if (updatableViewInfo.HasView())
-                    {
-                    classIdentifier.assign(updatableViewInfo.GetViewName());
-                    break;
-                    }
-                }
-
-            break;
-            }
-
-            default:
-                break;
-        }
-
-    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
