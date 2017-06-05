@@ -910,7 +910,7 @@ BentleyStatus Loader::_LoadTile()
     bvector<Render::GraphicPtr>     graphics;
 
     for (auto const& mesh : geometry.Meshes())
-        mesh->GetGraphics (graphics, *system, args, root.GetDgnDb(), tile.GetRange());
+        mesh->GetGraphics (graphics, *system, args, root.GetDgnDb());
 
     if (!graphics.empty())
         {
@@ -1609,6 +1609,8 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 
     bool anyContributed = false;
     uint32_t fillColor = displayParams.GetFillColor();
+
+    builder.BeginPolyface(*polyface, MeshEdgeCreationOptions());
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {
         if (isContained || m_tileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
@@ -1619,6 +1621,8 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             m_contentRange.Extend(visitor->Point());
             }
         }
+    DRange3d        polyfaceRange = polyface->PointRange();
+    builder.EndPolyface();
 
     if (anyContributed)
         {

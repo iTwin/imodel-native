@@ -327,7 +327,8 @@ public:
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
     float GetStartDistance() const { return m_startDistance; }
-    FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
+    FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
+
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
 };
@@ -494,7 +495,7 @@ public:
     bvector<uint16_t> const&        Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
     ColorTableCR                    GetColorTable() const { return m_colorTable; }
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
-    MeshEdgesPtr                    GetEdges(DRange3dCR tileRange, MeshEdgeCreationOptionsCR options) const;
+    MeshEdgesPtr                    GetEdges() const { return m_edges; }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     PrimitiveType GetType() const { return m_type; }
@@ -507,7 +508,7 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
     void AddPolyline(PolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
     uint32_t AddVertex(QVertex3dCR vertex, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
-    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db, DRange3dCR tileRange);
+    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db);
 };
 
 /*=================================================================================**//**
@@ -585,16 +586,30 @@ typedef bset<TriangleKey> TriangleSet;
 //=======================================================================================
 struct MeshBuilder : RefCountedBase
 {
+    struct Polyface : RefCountedBase
+        {
+        PolyfaceQueryCR             m_polyface;
+        MeshEdgeCreationOptions     m_edgeOptions;
+        size_t                      m_baseTriangleIndex;
+        bmap<uint32_t, uint32_t>    m_vertexIndexMap;           // Map from the Mesh vertex index to the polyface vertex index.
+
+        Polyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR edgeOptions, size_t baseTriangleIndex) : m_polyface(polyface), m_edgeOptions(edgeOptions), m_baseTriangleIndex(baseTriangleIndex) { }
+        };
+
 private:
-    MeshPtr             m_mesh;
-    VertexMap           m_clusteredVertexMap;
-    VertexMap           m_unclusteredVertexMap;
-    TriangleSet         m_triangleSet;
-    double              m_tolerance;
-    double              m_areaTolerance;
+    MeshPtr                         m_mesh;
+    VertexMap                       m_clusteredVertexMap;
+    VertexMap                       m_unclusteredVertexMap;
+    TriangleSet                     m_triangleSet;
+    double                          m_tolerance;
+    double                          m_areaTolerance;
+    RefCountedPtr<Polyface>         m_currentPolyface;
+    DRange3d                        m_tileRange;
+
 
     MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range)
-        : m_mesh(Mesh::Create(params, featureTable, type, range)), m_tolerance(tolerance), m_areaTolerance(areaTolerance) { }
+        : m_mesh(Mesh::Create(params, featureTable, type, range)), m_tolerance(tolerance), 
+        m_areaTolerance(areaTolerance) { }
 
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
@@ -603,6 +618,8 @@ public:
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
+    DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
+    DGNPLATFORM_EXPORT void EndPolyface();
 
     void AddMesh(TriangleCR triangle);
     void AddTriangle(TriangleCR triangle);
@@ -949,7 +966,7 @@ struct ElementMeshEdgeArgs : MeshEdgeArgs
 {
     bvector<uint32_t>               m_colorTable;
 
-    bool Init(MeshCR mesh, DRange3dCR tileRange);
+    bool Init(MeshCR mesh);
 };
 
 
@@ -960,7 +977,7 @@ struct ElementSilhouetteEdgeArgs : SilhouetteEdgeArgs
 {
     bvector<uint32_t>               m_colorTable;
 
-    bool Init(MeshCR mesh, DRange3dCR tileRange);
+    bool Init(MeshCR mesh);
 };
 
 
@@ -969,7 +986,7 @@ struct ElementSilhouetteEdgeArgs : SilhouetteEdgeArgs
 //=======================================================================================
 struct ElementPolylineEdgeArgs : PolylineArgs
 {
-    bool Init(MeshCR mesh, DRange3dCR tileRange);
+    bool Init(MeshCR mesh);
 };
 
 

@@ -76,24 +76,44 @@ private:
 public:    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
+* Build maps from a MeshBuilder::Polyface...
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdgesBuilder (MeshCR mesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR options) : m_options(options)
+MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const& builderPolyface) : m_options(builderPolyface.m_edgeOptions)
     {
-    PointMap                    pointMap(tileRange);
     TriangleList const&         triangles = mesh.Triangles();
-    QPoint3dListCR              points = mesh.Points();
     bool                        anyHidden = false;
 
-    for (uint32_t triangleIndex = 0; triangleIndex < triangles.size(); triangleIndex++)
+    // We need to detect the edge pairs -- Can't do that from the Mesh indices as these are not shared - so we'll
+    // assume that the polyface indices are properly shared, this should be true as a seperate index array is used
+    // for Polyfaces.
+
+    for (uint32_t triangleIndex = builderPolyface.m_baseTriangleIndex; triangleIndex < triangles.size(); triangleIndex++)
         {
-        auto const&   triangle = triangles[triangleIndex];
+        auto const&     triangle = triangles[triangleIndex];
+        DPoint3d        polyfacePoints[3];
+        uint32_t        polyfaceIndices[3];      // Use (unquantized) polyface points to calculate triangle normals.
+
+
         for (size_t j=0; j<3; j++)
             {
-            MeshEdge        meshEdge(triangle.m_indices[j], triangle.m_indices[(j+1)%3]);
+            auto const&       foundPolyfaceIndex = builderPolyface.m_vertexIndexMap.find(triangle.m_indices[j]);
+
+            if (foundPolyfaceIndex == builderPolyface.m_vertexIndexMap.end())
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            polyfacePoints[j] = builderPolyface.m_polyface.GetPointCP()[polyfaceIndices[j] = foundPolyfaceIndex->second];
+            }
+
+
+        for (size_t j=0; j<3; j++)
+            {
+            size_t          jNext = (j+1)%3;
+            MeshEdge        meshEdge(triangle.m_indices[j], triangle.m_indices[jNext]), polyfaceEdge(polyfaceIndices[j], polyfaceIndices[jNext]);
             EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleIndex, meshEdge);
-            MeshEdge        pointMapEdge(pointMap.GetIndex(points[meshEdge.m_indices[0]]), 
-                                         pointMap.GetIndex(points[meshEdge.m_indices[1]]));
-            auto            insertPair = m_edgeMap.Insert(pointMapEdge, edgeInfo);
+            auto            insertPair = m_edgeMap.Insert(polyfaceEdge, edgeInfo);
 
             if (!insertPair.second)
                 insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
@@ -101,7 +121,7 @@ MeshEdgesBuilder (MeshCR mesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR o
             anyHidden |= !edgeInfo.m_visible;
             }
 
-        m_triangleNormals.push_back (FVec3d::From(mesh.GetTriangleNormal(triangle)));
+        m_triangleNormals.push_back(FVec3d::From(DVec3d::FromNormalizedCrossProductToPoints(polyfacePoints[0], polyfacePoints[1], polyfacePoints[2])));
         }
 
     if (!anyHidden)
@@ -110,6 +130,7 @@ MeshEdgesBuilder (MeshCR mesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR o
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
+* Build maps from TriMeshArgs  - Could be used by a reality source...
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshEdgesBuilder (TriMeshArgsCR args, DRange3dCR tileRange, MeshEdgeCreationOptionsCR options) : m_options (options)
     {
@@ -185,28 +206,30 @@ void CalculateEdgeVisibility(QPoint3dCP points, DRange3dCR tileRange, QPoint3d::
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain, MeshBuilder::Polyface const& builderPolyface) const
+    {
+    for (size_t i=0; i<chain.GetIndexCount()-1; i++)
+        {
+        int32_t         iThis = chain.GetIndexCP()[i], iNext = chain.GetIndexCP()[i+1];
+
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BuildEdges (MeshEdgesR edges) const
+void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
     {
-    struct  PolylineSegment
-        {
-        MeshEdge        m_edge;
-        bool            m_processed;
-
-        PolylineSegment(MeshEdgeCR edge) : m_edge (edge), m_processed(false) { }
-        };
-    bvector <PolylineSegment> polylineSegments;
+    bool            useEdgeChains = false && nullptr != builderPolyface && 0 != builderPolyface->m_polyface.GetEdgeChainCount();
 
     for (auto& edge : m_edgeMap)
         {
-        if (edge.second.m_visible)    
+        if (edge.second.m_visible)
             {
-            if (1 == edge.second.m_faceCount)
-                polylineSegments.push_back (PolylineSegment(edge.second.m_edge));
-            else
+            if (!useEdgeChains)
                 edges.m_visible.push_back(edge.second.m_edge);
             }
         else
@@ -228,93 +251,36 @@ void BuildEdges (MeshEdgesR edges) const
                 }
             }
         }
-
-    struct MapEntry
-        {
-        uint32_t            m_endIndex;
-        PolylineSegment*    m_segment;
-
-        MapEntry() { }
-        MapEntry(uint32_t endIndex, PolylineSegment* segment) : m_endIndex(endIndex), m_segment(segment) { }
-        };
-    
-    bmultimap <uint32_t, MapEntry>  segmentMap;
-
-    for (auto& polylineSegment : polylineSegments)
-        {
-        segmentMap.Insert (polylineSegment.m_edge.m_indices[0], MapEntry(polylineSegment.m_edge.m_indices[1], &polylineSegment));
-        segmentMap.Insert (polylineSegment.m_edge.m_indices[1], MapEntry(polylineSegment.m_edge.m_indices[0], &polylineSegment));
-        }
-
-    for (auto& polylineSegment : polylineSegments)
-        {
-        if (polylineSegment.m_processed)
-            continue;
-        
-        std::list<uint32_t> indexList;
-
-        indexList.push_back (polylineSegment.m_edge.m_indices[0]);
-        indexList.push_back (polylineSegment.m_edge.m_indices[1]);
-
-        polylineSegment.m_processed = true;
-        
-        bool    linkFound = false;
-        
-        do
-            {
-            linkFound = false;
-            for (bmultimap <uint32_t, MapEntry>::iterator curr = segmentMap.lower_bound (indexList.back()), end = segmentMap.upper_bound(indexList.back()); !linkFound && curr != end; curr++)
-                {
-                if (!curr->second.m_segment->m_processed)
-                    {
-                    linkFound = true;
-                    indexList.push_back(curr->second.m_endIndex);
-                    curr->second.m_segment->m_processed = true;
-                    break;
-                    }
-                }
-            for (bmultimap <uint32_t, MapEntry>::iterator curr = segmentMap.lower_bound (indexList.front()), end = segmentMap.upper_bound(indexList.front()); !linkFound && curr != end; curr++)
-                {
-                if (!curr->second.m_segment->m_processed)
-                    {
-                    linkFound = true;
-                    indexList.push_front(curr->second.m_endIndex);
-                    curr->second.m_segment->m_processed = true;
-                    break;
-                    }
-                }
-            } while (linkFound);
-
-
-        bvector<uint32_t>   polyline;
-        for (auto& index : indexList)
-            polyline.push_back(index);
-
-        edges.m_polylines.push_back(std::move(polyline));
-        }
+    if (useEdgeChains)
+        for (size_t i=0; i<builderPolyface->m_polyface.GetEdgeChainCount(); i++)
+            BuildPolylineFromEdgeChain(edges, *(builderPolyface->m_polyface.GetEdgeChainCP() + i), *builderPolyface);
     }
 };  // MeshEdgesBuilder
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdges::MeshEdges(TriMeshArgsCR mesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR options)     
-    {
-    MeshEdgesBuilder (mesh, tileRange, options).BuildEdges(*this);
-    }                        
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
+* @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdgesPtr    Mesh::GetEdges(DRange3dCR tileRange, MeshEdgeCreationOptionsCR options) const
+void MeshBuilder::BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options) 
+    { 
+    m_currentPolyface = options.m_generateNoEdges ? nullptr : new Polyface (polyface, options, m_mesh->Triangles().size()); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilder::EndPolyface()
     {
-    if (!m_edges.IsValid())
+    if (!m_currentPolyface.IsValid())
         {
-        m_edges = new MeshEdges();
-        MeshEdgesBuilder (*this, tileRange, options).BuildEdges(*m_edges);
+        BeAssert (false && "Mismatched Begin/End Polyface");
+        return;
         }
 
-    return m_edges;
+    if (!m_mesh->m_edges.IsValid())
+        m_mesh->m_edges = new MeshEdges();
+
+    MeshEdgesBuilder(m_tileRange, *m_mesh, *m_currentPolyface).BuildEdges(*m_mesh->m_edges, m_currentPolyface.get());
     }
 
