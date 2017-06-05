@@ -30,6 +30,7 @@
         <file src="libs\BeXml.lib"                              target="lib\native\BeXml.lib" />
         <file src="UnitsB02.dll"                                target="lib\native\UnitsB02.dll" />
         <file src="libs\Units.lib"                              target="lib\native\Units.lib" />
+        <file src="libs\BeJsonCpp.lib"                          target="lib\native\BeJsonCpp.lib" />
 
         <file src="Assets\ECSchemas\Standard\*"                 target="Assets\ECSchemas\Standard" />
         <file src="Notices\*"                                   target="Notices" />
