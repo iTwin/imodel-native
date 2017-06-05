@@ -1815,7 +1815,7 @@ DVec3dCR  tangentB          //!< [in] OUTBOUND (forward) tangent at end point
 );
 
 //! construct fractional coordinates of lines tangent to two circles.
-static bool DEllipse3d::ConstructTangentLineRatios
+static bool ConstructTangentLineRatios
 (
 double centerToCenterDistance,  //!< [in] distance between centers
 double radiusA,                 //!< [in] radius of first circle.
