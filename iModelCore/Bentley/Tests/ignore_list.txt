@@ -45,3 +45,58 @@ WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
     #   Actual: true
     # Expected: false
     # [  FAILED  ] WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops (18 ms)
+
+LimitingTaskQueueTests.Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent
+    # bim2-0r1, x64, NDEBUG, Random Hang
+    # Threads:
+    #    50172   0   Main Thread Main Thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            ntdll.dll!NtWaitForAlertByThreadId()    
+    #            ntdll.dll!RtlSleepConditionVariableSRW()     
+    #            KernelBase.dll!SleepConditionVariableSRW()  
+    #            msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210    
+    #            msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77    
+    #            BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 58  
+    #            BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 207    
+    #            BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 344   
+    #            BentleyTest.exe!LimitingTaskQueueTests_Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent_Test::TestBody() Line 149  
+    #            ...
+    #
+    #    31820   0   Worker Thread   BentleyTest.exe!testing::internal::ThreadLocalRegistryImpl::WatcherThreadFunc   BentleyTest.exe!testing::internal::ThreadLocalRegistryImpl::WatcherThreadFunc   Normal
+    #            ntdll.dll!NtWaitForSingleObject()   
+    #            KernelBase.dll!WaitForSingleObjectEx()  
+    #            BentleyTest.exe!testing::internal::ThreadLocalRegistryImpl::WatcherThreadFunc(void *) Line 523   
+    #            kernel32.dll!BaseThreadInitThunk()  
+    #            ntdll.dll!RtlUserThreadStart()  
+    #
+    #    48260   0   Worker Thread   ucrtbase.dll thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            ntdll.dll!NtWaitForAlertByThreadId()    
+    #            ntdll.dll!RtlSleepConditionVariableSRW()     
+    #            KernelBase.dll!SleepConditionVariableSRW()  
+    #            msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210    
+    #            msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77    
+    #            BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 58  
+    #            BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 207    
+    #            BentleyB02.dll!BentleyB0200::Tasks::ConcurrentQueue<std::shared_ptr<BentleyB0200::Tasks::AsyncTask> >::ProtectedWaitAndPop(std::shared_ptr<BentleyB0200::Tasks::AsyncTask> &, BentleyB0200::BeMutexHolder &) Line 143    
+    #            BentleyB02.dll!BentleyB0200::Tasks::TaskScheduler::WaitAndPop() Line 82  
+    #            BentleyB02.dll!BentleyB0200::Tasks::AsyncTaskRunner::_RunAsyncTasksLoop() Line 110   
+    #            BentleyB02.dll!BentleyB0200::Tasks::AsyncTaskRunner::_Run() Line 95  
+    #            BentleyB02.dll!std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64> > > >::_Run(std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *> > > > *) Line 247     
+    #            BentleyB02.dll!std::_Pad::_Call_func(void *) Line 210    
+    #            ucrtbase.dll!00007ff8f6dccab0()  
+    #            kernel32.dll!BaseThreadInitThunk()  
+    #            ntdll.dll!RtlUserThreadStart()  
+    #
+    #    45196   0   Worker Thread   ucrtbase.dll thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            <Similar to 48260>
+    #
+    #    42960   0   Worker Thread   ucrtbase.dll thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            <Similar to 48260>
+    #
+    #    43548   0   Worker Thread   ucrtbase.dll thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            <Similar to 48260>
+    #
+    #    51888   0   Worker Thread   ntdll.dll!TppWorkerThread   ntdll.dll!NtWaitForWorkViaWorkerFactory Normal
+    #            ntdll.dll!NtWaitForWorkViaWorkerFactory()   
+    #            ntdll.dll!TppWorkerThread()  
+    #            kernel32.dll!BaseThreadInitThunk()  
+    #            ntdll.dll!RtlUserThreadStart()  
