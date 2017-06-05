@@ -16,6 +16,8 @@ using ::testing::NiceMock;
 using ::testing::_;
 using ::testing::Eq;
 using ::testing::Invoke;
+using ::testing::StrEq;
+using ::testing::HasSubstr;
 
 //=====================================================================================
 //! @bsiclass                                   Remi.Charbonneau              05/2017
@@ -108,6 +110,10 @@ TEST_F(RealityDataServiceFixture, RealityDataUrl)
 	{
 	RealityDataUrl dataURL{};
 	EXPECT_STREQ(dataURL.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema");
+	EXPECT_STREQ(dataURL.GetServerName().c_str(), "myserver.com");
+	EXPECT_STREQ(dataURL.GetVersion().c_str(), "9.9");
+	EXPECT_STREQ(dataURL.GetRepoId().c_str(), "myRepo");
+	EXPECT_STREQ(dataURL.GetSchema().c_str(), "mySchema");
 	}
 
 //=====================================================================================
@@ -385,11 +391,46 @@ TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequest)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestEmptyID)
+	{
+	RealityDataListByOrganizationPagedRequest requestUT("",77,75);
+
+	auto filter = RealityDataFilterCreator::FilterByName("MyName");
+	requestUT.SetFilter(filter);
+	requestUT.SortBy(RealityDataField::AccuracyInMeters, false);
+	requestUT.SetQuery("SomeQuery");
+	requestUT.SetProject("MyProject");	
+	
+	auto requestString = requestUT.GetHttpRequestString();
+	//e82a584b%2D9fae%2D409f%2D9581%2Dfd154f7b9ef9 <= Bentley OrganizationId
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$filter=OrganizationId+eq+'e82a584b%2D9fae%2D409f%2D9581%2Dfd154f7b9ef9'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=AccuracyInMeters+desc"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=77&$top=75"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&query=SomeQuery"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&project=MyProject"));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
 TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdPagedRequest)
 	{
 	RealityDataProjectRelationshipByProjectIdPagedRequest requestUT("MyIdentifier");
 
-	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=ProjectId+eq+'MyIdentifier'&$skip=0&$top=25");
+	auto filter = RealityDataFilterCreator::FilterByName("MyName");
+	requestUT.SetFilter(filter);
+	requestUT.SortBy(RealityDataField::Copyright, false);
+	requestUT.SetQuery("SomeQuery");
+	requestUT.SetProject("MyProject");	
+
+	auto requestString = requestUT.GetHttpRequestString();
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=ProjectId+eq+'MyIdentifier'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=Copyright+desc"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=0&$top=25"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&query=SomeQuery"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&project=MyProject"));
 	}
 
 //=====================================================================================
@@ -399,7 +440,20 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdP
 	{
 	RealityDataProjectRelationshipByRealityDataIdPagedRequest requestUT("MyIdentifier");
 
-	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RealityDataId+eq+'MyIdentifier'&$skip=0&$top=25");
+	auto filter = RealityDataFilterCreator::FilterByName("MyName");
+	requestUT.SetFilter(filter);
+	requestUT.SortBy(RealityDataField::Dataset, false);
+	requestUT.SetQuery("SomeQuery");
+	requestUT.SetProject("MyProject");	
+
+	auto requestString = requestUT.GetHttpRequestString();
+
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RealityDataId+eq+'MyIdentifier'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=Dataset+desc"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=0&$top=25"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&query=SomeQuery"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("&project=MyProject"));
 	}
 
 //=====================================================================================
@@ -417,173 +471,218 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootId)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterByName)
+TEST_F(RealityDataServiceFixture, RealityDataCreateRequestFromString)
 	{
-	RDSFilter filter = RealityDataFilterCreator::FilterByName("MyName");
-	EXPECT_STREQ(filter.ToString().c_str(), "Name+eq+'MyName'");
+	RealityDataCreateRequest requestUT("MyIdentifier", "\"SomeProperty\": \"myProperty\"");
+
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData");
+	Utf8String expectedPayload = R"({"instance":{"instanceId":"MyIdentifier", "className": "RealityData","schemaName":"S3MX", "properties": {"SomeProperty": "myProperty"}}})";
+
+	EXPECT_EQ(requestUT.GetRequestType(), WSGURL::HttpRequestType::POST_Request);
+
+	auto payload = requestUT.GetRequestPayload();
+	EXPECT_STREQ(payload.c_str(), expectedPayload.c_str());
+
+	auto headers = requestUT.GetRequestHeader();
+	EXPECT_CONTAINS(headers, "Content-Type: application/json");
 	}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterByClassification)
+TEST_F(RealityDataServiceFixture, RealityDataCreateRequestFromRealityData)
 	{
-	RDSFilter filter = RealityDataFilterCreator::FilterByClassification(RealityDataBase::Classification::MODEL);
-	EXPECT_STREQ(filter.ToString().c_str(), "Classification+eq+'Model'");
+	auto realityData = RealityData::Create();
+	realityData->SetIdentifier("MyIdentifier");
+	RealityDataCreateRequest requestUT(*realityData);
+
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData");
+	Utf8String expectedPayload = R"({"instance":{"instanceId":"MyIdentifier", "className": "RealityData","schemaName":"S3MX", "properties": {"Id" : "MyIdentifier"}}})";
+	auto payload = requestUT.GetRequestPayload();
+	EXPECT_STREQ(payload.c_str(), expectedPayload.c_str());
 	}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterBySize)
+TEST_F(RealityDataServiceFixture, RealityDataChangeRequestFromString)
 	{
-	RDSFilter filter = RealityDataFilterCreator::FilterBySize(0, UINT64_MAX);
-	EXPECT_STREQ(filter.ToString().c_str(), "Size+ge+0+and+Size+le+4294967295");
+	RealityDataChangeRequest requestUT("MyIdentifier", "\"SomeProperty\": \"myProperty\"");
+
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/MyIdentifier");
+	Utf8String expectedPayload = R"({"instance":{"instanceId":"MyIdentifier", "className": "RealityData","schemaName":"S3MX", "properties": {"SomeProperty": "myProperty"}}})";
+
+	EXPECT_EQ(requestUT.GetRequestType(), WSGURL::HttpRequestType::POST_Request);
+
+	auto payload = requestUT.GetRequestPayload();
+	EXPECT_STREQ(payload.c_str(), expectedPayload.c_str());
+
+	auto headers = requestUT.GetRequestHeader();
+	EXPECT_CONTAINS(headers, "Content-Type: application/json");
 	}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterSpatial)
+TEST_F(RealityDataServiceFixture, RealityDataChangeRequestFromRealityData)
 	{
-	auto footprint = bvector<GeoPoint2d>();
-    footprint.emplace_back(GeoPoint2d::From(-92, 39));
-    footprint.emplace_back(GeoPoint2d::From(-92, 38));
-    footprint.emplace_back(GeoPoint2d::From(-93, 38));
-    footprint.emplace_back(GeoPoint2d::From(-93, 39));
-    footprint.emplace_back(GeoPoint2d::From(-92, 39));
+	auto realityData = RealityData::Create();
+	realityData->SetIdentifier("MyIdentifier");
+	RealityDataChangeRequest requestUT(*realityData);
 
-	auto expectedFootprint = R"(polygon={\"points\":[[-92.000000,39.000000],[-92.000000,38.000000],[-93.000000,38.000000],[-93.000000,39.000000],[-92.000000,39.000000]], \"coordinate_system\":\"1555\"})";
-	RDSFilter filter = RealityDataFilterCreator::FilterSpatial(footprint, 1555);
-	EXPECT_STREQ(filter.ToString().c_str(), expectedFootprint);
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/MyIdentifier");
+	Utf8String expectedPayload = R"({"instance":{"instanceId":"MyIdentifier", "className": "RealityData","schemaName":"S3MX", "properties": {"Id" : "MyIdentifier"}}})";
+	auto payload = requestUT.GetRequestPayload();
+	EXPECT_STREQ(payload.c_str(), expectedPayload.c_str());
 	}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterByOwner)
+TEST_F(RealityDataServiceFixture, RealityDataRelationshipCreateRequest)
 	{
-	RDSFilter filter = RealityDataFilterCreator::FilterByOwner("importantOwner@example.com");
-	EXPECT_STREQ(filter.ToString().c_str(), "OwnedBy+eq+'importantOwner%40example%2Ecom'");
+	RealityDataRelationshipCreateRequest requestUT("MyIdentifier", "MYProjectID");
+
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship");
+	Utf8String expectedPayload = R"({"instance":{"className": "RealityDataRelationship","schemaName":"S3MX", "properties": { "RelationType" : "CONNECT-Project", "RelatedId" : "MYProjectID", "RealityDataId": "MyIdentifier"}}})";
+
+	EXPECT_EQ(requestUT.GetRequestType(), WSGURL::HttpRequestType::POST_Request);
+
+	auto payload = requestUT.GetRequestPayload();
+	EXPECT_STREQ(payload.c_str(), expectedPayload.c_str());
+
+	auto headers = requestUT.GetRequestHeader();
+	EXPECT_CONTAINS(headers, "Content-Type: application/json");
 	}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterByCreationDate)
+TEST_F(RealityDataServiceFixture, RealityDataRelationshipDelete)
 	{
-	DateTime minDate(DateTime::Kind::Utc, 2000, 01, 01, 12, 00, 25, 200);
-	DateTime maxDate(DateTime::Kind::Utc, 2016, 12, 31, 23, 59, 59, 999);
+	RealityDataRelationshipDelete requestUT("MyIdentifier", "MYProjectID");
 
-	RDSFilter filter = RealityDataFilterCreator::FilterByCreationDate(minDate, maxDate);
-	EXPECT_STREQ(filter.ToString().c_str(), "CreatedTimestamp+ge+'2000-01-01T12:00:25.200Z'+and+CreatedTimestamp+le+'2016-12-31T23:59:59.999Z'");
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship/MyIdentifier~2FMYProjectID");
+	EXPECT_EQ(requestUT.GetRequestType(), WSGURL::HttpRequestType::DELETE_Request);
+
+	auto headers = requestUT.GetRequestHeader();
+	EXPECT_CONTAINS(headers, "Content-Type: application/json");
 	}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterByModificationDate)
+TEST_F(RealityDataServiceFixture, RealityDataDelete)
 	{
-	DateTime minDate(DateTime::Kind::Utc, 2000, 01, 01, 12, 00, 25, 200);
-	DateTime maxDate(DateTime::Kind::Utc, 2016, 12, 31, 23, 59, 59, 999);
+	RealityDataDelete requestUT("RealityDataID");
 
-	RDSFilter filter = RealityDataFilterCreator::FilterByModificationDate(minDate, maxDate);
-	EXPECT_STREQ(filter.ToString().c_str(), "ModifiedTimestamp+ge+'2000-01-01T12:00:25.200Z'+and+ModifiedTimestamp+le+'2016-12-31T23:59:59.999Z'");
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/RealityDataID");
+	EXPECT_EQ(requestUT.GetRequestType(), WSGURL::HttpRequestType::DELETE_Request);
+
 	}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterByVisibility)
+TEST(TransferReport, XmlExport)
 	{
-	RDSFilter filter = RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility::PERMISSION);
-	EXPECT_STREQ(filter.ToString().c_str(), "Visibility+eq+'PERMISSION'");
+	TransferResult* result1 = new TransferResult{ CURLE_OK, 100, 5, "MyName", RawServerResponse() };
+	RawServerResponse response{};
+	response.responseCode = 400;
+	response.header = "SomeHeader";
+	TransferResult* result2 = new TransferResult{CURLE_COULDNT_CONNECT, 0, 5, "MyName2", response };
+	TransferReport transferReport{};
+
+	transferReport.results.push_back(result1);
+	transferReport.results.push_back(result2);
+
+	Utf8String report{};
+	transferReport.ToXml(report);
+	report.ReplaceAll("\n", "");
+	EXPECT_THAT(report.c_str(), testing::HasSubstr(R"(<File FileName="MyName" timeSpent="5" CURLcode="0" progress="100"/>)"));
+	EXPECT_THAT(report.c_str(), testing::HasSubstr(R"(<File FileName="MyName2" timeSpent="5" CURLcode="7" progress="0">    <Response ResponseCode="400" Header="SomeHeader"/>  </File>)"));
 	}
+
+//=====================================================================================
+//! @bsiclass                                   Remi.Charbonneau              05/2017
+//=====================================================================================
+struct RealityDataServiceTransfer_callback
+	{
+	MOCK_CONST_METHOD3(progressCallBack, void(Utf8String filename, double fileProgress, double repoProgress));
+	MOCK_CONST_METHOD4(statusCallBack, void(int index, void *pClient, int ErrorCode, const char* pMsg));
+	MOCK_CONST_METHOD0(heartbeatCallBack, int());
+
+	RealityDataServiceTransfer_callback()
+		{
+
+		}
+	};
+
+//=====================================================================================
+//! @bsiclass                                    Remi.Charbonneau              06/2017
+//=====================================================================================
+class RealityDataServiceTransferFixture : public RealityDataServiceFixture
+	{
+public:
+	static RealityDataServiceTransfer_callback* s_transferServiceCallback;
+	static RealityDataServiceTransfer* s_dataServiceTransfer;
+	RealityDataServiceTransferFixture()
+		{
+		}
+
+	static void SetUpTestCase()
+		{
+		s_transferServiceCallback = new RealityDataServiceTransfer_callback();
+		s_dataServiceTransfer = new RealityDataServiceTransfer();
+		s_dataServiceTransfer->SetProgressCallBack(progressCallBack);
+		s_dataServiceTransfer->SetStatusCallBack(statusCallBack);
+		s_dataServiceTransfer->SetHeartbeatCallBack(heartBeatCallBack);
+		}
+
+	static void TearDownTestCase()
+		{
+		delete s_transferServiceCallback;
+		s_transferServiceCallback = nullptr;
+		delete s_dataServiceTransfer;
+		s_dataServiceTransfer = nullptr;
+		}
+
+	static void progressCallBack(Utf8String filename, double fileProgress, double repoProgress)
+		{
+		if (s_transferServiceCallback != nullptr)
+			{
+			s_transferServiceCallback->progressCallBack(filename, fileProgress, repoProgress);
+			}
+		}
+
+	static void statusCallBack(int index, void *pClient, int ErrorCode, const char* pMsg)
+		{
+		if (s_transferServiceCallback != nullptr)
+			{
+			s_transferServiceCallback->statusCallBack(index, pClient, ErrorCode, pMsg);
+			}
+		}
+
+	static int heartBeatCallBack()
+		{
+		if (s_transferServiceCallback != nullptr)
+			{
+			return s_transferServiceCallback->heartbeatCallBack();
+			}
+		return 1;
+		}
+
+	};
+
+RealityDataServiceTransfer_callback* RealityDataServiceTransferFixture::s_transferServiceCallback = nullptr;
+RealityDataServiceTransfer* RealityDataServiceTransferFixture::s_dataServiceTransfer = nullptr;
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST(RealityDataFilterCreator, FilterByResolution)
+TEST_F(RealityDataServiceTransferFixture, EmptyFileToTransfer)
 	{
-	RDSFilter filter = RealityDataFilterCreator::FilterByResolution(0, 200, true);
-	EXPECT_STREQ(filter.ToString().c_str(), "ResolutionInMeters+ge+'0.000000'+and+ResolutionInMeters+le+'200.000000'");
+	EXPECT_CALL(*s_transferServiceCallback, statusCallBack(Eq(0), Eq(nullptr), Eq(-1), StrEq("No files to transfer, please verify that the previous steps completed without failure"))).Times(1);
+	auto report = s_dataServiceTransfer->Perform();
+	//EXPECT_EQ(report.results[0]->progress, 0);
 	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              06/2017
-//=====================================================================================
-TEST(RealityDataFilterCreator, FilterByAccuracy)
-	{
-	RDSFilter filter = RealityDataFilterCreator::FilterByAccuracy(0, 200, true);
-	EXPECT_STREQ(filter.ToString().c_str(), "AccuracyInMeters+ge+'0.000000'+and+AccuracyInMeters+le+'200.000000'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              06/2017
-//=====================================================================================
-TEST(RealityDataFilterCreator, FilterByType)
-	{
-	RDSFilter filter = RealityDataFilterCreator::FilterByType("MyType");
-	EXPECT_STREQ(filter.ToString().c_str(), "Type+eq+'MyType'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              06/2017
-//=====================================================================================
-TEST(RealityDataFilterCreator, FilterByDataset)
-	{
-	RDSFilter filter = RealityDataFilterCreator::FilterByDataset("SomeDataset");
-	EXPECT_STREQ(filter.ToString().c_str(), "Dataset+eq+'SomeDataset'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              06/2017
-//=====================================================================================
-TEST(RealityDataFilterCreator, FilterByGroup)
-	{
-	RDSFilter filter = RealityDataFilterCreator::FilterByGroup("YourGroup");
-	EXPECT_STREQ(filter.ToString().c_str(), "Group+eq+'YourGroup'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              06/2017
-//=====================================================================================
-TEST(RealityDataFilterCreator, FilterRelationshipByRealityDataId)
-	{
-	RDSFilter filter = RealityDataFilterCreator::FilterRelationshipByRealityDataId("MyRealityDataID");
-	EXPECT_STREQ(filter.ToString().c_str(), "RealityDataId+eq+'MyRealityDataID'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              06/2017
-//=====================================================================================
-TEST(RealityDataFilterCreator, FilterRelationshipByProjectId)
-	{
-	RDSFilter filter = RealityDataFilterCreator::FilterRelationshipByProjectId("MyProjectID");
-	EXPECT_STREQ(filter.ToString().c_str(), "ProjectId+eq+'MyProjectID'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              06/2017
-//=====================================================================================
-TEST(RealityDataFilterCreator, GroupFiltersAND)
-	{
-	bvector<RDSFilter> filtersVector;
-	filtersVector.emplace_back(RealityDataFilterCreator::FilterRelationshipByRealityDataId("MyRealityDataID"));
-	filtersVector.emplace_back(RealityDataFilterCreator::FilterRelationshipByProjectId("MyProjectID"));
-	auto filter = RealityDataFilterCreator::GroupFiltersAND(filtersVector);
-	EXPECT_STREQ(filter.ToString().c_str(), "RealityDataId+eq+'MyRealityDataID'+and+ProjectId+eq+'MyProjectID'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              06/2017
-//=====================================================================================
-TEST(RealityDataFilterCreator, GroupFiltersOR)
-	{
-	bvector<RDSFilter> filtersVector;
-	filtersVector.emplace_back(RealityDataFilterCreator::FilterRelationshipByRealityDataId("MyRealityDataID"));
-	filtersVector.emplace_back(RealityDataFilterCreator::FilterRelationshipByProjectId("MyProjectID"));
-	auto filter = RealityDataFilterCreator::GroupFiltersOR(filtersVector);
-	EXPECT_STREQ(filter.ToString().c_str(), "RealityDataId+eq+'MyRealityDataID'+or+ProjectId+eq+'MyProjectID'");
-	}
-
