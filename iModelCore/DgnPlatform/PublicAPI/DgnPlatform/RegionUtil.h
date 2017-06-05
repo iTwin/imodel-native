@@ -64,7 +64,6 @@ struct RegionParams
     bool            m_forcePlanar = true;
     bool            m_dirty = false;
 
-    uint32_t        m_reservedFlags = 0;
     double          m_gapTolerance = 0.0;
     RotMatrix       m_flatten = RotMatrix::FromIdentity();
 
@@ -106,6 +105,7 @@ struct RegionGraphicsContext : RefCountedBase, NullContext, IGeometryProcessor
 {
     DEFINE_T_SUPER(NullContext)
     friend struct RegionData;
+    friend struct DgnRegionElementTool;
 
 protected:
 
