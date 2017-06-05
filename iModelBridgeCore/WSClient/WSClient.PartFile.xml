@@ -23,7 +23,6 @@
     <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*, Android*">
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesClient-Library"/>
-        <SubPart PartName="WebServicesClient-Library-Android" LibType="Static"/>
         <SubPart PartName="WSClient-Xliffs"/>
     </Part>
 
@@ -98,10 +97,24 @@
     <!-- // WebServicesCache lib                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
+    <!--
+        Cannot directly add a SubPart in WebServicesCache to
+        WebServicesCache-Library-Android/LibType=Static due to LKGs. The issue arises
+        on Windows, for example, which does not build anything in wsclient
+        statically, and thus will not post anything in the static LKG for
+        wsclient (good). Because there is no static LKG at all,
+        WebServicesClient cannot go searching for the static partfile to see
+        that this is Android-only. The workaround is to add a "shim" dynamic
+        part in the middle with the platform filter first.
+    -->
+    <Part Name="WebServicesCache-Library-Android-Shim" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesCache-Library-Android" LibType="Static"/>
+    </Part>
+
     <Part Name="WebServicesCache">
         <SubPart PartName="WebServicesCache-PublicAPI" />
         <SubPart PartName="WebServicesCache-Library" />
-        <SubPart PartName="WebServicesCache-Library-Android" LibType="Static" />
+        <SubPart PartName="WebServicesCache-Library-Android-Shim"/>
         <SubPart PartName="WebServicesCache-Schemas" />
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
@@ -125,7 +138,7 @@
 
     <Part Name="WebServicesCache-Library-Android" BentleyBuildMakeFile="CacheLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
@@ -146,10 +159,24 @@
     <!-- // iModelHubClient lib                                                  // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
+    <!--
+        Cannot directly add a SubPart in iModelHubClient to
+        iModelHubClient-Library-Android/LibType=Static due to LKGs. The issue arises
+        on Windows, for example, which does not build anything in wsclient
+        statically, and thus will not post anything in the static LKG for
+        wsclient (good). Because there is no static LKG at all,
+        WebServicesClient cannot go searching for the static partfile to see
+        that this is Android-only. The workaround is to add a "shim" dynamic
+        part in the middle with the platform filter first.
+    -->
+    <Part Name="iModelHubClient-Library-Android-Shim" OnlyPlatforms="Android*">
+        <SubPart PartName="iModelHubClient-Library-Android" LibType="Static"/>
+    </Part>
+
     <Part Name="iModelHubClient">
         <SubPart PartName="iModelHubClient-PublicAPI" />
         <SubPart PartName="iModelHubClient-Library" />
-        <SubPart PartName="iModelHubClient-Library-Android" LibType="Static" />
+        <SubPart PartName="iModelHubClient-Library-Android-Shim"/>
         <SubPart PartName="WSClient-Xliffs" />
         <SubPart PartName="iModelHubClient-Xliffs" />
     </Part>
@@ -172,7 +199,7 @@
 
     <Part Name="iModelHubClient-Library-Android" BentleyBuildMakeFile="iModelHubClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>
@@ -231,7 +258,7 @@
     </Part>
     <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
@@ -410,6 +437,7 @@
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="WSClientTestAssets" />
+        <SubPart PartName="DgnClientFxLibrary-JNI" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
