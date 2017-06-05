@@ -102,8 +102,9 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 
     LOG.infov("ConnectSignIn: sign-in token lifetime %d minutes", token->GetLifetime());
 
+    auto self(shared_from_this());
     return m_client->RequestToken(*token, nullptr, m_config.identityTokenLifetime)
-        ->Then<SignInResult>([=] (SamlTokenResult result)
+        ->Then<SignInResult>([this, self] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
             return SignInResult::Error(result.GetError());
@@ -132,9 +133,10 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(CredentialsCR credentials)
     {
     BeMutexHolder lock(m_cs);
-
+    
+    auto self(shared_from_this());
     return m_client->RequestToken(credentials, nullptr, m_config.identityTokenLifetime)
-        ->Then<SignInResult>([=] (SamlTokenResult result)
+        ->Then<SignInResult>([this, self, credentials] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
             return SignInResult::Error(result.GetError());
