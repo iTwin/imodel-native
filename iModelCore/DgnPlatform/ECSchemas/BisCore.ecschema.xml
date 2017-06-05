@@ -1842,10 +1842,10 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="Sealed">
-        <!-- @see ViewDefinition3d.ModelSelector ECNavigationProperty -->
+    <ECRelationshipClass typeName="SpatialViewDefinitionUsesModelSelector" strength="referencing" modifier="Sealed">
+        <!-- @see SpatialViewDefinition.ModelSelector ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
-            <Class class="ViewDefinition3d"/>
+            <Class class="SpatialViewDefinition"/>
         </Source>
         <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="true">
             <Class class="ModelSelector"/>
@@ -1976,16 +1976,14 @@
         <ECProperty propertyName="FocusDistance" typeName="double" displayLabel="Focus Distance" description="Camera focus distance">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward" displayLabel="Model Selector">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECNavigationProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="SpatialViewDefinition" displayLabel="Spatial View Definition" description="A view of a spatially located volume.">
         <BaseClass>ViewDefinition3d</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
+        <ECNavigationProperty propertyName="ModelSelector" relationshipName="SpatialViewDefinitionUsesModelSelector" direction="Forward" displayLabel="Model Selector">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="OrthographicViewDefinition" displayLabel="Orthographic Spatial View" description="A spatial view that always show an parallel projection.">

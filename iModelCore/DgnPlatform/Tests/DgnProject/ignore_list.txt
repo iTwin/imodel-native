@@ -45,6 +45,3 @@ TransactionManagerTests.TestRelationshipLinkTableTracking
 
 # Waiting to hear from Krischan and Affan as to whether we expect the source's NavigationProperty value to be nulled out automatically when the target element is deleted.
 DgnElementTests.NavigationPropertyOnTargetDelete
-
-# Requires reaction to handler code after moving ModelSelector nav prop from SpatialViewDefinition to ViewDefinition3d
-TypeTests.CreateSampleBim
