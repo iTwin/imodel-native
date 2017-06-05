@@ -794,7 +794,7 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
         ECClassCP primaryClass = entry.GetPrimaryClass();
         BeAssert(primaryClass != nullptr);
 
-        if (entry.IsJoinedTable() || !primaryClass->Is(elemClass))
+        if (!entry.IsPrimaryTable() || !primaryClass->Is(elemClass))
             continue;
 
         DbOpcode dbOpcode = entry.GetDbOpcode();
@@ -837,7 +837,7 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         ECClassCP primaryClass = entry.GetPrimaryClass();
         BeAssert(primaryClass != nullptr);
 
-        if (entry.IsJoinedTable() || !primaryClass->Is(elemClass))
+        if (!entry.IsPrimaryTable() || !primaryClass->Is(elemClass))
             continue;
 
         ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
@@ -872,7 +872,7 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         ECClassCP primaryClass = entry.GetPrimaryClass();
         BeAssert(primaryClass != nullptr);
 
-        if (entry.IsJoinedTable() || !primaryClass->Is(modelClass))
+        if (!entry.IsPrimaryTable() || !primaryClass->Is(modelClass))
             continue;
 
         lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);

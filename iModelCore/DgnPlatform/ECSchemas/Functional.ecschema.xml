@@ -27,6 +27,9 @@
             </ShareColumns>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="TypeDefinition" relationshipName="FunctionalElementIsOfType" direction="Forward" displayLabel="Type Definition">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
             <!-- NOTE: Has same propertyName as other element subclasses in case the concept of "TypeDefinition" needs to move down to bis:Element. -->
         </ECNavigationProperty>
     </ECEntityClass>
@@ -69,9 +72,6 @@
     </ECEntityClass>
     
     <ECRelationshipClass typeName="FunctionalElementIsOfType" strength="referencing" modifier="None">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
             <Class class="FunctionalElement" />
         </Source>
