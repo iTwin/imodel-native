@@ -705,7 +705,6 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImport
     M  -> Map in this methiod
     X -> Map in Finish ()
     */
-
     ForeignKeyColumnInfo fkColInfo;
     DbColumn* columnRefId = CreateForeignColumn(classMappingInfo, fkTable, navPropMap, fkColInfo);
     if (columnRefId == nullptr)
@@ -718,7 +717,7 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImport
     if (columnId == nullptr)
         return ClassMappingStatus::Error;
 
-    DbColumn* columnClassId = CreateRelECClassIdColumn(fkTable, fkColInfo, *columnRefId, navPropMap);
+    DbColumn* columnClassId = CreateRelECClassIdColumn(columnRefId->GetTableR(), fkColInfo, *columnRefId, navPropMap);
     if (columnClassId == nullptr)
         return ClassMappingStatus::Error;
 
@@ -735,7 +734,6 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImport
         return ClassMappingStatus::Error;
 
     DbColumn::UpdateKind(*columnForeignId, GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
-
 
     //[+++ECInstanceId-----------------------------------------------------------------------------------------------------------------------------------]
     if (ECInstanceIdPropertyMap* propertyMap = static_cast<ECInstanceIdPropertyMap*>(const_cast<PropertyMap*>(GetPropertyMaps().Find(ECDBSYS_PROP_ECInstanceId))))

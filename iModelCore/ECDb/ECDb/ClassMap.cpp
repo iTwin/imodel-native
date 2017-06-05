@@ -197,7 +197,16 @@ ClassMappingStatus ClassMap::MapNavigationProperty(SchemaImportContext& ctx, Nav
         return ClassMappingStatus::Error;
         }
     
-    return static_cast<RelationshipClassEndTableMap*>(const_cast<ClassMap*>(classMap))->UpdatePersistedEnd(ctx, navPropMap);
+    const bool useColumnReservation = GetColumnFactory().UsesSharedColumnStrategy();
+    if (useColumnReservation)
+        GetColumnFactory().ReserveSharedColumns(navPropMap.GetName());
+
+    ClassMappingStatus status = static_cast<RelationshipClassEndTableMap*>(const_cast<ClassMap*>(classMap))->UpdatePersistedEnd(ctx, navPropMap);
+
+    if (useColumnReservation)
+        GetColumnFactory().ReleaseSharedColumnReservation();
+
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
