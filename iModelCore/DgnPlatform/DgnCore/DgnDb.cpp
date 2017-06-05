@@ -193,7 +193,7 @@ DbResult DgnDb::_OnDbOpening()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
+DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     {
     if (newBriefcaseId.IsMasterId())
         {
@@ -201,7 +201,7 @@ DbResult DgnDb::_OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
         return BE_SQLITE_ERROR;
         }
 
-    DbResult result = T_Super::_OnBriefcaseIdChanged(newBriefcaseId);
+    DbResult result = T_Super::_OnBriefcaseIdAssigned(newBriefcaseId);
     if (result != BE_SQLITE_OK)
         return result;
 
