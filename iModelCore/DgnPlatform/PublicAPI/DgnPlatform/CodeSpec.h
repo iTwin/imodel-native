@@ -175,23 +175,29 @@ public:
         RelatedElement = 4, //!< The Code value must be unique among other elements also scoped by the same element
     };
 
+    typedef DgnCode::ScopeRequirement ScopeRequirement;
+
 private:
     BE_JSON_NAME(type);
     BE_JSON_NAME(relationship); // only valid for Type::RelatedElement
+    BE_JSON_NAME(fGuidRequired);
     
-    CodeScopeSpec(Type type=Type::Repository) {SetType(type);}
+    CodeScopeSpec(Type type=Type::Repository, ScopeRequirement scopeRequirement=ScopeRequirement::ElementId) : Json::Value(Json::objectValue) {SetType(type); SetScopeRequirement(scopeRequirement);}
     void SetType(Type type) {(*this)[json_type()] = (int) type;}
+    void SetScopeRequirement(ScopeRequirement scopeRequirement) {if (ScopeRequirement::FederationGuid == scopeRequirement) (*this)[json_fGuidRequired()] = true;}
     void SetRelationship(Utf8CP relationship) {if (relationship && *relationship) (*this)[json_relationship()] = relationship;}
     JsonValueCR GetValue(Utf8CP key) const {return (*this)[key];}
 
 public:
     Type GetType() const {return (Type) GetValue(json_type()).asInt((int) Type::Repository);}
+    bool IsFederationGuidRequired() const {return GetValue(json_fGuidRequired()).asBool(false);} //!< If true, the scope element is required to have a FederationGuid
+    DgnCode::ScopeRequirement GetScopeRequirement() const {return IsFederationGuidRequired() ? DgnCode::ScopeRequirement::FederationGuid : DgnCode::ScopeRequirement::ElementId;}
     Utf8String GetRelationship() const {return GetValue(json_relationship()).asString();}
 
-    static CodeScopeSpec CreateRepositoryScope() {return CodeScopeSpec(Type::Repository);}
-    static CodeScopeSpec CreateModelScope() {return CodeScopeSpec(Type::Model);}
-    static CodeScopeSpec CreateParentElementScope() {return CodeScopeSpec(Type::ParentElement);}
-    static CodeScopeSpec CreateRelatedElementScope(Utf8CP relationship=nullptr) {CodeScopeSpec scopeSpec(Type::RelatedElement); scopeSpec.SetRelationship(relationship); return scopeSpec;}
+    static CodeScopeSpec CreateRepositoryScope(ScopeRequirement scopeRequirement=ScopeRequirement::ElementId) {return CodeScopeSpec(Type::Repository, scopeRequirement);}
+    static CodeScopeSpec CreateModelScope(ScopeRequirement scopeRequirement=ScopeRequirement::ElementId) {return CodeScopeSpec(Type::Model, scopeRequirement);}
+    static CodeScopeSpec CreateParentElementScope(ScopeRequirement scopeRequirement=ScopeRequirement::ElementId) {return CodeScopeSpec(Type::ParentElement, scopeRequirement);}
+    static CodeScopeSpec CreateRelatedElementScope(Utf8CP relationship=nullptr, ScopeRequirement scopeRequirement=ScopeRequirement::ElementId) {CodeScopeSpec scopeSpec(Type::RelatedElement, scopeRequirement); scopeSpec.SetRelationship(relationship); return scopeSpec;}
 };
 
 typedef bvector<CodeFragmentSpec> CodeFragmentSpecList;
@@ -273,6 +279,7 @@ public:
     DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateRepositoryScope());
 
     CodeScopeSpecCR GetScope() const {return m_scopeSpec;}
+    DgnCode::ScopeRequirement GetScopeRequirement() const {return GetScope().GetScopeRequirement();}
     void SetScope(CodeScopeSpecCR scopeSpec) {m_scopeSpec = scopeSpec;}
     bool IsRepositoryScope() const {return CodeScopeSpec::Type::Repository == GetScope().GetType();}
     bool IsModelScope() const {return CodeScopeSpec::Type::Model == GetScope().GetType();}
@@ -284,18 +291,21 @@ public:
 
     CodeFragmentSpecListCR GetFragmentSpecs() const {return m_fragmentSpecs;}
     CodeFragmentSpecListR GetFragmentSpecsR() {return m_fragmentSpecs;}
-    bool CanGenerateCode() const {return m_fragmentSpecs.size() > 0;}
 
     DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value);
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const;
+
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnModelCR scopeModel, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const;
+
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
     DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value) const;
 
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value);
+    DGNPLATFORM_EXPORT DgnCode CreateCode(BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) const;
+
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(DgnElementCR) const;
     DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
-
     DGNPLATFORM_EXPORT static CodeSpecPtr Import(DgnDbStatus* status, CodeSpecCR sourceCodeSpec, DgnImportContext& importer);
 };
 

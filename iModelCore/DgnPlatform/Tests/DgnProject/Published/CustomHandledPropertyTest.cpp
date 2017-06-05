@@ -24,7 +24,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     {
     SetupSeedProject();
     ECN::ECValue checkValue1, checkValue2;
-    uint32_t LMindex, Spindex, Mindex, Gsindex, Orgindex, fgindex, cspindex, csindex, cvindex, jsindex, uvindex;
+    uint32_t LMindex, Spindex, Mindex, Gsindex, Orgindex, fgindex, codeScopeIndex, codeSpecIndex, codeValueIndex, jsindex, uvindex;
     DateTime dateTime = DateTime(DateTime::Kind::Utc, 2016, 2, 14, 9, 58, 17, 456);
     DgnCode code = DgnCode::CreateEmpty();
     BeGuid federationGuid(true);
@@ -34,15 +34,15 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     if (true)
     {
         DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
-        TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d());
+        TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), code);
         TestElement el(params);
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(LMindex, "LastMod"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Mindex, "Model"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Spindex, "InSpatialIndex"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(fgindex, "FederationGuid"));
-        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(csindex, "CodeSpec"));
-        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(cspindex, "CodeScope"));
-        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(cvindex, "CodeValue"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(codeSpecIndex, "CodeSpec"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(codeScopeIndex, "CodeScope"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(codeValueIndex, "CodeValue"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(uvindex, "UserLabel"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(jsindex, "JsonProperties"));
 
@@ -74,23 +74,19 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
         ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
         checkValue1.Clear();
 
-        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(csindex, ECN::ECValue(1)));
-        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(csindex, ECN::ECValue(code.GetCodeSpecId())));
-        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, csindex));
+        ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(codeSpecIndex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, codeSpecIndex));
         ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
         checkValue1.Clear();
 
-        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(cspindex, ECN::ECValue(1)));
-        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(cspindex, ECN::ECValue(code.GetValue().c_str())));
-        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(cspindex, ECN::ECValue(m_db->Elements().GetRootSubjectId())));
-        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, cspindex));
-        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(m_db->Elements().GetRootSubjectId())));
+        ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(codeScopeIndex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, codeScopeIndex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetScopeElementId())));
         checkValue1.Clear();
 
-        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(cvindex, ECN::ECValue(1)));
-        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(cvindex, ECN::ECValue("TestCode")));
-        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, cvindex));
-        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("TestCode")));
+        ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(codeValueIndex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, codeValueIndex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
         checkValue1.Clear();
 
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(uvindex, ECN::ECValue(1)));
@@ -118,14 +114,14 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
      size_t sz=sizeof(federationGuid);
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
      checkValue1.Clear();
-     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, csindex));
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, codeSpecIndex));
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
      checkValue1.Clear();
-     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
-     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(m_db->Elements().GetRootSubjectId())));
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, codeScopeIndex));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetScopeElementId())));
      checkValue1.Clear();
-     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
-     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("TestCode")));
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, codeValueIndex));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
      checkValue1.Clear();
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, uvindex));
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("userlabel")));
@@ -144,18 +140,6 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(fgindex, ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, fgindex));
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
-    checkValue1.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(csindex, ECN::ECValue(code.GetCodeSpecId())));
-    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, csindex));
-    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
-    checkValue1.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(cspindex, ECN::ECValue(m_db->Elements().GetDictionaryPartitionId())));
-    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
-    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(m_db->Elements().GetDictionaryPartitionId())));
-    checkValue1.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(cvindex, ECN::ECValue("NewTestCode")));
-    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
-    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("NewTestCode")));
     checkValue1.Clear();
     ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(uvindex, ECN::ECValue("label")));
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, uvindex));
@@ -177,21 +161,13 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, fgindex));
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
     checkValue1.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, csindex));
-    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
-    checkValue1.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
-    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(m_db->Elements().GetDictionaryPartitionId())));
-    checkValue1.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
-    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("NewTestCode")));
-    checkValue1.Clear();
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, uvindex));
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("label")));
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, jsindex));
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(Json::FastWriter::ToString(json).c_str())));
     }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/

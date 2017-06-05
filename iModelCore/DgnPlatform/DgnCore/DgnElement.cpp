@@ -266,8 +266,11 @@ DgnDbStatus DgnElement::_OnInsert()
         {
         m_code = _GenerateDefaultCode();
         if (!m_code.IsValid())
-            return DgnDbStatus::InvalidName;
+            return DgnDbStatus::InvalidCode;
         }
+
+    if (DgnDbStatus::Success != m_code.ResolveScope(GetDgnDb()))
+        return DgnDbStatus::InvalidCode;
 
     if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
@@ -2406,11 +2409,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsString())
-                return DgnDbStatus::BadArg;
-            DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetCodeSpecId(), existingCode.GetScopeElementId(), value.ToString());
-            return el.SetCode(newCode);
+            return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
             });
 
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeScope,
@@ -2422,11 +2421,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsNavigation())
-                return DgnDbStatus::BadArg;
-            DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetCodeSpecId(), value.GetNavigationInfo().GetId<DgnElementId>(), existingCode.GetValue());
-            return el.SetCode(newCode);
+            return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
             });
         
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeSpec, 
@@ -2438,11 +2433,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsNavigation())
-                return DgnDbStatus::BadArg;
-            DgnCode existingCode = el.GetCode();
-            DgnCode newCode(value.GetNavigationInfo().GetId<CodeSpecId>(), existingCode.GetScopeElementId(), existingCode.GetValue());
-            return el.SetCode(newCode);
+            return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
             });
         
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Model, 
@@ -2911,12 +2902,7 @@ DgnDbStatus DgnElement::SetCode(DgnCodeCR newCode)
         return DgnDbStatus::MissingHandler;
 
     m_code = newCode;
-
-    DgnDbStatus status = ValidateCode();
-    if (DgnDbStatus::Success != status)
-        m_code = oldCode;
-
-    return status;
+    return DgnDbStatus::Success; // WIP: Validation?
     }
 
 /*---------------------------------------------------------------------------------**//**

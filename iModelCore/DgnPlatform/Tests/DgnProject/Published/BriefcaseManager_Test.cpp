@@ -27,7 +27,7 @@ struct RepositoryManager : IRepositoryManager
     typedef IBriefcaseManager::ResponseOptions Options;
     typedef IBriefcaseManager::RequestPurpose Purpose;
 private:
-    Db  m_db;
+    Db m_db;
 
     // impl
     Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
@@ -66,6 +66,7 @@ private:
     RepositoryStatus _RelinquishCodes(DgnDbR);
     RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&);
     void GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcId);
+
 public:
     RepositoryManager();
 
@@ -237,7 +238,20 @@ RepositoryManager::RepositoryManager()
     BeTest::GetHost().GetTempDir(tempDir);
     BeSQLiteLib::Initialize(tempDir);
 
-    DbResult result = m_db.CreateNewDb(BEDB_MemoryDb);
+#if 1
+    DbResult result = m_db.CreateNewDb(BEDB_MemoryDb); // use MemoryDb for performance
+#else
+    BeFileName testFixtureName(TEST_FIXTURE_NAME, BentleyCharEncoding::Utf8);
+    BeFileName testName(TEST_NAME, BentleyCharEncoding::Utf8);
+    BeFileName serverDb;
+    BeTest::GetHost().GetOutputRoot(serverDb);
+    serverDb.AppendToPath(testFixtureName);
+    BeFileName::CreateNewDirectory(serverDb);
+    serverDb.AppendToPath(testName);
+    serverDb.AppendExtension(L"bim.server");
+    DbResult result = m_db.CreateNewDb(serverDb); // use file db for debugging
+#endif
+
     if (BE_SQLITE_OK == result)
         {
         result = CreateLocksTable();
@@ -267,9 +281,9 @@ DbResult RepositoryManager::CreateLocksTable()
 DbResult RepositoryManager::CreateCodesTable()
     {
     return m_db.CreateTable(TABLE_Codes,
-            CODE_CodeSpec " INTEGER,"
-            CODE_Scope " INTEGER,"
-            CODE_Value " TEXT,"
+            CODE_CodeSpec " INTEGER NOT NULL,"
+            CODE_Scope " TEXT NOT NULL,"
+            CODE_Value " TEXT NOT NULL,"
             CODE_State " INTEGER,"
             CODE_Revision " TEXT,"
             CODE_Briefcase " INTEGER,"
@@ -396,10 +410,7 @@ void RepositoryManager::GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcI
     bindBcId(stmt, 1, bcId);
 
     while (BE_SQLITE_ROW == stmt.Step())
-        {
-        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2));
-        codes.insert(code);
-        }
+        codes.insert(DgnCode::From(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(1), stmt.GetValueText(2)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -679,8 +690,7 @@ RepositoryStatus RepositoryManager::ValidateRelease(DgnCodeInfoSet& discarded, S
 
         if (!stmt.IsColumnNull(5))
             {
-            DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2));
-            DgnCodeInfo info(code);
+            DgnCodeInfo info(DgnCode::From(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(1), stmt.GetValueText(2)));
             info.SetDiscarded(stmt.GetValueText(5));
             discarded.insert(info);
             }
@@ -697,11 +707,11 @@ void RepositoryManager::MarkDiscarded(DgnCodeInfoSet const& discarded)
     Statement stmt;
     stmt.Prepare(m_db, "INSERT INTO " TABLE_Codes "(" CODE_CodeSpec "," CODE_Scope "," CODE_Value "," CODE_State "," CODE_Revision ") VALUES (?,?,?,2,?)");
 
-    for (auto const& info : discarded)
+    for (DgnCodeInfo const& info : discarded)
         {
-        auto const& code = info.GetCode();
+        DgnCodeCR code = info.GetCode();
         stmt.BindId(1, code.GetCodeSpecId());
-        stmt.BindId(2, code.GetScopeElementId());
+        stmt.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
         stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
         stmt.BindText(4, info.GetRevisionId(), Statement::MakeCopy::No);
 
@@ -724,7 +734,7 @@ struct VirtualCodeSet : VirtualSet
         return m_codes.end() != std::find_if(m_codes.begin(), m_codes.end(), [&](DgnCode const& arg)
             {
             return arg.GetCodeSpecId().GetValueUnchecked() == vals[0].GetValueUInt64()
-                && arg.GetScopeElementId().GetValueUnchecked() == vals[1].GetValueUInt64()
+                && arg.GetScopeString().Equals(vals[1].GetValueText())
                 && arg.GetValue().Equals(vals[2].GetValueText());
             });
         }
@@ -747,7 +757,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
     bool wantInfos = Options::CodeState == (opts & Options::CodeState);
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2));
+        DgnCode code = DgnCode::From(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(1), stmt.GetValueText(2));
         switch (static_cast<CodeState>(stmt.GetValueInt(3)))
             {
             case CodeState::Reserved:
@@ -798,7 +808,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
     for (auto const& code : req)
         {
         insert.BindId(1, code.GetCodeSpecId());
-        insert.BindId(2, code.GetScopeElementId());
+        insert.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
         insert.BindText(3, code.GetValue(), Statement::MakeCopy::No);
         insert.BindInt(4, bcId);
         auto revIter = discarded.find(DgnCodeInfo(code));
@@ -890,8 +900,7 @@ RepositoryStatus RepositoryManager::_QueryCodeStates(DgnCodeInfoSet& infos, DgnC
     stmt.BindVirtualSet(1, vset);
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        DgnCode code(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2));
-        DgnCodeInfo info(code);
+        DgnCodeInfo info(DgnCode::From(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(1), stmt.GetValueText(2)));
         switch (static_cast<CodeState>(stmt.GetValueInt(3)))
             {
             case CodeState::Reserved:
@@ -912,7 +921,7 @@ RepositoryStatus RepositoryManager::_QueryCodeStates(DgnCodeInfoSet& infos, DgnC
         infos.insert(info);
         }
 
-    for (auto const& code : codes)
+    for (DgnCodeCR code : codes)
         {
         // Server doesn't keep track of "available" codes...
         DgnCodeInfo info(code);
@@ -934,7 +943,7 @@ RepositoryStatus RepositoryManager::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
     stmt.BindInt(1, static_cast<int>(db.GetBriefcaseId().GetValue()));
     
     while (BE_SQLITE_ROW == stmt.Step())
-        codes.insert(DgnCode(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueId<DgnElementId>(1), stmt.GetValueText(2)));
+        codes.insert(DgnCode::From(stmt.GetValueId<CodeSpecId>(0), stmt.GetValueText(1), stmt.GetValueText(2)));
 
     return RepositoryStatus::Success;
     }
@@ -952,7 +961,7 @@ void RepositoryManager::MarkRevision(DgnCodeSet const& codes, bool discarded, Ut
     for (DgnCodeCR code : codes)
         {
         stmt.BindId(1, code.GetCodeSpecId());
-        stmt.BindId(2, code.GetScopeElementId());
+        stmt.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
         stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
         stmt.BindInt(4, static_cast<int>(discarded ? CodeState::Discarded : CodeState::Used));
         stmt.BindText(5, revId, Statement::MakeCopy::No);
@@ -2509,6 +2518,16 @@ struct CodesManagerTest : RepositoryManagerTest
         return status;
         }
 
+    static PhysicalElementPtr InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, BeGuidCR federationGuid=BeGuid(), DgnCodeCR code=DgnCode())
+        {
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(model, categoryId);
+        EXPECT_TRUE(element.IsValid());
+        element->SetFederationGuid(federationGuid);
+        element->SetCode(code);
+        EXPECT_TRUE(element->Insert().IsValid());
+        return element;
+        }
+
     static DgnCode MakeStyleCode(Utf8CP name, DgnDbR db)
         {
         // Because AnnotationTextStyle::CreateCodeFromName() is private for some reason...
@@ -2522,6 +2541,22 @@ struct CodesManagerTest : RepositoryManagerTest
         DgnCodeSet codes;
         EXPECT_STATUS(Success, m_server._QueryCodes(codes, db));
         return codes;
+        }
+
+    bool IsCodeReserved(IBriefcaseManager& briefcaseManager, DgnCodeCR code)
+        {
+        DgnCodeSet codes;
+        codes.insert(code);
+        return briefcaseManager.AreCodesReserved(codes);
+        }
+
+    void AcquireSharedLockOnModel(DgnDbR db, DgnModelId modelId)
+        {
+        DgnModelPtr model = db.Models().GetModel(modelId);
+        EXPECT_TRUE(model.IsValid());
+        IBriefcaseManager::Request request;
+        request.Locks().Insert(*model, LockLevel::Shared);
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().Acquire(request).Result());
         }
 };
 
@@ -2738,6 +2773,200 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     EXPECT_STATUS(Success, mgr.RelinquishCodes());
     ExpectState(MakeDiscarded(unusedCode, rev3), db);
     ExpectState(MakeDiscarded(usedCode, rev2), db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* It is common in Plant to reserve codes before elements exist.
+* @bsimethod                                                    Shaun.Sewall    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, PlantScenario)
+    {
+    DgnDbPtr pDb = SetupDb(L"PlantScenarioTest.bim", BeBriefcaseId(2));
+    DgnDbR db = *pDb;
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(db, "TestPhysicalModel");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "TestSpatialCategory");
+
+    CodeSpecPtr unitCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Unit", CodeScopeSpec::CreateModelScope());
+    EXPECT_TRUE(unitCodeSpec.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, unitCodeSpec->Insert());
+    EXPECT_TRUE(unitCodeSpec->IsModelScope());
+    EXPECT_FALSE(unitCodeSpec->GetScope().IsFederationGuidRequired());
+
+    Utf8CP fakeRelationship = "Fake.EquipmentScopedByUnit"; // relationship name not validated by CodeScopeSpec yet
+    CodeSpecPtr equipmentCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Equipment", CodeScopeSpec::CreateRelatedElementScope(fakeRelationship, DgnCode::ScopeRequirement::FederationGuid));
+    EXPECT_TRUE(equipmentCodeSpec.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, equipmentCodeSpec->Insert());
+    EXPECT_TRUE(equipmentCodeSpec->IsRelatedElementScope());
+    EXPECT_STREQ(equipmentCodeSpec->GetScope().GetRelationship().c_str(), fakeRelationship);
+    EXPECT_TRUE(equipmentCodeSpec->GetScope().IsFederationGuidRequired());
+
+    CodeSpecPtr nozzleCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Nozzle", CodeScopeSpec::CreateParentElementScope(DgnCode::ScopeRequirement::FederationGuid));
+    EXPECT_TRUE(nozzleCodeSpec.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, nozzleCodeSpec->Insert());
+    EXPECT_TRUE(nozzleCodeSpec->IsParentElementScope());
+    EXPECT_TRUE(nozzleCodeSpec->GetScope().IsFederationGuidRequired());
+
+    BeGuid unitGuid(true);
+    BeGuid equipment1Guid(true);
+    BeGuid nozzle11Guid(true);
+    BeGuid nozzle12Guid(true);
+    BeGuid equipment2Guid(true);
+    BeGuid nozzle21Guid(true);
+    BeGuid nozzle22Guid(true);
+    BeGuid nozzle23Guid(true);
+
+    DgnCode unitCode = unitCodeSpec->CreateCode(*physicalModel, "U1");
+    DgnCode equipment1Code = equipmentCodeSpec->CreateCode(unitGuid, "U1-E1");
+    DgnCode nozzle11Code = nozzleCodeSpec->CreateCode(equipment1Guid, "N1");
+    DgnCode nozzle12Code = nozzleCodeSpec->CreateCode(equipment1Guid, "N2");
+    DgnCode equipment2Code = equipmentCodeSpec->CreateCode(unitGuid, "U1-E2");
+    DgnCode nozzle21Code = nozzleCodeSpec->CreateCode(equipment2Guid, "N1");
+    DgnCode nozzle22Code = nozzleCodeSpec->CreateCode(equipment2Guid, "N2");
+    DgnCode nozzle23Code = nozzleCodeSpec->CreateCode(equipment2Guid, "N3");
+    DgnCode nozzle24Code = nozzleCodeSpec->CreateCode(equipment2Guid, "N4");
+    DgnCode nozzle25Code = nozzleCodeSpec->CreateCode(equipment2Guid, "N5");
+
+    DgnCodeSet codesToReserve;
+    codesToReserve.insert(unitCode);
+    codesToReserve.insert(equipment1Code);
+    codesToReserve.insert(nozzle11Code);
+    codesToReserve.insert(nozzle12Code);
+    codesToReserve.insert(equipment2Code);
+    codesToReserve.insert(nozzle21Code);
+    codesToReserve.insert(nozzle22Code);
+    codesToReserve.insert(nozzle23Code);
+    codesToReserve.insert(nozzle24Code);
+    codesToReserve.insert(nozzle25Code);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCodes(codesToReserve).Result());
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesToReserve));
+
+    DgnCodeSet codesFromServer = GetReservedCodes(db);
+    for (DgnCodeCR code : codesToReserve)
+        {
+        EXPECT_TRUE(codesFromServer.end() != codesFromServer.find(code));
+        }
+
+    DgnCodeInfoSet codeStates;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryCodeStates(codeStates, codesToReserve));
+    for (DgnCodeInfo const& codeState : codeStates)
+        {
+        EXPECT_TRUE(codeState.IsReserved());
+        }
+
+    IBriefcaseManager::Request request1, request2;
+    request1.Codes() = codesToReserve;
+    Json::Value requestJson(Json::objectValue);
+    request1.ToJson(requestJson);
+    EXPECT_TRUE(request2.FromJson(requestJson));
+    EXPECT_EQ(request2.Codes().size(), codesToReserve.size());
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(request2.Codes()));
+
+    DgnCodeSet wrongCodes;
+    wrongCodes.insert(unitCodeSpec->CreateCode(*physicalModel, "U2")); // wrong name
+    wrongCodes.insert(unitCodeSpec->CreateCode(db.GetDictionaryModel(), "U1")); // wrong model
+    wrongCodes.insert(DgnCode(unitCodeSpec->GetCodeSpecId(), DgnElementId(), "U1")); // invalid scope
+    wrongCodes.insert(DgnCode(nozzleCodeSpec->GetCodeSpecId(), DgnCode::ScopeRequirement::Unknown, DgnElementId(), BeGuid(), "N1")); // invalid scope
+    wrongCodes.insert(nozzleCodeSpec->CreateCode(equipment1Guid, "N3")); // wrong scope
+
+    for (DgnCodeCR wrongCode : wrongCodes)
+        {
+        BeTest::SetFailOnAssert(false);
+        bool isCodeReserved = IsCodeReserved(db.BriefcaseManager(), wrongCode);
+        BeTest::SetFailOnAssert(true);
+
+        EXPECT_FALSE(isCodeReserved) << "wrongCode should not be reserved";
+        EXPECT_TRUE(codesFromServer.end() == codesFromServer.find(wrongCode)) << "Should not find wrongCode on server";
+        }
+
+    DgnCodeSet availableCodes;
+    availableCodes.insert(unitCodeSpec->CreateCode(*physicalModel, "U2"));
+    availableCodes.insert(unitCodeSpec->CreateCode(*physicalModel, "U3"));
+    availableCodes.insert(nozzleCodeSpec->CreateCode(equipment1Guid, "N3"));
+    availableCodes.insert(nozzleCodeSpec->CreateCode(equipment1Guid, "N4"));
+
+    IBriefcaseManager::Request availableCodesRequest;
+    availableCodesRequest.Codes() = availableCodes;
+    EXPECT_TRUE(db.BriefcaseManager().AreResourcesAvailable(availableCodesRequest));
+    EXPECT_FALSE(db.BriefcaseManager().AreCodesReserved(availableCodesRequest.Codes()));
+
+    DgnCodeInfoSet availableCodeStates;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryCodeStates(availableCodeStates, availableCodes));
+    for (DgnCodeInfo const& codeState : availableCodeStates)
+        {
+        EXPECT_TRUE(codeState.IsAvailable());
+        }
+
+    DgnCodeSet codesEmpty;
+    DgnCodeSet codesSkipped;
+    codesSkipped.insert(DgnCode::CreateEmpty());
+    codesSkipped.insert(DgnCode());
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesEmpty)) << "Should return true because there is nothing to reserve (empty list of codes)";
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesSkipped)) << "Should return true because there is nothing to reserve (effectively an empty list of codes)";
+
+    DgnCodeSet codesToRelease;
+    codesToRelease.insert(nozzle24Code);
+    codesToRelease.insert(nozzle25Code);
+    EXPECT_NE(RepositoryStatus::Success, db.BriefcaseManager().ReleaseCodes(codesToRelease)) << "ReleaseCodes should fail because of pending transaction";
+
+    db.SaveChanges("1");
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReleaseCodes(codesToRelease)) << "ReleaseCodes should succeed after SaveChanges is called";
+    EXPECT_FALSE(db.BriefcaseManager().AreCodesReserved(codesToRelease));
+
+    PhysicalElementPtr unitElement = InsertPhysicalElement(*physicalModel, categoryId, unitGuid, unitCode);
+    PhysicalElementPtr equipment1Element = InsertPhysicalElement(*physicalModel, categoryId, equipment1Guid, equipment1Code);
+    PhysicalElementPtr nozzle11Element = InsertPhysicalElement(*physicalModel, categoryId, nozzle11Guid, nozzle11Code);
+    PhysicalElementPtr nozzle12Element = InsertPhysicalElement(*physicalModel, categoryId, nozzle12Guid, nozzle12Code);
+    PhysicalElementPtr equipment2Element = InsertPhysicalElement(*physicalModel, categoryId, equipment2Guid, equipment2Code);
+    PhysicalElementPtr nozzle21Element = InsertPhysicalElement(*physicalModel, categoryId, nozzle21Guid, nozzle21Code);
+    PhysicalElementPtr nozzle22Element = InsertPhysicalElement(*physicalModel, categoryId, nozzle22Guid, nozzle22Code);
+    PhysicalElementPtr nozzle23Element = InsertPhysicalElement(*physicalModel, categoryId, nozzle23Guid, nozzle23Code);
+
+    EXPECT_EQ(unitCode, unitElement->GetCode());
+    EXPECT_EQ(equipment1Code, equipment1Element->GetCode());
+    EXPECT_EQ(nozzle11Code, nozzle11Element->GetCode());
+    EXPECT_EQ(nozzle12Code, nozzle12Element->GetCode());
+    EXPECT_EQ(equipment2Code, equipment2Element->GetCode());
+    EXPECT_EQ(nozzle21Code, nozzle21Element->GetCode());
+    EXPECT_EQ(nozzle22Code, nozzle22Element->GetCode());
+    EXPECT_EQ(nozzle23Code, nozzle23Element->GetCode());
+
+    DgnCodeSet reservedCodes;
+    reservedCodes.insert(unitElement->GetCode());
+    reservedCodes.insert(equipment1Element->GetCode());
+    reservedCodes.insert(nozzle11Element->GetCode());
+    reservedCodes.insert(nozzle12Element->GetCode());
+    reservedCodes.insert(equipment2Element->GetCode());
+    reservedCodes.insert(nozzle21Element->GetCode());
+    reservedCodes.insert(nozzle22Element->GetCode());
+    reservedCodes.insert(nozzle23Element->GetCode());
+
+    DgnCodeInfoSet reservedCodeStates;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryCodeStates(reservedCodeStates, reservedCodes));
+    for (DgnCodeInfo const& codeState : reservedCodeStates)
+        {
+        EXPECT_TRUE(codeState.IsReserved());
+        }
+
+    db.SaveChanges("2");
+    CommitRevision(db); // simulates pushing revision to server which should mark codes as used
+
+    DgnCodeSet usedCodes;
+    usedCodes.insert(unitCode);
+    usedCodes.insert(equipment1Code);
+    usedCodes.insert(nozzle11Code);
+    usedCodes.insert(nozzle12Code);
+    usedCodes.insert(equipment2Code);
+    usedCodes.insert(nozzle21Code);
+    usedCodes.insert(nozzle22Code);
+    usedCodes.insert(nozzle23Code);
+
+    DgnCodeInfoSet usedCodeStates;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryCodeStates(usedCodeStates, usedCodes));
+    for (DgnCodeInfo const& codeState : usedCodeStates)
+        {
+        EXPECT_TRUE(codeState.IsUsed());
+        }
     }
 
 //=======================================================================================

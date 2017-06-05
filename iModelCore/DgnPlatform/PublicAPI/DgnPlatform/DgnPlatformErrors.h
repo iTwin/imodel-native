@@ -55,6 +55,7 @@ enum class DgnDbStatus : int
     IdExists,
     InDynamicTransaction,
     InvalidCategory,
+    InvalidCode,
     InvalidCodeSpec,
     InvalidId,
     InvalidName,

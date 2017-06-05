@@ -459,10 +459,8 @@ TEST_F(CategoryTests, SubCategoryInvariants)
 
     // Code validation
     DgnSubCategoryPtr defaultSubCat1Edit = defaultSubCat1->MakeCopy<DgnSubCategory>();
-    DgnCode code;    // invalid code
-    EXPECT_EQ(DgnDbStatus::InvalidCodeSpec, defaultSubCat1Edit->SetCode(code));
 
-    code = DgnSubCategory::CreateCode(db, cat2Id, "Cat2"); // Duplicate code
+    DgnCode code = DgnSubCategory::CreateCode(db, cat2Id, "Cat2");
     EXPECT_EQ(DgnDbStatus::Success, defaultSubCat1Edit->SetCode(code));
     DgnDbStatus status;
     defaultSubCat1Edit->Update(&status);

@@ -432,8 +432,9 @@ DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
     {
-    BeAssert(scopeModel.GetModelId().IsValid() && IsModelScope());
-    return scopeModel.GetModelId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), scopeModel.GetModeledElementId(), value) : DgnCode();
+    DgnElementCPtr scopeElement = scopeModel.GetModeledElement();
+    BeAssert(scopeElement.IsValid() && IsModelScope());
+    return scopeElement.IsValid() && !value.empty() ? CreateCode(*scopeElement, value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -442,7 +443,26 @@ DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
 DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const
     {
     BeAssert(scopeElement.GetElementId().IsValid());
-    return scopeElement.GetElementId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), scopeElement.GetElementId(), value) : DgnCode();
+    return scopeElement.GetElementId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), GetScopeRequirement(), scopeElement.GetElementId(), scopeElement.GetFederationGuid(), value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(DgnDbR db, Utf8CP codeSpecName, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value)
+    {
+    CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(codeSpecName);
+    BeAssert(codeSpec.IsValid());
+    return codeSpec.IsValid() ? codeSpec->CreateCode(scopeFederationGuid, value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) const
+    {
+    BeAssert(scopeFederationGuid.IsValid());
+    return scopeFederationGuid.IsValid() ? DgnCode(GetCodeSpecId(), GetScopeRequirement(), DgnElementId(), scopeFederationGuid, value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -454,27 +474,121 @@ DgnCode DgnCode::CreateEmpty()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Shaun.Sewall    06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCode::From(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value)
+DgnCode DgnCode::From(CodeSpecId specId, Utf8StringCR scope, Utf8StringCR value)
     {
-    m_specId = specId;
-    m_scopeElementId = scopeElementId;
-    m_value = value;
+    if (specId.IsValid() && !scope.empty() && !value.empty())
+        {
+        if (scope.Contains("-"))
+            {
+            BeGuid scopeFederationGuid;
+            if (BentleyStatus::SUCCESS == scopeFederationGuid.FromString(scope.c_str()))
+                return DgnCode(specId, ScopeRequirement::FederationGuid, DgnElementId(), scopeFederationGuid, value);
+            }
+        else
+            {
+            uint64_t scopeElementId;
+            if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, scope.c_str()))
+                return DgnCode(specId, ScopeRequirement::ElementId, DgnElementId(scopeElementId), BeGuid(), value);
+            }
+        }
+
+    BeAssert(false);
+    return DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
+* @bsimethod                                                    Shaun.Sewall    06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnCode::operator<(DgnCode const& rhs) const
+bool DgnCode::operator<(DgnCodeCR rhs) const
     {
-    if (GetCodeSpecId().GetValueUnchecked() != rhs.GetCodeSpecId().GetValueUnchecked())
-        return GetCodeSpecId().GetValueUnchecked() < rhs.GetCodeSpecId().GetValueUnchecked();
+    if (m_specId != rhs.m_specId)
+        return m_specId < rhs.m_specId;
 
-    if (GetScopeElementId().GetValueUnchecked() != rhs.GetScopeElementId().GetValueUnchecked())
-        return GetScopeElementId().GetValueUnchecked() < rhs.GetScopeElementId().GetValueUnchecked();
+    if (m_scopeRequirement == rhs.m_scopeRequirement)
+        {
+        switch (m_scopeRequirement)
+            {
+            case ScopeRequirement::ElementId: 
+                return m_scopeElementId != rhs.m_scopeElementId ? m_scopeElementId < rhs.m_scopeElementId : GetValue().CompareTo(rhs.GetValue()) < 0;
+
+            case ScopeRequirement::FederationGuid: 
+                return m_scopeFederationGuid != rhs.m_scopeFederationGuid ? m_scopeFederationGuid < rhs.m_scopeFederationGuid : GetValue().CompareTo(rhs.GetValue()) < 0;
+
+            case ScopeRequirement::Unknown: 
+            default: 
+                break; // fall through
+            }
+        }
+
+    // ScopeRequirement is different or unknown
+    if (m_scopeElementId != rhs.m_scopeElementId)
+        return m_scopeElementId < rhs.m_scopeElementId;
+
+    if (!m_scopeElementId.IsValid() && (m_scopeFederationGuid != rhs.m_scopeFederationGuid)) // reserved code case
+        return m_scopeFederationGuid < rhs.m_scopeFederationGuid;
 
     return GetValue().CompareTo(rhs.GetValue()) < 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnCode::operator==(DgnCodeCR other) const 
+    {
+    if (m_specId != other.m_specId)
+        return false;
+
+    if (m_value != other.m_value)
+        return false;
+    
+    if (m_scopeRequirement == other.m_scopeRequirement)
+        {
+        switch (m_scopeRequirement)
+            {
+            case ScopeRequirement::ElementId: return m_scopeElementId == other.m_scopeElementId;
+            case ScopeRequirement::FederationGuid: return m_scopeFederationGuid == other.m_scopeFederationGuid;
+            case ScopeRequirement::Unknown: default: break; // fall through
+            }
+        }
+
+    // if ScopeRequirement different or unknown, compare both sets of scope IDs
+    return (m_scopeElementId == other.m_scopeElementId) && (m_scopeFederationGuid == other.m_scopeFederationGuid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnCode::ResolveScope(DgnDbCR db)
+    {
+    if (!m_specId.IsValid())
+        return DgnDbStatus::InvalidCodeSpec;
+
+    if (ScopeRequirement::Unknown == m_scopeRequirement)
+        {
+        CodeSpecCPtr spec = db.CodeSpecs().GetCodeSpec(m_specId);
+        if (!spec.IsValid())
+            return DgnDbStatus::InvalidCodeSpec;
+
+        m_scopeRequirement = spec->GetScopeRequirement();
+        }
+
+    if (!m_scopeElementId.IsValid()) // always attempt to resolve m_scopeElementId because DgnElement::Insert will need it
+        {
+        DgnElementCPtr element = db.Elements().QueryElementByFederationGuid(m_scopeFederationGuid);
+        if (element.IsValid())
+            m_scopeElementId = element->GetElementId();
+        }
+
+    if (!m_scopeFederationGuid.IsValid() && (ScopeRequirement::FederationGuid == m_scopeRequirement))
+        {
+        DgnElementCPtr element = db.Elements().GetElement(m_scopeElementId);
+        if (element.IsValid())
+            m_scopeFederationGuid = element->GetFederationGuid();
+        }
+
+    return  DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1631,7 +1631,7 @@ public:
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Get the FederationGuid of this DgnElement.
-    BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
+    BeSQLite::BeGuidCR GetFederationGuid() const {return m_federationGuid;}
 
     //! Set the FederationGuid for this DgnElement.
     //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
@@ -1661,9 +1661,7 @@ public:
     //! Generate a default code for this DgnElement
     DgnCode GenerateDefaultCode() const {return _GenerateDefaultCode();}
 
-    DGNPLATFORM_EXPORT DgnDbStatus GenerateCode(bool replaceExistingCode=false);
     DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCodeCR newCode);
-    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
     DGNPLATFORM_EXPORT CodeSpecCPtr GetCodeSpec() const;
     bool SupportsCodeSpec(CodeSpecCR codeSpec) const {return _SupportsCodeSpec(codeSpec);}
 
