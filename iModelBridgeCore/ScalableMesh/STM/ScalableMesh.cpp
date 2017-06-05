@@ -1380,9 +1380,13 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
     }
 
 DTMStatusInt ScalableMeshDTM::_GetBoundary(DTMPointArray& result)
-{
-return m_scMesh->GetBoundary(result) == SUCCESS ? DTM_SUCCESS : DTM_ERROR;
-}
+    {
+    DTMPointArray boundary;
+    if (m_scMesh->GetBoundary(boundary) != SUCCESS)
+        return DTM_ERROR;
+    m_transformToUors.Multiply(result, boundary);
+    return DTM_SUCCESS;
+    }
 
 IDTMDrapingP ScalableMeshDTM::_GetDTMDraping()
     {
