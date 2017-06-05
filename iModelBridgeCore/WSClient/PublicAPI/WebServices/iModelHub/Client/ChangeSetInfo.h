@@ -17,9 +17,9 @@ typedef RefCountedPtr<struct ChangeSetInfo> ChangeSetInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ChangeSetInfo);
 DEFINE_TASK_TYPEDEFS(ChangeSetInfoPtr, ChangeSetInfo);
 DEFINE_TASK_TYPEDEFS(bvector<ChangeSetInfoPtr>, ChangeSetsInfo);
-typedef bvector<Dgn::DgnRevisionPtr> DgnRevisions;
-DEFINE_TASK_TYPEDEFS(DgnRevisions, DgnRevisions);
-DEFINE_TASK_TYPEDEFS(Dgn::DgnRevisionPtr, DgnRevision);
+typedef bvector<Dgn::DgnRevisionPtr> ChangeSets;
+DEFINE_TASK_TYPEDEFS(ChangeSets, ChangeSets);
+DEFINE_TASK_TYPEDEFS(Dgn::DgnRevisionPtr, ChangeSet);
 
 //=======================================================================================
 //! Information about changeSet.
@@ -46,6 +46,7 @@ private:
     BeSQLite::BeBriefcaseId m_briefcaseId;
     ContainingChanges       m_containingChanges;
 
+    friend struct iModelConnectionImpl;
     friend struct iModelConnection;
     friend struct PredownloadManager;
     FileAccessKeyPtr m_fileAccessKey;
