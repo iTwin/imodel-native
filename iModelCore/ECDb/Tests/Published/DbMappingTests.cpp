@@ -14,41 +14,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, SimpleFail)
-    {
-    ECDbR ecdb = SetupECDb("SimpleFK.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName='TestSchema9' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
-    <ECEntityClass typeName='Parent' >
-        <ECProperty propertyName='Name' typeName='string' />
-    </ECEntityClass>
-    <ECEntityClass typeName='ParentA' >
-        <BaseClass>Parent</BaseClass>
-        <ECProperty propertyName='PA' typeName='long' />
-    </ECEntityClass>
-    <ECEntityClass typeName='ParentB' >
-        <BaseClass>Parent</BaseClass>
-        <ECProperty propertyName='PB' typeName='long' />
-    </ECEntityClass>
-    <ECEntityClass typeName='Child' >
-        <ECProperty propertyName='C1' typeName='long' />
-        <ECNavigationProperty propertyName='Parent' relationshipName='ChildHasParent' direction='Forward'/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName='ChildHasParent' strength='embedding' strengthDirection='backward' modifier='Sealed'>
-        <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Children Has Parent'>
-            <Class class='Child' />
-        </Source>
-        <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Children Has Parent (Reversed)'>
-            <Class class='Parent' />
-        </Target>
-    </ECRelationshipClass>
-</ECSchema>
-)xml"));
-    ecdb.SaveChanges();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Affan.Khan                          05/17
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SimpleFK_Dervied)
     {
     ECDbCR ecdb = SetupECDb("SimpleFK.ecdb", SchemaItem(
