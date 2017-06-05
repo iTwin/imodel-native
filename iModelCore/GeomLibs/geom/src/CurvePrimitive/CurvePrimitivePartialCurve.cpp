@@ -298,27 +298,37 @@ bool _Length(RotMatrixCP worldToLocal, double &length) const override
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool _GetRange(DRange3dR range) const override
+virtual bool _GetRange(DRange3dR range) const override
         {
         MSBsplineCurve curve;
-        GetMSBsplineCurve (curve, 0.0, 1.0);
-        range = curve.GetRange ();
-        curve.ReleaseMem ();
-        return true;
+        if (GetMSBsplineCurve(curve, 0.0, 1.0))
+            {
+            range = curve.GetRange();
+            curve.ReleaseMem();
+            return true;
+            }
+
+        range.Init();
+        return false;
         }
 
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool _GetRange(DRange3dR range, TransformCR transform) const override
+virtual bool _GetRange(DRange3dR range, TransformCR transform) const override
         {
         MSBsplineCurve curve;
-        GetMSBsplineCurve (curve, 0.0, 1.0);
-        curve.TransformCurve (transform);
-        range = curve.GetRange ();
-        curve.ReleaseMem ();
-        return true;
+        if (GetMSBsplineCurve(curve, 0.0, 1.0))
+            {
+            curve.TransformCurve(transform);
+            range = curve.GetRange();
+            curve.ReleaseMem();
+            return true;
+            }
+
+        range.Init();
+        return false;
         }
 
 

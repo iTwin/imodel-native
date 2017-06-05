@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cv_clone.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -36,8 +36,8 @@ bool CloneAndPush (CurveVectorR dest, ICurvePrimitivePtr const &parent, double f
         }
     else 
         curve = parent->CloneBetweenFractions (fraction0, fraction1, false);
-
-    if (curve.IsNull())
+    double a;
+    if (curve.IsNull () || !curve->Length (a) || a <= DoubleOps::SmallMetricDistance ())
         return false;
 
     dest.push_back (curve);
