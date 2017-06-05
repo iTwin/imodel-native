@@ -2130,12 +2130,12 @@ public:
     {
         Encoding m_encoding;
         PageSize m_pagesize;
+        enum DbType {Master=0,Standalone=1} m_dbType;
         enum CompressedDb {CompressDb_None=0,CompressDb_Zlib=1,CompressDb_Snappy=2,} m_compressedDb;
         enum ApplicationId : uint64_t {APPLICATION_ID_BeSQLiteDb='BeDb',} m_applicationId;
         bool m_failIfDbExists;
         DateTime m_expirationDate;
-        bool m_createStandalone;
-
+        
         //! @param[in] pagesize The pagesize for the database. Default is 4K.
         //! @param[in] encoding The text encoding mode for the database. The default is UTF-8 and is almost always the best choice.
         //! @param[in] failIfDbExists If true, return an error if a the specified file already exists, otherwise delete existing file.
@@ -2143,11 +2143,12 @@ public:
         //! @param[in] retry Supply a BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
         //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
-        //! @param[in] createStandalone If true, creates a standalone database; otherwise, creates a master database
+        //! @param[in] dbType Option to create a standalone or a master database.
         explicit CreateParams(PageSize pagesize=PageSize::PAGESIZE_4K, Encoding encoding=Encoding::Utf8, bool failIfDbExists=true,
-                DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr, bool createStandalone=false)
+                DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr, DbType dbType=DbType::Master)
                 : OpenParams(OpenMode::Create, defaultTxn, retry), m_encoding(encoding), m_pagesize(pagesize), m_compressedDb(CompressDb_None),
-                m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb), m_createStandalone(createStandalone) {}
+                m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb), m_dbType(dbType)
+            {}
 
         //! Set the page size for the newly created database.
         void SetPageSize(PageSize pagesize) {m_pagesize = pagesize;}
@@ -2162,7 +2163,7 @@ public:
         //! Set expiration date for the newly created database.
         void SetExpirationDate(DateTime xdate) {m_expirationDate=xdate;}
         //! Set whether to create a standalone or master database.
-        void SetCreateStandalone(bool val) {m_createStandalone=val;}
+        void SetDbType(DbType val) { m_dbType = val; }
     };
 
     //=======================================================================================
@@ -2214,9 +2215,9 @@ protected:
     //! @note implementers should always forward this call to their superclass.
     BE_SQLITE_EXPORT virtual void _OnDbChangedByOtherConnection();
 
-    //!< override to perform additional processing when briefcase id is changed
+    //!< override to perform additional processing when briefcase id is assigned
     //! @note implementers should always forward this call to their superclass.
-    virtual DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) {return BE_SQLITE_OK;}
+    virtual DbResult _OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId) { return BE_SQLITE_OK; }
 
     //! Gets called when a Db is opened and checks whether the file can be opened, i.e
     //! whether the file version matches what the opening API expects.

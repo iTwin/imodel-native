@@ -1469,7 +1469,7 @@ DbResult Db::AssignBriefcaseId(BeBriefcaseId id)
         return stat;
         }
 
-    stat =_OnBriefcaseIdChanged(id);
+    stat =_OnBriefcaseIdAssigned(id);
     if (stat != BE_SQLITE_OK)
         {
         AbandonChanges();
@@ -1669,8 +1669,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
 
-    if (params.m_createStandalone)
-        m_dbFile->m_briefcaseId = BeBriefcaseId(BeBriefcaseId::Standalone());
+    m_dbFile->m_briefcaseId = (params.m_dbType == Db::CreateParams::DbType::Standalone) ? BeBriefcaseId(BeBriefcaseId::Standalone()) : BeBriefcaseId(BeBriefcaseId::Master());
 
     ExecuteSql(SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\";", params.m_pagesize,
                               params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
