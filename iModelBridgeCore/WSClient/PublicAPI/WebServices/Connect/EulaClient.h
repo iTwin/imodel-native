@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Connect/EulaClient.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,7 +22,7 @@ typedef AsyncResult<void, HttpError> EulaResult;
 // @bsiclass                                              Vytautas.Barkauskas   01/2016
 //=======================================================================================
 typedef std::shared_ptr<struct EulaClient> EulaClientPtr;
-struct EulaClient
+struct EulaClient : std::enable_shared_from_this<EulaClient>
     {
     private:
         IConnectAuthenticationProvider& m_authProvider;
