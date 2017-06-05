@@ -291,8 +291,6 @@ $(CoreObjs)ValueParse$(oext) :                      $(DgnCoreDir)ValueParse.cpp 
 
 $(CoreObjs)ACSManager$(oext) :                      $(DgnCoreDir)ACSManager.cpp $(DgnPlatformAPISrc)IAuxCoordSys.h ${MultiCompileDepends}
 
-$(CoreObjs)CodeAdmin$(oext) :                       $(DgnCoreDir)CodeAdmin.cpp $(DgnPlatformAPISrc)DgnPlatformLib.h ${MultiCompileDepends}
-
 $(CoreObjs)DgnFont$(oext) :                         $(DgnCoreDir)DgnFont.cpp $(DgnPlatformAPISrc)DgnFont.h $(contextDepends) ${MultiCompileDepends}
 
 $(CoreObjs)DgnRscFont$(oext) :                      $(DgnCoreDir)DgnRscFont.cpp $(DgnPlatformAPISrc)DgnFont.h ${MultiCompileDepends}

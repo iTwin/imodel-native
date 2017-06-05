@@ -528,41 +528,6 @@ public:
             virtual void _OnResponse(IBriefcaseManager::Response const& response, Utf8CP operation) { }
             };
 
-        //! Supervises the creation and management of element codes.
-        struct CodeAdmin : IHostObject
-        {
-        public:
-            //! Register the default CodeSpec for the specified ECClass
-            //! @see _GetDefaultCodeSpecId
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName);
-
-            //! Get the default CodeSpec associated with the specified ECClass
-            //! @note Called by DgnElement::GenerateCode
-            //! @see _RegisterDefaultCodeSpec
-            DGNPLATFORM_EXPORT virtual CodeSpecId _GetDefaultCodeSpecId(DgnDbR, ECN::ECClassCR) const;
-
-            //! Generate a DgnCode for the specified element using the specified CodeSpec
-            DGNPLATFORM_EXPORT virtual DgnCode _GenerateCode(DgnElementCR, CodeSpecCR) const;
-            
-            //! Reserve the next DgnCode given an element, a CodeSpec, and a sequenceMask
-            //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnCode _ReserveNextCodeInSequence(DgnElementCR, CodeSpecCR, Utf8StringCR) const;
-
-            //! Attempt to reserve the specified DgnCode for the specified element
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _ReserveCode(DgnElementCR, DgnCodeCR) const;
-            
-            //! Validate a code against the specified CodeSpec
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(DgnCodeCR, CodeSpecCR) const;
-
-            //! Get the class type code for the specified element
-            //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetElementTypeCode(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
-
-            //! Get the value of a property as specified by the CodeFragmentSpec
-            //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
-        };
-
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
@@ -580,7 +545,6 @@ public:
         FormatterAdmin*         m_formatterAdmin;
         ScriptAdmin*            m_scriptingAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
-        CodeAdmin*              m_codeAdmin;
         Utf8String              m_productName;
         DevelopmentPhase        m_developmentPhase;
         T_RegisteredDomains     m_registeredDomains;
@@ -624,9 +588,6 @@ public:
         //! Supply the RepositoryAdmin
         DGNPLATFORM_EXPORT virtual RepositoryAdmin& _SupplyRepositoryAdmin();
 
-        //! Supply the CodeAdmin.
-        DGNPLATFORM_EXPORT virtual CodeAdmin& _SupplyCodeAdmin();
-
         //! Supply the SessionSettingsAdmin.
         DGNPLATFORM_EXPORT virtual SessionSettingsAdmin& _SupplySessionSettingsAdmin();
 
@@ -656,7 +617,6 @@ public:
             m_formatterAdmin = nullptr;
             m_scriptingAdmin = nullptr;
             m_repositoryAdmin = nullptr;
-            m_codeAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -674,7 +634,6 @@ public:
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
-        CodeAdmin&              GetCodeAdmin()             {return *m_codeAdmin;} 
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
         DevelopmentPhase        GetDevelopmentPhase()      {return m_developmentPhase;}
 

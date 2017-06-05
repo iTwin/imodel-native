@@ -132,7 +132,6 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
-    void SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin* admin) {delete m_codeAdmin; m_codeAdmin = admin;}
     void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin) {((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl = admin;}
     DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin() {return ((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl;}
 };
@@ -160,14 +159,6 @@ ScopedDgnHost::~ScopedDgnHost()
 void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
     {
     m_pimpl->SetFetchScriptCallback(cb);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ScopedDgnHost::SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin* admin)
-    {
-    m_pimpl->SetCodeAdmin(admin);
     }
 
 /*---------------------------------------------------------------------------------**//**
