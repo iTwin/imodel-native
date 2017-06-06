@@ -23,6 +23,7 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 #Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
+#TFS 709855
 # Fails with this error which is wrong
 #                         if (!ecRelationshipClass->HasBaseClasses())
 #                             {

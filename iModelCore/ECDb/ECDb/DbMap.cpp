@@ -299,7 +299,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
                              //! EndTable must be mapped during SchemaImportContext::Phase::MappingClasses
                              //! If its not yet mapped then it mean the class that have the navigation property is marked as NotMapped and therefore the relationship was not mapped
                              //! This is a hard error.
-                             GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. At least one of its constraint classes has the'NotMapped' strategy.",
+                             GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. At least one of its constraint classes has the 'NotMapped' strategy.",
                                                                                 ecClass.GetFullName());
 
                              return ClassMappingStatus::Error;
