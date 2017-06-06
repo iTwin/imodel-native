@@ -161,8 +161,8 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             return 1;
             }
 
-        bvector<std::pair<AString, WString>> wMirrors;
-        bvector<bvector<std::pair<AString, WString>>> wSisters;
+        bvector<RealityDataDownload::url_file_pair> wMirrors;
+        bvector<bvector<RealityDataDownload::url_file_pair>> wSisters;
         for (auto& realityData : DownloadList)
             {
             RealityDataSourceCP pSource = dynamic_cast<RealityDataSourceCP>(&realityData->GetSource(0));
@@ -171,9 +171,9 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
 
             WString filename = createDirWithHash(pSource->GetUri().GetSource(), sOutputFolder, realityData->GetSource(0).GetSize());
             RealityDataDownload::ExtractFileName(filename, pSource->GetUri().GetSource());
-            wMirrors = bvector<std::pair<AString, WString>>();
-            wMirrors.push_back(std::make_pair(pSource->GetUri().GetSource(), filename));
-            wSisters = bvector<bvector<std::pair<AString, WString>>>();
+            wMirrors = bvector<RealityDataDownload::url_file_pair>();
+            wMirrors.push_back(RealityDataDownload::url_file_pair(pSource->GetUri().GetSource(), filename));
+            wSisters = bvector<bvector<RealityDataDownload::url_file_pair>>();
             wSisters.push_back(wMirrors);
             urlList.push_back(wSisters); //insert each entry as completely independant from the others
             }
@@ -220,58 +220,58 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
         WString filenameBad(sOutputFolder);
         RealityDataDownload::ExtractFileName(filenameBad, L"badFile.zip");
 
-        bvector<bvector<std::pair<AString, WString>>> sisterFileTest = 
+        bvector<bvector<RealityDataDownload::url_file_pair>> sisterFileTest =
             {
                 {
-                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a01_tif.zip", filename1),
-                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_0121_tif.zip", filenameBad)
+                RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a01_tif.zip", filename1),
+                RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_0121_tif.zip", filenameBad)
                 },
                 {
-                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a05_tif.zip", filename5),
-                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
-                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7),
-                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a08_tif.zip", filename8)
+                RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a05_tif.zip", filename5),
+                RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
+                RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7),
+                RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a08_tif.zip", filename8)
                 }
             };
 
-        bvector<bvector<std::pair<AString, WString>>> cacheTest1 =
+        bvector<bvector<RealityDataDownload::url_file_pair>> cacheTest1 =
         {
             {
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7)
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7)
             }
         };
 
-        bvector<bvector<std::pair<AString, WString>>> cacheTest2 =
+        bvector<bvector<RealityDataDownload::url_file_pair>> cacheTest2 =
         {
             {
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename3),
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7)
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename3),
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7)
             }
         };
 
-        bvector<bvector<std::pair<AString, WString>>> cacheTest3 =
+        bvector<bvector<RealityDataDownload::url_file_pair>> cacheTest3 =
         {
             {
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
-            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename4)
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
+            RealityDataDownload::url_file_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename4)
             }
         };
 
-        bvector<std::pair<AString, WString>> wMirrors;
-        bvector<bvector<std::pair<AString, WString>>> wSisters;
+        bvector<RealityDataDownload::url_file_pair> wMirrors;
+        bvector<bvector<RealityDataDownload::url_file_pair>> wSisters;
 
         for (size_t i=0; i<urlUSGSLink.size(); ++i)
             {
             WString filename(sOutputFolder);
             RealityDataDownload::ExtractFileName(filename, urlUSGSLink[i]);
 
-            wMirrors = bvector<std::pair<AString, WString>>();
-            wMirrors.push_back(std::make_pair(urlUSGSLink[i], filename));
-            wSisters = bvector<bvector<std::pair<AString, WString>>>();
+            wMirrors = bvector<RealityDataDownload::url_file_pair>();
+            wMirrors.push_back(RealityDataDownload::url_file_pair(urlUSGSLink[i], filename));
+            wSisters = bvector<bvector<RealityDataDownload::url_file_pair>>();
             wSisters.push_back(wMirrors);
             urlList.push_back(wSisters); //independant file test
             }
@@ -281,10 +281,10 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             wchar_t filename[1024];
             swprintf (filename, 1024, L"%lsOsmFile_%2llu.osm", sOutputFolder.c_str(), i);
 
-            wMirrors = bvector<std::pair<AString, WString>>();
-            wMirrors.push_back(std::make_pair("http://api.openstreetmap.org/api/0.6/map?ddox=-112.132,40.5292,-111.52,40.8019", WString(filename))); //url with typo, to force use of mirror
-            wMirrors.push_back(std::make_pair(urlOSMLink[i], WString (filename)));
-            wSisters = bvector<bvector<std::pair<AString, WString>>>();
+            wMirrors = bvector<RealityDataDownload::url_file_pair>();
+            wMirrors.push_back(RealityDataDownload::url_file_pair("http://api.openstreetmap.org/api/0.6/map?ddox=-112.132,40.5292,-111.52,40.8019", WString(filename))); //url with typo, to force use of mirror
+            wMirrors.push_back(RealityDataDownload::url_file_pair(urlOSMLink[i], WString (filename)));
+            wSisters = bvector<bvector<RealityDataDownload::url_file_pair>>();
             wSisters.push_back(wMirrors);
             urlList.push_back(wSisters); //mirror file test
             }

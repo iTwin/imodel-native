@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         {
         for( size_t i = 0; i < subNodes.size(); i ++ )
             {
-            if(subNodes[i].GetClassName().Equals("Document"))
+            if(subNodes[i].GetECClassName().Equals("Document"))
                 {
                 objectFound = true;
                 objectIndex = i;
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     objectId.ReplaceAll("/","~2F");
 
     versionResponse = RawServerResponse();
-    WSGObjectRequest* objRequest = new WSGObjectRequest(server.GetServerName(), server.GetVersion(versionResponse), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetClassName(), objectId);
+    WSGObjectRequest* objRequest = new WSGObjectRequest(server.GetServerName(), server.GetVersion(versionResponse), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetECClassName(), objectId);
 
     RawServerResponse objResponse = RawServerResponse();
     WSGRequest::GetInstance().PerformRequest(*objRequest, objResponse, 0);
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 
     // we won't execute the actual download, because a randomly chosen file could represent several gigabytes
     // but this code shows how it could be done
-    /*WSGObjectContentRequest* objRequest = new WSGObjectContentRequest(server.GetServerName(), server.GetVersion(), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetClassName(), objectId);
+    /*WSGObjectContentRequest* objRequest = new WSGObjectContentRequest(server.GetServerName(), server.GetVersion(), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetECClassName(), objectId);
     
     //open file
     WChar exePath[MAX_PATH];

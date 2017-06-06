@@ -20,6 +20,8 @@ int main(int argc, char* argv[])
     std::string substring;
     BeFileName infile = BeFileName("");
     BeFileName outfile = BeFileName("");
+    Utf8String server = "";
+    Utf8String projectId = "";
 
     if (argc == 3)
         {
@@ -39,11 +41,28 @@ int main(int argc, char* argv[])
                 substring = std::string(substringPosition);
                 outfile = BeFileName(substring.c_str());
                 }
+            else if (strstr(argv[i], "-s:") || strstr(argv[i], "--server:"))
+                {
+                substringPosition = strstr(argv[i], ":");
+                substringPosition++;
+                server = std::string(substringPosition).c_str();
+                }
+            else if (strstr(argv[i], "-p:") || strstr(argv[i], "--projectId:"))
+                {
+                substringPosition = strstr(argv[i], ":");
+                substringPosition++;
+                projectId = std::string(substringPosition).c_str();
+                }
             }
         }
 
     RealityDataConsole console = RealityDataConsole();
-    if (infile.empty() || !infile.DoesPathExist() || outfile.empty())
+    if (!server.empty() && !projectId.empty())
+        {
+        console.Run(server, projectId);
+        return 0;
+        }
+    else if (infile.empty() || !infile.DoesPathExist() || outfile.empty())
         {
         console.Run();
         return 0;

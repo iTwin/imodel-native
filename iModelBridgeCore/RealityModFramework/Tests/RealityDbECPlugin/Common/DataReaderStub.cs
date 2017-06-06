@@ -4,19 +4,13 @@ using System.Data;
 namespace IndexECPlugin.Tests.Common
     {
     internal class DataReaderStub : IDataReader
-    {
-        private int _currentIndex;
+        {
+        private readonly object[][] _records;
+        private int _currentRecord = -1;
 
-        public bool CanRead
+        public DataReaderStub (object[][] records)
             {
-            get;
-            set;
-            }
-
-        public byte[] ByteBuffer
-            {
-            get;
-            set;
+            _records = records;
             }
 
         public void Close ()
@@ -26,27 +20,29 @@ namespace IndexECPlugin.Tests.Common
 
         public void Dispose ()
             {
-            
+
             }
 
         public bool Read ()
             {
-            return CanRead;
+            _currentRecord++;
+            return _records != null && _currentRecord < _records.Length;
             }
 
         public long GetBytes (int column, long fieldOffset, byte[] buffer, int bufferOffset, int length)
-        {
-            int bytesLeft = ByteBuffer.Length - _currentIndex;
-            if ( length > bytesLeft )
+            {
+            byte[] byteStream = (byte[]) _records[_currentRecord][column];
+
+            int bytesAvailable = (int) (byteStream.Length - fieldOffset);
+            if ( length > bytesAvailable )
                 {
-                length = bytesLeft;
+                length = bytesAvailable;
                 }
 
             for ( int i = 0; i < length; i++ )
                 {
-                buffer[bufferOffset + i] = ByteBuffer[fieldOffset + i];
+                buffer[bufferOffset + i] = byteStream[fieldOffset + i];
                 }
-            _currentIndex += length;
 
             return length;
             }
@@ -131,7 +127,7 @@ namespace IndexECPlugin.Tests.Common
 
         public DateTime GetDateTime (int field)
             {
-            throw new NotImplementedException();
+            return (DateTime) _records[_currentRecord][field];
             }
 
         public Decimal GetDecimal (int field)
@@ -191,7 +187,7 @@ namespace IndexECPlugin.Tests.Common
 
         public string GetString (int field)
             {
-            throw new NotImplementedException();
+            return (string) _records[_currentRecord][field];
             }
 
         public object GetValue (int field)
@@ -206,7 +202,7 @@ namespace IndexECPlugin.Tests.Common
 
         public bool IsDBNull (int field)
             {
-            throw new NotImplementedException();
+            return _records[_currentRecord][field] == null;
             }
 
         public bool NextResult ()

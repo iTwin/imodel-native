@@ -71,8 +71,8 @@ TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
     WString filename(directory);
     RealityDataDownload::ExtractFileName(filename, urlUSGSLink);
 
-    bvector<std::pair<AString, WString>> simpleDlList = bvector<std::pair<AString, WString>>();
-    simpleDlList.push_back(std::make_pair(urlUSGSLink, filename));
+    bvector<RealityDataDownload::url_file_pair> simpleDlList = bvector<RealityDataDownload::url_file_pair>();
+    simpleDlList.push_back(RealityDataDownload::url_file_pair(urlUSGSLink, filename));
 
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(simpleDlList);
     ASSERT_TRUE(pDownload != nullptr);
@@ -104,16 +104,16 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
     WString filename2(directory);
     RealityDataDownload::ExtractFileName(filename2, urlOSMLink[1]);
 
-    RealityDataDownload::Link_File_wMirrors_wSisters sisterDlList = bvector<bvector<bvector<std::pair<AString, WString>>>>();
-    RealityDataDownload::mirrorWSistersVector mirrorGroup = bvector<bvector<std::pair<AString, WString>>>();
-    RealityDataDownload::sisterFileVector ufPair = bvector<std::pair<AString, WString>>();
+    RealityDataDownload::Link_File_wMirrors_wSisters sisterDlList = bvector<bvector<bvector<RealityDataDownload::url_file_pair>>>();
+    RealityDataDownload::mirrorWSistersVector mirrorGroup = bvector<bvector<RealityDataDownload::url_file_pair>>();
+    RealityDataDownload::sisterFileVector ufPair = bvector<RealityDataDownload::url_file_pair>();
 
     for (size_t i = 0; i < urlOSMLink.size(); ++i)
         {
         wchar_t filename[1024];
         swprintf(filename, 1024, L"%ls\\OsmFile_%2llu.osm", directory.c_str(), i);
 
-        ufPair.push_back(std::make_pair(urlOSMLink[i], WString(filename)));
+        ufPair.push_back(RealityDataDownload::url_file_pair(urlOSMLink[i], WString(filename)));
         }
     mirrorGroup.push_back(ufPair);
     sisterDlList.push_back(mirrorGroup);
@@ -123,8 +123,8 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
     pDownload->SetCertificatePath(GetPemLocation());
 
     pDownload->Perform();
-    ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[0].second.c_str()));
-    ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].second.c_str()));
+    ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[0].m_filePath.c_str()));
+    ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].m_filePath.c_str()));
     BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
 
@@ -148,15 +148,15 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
     WString filename2(directory);
     RealityDataDownload::ExtractFileName(filename2, mirrors[1]);
 
-    RealityDataDownload::Link_File_wMirrors mirrorDlList = bvector<bvector<std::pair<AString, WString>>>();
-    RealityDataDownload::mirrorVector ufPair = bvector<std::pair<AString, WString>>();
+    RealityDataDownload::Link_File_wMirrors mirrorDlList = bvector<bvector<RealityDataDownload::url_file_pair>>();
+    RealityDataDownload::mirrorVector ufPair = bvector<RealityDataDownload::url_file_pair>();
 
     for (size_t i = 0; i < mirrors.size(); ++i)
         {
         wchar_t filename[1024];
         swprintf(filename, 1024, L"%ls\\OsmFile_%2llu.osm", directory.c_str(), i);
 
-        ufPair.push_back(std::make_pair(mirrors[i], WString(filename)));
+        ufPair.push_back(RealityDataDownload::url_file_pair(mirrors[i], WString(filename)));
         }
 
     mirrorDlList.push_back(ufPair);
@@ -166,8 +166,8 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
     pDownload->SetCertificatePath(GetPemLocation());
 
     pDownload->Perform();
-    ASSERT_TRUE(!BeFileName::DoesPathExist(ufPair[0].second.c_str()));
-    ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].second.c_str()));
+    ASSERT_TRUE(!BeFileName::DoesPathExist(ufPair[0].m_filePath.c_str()));
+    ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].m_filePath.c_str()));
     BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
 
@@ -195,34 +195,34 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
     WString filename3(directory);
     RealityDataDownload::ExtractFileName(filename3, L"can03.zip");
 
-    bvector<bvector<std::pair<AString, WString>>> cacheTest1 =
+    bvector<bvector<RealityDataDownload::url_file_pair>> cacheTest1 =
         {
             {
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip", filename1),
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27E050.hgt.zip", cachename1),
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip", cachename2)
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip", filename1),
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27E050.hgt.zip", cachename1),
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip", cachename2)
             }
         };//dl first file, other 2 exist
 
-    bvector<bvector<std::pair<AString, WString>>> cacheTest2 =
+    bvector<bvector<RealityDataDownload::url_file_pair>> cacheTest2 =
         {
             {
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip", cachename1),
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N37W025.hgt.zip", filename2),
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip", cachename2)
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip", cachename1),
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N37W025.hgt.zip", filename2),
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N16E055.hgt.zip", cachename2)
             }
         };//dl second file, other 2 exist
 
-    bvector<bvector<std::pair<AString, WString>>> cacheTest3 =
+    bvector<bvector<RealityDataDownload::url_file_pair>> cacheTest3 =
         {
             {
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27E050.hgt.zip", cachename1),
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip", cachename2),
-            std::make_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip", filename3)
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27E050.hgt.zip", cachename1),
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N27W017.hgt.zip", cachename2),
+            RealityDataDownload::url_file_pair("https://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Africa/N29E049.hgt.zip", filename3)
             }
         };//dl last file, other 2 exist
 
-    RealityDataDownload::Link_File_wMirrors_wSisters sisterDlList = bvector<bvector<bvector<std::pair<AString, WString>>>>();
+    RealityDataDownload::Link_File_wMirrors_wSisters sisterDlList = bvector<bvector<bvector<RealityDataDownload::url_file_pair>>>();
 
     sisterDlList.push_back(cacheTest1);
     sisterDlList.push_back(cacheTest2);

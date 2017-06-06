@@ -74,6 +74,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT void Run();
     REALITYDATAPLATFORM_EXPORT void Run(BeFileName infile, BeFileName outfile);
+    REALITYDATAPLATFORM_EXPORT void Run(Utf8String server, Utf8String projectId);
 private:
     void _Run();
     void ConfigureServer();
@@ -103,6 +104,7 @@ private:
     void CreateRD();
     void Link();
     void Unlink();
+    void MassUnlink();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 

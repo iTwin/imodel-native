@@ -26,6 +26,12 @@ namespace IndexECPlugin.Tests.Common
             _executeNonQueryBehavior = behavior;
             }
 
+        public DataReaderStub DataReaderStub
+            {
+            get;
+            set;
+            }
+
         public string CommandText
             {
             get;
@@ -94,7 +100,7 @@ namespace IndexECPlugin.Tests.Common
 
         public IDataReader ExecuteReader ()
             {
-            throw new NotImplementedException();
+            return DataReaderStub;
             }
 
         public IDataReader ExecuteReader (CommandBehavior commandBehavior)

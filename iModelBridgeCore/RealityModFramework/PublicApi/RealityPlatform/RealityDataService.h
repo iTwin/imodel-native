@@ -49,9 +49,6 @@ public:
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT void AddProjectId() const;
-    REALITYDATAPLATFORM_EXPORT Utf8String PostProjectId() const;
-
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override; 
     REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
@@ -214,37 +211,19 @@ private:
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataDocumentContentByIdRequest
-//! This class represents a request for specific RealityDataDocument content class object.
+//! This class represents a download attempt of a specific file.
 //! The present class provides services for the support of azure redirection to blob.
 //! The RealityDataService can query the class to check if azure redirection is possible
-//!  or not. If the object indicates the redirection is possible but is not yet
-//!  redirected then the service will fetch the azure blob redirection request
-//!  and call the WSG service. If the blob address to the container is returned
-//!  then the service will set the azure blob redirection URL. After which the
-//!  object will be set to access directly the blob.
+//! or not. It will automatically attempt to download the file directly from Azure, unless
+//! the user specifies not to do so, using SetAzureRedirectionPossible(false);
 //! Example:
-//! RealityDataDocumentContentByIdRequest myRequest("0586-358df-445-de34a-dd286", "RootDocument.3mx");
-//! ...
-//! if (myRequest.IsAzureRedirectionPossible())
-//!     {
-//!     if (!myRequest.IsAzureBlobRedirected())
-//!         {
-//!         Utf8String redirectRequest = myRequest.GetAzureRedirectionRequestUrl();
-//!         if (redirectRequest.size() == 0)
-//!             myRequest.SetAzureRedirectionPossible(false);
-//!         else
-//!             SetAzureRedirectionUrlToContainer(blobContainerUrl);
-//!         }
-//!    // After this the request will provide the proper http ulr, header and body
-//!    //  either to the blob or RealityDataService
-//!
-//!    }
+//! RealityDataDocumentContentByIdRequest myRequest("0586-358df-445-de34a-dd286/RootDocument.3mx");
 //=====================================================================================
 struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
     {
 public:
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) : 
-        m_handshakeRequest(nullptr), m_allowAzureRedirection(false), m_AzureRedirected(false)
+        m_handshakeRequest(nullptr), m_allowAzureRedirection(true), m_AzureRedirected(false)
     { m_validRequestString = false; m_id = identifier; }
     
     //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
@@ -423,9 +402,6 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT void AddProjectId() const;
-    REALITYDATAPLATFORM_EXPORT Utf8String PostProjectId() const;
-
     REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(const RDSFilter& filter);
@@ -457,8 +433,8 @@ protected:
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason 02/2017
 //! A specialisation of a RealityDataPagedRequest that only obtains reality data
-//! for specific organization. Usually a CONENCT user only has access to its own organization 
-//! data only so the organizationId specified should be the identifeir of its organization.
+//! for specific organization. Usually a CONNECT user only has access to its own organization 
+//! data only so the organizationId specified should be the identifier of its organization.
 //! This request will not return public references to reality data from other organizations
 //! marked as public.
 //! Note that the present request will only return Reality Data part of an organization
@@ -476,7 +452,7 @@ protected:
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason 02/2017
 //! A specialisation of a RealityDataPagedRequest that only obtains reality data
-//! explicitely linked to a specific CONNECT Project through the Reality Data Service
+//! explicitly linked to a specific CONNECT Project through the Reality Data Service
 //! RealityData/Project registry it maintains. 
 //=====================================================================================
 struct RealityDataProjectRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
@@ -494,7 +470,7 @@ private:
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason 03/2017
 //! A specialisation of a RealityDataPagedRequest that only obtains reality data
-//! explicitely linked to a specific CONNECT Project through the Reality Data Service
+//! explicitly linked to a specific CONNECT Project through the Reality Data Service
 //! RealityData/Project registry it maintains. 
 //=====================================================================================
 struct RealityDataProjectRelationshipByRealityDataIdPagedRequest : public RealityDataPagedRequest
@@ -890,7 +866,8 @@ public:
     //! schemaName is the name of the schema exposing the RealityData Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
     //! When accessing one of the dev or qa version of RealityData Service.
-    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath = "", Utf8StringCR projectId = "");
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath = "");
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR repoName, Utf8StringCR schemaName, Utf8StringCR certificatePath, Utf8StringCR projectId);
 
     REALITYDATAPLATFORM_EXPORT static void SetProjectId(Utf8StringCR projectId);
 

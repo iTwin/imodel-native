@@ -294,6 +294,7 @@ void RealityDataConsole::Run(BeFileName infile, BeFileName outfile)
     if(s_inputSource == nullptr || s_outputDestination == nullptr)
         return;
 
+    ConfigureServer();
     _Run();
     s_outputDestination->flush();
     (dynamic_cast<std::ifstream*>(s_inputSource))->close();
@@ -306,12 +307,23 @@ void RealityDataConsole::Run()
     {
     s_inputSource = &std::cin;
     s_outputDestination = &std::cout;
+    ConfigureServer();
+    _Run();
+    }
+
+void RealityDataConsole::Run(Utf8String server, Utf8String projectId)
+    {
+    s_inputSource = &std::cin;
+    s_outputDestination = &std::cout;
+    m_server = WSGServer(server, false);
+    RawServerResponse versionResp = RawServerResponse();
+    RealityDataService::SetServerComponents(server, m_server.GetVersion(versionResp), "S3MXECPlugin--Server", "S3MX", "", projectId);
+    DisplayInfo(Utf8PrintfString("Console started with server: %s and projectId: %s\n", server, projectId), DisplayOption::Tip);
     _Run();
     }
 
 void RealityDataConsole::_Run()
     {
-    ConfigureServer();
     while (m_lastCommand != Command::Quit)
         {
         if (m_currentNode != nullptr)
@@ -388,32 +400,48 @@ void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> resu
 void RealityDataConsole::ConfigureServer()
     {
     DisplayInfo("Welcome to the RealityDataService Navigator. Please enter your server name\n", DisplayOption::Question);
-    DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net\n  ?", DisplayOption::Question);
+    DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net,\n", DisplayOption::Question);
+    DisplayInfo("                   qa-connect-realitydataservices.bentley.com\n  ?", DisplayOption::Question);
     Utf8String server;
     std::string input;
     std::getline(*s_inputSource, input);
     server = Utf8String(input.c_str()).Trim();
-    if (server.length() == 0)
+    if (server.length() == 0 || server.EqualsI("dev"))
         server = "dev-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("qa"))
+        server = "qa-connect-realitydataservices.bentley.com";
+    else if (server.EqualsI("ll"))
+        server = "prod-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("perf"))
+        server = "perf-realitydataservices-eus.cloudapp.net";
+    else if (server.EqualsI("prod"))
+        server = "connect-realitydataservices.bentley.com";
+
     bool verifyCertificate = false;
-    while (1)
+    Utf8String certificatePath = "";
+
+    DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
+    Utf8String temp;
+    std::getline(*s_inputSource, input);
+    temp = Utf8String(input.c_str()).Trim();
+    if (temp.EqualsI("y"))
         {
-        DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
-        Utf8String temp;
+        verifyCertificate = true;
+        DisplayInfo("If you need to use a custom certificate file, enter the path to it now. Otherwise input blank\n ?", DisplayOption::Question);
         std::getline(*s_inputSource, input);
-        temp = Utf8String(input.c_str()).Trim();
-        if (temp.EqualsI("y"))
+        certificatePath = Utf8String(input.c_str()).Trim();
+        BeFileName fileName = BeFileName(certificatePath);
+        if (!certificatePath.empty() && !BeFileName::DoesPathExist(fileName))
             {
-            verifyCertificate = true;
-            break;
+            DisplayInfo("Could not validate specified path. Please verify that it is correct and try again\n", DisplayOption::Error);
+            return;
             }
-        else if (temp.EqualsI("n"))
-            {
-            verifyCertificate = false;
-            break;
-            }
-        else
-            DisplayInfo("invalid answer\n", DisplayOption::Error);
+        WSGRequest::GetInstance().SetCertificatePath(certificatePath.c_str());
+        }
+    else if (temp.EqualsI("quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
         }
 
     DisplayInfo("Retrieving version information. One moment...\n\n", DisplayOption::Tip);
@@ -523,14 +551,18 @@ void RealityDataConsole::ConfigureServer()
                 }
             }
 
-        if (schema.length() > 0)
+        if (schema.empty())
             {
-            RealityDataService::SetServerComponents(server, version, repo, schema);
-            m_server = WSGServer(RealityDataService::GetServerName(), verifyCertificate);
+            DisplayInfo("Server configuration failed, invalid parameters passed\n", DisplayOption::Error);
+            return;
             }
         }
+    else
+        {
+        DisplayInfo("Server configuration failed, invalid parameters passed\n", DisplayOption::Error);
+        return;
+        }
 
-    DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     DisplayInfo("ProjectId required for multiple operations. Set ProjectId now?\n", DisplayOption::Question);
     std::string str;
     std::getline(*s_inputSource, str);
@@ -540,7 +572,18 @@ void RealityDataConsole::ConfigureServer()
         return;
         }
     else if (str == "y")
-        SetProjectId();
+        {
+        DisplayInfo("Please set project id\n ?", DisplayOption::Question);
+        std::string input;
+        std::getline(*s_inputSource, input);
+        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(input.c_str()).Trim());
+        }
+    else if (verifyCertificate)
+        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
+    else
+        RealityDataService::SetServerComponents(server, version, repo, schema);
+
+    DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     }
     
 void RealityDataConsole::SetProjectId()
@@ -553,7 +596,7 @@ void RealityDataConsole::SetProjectId()
 
 void RealityDataConsole::List()
     {
-    if (m_currentNode != nullptr && m_currentNode->node.GetClassName() == "Document")
+    if (m_currentNode != nullptr && m_currentNode->node.GetECClassName() == "Document")
         {
         DisplayInfo("You are currently on a document, there are no files beneath this point\n", DisplayOption::Error);
         return;
@@ -577,13 +620,27 @@ void RealityDataConsole::List()
         for (NavNode node : m_serverNodes)
             {
             nodeString = node.GetLabel();
-            if (node.GetClassName() == "Folder")
+            if (node.GetECClassName() == "Folder")
                 nodeString.append("/");
             nodeStrings.push_back(nodeString);
             }   
 
         PrintResults(nodeStrings);
         }
+    }
+
+Utf8String ShortenVisibility(Utf8String visibility)
+    {
+    if(visibility.EqualsI("PUBLIC"))
+        return "PUB";
+    else if (visibility.EqualsI("ENTERPRISE"))
+        return "ENT";
+    else if (visibility.EqualsI("PRIVATE"))
+        return "PRV";
+    else if (visibility.EqualsI("PERMISSION"))
+        return "PRM";
+    else
+        return "---";
     }
 
 void RealityDataConsole::ListRoots()
@@ -637,7 +694,7 @@ void RealityDataConsole::ListRoots()
             owner = rData->GetOwner();
             }
 
-        subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier(), rData->GetTotalSize()));
+        subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s / %s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", ShortenVisibility(rData->GetVisibilityTag()), rData->GetIdentifier(), rData->GetTotalSize()));
 
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
 
@@ -919,7 +976,7 @@ void RealityDataConsole::Details()
         return;
         }
     RawServerResponse rawResponse = RawServerResponse();
-    Utf8String className = m_currentNode->node.GetClassName();
+    Utf8String className = m_currentNode->node.GetECClassName();
 
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
     instanceId.ReplaceAll("/", "~2F");
@@ -1066,7 +1123,7 @@ void RealityDataConsole::ChangeProps()
         DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
         return;
         }
-    else if (m_currentNode->node.GetClassName() != "RealityData")
+    else if (m_currentNode->node.GetECClassName() != "RealityData")
         {
         DisplayInfo("can only change properties of RealityData at root, use \"cd ..\" to navigate back\n", DisplayOption::Error);
         return;
@@ -1117,11 +1174,34 @@ void RealityDataConsole::ChangeProps()
         Details();
     }
 
+void RealityDataConsole::MassUnlink()
+    {
+    Utf8StringCR projectId = RealityDataService::GetProjectId();
+    DisplayInfo(Utf8PrintfString("Unlinking all %d entries. Please be patient...\n", m_serverNodes.size()), DisplayOption::Tip);
+    if(!projectId.empty())
+        {
+        RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete("", "");//dummy
+
+        RawServerResponse relationResponse = RawServerResponse();
+        WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+
+        for (int i = 0; i < m_serverNodes.size(); ++i)
+            {
+            relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), projectId);
+            WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
+            }
+        }
+
+    DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
+    }
+
 void RealityDataConsole::MassDelete()
     {
     std::string str, str2;
 
-    DisplayInfo(Utf8PrintfString("Using this command like this will delete ALL %d entries, from your most recent List/Dir command.\nAre you SURE? [ y / n ]", m_serverNodes.size()), DisplayOption::Question);
+    DisplayInfo(Utf8PrintfString("Using this command like this will delete ALL %d entries, from your most recent List/Dir command.\n"
+        "(NOTE: If the RealityData is linked to any project other than your own, it will not be deleted but it will be unlinked from your project)\n", m_serverNodes.size()), DisplayOption::Question);
+    DisplayInfo("Are you SURE? [ y / n ]", DisplayOption::Question);
     std::getline(*s_inputSource, str);
     if (strstr(str.c_str(), "quit"))
         {
@@ -1143,6 +1223,8 @@ void RealityDataConsole::MassDelete()
     else if (str != str2)
         return;
 
+    MassUnlink();
+
     DisplayInfo(Utf8PrintfString("Deleting all %d entries. Please be patient...\n", m_serverNodes.size()), DisplayOption::Tip);
 
     RawServerResponse rawResponse = RawServerResponse();
@@ -1155,7 +1237,7 @@ void RealityDataConsole::MassDelete()
         realityDataReq = RealityDataDelete(m_serverNodes[i].GetInstanceId());
         rawResponse = RealityDataService::BasicRequest(&realityDataReq);
         if (rawResponse.body.Contains("errorMessage"))
-            errors.push_back(m_serverNodes[i].GetInstanceId());
+            errors.push_back(Utf8PrintfString("%s failed to delete with error:\n%s\n",m_serverNodes[i].GetInstanceId(), rawResponse.body));
         rawResponse.clear();
         }
     
@@ -1163,7 +1245,7 @@ void RealityDataConsole::MassDelete()
         {
         DisplayInfo("There was an error removing the following items:\n", DisplayOption::Error);
         for(int i = 0 ; i < errors.size() ; ++ i ) 
-            DisplayInfo(Utf8PrintfString("%s\n", errors[i]), DisplayOption::Error);
+            DisplayInfo(errors[i], DisplayOption::Error);
         }
 
     DisplayInfo("Mass Delete Complete\n", DisplayOption::Tip);
@@ -1177,7 +1259,7 @@ void RealityDataConsole::Delete()
     if (m_currentNode == nullptr)
         return MassDelete();
 
-    Utf8String className = m_currentNode->node.GetClassName();
+    Utf8String className = m_currentNode->node.GetECClassName();
 
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
     instanceId.ReplaceAll("/", "~2F");
@@ -1217,7 +1299,7 @@ void RealityDataConsole::Delete()
     else if (className == "RealityData")
         {
         DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
-        DisplayInfo("All project relationships attached to this RealityData will also be removed.\nConfirm ? [y / n]", DisplayOption::Question);
+        DisplayInfo("A RealityData can only be deleted if there are no project relationships attached to it.\nConfirm ? [y / n]", DisplayOption::Question);
         std::getline(*s_inputSource, str);
         if (strstr(str.c_str(), "quit"))
             {
