@@ -7104,7 +7104,7 @@ TEST_F(SchemaUpdateTestFixture, RemoveExistingEnum)
 
         ASSERT_TRUE(foo_type != nullptr);
         ASSERT_TRUE(foo_type->GetEnumeration() == strictEnum);
-
+         
         GetECDb().CloseDb();
         }
     }

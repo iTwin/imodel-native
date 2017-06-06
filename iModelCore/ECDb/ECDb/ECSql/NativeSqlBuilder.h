@@ -68,7 +68,7 @@ struct NativeSqlBuilder final
         void Clear() { m_nativeSql.clear(); m_stack.clear(); }
         bool IsEmpty() const { return m_nativeSql.empty(); }
         Utf8CP ToString() const { return m_nativeSql.c_str(); }
-
+        
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t, std::vector<size_t>> const& indexSkipList);
     };

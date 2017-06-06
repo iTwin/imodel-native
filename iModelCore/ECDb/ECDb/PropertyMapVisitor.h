@@ -80,7 +80,7 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
         BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
-        explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)            
+        explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)
             {
             SetCallbackPropertyMapFilter([filter](PropertyMap const& propertyMap) {return Enum::Contains(filter, propertyMap.GetType()); });
             SetCallbackRecurseIntoCompoundPropertyMap([recurseIntoCompoundPropertyMaps](CompoundDataPropertyMap const&) { return recurseIntoCompoundPropertyMaps; });

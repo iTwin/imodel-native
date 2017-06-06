@@ -162,7 +162,15 @@ struct ClassMap : RefCountedBase
         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
         ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
         ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
+        bool IsMixin() const
+            {
+            if (auto entity = GetClass().GetEntityClassCP())
+                {
+                return entity->IsMixin();
+                }
 
+            return false;
+            }
         std::vector<DbTable*>& GetTables() const { return m_tables; }
         DbTable& GetPrimaryTable() const 
             { 

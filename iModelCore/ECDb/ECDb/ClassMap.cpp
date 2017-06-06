@@ -658,8 +658,8 @@ std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
     std::vector<ClassMap const*> derivedClassMaps;
     for (ECClassCP derivedClass : derivedClasses)
         {
-        ClassMap const* derivedClassMap = GetDbMap().GetClassMap(*derivedClass);
-        derivedClassMaps.push_back(derivedClassMap);
+        if (ClassMap const* derivedClassMap = GetDbMap().GetClassMap(*derivedClass))
+            derivedClassMaps.push_back(derivedClassMap);
         }
 
     return derivedClassMaps;

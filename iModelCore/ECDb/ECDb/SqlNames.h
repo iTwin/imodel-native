@@ -215,7 +215,8 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
         INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
         INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
         INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
-        WHERE ec_Column.IsVirtual=)sql" SQLVAL_False " AND (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") " \
+        WHERE mappedpropertyclass.Id NOT IN (SELECT CA.ContainerId FROM ec_Class C  INNER JOIN ec_Schema S ON S.Id = C.SchemaId  INNER JOIN ec_CustomAttribute CA ON CA.ClassId = C.Id WHERE C.Name ='IsMixin' AND S.Name = 'CoreCustomAttributes') AND 
+        ec_Column.IsVirtual=)sql" SQLVAL_False " AND (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") " \
         R"sql(GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1
 
         UNION ALL
@@ -228,8 +229,9 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
         INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
         INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
         INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId)sql" \
-        " WHERE ec_Column.IsVirtual=" SQLVAL_False " AND " \
+        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
+        WHERE  mappedpropertyclass.Id NOT IN (SELECT CA.ContainerId FROM ec_Class C  INNER JOIN ec_Schema S ON S.Id = C.SchemaId  INNER JOIN ec_CustomAttribute CA ON CA.ClassId = C.Id WHERE C.Name ='IsMixin' AND S.Name = 'CoreCustomAttributes') AND )sql" \
+        " ec_Column.IsVirtual=" SQLVAL_False " AND " \
         "(ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") AND " \
         "mappedpropertyschema.Alias<>'" ECSCHEMA_ALIAS_ECDbSystem "' " \
         "GROUP BY ec_Table.Id, ec_PropertyPath.Id HAVING COUNT(DISTINCT ec_Column.Id) > 1"

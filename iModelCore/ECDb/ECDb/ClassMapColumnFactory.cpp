@@ -57,7 +57,6 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
     if (!contextClass.HasBaseClasses())
         return SUCCESS;
 
-    std::vector<ECN::ECClassCP> mixins;
     std::vector<ClassMapCP> baseClasses;
 
     for (ECClassCP baseClass : contextClass.GetBaseClasses())
@@ -69,11 +68,6 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
             return ERROR;
             }
 
-        if (baseClass->IsEntityClass() && baseClass->GetEntityClassCP()->IsMixin())
-            {
-            mixins.push_back(baseClass);
-            continue;
-            }
 
         if (baseClassMap->GetPrimaryTable().GetId() != classMap.GetPrimaryTable().GetId())
             continue;
@@ -88,11 +82,6 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
         return ERROR;
         }
 
-    if (!mixins.empty())
-        {
-        if (QueryMixinColumnMaps(columnMaps, classMap, &mixins) != SUCCESS)
-            return ERROR;
-        }
 
     for (ClassMap const* baseClassMap : baseClasses)
         if (Query(columnMaps, *baseClassMap, Filter::InheritedAndLocal, nullptr) != SUCCESS)
@@ -128,208 +117,8 @@ BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, C
     return SUCCESS;
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-void ColumnMapContext::AppendRelationshipColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap, ECN::ECClassId relationshipClassId)
-    {
-    std::vector<DbTable*> const& tables = classMap.GetTables();
-    ECDbCR ecdb = classMap.GetDbMap().GetECDb();
-    ECClassCP relClass = ecdb.Schemas().GetClass(relationshipClassId);
-    BeAssert(relClass != nullptr);
-    ClassMap const* relMap = ecdb.Schemas().GetDbMap().GetClassMap(*relClass);
-    if (relMap == nullptr || relMap->GetTables().empty())
-        return;
 
-    if (relMap->GetType() != ClassMap::Type::RelationshipEndTable)
-        return;
 
-    RelationshipClassEndTableMap const& endTableMap = relMap->GetAs<RelationshipClassEndTableMap>();
-    RelationshipConstraintMap const& persistedEnd = endTableMap.GetConstraintMap(endTableMap.GetReferencedEnd());
-    const SingleColumnDataPropertyMap* id = nullptr;
-    const SingleColumnDataPropertyMap* relClassId = nullptr;
-    for (DbTable const* table : tables)
-        {
-        if (id == nullptr)
-            id = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*table);
-
-        if (relClassId == nullptr)
-            relClassId = relMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*table);
-
-        if (id != nullptr && relClassId != nullptr)
-            break;
-        }
-
-    if (relClassId != nullptr || id != nullptr)
-        {
-        columnMaps.Insert(endTableMap.GetAccessStringForId(), id->GetColumn());
-        columnMaps.Insert(endTableMap.GetAccessStringForRelClassId(), relClassId->GetColumn());
-        }
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::QueryEndTableRelationshipMaps(ColumnMaps& columnMaps, ClassMap const& classMap, RelationshpFilter filter)
-    {
-    LightweightCache const& lwc = classMap.GetDbMap().GetECDb().Schemas().GetDbMap().GetLightweightCache();
-    //This should include relationship that the mixin have added to current class
-    if (filter == RelationshpFilter::Direct)
-        {
-        for (ECN::ECClassId relClassId : lwc.GetDirectRelationshipClasssForConstraintClass(classMap.GetClass().GetId()))
-            AppendRelationshipColumnMaps(columnMaps, classMap, relClassId);
-        }
-    else
-        {
-        for (auto const& entry : lwc.GetRelationshipClassesForConstraintClass(classMap.GetClass().GetId()))
-            AppendRelationshipColumnMaps(columnMaps, classMap, entry.first);
-        }
-
-    return SUCCESS;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::QueryMixinColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap, std::vector<ECN::ECClassCP> const* seedMixins)
-    {
-    ECDbCR ecdb = classMap.GetDbMap().GetECDb();
-    std::vector<ECN::ECClassCP> mixins;
-    if (seedMixins)
-        mixins = *seedMixins;
-    else
-        if (FindMixins(mixins, ecdb, classMap.GetClass().GetId()) != SUCCESS)
-            return ERROR;
-
-    bmap<ECN::ECClassCP, ClassMapCP> resolved;
-    std::deque<ECClassCP> q;
-    for (ECClassCP mixin : mixins)
-        {
-        if (resolved.find(mixin) != resolved.end())
-            continue;
-
-        q.push_back(mixin);
-        while (!q.empty())
-            {
-            if (ClassMapCP impl = FindMixinImplementation(ecdb, *q.front(), classMap.GetJoinedOrPrimaryTable().GetId(), classMap.GetClass().GetId()))
-                {
-                if (resolved.find(mixin) == resolved.end())
-                    resolved[q.front()] = impl;
-
-                q.clear();
-                }
-            else
-                {
-                for (ECClassCP b : q.front()->GetBaseClasses())
-                    q.push_back(b);
-
-                q.pop_front();
-                }
-            }
-        }
-
-    for (auto const& r : resolved)
-        {
-        ECClassCP mixin = r.first;
-        ClassMapCP impl = r.second;
-        for (ECPropertyCP property : mixin->GetProperties())
-            {
-            if (property->GetIsNavigation())
-                continue;
-
-            PropertyMap const* propertyMap = impl->GetPropertyMaps().Find(property->GetName().c_str());
-            if (propertyMap == nullptr)
-                continue;
-
-            SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
-            propertyMap->AcceptVisitor(visitor);
-            for (PropertyMap const* p : visitor.Results())
-                columnMaps.Insert(p->GetAs<SingleColumnDataPropertyMap>());
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::FindMixins(std::vector<ECN::ECClassCP>& mixins, ECDbCR ecdb, ECN::ECClassId contextClassId)
-    {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(
-        "SELECT  CHBC.BaseClassId from " TABLE_ClassHierarchyCache " CCH "
-        "INNER JOIN " TABLE_ClassHasBaseClasses " CHBC ON CHBC.ClassId = CCH.ClassId "
-        "WHERE CCH.BaseClassId=? AND CHBC.BaseClassId IN ("
-        "SELECT CA.ContainerId FROM " TABLE_Class " C"
-        "                      INNER JOIN " TABLE_Schema " S ON S.Id=C.SchemaId"
-        "                      INNER JOIN " TABLE_CustomAttribute " CA ON CA.ClassId = C.Id "
-        "                      WHERE C.Name = 'IsMixin' AND S.Name='CoreCustomAttributes') "
-        "GROUP BY CHBC.BaseClassId");
-
-    if (BE_SQLITE_OK != stmt->BindId(1, contextClassId))
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        ECClassId mixinId = stmt->GetValueId<ECClassId>(0);
-        ECClassCP classCP = ecdb.Schemas().GetClass(mixinId);
-        if (!classCP->IsEntityClass() || !classCP->GetEntityClassCP()->IsMixin())
-            {
-            BeAssert(false && "SQL query has issue. Something changed about Mixin CA");
-            return ERROR;
-            }
-
-        mixins.push_back(classCP);
-        }
-
-    auto a = begin(mixins);
-    for (; a != end(mixins); ++a)
-        for (auto b = a + 1; b != end(mixins); ++b)
-            {
-            if ((*a)->Is((*b)))
-                {
-                a = mixins.erase(a);
-                break;
-                }
-            }
-
-    return SUCCESS;
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-ClassMap const* ColumnMapContext::FindMixinImplementation(ECDbCR ecdb, ECN::ECClassCR contextClass, DbTableId primaryTable, ECN::ECClassId skipId)
-    {
-    ECDerivedClassesList const& derivedClasses = ecdb.Schemas().GetDerivedClasses(contextClass);
-    DbMap const& dbMap = ecdb.Schemas().GetDbMap();
-    for (ECN::ECClassCP derivedClass : derivedClasses)
-        {
-        if (skipId == derivedClass->GetId())
-            continue;
-
-        if (ClassMapCP dervicedClassMap = dbMap.GetClassMap(*derivedClass))
-            {
-            if (dervicedClassMap->GetJoinedOrPrimaryTable().GetId() == primaryTable)
-                return dervicedClassMap;
-            else
-                return nullptr;
-            }
-        }
-
-    for (ECN::ECClassCP derivedClass : derivedClasses)
-        {
-        if (skipId == derivedClass->GetId())
-            continue;
-
-        if (ClassMapCP dervicedClassMap = FindMixinImplementation(ecdb, *derivedClass, primaryTable, skipId))
-            return dervicedClassMap;
-        }
-
-    return nullptr;
-    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
@@ -347,11 +136,11 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
-            return ERROR;
+        //if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
+        //    return ERROR;
 
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-            return ERROR;
+        //if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
+        //    return ERROR;
 
         if (base == nullptr)
             {
@@ -369,8 +158,8 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-            return ERROR;
+        //if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
+        //    return ERROR;
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
@@ -391,11 +180,11 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
                 }
             }
 
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-            return ERROR;
+        //if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
+        //    return ERROR;
 
-        if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
-            return ERROR;
+        //if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
+        //    return ERROR;
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
@@ -425,9 +214,6 @@ BentleyStatus ColumnMapContext::QueryLocalColumnMaps(ColumnMaps& columnMaps, Cla
     {
     for (ECPropertyCP property : classMap.GetClass().GetProperties(true))
         {
-        if (property->GetIsNavigation())
-            continue;
-
         PropertyMap const* propertyMap = classMap.GetPropertyMaps().Find(property->GetName().c_str());
         if (propertyMap == nullptr)
             continue;

@@ -11,6 +11,87 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, Simple_MixIn)
+    {
+    ECDbCR ecdb = SetupECDb("Simple_MixIn.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />
+                   <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+                    <ECEntityClass typeName='MyMixin' modifier='Abstract'>
+                       <ECCustomAttributes>
+                           <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                               <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                           </IsMixin>
+                       </ECCustomAttributes>
+                       <ECProperty propertyName='M1' typeName='long' />
+                       <ECProperty propertyName='M2' typeName='long' />
+                       <ECProperty propertyName='M3' typeName='long' />
+                   </ECEntityClass>
+                   <ECEntityClass typeName='BaseClass' modifier='Abstract' >
+                       <ECCustomAttributes>
+                           <ClassMap xmlns='ECDbMap.02.00'>
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns='ECDbMap.02.00'>
+                               <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                               <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                           </ShareColumns>
+                       </ECCustomAttributes>
+                       <ECProperty propertyName='P1' typeName='long' />
+                       <ECProperty propertyName='P2' typeName='long' />
+                       <ECProperty propertyName='P3' typeName='long' />
+                   </ECEntityClass>
+                   <ECEntityClass typeName='ChildA'> 
+                       <BaseClass>BaseClass</BaseClass>
+                       <BaseClass>MyMixin</BaseClass>
+                       <ECProperty propertyName='A1' typeName='long' />
+                       <ECProperty propertyName='A2' typeName='long' />
+                       <ECProperty propertyName='A3' typeName='long' />
+                   </ECEntityClass>
+                   <ECEntityClass typeName='ChildB'> 
+                       <BaseClass>BaseClass</BaseClass>
+                       <ECProperty propertyName='B1' typeName='long' />
+                       <ECProperty propertyName='B2' typeName='long' />
+                       <ECProperty propertyName='B3' typeName='long' />
+                   </ECEntityClass>
+                   <ECEntityClass typeName='ChildC'> 
+                       <BaseClass>ChildB</BaseClass>
+                       <ECProperty propertyName='C1' typeName='long' />
+                       <ECProperty propertyName='C2' typeName='long' />
+                       <ECProperty propertyName='C3' typeName='long' />
+                   </ECEntityClass>
+                   <ECEntityClass typeName='ChildD'> 
+                       <BaseClass>ChildB</BaseClass>
+                       <ECProperty propertyName='D1' typeName='long' />
+                       <ECProperty propertyName='D2' typeName='long' />
+                       <ECProperty propertyName='D3' typeName='long' />
+                   </ECEntityClass>
+                   <ECEntityClass typeName='ChildE'> 
+                       <BaseClass>ChildD</BaseClass>
+                       <ECProperty propertyName='E1' typeName='long' />
+                       <ECProperty propertyName='E2' typeName='long' />
+                       <ECProperty propertyName='E3' typeName='long' />
+                   </ECEntityClass>
+                   <ECEntityClass typeName='ChildF'> 
+                       <BaseClass>ChildD</BaseClass>
+                       <BaseClass>MyMixin</BaseClass>
+                       <ECProperty propertyName='F1' typeName='long' />
+                       <ECProperty propertyName='F2' typeName='long' />
+                       <ECProperty propertyName='F3' typeName='long' />
+                   </ECEntityClass>
+
+                 </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    //ComparerContext a(ecdb, "SimpleFK");
+    //a.CreateBaseline(); 
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT M1, M2, M3 FROM ts.MyMixin")); stmt.Finalize();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -8991,22 +9072,22 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case1)
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P4 FROM ts.D_B WHERE ECInstanceId = 2"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(12, stmt.GetValueInt64(0));
-    ASSERT_EQ(42, stmt.GetValueInt64(1));
+    ASSERT_EQ(12, stmt.GetValueInt64(0)) << stmt.GetNativeSql();
+    ASSERT_EQ(42, stmt.GetValueInt64(1)) << stmt.GetNativeSql();
 
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P4 FROM ts.DB_XFace WHERE ECInstanceId = 3"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(12, stmt.GetValueInt64(0));
-    ASSERT_EQ(22, stmt.GetValueInt64(1));
-    ASSERT_EQ(43, stmt.GetValueInt64(2));
+    ASSERT_EQ(12, stmt.GetValueInt64(0)) << stmt.GetNativeSql();
+    ASSERT_EQ(22, stmt.GetValueInt64(1)) << stmt.GetNativeSql();
+    ASSERT_EQ(43, stmt.GetValueInt64(2)) << stmt.GetNativeSql();
 
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFace ORDER BY P2 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(21, stmt.GetValueInt64(0));
+    ASSERT_EQ(21, stmt.GetValueInt64(0)) << stmt.GetNativeSql();
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(22, stmt.GetValueInt64(0));
+    ASSERT_EQ(22, stmt.GetValueInt64(0)) << stmt.GetNativeSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 //---------------------------------------------------------------------------------------
@@ -10887,6 +10968,8 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
     ECDb& ecdb = SetupECDb("concept_station_mixin_issue.ecdb");
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, testItem);
+    ECSqlStatement stmt;
+    stmt.Prepare(ecdb, "SELECT * FROM diego.ILinearlyLocated");
     ecdb.Schemas().CreateClassViewsInDb();
 }
 //---------------------------------------------------------------------------------------

@@ -360,6 +360,7 @@ DbResult ECDbTestFixture::ExecuteNonSelectECSql(ECDbCR ecdb, Utf8CP ecsql)
     if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
         return BE_SQLITE_ERROR;
 
+    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
     return stmt.Step();
     }
 

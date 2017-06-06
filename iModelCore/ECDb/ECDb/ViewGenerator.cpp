@@ -471,7 +471,121 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, Context&
         return RenderRelationshipClassLinkTableMap(viewSql, ctx, classMap.GetAs<RelationshipClassLinkTableMap>());
         }
 
+    if (classMap.IsMixin())
+        return RenderMixinClassMap(viewSql, ctx, classMap);
+
     return RenderEntityClassMap(viewSql, ctx, classMap);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                          06/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ViewGenerator::RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap)
+    {
+    if (!derivedClassMap.IsMixin())
+        {
+        NativeSqlBuilder viewSql;
+        DbTable const* contextTable;
+        GetTablesPropertyMapVisitor visitor(PropertyMap::Type::Data);
+        derivedClassMap.GetPropertyMaps().AcceptVisitor(visitor);
+        if (visitor.GetTables().empty() || visitor.GetTables().size() == 2)
+            contextTable = &derivedClassMap.GetJoinedOrPrimaryTable();
+        else
+            {
+            BeAssert(visitor.GetTables().size() == 1);
+            if (visitor.GetTables().size() != 1)
+                return ERROR;
+
+            contextTable = *visitor.GetTables().begin();
+            }
+
+        if (RenderEntityClassMap(viewSql, ctx, derivedClassMap, *contextTable, &mixInClassMap) != SUCCESS)
+            return ERROR;
+
+        if(!selectClauses.empty())
+            if (ctx.GetViewType() == ViewType::ECClassView)
+                ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
+
+        Utf8String sql = viewSql.ToString();
+        auto itor = selectClauses.find(sql);
+        if (itor == selectClauses.end())
+            itor = selectClauses.insert(make_bpair(std::move(sql), make_bpair(contextTable, bvector<ECN::ECClassId>()))).first;
+
+        itor->second.second.push_back(derivedClassMap.GetClass().GetId());
+        }
+
+    for (ClassMapCP derivedClassMap : derivedClassMap.GetDerivedClassMaps())
+        if (RenderMixinClassMap(selectClauses, ctx, mixInClassMap, *derivedClassMap) != SUCCESS)
+            return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                          06/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ViewGenerator::RenderMixinClassMap(NativeSqlBuilder& viewSql, Context& ctx, ClassMap const& mixInClassMap)
+    {
+    //! Drill down and find all the classmap.
+    if (ctx.GetViewType() == ViewType::UpdatableView)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (ctx.GetViewType() == ViewType::SelectFromView)
+        {
+        if (!ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery())
+            return RenderNullView(viewSql, ctx, mixInClassMap);
+
+        viewSql.AppendParenLeft();
+        }
+
+    bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii> selectClauses;
+    if (RenderMixinClassMap(selectClauses, ctx, mixInClassMap, mixInClassMap) != SUCCESS)
+        return ERROR;
+
+    NativeSqlBuilder selectClause;
+    bool first = true;
+    for (auto const& kvp : selectClauses)
+        {
+        bvector<ECClassId> const& classIds = kvp.second.second;
+        DbTable const* table = kvp.second.first;
+        selectClause.Append(kvp.first.c_str());
+        DbColumn const* classId = table->FindFirst(DbColumn::Kind::ECClassId);
+        if (classId->GetPersistenceType() == PersistenceType::Physical)
+            {
+            selectClause.Append(" WHERE ").Append(table->GetName().c_str(), classId->GetName().c_str());
+            if (classIds.size() == 1)
+                selectClause.Append("=").Append(classIds.front());
+            else
+                {
+                selectClause.Append("IN ").AppendParenLeft();
+                for (int i = 0; i < classIds.size(); i++)
+                    {
+                    if (i > 0)
+                        selectClause.AppendComma();
+
+                    selectClause.Append(classIds[i]);
+                    }
+
+                selectClause.AppendParenRight();
+                }
+            }
+        if (first)
+            first = false;
+        else
+            viewSql.Append(" UNION ALL ");
+
+        viewSql.AppendLine(selectClause.ToString());
+        selectClause.Clear();
+        }
+ 
+    if (ctx.GetViewType() == ViewType::SelectFromView)
+        viewSql.AppendParenRight();
+
+ 
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1062,6 +1176,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         if (requireJoinTo.end() != requireJoinTo.find(&dataProperty.GetTable()) || requireJoin)
             {
             ToSqlVisitor toSqlVisitor(ctx, dataProperty.GetTable(), dataProperty.GetTable().GetName().c_str(), ToSqlVisitor::ColumnAliasMode::NoAlias);
+            if (baseClass)
+                   toSqlVisitor.DoNotAddColumnAliasForComputedExpression();
+
             if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
                 BeAssert(false);
@@ -1113,6 +1230,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
         //no join needed
         ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, ToSqlVisitor::ColumnAliasMode::NoAlias);
+        if (baseClass)
+            toSqlVisitor.DoNotAddColumnAliasForComputedExpression();
+
         if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
             {
             BeAssert(false);
@@ -1387,7 +1507,7 @@ bool ViewGenerator::SelectFromViewContext::IsInSelectClause(Utf8StringCR exp) co
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 ViewGenerator::ToSqlVisitor::ToSqlVisitor(Context const& context, DbTable const& tableFilter, Utf8CP classIdentifier, ColumnAliasMode colAliasMode)
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_columnAliasMode(colAliasMode),m_context(context)
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_columnAliasMode(colAliasMode),m_context(context), m_doNotAddColumnAliasForComputedExpression(false)
     {
     if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
         m_classIdentifier = nullptr;
@@ -1464,7 +1584,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
         relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
     //The RelECClassId should always be logically null if the respective NavId col is null
     //case exp must have the relclassid col name as alias
-    if (m_context.GetViewType() == ViewType::ECClassView || m_context.GetViewType() == ViewType::UpdatableView)
+    if (m_context.GetViewType() == ViewType::ECClassView || m_context.GetViewType() == ViewType::UpdatableView || m_doNotAddColumnAliasForComputedExpression)
         result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
     else
         result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END) %s", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString(), relClassIdPropMap.GetColumn().GetName().c_str());
