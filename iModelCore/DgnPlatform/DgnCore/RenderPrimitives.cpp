@@ -1361,7 +1361,13 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
 
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
 
-    DRange2d range2d = textString.GetRange();
+    DRange2d range2d;
+        {
+        // ###TODO: Fonts are a freaking mess.
+        BeMutexHolder lock(DgnFonts::GetMutex());
+        range2d = textString.GetRange();
+        }
+
     DRange3d range = DRange3d::From(range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
     Transform::FromProduct(tf, textString.ComputeTransform()).Multiply(range, range);
 
@@ -1533,6 +1539,9 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
 
     if (DoGlyphBoxes(facetOptions))
         {
+        // ###TODO: Fonts are a freaking mess.
+        BeMutexHolder lock(DgnFonts::GetMutex());
+
         DVec3d              xAxis, yAxis;
         DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
         DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
@@ -1623,6 +1632,9 @@ void  TextStringGeometry::InitGlyphCurves() const
     {
     if (!m_glyphCurves.empty())
         return;
+
+    // ###TODO: Fonts are a freaking mess.
+    BeMutexHolder lock(DgnFonts::GetMutex());
 
     DVec3d              xAxis, yAxis;
     DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
