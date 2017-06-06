@@ -405,12 +405,13 @@ int main(int argc, char **argv)
         
         check = 1;
         //set _NT_SYMBOL_PATH
-        WString currentDirectory;
-        Desktop::FileSystem::GetCwd(currentDirectory);
+        BeFileName outdirName;
+        hostPtr->GetOutputRoot(outdirName);
+        outdirName.PopDir();
+        WString currentDirectory(outdirName.GetName());
 
         BeStringUtilities::WCharToUtf8(symbolPath, currentDirectory.c_str());
         printf("%d\n", WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
-        //printf("Symbols path is   :   %s\n", WinGetEnv("_NT_SYMBOL_PATH"));
 
         CharCP winSdkDir = WinGetEnv("Win10SdkDir");
         CharCP  defArch = "x64";
@@ -431,7 +432,7 @@ int main(int argc, char **argv)
         spawnRet = SpawnProcessWin32(strCommand, retCode);
         
         //first snapshot
-        CharP log1Name = "\\run\\FirstSnapshot.log";
+        CharP log1Name = "\\FirstSnapshot.log";
         currentDirectory.AppendUtf8(log1Name);
         
         BeStringUtilities::WCharToUtf8(pathSnapshot1, currentDirectory.c_str());
@@ -458,10 +459,12 @@ int main(int argc, char **argv)
             {
             RUN_ALL_TESTS();
             }
-        WString currentDirectory2;
-        Desktop::FileSystem::GetCwd(currentDirectory2);
-        WString currentDirectory3 = currentDirectory2;
-        CharP log2Name = "\\run\\SecondSnapshot.log";
+        BeFileName outdirName;
+        hostPtr->GetOutputRoot(outdirName);
+        outdirName.PopDir();
+        WString currentDirectory2(outdirName.GetName());
+        WString currentDirectory3(outdirName.GetName());
+        CharP log2Name = "\\SecondSnapshot.log";
         CharP logComparisonName = "";
 
         CharCP testName = getTestName(no, args);
@@ -470,12 +473,12 @@ int main(int argc, char **argv)
 
         if (utf8Str.Equals(""))
             {
-            logComparisonName = "\\run\\Comparison.log";
+            logComparisonName = "run\\Comparison.log";
             currentDirectory3.AppendUtf8(logComparisonName);
             }
         else
             {
-            sprintf_s(pathCompComm, sizeof(pathCompComm), "\\run\\%s.log", testName);
+            sprintf_s(pathCompComm, sizeof(pathCompComm), "\\%s.log", testName);
             currentDirectory3.AppendUtf8(pathCompComm);
             }
 
