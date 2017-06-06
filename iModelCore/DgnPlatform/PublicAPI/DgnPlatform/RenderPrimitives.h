@@ -608,8 +608,7 @@ private:
 
 
     MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range)
-        : m_mesh(Mesh::Create(params, featureTable, type, range)), m_tolerance(tolerance), 
-        m_areaTolerance(areaTolerance) { }
+        : m_mesh(Mesh::Create(params, featureTable, type, range)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
 
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
