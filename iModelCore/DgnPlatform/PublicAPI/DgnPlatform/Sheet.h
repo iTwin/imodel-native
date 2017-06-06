@@ -282,7 +282,6 @@ namespace Attachment
         ChildTiles const* _GetChildren(bool create) const override {return nullptr;}
         TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loadss, Dgn::Render::SystemP renderSys) override {return nullptr;}
         void _DrawGraphics(TileTree::DrawArgsR args, int depth) const override;
-        void _GetGraphics(TileTree::DrawGraphicsR drawGraphics, int depth) const override;
 
         TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
         Tree& GetTree() const {return (Tree&) m_root;}
