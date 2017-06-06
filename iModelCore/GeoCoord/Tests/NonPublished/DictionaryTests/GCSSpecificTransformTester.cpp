@@ -14,7 +14,7 @@
 
 using namespace ::testing;
 
-
+ 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  08/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -377,6 +377,25 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT9)
 
     }
 
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT10)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    // This WKT originates from a client for a 3MX
+    WString wellKnownText = L"PROJCS[\"Quebec MTM Zone 10 (NAD 27)\",GEOGCS[\"NAD 27 (Canada)\",DATUM[\"NAD 27 (Canada)\",SPHEROID[\"Clarke 1866\",6378206.4,294.9786982]],PRIMEM[\"Greenwich\",0],UNIT[\"Decimal Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"Scale_Factor\",0.9999],PARAMETER[\"Central_Meridian\",-79.500000],PARAMETER[\"False_Easting\",304800.00000],UNIT[\"Meter\",1.000000]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
 
 //==================================================================================
 // Domain
