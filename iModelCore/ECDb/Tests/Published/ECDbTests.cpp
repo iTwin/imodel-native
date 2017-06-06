@@ -172,7 +172,7 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, GetAndChangeBriefcaseIdForDb)
+TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
     {
     ECDbR ecdb = SetupECDb("ecdbbriefcaseIdtest.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
     
@@ -180,7 +180,7 @@ TEST_F(ECDbTestFixture, GetAndChangeBriefcaseIdForDb)
     ASSERT_TRUE(id.IsValid());
     int32_t previousBriefcaseId = id.GetValue();
     BeBriefcaseId nextid = id.GetNextBriefcaseId();
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.ChangeBriefcaseId(nextid));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AssignBriefcaseId(nextid));
     int32_t changedBriefcaseId = ecdb.GetBriefcaseId().GetValue();
     ASSERT_NE(previousBriefcaseId, changedBriefcaseId);
     }

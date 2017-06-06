@@ -80,16 +80,7 @@ ConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClass
 // @bsimethod                                   Krischan.Eberle                   03/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP RelationshipClassEndTableMap::DEFAULT_FK_COL_PREFIX = "FK_";
-//static
 Utf8CP RelationshipClassEndTableMap::RELECCLASSID_COLNAME_TOKEN = "RelECClassId";
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   06/12
-//+---------------+---------------+---------------+---------------+---------------+------
-RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
-    : RelationshipClassMap(ecdb, Type::RelationshipEndTable, ecRelClass, mapStrategy), m_mapping(true) {}
-
 
 
 //---------------------------------------------------------------------------------------
@@ -104,23 +95,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& fkTabl
     if (fkTable.GetType() == DbTable::Type::Virtual || fkTable.GetType() == DbTable::Type::Existing || GetClass().GetClassModifier() == ECClassModifier::Sealed)
         persType = PersistenceType::Virtual;
 
-    Utf8String relECClassIdColName;
-    if (fkColInfo.CanImplyFromNavigationProperty())
-        relECClassIdColName.assign(fkColInfo.GetImpliedRelClassIdColumnName());
-    else if (fkCol.GetName().EndsWithIAscii("id"))
-        {
-        relECClassIdColName = fkCol.GetName().substr(0, fkCol.GetName().size() - 2);
-        relECClassIdColName.append(RELECCLASSID_COLNAME_TOKEN);
-        }
-    else if (!fkCol.GetName().StartsWithIAscii(DEFAULT_FK_COL_PREFIX) && !fkCol.IsShared())
-        relECClassIdColName.assign(fkCol.GetName()).append(RELECCLASSID_COLNAME_TOKEN);
-    else
-        {
-        //default name: RelECClassId_<schema alias>_<rel class name>
-        relECClassIdColName.assign(RELECCLASSID_COLNAME_TOKEN).append("_").append(GetRelationshipClass().GetSchema().GetAlias()).append("_").append(GetRelationshipClass().GetName());
-        }
-
-    DbColumn* relClassIdCol = fkTable.FindColumnP(relECClassIdColName.c_str());
+    DbColumn* relClassIdCol = fkTable.FindColumnP(fkColInfo.GetRelClassIdColumnName().c_str());
     if (relClassIdCol != nullptr)
         {
         BeAssert(Enum::Contains(relClassIdCol->GetKind(), DbColumn::Kind::RelECClassId));
@@ -140,11 +115,11 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& fkTabl
     if (persType == PersistenceType::Physical)
         {
         Utf8String accessString = navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropRelECClassId;
-        relClassIdCol = navPropMap.GetClassMap().GetColumnFactory().Allocate(navPropMap.GetProperty(), DbColumn::Type::Integer, DbColumn::CreateParams(relECClassIdColName), accessString, navPropMap.HasForeignKeyConstraint());
+        relClassIdCol = navPropMap.GetClassMap().GetColumnFactory().Allocate(navPropMap.GetProperty(), DbColumn::Type::Integer, DbColumn::CreateParams(fkColInfo.GetRelClassIdColumnName()), accessString, navPropMap.HasForeignKeyConstraint());
         }
     else
         {
-        relClassIdCol = fkTable.CreateColumn(relECClassIdColName, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, persType);
+        relClassIdCol = fkTable.CreateColumn(fkColInfo.GetRelClassIdColumnName(), DbColumn::Type::Integer, DbColumn::Kind::DataColumn, persType);
         }
 
     if (relClassIdCol == nullptr)
@@ -177,78 +152,73 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& fkTabl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn* RelationshipClassEndTableMap::CreateForeignColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo& fkColInfo)
+DbColumn* RelationshipClassEndTableMap::CreateForeignKeyColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo& fkColInfo)
     {
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
     ECRelationshipConstraintCR referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
     DbColumn::Kind foreignKeyColumnKind = GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
+
     DbColumn* fkColumn = nullptr;
+
     if (classMappingInfo.GetFkMappingInfo()->UseECInstanceIdAsFk())
         {
         DbColumn const* pkColumn = fkTable.FindFirst(DbColumn::Kind::ECInstanceId);
         DbColumn* pkColumnP = const_cast<DbColumn*> (pkColumn);
         pkColumnP->AddKind(foreignKeyColumnKind);
         fkColumn = const_cast<DbColumn*>(pkColumn);
+
+        fkColInfo = ForeignKeyColumnInfo::FromPkColumnIfUseECInstanceIdAsFk(*fkColumn);
+        return fkColumn;
         }
-    else
+
+    fkColInfo = ForeignKeyColumnInfo::FromNavigationProperty(*navPropMap.GetProperty().GetAsNavigationProperty());
+    const bool multiplicityImpliesNotNullOnFkCol = referencedEndConstraint.GetMultiplicity().GetLowerLimit() > 0;
+
+    DbColumn* fkCol = const_cast<DbColumn*>(fkTable.FindColumn(fkColInfo.GetFkColumnName().c_str()));
+    if (fkTable.GetType() == DbTable::Type::Existing)
         {
-        GetForeignKeyColumnInfo(fkColInfo, navPropMap);
-        const bool multiplicityImpliesNotNullOnFkCol = referencedEndConstraint.GetMultiplicity().GetLowerLimit() > 0;
-        Utf8String fkColName;
-        if (fkColInfo.CanImplyFromNavigationProperty() && !fkColInfo.GetImpliedFkColumnName().empty())
-            fkColName.assign(fkColInfo.GetImpliedFkColumnName());
-        else
-            {
-            //default name: FK_<schema alias>_<rel class name>
-            fkColName.assign(DEFAULT_FK_COL_PREFIX).append(relClass.GetSchema().GetAlias()).append("_").append(relClass.GetName());
-            }
-
-        DbColumn* fkCol = const_cast<DbColumn*>(fkTable.FindColumn(fkColName.c_str()));
-        if (fkTable.GetType() == DbTable::Type::Existing)
-            {
-            //for existing tables, the FK column must exist otherwise we fail schema import
-            if (fkCol != nullptr)
-                {
-                if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
-                    return nullptr;
-
-                return fkCol;
-                }
-
-            Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'.",
-                            relClass.GetFullName(), fkTable.GetName().c_str(), fkColName.c_str());
-
-            return nullptr;
-            }
-
-        //table owned by ECDb
+        //for existing tables, the FK column must exist otherwise we fail schema import
         if (fkCol != nullptr)
             {
-            Issues().Report("Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
-                            relClass.GetFullName(), fkColName.c_str(), fkTable.GetName().c_str());
-            return nullptr;
+            if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
+                return nullptr;
+
+            return fkCol;
             }
 
+        Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'.",
+                        relClass.GetFullName(), fkTable.GetName().c_str(), fkColInfo.GetFkColumnName().c_str());
 
-        Utf8String accessString = navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropId;        
-        fkColumn= navPropMap.GetClassMap().GetColumnFactory().Allocate(navPropMap.GetProperty(), DbColumn::Type::Integer, DbColumn::CreateParams(fkColName), accessString, navPropMap.HasForeignKeyConstraint());
-        if (fkColumn == nullptr)
-            {
-            Issues().Report("Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
-                            relClass.GetFullName(), fkColName.c_str(), fkTable.GetName().c_str());
-            BeAssert(false && "Could not create FK column for end table mapping");
-            return nullptr;
-            }
-
-        bset<ECClassId> foreignEndConstraintClassIds;
-        for (ECClassCP constraintClass : foreignEndConstraint.GetConstraintClasses())
-            foreignEndConstraintClassIds.insert(constraintClass->GetId());
-
-        const bool makeFkColNotNull = multiplicityImpliesNotNullOnFkCol && fkTable.HasExclusiveRootECClass() && foreignEndConstraintClassIds.find(fkTable.GetExclusiveRootECClassId()) != foreignEndConstraintClassIds.end();
-        if (makeFkColNotNull)
-            fkColumn->GetConstraintsR().SetNotNullConstraint();
+        return nullptr;
         }
+
+    //table owned by ECDb
+    if (fkCol != nullptr)
+        {
+        Issues().Report("Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
+                        relClass.GetFullName(), fkColInfo.GetFkColumnName().c_str(), fkTable.GetName().c_str());
+        return nullptr;
+        }
+
+
+    Utf8String accessString = navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropId;
+    fkColumn = navPropMap.GetClassMap().GetColumnFactory().Allocate(navPropMap.GetProperty(), DbColumn::Type::Integer, DbColumn::CreateParams(fkColInfo.GetFkColumnName()), accessString, navPropMap.HasForeignKeyConstraint());
+    if (fkColumn == nullptr)
+        {
+        Issues().Report("Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
+                        relClass.GetFullName(), fkColInfo.GetFkColumnName().c_str(), fkTable.GetName().c_str());
+        BeAssert(false && "Could not create FK column for end table mapping");
+        return nullptr;
+        }
+
+    bset<ECClassId> foreignEndConstraintClassIds;
+    for (ECClassCP constraintClass : foreignEndConstraint.GetConstraintClasses())
+        foreignEndConstraintClassIds.insert(constraintClass->GetId());
+
+    const bool makeFkColNotNull = multiplicityImpliesNotNullOnFkCol && fkTable.HasExclusiveRootECClass() && foreignEndConstraintClassIds.find(fkTable.GetExclusiveRootECClassId()) != foreignEndConstraintClassIds.end();
+    if (makeFkColNotNull)
+        fkColumn->GetConstraintsR().SetNotNullConstraint();
 
     return fkColumn;
     }
@@ -288,7 +258,11 @@ DbColumn * RelationshipClassEndTableMap::CreateReferencedClassIdColumn(DbTable &
 
     return fkClassIdColumn;
     }
-ClassMappingStatus RelationshipClassEndTableMap::CreateForiegnKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo)
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Affan.Khan            05/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassMappingStatus RelationshipClassEndTableMap::CreateForeignKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo)
     {
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
     ForeignKeyDbConstraint::ActionType onDelete = ForeignKeyDbConstraint::ActionType::NotSpecified;
@@ -347,6 +321,10 @@ ClassMappingStatus RelationshipClassEndTableMap::CreateForiegnKeyConstraint(DbTa
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImportContext& ctx)
     {
+    if (GetPropertyMaps().Size() == 6)
+        return ClassMappingStatus::Success;
+
+
     if (GetClass().GetBaseClasses().size() != 1)
         {
         BeAssert(false && "Multi-inheritance of ECRelationshipclasses should have been caught before already");
@@ -454,7 +432,7 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImp
         return ClassMappingStatus::Error;
 
     referencedEndConstraintMap.SetECClassIdPropMap(&clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
-
+    m_mapping = false;
     return ClassMappingStatus::Success;
     }
 
@@ -467,9 +445,7 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMapping(SchemaImportConte
         return ClassMappingStatus::Success;
 
     if (GetClass().HasBaseClasses())
-        {
         return FinishMappingForChild(ctx);
-        }
 
     if (GetState() == ObjectState::Persisted)
         return ClassMappingStatus::Success;
@@ -521,7 +497,15 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMapping(SchemaImportConte
         return ClassMappingStatus::Error;
         }
 
-    DbColumn::UpdateKind(*columnForeignClassId, GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId);
+    const bool primaryTableWasAlreadyInEditState = columnForeignClassId->GetTableR().GetEditHandle().CanEdit();
+    if (!primaryTableWasAlreadyInEditState)
+        columnForeignClassId->GetTableR().GetEditHandleR().BeginEdit();
+
+    columnForeignClassId->AddKind(GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId);
+    
+    if (!primaryTableWasAlreadyInEditState)
+        columnForeignClassId->GetTableR().GetEditHandleR().EndEdit();
+
     Utf8CP refEndClassId = GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDBSYS_PROP_SourceECClassId : ECDBSYS_PROP_TargetECClassId;
     if (ConstraintECClassIdPropertyMap* propertyMap = static_cast<ConstraintECClassIdPropertyMap*>(const_cast<PropertyMap*>(GetPropertyMaps().Find(refEndClassId))))
         {
@@ -551,7 +535,7 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMapping(SchemaImportConte
         return ClassMappingStatus::Error;
         }
 
-    if (CreateForiegnKeyConstraint(*primaryTable, classMappingInfo) != ClassMappingStatus::Success)
+    if (CreateForeignKeyConstraint(*primaryTable, classMappingInfo) != ClassMappingStatus::Success)
         return ClassMappingStatus::Error;
 
     AddIndexToRelationshipEnd(classMappingInfo);
@@ -584,7 +568,7 @@ RelationshipClassEndTableMap* RelationshipClassEndTableMap::GetRootRelationshipM
             return nullptr;
         }
 
-    return  static_cast<RelationshipClassEndTableMap*>(const_cast<ClassMap*>(GetDbMap().GetClassMap(*relationshipClass)));
+    return const_cast<RelationshipClassEndTableMap*>(&GetDbMap().GetClassMap(*relationshipClass)->GetAs<RelationshipClassEndTableMap>());
     }
 
 //---------------------------------------------------------------------------------------
@@ -666,7 +650,6 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImport
         return ClassMappingStatus::Error;
 
     RelationshipMappingInfo const& classMappingInfo = static_cast<RelationshipMappingInfo const&> (*itor->second);
-    DbTable& fkTable = const_cast<DbTable&>(navPropMap.GetClassMap().GetJoinedOrPrimaryTable());
 
 
     /*
@@ -705,37 +688,41 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImport
     M  -> Map in this methiod
     X -> Map in Finish ()
     */
-
     ForeignKeyColumnInfo fkColInfo;
-    DbColumn* columnRefId = CreateForeignColumn(classMappingInfo, fkTable, navPropMap, fkColInfo);
+    DbColumn* columnRefId = CreateForeignKeyColumn(classMappingInfo, const_cast<DbTable&>(navPropMap.GetClassMap().GetJoinedOrPrimaryTable()), navPropMap, fkColInfo);
     if (columnRefId == nullptr)
         return ClassMappingStatus::Error;
 
-    DbColumn::UpdateKind(*columnRefId, GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
+    const bool fkTableWasAlreadyInEditState = columnRefId->GetTableR().GetEditHandle().CanEdit();
+    if (!fkTableWasAlreadyInEditState)
+        columnRefId->GetTableR().GetEditHandleR().BeginEdit();
 
+    columnRefId->AddKind(GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
     AddTable(columnRefId->GetTableR());
-    DbColumn* columnId = const_cast<DbColumn*>(fkTable.FindFirst(DbColumn::Kind::ECInstanceId));
+    DbColumn* columnId = const_cast<DbColumn*>(columnRefId->GetTableR().FindFirst(DbColumn::Kind::ECInstanceId));
     if (columnId == nullptr)
         return ClassMappingStatus::Error;
 
-    DbColumn* columnClassId = CreateRelECClassIdColumn(fkTable, fkColInfo, *columnRefId, navPropMap);
+    DbColumn* columnClassId = CreateRelECClassIdColumn(columnRefId->GetTableR(), fkColInfo, *columnRefId, navPropMap);
     if (columnClassId == nullptr)
         return ClassMappingStatus::Error;
 
-    DbColumn::UpdateKind(*columnClassId, DbColumn::Kind::RelECClassId);
+    columnClassId->AddKind(DbColumn::Kind::RelECClassId);
 
-    DbColumn* columnForeignClassId = CreateReferencedClassIdColumn(fkTable);
+    DbColumn* columnForeignClassId = CreateReferencedClassIdColumn(columnRefId->GetTableR());
     if (columnForeignClassId == nullptr)
         return ClassMappingStatus::Error;
 
-    DbColumn::UpdateKind(*columnForeignClassId, GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId);
+    columnForeignClassId->AddKind(GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId);
 
-    DbColumn* columnForeignId = const_cast<DbColumn*>(fkTable.FindFirst(DbColumn::Kind::ECInstanceId));
+    DbColumn* columnForeignId = const_cast<DbColumn*>(columnRefId->GetTableR().FindFirst(DbColumn::Kind::ECInstanceId));
     if (columnForeignId == nullptr)
         return ClassMappingStatus::Error;
 
-    DbColumn::UpdateKind(*columnForeignId, GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
+    columnForeignId->AddKind(GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
 
+    if (!fkTableWasAlreadyInEditState)
+        columnRefId->GetTableR().GetEditHandleR().EndEdit();
 
     //[+++ECInstanceId-----------------------------------------------------------------------------------------------------------------------------------]
     if (ECInstanceIdPropertyMap* propertyMap = static_cast<ECInstanceIdPropertyMap*>(const_cast<PropertyMap*>(GetPropertyMaps().Find(ECDBSYS_PROP_ECInstanceId))))
@@ -1043,39 +1030,53 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetReferencedEnd() const
     return GetForeignEnd() == ECRelationshipEnd_Source ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
     }
 
+
+//************************** RelationshipClassEndTableMap::ForeignKeyColumnInfo *****************************************
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                      Krischan.Eberle                          01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void RelationshipClassEndTableMap::GetForeignKeyColumnInfo(ForeignKeyColumnInfo& fkColInfo, NavigationPropertyMap const& navProp) const
+// @bsimethod                                 Krischan.Eberle                    01/2014
+//---------------------------------------------------------------------------------------
+//static
+RelationshipClassEndTableMap::ForeignKeyColumnInfo RelationshipClassEndTableMap::ForeignKeyColumnInfo::FromNavigationProperty(ECN::NavigationECPropertyCR navProp)
     {
-    //if not overridden with a PropertyMap CA, the FK column name is implied as <nav prop name>Id.
+    //the FK column name is implied as <nav prop name>Id.
     //if nav prop name ends with "Id" already, it is not appended again.
-    NavigationECPropertyCP singleNavProperty = static_cast<NavigationECPropertyCP>(&navProp.GetProperty());
-    Utf8StringCR navPropName = singleNavProperty->GetName();
-    Utf8String defaultFkColName, defaultRelClassIdColName;
-    if (navPropName.EndsWithIAscii("id"))
-        {
-        defaultFkColName.assign(navPropName);
-        defaultRelClassIdColName = navPropName.substr(0, navPropName.size() - 2);
-        }
-    else
-        {
-        defaultFkColName.assign(navPropName).append("Id");
-        defaultRelClassIdColName.assign(navPropName);
-        }
+    ForeignKeyColumnInfo info(navProp.GetName());
 
-    defaultRelClassIdColName.append(RELECCLASSID_COLNAME_TOKEN);
-    TablePerHierarchyInfo const& tphInfo = navProp.GetClassMap().GetMapStrategy().GetTphInfo();
-    if (tphInfo.IsValid() && tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes)
-        {
-        //table uses shared columns, so FK col position cannot depend on NavigationProperty position
-        fkColInfo.Assign(defaultFkColName, defaultRelClassIdColName);
-        return;
-        }
+    if (!navProp.GetName().EndsWithIAscii("id"))
+        info.m_fkColName.assign(navProp.GetName()).append("Id");
 
-    fkColInfo.Assign(defaultFkColName, defaultRelClassIdColName);
-    return;
+    info.m_relClassIdColName = DetermineRelClassIdColumnName(info.m_fkColName);
+    return info;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    01/2014
+//---------------------------------------------------------------------------------------
+//static
+RelationshipClassEndTableMap::ForeignKeyColumnInfo RelationshipClassEndTableMap::ForeignKeyColumnInfo::FromPkColumnIfUseECInstanceIdAsFk(DbColumn const& idCol)
+    {
+    ForeignKeyColumnInfo info(idCol.GetName());
+    info.m_relClassIdColName = DetermineRelClassIdColumnName(info.m_fkColName);
+    return info;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    01/2014
+//---------------------------------------------------------------------------------------
+//static
+Utf8String RelationshipClassEndTableMap::ForeignKeyColumnInfo::DetermineRelClassIdColumnName(Utf8StringCR fkColName)
+    {
+    Utf8String relClassIdColName;
+    if (fkColName.EndsWithIAscii("id"))
+        relClassIdColName.assign(fkColName.substr(0, fkColName.size() - 2));
+    else
+        relClassIdColName.assign(fkColName);
+
+    relClassIdColName.append(RELECCLASSID_COLNAME_TOKEN);
+    return relClassIdColName;
+    }
+
 
 //************************** RelationshipClassLinkTableMap *****************************************
 /*---------------------------------------------------------------------------------**//**
@@ -1668,7 +1669,6 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
     if (!addConstraintClassIdColumnNeeded && constraint.GetIsPolymorphic())
         addConstraintClassIdColumnNeeded = true;
     }
-
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

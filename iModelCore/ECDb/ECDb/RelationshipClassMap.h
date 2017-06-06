@@ -82,45 +82,43 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
     friend struct ClassMapFactory;
 
     private:
-        static Utf8CP DEFAULT_FK_COL_PREFIX;
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
-        bool m_mapping;
-        struct ForeignKeyColumnInfo final: NonCopyableClass
+
+        struct ForeignKeyColumnInfo final
             {
             private:
-                bool m_canImplyFromNavigationProperty = false;
-                Utf8String m_impliedFkColName;
-                Utf8String m_impliedRelClassIdColName;
+                Utf8String m_fkColName;
+                Utf8String m_relClassIdColName;
+
+                explicit ForeignKeyColumnInfo(Utf8StringCR fkColName) : m_fkColName(fkColName) {}
+
+                static Utf8String DetermineRelClassIdColumnName(Utf8StringCR fkColName);
 
             public:
                 ForeignKeyColumnInfo() {}
+                static ForeignKeyColumnInfo FromNavigationProperty(ECN::NavigationECPropertyCR);
+                static ForeignKeyColumnInfo FromPkColumnIfUseECInstanceIdAsFk(DbColumn const& idCol);
 
-                void Assign(Utf8StringCR impliedFkColName, Utf8StringCR impliedRelClassIdColName)
-                    {
-                    m_canImplyFromNavigationProperty = true;
-                    m_impliedFkColName.assign(impliedFkColName);
-                    m_impliedRelClassIdColName.assign(impliedRelClassIdColName);
-                    }
-
-                bool CanImplyFromNavigationProperty() const { return m_canImplyFromNavigationProperty; }
-                Utf8StringCR GetImpliedFkColumnName() const { return m_impliedFkColName; }
-                Utf8StringCR GetImpliedRelClassIdColumnName() const { return m_impliedRelClassIdColName; }
+                Utf8StringCR GetFkColumnName() const { return m_fkColName; }
+                Utf8StringCR GetRelClassIdColumnName() const { return m_relClassIdColName; }
             };
-        RelationshipClassEndTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
+
+        bool m_mapping = true;
+
+        RelationshipClassEndTableMap(ECDb const& ecdb, ECN::ECClassCR relClass, MapStrategyExtendedInfo const& mapStrategy) : RelationshipClassMap(ecdb, Type::RelationshipEndTable, relClass, mapStrategy) {}
         void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
         ClassMappingStatus _Map(ClassMappingContext&) override;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
-        void GetForeignKeyColumnInfo(ForeignKeyColumnInfo& fkColInfo, NavigationPropertyMap const& navProp) const;
-        DbColumn* CreateForeignColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo &fkColInfo);
+        DbColumn* CreateForeignKeyColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo &fkColInfo);
         DbColumn* CreateReferencedClassIdColumn(DbTable& fkTable) const;
         DbColumn* CreateRelECClassIdColumn(DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap) const;
-        ClassMappingStatus CreateForiegnKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo);
+        ClassMappingStatus CreateForeignKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo);
         ClassMappingStatus UpdatePersistedEndForChild(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap);
         RelationshipClassEndTableMap* GetRootRelationshipMap(SchemaImportContext& ctx);
         ClassMappingStatus FinishMappingForChild(SchemaImportContext& ctx);
-    public:
 
+    public:
         ~RelationshipClassEndTableMap() {}
         ClassMappingStatus UpdatePersistedEnd(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap);
         //!Gets the end in which the ForeignKey is persisted

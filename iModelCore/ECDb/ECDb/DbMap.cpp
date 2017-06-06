@@ -201,7 +201,7 @@ void DbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, 
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
-    ctx.SetPhase(SchemaImportContext::Phase::Mapping);
+    ctx.SetPhase(SchemaImportContext::Phase::MappingSchemas);
     // Identify root classes/relationship-classes
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;
@@ -252,7 +252,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
             return ERROR;
         }
 
-    ctx.SetPhase(SchemaImportContext::Phase::CreatingUserIndexes);
+    ctx.SetPhase(SchemaImportContext::Phase::CreatingUserDefinedIndexes);
     for (auto& kvpair : ctx.GetClassMappingInfoCache())
         {
         if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(ctx, kvpair.second->GetIndexInfos()))
@@ -299,7 +299,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
                              //! EndTable must be mapped during SchemaImportContext::Phase::MappingClasses
                              //! If its not yet mapped then it mean the class that have the navigation property is marked as NotMapped and therefore the relationship was not mapped
                              //! This is a hard error.
-                             GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Atleast one of its constraint classes has the'NotMapped' strategy.",
+                             GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. At least one of its constraint classes has the 'NotMapped' strategy.",
                                                                                 ecClass.GetFullName());
 
                              return ClassMappingStatus::Error;
