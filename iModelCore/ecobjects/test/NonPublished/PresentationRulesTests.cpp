@@ -182,16 +182,6 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
     ruleSet->AddPresentationRule(*imageIdOverride1);
     ruleSet->AddPresentationRule(*imageIdOverride2);
     ruleSet->AddPresentationRule(*imageIdOverride3);
-
-    delete rootNodeRule1; delete rootNodeRule2; delete rootNodeRule3;
-    delete childNodeRule1; delete childNodeRule2; delete childNodeRule3;
-    delete contentRule1; delete contentRule2; delete contentRule3;
-    delete imageIdOverride1; delete imageIdOverride2; delete imageIdOverride3;
-    rootNodeRule1 = nullptr; rootNodeRule2 = nullptr; rootNodeRule3 = nullptr;
-    childNodeRule1 = nullptr; childNodeRule2 = nullptr; childNodeRule3 = nullptr;
-    contentRule1 = nullptr; contentRule2 = nullptr; contentRule3 = nullptr;
-    imageIdOverride1 = nullptr; imageIdOverride2 = nullptr; imageIdOverride3 = nullptr;
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -276,7 +266,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
             ValidateContentRule(**iter, ""/*default*/, 1000/*default*/, false/*default*/);
 
             CalculatedPropertiesSpecificationP specification1 = (*iter)->GetSpecifications()[0]->GetCalculatedProperties()[0];
-			EXPECT_EQ("Label1", specification1->GetLabel());
+            EXPECT_EQ("Label1", specification1->GetLabel());
             EXPECT_EQ(1000, specification1->GetPriority());
             EXPECT_EQ("\"Value1\"", specification1->GetValue());
             
@@ -468,16 +458,6 @@ TEST_F(PresentationRulesTests, TestPresentationRules)
         ValidateSettingsGroup(**iter, "UserCategoryLabel", 1000/*Default*/);
         }
     EXPECT_EQ(1, settingsRulesCount);
-    delete rootNodeRule; delete childNodeRule; delete contentRule;
-    delete groupingRule; delete classGroup;  delete propertyGroup;
-    delete checkBoxRule; delete renameNodeRule;
-    delete sortingRule; delete userSettingsGroup;
-    rootNodeRule = nullptr; childNodeRule = nullptr; contentRule = nullptr;
-    groupingRule = nullptr; classGroup = nullptr;
-    propertyGroup = nullptr; checkBoxRule = nullptr;
-    renameNodeRule = nullptr; sortingRule = nullptr;
-    userSettingsGroup = nullptr;
-    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -504,8 +484,6 @@ TEST_F(PresentationRulesTests, AddPresentationRule_SortsByPriority)
     EXPECT_STREQ("TestCondition3", ruleSet->GetRootNodesRules()[0]->GetCondition().c_str());
     EXPECT_STREQ("TestCondition1", ruleSet->GetRootNodesRules()[1]->GetCondition().c_str());
     EXPECT_STREQ("TestCondition2", ruleSet->GetRootNodesRules()[2]->GetCondition().c_str());
-    delete rootNodeRule;
-    rootNodeRule = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -516,14 +494,12 @@ TEST_F(PresentationRulesTests, RemovePresentationRule)
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 1, 0, false, "", "", "", true);
     EXPECT_EQ(0, ruleSet->GetRootNodesRules().size());
 
-    RootNodeRuleP rootNodeRule = new RootNodeRule("TestCondition1", 1, true, TargetTree_Both, false);
-    ruleSet->AddPresentationRule(*rootNodeRule);
+    RootNodeRule rootNodeRule("TestCondition1", 1, true, TargetTree_Both, false);
+    ruleSet->AddPresentationRule(rootNodeRule);
     EXPECT_EQ(1, ruleSet->GetRootNodesRules().size());
 
-    ruleSet->RemovePresentationRule(*rootNodeRule);
+    ruleSet->RemovePresentationRule(rootNodeRule);
     EXPECT_EQ(0, ruleSet->GetRootNodesRules().size());
-    delete rootNodeRule;
-    rootNodeRule = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -531,13 +507,9 @@ TEST_F(PresentationRulesTests, RemovePresentationRule)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ContentRuleTest, GetSetContentRule)
     {
-    ContentRuleP contentRule = new ContentRule("TestCondition3", 3, true);
-    ASSERT_TRUE(nullptr != contentRule);
-    contentRule->SetCustomControl("MyDisplay");
-
-    ASSERT_STREQ("MyDisplay", contentRule->GetCustomControl().c_str());
-    delete contentRule;
-    contentRule = nullptr;
+    ContentRule contentRule("TestCondition3", 3, true);
+    contentRule.SetCustomControl("MyDisplay");
+    ASSERT_STREQ("MyDisplay", contentRule.GetCustomControl().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -545,17 +517,13 @@ TEST(ContentRuleTest, GetSetContentRule)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ImageIdOverrideTest, GetSetImageId)
     {
-    ImageIdOverrideP imageIdOverride = new ImageIdOverride("TestCondition4", 4, "ImageIdOverrideTestValue");
-    ASSERT_TRUE(nullptr != imageIdOverride);
+    ImageIdOverride imageIdOverride("TestCondition4", 4, "ImageIdOverrideTestValue");
+    ImageIdOverride imageIdOverride1;
+    imageIdOverride1.SetCondition("TestCondition4");
+    imageIdOverride1.SetImageId("ImageIdOverrideTestValue");
 
-    ImageIdOverrideP imageIdOverride1 = new ImageIdOverride();
-    imageIdOverride1->SetCondition("TestCondition4");
-    imageIdOverride1->SetImageId("ImageIdOverrideTestValue");
-
-    ASSERT_STREQ(imageIdOverride->GetCondition().c_str(), imageIdOverride1->GetCondition().c_str());
-    ASSERT_STREQ(imageIdOverride->GetImageId().c_str(), imageIdOverride1->GetImageId().c_str());
-    delete imageIdOverride; delete imageIdOverride1;
-    imageIdOverride = nullptr; imageIdOverride1 = nullptr;
+    ASSERT_STREQ(imageIdOverride.GetCondition().c_str(), imageIdOverride1.GetCondition().c_str());
+    ASSERT_STREQ(imageIdOverride.GetImageId().c_str(), imageIdOverride1.GetImageId().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -563,19 +531,15 @@ TEST(ImageIdOverrideTest, GetSetImageId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(LabelOverrideTest, GetLabelOverrideAttributes)
     {
-    LabelOverrideP lo = new LabelOverride("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue");
-    ASSERT_TRUE(nullptr != lo);
+    LabelOverride lo("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue");
+    LabelOverride lo1;
+    lo1.SetCondition("TestCondition5");
+    lo1.SetLabel("LabelOverrideLabelValue");
+    lo1.SetDescription("LabelOverrideDescriptionValue");
 
-    LabelOverrideP lo1 = new LabelOverride();
-    lo1->SetCondition("TestCondition5");
-    lo1->SetLabel("LabelOverrideLabelValue");
-    lo1->SetDescription("LabelOverrideDescriptionValue");
-
-    ASSERT_STREQ(lo->GetCondition().c_str(), lo1->GetCondition().c_str());
-    ASSERT_STREQ(lo->GetLabel().c_str(), lo1->GetLabel().c_str());
-    ASSERT_STREQ(lo->GetDescription().c_str(), lo1->GetDescription().c_str());
-    delete lo; delete lo1;
-    lo = nullptr; lo1 = nullptr;
+    ASSERT_STREQ(lo.GetCondition().c_str(), lo1.GetCondition().c_str());
+    ASSERT_STREQ(lo.GetLabel().c_str(), lo1.GetLabel().c_str());
+    ASSERT_STREQ(lo.GetDescription().c_str(), lo1.GetDescription().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -583,14 +547,9 @@ TEST(LabelOverrideTest, GetLabelOverrideAttributes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(StyleOverrideTest, GetSetForeColor)
     {
-    StyleOverrideP styleOverride = new StyleOverride();
-    ASSERT_TRUE(nullptr != styleOverride);
-    styleOverride->SetForeColor("White");
-
-    ASSERT_STREQ("White", styleOverride->GetForeColor().c_str());
-    
-    delete styleOverride;
-    styleOverride = nullptr;
+    StyleOverride styleOverride;
+    styleOverride.SetForeColor("White");
+    ASSERT_STREQ("White", styleOverride.GetForeColor().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -598,15 +557,11 @@ TEST(StyleOverrideTest, GetSetForeColor)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(UserSettingsItemTest, CreateUserSettingsItem)
     {
-    UserSettingsItemP userSettingsItem = new UserSettingsItem("UserId", "UserLabel", "UserSettingOption", "UserDefaultValue");
-    ASSERT_TRUE(nullptr != userSettingsItem);
-
-    ASSERT_STREQ("UserId", userSettingsItem->GetId().c_str());
-    ASSERT_STREQ("UserLabel", userSettingsItem->GetLabel().c_str());
-    ASSERT_STREQ("UserSettingOption", userSettingsItem->GetOptions().c_str());
-    ASSERT_STREQ("UserDefaultValue", userSettingsItem->GetDefaultValue().c_str());
-    delete userSettingsItem;
-    userSettingsItem = nullptr;
+    UserSettingsItem userSettingsItem("UserId", "UserLabel", "UserSettingOption", "UserDefaultValue");
+    ASSERT_STREQ("UserId", userSettingsItem.GetId().c_str());
+    ASSERT_STREQ("UserLabel", userSettingsItem.GetLabel().c_str());
+    ASSERT_STREQ("UserSettingOption", userSettingsItem.GetOptions().c_str());
+    ASSERT_STREQ("UserDefaultValue", userSettingsItem.GetDefaultValue().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -614,39 +569,31 @@ TEST(UserSettingsItemTest, CreateUserSettingsItem)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(GroupingRulesTest, TestGroupingRules)
     {
-    GroupingRuleP groupRuleset = new GroupingRule();
-    groupRuleset->SetCondition("GroupTestCondition");
-    groupRuleset->SetContextMenuCondition("ContextMenuCondition");
+    GroupingRule groupingRule;
+    groupingRule.SetCondition("GroupTestCondition");
+    groupingRule.SetContextMenuCondition("ContextMenuCondition");
 
     ClassGroupP classGroup = new ClassGroup("ClassMenuLabel", true, "DummySchemaName", "DummyBaseClass");
-    ASSERT_TRUE(nullptr != classGroup);
-
     PropertyGroupP propertyGroup = new PropertyGroup("PropertyContextMenuLabel", "DummyImageId", true, "DummyPropertyName");
-    ASSERT_TRUE(nullptr != propertyGroup);
     propertyGroup->GetRangesR().push_back(new PropertyRangeGroupSpecification("PropertySpecificationLabel", "PropertySpecificationImageId", "1", "5"));
-
     SameLabelInstanceGroupP sameLabelInstanceGroup = new SameLabelInstanceGroup("sameLabelContextMenuLabel");
-    ASSERT_TRUE(nullptr != sameLabelInstanceGroup);
 
-    groupRuleset->GetGroupsR().push_back(classGroup);
-    groupRuleset->GetGroupsR().push_back(propertyGroup);
-    groupRuleset->GetGroupsR().push_back(sameLabelInstanceGroup);
+    groupingRule.GetGroupsR().push_back(classGroup);
+    groupingRule.GetGroupsR().push_back(propertyGroup);
+    groupingRule.GetGroupsR().push_back(sameLabelInstanceGroup);
 
-    ASSERT_STREQ("GroupTestCondition", groupRuleset->GetCondition().c_str());
-    ASSERT_STREQ("ContextMenuCondition", groupRuleset->GetContextMenuCondition().c_str());
-    ASSERT_STREQ("", groupRuleset->GetContextMenuLabel().c_str());
+    ASSERT_STREQ("GroupTestCondition", groupingRule.GetCondition().c_str());
+    ASSERT_STREQ("ContextMenuCondition", groupingRule.GetContextMenuCondition().c_str());
+    ASSERT_STREQ("", groupingRule.GetContextMenuLabel().c_str());
 
-    GroupList groupsList = groupRuleset->GetGroups();
+    GroupList const& groupsList = groupingRule.GetGroups();
     for (auto group : groupsList)
         {
         ASSERT_STREQ("", group->GetDefaultLabel().c_str());
         Utf8StringCR menuLabel = group->GetContextMenuLabel();
         if (menuLabel != "ClassMenuLabel" && menuLabel != "PropertyContextMenuLabel" && menuLabel != "sameLabelContextMenuLabel")
-            ASSERT_TRUE(false) << group->GetContextMenuLabel().c_str();
+            FAIL() << group->GetContextMenuLabel().c_str();
         }
-    delete groupRuleset; delete classGroup;
-    delete propertyGroup; delete sameLabelInstanceGroup;
-    groupRuleset = nullptr; classGroup = nullptr; propertyGroup = nullptr; sameLabelInstanceGroup = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -665,9 +612,8 @@ void ValidateDisplaySpecifications(DisplayRelatedItemsSpecificationCR displaySpe
 TEST(SelectedNodeInstanceTest, VerifyDisplayRelatedItemsSpecifications)
     {
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class1", false);
-    DisplayRelatedItemsSpecificationP displaySpec = new DisplayRelatedItemsSpecification();
     spec.GetDisplayRelatedItems().push_back(new DisplayRelatedItemsSpecification(false, 0, ""));
-    spec.GetDisplayRelatedItems().push_back(displaySpec);
+    spec.GetDisplayRelatedItems().push_back(new DisplayRelatedItemsSpecification());
 
     int displayRelatedItemsCount = 0;
     for (DisplayRelatedItemsSpecificationList::const_iterator iter = spec.GetDisplayRelatedItems().begin(); iter != spec.GetDisplayRelatedItems().end(); ++iter)
@@ -676,8 +622,6 @@ TEST(SelectedNodeInstanceTest, VerifyDisplayRelatedItemsSpecifications)
         ValidateDisplaySpecifications(**iter, false, 0, "");
         }
     ASSERT_EQ(2, displayRelatedItemsCount);
-    delete displaySpec;
-    displaySpec = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,10 +716,5 @@ TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
             "<StyleOverride Priority=\"7\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\" Condition=\"TestCondition7\" OnlyIfNotHandled=\"false\"/>"
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
-    
-    delete rootNodeRule; delete childNodeRule; delete spec;
-    delete nestedChildNodeRule; delete styleOverride;
-    rootNodeRule = nullptr; childNodeRule = nullptr; spec = nullptr;
-    nestedChildNodeRule = nullptr; styleOverride = nullptr;
     }
 END_BENTLEY_ECN_TEST_NAMESPACE
