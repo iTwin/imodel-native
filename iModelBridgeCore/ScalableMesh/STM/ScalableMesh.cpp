@@ -1209,7 +1209,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                        
 
         m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
-        if (m_contentExtent.isNull() || m_contentExtent.isEmpty() || m_contentExtent.DiagonalDistance() == 0) return BSIERROR;
+        //if (m_contentExtent.isNull() || m_contentExtent.isEmpty() || m_contentExtent.DiagonalDistance() == 0) return BSIERROR;
         for (int i = 0; i < (int)DTMAnalysisType::Qty; ++i)
         {
             m_scalableMeshDTM[i] = ScalableMeshDTM::Create(this);
