@@ -1178,7 +1178,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         if (requireJoinTo.end() != requireJoinTo.find(&dataProperty.GetTable()) || requireJoin)
             {
             ToSqlVisitor toSqlVisitor(ctx, dataProperty.GetTable(), dataProperty.GetTable().GetName().c_str(), ToSqlVisitor::ColumnAliasMode::NoAlias);
-            if (baseClass)
+            if (baseClass && baseClass->IsMixin())
                    toSqlVisitor.DoNotAddColumnAliasForComputedExpression();
 
             if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
@@ -1232,7 +1232,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
         //no join needed
         ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, ToSqlVisitor::ColumnAliasMode::NoAlias);
-        if (baseClass)
+        if (baseClass && baseClass->IsMixin())
             toSqlVisitor.DoNotAddColumnAliasForComputedExpression();
 
         if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
