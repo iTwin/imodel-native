@@ -107,26 +107,13 @@ static double s_defaultFacetAngleTol            = 0.39;     // radians
 static double s_facetAngleCurveFactor           = 0.5;
 static double s_maxToleranceRatio               = 50000.0;
 
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      05/2007
-+===============+===============+===============+===============+===============+======*/
-struct EdgeIndices 
-{
-    int32_t    m_index0;
-    int32_t    m_index1;
-
-    EdgeIndices () { }
-    EdgeIndices (int32_t index0, int32_t index1) : m_index0 (index0), m_index1 (index1)  { }
-
-    bool operator < (EdgeIndices const& rhs) const { return m_index0 == rhs.m_index0 ? m_index1 < rhs.m_index1 : m_index0 < rhs.m_index0; }
-};
 
 struct CompareParams { bool operator() (DPoint2dCR param1, DPoint2dCR param2) { return param1.x == param2.x ? (param1.y < param2.y) : (param1.x < param2.x); } };
 
-typedef bmap <DPoint2d, int32_t, CompareParams>         T_ParamIndexMap; // Untoleranced parameter to index map used to reindex parameters within a single face.
-typedef bmap <int32_t, int32_t>                         T_IndexRemap;
-typedef bmap <int32_t, int32_t>                         T_FinToEdgeMap;
-typedef std::multimap <CurveTopologyId, EdgeIndices>    T_EdgeIdToIndicesMap;
+typedef bmap <DPoint2d, int32_t, CompareParams>                 T_ParamIndexMap; // Untoleranced parameter to index map used to reindex parameters within a single face.
+typedef bmap <int32_t, int32_t>                                 T_IndexRemap;
+typedef bmap <int32_t, int32_t>                                 T_FinToEdgeMap;
+typedef bmap <CurveTopologyId, bvector<PolyfaceEdge>>               T_EdgeIdToPolyfaceEdgeMap;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      03/2012
@@ -172,13 +159,14 @@ static void initFinToEdgeMap (T_FinToEdgeMap& finToEdgeMap, IFacetTopologyTable&
             finToEdgeMap.insert (bpair <int32_t, int32_t> (finEdge[i].x, finEdge[i].y));
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void addEdgeChains (BlockedVector<PolyfaceEdgeChain>& edgeChains, T_EdgeIdToIndicesMap& edgeIdToIndicesMap)
+static void addEdgeChains (BlockedVector<PolyfaceEdgeChain>& edgeChains, T_EdgeIdToPolyfaceEdgeMap& edgeIdToIndicesMap)
     {
-    for (T_EdgeIdToIndicesMap::iterator curr = edgeIdToIndicesMap.begin(); curr != edgeIdToIndicesMap.end(); curr++)
-        edgeChains.push_back (PolyfaceEdgeChain (curr->first, curr->second.m_index0, curr->second.m_index1));
+    for (T_EdgeIdToPolyfaceEdgeMap::iterator curr = edgeIdToIndicesMap.begin(); curr != edgeIdToIndicesMap.end(); curr++)
+        edgeChains.push_back(PolyfaceEdgeChain(curr->first, std::move(curr->second)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -189,7 +177,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
     bool                    edgeChainsRequired = facetOptions.GetEdgeChainsRequired();
     T_FinToEdgeMap          finToEdgeMap;
     bset<int32_t>           edgeSet;
-    T_EdgeIdToIndicesMap    edgeIdToIndicesMap;
+    T_EdgeIdToPolyfaceEdgeMap   edgeIdToPolyfaceEdgeMap;
         
     initPolyface (polyface, ftt);
     initFinToEdgeMap (finToEdgeMap, ftt, facetOptions.GetEdgeHiding());
@@ -260,11 +248,15 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
                     {
                     CurveTopologyId      curveTopologyId;
 
-                     if (edgeSet.find (found->second) == edgeSet.end() &&
-                        ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
+                     if (ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
                         {
-                        edgeSet.insert (found->second);
-                        edgeIdToIndicesMap.insert (std::pair <CurveTopologyId, EdgeIndices> (curveTopologyId, EdgeIndices (1 + xyzIndex, 1 + ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]])));
+                        PolyfaceEdge             polyfaceEdge(1 + xyzIndex, 1 + ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]]);
+                        bvector<PolyfaceEdge>    indices(1, polyfaceEdge);  
+
+                        auto  insertPair = edgeIdToPolyfaceEdgeMap.Insert(curveTopologyId, indices);
+
+                        if (!insertPair.second)
+                            insertPair.first->second.push_back(polyfaceEdge);
                         }
                     }
                 }
@@ -280,7 +272,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
 
     polyface.SetNewFaceData (NULL);
     if (edgeChainsRequired) // Edge chains requested...
-        addEdgeChains (polyface.EdgeChain(), edgeIdToIndicesMap);
+        addEdgeChains (polyface.EdgeChain(), edgeIdToPolyfaceEdgeMap);
         
     return SUCCESS;
     }
@@ -324,7 +316,7 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap<int
     Point2dCP   ftt_facetFin         = ftt._GetFacetFin ();
 
     T_IndexRemap            pointIndexMap, normalIndexMap, paramIndexMap;
-    T_EdgeIdToIndicesMap    edgeIdToIndicesMap;
+    T_EdgeIdToPolyfaceEdgeMap   edgeIdToPolyfaceEdgeMap;
     bset<int32_t>           edgeSet;
 
     int32_t thisFace, currentFace = -1;
@@ -375,14 +367,20 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap<int
                 {
                 polyface.PointIndex().push_back (pointIndexRemapped + 1);
 
+
                 if (edgeChainsRequired)
                     {
                     CurveTopologyId curveTopologyId;
 
-                    if (edgeSet.find (foundEdge->second) == edgeSet.end() && ftt._GetEdgeCurveId (curveTopologyId, foundEdge->second, true))
+                    if (ftt._GetEdgeCurveId (curveTopologyId, foundEdge->second, true))
                         {
-                        edgeSet.insert (foundEdge->second);
-                        edgeIdToIndicesMap.insert (std::pair <CurveTopologyId, EdgeIndices> (curveTopologyId, EdgeIndices (1 + pointIndexRemapped, 1 + nextPointIndexRemapped)));
+                        PolyfaceEdge             polyfaceEdge(1 + pointIndexRemapped, 1 + nextPointIndexRemapped);
+                        bvector<PolyfaceEdge>    indices(1, polyfaceEdge);  
+
+                        auto  insertPair = edgeIdToPolyfaceEdgeMap.Insert(curveTopologyId, indices);
+
+                        if (!insertPair.second)
+                            insertPair.first->second.push_back(polyfaceEdge);
                         }
                     }
                 }
@@ -433,7 +431,7 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap<int
     polyface.SetNewFaceData (NULL);
 
     if (edgeChainsRequired)
-        addEdgeChains (polyface.EdgeChain(), edgeIdToIndicesMap);
+        addEdgeChains (polyface.EdgeChain(), edgeIdToPolyfaceEdgeMap);
 
     return SUCCESS;
     }

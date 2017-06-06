@@ -81,8 +81,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const& builderPolyface) : m_options(builderPolyface.m_edgeOptions)
     {
-    TriangleList const&         triangles = mesh.Triangles();
-
+    TriangleList const&     triangles = mesh.Triangles();
+    bool                    anyHidden = false;
+    
     // We need to detect the edge pairs -- Can't do that from the Mesh indices as these are not shared - so we'll
     // assume that the polyface indices are properly shared, this should be true as a seperate index array is used
     // for Polyfaces.
@@ -118,6 +119,8 @@ MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const
             EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleNormalIndex, meshEdge, polyfacePoints[j], polyfacePoints[jNext]);
             auto            insertPair = m_edgeMap.Insert(polyfaceEdge, edgeInfo);
 
+            anyHidden |= !edgeInfo.m_visible;
+
             if (!insertPair.second)
                 insertPair.first->second.AddFace(edgeInfo.m_visible, triangleNormalIndex);
             }
@@ -125,7 +128,8 @@ MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const
         m_triangleNormals.push_back(FVec3d::From(DVec3d::FromNormalizedCrossProductToPoints(polyfacePoints[0], polyfacePoints[1], polyfacePoints[2])));
         }
 
-    CalculateEdgeVisibility (tileRange);
+    if (!anyHidden)
+        CalculateEdgeVisibility (tileRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -204,7 +208,7 @@ void CalculateEdgeVisibility(DRange3dCR tileRange)
             }
         else if (m_options.m_generateSheetEdges)
             {
-            edge.second.m_visible = false;
+            edge.second.m_visible = true;
             }
         }
     }
@@ -258,14 +262,14 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
     {
-    static bool     s_doEdgeChains = false;
-    bool            useEdgeChains = s_doEdgeChains && nullptr != builderPolyface && 0 != builderPolyface->m_polyface.GetEdgeChainCount();
+    bool                    useExistingEdgeChains = nullptr != builderPolyface && 0 != builderPolyface->m_polyface.GetEdgeChainCount();
+    bvector<PolyfaceEdge>   visibleEdges;
 
     for (auto& edge : m_edgeMap)
         {
         if (edge.second.m_visible)
             {
-            if (!useEdgeChains)
+            if (nullptr == builderPolyface)
                 edges.m_visible.push_back(edge.second.m_edge);
             }
         else
@@ -287,15 +291,23 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
                 }
             }
         }
-    if (useEdgeChains)
+
+    if (nullptr != builderPolyface)
         {
         bmap <uint32_t, uint32_t>   inverseVertexIndexMap;
 
         for (auto& vertexIndex : builderPolyface->m_vertexIndexMap)
             inverseVertexIndexMap.Insert(vertexIndex.second, vertexIndex.first);
-        
-        for (size_t i=0; i<builderPolyface->m_polyface.GetEdgeChainCount(); i++)
-            BuildPolylineFromEdgeChain(edges, *(builderPolyface->m_polyface.GetEdgeChainCP() + i), *builderPolyface, inverseVertexIndexMap);
+
+        if (useExistingEdgeChains)
+            {
+            for (size_t i=0; i<builderPolyface->m_polyface.GetEdgeChainCount(); i++)
+                BuildPolylineFromEdgeChain(edges, *(builderPolyface->m_polyface.GetEdgeChainCP() + i), *builderPolyface, inverseVertexIndexMap);
+            }
+        else
+            {
+            BuildPolylineFromEdgeChain(edges, PolyfaceEdgeChain(CurveTopologyId(), builderPolyface->m_polyface), *builderPolyface, inverseVertexIndexMap);
+            }
         }
     }
 };  // MeshEdgesBuilder
