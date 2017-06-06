@@ -547,6 +547,9 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(NativeSqlBuilder& viewSql, Cont
 
     NativeSqlBuilder selectClause;
     bool first = true;
+    if (selectClauses.empty())
+        return  RenderNullView(viewSql, ctx, mixInClassMap);
+
     for (auto const& kvp : selectClauses)
         {
         bvector<ECClassId> const& classIds = kvp.second.second;
@@ -580,11 +583,10 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(NativeSqlBuilder& viewSql, Cont
         viewSql.AppendLine(selectClause.ToString());
         selectClause.Clear();
         }
- 
+
     if (ctx.GetViewType() == ViewType::SelectFromView)
         viewSql.AppendParenRight();
 
- 
     return SUCCESS;
     }
 
