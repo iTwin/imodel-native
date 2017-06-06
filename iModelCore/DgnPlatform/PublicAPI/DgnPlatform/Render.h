@@ -1162,7 +1162,7 @@ public:
     //@{
 
     //! Set the current line color for this GraphicParams.
-    //! @param[in] lineColor the new TBGR line color for this GraphicParams.
+    //! @param[in] lineColor the new TBGR line color for this GraphicParams.     a
     void SetLineColor(ColorDef lineColor) {m_lineColor = lineColor;}
     void SetLineTransparency(Byte transparency) {m_lineColor.SetAlpha(transparency);}
 
@@ -2020,14 +2020,24 @@ struct  MeshEdge
 //=======================================================================================
 struct MeshEdges : RefCountedBase
 {
+    
+    struct Polyline
+        {
+        bvector<uint32_t>       m_indices;
+        FPoint3d                m_rangeCenter;
+        float                   m_startDistance;
+
+        Polyline (bvector<uint32_t>&& indices, FPoint3dCR rangeCenter, float startDistance);
+        Polyline() { }
+        };
+
     bvector<MeshEdge>           m_visible;
     bvector<MeshEdge>           m_silhouette;
-    bvector<bvector<uint32_t>>  m_polylines;
+    bvector<Polyline>           m_polylines;
     QPoint3dList                m_silhouetteNormals0 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
     QPoint3dList                m_silhouetteNormals1 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
 
     MeshEdges() {}
-    DGNPLATFORM_EXPORT MeshEdges(TriMeshArgsCR triMesh, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeCreationOptions);
 };
 
 
@@ -2535,15 +2545,16 @@ struct ViewletPosition
 // @bsiclass                                                    Ray.Bentley     05/17
 //=======================================================================================
 struct MeshEdgeCreationOptions
-
     {
+    bool        m_generateNoEdges       = false;
     bool        m_generateAllEdges      = false;
     bool        m_generateSheetEdges    = true;
     bool        m_generateCreaseEdges   = true;
     double      m_minCreaseAngle        = 20.0 * msGeomConst_radiansPerDegree;
 
     MeshEdgeCreationOptions() {}
-    MeshEdgeCreationOptions(bool generateAllEdges, bool generateSheetEdges, bool generateCreaseEdges, double minCreaseAngle) : m_generateAllEdges(generateAllEdges), m_generateSheetEdges(generateSheetEdges), m_generateCreaseEdges(generateCreaseEdges), m_minCreaseAngle(minCreaseAngle) { }
+    MeshEdgeCreationOptions(bool generateAllEdges, bool generateNoEdges, bool generateSheetEdges, bool generateCreaseEdges, double minCreaseAngle) : 
+        m_generateAllEdges(generateAllEdges), m_generateNoEdges(generateNoEdges), m_generateSheetEdges(generateSheetEdges), m_generateCreaseEdges(generateCreaseEdges), m_minCreaseAngle(minCreaseAngle) { }
     };
 
 //=======================================================================================

@@ -453,7 +453,7 @@ bool Mesh::HasNonPlanarNormals() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, GetMeshGraphicsArgs& args, DgnDbR db, DRange3dCR tileRange)
+void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, GetMeshGraphicsArgs& args, DgnDbR db)
     {
     bool haveMesh = !Triangles().empty();
     bool havePolyline = !haveMesh && !Polylines().empty();
@@ -469,17 +469,17 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
             (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db)).IsValid())
             graphics.push_back (thisGraphic);
 
-        MeshEdgesPtr    edges = GetEdges(tileRange, MeshEdgeCreationOptions());
+        MeshEdgesPtr    edges = GetEdges();
 
-        if (args.m_visibleEdgesArgs.Init(*this, tileRange) &&
+        if (args.m_visibleEdgesArgs.Init(*this) &&
             (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db)).IsValid())
             graphics.push_back(thisGraphic);
 
-        if (args.m_invisibleEdgesArgs.Init(*this, tileRange) &&
+        if (args.m_invisibleEdgesArgs.Init(*this) &&
             (thisGraphic = system._CreateSilhouetteEdges(args.m_invisibleEdgesArgs, db)).IsValid())
             graphics.push_back(thisGraphic);
 
-        if (args.m_polylineEdgesArgs.Init(*this, tileRange) &&
+        if (args.m_polylineEdgesArgs.Init(*this) &&
             (thisGraphic = system._CreateIndexedPolylines(args.m_polylineEdgesArgs, db)).IsValid())
             graphics.push_back(thisGraphic);
         }
@@ -812,6 +812,9 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP renderi
         {
         VertexKey vertex(points[i], feature, fillColor, m_mesh->Verts().GetParams(), haveNormals ? &visitor.Normal()[i] : nullptr, haveParams ? &params[i] : nullptr);
         newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
+
+        if (m_currentPolyface.IsValid())
+            m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[i]);
         }
 
     BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Verts().size());
@@ -849,6 +852,7 @@ uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
 
     return insertPair.first->second;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -984,6 +988,7 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance)
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
     opts->SetNormalsRequired(true);
+    opts->SetEdgeChainsRequired(true);
 
     return opts;
     }
@@ -1459,7 +1464,7 @@ void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Geome
     GetMeshGraphicsArgs     args;
 
     for (auto const& mesh : meshes)
-        mesh->GetGraphics (graphics, GetSystem(), args, GetDgnDb(), m_tileRange);
+        mesh->GetGraphics (graphics, GetSystem(), args, GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1725,9 +1730,9 @@ template<typename T> static void initLinearGraphicParams(T& args, MeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementMeshEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
+bool  ElementMeshEdgeArgs::Init(MeshCR mesh)
     {
-    MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
+    MeshEdgesPtr    meshEdges = mesh.GetEdges();
     m_pointParams = mesh.Points().GetParams();
 
     initLinearGraphicParams(*this, mesh);
@@ -1748,9 +1753,9 @@ bool  ElementMeshEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
+bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh)
     {
-    MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
+    MeshEdgesPtr    meshEdges = mesh.GetEdges();
     m_pointParams = mesh.Points().GetParams();
 
     initLinearGraphicParams(*this, mesh);
@@ -1772,10 +1777,10 @@ bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementPolylineEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
+bool  ElementPolylineEdgeArgs::Init(MeshCR mesh)
     {
     Reset();
-    MeshEdgesPtr    meshEdges = mesh.GetEdges(tileRange, MeshEdgeCreationOptions());
+    MeshEdgesPtr    meshEdges = mesh.GetEdges();
     m_pointParams = mesh.Points().GetParams();
 
     initLinearGraphicParams(*this, mesh);
@@ -1791,12 +1796,8 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh, DRange3dCR tileRange)
     for (auto& polyline : meshEdges->m_polylines)
         {
         IndexedPolyline indexedPolyline;
-        DRange3d        range = DRange3d::NullRange();
 
-        for (auto& index : polyline)
-            range.Extend(mesh.GetPoint(index));
-
-        if (indexedPolyline.Init(polyline, 0.0, FPoint3d::From(DPoint3d::FromInterpolate(range.low, .5, range.high))))
+        if (indexedPolyline.Init(polyline.m_indices, polyline.m_startDistance, polyline.m_rangeCenter))
             m_polylines.push_back(indexedPolyline);
         }
                                                 
