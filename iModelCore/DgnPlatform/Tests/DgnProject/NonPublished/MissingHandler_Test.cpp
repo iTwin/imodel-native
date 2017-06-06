@@ -348,16 +348,10 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
         ASSERT_TRUE(db.IsValid());
         fullDgnDbFileName = db->GetFileName();
 
-
         // register domain and handlers
         MissingHandlerDomain domain;
         DgnDomains::RegisterDomain(domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
 		
-        // Flush any un-committed or committed transactions before importing the schema
-        db->SaveChanges();
-        db->Revisions().StartCreateRevision();
-        db->Revisions().FinishCreateRevision();
-
 		MissingHandlerDomain::GetDomain().ImportSchema(*db);
 
         // Populate the db with elements belonging to our domain

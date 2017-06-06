@@ -317,7 +317,6 @@ private:
     void ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet&, TxnId rowid);
     void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 	
-
     void ApplyTxnChanges(TxnId, TxnAction);
     BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
