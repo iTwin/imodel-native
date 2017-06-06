@@ -121,7 +121,7 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
         return rc;
         }
 
-    if (BE_SQLITE_OK != (rc = MergeSchemaRevision(params))) 
+    if (BE_SQLITE_OK != (rc = MergeSchemaRevisions(params))) 
         return rc;
 
     Fonts().Update(); // ensure the font Id cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
@@ -164,14 +164,25 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::MergeSchemaRevision(Db::OpenParams const& params)
+DbResult DgnDb::MergeSchemaRevisions(Db::OpenParams const& params)
     {
-    DgnRevisionCP schemaRevision = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions()).GetUpgradeRevision();
-    if (schemaRevision == nullptr)
+    bvector<DgnRevisionCP> revisions = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions()).GetUpgradeRevisions();
+    if (revisions.empty())
         return BE_SQLITE_OK;
 
-    RevisionStatus revStatus = Revisions().DoMergeRevision(*schemaRevision); 
-    return (revStatus == RevisionStatus::Success) ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
+    for (DgnRevisionCP revision : revisions)
+        {
+        if (!revision)
+            {
+            BeAssert(false);
+            return BE_SQLITE_ERROR_SchemaUpgradeFailed;
+            }
+
+        if (RevisionStatus::Success != Revisions().DoMergeRevision(*revision))
+            return BE_SQLITE_ERROR_SchemaUpgradeFailed;
+        }
+
+    return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
