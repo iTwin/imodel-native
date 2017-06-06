@@ -178,7 +178,7 @@ private:
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
-    BeSQLite::DbResult MergeSchemaRevision(BeSQLite::Db::OpenParams const& params);
+    BeSQLite::DbResult MergeSchemaRevisions(BeSQLite::Db::OpenParams const& params);
 
 protected:
     friend struct Txns;

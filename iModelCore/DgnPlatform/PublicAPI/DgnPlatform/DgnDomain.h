@@ -81,30 +81,41 @@ enum class AllowedDomainUpgrades : int
 
 private:
     AllowedDomainUpgrades m_allowedDomainUpgrades;
-    DgnRevisionCP m_upgradeRevision;
+    bvector<DgnRevisionCP> m_upgradeRevisions;
 
 public:
     //! Default constructor
-    SchemaUpgradeOptions() : m_allowedDomainUpgrades(AllowedDomainUpgrades::None), m_upgradeRevision(nullptr) {}
+    SchemaUpgradeOptions() : m_allowedDomainUpgrades(AllowedDomainUpgrades::None) {}
 
     //! Constructor to setup schema upgrades from the registered domains
     SchemaUpgradeOptions(AllowedDomainUpgrades allowedDomainUpgrades) { SetUpgradeFromDomains(allowedDomainUpgrades); }
 
-    //! Constructor to setup schema upgrades by merging a revision (that contains schema changes).
+    //! Constructor to setup schema upgrades by merging a revision (that may contain schema changes).
     SchemaUpgradeOptions(DgnRevisionCR revision) { SetUpgradeFromRevision(revision); }
+
+    //! Constructor to setup schema upgrades by merging revisions (that may contain schema changes).
+    SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions) { SetUpgradeFromRevisions(revisions); }
 
     //! Setup to upgrade schemas from the registered domains
     void SetUpgradeFromDomains(AllowedDomainUpgrades allowedDomainUpgrades = AllowedDomainUpgrades::UseDefaults)
         {
         m_allowedDomainUpgrades = allowedDomainUpgrades;
-        m_upgradeRevision = nullptr;
+        m_upgradeRevisions.clear();
         }
 
-    //! Setup Schema upgrades by merging a revision (that contains schema changes)
+    //! Setup Schema upgrades by merging a revision (that may contain schema changes)
     void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision)
         {
         m_allowedDomainUpgrades = AllowedDomainUpgrades::None;
-        m_upgradeRevision = &upgradeRevision;
+        m_upgradeRevisions.clear();
+        m_upgradeRevisions.push_back(&upgradeRevision);
+        }
+
+    //! Setup Schema upgrades by merging a revision (that contains schema changes)
+    void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions)
+        {
+        m_allowedDomainUpgrades = AllowedDomainUpgrades::None;
+        m_upgradeRevisions = upgradeRevisions;
         }
 
     //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
@@ -113,8 +124,8 @@ public:
     //! Returns true if schemas are to be upgraded from the domains.
     bool AreDomainUpgradesAllowed() const { return m_allowedDomainUpgrades != AllowedDomainUpgrades::None; }
 
-    //! Gets the revision containing schema changes if the schemas in the DgnDb are to be upgraded from it.
-    DgnRevisionCP GetUpgradeRevision() const { return m_upgradeRevision; }
+    //! Gets the revisions that are to be merged
+    bvector<DgnRevisionCP> const& GetUpgradeRevisions() const { return m_upgradeRevisions; }
 };
 
 //=======================================================================================
