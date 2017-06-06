@@ -26,7 +26,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_UserServerError)                   // =="Internal server error has occured. More than one user found."==
 
     //iModel errors
-    L10N_STRING(MESSAGE_MasterFileNotFound)                // =="Could not find uninitialized master file."==
+    L10N_STRING(MESSAGE_SeedFileNotFound)                // =="Could not find uninitialized seed file."==
     L10N_STRING(MESSAGE_iModelIsNotInitialized)            // =="iModel is not initialized."==
 
     //Initialization errors
@@ -45,7 +45,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_FileAlreadyExists)                 // =="Could not acquire briefcase. File with that name already exists."==
     L10N_STRING(MESSAGE_FileIsNotBriefcase)                // =="File is not a valid briefcase."==
     L10N_STRING(MESSAGE_BriefcaseInfoParseError)           // =="Briefcase information could not be parsed."==
-    L10N_STRING(MESSAGE_BriefcaseOutdated)                 // =="Briefcase is no longer valid. Master file has been replaced."==
+    L10N_STRING(MESSAGE_BriefcaseOutdated)                 // =="Briefcase is no longer valid. Seed file has been replaced."==
 
     //ChangeSet errors
     L10N_STRING(MESSAGE_MergeError)                        // =="ChangeSet merge error has occured."==

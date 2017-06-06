@@ -182,37 +182,35 @@ public:
     static iModelConnectionResult Create(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo,
                                                    IHttpHandlerPtr customHandler = nullptr);
 
-    //! Checks whether master file with specified fileId is active.
-    //! @param[in] fileId Db guid of the master file.
+    //! Checks whether seed file with specified fileId is active.
+    //! @param[in] fileId Db guid of the seed file.
     //! @param[in] briefcaseId Briefcase id.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that returns error if there is no active master file with specified id.
+    //! @return Asynchronous task that returns error if there is no active seed file with specified id.
     StatusTaskPtr ValidateBriefcase(BeSQLite::BeGuidCR fileId, BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
     //! @param[in] codes Set of codes to acquire
     //! @param[in] briefcaseId
-    //! @param[in] masterFileId
+    //! @param[in] seedFileId
     //! @param[in] lastChangeSetId Last pulled ChangeSetId
     //! @param[in] options
     //! @param[in] cancellationToken
-    //! @param[in] options
     IMODELHUBCLIENT_EXPORT StatusTaskPtr AcquireCodesLocks(LockRequestCR locks, Dgn::DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        BeSQLite::BeGuidCR masterFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, 
+        BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, 
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Attempt to acquire the requested set of locks.
     //! @param[in] locks Set of locks to check
     //! @param[in] codes Set of codes to check
     //! @param[in] briefcaseId
-    //! @param[in] masterFileId
+    //! @param[in] seedFileId
     //! @param[in] lastChangeSetId Last pulled ChangeSetId
     //! @param[in] options
     //! @param[in] cancellationToken
-    //! @param[in] options
     IMODELHUBCLIENT_EXPORT StatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, Dgn::DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        BeSQLite::BeGuidCR masterFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+        BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
         ICancellationTokenPtr cancellationToken = nullptr) const;
     
     //! Update the Event Subscription
@@ -232,11 +230,11 @@ public:
     //! @param[in] locks Set of locks to release
     //! @param[in] codes Set of codes to release
     //! @param[in] briefcaseId
-    //! @param[in] masterFileId
+    //! @param[in] seedFileId
     //! @param[in] options
     //! @param[in] cancellationToken
     IMODELHUBCLIENT_EXPORT StatusTaskPtr DemoteCodesLocks(Dgn::DgnLockSet const& locks, Dgn::DgnCodeSet const& codes, BeSQLite::BeBriefcaseId briefcaseId,
-        BeSQLite::BeGuidCR masterFileId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
+        BeSQLite::BeGuidCR seedFileId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete all currently held codes abd locks by specific briefcase.
     //! @param[in] briefcaseId
@@ -245,51 +243,51 @@ public:
     IMODELHUBCLIENT_EXPORT StatusTaskPtr RelinquishCodesLocks(BeSQLite::BeBriefcaseId briefcaseId,
         IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Lock iModel for master file replacement.
+    //! Lock iModel for seed file replacement.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the status of acquiring iModel lock as result.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr LockiModel(ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Replace a master file on the server.
+    //! Replace a seed file on the server.
     //! @param[in] filePath The path to the BIM file to upload.
     //! @param[in] fileInfo Details of the file.
     //! @param[in] waitForInitialized Wait for new file to be initialized
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the uploaded file information as the result.
-    //! @note Part of master file replacement. Needs iModel to be locked before calling. See LockiModel.
-    IMODELHUBCLIENT_EXPORT FileTaskPtr UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    //! @note Part of seed file replacement. Needs iModel to be locked before calling. See LockiModel.
+    IMODELHUBCLIENT_EXPORT FileTaskPtr UploadNewSeedFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Cancels master file creation.
+    //! Cancels seed file creation.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that is successful if file creation was canceled.
-    //! @note This function should be used after iModelConnection::UploadNewMasterFile or Client::CreateNewiModel has failed.
-    //! This method does not unlock the iModel and allows the same user to attempt master file replacement again.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr CancelMasterFileCreation(ICancellationTokenPtr cancellationToken = nullptr) const;
+    //! @note This function should be used after iModelConnection::UploadNewSeedFile or Client::CreateNewiModel has failed.
+    //! This method does not unlock the iModel and allows the same user to attempt seed file replacement again.
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr CancelSeedFileCreation(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Unlock iModel.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the status of releasing iModel lock as result.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr UnlockiModel(ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Returns all master files available in the server.
+    //! Returns all seed files available in the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of file information as the result.
-    IMODELHUBCLIENT_EXPORT FilesTaskPtr GetMasterFiles(ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT FilesTaskPtr GetSeedFiles(ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Returns all master files with specified file id available in the server.
-    //! @param[in] fileId DbGuid of the queried master file 
+    //! Returns all seed files with specified file id available in the server.
+    //! @param[in] fileId DbGuid of the queried seed file 
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of file information as the result.
-    IMODELHUBCLIENT_EXPORT FileTaskPtr GetMasterFileById(BeSQLite::BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT FileTaskPtr GetSeedFileById(BeSQLite::BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Download a copy of the master file from the iModel
+    //! Download a copy of the seed file from the iModel
     //! @param[in] localFile Location where the downloaded file should be placed.
     //! @param[in] fileId File id.
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that results in an error if the download failed.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr DownloadMasterFile(BeFileName localFile, Utf8StringCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr DownloadSeedFile(BeFileName localFile, Utf8StringCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire briefcase id without downloading the briefcase file.
@@ -310,7 +308,7 @@ public:
 
     //! Get all of the changeSets after the specific ChangeSetId.
     //! @param[in] changeSetId Id of the parent ChangeSet for the first ChangeSet in the resulting collection. If empty gets all changeSets on server.
-    //! @param[in] fileId Id of the master file changeSets belong to.
+    //! @param[in] fileId Id of the seed file changeSets belong to.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of ChangeSet information as the result.
     IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -321,7 +319,7 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of changeSets metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase Briefcase methods should be used.
-    IMODELHUBCLIENT_EXPORT DgnRevisionsTaskPtr DownloadChangeSets(bvector<ChangeSetInfoPtr> const& changeSets, Http::Request::ProgressCallbackCR callback = nullptr,
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSets(bvector<ChangeSetInfoPtr> const& changeSets, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the ChangeSet files.
@@ -330,17 +328,17 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of changeSets metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase Briefcase methods should be used.
-    IMODELHUBCLIENT_EXPORT DgnRevisionsTaskPtr DownloadChangeSets(bvector<Utf8String> const& changeSetIds, Http::Request::ProgressCallbackCR callback = nullptr,
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSets(bvector<Utf8String> const& changeSetIds, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download all ChangeSet files after ChangeSetId
     //! @param[in] changeSetId Id of the parent ChangeSet for the first ChangeSet in the resulting collection. If empty gets all changeSets on server.
-    //! @param[in] fileId Db guid of the master file.
+    //! @param[in] fileId Db guid of the seed file.
     //! @param[in] callback Download callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of downloaded changeSets metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase Briefcase methods should be used.
-    IMODELHUBCLIENT_EXPORT DgnRevisionsTaskPtr DownloadChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), Http::Request::ProgressCallbackCR callback = nullptr,
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), Http::Request::ProgressCallbackCR callback = nullptr,
                                                                                   ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Verify the access to the change set on the server.
