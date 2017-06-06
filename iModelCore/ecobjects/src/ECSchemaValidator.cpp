@@ -188,7 +188,7 @@ ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
     {
     if (mixin.GetBaseClasses().size() > 1)
         {
-        LOG.errorv("Mixin %s has more than 1 base class", mixin.GetFullName());
+        LOG.errorv("Mixin '%s' has more than 1 base class", mixin.GetFullName());
         return ECObjectsStatus::Error;
         }
  
@@ -215,6 +215,11 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
     for (ECPropertyP prop : entity.GetProperties(false))
         {
         numBaseClasses = 0;
+        if (prop->GetTypeName() == "long" && prop->GetName().EndsWith("Id"))
+            {
+            LOG.errorv("Warning treated as error in class '%s:%s' as it is of type 'long' and has a name ending with 'Id'", entity.GetFullName(), prop->GetName().c_str());
+            status = ECObjectsStatus::Error;
+            }
         if (prop->GetBaseProperty() == nullptr)
             continue;
         for (ECClassP baseClass : entity.GetBaseClasses())
@@ -241,6 +246,37 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  05/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus CheckStrength(ECRelationshipClassCP relClass)
+    {
+    ECObjectsStatus returnStatus = ECObjectsStatus::Success;
+    if (relClass->GetStrength() == StrengthType::Holding)
+        {
+        LOG.errorv("Relationship class '%s' strength must not be set to 'holding'.", relClass->GetFullName());
+        returnStatus = ECObjectsStatus::Error;
+        }
+
+    if (relClass->GetStrength() == StrengthType::Embedding && relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward
+        && relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1)
+        {
+        LOG.errorv("Relationship class '%s' has an 'embedding' strength with a forward direction so the source constraint may not have a multiplicity upper bound greater than 1",
+                   relClass->GetFullName());
+        returnStatus = ECObjectsStatus::Error;
+        }
+
+    if (relClass->GetStrength() == StrengthType::Embedding && relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward
+        && relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
+        {
+        LOG.errorv("Relationship class '%s' has an 'embedding' strength with a backward direction so the target constraint may not have a multiplicity upper bound greater than 1",
+                   relClass->GetFullName());
+        returnStatus = ECObjectsStatus::Error;
+        }
+
+    return returnStatus;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
@@ -250,15 +286,19 @@ ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
     if (nullptr == relClass)
         return status;
 
+    // Validate relationship strength
+    status = CheckStrength(relClass);
+
     ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
     ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
     
     // Validate both target and source.  If one of them fails, the class fails.
-    ECObjectsStatus targetStatus, sourceStatus;
-    targetStatus = RelationshipValidator::CheckLocalDefinitions(targetConstraint, "Target");
-    sourceStatus = RelationshipValidator::CheckLocalDefinitions(sourceConstraint, "Source");
+    ECObjectsStatus targetStatus = RelationshipValidator::CheckLocalDefinitions(targetConstraint, "Target");
+    ECObjectsStatus sourceStatus = RelationshipValidator::CheckLocalDefinitions(sourceConstraint, "Source");
 
-    status = (ECObjectsStatus::Error == targetStatus) || (ECObjectsStatus::Error == sourceStatus) ? ECObjectsStatus::Error : ECObjectsStatus::Success;
+    if (status == ECObjectsStatus::Success)
+        status = (ECObjectsStatus::Error == targetStatus) || (ECObjectsStatus::Error == sourceStatus) ? ECObjectsStatus::Error : ECObjectsStatus::Success;
+    
     return status;
     }
 

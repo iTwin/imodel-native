@@ -247,6 +247,46 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     return SchemaReadStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                David.Fox-Rabinovitz      05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) const
+    { 
+    if (m_presentationFUS.size() > 0)
+        {
+        return (indx < m_presentationFUS.size())? &m_presentationFUS[indx] :  m_presentationFUS.begin();
+        }
+    else
+        return &m_persistenceFUS;
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                David.Fox-Rabinovitz      05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+   /* Formatting::FormatUnitSetCP KindOfQuantityFormatting::GetPresentationFUS(size_t indx) const
+    {
+    if (m_presentationFUS.size() > 0)
+        {
+        return (indx < m_presentationFUS.size()) ? &m_presentationFUS[indx] : m_presentationFUS.begin();
+        }
+    else
+        return &m_persistenceFUS;
+    };*/
+
+//Formatting::FormatUnitSet KindOfQuantityFormatting::GetDefaultPresentationFUS() const 
+//    { 
+//    return GetPresentationFUS(0);
+//    //return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS; 
+//    };
+
+Json::Value KindOfQuantity::PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias) const
+    {
+    Formatting::FormatUnitSetCP fusCP = GetPresentationFUS(indx);
+    Json::Value jval = fusCP->FormatQuantityJson(qty, useAlias);
+    return jval;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 
