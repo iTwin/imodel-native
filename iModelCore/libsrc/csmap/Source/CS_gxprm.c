@@ -213,7 +213,8 @@ struct cs_GxXform_*	CS_gxlocDtm (Const struct cs_Datum_ *src_dt,Const struct cs_
 		src_dt->to84_via != cs_DTCTYP_7PARM &&
 		src_dt->to84_via != cs_DTCTYP_6PARM &&
 		src_dt->to84_via != cs_DTCTYP_3PARM &&
-        src_dt->to84_via != cs_DTCTYP_GEOCTR)
+        src_dt->to84_via != cs_DTCTYP_GEOCTR &&
+        src_dt->to84_via != cs_DTCTYP_WGS84)
 
 #else
 

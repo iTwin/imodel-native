@@ -407,7 +407,7 @@ int EXP_LVL9 CSmrcatF (Const struct cs_Mrcat_ *mrcat,double xy [2],Const double 
     if (fabs (del_lng) == cs_Pi)
     {
         rtn_val = cs_CNVRT_USFL;
-        del_lng = CS_adj2pi (del_lng);
+        // del_lng = CS_adj2pi (del_lng); This is wrong - it turns -180 into +180.
     }
 
 #endif
