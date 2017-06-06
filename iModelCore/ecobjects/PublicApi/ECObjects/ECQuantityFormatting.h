@@ -18,11 +18,23 @@
 #include <Formatting/FormattingApi.h>
 
 namespace BEU = BentleyApi::Units;
+namespace BEF = BentleyApi::Formatting;
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+
+
+enum class ECQuantityFormattingStatus
+    {
+    Success = 0,
+    IncompatibleKOQ = 1,
+    InvalidKOQ = 2
+    };
 
 struct ECQuantityFormatting
     {
-    ECOBJECTS_EXPORT  static Utf8String StdFormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, Utf8String defFormatName = "real4");
+    ECOBJECTS_EXPORT static Utf8String StdFormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat=nullptr);
+    ECOBJECTS_EXPORT static Json::Value FormatQuantityJson(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, bool useAlias=true);
+    ECOBJECTS_EXPORT ECValue static GetQuantityValue(BEU::QuantityCR qty, UnitCP useUnit = nullptr);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

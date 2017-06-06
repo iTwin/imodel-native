@@ -349,6 +349,46 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     mixin1->CreatePrimitiveProperty(prop, "P1");
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited property so validation should fail";
     }
+TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
+    {
+    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="TestClassBad">
+        <ECProperty propertyName="PropNameId" typeName="long">
+        </ECProperty>
+    </ECEntityClass>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
+
+    Utf8CP goodSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="TestClassGood1">
+        <ECProperty propertyName="PropName" typeName="long">
+        </ECProperty>
+    </ECEntityClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml1, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name does not end in 'Id' even though the type is 'long'";
+
+    Utf8CP goodSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="TestClassGood2">
+        <ECProperty propertyName="PropNameId" typeName="double">
+        </ECProperty>
+    </ECEntityClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml2, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'Id' but is not type 'long'";
+    }
 
 TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleBaseClasses)
     {
@@ -706,6 +746,234 @@ TEST_F(SchemaValidatorTests, RelationshipClassMustLocallyDefineAbstractConstrain
     ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Abstract constraints are defined locally in source and target so validation should succeed";
+    }
+
+TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
+    {
+    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="holding" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as strength attribute must not be set to 'holding'";
+    
+    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should pass validation as strength attribute is set to 'embedding'";
+    }
+
+TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
+    {
+
+    // Test forward direction
+    // Source = 0..*
+    Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml1, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as source multiplicity upper bound is greater than 1 while strength is embedding and forward";
+    
+    // Source = 1..*
+    Utf8CP badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(1..*)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml2, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as source multiplicity upper bound is greater than 1 while strength is embedding and forward";
+   
+    // Source = 0..1
+    Utf8CP goodSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml1, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as source multiplicity upper bound is not greater than 1 while strength is embedding and forward";
+
+    // Source = 1..1
+    Utf8CP goodSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml2, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as source multiplicity upper bound is not greater than 1 while strength is embedding and forward";
+
+    // Test backward direction
+    // Target = 0..*
+    badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml1, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as target multiplicity upper bound is greater than 1 while strength is embedding and backward";
+
+    // Target = 1..*
+    badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="backward" modifier="Sealed">
+        <Source multiplicity="(1..*)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(1..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml2, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as target multiplicity upper bound is greater than 1 while strength is embedding and backward";
+
+    // Target = 0..1
+    goodSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml1, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as target multiplicity upper bound is not greater than 1 while strength is embedding and backward";
+
+    // Target = 1..1
+    goodSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml2, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as target multiplicity upper bound is not greater than 1 while strength is embedding and backward";
+
+    // No direction given, so forward is assumed
+    // Source = 0..*
+    Utf8CP badSchemaNoDirection = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaNoDirection, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as direction is assumed to be forward with embedding strength, with multiplicity in source greater than 1";
+
+    // Source = 0..1
+    Utf8CP goodSchemaNoDirection = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="read from source to target" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="read from target to source" polymorphic="true">
+            <Class class="TestClass"/>
+        </Target>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaNoDirection, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as direction is assumed to be forward, with multiplicity equal to 1";
     }
 
 TEST_F(SchemaConverterTests, RelationshipClassMustLocallyDefineRoleLabelConversion)
