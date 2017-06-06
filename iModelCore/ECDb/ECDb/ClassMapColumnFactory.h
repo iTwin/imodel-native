@@ -168,20 +168,4 @@ struct UpdateColumnResolutionScope final : public  ClassMapColumnFactory::Column
         ~UpdateColumnResolutionScope() {}
     };
 
-//======================================================================================
-// @bsiclass                                                     Affan.Khan      01/2015
-//===============+===============+===============+===============+===============+======
-struct EndTableRelationshipColumnResolutionScope final : public  ClassMapColumnFactory::ColumnResolutionScope
-    {
-    private:
-        std::vector<ClassMap const*> m_relevantMaps;
-
-        void _Fill(ColumnMaps&) override;
-
-    public:
-        EndTableRelationshipColumnResolutionScope(ClassMap const& classMap, std::vector<ClassMap const*> classMaps)
-            : ClassMapColumnFactory::ColumnResolutionScope(classMap), m_relevantMaps(classMaps) {}
-
-        ~EndTableRelationshipColumnResolutionScope() {}
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

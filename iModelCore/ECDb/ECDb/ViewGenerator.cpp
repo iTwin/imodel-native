@@ -502,16 +502,16 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(bmap<Utf8String, bpair<DbTable 
         if (RenderEntityClassMap(viewSql, ctx, derivedClassMap, *contextTable, &mixInClassMap) != SUCCESS)
             return ERROR;
 
-        if(!selectClauses.empty())
-            if (ctx.GetViewType() == ViewType::ECClassView)
-                ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
-
         Utf8String sql = viewSql.ToString();
         auto itor = selectClauses.find(sql);
         if (itor == selectClauses.end())
             itor = selectClauses.insert(make_bpair(std::move(sql), make_bpair(contextTable, bvector<ECN::ECClassId>()))).first;
 
         itor->second.second.push_back(derivedClassMap.GetClass().GetId());
+
+        if (!selectClauses.empty())
+            if (ctx.GetViewType() == ViewType::ECClassView)
+                ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
         }
 
     for (ClassMapCP derivedClassMap : derivedClassMap.GetDerivedClassMaps())

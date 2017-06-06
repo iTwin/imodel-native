@@ -136,12 +136,6 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        //if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
-        //    return ERROR;
-
-        //if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-        //    return ERROR;
-
         if (base == nullptr)
             {
             const size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().Size();
@@ -157,9 +151,6 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         {
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
-
-        //if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-        //    return ERROR;
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
@@ -180,11 +171,6 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
                 }
             }
 
-        //if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-        //    return ERROR;
-
-        //if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
-        //    return ERROR;
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
@@ -691,14 +677,4 @@ void UpdateColumnResolutionScope::_Fill(ColumnMaps& columnMaps)
     ColumnMapContext::Query(columnMaps, m_classMap, ColumnMapContext::Filter::Full);
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-void EndTableRelationshipColumnResolutionScope::_Fill(ColumnMaps& columnMaps)
-    {
-    for (ClassMapCP classMap : m_relevantMaps)
-        {
-        ColumnMapContext::Query(columnMaps, *classMap, ColumnMapContext::Filter::Full);
-        }
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

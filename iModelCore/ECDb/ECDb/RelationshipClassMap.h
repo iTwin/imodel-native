@@ -128,8 +128,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ClassMappingStatus FinishMapping(SchemaImportContext& ctx);
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
         //WIP: This code must go elsewhere. It is only used by the column factory
-        Utf8String GetAccessStringForId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropId); }
-        Utf8String GetAccessStringForRelClassId() const { return Utf8String(GetClass().GetFullName()) + Utf8String("." ECDBSYS_PROP_NavPropRelECClassId); }
     };
 
 /*==========================================================================
