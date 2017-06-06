@@ -43,3 +43,5 @@ WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
     #   Actual: true
     # Expected: false
     # [  FAILED  ] WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops (18 ms)
+
+BeStringUtilitiesTests.GetDecimalSeparator    #failing for locales with decimal operator other than "."
