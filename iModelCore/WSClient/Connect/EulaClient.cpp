@@ -38,8 +38,9 @@ Http::Request EulaClient::CreateRequest(Utf8StringCR serverUrl, Utf8StringCR req
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<EulaResult> EulaClient::ResetEula(Utf8StringCR username)
     {
+    auto self(shared_from_this());
     auto finalResult = std::make_shared<EulaResult>();
-    return UrlProvider::Urls::ConnectEula.GetAsync()->Then([=] (Utf8String eulaUrl)
+    return UrlProvider::Urls::ConnectEula.GetAsync()->Then([this, self, username, finalResult] (Utf8String eulaUrl)
         {
         // The agreement service stores usernames (email addresses) in lower case and performs case-sensitive checks on them,
         // so we must map accordingly.
@@ -73,8 +74,9 @@ AsyncTaskPtr<EulaResult> EulaClient::ResetEula(Utf8StringCR username)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<EulaStatusResult> EulaClient::CheckEula()
     {
+    auto self(shared_from_this());
     auto finalResult = std::make_shared<EulaStatusResult>();
-    return UrlProvider::Urls::ConnectEula.GetAsync()->Then([=] (Utf8String eulaUrl)
+    return UrlProvider::Urls::ConnectEula.GetAsync()->Then([this, self, finalResult] (Utf8String eulaUrl)
         {
         Utf8String url = eulaUrl + "/Agreements/1/Types/EULA/state";
 
@@ -112,8 +114,9 @@ AsyncTaskPtr<EulaStatusResult> EulaClient::CheckEula()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<EulaDownloadResult> EulaClient::DownloadEula()
     {
+    auto self(shared_from_this());
     auto finalResult = std::make_shared<EulaDownloadResult>();
-    return UrlProvider::Urls::ConnectEula.GetAsync()->Then([=] (Utf8String eulaUrl)
+    return UrlProvider::Urls::ConnectEula.GetAsync()->Then([this, self, finalResult] (Utf8String eulaUrl)
         {
         Utf8String url = eulaUrl + "/Agreements/1/Types/EULA";
 
@@ -151,8 +154,9 @@ AsyncTaskPtr<EulaDownloadResult> EulaClient::DownloadEula()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<EulaResult> EulaClient::AcceptEula()
     {
+    auto self(shared_from_this());
     auto finalResult = std::make_shared<EulaResult>();
-    return UrlProvider::Urls::ConnectEula.GetAsync()->Then([=] (Utf8String eulaUrl)
+    return UrlProvider::Urls::ConnectEula.GetAsync()->Then([this, self, finalResult] (Utf8String eulaUrl)
         {
         Utf8String url = eulaUrl + "/Agreements/1/Types/EULA/state";
 
