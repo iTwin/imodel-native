@@ -2677,6 +2677,7 @@ MergeStatus ECSchemaMergeTool::MergeBaseClasses (ECDiffNodeR diff,ECClassR merge
         baseClassMap.insert(baseClass->GetFullName());
         }
     for(ECDiffNode::const_iterator itor = diff.begin(); itor != diff.end(); ++itor)
+        {
         if ((v = GetMergeValue(**itor)) !=  NULL )
             if (baseClassMap.find (v->GetValueString()) != baseClassMap.end())
                 {
@@ -2688,9 +2689,21 @@ MergeStatus ECSchemaMergeTool::MergeBaseClasses (ECDiffNodeR diff,ECClassR merge
                 ECClassCP baseClass = ResolveClass (*itor);
                 if (baseClass == NULL)
                     return MergeStatus::ErrorClassNotFound;
-                mergedClass.AddBaseClass (*baseClass);
+                ECBaseClassesList::const_iterator baseClassIterator;
+                bool isAlreadyBase = false;
+                for (baseClassIterator = mergedClass.GetBaseClasses().begin(); baseClassIterator != mergedClass.GetBaseClasses().end(); baseClassIterator++)
+                    {
+                    if (*baseClassIterator == (ECClassP) baseClass)
+                        {
+                        isAlreadyBase = true;
+                        break;
+                        }
+                    }
+                if (!isAlreadyBase)
+                    mergedClass.AddBaseClass(*baseClass);
                 }
-            return status;
+        }
+    return status;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
@@ -2741,7 +2754,7 @@ MergeStatus ECSchemaMergeTool::AppendClassToMerge (ECClassCP ecClass, ClassMerge
     if (relationshipClass != NULL)
         {
         ECRelationshipClassP newClass;
-        if (GetMerged().CreateRelationshipClass (newClass, ecClass->GetName()) != ECObjectsStatus::Success)
+        if (GetMerged().CreateRelationshipClass (newClass, ecClass->GetName(), false) != ECObjectsStatus::Success)
             return MergeStatus::Failed;
         mergedClass = newClass;
         }
