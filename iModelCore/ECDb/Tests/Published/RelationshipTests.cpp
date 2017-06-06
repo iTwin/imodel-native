@@ -3367,13 +3367,6 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               <ECEntityClass typeName="SubChild" >
                                 <BaseClass>Child</BaseClass>
                                 <ECProperty propertyName="SubChildName" typeName="string" />
-                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasSubChildren" direction="Backward">
-                                 <ECCustomAttributes>
-                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                                        <OnDeleteAction>SetNull</OnDeleteAction>
-                                    </ForeignKeyConstraint>
-                                 </ECCustomAttributes>
-                                </ECNavigationProperty>
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="None">
                                  <ECCustomAttributes>
@@ -3410,11 +3403,6 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECEntityClass typeName="Child" >
                                 <ECProperty propertyName="ChildName" typeName="string" />
-                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward">
-                                 <ECCustomAttributes>
-                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
-                                 </ECCustomAttributes>
-                                </ECNavigationProperty>
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                                  <ECCustomAttributes>
@@ -3441,13 +3429,6 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECEntityClass typeName="Child" >
                                 <ECProperty propertyName="ChildName" typeName="string" />
-                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward">
-                                 <ECCustomAttributes>
-                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
-                                        <OnDeleteAction>Cascade</OnDeleteAction>
-                                    </ForeignKeyConstraint>
-                                 </ECCustomAttributes>
-                                </ECNavigationProperty>
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasChildren" strength="embedding" modifier="Sealed">
                                  <ECCustomAttributes>
@@ -3463,7 +3444,7 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                             </ECSchema>)xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    AssertForeignKeyDdl(GetECDb(), "ts2_Child", "FOREIGN KEY([Id]) REFERENCES [ts2_Parent]([Id]) ON DELETE CASCADE)");
+    AssertForeignKeyDdl(GetECDb(), "ts2_Child", "FOREIGN KEY([Id]) REFERENCES [ts2_Parent]([Id]))");
     GetECDb().CloseDb();
 
     //UseECInstanceIdAsForeignKey where FK is in joined table
@@ -3485,13 +3466,6 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                               <ECEntityClass typeName="SubChild" >
                                 <BaseClass>Child</BaseClass>
                                 <ECProperty propertyName="SubChildName" typeName="string" />
-                                <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasSubChildren" direction="Backward">
-                                  <ECCustomAttributes>
-                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
-                                        <OnDeleteAction>SetNull</OnDeleteAction>
-                                    </ForeignKeyConstraint>
-                                   </ECCustomAttributes>
-                                 </ECNavigationProperty>
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="Sealed">
                                  <ECCustomAttributes>
@@ -3507,7 +3481,7 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                             </ECSchema>)xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    AssertForeignKeyDdl(GetECDb(), "ts4_SubChild", "FOREIGN KEY([ChildId]) REFERENCES [ts4_Parent]([Id]) ON DELETE SET NULL)");
+    AssertForeignKeyDdl(GetECDb(), "ts4_SubChild", "FOREIGN KEY([ChildId]) REFERENCES [ts4_Parent]([Id]))");
     GetECDb().CloseDb();
 
     SetupECDb("useecinstanceidasfk6.ecdb", SchemaItem(R"xml(
@@ -3568,7 +3542,7 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
                             </ECSchema>)xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    AssertForeignKeyDdl(GetECDb(), "ts6_Model", "FOREIGN KEY([Id]) REFERENCES [ts6_Element]([Id]) ON DELETE NO ACTION)");
+    AssertForeignKeyDdl(GetECDb(), "ts6_Model", "FOREIGN KEY([Id]) REFERENCES [ts6_Element]([Id]))");
     Utf8String modelDdl = RetrieveDdl(GetECDb(), "ts6_Model");
     ASSERT_FALSE(modelDdl.empty());
     ASSERT_TRUE(modelDdl.ContainsI("[RelECClassId] INTEGER NOT NULL,")) << modelDdl.c_str();
@@ -3584,11 +3558,6 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="Child" >
                <ECProperty propertyName="ChildName" typeName="string" />
-               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" >
-                 <ECCustomAttributes>
-                  <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                  </ECCustomAttributes>
-               </ECNavigationProperty>                 
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                 <ECCustomAttributes>
@@ -3611,7 +3580,6 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="Child" >
                <ECProperty propertyName="ChildName" typeName="string" />
-               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                 <ECCustomAttributes>
@@ -3635,11 +3603,6 @@ TEST_F(RelationshipMappingTestFixture, UseECInstanceIdAsForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="Child" >
                <ECProperty propertyName="ChildName" typeName="string" />
-               <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" >
-                  <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
-                  </ECCustomAttributes>
-                </ECNavigationProperty>                
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
                 <ECCustomAttributes>

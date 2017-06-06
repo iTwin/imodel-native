@@ -168,7 +168,7 @@ private:
     BentleyStatus FailIfConstraintClassIsNotMapped() const;
 
     //! Determines whether the specified ECRelationship requires to be mapped to a link table.
-    BentleyStatus DetermineFkOrLinkTableMapping(bool& isFkMapping, ECN::ECRelationshipEnd& fkEnd, LinkTableRelationshipMapCustomAttribute const&) const;
+    BentleyStatus DetermineFkOrLinkTableMapping(bool& isFkMapping, ECN::ECRelationshipEnd& fkEnd, bool useECInstanceIdAsFk, LinkTableRelationshipMapCustomAttribute const&) const;
 
     static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
 

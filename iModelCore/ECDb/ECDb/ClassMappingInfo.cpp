@@ -534,7 +534,7 @@ void ClassMappingInfo::LogClassNotMapped(NativeLogging::SEVERITY severity, ECCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipMappingInfo::DetermineFkOrLinkTableMapping(bool& isFkMapping, ECRelationshipEnd& fkEnd, LinkTableRelationshipMapCustomAttribute const& linkTableRelationshipMapCA) const
+BentleyStatus RelationshipMappingInfo::DetermineFkOrLinkTableMapping(bool& isFkMapping, ECRelationshipEnd& fkEnd, bool useECInstanceIdAsFk, LinkTableRelationshipMapCustomAttribute const& linkTableRelationshipMapCA) const
     {
     BeAssert(m_isRootClass && "DetermineFkOrLinkTableMapping must only be called for root classes");
 
@@ -594,10 +594,24 @@ BentleyStatus RelationshipMappingInfo::DetermineFkOrLinkTableMapping(bool& isFkM
             }
         }
 
+    if (useECInstanceIdAsFk)
+        {
+        if (actualConstraintClassIds.empty())
+            {
+            isFkMapping = true;
+            return SUCCESS;
+            }
+
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. It has the 'UseECInstanceIdAsForeignKey' custom attribute, but at the same time a navigation property is defined for it "
+                                                        "on the %s constraint class(es).", relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+        return ERROR;
+        }
+
     if (actualConstraintClassIds.empty())
         {
         LOG.debugv("ECRelationshipClass '%s' is mapped to a link table because none of the constraint classes on the %s end define a navigation property for this relationship class.",
                    relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+
         return SUCCESS;
         }
 
@@ -745,7 +759,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext
     //determine whether a link table is required or not
     bool isFkMapping = true;
     ECRelationshipEnd foreignKeyEnd;
-    if (SUCCESS != DetermineFkOrLinkTableMapping(isFkMapping, foreignKeyEnd, linkTableRelationMapCA))
+    if (SUCCESS != DetermineFkOrLinkTableMapping(isFkMapping, foreignKeyEnd, useECInstanceIdAsFk, linkTableRelationMapCA))
         return ERROR;
 
     if ((hasForeignKeyConstraintCA || useECInstanceIdAsFk) && !isFkMapping)
