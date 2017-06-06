@@ -46,3 +46,5 @@ TransactionManagerTests.TestRelationshipLinkTableTracking
 # Waiting to hear from Krischan and Affan as to whether we expect the source's NavigationProperty value to be nulled out automatically when the target element is deleted.
 DgnElementTests.NavigationPropertyOnTargetDelete
 
+#TFS 697010
+CompatibilityTests.ModifyBaseline       #crashing with repeat
