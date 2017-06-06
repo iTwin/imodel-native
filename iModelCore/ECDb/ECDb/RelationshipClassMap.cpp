@@ -693,9 +693,9 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImport
     if (columnRefId == nullptr)
         return ClassMappingStatus::Error;
 
-    const bool fkTableWasAlreadyInEditState = fkTable.GetEditHandle().CanEdit();
+    const bool fkTableWasAlreadyInEditState = columnRefId->GetTableR().GetEditHandle().CanEdit();
     if (!fkTableWasAlreadyInEditState)
-        fkTable.GetEditHandleR().BeginEdit();
+        columnRefId->GetTableR().GetEditHandleR().BeginEdit();
 
     columnRefId->AddKind(GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
     AddTable(columnRefId->GetTableR());
@@ -722,7 +722,7 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImport
     columnForeignId->AddKind(GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
 
     if (!fkTableWasAlreadyInEditState)
-        fkTable.GetEditHandleR().EndEdit();
+        columnRefId->GetTableR().GetEditHandleR().EndEdit();
 
     //[+++ECInstanceId-----------------------------------------------------------------------------------------------------------------------------------]
     if (ECInstanceIdPropertyMap* propertyMap = static_cast<ECInstanceIdPropertyMap*>(const_cast<PropertyMap*>(GetPropertyMaps().Find(ECDBSYS_PROP_ECInstanceId))))
