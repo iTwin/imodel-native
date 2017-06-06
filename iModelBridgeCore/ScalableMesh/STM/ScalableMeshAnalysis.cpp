@@ -231,7 +231,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     const double progressStep = 1.0 / m_xSize;
     bool bAbort = false;
 
-#pragma omp parallel for num_threads(numProcs) 
+//#pragma omp parallel for num_threads(numProcs) 
     for (int i = 0; i < m_xSize; i++)
         {
         if (bAbort)
@@ -240,7 +240,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
 
-#pragma omp critical
+//#pragma omp critical
         {
         if (!report.CheckContinueOnProgress())
             bAbort = true; //User abort, cannot break in parallel for
@@ -299,7 +299,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     // Sum the discrete volumes
     double AreaCell = m_xStep*m_yStep;
     double _cutVolume = 0, _fillVolume = 0;
-#pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
+//#pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
     for (int i = 0; i < m_xSize; i++)
         {
         for (int j = 0; j < m_ySize; j++)
@@ -408,7 +408,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     double progressStep = 1.0 / m_xSize;
     bool bAbort = false;
 
-#pragma omp parallel for num_threads(numProcs) 
+//#pragma omp parallel for num_threads(numProcs) 
     for (int i = 0; i < m_xSize; i++)
         {
         if (bAbort)
@@ -417,7 +417,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
 
-#pragma omp critical
+//#pragma omp critical
         {
         if (!report.CheckContinueOnProgress())
             bAbort = true; //User abort, cannot break in parallel for
@@ -457,7 +457,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     // Sum the discrete volumes
     double AreaCell = m_xStep*m_yStep;
     double _cutVolume = 0, _fillVolume = 0;
-#pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
+//#pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
     for (int i = 0; i < m_xSize; i++) // need to parallelize
         {
         for (int j = 0; j < m_ySize; j++)
