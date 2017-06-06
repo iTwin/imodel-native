@@ -39,9 +39,9 @@ private:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
     static BriefcasePtr Create(Dgn::DgnDbPtr db, iModelConnectionPtr connection) { return new Briefcase(db, connection); }
 
-    DgnRevisionsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+    ChangeSetsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
-    DgnRevisionsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+    ChangeSetsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0);
     void CheckCreatingChangeSet() const;
     void WaitForChangeSetEvent() const;
@@ -69,13 +69,13 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error and list of pulled ChangeSets.
-    IMODELHUBCLIENT_EXPORT DgnRevisionsTaskPtr Pull(Http::Request::ProgressCallbackCR callback = nullptr,
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr Pull(Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Merge changeSets.
     //! @param[in] changeSets ChangeSets to merge.
     //! @return Asynchronous task that returns success or an error.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr Merge(DgnRevisions const& changeSets) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr Merge(ChangeSets const& changeSets) const;
 
     //! Send the outgoing ChangeSets.
     //! @param[in] description ChangeSet description.
@@ -90,7 +90,7 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Blocking task that returns success or an error and list of pulled and merged changeSets.
-    IMODELHUBCLIENT_EXPORT DgnRevisionsTaskPtr PullAndMerge(Http::Request::ProgressCallbackCR callback = nullptr,
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullAndMerge(Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Pull and merge incomming ChangeSets and then send the outgoing ChangeSets.
@@ -101,7 +101,7 @@ public:
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Blocking task that returns success or an error and list of pulled and merged ChangeSet.
-    IMODELHUBCLIENT_EXPORT DgnRevisionsTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
         Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1);
 

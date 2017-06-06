@@ -36,7 +36,7 @@ Briefcase::Briefcase(Dgn::DgnDbPtr db, iModelConnectionPtr connection)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
-DgnRevisionsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
+ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Briefcase::Pull";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -45,22 +45,22 @@ DgnRevisionsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, 
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error({Error::Id::FileNotFound, ErrorLocalizedString(MESSAGE_FileNotOpen)}));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error({Error::Id::FileNotFound, ErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_imodelConnection.IsNull())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel connection.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(Error::Id::InvalidiModelConnection));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::InvalidiModelConnection));
         }
     if (m_db->IsReadonly())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Briefcase is read only.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(Error::Id::BriefcaseIsReadOnly));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::BriefcaseIsReadOnly));
         }
     if (!m_db->Txns().IsTracking())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(Error::Id::TrackingNotEnabled));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::TrackingNotEnabled));
         }
     CheckCreatingChangeSet();
 
@@ -68,12 +68,12 @@ DgnRevisionsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", Utf8String::IsNullOrEmpty(lastChangeSetId.c_str()) ? "No changeSets pulled yet" : "Downloading changeSets after changeSet ", lastChangeSetId.c_str());
 
     return m_imodelConnection->DownloadChangeSetsAfterId(lastChangeSetId, GetDgnDb().GetDbGuid(), callback, cancellationToken)
-        ->Then<DgnRevisionsResult>([=] (DgnRevisionsResultCR result)
+        ->Then<ChangeSetsResult>([=] (ChangeSetsResultCR result)
         {
         if (!result.IsSuccess())
             {
             LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return DgnRevisionsResult::Error(result.GetError());
+            return ChangeSetsResult::Error(result.GetError());
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -85,7 +85,7 @@ DgnRevisionsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Briefcase::Merge(DgnRevisions const& changeSets) const
+StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets) const
     {
     const Utf8String methodName = "Briefcase::Merge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -240,7 +240,7 @@ StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Htt
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
+ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Briefcase::PullAndMerge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -254,7 +254,7 @@ DgnRevisionsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR ca
     if (!result.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Pull failed.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(result.GetError()));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(result.GetError()));
         }
 
     auto pulledChangeSets = result.GetValue();
@@ -263,19 +263,19 @@ DgnRevisionsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR ca
     if (!mergeResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(mergeResult.GetError()));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(mergeResult.GetError()));
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "ChangeSets merged successfully.");
-    return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Success(pulledChangeSets));
+    return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(pulledChangeSets));
 
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
+ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
                                                                  Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount)
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPush";
@@ -346,7 +346,7 @@ void Briefcase::UnsubscribeChangeSetEvents()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
-DgnRevisionsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
+ChangeSetsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
                                                                      ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay)
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushRepeated";
@@ -356,14 +356,14 @@ DgnRevisionsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool
     if (result.IsSuccess())
         {
         UnsubscribeChangeSetEvents();
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Success(result.GetValue()));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(result.GetValue()));
         }
 
     if (attempt >= attemptsCount)
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Too many unsuccessful attempts.");
         UnsubscribeChangeSetEvents();
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(result.GetError()));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(result.GetError()));
         }
 
     Error::Id errorId = result.GetError().GetId();
@@ -378,7 +378,7 @@ DgnRevisionsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool
             {
             LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             UnsubscribeChangeSetEvents();
-            return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(result.GetError()));
+            return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(result.GetError()));
             }
         }
 
@@ -422,27 +422,27 @@ void Briefcase::CheckCreatingChangeSet() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
+ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
     Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushInternal";
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error({Error::Id::FileNotFound, ErrorLocalizedString(MESSAGE_FileNotOpen)}));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error({Error::Id::FileNotFound, ErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_imodelConnection.IsNull())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel connection.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(Error::Id::InvalidiModelConnection));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::InvalidiModelConnection));
         }
     if (m_db->IsReadonly())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Briefcase is read only.");
-        return CreateCompletedAsyncTask<DgnRevisionsResult>(DgnRevisionsResult::Error(Error::Id::BriefcaseIsReadOnly));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::BriefcaseIsReadOnly));
         }
-    std::shared_ptr<DgnRevisionsResult> finalResult = std::make_shared<DgnRevisionsResult>();
-    return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (DgnRevisionsResultCR result)
+    std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
+    return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (ChangeSetsResultCR result)
         {
         if (!result.IsSuccess())
             {
@@ -476,7 +476,7 @@ DgnRevisionsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool
                 }
             });
 
-        })->Then<DgnRevisionsResult>([=] ()
+        })->Then<ChangeSetsResult>([=] ()
         {
         return *finalResult;
         });
