@@ -22,7 +22,7 @@ add_library( # Sets the name of the library.
              native-lib
 
              # Sets the library as a shared library.
-             SHARED
+             #SHARED
 
              # Provides a relative path to your source file(s).
              # Associated headers in the same location as their source
@@ -49,11 +49,13 @@ find_library( # Sets the name of the path variable.
 # NOTE: Order matters here
 target_link_libraries( # Specifies the target library.
                        native-lib
-
-                       ${BUILD_CONTEXTS}/SubParts/Libs/libBentley.a
-                       ${BUILD_CONTEXTS}/SubParts/Libs/libBeIcu4c.a
-                       ${BUILD_CONTEXTS}/SubParts/Libs/libDgnPlatform.a
-                       ${BUILD_CONTEXTS}/SubParts/Libs/libConnectWebServicesClientC.so
+                       
+                       ${BUILD_CONTEXTS}SubParts/Libs/libBeHttp.a
+                       ${BUILD_CONTEXTS}SubParts/Libs/libBentley.a
+                       ${BUILD_CONTEXTS}SubParts/Libs/libBeIcu4c.a
+                       ${BUILD_CONTEXTS}SubParts/Libs/libDgnPlatform.a
+                       ${BUILD_CONTEXTS}SubParts/Libs/libWebServicesClient.a
+                       ${BUILD_CONTEXTS}SubParts/Libs/libConnectWebServicesClientC.a
 
                        # Links the target library to the log library
                        # included in the NDK.

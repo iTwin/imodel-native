@@ -520,6 +520,13 @@
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
         </Bindings>
     </Part>
+	
+	<!-- Memory leak testing of WSClient tests. Only called on demand -->
+	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest" OnlyPlatforms="x64">
+		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+		<SubProduct ProductName="WSClient-Gtest" />
+    </Part>
+
 
     <!-- Part for Visual Studio based builds on G0505 -->
     <Part Name="WSClientUnitTests-VS" >
