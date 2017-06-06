@@ -1578,7 +1578,41 @@ StatusInt GetProjectionToCoordSys (WStringR wkt,double conversionToDegree, BaseG
     BaseGCS::ProjectionCodeValue projectionCode = GetProjectionCodeFromWKTName (name);
 
     if (BaseGCS::pcvInvalid == projectionCode)
-        return ERROR;
+        {
+        WString upperMethodName = name;
+        std::transform(upperMethodName.begin(), upperMethodName.end(), upperMethodName.begin(), [](wchar_t const& c){return (wchar_t)towupper(c);});
+            
+        if (upperMethodName == L"MERCATOR_AUXILIARY_SPHERE")
+            {
+            // This is a special case from ESRI that we process completely differently (WebMercator)
+            // Datum name should be WGS84 ... verify
+            WString datumName = coordinateSystem.GetDatumName();
+            if (datumName == L"WGS84")
+                {
+                projectionCode = BaseGCS::pcvMercator;
+                int foundIndex = FindEllipsoidIndex (L"SphereWGS84");
+    
+                if (foundIndex >= 0)
+                    {
+                    coordinateSystem.SetDatumCode (-1);
+                    coordinateSystem.SetEllipsoidCode (foundIndex);
+                    }
+                else
+                    return ERROR;
+
+                foundIndex = FindDatumIndex (L"SphereWGS84");
+    
+                if (foundIndex >= 0)
+                    coordinateSystem.SetDatumCode (foundIndex);
+                else
+                    return ERROR;
+                }
+            else
+                return ERROR;
+            }
+        else
+            return ERROR;
+        }
 
     coordinateSystem.SetProjectionCode (projectionCode);
 
@@ -3083,6 +3117,11 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
              (upperParameterName == L"DANISH 34/45 REGION (1=J, 2=S, 3=B)"))
         {
         if (SUCCESS != coordinateSystem.SetDanishSys34Region((int)parameterValue)) // For Danish projections
+            return ERROR;
+        }
+    else if (upperParameterName == L"AUXILIARY_SPHERE_TYPE") // ESRI weirdness ... we only support value 0.0
+        {
+        if (parameterValue != 0.0) // Floating point compare without epsilon is intensional
             return ERROR;
         }
     else if (upperParameterName == L"XY_PLANE_ROTATION") // OGR weirdness ... Not really supported ... a variant for skew angle which is not supported by CSMAP
@@ -7353,16 +7392,7 @@ int     code
                 }
             index++;
             }
-        /* If the unit type is not length then it must be angular and can only be used to set klat/long geographic coordinate systems */
-        else if (cs_PRJCOD_UNITY == m_csParameters->prj_code)
-            {
-            if (code == index)
-                {
-                CSMap::CS_stncp (m_csParameters->csdef.unit, pUnit->name, DIM (m_csParameters->csdef.unit));
-                return SUCCESS;
-                }
-            index++;
-            }
+
         }
     return GEOCOORDERR_InvalidUnitCode;
     }

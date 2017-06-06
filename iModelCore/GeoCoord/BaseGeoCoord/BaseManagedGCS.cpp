@@ -4149,8 +4149,10 @@ property ECL::LightweightClass^     TransverseMercatorClass
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
 
+            ECS::IECProperty^       prop;
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("TransverseMercatorClass", CentralMeridianOriginLatitudeClass);
-            AddProperty (ecClass, "ScaleReduction",   nullptr, Priority::ScaleReduction,  m_csCategory, PropIndex::ScaleReduction,    false, doubleType);
+            prop = AddProperty (ecClass, "ScaleReduction",   nullptr, Priority::ScaleReduction,  m_csCategory, PropIndex::ScaleReduction,    false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4252,13 +4254,23 @@ property ECL::LightweightClass^     ConicClassWithAffine
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
 
+            ECS::IECProperty^       prop;
+
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("ConicClassWithAffine", ConicClass);
             AddProperty (ecClass, "AffineA0",       nullptr,   Priority::AffineA0,              m_csCategory, PropIndex::AffineA0,      false, doubleType);
-            AddProperty (ecClass, "AffineA1",       nullptr,   Priority::AffineA1,              m_csCategory, PropIndex::AffineA1,      false, doubleType);
-            AddProperty (ecClass, "AffineA2",       nullptr,   Priority::AffineA2,              m_csCategory, PropIndex::AffineA2,      false, doubleType);
+            prop = AddProperty (ecClass, "AffineA1",       nullptr, Priority::AffineA1,              m_csCategory, PropIndex::AffineA1,      false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
+
+            prop = AddProperty (ecClass, "AffineA2",       nullptr, Priority::AffineA2,              m_csCategory, PropIndex::AffineA2,      false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
+
             AddProperty (ecClass, "AffineB0",       nullptr,   Priority::AffineB0,              m_csCategory, PropIndex::AffineB0,      false, doubleType);
-            AddProperty (ecClass, "AffineB1",       nullptr,   Priority::AffineB1,              m_csCategory, PropIndex::AffineB1,      false, doubleType);
-            AddProperty (ecClass, "AffineB2",       nullptr,   Priority::AffineB2,              m_csCategory, PropIndex::AffineB2,      false, doubleType);
+            prop = AddProperty (ecClass, "AffineB1",       nullptr, Priority::AffineB1,              m_csCategory, PropIndex::AffineB1,      false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
+
+            prop = AddProperty (ecClass, "AffineB2",       nullptr, Priority::AffineB2,              m_csCategory, PropIndex::AffineB2,      false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
+
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4376,10 +4388,13 @@ property ECL::LightweightClass^     CentralPointAzimuthClass      // works for A
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
 
+            ECS::IECProperty^       prop;
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("CentralPointAzimuthClass", ProjectedCSBaseClass);
             AddProperty (ecClass, "CentralPointLongitude",  m_meridianET, Priority::CentralPointLongitude,   m_csCategory, PropIndex::CentralPointLongitude, false, doubleType);
             AddProperty (ecClass, "CentralPointLatitude",   m_parallelET, Priority::CentralPointLatitude,    m_csCategory, PropIndex::CentralPointLatitude,  false, doubleType);
-            AddProperty (ecClass, "ScaleReduction",         nullptr,      Priority::ScaleReduction,          m_csCategory, PropIndex::ScaleReduction,        false, doubleType);
+            prop = AddProperty (ecClass, "ScaleReduction",         nullptr,    Priority::ScaleReduction,          m_csCategory, PropIndex::ScaleReduction,        false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
+
             AddProperty (ecClass, "Azimuth",                m_angleET,    Priority::Azimuth,                 m_csCategory, PropIndex::Azimuth,               false, doubleType);
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
@@ -4416,6 +4431,7 @@ property ECL::LightweightClass^     TwoPointOriginLatClass      // works for Azi
         if (nullptr == m_twoPointOriginLatClass)
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
+            ECS::IECProperty^       prop;
 
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("TwoPointOriginLatitudeClass", ProjectedCSBaseClass);
             AddProperty (ecClass, "Point1Longitude",    m_meridianET, Priority::Point1Longitude, m_csCategory, PropIndex::Point1Longitude, false, doubleType);
@@ -4423,7 +4439,8 @@ property ECL::LightweightClass^     TwoPointOriginLatClass      // works for Azi
             AddProperty (ecClass, "Point2Longitude",    m_meridianET, Priority::Point2Longitude, m_csCategory, PropIndex::Point2Longitude, false, doubleType);
             AddProperty (ecClass, "Pointt2Latitude",    m_parallelET, Priority::Point2Latitude,  m_csCategory, PropIndex::Point2Latitude,  false, doubleType);
             AddProperty (ecClass, "OriginLatitude",     m_parallelET, Priority::OriginLatitude,  m_csCategory, PropIndex::OriginLatitude,  false, doubleType);
-            AddProperty (ecClass, "ScaleReduction",     nullptr,      Priority::ScaleReduction,  m_csCategory, PropIndex::ScaleReduction,  false, doubleType);
+            prop = AddProperty (ecClass, "ScaleReduction",     nullptr,      Priority::ScaleReduction,  m_csCategory, PropIndex::ScaleReduction,  false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4439,12 +4456,14 @@ property ECL::LightweightClass^     KrovakClass
         if (nullptr == m_krovakClass)
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
+            ECS::IECProperty^       prop;
 
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("TwoPointOriginLatitudeClass", OriginLongitudeLatitudeClass);
             AddProperty (ecClass, "PoleLongitude",      m_meridianET, Priority::Point1Longitude,   m_csCategory, PropIndex::Point1Longitude,   false, doubleType);
             AddProperty (ecClass, "PoleLatitude",       m_parallelET, Priority::Point1Latitude,    m_csCategory, PropIndex::Point1Latitude,    false, doubleType);
             AddProperty (ecClass, "StandardParallel1",  m_parallelET, Priority::StandardParallel1, m_csCategory, PropIndex::StandardParallel1, false, doubleType);
-            AddProperty (ecClass, "ScaleReduction",     nullptr,      Priority::ScaleReduction,    m_csCategory, PropIndex::ScaleReduction,    false, doubleType);
+            prop = AddProperty (ecClass, "ScaleReduction",     nullptr,      Priority::ScaleReduction,    m_csCategory, PropIndex::ScaleReduction,    false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4461,9 +4480,11 @@ property ECL::LightweightClass^     OriginScaleReductionClass
         if (nullptr == m_originScaleReductionClass)
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
+            ECS::IECProperty^       prop;
 
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("OriginScaleReductionClass", OriginLongitudeLatitudeClass);
-            AddProperty (ecClass, "ScaleReduction",     nullptr, Priority::ScaleReduction,  m_csCategory, PropIndex::ScaleReduction,  false, doubleType);
+            prop = AddProperty (ecClass, "ScaleReduction",     nullptr,   Priority::ScaleReduction,  m_csCategory, PropIndex::ScaleReduction,  false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4554,9 +4575,11 @@ property ECL::LightweightClass^     CentMerScaleRedClass
         if (nullptr == m_centMerScaleRedClass)
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
+            ECS::IECProperty^       prop;
 
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("CentMerScaleRedClass", CentralMeridianClass);
-            AddProperty (ecClass, "ScaleReduction",         nullptr, Priority::ScaleReduction,          m_csCategory, PropIndex::ScaleReduction,        false, doubleType);
+            prop = AddProperty (ecClass, "ScaleReduction",       nullptr,   Priority::ScaleReduction,          m_csCategory, PropIndex::ScaleReduction,        false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4613,9 +4636,11 @@ property ECL::LightweightClass^     OriginAzimuthClass      // works for Azimuth
         if (nullptr == m_originAzimuthClass)
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
+            ECS::IECProperty^       prop;
 
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("OriginAzimuthClass", OriginLongitudeLatitudeClass);
-            AddProperty (ecClass, "ScaleReduction",  nullptr,   Priority::ScaleReduction,          m_csCategory, PropIndex::ScaleReduction,        false, doubleType);
+            prop = AddProperty (ecClass, "ScaleReduction",  nullptr, Priority::ScaleReduction,          m_csCategory, PropIndex::ScaleReduction,        false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
             AddProperty (ecClass, "Azimuth",         m_angleET, Priority::Azimuth,                 m_csCategory, PropIndex::Azimuth,               false, doubleType);
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
@@ -4633,14 +4658,19 @@ property ECL::LightweightClass^     TransverseMercatorWithAffineClass   // used 
         if (nullptr == m_transverseMercatorWithAffineClass)
             {
             ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
+            ECS::IECProperty^       prop;
 
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("TransverseMercatorWithAffineClass", TransverseMercatorClass);
             AddProperty (ecClass, "AffineA0",       nullptr,   Priority::AffineA0,              m_csCategory, PropIndex::AffineA0,      false, doubleType);
-            AddProperty (ecClass, "AffineA1",       nullptr,   Priority::AffineA1,              m_csCategory, PropIndex::AffineA1,      false, doubleType);
-            AddProperty (ecClass, "AffineA2",       nullptr,   Priority::AffineA2,              m_csCategory, PropIndex::AffineA2,      false, doubleType);
+            prop = AddProperty (ecClass, "AffineA1",       nullptr, Priority::AffineA1,              m_csCategory, PropIndex::AffineA1,      false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
+            prop = AddProperty (ecClass, "AffineA2",       nullptr, Priority::AffineA2,              m_csCategory, PropIndex::AffineA2,      false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
             AddProperty (ecClass, "AffineB0",       nullptr,   Priority::AffineB0,              m_csCategory, PropIndex::AffineB0,      false, doubleType);
-            AddProperty (ecClass, "AffineB1",       nullptr,   Priority::AffineB1,              m_csCategory, PropIndex::AffineB1,      false, doubleType);
-            AddProperty (ecClass, "AffineB2",       nullptr,   Priority::AffineB2,              m_csCategory, PropIndex::AffineB2,      false, doubleType);
+            prop = AddProperty (ecClass, "AffineB1",       nullptr, Priority::AffineB1,              m_csCategory, PropIndex::AffineB1,      false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
+            prop = AddProperty (ecClass, "AffineB2",       nullptr, Priority::AffineB2,              m_csCategory, PropIndex::AffineB2,      false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4769,9 +4799,11 @@ property ECL::LightweightClass^     DatumScaleClass
         if (nullptr == m_datumScaleClass)
             {
             ECL::LightweightDoubleType^ doubleType = CSDoubleType;
+            ECS::IECProperty^       prop;
 
             m_datumScaleClass = gcnew ECL::LightweightClass ("DatumScale");
-            AddProperty (m_datumScaleClass, "Scale",      nullptr,         Priority::DatumScale,  m_datumCategory, PropIndex::DatumScale,   false,  doubleType);
+            prop = AddProperty (m_datumScaleClass, "Scale",    nullptr,         Priority::DatumScale,  m_datumCategory, PropIndex::DatumScale,   false,  doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
 
             m_datumScaleClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
             }
