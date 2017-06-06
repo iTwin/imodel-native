@@ -2857,7 +2857,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
     for (const auto &baseClass : m_relClass->GetBaseClasses())
         {
         ECRelationshipClassCP baseRelClass = baseClass->GetRelationshipClassCP();
-        auto baseConstraint = (m_isSource) ? baseRelClass->GetSource() : baseRelClass->GetTarget();
+        ECRelationshipConstraintR baseConstraint = (m_isSource) ? baseRelClass->GetSource() : baseRelClass->GetTarget();
         if (!baseConstraint.SupportsClass(*abstractConstraint))
             {
             LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
@@ -2866,6 +2866,29 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
                          baseConstraint.GetRelationshipClass().GetFullName());
 
             valid = false;
+            }
+        for (const auto &constraint : m_constraintClasses)
+            {
+            if (!baseConstraint.SupportsClass(*constraint) && baseConstraint.GetAbstractConstraint() == abstractConstraint && resolveIssues)
+                {
+                ECEntityClassCP commonClass = nullptr;
+                FindCommonBaseClass(commonClass, abstractConstraint, GetConstraintClasses());
+
+                if (nullptr != commonClass && ECObjectsStatus::Success == baseConstraint.ValidateAbstractConstraint(commonClass))
+                    {
+                    if (ECObjectsStatus::Success == baseConstraint.SetAbstractConstraint(*commonClass))
+                        {
+                        LOG.infov("The %s attribute of %s-Constraint on class '%s' has been set to the class '%s' since it is a common base class of all shared constraint classes.",
+                                  ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
+                                  baseRelClass->GetFullName(), commonClass->GetFullName());
+                        return ECObjectsStatus::Success;
+                        }
+                    }
+                else
+                    LOG.errorv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'",
+                    (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+
+                }
             }
         }
 

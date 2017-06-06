@@ -1412,6 +1412,9 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
     if (&schema == this)
         return ECObjectsStatus::Success;
 
+    if (schema.GetSchemaKey() == GetSchemaKey())
+        return ECObjectsStatus::Success;
+
     bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaAliasMap.find((ECSchemaP) &schema);
     if (schemaIterator != m_referencedSchemaAliasMap.end())
         {

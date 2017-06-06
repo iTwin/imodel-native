@@ -2219,8 +2219,17 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
     if ((v = GetMergeValue(diff, DiffNodeId::AbstractConstraint)) != NULL)
         mergedConstraint.SetAbstractConstraint(v->GetValueString().c_str());
     else
+        {
         if (defaultContraint)
-            mergedConstraint.SetAbstractConstraint(*defaultContraint->GetAbstractConstraint());
+            {
+            // The defaultConstraint might be from a different in-memory copy of the schema, so need to use the one from the mergedSchema
+            ECClassCP mergedAbstract = mergedConstraint.GetContainerSchema()->GetClassCP(defaultContraint->GetAbstractConstraint()->GetName().c_str());
+            if (nullptr != mergedAbstract)
+                mergedConstraint.SetAbstractConstraint(*mergedAbstract->GetEntityClassCP());
+            else
+                mergedConstraint.SetAbstractConstraint(defaultContraint->GetAbstractConstraint()->GetFullName());
+            }
+        }
 
     set<Utf8String> constraintClasses;
     if (defaultContraint)
