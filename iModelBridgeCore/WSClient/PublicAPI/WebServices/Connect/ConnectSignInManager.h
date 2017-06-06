@@ -28,7 +28,7 @@ typedef AsyncResult<void, AsyncError> SignInResult;
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ConnectSignInManager> ConnectSignInManagerPtr;
-struct ConnectSignInManager : IConnectAuthenticationProvider
+struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared_from_this<ConnectSignInManager>
     {
     public:
         struct UserInfo
