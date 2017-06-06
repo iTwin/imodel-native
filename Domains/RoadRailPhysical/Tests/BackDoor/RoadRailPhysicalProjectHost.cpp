@@ -278,7 +278,7 @@ DgnDbPtr RoadRailPhysicalTestsFixture::CreateProject(WCharCP baseName, bool need
 
     if (needsSetBriefcase)
         {
-        s_currentProject->ChangeBriefcaseId(BeBriefcaseId(1));
+        s_currentProject->AssignBriefcaseId(BeBriefcaseId(1));
         s_currentProject->CloseDb();
         s_currentProject = m_host->OpenProject(baseName);
         }
@@ -308,7 +308,7 @@ Dgn::DgnDbPtr RoadRailPhysicalTestsFixture::OpenProject(WCharCP baseName, bool n
 
     if (needsSetBriefcase && s_currentProject.IsValid())
         {
-        s_currentProject->ChangeBriefcaseId(BeBriefcaseId(1));
+        s_currentProject->AssignBriefcaseId(BeBriefcaseId(1));
         s_currentProject->SaveChanges();
         s_currentProject->CloseDb();
         s_currentProject = m_host->OpenProject(baseName);
