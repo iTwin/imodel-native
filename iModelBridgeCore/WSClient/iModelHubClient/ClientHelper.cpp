@@ -18,7 +18,7 @@ BeMutex ClientHelper::s_mutex{};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientHelper* ClientHelper::Initialize(WebServices::ClientInfoPtr clientInfo, IJsonLocalState * ls)
+ClientHelper* ClientHelper::Initialize(ClientInfoPtr clientInfo, IJsonLocalState * ls)
     {
     BeMutexHolder lock(s_mutex);
     if (nullptr == s_instance)
@@ -55,26 +55,50 @@ ClientHelper* ClientHelper::GetInstance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientPtr ClientHelper::SignIn(Tasks::AsyncError* errorOut, SignInInfo const& signinInfo)
+ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials credentials)
     {
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
-    UrlProvider::Initialize(signinInfo.m_environment, UrlProvider::DefaultTimeout, m_localState);
-
     m_signinMgr = ConnectSignInManager::Create(m_clientInfo, nullptr, m_localState);
-    auto signInResult = m_signinMgr->SignInWithCredentials(signinInfo.m_credentials)->GetResult();
+    auto signInResult = m_signinMgr->SignInWithCredentials(credentials)->GetResult();
     if (!signInResult.IsSuccess())
         {
-        error = AsyncError(signInResult.GetError().GetMessage(), signInResult.GetError().GetDescription());;
+        error = AsyncError(signInResult.GetError().GetMessage(), signInResult.GetError().GetDescription());
         return nullptr;
         }
+
+    return SignInWithManager (m_signinMgr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token)
+    {
+    Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
+
+    m_signinMgr = ConnectSignInManager::Create(m_clientInfo, nullptr, m_localState);
+    auto signInResult =  m_signinMgr->SignInWithToken(token)->GetResult();
+    if (!signInResult.IsSuccess())
+        {
+        error = AsyncError(signInResult.GetError().GetMessage(), signInResult.GetError().GetDescription());
+        return nullptr;
+        }
+
+    return SignInWithManager (m_signinMgr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Algirdas.Mikoliunas            03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr)
+    {
+    m_signinMgr = managerPtr;
     Utf8String host = UrlProvider::Urls::iModelHubServices.Get();
 
     AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(host);
-
     ClientPtr client = Client::Create(m_clientInfo, authHandler);
     client->SetServerURL(host);
-    client->SetCredentials(signinInfo.m_credentials);
 
     return client;
     }
