@@ -176,7 +176,7 @@ private:
     DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;
     void OnDbClose() const;
-    DbResult OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId);
+    DbResult OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
     DbResult VerifyProfileVersion(Db::OpenParams const& params) const { return ProfileManager::UpgradeProfile(m_ecdb, params); }
 
