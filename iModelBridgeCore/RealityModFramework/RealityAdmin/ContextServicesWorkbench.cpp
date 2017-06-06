@@ -167,10 +167,10 @@ Utf8String ContextServicesWorkbench::getBaseUrl()
     Utf8String tempRealityServerUrl;
     switch (m_params.GetServerType())
     {
-    case ServerType::DEV:
+    case CONNECTServerType::DEV:
         tempRealityServerUrl = "https://dev-contextservices-eus.cloudapp.net/v2.4";//"https://naou10726:8443/ws/v2.4";
         break;
-    case ServerType::PROD:
+    case CONNECTServerType::PROD:
         tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.4";
         break;
     default:
@@ -348,7 +348,7 @@ void ContextServicesWorkbench::SelectRandomResolution()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Spencer.Mason                   11/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordinationParams::GeoCoordinationParams(bvector<GeoPoint2d> params, ServerType serverType, Utf8String filterString)
+GeoCoordinationParams::GeoCoordinationParams(bvector<GeoPoint2d> params, CONNECTServerType serverType, Utf8String filterString)
     :m_filterPolygon(params), m_serverType(serverType), m_filterString()
     {}
 

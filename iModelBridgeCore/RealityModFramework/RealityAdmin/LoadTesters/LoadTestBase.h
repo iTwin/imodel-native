@@ -120,6 +120,7 @@ public:
 
 struct LoadTester
     {
+    RealityPlatform::CONNECTServerType m_serverType;
     UserManager userManager;
     bool trickle = false;
     Utf8String path;

@@ -310,11 +310,13 @@ void Stats::WriteToFile(int userCount, Utf8String path)
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void ShowUsage()
+void ShowUsage(int argc, char* argv[])
     {
     std::cout << "Server Load Tester" << std::endl << std::endl;
+    std::cout << "Usage:" << argv[0] << "-s:[serverType] -u:[users]" << std::endl << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  -h, --help                                      Show this help message and exit" << std::endl;
+    std::cout << "  -s, --serverType        {dev, qa, prod}" << std::endl;
     std::cout << "  -u:[number of users], --users:[number of users] Number of users" << std::endl;
     std::cout << "  -hr:[rateperhour], --hourlyrate:[rateperhour]   Rate of requests per hour ex: 1000" << std::endl;
     std::cout << "  -t, --trickle                                   optional, add this argument to avoid spawing all users at once" << std::endl;
@@ -486,20 +488,33 @@ bool LoadTester::Main(int argc, char* argv[])
 
     if (argc < 2)
         {
-        ShowUsage();
+        ShowUsage(argc, argv);
         return true;
         }
 
     char* substringPosition;
     int userCount = 0;
 
+    // Default server type
+    m_serverType = RealityPlatform::CONNECTServerType::QA;
+
+
     //parse command line arguments
     for (int i = 0; i < argc; ++i)
         {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
             {
-            ShowUsage();
+            ShowUsage(argc, argv);
             return true;
+            }
+        else if (strstr(argv[i], "-s:") || strstr(argv[i], "--serverType:"))
+            {
+            if(strstr(argv[i], "qa"))
+                m_serverType = RealityPlatform::CONNECTServerType::QA;
+            else if (strstr(argv[i], "prod"))
+                m_serverType = RealityPlatform::CONNECTServerType::PROD;
+            else
+                m_serverType = RealityPlatform::CONNECTServerType::DEV;
             }
         else if (strstr(argv[i], "-u") || strstr(argv[i], "--users"))
             {
@@ -507,7 +522,7 @@ bool LoadTester::Main(int argc, char* argv[])
 
             if (substringPosition == 0)
                 {
-                ShowUsage();
+                ShowUsage(argc, argv);
                 return true;
                 }
             substringPosition++;
@@ -522,7 +537,7 @@ bool LoadTester::Main(int argc, char* argv[])
 
             if (substringPosition == 0)
                 {
-                ShowUsage();
+                ShowUsage(argc, argv);
                 return true;
                 }
             substringPosition++;
