@@ -1034,7 +1034,29 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                             <Class class="ChildSub2"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml", false, "Navigation properties on all constraint classes must have same name.")
+                   </ECSchema>)xml", false, "Navigation properties on all constraint classes must have same name."),
+
+                   SchemaItem(R"xml(<ECSchema schemaName="TestSchema16" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child">
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="None" strength="Referencing">
+                        <ECCustomAttributes>
+                            <UseECInstanceIdAsForeignKey xlmns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml", false, "Rels with UseECInstanceIdAsForeignKey CA must not have a Navigation property.")
     };
 
     AssertSchemaImport(testItems, "ecdbschemarules_navprops.ecdb");
