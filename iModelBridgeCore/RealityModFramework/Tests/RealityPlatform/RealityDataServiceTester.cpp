@@ -101,6 +101,8 @@ TEST_F(RealityDataServiceFixture, SetServerComponents)
 	EXPECT_STREQ(s_realityDataService->GetWSGProtocol().c_str(), "9.9");
 	EXPECT_STREQ(s_realityDataService->GetRepoName().c_str(), "myRepo");
 	EXPECT_STREQ(s_realityDataService->GetSchemaName().c_str(), "mySchema");
+	EXPECT_STREQ(s_realityDataService->GetProjectId().c_str(), "myProjectID");
+	EXPECT_TRUE(s_realityDataService->AreParametersSet());
 	}
 
 //=====================================================================================
@@ -584,6 +586,278 @@ TEST_F(RealityDataServiceFixture, RealityDataDelete)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteGoodRequest)
+	{
+		ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+		response.curlCode = CURLE_OK;
+		response.responseCode = 200;
+		response.body = R"(
+			{
+			"changedInstance": 
+				[
+					{
+						"properties": 
+							{
+								"Name": "myName",
+								"Url": "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z"
+							}
+					}
+				]
+			}
+	
+			)";
+		}));
+
+	RealityDataDelete requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::OK);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataDeleteBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataDelete failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataDelete requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataEnterpriseStatRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataEnterpriseStatRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+    RealityDataEnterpriseStat stat {};
+	s_realityDataService->Request(requestUT, stat, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataByIdRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataByIdRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataByIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataDocumentByIdRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataDocumentByIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataDocumentContentByIdRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataDocumentContentByIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT,new BeFile() ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataFolderByIdRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataFolderByIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataListByOrganizationPagedRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataListByOrganizationPagedRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(realityDataVector.empty());
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataProjectRelationshipRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataProjectRelationshipByProjectIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(realityDataVector.empty());
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdPagedRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataProjectRelationshipPagedRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataProjectRelationshipByProjectIdPagedRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(realityDataVector.empty());
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataChangeRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataChangeRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataChangeRequest requestUT("RealityDataID", "SomeProperties");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataRelationshipCreateRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataRelationshipCreateRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataRelationshipCreateRequest requestUT("RealityDataID", "SomeProperties");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataRelationshipDelete failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataRelationshipDelete requestUT("RealityDataID", "SomeProperties");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataCreateRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataCreateRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataCreateRequest requestUT("RealityDataID", "SomeProperties");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
 TEST(TransferReport, XmlExport)
 	{
 	TransferResult* result1 = new TransferResult{ CURLE_OK, 100, 5, "MyName", RawServerResponse() };
@@ -676,6 +950,7 @@ public:
 
 RealityDataServiceTransfer_callback* RealityDataServiceTransferFixture::s_transferServiceCallback = nullptr;
 RealityDataServiceTransfer* RealityDataServiceTransferFixture::s_dataServiceTransfer = nullptr;
+
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
