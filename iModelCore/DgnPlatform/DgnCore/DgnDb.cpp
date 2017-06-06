@@ -117,6 +117,8 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 
     if (BE_SQLITE_OK != (rc = InitializeSchemas(params)))
         {
+        // *** NEEDS WORK: how can we be sure that DbClose won't automatically save the partial changes?
+        // Should we call AbandonChanges(); here?
         m_txnManager = nullptr; // Deletes ref counted ptr so that statement caches are freed
         return rc;
         }
@@ -156,6 +158,8 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaTooOld;
         case SchemaStatus::SchemaUpgradeRequired:
             return BE_SQLITE_ERROR_SchemaUpgradeRequired;
+        case SchemaStatus::CouldNotAcquireLocksOrCodes:
+            return BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes;
         default:
             return isUpgrade ? BE_SQLITE_ERROR_SchemaUpgradeFailed : BE_SQLITE_ERROR_SchemaImportFailed;
         }

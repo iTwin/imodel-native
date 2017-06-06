@@ -26,6 +26,10 @@ private:
     RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
     void _OnElementInserted(DgnElementId) override { }
     void _OnModelInserted(DgnModelId) override { }
+    void _StartBulkOperation() override {}
+    bool _IsBulkOperation() const override {return false;}
+    Response _EndBulkOperation() override {return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);}
+
     RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
         {
         for (auto const& id : lockIds)
@@ -62,7 +66,7 @@ public:
 *     are believed to be locked by another briefcase.
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BriefcaseManager : IBriefcaseManager, TxnMonitor
+struct BriefcaseManagerBase : IBriefcaseManager, TxnMonitor
 {
 protected:
     enum class DbState { New, Ready, Invalid };
@@ -98,11 +102,11 @@ protected:
         return model.PopulateRequest(req, op);
         }
 
-    BriefcaseManager(DgnDbR db) : IBriefcaseManager(db), m_localDbState(DbState::New)
+    BriefcaseManagerBase(DgnDbR db) : IBriefcaseManager(db), m_localDbState(DbState::New)
         {
         T_HOST.GetTxnAdmin().AddTxnMonitor(*this);
         }
-    ~BriefcaseManager()
+    ~BriefcaseManagerBase()
         {
         Save();
         T_HOST.GetTxnAdmin().DropTxnMonitor(*this);
@@ -155,19 +159,20 @@ protected:
     static PropSpec GetCreationDatePropSpec() { return PropSpec("BriefcaseLocalStateDbCreationDate"); }
     static PropSpec GetVersionPropSpec() { return PropSpec("BriefcaseLocalStateDbVersion"); }
     static Utf8CP GetCurrentVersion() { return "1"; }
-public:
-    static IBriefcaseManagerPtr Create(DgnDbR db) { return new BriefcaseManager(db); }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BulkUpdateBriefcaseManager : BriefcaseManager, IBulkUpdateBriefcaseOps
+struct BulkUpdateBriefcaseManager : BriefcaseManagerBase
 {
-    DEFINE_T_SUPER(BriefcaseManager)
+    DEFINE_T_SUPER(BriefcaseManagerBase)
 protected:
     Request m_req;      // locks and codes that we must acquire before we can say that update has succeeded
-    bool m_inBulkUpdate = false;
+    int m_inBulkUpdate = 0;
+#ifndef NDEBUG
+    intptr_t m_threadId = 0;
+#endif
 
     BulkUpdateBriefcaseManager(DgnDbR db) : T_Super(db) {;}
 
@@ -187,9 +192,9 @@ protected:
 
     // Note: functions like _QueryCodeStates and _QueryLockLevel do NOT look in m_req. They check what we actually have obtained from the server.
 
-    void _StartBulkUpdate() override {BeAssert(!m_inBulkUpdate); m_inBulkUpdate = true;}
-    Response _AcquireLocksAndCodes() override;
-    void _EndBulkUpdate() override {BeAssert(m_req.IsEmpty()); m_inBulkUpdate = false;}
+    void _StartBulkOperation() override;
+    bool _IsBulkOperation() const override {return 0 != m_inBulkUpdate;}
+    Response _EndBulkOperation() override;
 
     void AccumulateRequests(Request const&);
 public:
@@ -199,7 +204,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbR BriefcaseManager::GetLocalDb()
+DbR BriefcaseManagerBase::GetLocalDb()
     {
     Validate();
     return m_localDb;
@@ -208,7 +213,7 @@ DbR BriefcaseManager::GetLocalDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::_OnDgnDbDestroyed()
+void BriefcaseManagerBase::_OnDgnDbDestroyed()
     {
     if (DbState::New == m_localDbState)
         return;
@@ -230,7 +235,7 @@ void BriefcaseManager::_OnDgnDbDestroyed()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
-    return db.IsMasterCopy() || db.IsStandaloneBriefcase() ? MasterBriefcaseManager::Create(db) : BriefcaseManager::Create(db);
+    return db.IsMasterCopy() || db.IsStandaloneBriefcase() ? MasterBriefcaseManager::Create(db) : BulkUpdateBriefcaseManager::Create(db);
     }
 
 #define TABLE_Codes "Codes"
@@ -281,7 +286,7 @@ bool IBriefcaseManager::LocksRequired() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BriefcaseManager::Validate(RepositoryStatus* pStatus)
+bool BriefcaseManagerBase::Validate(RepositoryStatus* pStatus)
     {
     switch (m_localDbState)
         {
@@ -306,7 +311,7 @@ bool BriefcaseManager::Validate(RepositoryStatus* pStatus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BriefcaseManager::UseExistingLocalDb(BeFileNameCR filename)
+bool BriefcaseManagerBase::UseExistingLocalDb(BeFileNameCR filename)
     {
     // To support temporarily-offline workflows: if local state db already exists, AND server unavailable, AND pass verification checks, reuse existing.
     if (!filename.DoesPathExist() || nullptr != GetRepositoryManager() || BE_SQLITE_OK != m_localDb.OpenBeSQLiteDb(filename, Db::OpenParams(Db::OpenMode::ReadWrite)))
@@ -332,7 +337,7 @@ bool BriefcaseManager::UseExistingLocalDb(BeFileNameCR filename)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BriefcaseManager::InitializeLocalDb()
+bool BriefcaseManagerBase::InitializeLocalDb()
     {
     // Save an identifier for the current schema version for later verification in offline mode...
     m_localDb.SavePropertyString(GetVersionPropSpec(), GetCurrentVersion());
@@ -350,7 +355,7 @@ bool BriefcaseManager::InitializeLocalDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BriefcaseManager::CreateCodesTable(Utf8CP tableName)
+bool BriefcaseManagerBase::CreateCodesTable(Utf8CP tableName)
     {
     return BE_SQLITE_OK == m_localDb.CreateTable(tableName, CODE_SpecId " INTEGER,"
                                                             CODE_Scope " INTEGER,"
@@ -361,7 +366,7 @@ bool BriefcaseManager::CreateCodesTable(Utf8CP tableName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BriefcaseManager::CreateLocksTable(Utf8CP tableName)
+bool BriefcaseManagerBase::CreateLocksTable(Utf8CP tableName)
     {
     return BE_SQLITE_OK == m_localDb.CreateTable(tableName,   LOCK_Type " INTEGER,"
                                                 LOCK_Id " INTEGER,"
@@ -372,7 +377,7 @@ bool BriefcaseManager::CreateLocksTable(Utf8CP tableName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::Initialize()
+RepositoryStatus BriefcaseManagerBase::Initialize()
     {
     BeAssert(DbState::New == m_localDbState);
 
@@ -400,7 +405,7 @@ RepositoryStatus BriefcaseManager::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::Pull()
+RepositoryStatus BriefcaseManagerBase::Pull()
     {
     // Populate local Db with reserved codes and locks from the server
     DgnLockSet locks, unavailableLocks;
@@ -431,7 +436,7 @@ RepositoryStatus BriefcaseManager::Pull()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::Refresh()
+RepositoryStatus BriefcaseManagerBase::Refresh()
     {
     if (DbState::Ready != m_localDbState)
         {
@@ -455,7 +460,7 @@ RepositoryStatus BriefcaseManager::Refresh()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::InsertCodes(DgnCodeSet const& codes, TableType tableType)
+void BriefcaseManagerBase::InsertCodes(DgnCodeSet const& codes, TableType tableType)
     {
     CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(TableType::Owned == tableType ? STMT_InsertCode : STMT_InsertUnavailableCode);
     for (auto const& code : codes)
@@ -497,7 +502,7 @@ struct VirtualCodeSet : VirtualSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::Cull(DgnCodeSet& codes)
+void BriefcaseManagerBase::Cull(DgnCodeSet& codes)
     {
     // Don't bother asking server to reserve codes which we've already reserved...
     CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectCode);
@@ -528,7 +533,7 @@ void BriefcaseManager::Cull(DgnCodeSet& codes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::Remove(DgnCodeSet const& codes)
+RepositoryStatus BriefcaseManagerBase::Remove(DgnCodeSet const& codes)
     {
     VirtualCodeSet vset(codes);
     CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_DeleteCodesInSet);
@@ -550,7 +555,7 @@ template<typename T> static void bindEnum(Statement& stmt, int32_t index, T val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::InsertLock(LockableId id, LockLevel level, TableType tableType, bool overwrite)
+void BriefcaseManagerBase::InsertLock(LockableId id, LockLevel level, TableType tableType, bool overwrite)
     {
     auto sql = TableType::Owned == tableType
              ? (overwrite ? STMT_InsertOrReplaceLock : STMT_InsertNewLock)
@@ -612,7 +617,7 @@ ModelElementLocks::const_iterator ModelElementLocks::begin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableType tableType, bool checkExisting)
+template<typename T> void BriefcaseManagerBase::InsertLocks(T const& locks, TableType tableType, bool checkExisting)
     {
     CachedStatementPtr select, insert, update;
     bool insertingOwnedLocks = (TableType::Owned == tableType);
@@ -730,7 +735,7 @@ template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableTyp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::AddDependentElements(DgnLockSet& locks, bvector<DgnModelId> const& models)
+void BriefcaseManagerBase::AddDependentElements(DgnLockSet& locks, bvector<DgnModelId> const& models)
     {
     if (models.empty())
         return;
@@ -760,7 +765,7 @@ void BriefcaseManager::AddDependentElements(DgnLockSet& locks, bvector<DgnModelI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models)
+RepositoryStatus BriefcaseManagerBase::PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models)
     {
     if (models.empty())
         return RepositoryStatus::Success;
@@ -783,7 +788,7 @@ RepositoryStatus BriefcaseManager::PromoteDependentElements(LockRequestCR usedLo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
+RepositoryStatus BriefcaseManagerBase::AcquireLocks(LockRequestR locks, bool cull)
     {
     if (!Validate())
         return RepositoryStatus::SyncError;
@@ -828,7 +833,7 @@ struct VirtualLockSet : VirtualSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::Cull(DgnLockSet& locks)
+void BriefcaseManagerBase::Cull(DgnLockSet& locks)
     {
     CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectExistingLock);
     auto iter = locks.begin();
@@ -849,7 +854,7 @@ void BriefcaseManager::Cull(DgnLockSet& locks)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, RequestPurpose purpose)
+IBriefcaseManager::Response BriefcaseManagerBase::_ProcessRequest(Request& req, RequestPurpose purpose)
     {
     RepositoryStatus stat;
     if (!Validate(&stat))
@@ -879,7 +884,7 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, Requ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response BriefcaseManager::DoFastQuery(Request const& req)
+IBriefcaseManager::Response BriefcaseManagerBase::DoFastQuery(Request const& req)
     {
     Response response(RequestPurpose::FastQuery, req.Options());
     response.SetResult(FastQueryLocks(response, req.Locks(), req.Options()));
@@ -893,7 +898,7 @@ IBriefcaseManager::Response BriefcaseManager::DoFastQuery(Request const& req)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::FastQueryLocks(Response& response, LockRequest const& locks, ResponseOptions options)
+RepositoryStatus BriefcaseManagerBase::FastQueryLocks(Response& response, LockRequest const& locks, ResponseOptions options)
     {
     struct VSet : VirtualLockSet
     {
@@ -949,7 +954,7 @@ RepositoryStatus BriefcaseManager::FastQueryLocks(Response& response, LockReques
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::FastQueryCodes(Response& response, DgnCodeSet const& codes, ResponseOptions options)
+RepositoryStatus BriefcaseManagerBase::FastQueryCodes(Response& response, DgnCodeSet const& codes, ResponseOptions options)
     {
     VirtualCodeSet vset(codes);
     CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectUnavailableCodesInSet);
@@ -1049,7 +1054,7 @@ RepositoryStatus ReleaseContext::ClearTxns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::_Relinquish(Resources which)
+RepositoryStatus BriefcaseManagerBase::_Relinquish(Resources which)
     {
     IRepositoryManagerP server;
     RepositoryStatus stat;
@@ -1082,7 +1087,7 @@ RepositoryStatus BriefcaseManager::_Relinquish(Resources which)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::_Demote(DgnLockSet& locks, DgnCodeSet const& codes)
+RepositoryStatus BriefcaseManagerBase::_Demote(DgnLockSet& locks, DgnCodeSet const& codes)
     {
     // Releasing the db itself is equivalent to releasing all held locks...
     if (locks.end() != locks.find(DgnLock(LockableId(GetDgnDb()), LockLevel::None)))
@@ -1190,7 +1195,7 @@ RepositoryStatus BriefcaseManager::_Demote(DgnLockSet& locks, DgnCodeSet const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BriefcaseManager::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* pStatus)
+bool BriefcaseManagerBase::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* pStatus)
     {
     if (!Validate(pStatus))
         return false;
@@ -1222,7 +1227,7 @@ bool BriefcaseManager::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, R
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::_QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes)
+RepositoryStatus BriefcaseManagerBase::_QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes)
     {
     auto server = GetRepositoryManager();
     return nullptr != server ? server->QueryCodeStates(states, codes) : RepositoryStatus::ServerUnavailable;
@@ -1231,7 +1236,7 @@ RepositoryStatus BriefcaseManager::_QueryCodeStates(DgnCodeInfoSet& states, DgnC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::_QueryLockLevel(LockLevel& level, LockableId lockId)
+RepositoryStatus BriefcaseManagerBase::_QueryLockLevel(LockLevel& level, LockableId lockId)
     {
     DgnLockSet levels;
     LockableIdSet ids;
@@ -1245,7 +1250,7 @@ RepositoryStatus BriefcaseManager::_QueryLockLevel(LockLevel& level, LockableId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::_QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids)
+RepositoryStatus BriefcaseManagerBase::_QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids)
     {
     // Our local DB was populated from the server...there's no need to contact server again
     RepositoryStatus stat;
@@ -1336,7 +1341,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-IOwnedLocksIteratorPtr BriefcaseManager::_GetOwnedLocks(FastQuery fast)
+IOwnedLocksIteratorPtr BriefcaseManagerBase::_GetOwnedLocks(FastQuery fast)
     {
     bool valid = FastQuery::Yes == fast ? Validate() : RepositoryStatus::Success == RefreshFromRepository();
     return valid ? OwnedLocksIterator::Create(GetLocalDb()).get() : nullptr;
@@ -1345,7 +1350,7 @@ IOwnedLocksIteratorPtr BriefcaseManager::_GetOwnedLocks(FastQuery fast)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
+RepositoryStatus BriefcaseManagerBase::_OnFinishRevision(DgnRevision const& rev)
     {
     // Any codes which became Used as a result of these changes must necessarily have been Reserved by this briefcase,
     // and are now no longer Reserved by any briefcase
@@ -1368,7 +1373,7 @@ RepositoryStatus BriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::_OnElementInserted(DgnElementId id)
+void BriefcaseManagerBase::_OnElementInserted(DgnElementId id)
     {
     if (LocksRequired() && Validate())
         InsertLock(LockableId(id), LockLevel::Exclusive, TableType::Owned);
@@ -1377,7 +1382,7 @@ void BriefcaseManager::_OnElementInserted(DgnElementId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::_OnModelInserted(DgnModelId id)
+void BriefcaseManagerBase::_OnModelInserted(DgnModelId id)
     {
     if (LocksRequired() && Validate())
         {
@@ -1425,6 +1430,9 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode)
     {
+    if (IsBulkOperation()) // In a bulk op, the "prepare" step schedules the request. We won't process it until later.
+        return DgnDbStatus::Success;
+
     Request req;
     return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, PrepareAction::Verify), req);
     }
@@ -1434,6 +1442,9 @@ DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbO
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode)
     {
+    if (IsBulkOperation()) // In a bulk op, the "prepare" step schedules the request. We won't process it until later.
+        return DgnDbStatus::Success;
+
     Request req;
     return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, PrepareAction::Verify), req);
     }
@@ -1603,6 +1614,8 @@ void IBriefcaseManager::RemoveElements(LockRequestR request, DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IBriefcaseManager::ReformulateLockRequest(LockRequestR req, Response const& response) const
     {
+    BeAssert(!_IsBulkOperation() && "this function does not make sense in bulk operation mode");
+
     DgnLockSet& locks = req.GetLockSet();
     for (auto const& state : response.LockStates())
         {
@@ -2261,6 +2274,10 @@ IBriefcaseManager::Response BulkUpdateBriefcaseManager::_ProcessRequest(IBriefca
     if (!m_inBulkUpdate || (IBriefcaseManager::RequestPurpose::Acquire != purpose))
         return T_Super::_ProcessRequest(req, purpose);
 
+#ifndef NDEBUG
+    BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
+
     AccumulateRequests(req);
     return IBriefcaseManager::Response(purpose, req.Options(), RepositoryStatus::Success);
     }
@@ -2270,7 +2287,12 @@ IBriefcaseManager::Response BulkUpdateBriefcaseManager::_ProcessRequest(IBriefca
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus BulkUpdateBriefcaseManager::_Relinquish(Resources res)
     {
-    // *** NEEDS WORK: I don't know how to buffer this -- how would this intersect the individual requests in m_req?
+    if (m_inBulkUpdate)
+        {
+        BeAssert(false && "makes no sense in bulk operation mode");
+        return  RepositoryStatus::InvalidRequest;
+        }
+
     return T_Super::_Relinquish(res);
     }
 
@@ -2281,6 +2303,10 @@ RepositoryStatus BulkUpdateBriefcaseManager::_ReserveCode(DgnCodeCR code)
     {
     if (!m_inBulkUpdate)
         return T_Super::_ReserveCode(code);
+
+#ifndef NDEBUG
+    BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
 
     m_req.Codes().insert(code);
     return RepositoryStatus::Success;
@@ -2293,6 +2319,10 @@ RepositoryStatus BulkUpdateBriefcaseManager::_Demote(DgnLockSet& locks, DgnCodeS
     {
     if (!m_inBulkUpdate)
         return T_Super::_Demote(locks, codes);
+
+#ifndef NDEBUG
+    BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
 
     for (auto& code : codes)
         {
@@ -2312,19 +2342,48 @@ RepositoryStatus BulkUpdateBriefcaseManager::_Demote(DgnLockSet& locks, DgnCodeS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response BulkUpdateBriefcaseManager::_AcquireLocksAndCodes()
+void BulkUpdateBriefcaseManager::_StartBulkOperation()
     {
-    if (!m_inBulkUpdate)
+    ++m_inBulkUpdate;
+
+#ifndef NDEBUG
+    if (0 == m_threadId)
+        m_threadId = BeThreadUtilities::GetCurrentThreadId();
+    else
+        {
+        BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManager::Response BulkUpdateBriefcaseManager::_EndBulkOperation()
+    {
+#ifndef NDEBUG
+    BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
+
+    if (m_inBulkUpdate <= 0)
         {
         BeAssert(false);
         return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::InvalidRequest);
         }
 
+    if (0 != --m_inBulkUpdate)
+        return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);
+
     auto resp = T_Super::_ProcessRequest(m_req, RequestPurpose::Acquire);
     
-    if (RepositoryStatus::Success == resp.Result())     // If the request went through, 
-        m_req.Reset();                                  // then we no longer hold it in suspense. Note that caller is responsible for acting on locks/codes that were refused.
+    if (RepositoryStatus::Success != resp.Result())
+        return resp;
+        
+    m_req.Reset();
 
+#ifndef NDEBUG
+    m_threadId = 0;
+#endif
     return resp;
     }
 
@@ -2336,9 +2395,15 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForElementOperation(Request
     if (!m_inBulkUpdate)
         return T_Super::_PrepareForElementOperation(reqOut, el, op);
 
-    Request req;
-    el.PopulateRequest(req, op);
-    AccumulateRequests(req);
+#ifndef NDEBUG
+    BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
+
+    auto rstat = el.PopulateRequest(reqOut, op);
+    if (RepositoryStatus::Success != rstat)
+        return rstat;
+
+    AccumulateRequests(reqOut);
     return RepositoryStatus::Success;
     }
 
@@ -2350,9 +2415,16 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForModelOperation(Request& 
     if (!m_inBulkUpdate)
         return T_Super::_PrepareForModelOperation(reqOut, model, op);
 
-    Request req;
-    model.PopulateRequest(req, op);
-    AccumulateRequests(req);
+#ifndef NDEBUG
+    BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
+
+     auto rstat = model.PopulateRequest(reqOut, op);
+
+    if (RepositoryStatus::Success != rstat)
+        return rstat;
+
+    AccumulateRequests(reqOut);
     return RepositoryStatus::Success;
     }
 
@@ -2361,7 +2433,16 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForModelOperation(Request& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnElementInserted(DgnElementId id)
     {
-    if (LocksRequired())
+    if (!m_inBulkUpdate)
+        {
+        T_Super::_OnElementInserted(id);
+        return;
+        }
+
+#ifndef NDEBUG
+    BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
+    if (LocksRequired()) // don't Validate
         m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
     }
 
@@ -2370,7 +2451,16 @@ void BulkUpdateBriefcaseManager::_OnElementInserted(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnModelInserted(DgnModelId id)
     {
-    if (LocksRequired())
+    if (!m_inBulkUpdate)
+        {
+        T_Super::_OnModelInserted(id);
+        return;
+        }
+
+#ifndef NDEBUG
+    BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
+    if (LocksRequired()) // don't Validate
         m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
     }
 
@@ -2379,12 +2469,11 @@ void BulkUpdateBriefcaseManager::_OnModelInserted(DgnModelId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus BulkUpdateBriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
     {
-    if (m_inBulkUpdate)
-        {
-        BeAssert(false);
-        return RepositoryStatus::PendingTransactions;
-        }
-    return T_Super::_OnFinishRevision(rev);
+    if (!m_inBulkUpdate)
+        return T_Super::_OnFinishRevision(rev);
+        
+    BeAssert(false);
+    return RepositoryStatus::PendingTransactions;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2392,13 +2481,7 @@ RepositoryStatus BulkUpdateBriefcaseManager::_OnFinishRevision(DgnRevision const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnCommit(TxnManager& mgr)
     {
-    if (m_inBulkUpdate)
-        {
-        BeAssert(false);
-        TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Pending locks and codes");
-        mgr.ReportError(err);
-        return;
-        }
+    BeAssert (!m_inBulkUpdate && "somebody called SaveChanges while in a NESTED bulk op");
     T_Super::_OnCommit(mgr);
     }
 
@@ -2407,10 +2490,12 @@ void BulkUpdateBriefcaseManager::_OnCommit(TxnManager& mgr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnAppliedChanges(TxnManager& mgr)
     {
-    // This is called by undo/redo and by revision manager
+    // This is called by CancelChanges, undo/redo and by revision manager
     if (m_inBulkUpdate)
         {
-        BeAssert(false && "downloading revisions in a bulk update transaction??");
+#ifndef NDEBUG
+        BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
         m_inBulkUpdate = false;
         m_req.Reset();
         }
@@ -2424,25 +2509,12 @@ void BulkUpdateBriefcaseManager::_OnUndoRedo(TxnManager& mgr, TxnAction action)
     {
     if (m_inBulkUpdate)
         {
+#ifndef NDEBUG
+        BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
+#endif
         m_inBulkUpdate = false;
         m_req.Reset();
         }
     T_Super::_OnUndoRedo(mgr, action);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManagerPtr IBriefcaseManager::CreateMasterBriefcaseManager(DgnDbR db)
-    {
-    return MasterBriefcaseManager::Create(db);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManagerPtr IBriefcaseManager::CreateBulkUpdateBriefcaseManager(DgnDbR db)
-    {
-    return BulkUpdateBriefcaseManager::Create(db);
     }
 

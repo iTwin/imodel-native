@@ -638,6 +638,8 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         // That's taken care of in the above call to CancelDynamics(), so we're finished
         if (HasDataChanges())
             Restart();
+        if (GetDgnDb().BriefcaseManager().IsBulkOperation() && (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().EndBulkOperation().Result()))
+            return OnCommitStatus::Abort;
         return OnCommitStatus::Continue;
         }
 
@@ -670,6 +672,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             Restart();
             dataChangeSet.ConcatenateWith(indirectChanges); // combine direct and indirect changes into a single dataChangeSet
             }
+
+        if (GetDgnDb().BriefcaseManager().IsBulkOperation() && (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().EndBulkOperation().Result()))
+            status = BentleyStatus::ERROR;
 
         if (SUCCESS != status)
             {
