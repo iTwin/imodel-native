@@ -108,7 +108,19 @@
 # include <windows.h>  // NOLINT
 
 // *** BENTLEY CHANGE ***
-# include <DbgHelp.h>
+// ...\DbgHelp.h(1544): error C2220: warning treated as error - no 'object' file generated
+// ...\DbgHelp.h(1544): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+// ...\DbgHelp.h(3190): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+#if defined (_MSC_VER)
+    #pragma warning(push)
+    #pragma warning(disable:4091)
+#endif
+
+#include <DbgHelp.h>
+
+#if defined (_MSC_VER)
+    #pragma warning(pop)
+#endif
 // *** BENTLEY CHANGE ***
 
 # undef min
