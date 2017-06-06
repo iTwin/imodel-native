@@ -44,6 +44,8 @@ WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
     # Expected: false
     # [  FAILED  ] WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops (18 ms)
 
+BeStringUtilitiesTests.GetDecimalSeparator    #failing for locales with decimal operator other than "."
+
 LimitingTaskQueueTests.Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent
     # bim2-0r1, x64, NDEBUG, Random Hang
     # Threads:
