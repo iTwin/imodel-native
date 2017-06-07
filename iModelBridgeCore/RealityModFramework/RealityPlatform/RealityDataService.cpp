@@ -1673,7 +1673,7 @@ void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int Erro
     {
     RealityDataFileTransfer* pEntry = (RealityDataFileTransfer*)pClient;
 
-    if(!m_onlyReportErrors && ErrorCode != static_cast<int>(CURLE_OK))
+    if(!m_onlyReportErrors || ErrorCode != static_cast<int>(CURLE_OK))
         {
         if (m_pStatusFunc)
             m_pStatusFunc(index, pClient, ErrorCode, pMsg);
