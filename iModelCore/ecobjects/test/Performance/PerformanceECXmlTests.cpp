@@ -33,7 +33,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
 
         serializationTimer.Start ();
         //printf ("Attach to profiler for writing schema...\r\n"); getchar ();
-        SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXml);
+        SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXml, ECVersion::V3_0);
         //printf ("Detach from profiler...\r\n"); getchar ();
         serializationTimer.Stop ();
         EXPECT_EQ (SchemaWriteStatus::Success, status2);

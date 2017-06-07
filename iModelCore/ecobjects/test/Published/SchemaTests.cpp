@@ -904,98 +904,6 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedRoleLabels)
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
-    schema->SetDescription("Schema to test Relationship Class Role Label Inheritance serialization.");
-    schema->SetDisplayLabel("RoleLabel Inheritance Test Schema");
-
-    ECEntityClassP entityClassA;
-    ECEntityClassP entityClassB;
-    ECEntityClassP entityClassC;
-    ECRelationshipClassP classARelB;
-    ECRelationshipClassP classARelC;
-    ECRelationshipClassP classBRelC;
-
-    schema->CreateEntityClass(entityClassA, "A");
-    entityClassA->SetClassModifier(ECClassModifier::Abstract);
-    entityClassA->SetDisplayLabel("Entity A");
-    entityClassA->SetDescription("Entity A Description");
-
-    schema->CreateEntityClass(entityClassB, "B");
-    entityClassB->SetClassModifier(ECClassModifier::Abstract);
-    entityClassB->SetDisplayLabel("Entity B");
-    entityClassB->SetDescription("Entity B Description");
-    entityClassB->AddBaseClass(*entityClassA);
-
-    schema->CreateEntityClass(entityClassC, "C");
-    entityClassC->SetClassModifier(ECClassModifier::Abstract);
-    entityClassC->SetDisplayLabel("Entity C");
-    entityClassC->SetDescription("Entity C Description");
-    entityClassC->AddBaseClass(*entityClassB);
-
-    schema->CreateRelationshipClass(classARelB, "ARelB");
-    classARelB->SetClassModifier(ECClassModifier::Abstract);
-    classARelB->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classARelB->GetSource().AddClass(*entityClassA);
-    classARelB->GetSource().SetRoleLabel("testSource");
-    classARelB->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classARelB->GetTarget().AddClass(*entityClassB);
-    classARelB->GetTarget().SetRoleLabel("testTarget");
-
-    schema->CreateRelationshipClass(classARelC, "ARelC");
-    classARelC->SetClassModifier(ECClassModifier::Abstract);
-    classARelC->AddBaseClass(*classARelB);
-    classARelC->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classARelC->GetSource().AddClass(*entityClassA);
-    classARelC->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classARelC->GetTarget().AddClass(*entityClassC);
-
-    schema->CreateRelationshipClass(classBRelC, "BRelC");
-    classBRelC->SetClassModifier(ECClassModifier::Sealed);
-    classBRelC->AddBaseClass(*classARelC);
-    classBRelC->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classBRelC->GetSource().AddClass(*entityClassB);
-    classBRelC->GetSource().SetRoleLabel("overrideSource");
-    classBRelC->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classBRelC->GetTarget().AddClass(*entityClassC);
-    classBRelC->GetTarget().SetRoleLabel("overrideTarget");
-
-    SchemaWriteStatus writeStatus = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"InheritedRoleLabel.01.00.00.ecschema.xml").c_str());
-    ASSERT_EQ(SchemaWriteStatus::Success, writeStatus);
-
-    ECSchemaPtr readSchema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus readStatus = ECSchema::ReadFromXmlFile(readSchema, ECTestFixture::GetTempDataPath(L"InheritedRoleLabel.01.00.00.ecschema.xml").c_str(), *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, readStatus);
-    ASSERT_TRUE(readSchema.IsValid());
-
-    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
-    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testSource", readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
-    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
-    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testTarget", readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
-
-    EXPECT_TRUE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
-    EXPECT_FALSE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testSource", readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
-    EXPECT_TRUE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
-    EXPECT_FALSE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testTarget", readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
-
-    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
-    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("overrideSource", readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
-    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
-    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("overrideTarget", readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, InvalidReference)
     {
     // show error messages but do not assert.
@@ -2385,6 +2293,38 @@ TEST_F(SchemaVersionTest, CreateSchemaECVersionTest)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V2_0);
     EXPECT_TRUE(schema->IsECVersion(ECVersion::V2_0)) << "The schema was created as an EC2.0 schema.";
     EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC2.0 schema so it is not the latest";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                     06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, ChangeOriginalECXmlVersion)
+    {
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        </ECSchema>
+        )xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());
+    ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(3, 1));
+    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor());
+    }
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor());
+    ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(2, 0));
+    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());
     }
     }
 

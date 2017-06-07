@@ -449,6 +449,7 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
 
     ECEntityClassP mixinSource2;
     maceSchema->CreateMixinClass(mixinSource2, "MixinSource2", *sourceConstraint);
+    EXPECT_EQ(ECObjectsStatus::Success, mixinSource2->AddBaseClass(*mixinSource));
 
     ECRelationshipClassP relClass2;
     maceSchema->CreateRelationshipClass(relClass2, "MixinRel2", *mixinSource2, "Source2", *baseTargetConstraint, "Target");

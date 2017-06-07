@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/NavigationECPropertyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -454,6 +454,7 @@ void InstanceWithNavProp(PrimitiveType navPropType)
     relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
     derivedRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    derivedRelClass->GetSource().AddClass(*sourceClass);
     derivedRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
     derivedRelClass->GetTarget().AddClass(*derivedTargetClass);
     derivedRelClass->AddBaseClass(*relClass);

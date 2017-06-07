@@ -245,10 +245,10 @@ TEST_F(SchemaValidationTests, TestSchemaValidationCanBeDelayed)
            </ECRelationshipClass>
            <ECRelationshipClass typeName='ARelC' strength='referencing' strengthDirection='forward' modifier='abstract'>
                <BaseClass>ARelB</BaseClass>
-               <Source multiplicity='(0..1)' polymorphic='True'>
+               <Source multiplicity='(0..1)' roleLabel='source' polymorphic='True'>
                    <Class class='A' />
                </Source>
-               <Target multiplicity='(0..*)' polymorphic='True'>
+               <Target multiplicity='(0..*)' roleLabel='target' polymorphic='True'>
                    <Class class='C' />
                </Target>
            </ECRelationshipClass>
@@ -263,7 +263,6 @@ TEST_F(SchemaValidationTests, TestSchemaValidationCanBeDelayed)
     schemaContext->SetSkipValidation(true);
     status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status) << "Skip validation was set on the schema read context but relationship constraints that do not narrow still caused a schema read error.";
-
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

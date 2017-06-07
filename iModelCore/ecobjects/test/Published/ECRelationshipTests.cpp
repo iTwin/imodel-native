@@ -560,6 +560,7 @@ TEST_F (ECRelationshipTests, TestsRelationshipConstraints)
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase));
 
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classB)) << "ClassB is the constraint class so it should work ";
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().SetAbstractConstraint(*classB)) << "ClassB is the constraint class so adding it as the abstract constraint should work.";
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classC)) << "ClassC is deriving from ClassA so it should work too";
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetSource().AddClass(*classA)) << "ClassA is the base class of ClassB but violates the base constraints(expects ClassB or bigger)";
 
@@ -614,45 +615,6 @@ TEST_F (ECRelationshipTests, TestRelationshipMultiplicityConstraint)
     relationClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::OneMany());
     relationClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
     ASSERT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClassBase));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECRelationshipTests, TestRoleLabelInheritance)
-    {
-    ECSchemaPtr schemaPtr;
-    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
-
-    ECSchemaP ecSchema = schemaPtr.get();
-
-    ECRelationshipClassP relationClass;
-    ecSchema->CreateRelationshipClass(relationClass, "RelClass");
-    relationClass->SetStrength(StrengthType::Referencing);
-    relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    EXPECT_TRUE(Utf8String::IsNullOrEmpty(relationClass->GetSource().GetInvariantRoleLabel().c_str())) << "The Source constraint's roleLabel is expected to be empty when a relationship class is first created.";
-    EXPECT_TRUE(Utf8String::IsNullOrEmpty(relationClass->GetTarget().GetInvariantRoleLabel().c_str())) << "The Target constraint's roleLabel is expected to be empty when a relationship class is first created.";
-
-    ECRelationshipClassP relationClassBase;
-    ecSchema->CreateRelationshipClass(relationClassBase, "RelBaseClass");
-    relationClassBase->SetStrength(StrengthType::Referencing);
-    relationClassBase->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    relationClassBase->GetSource().SetRoleLabel("Test Source");
-    relationClassBase->GetTarget().SetRoleLabel("Test Target");
-
-    EXPECT_TRUE(relationClassBase->GetSource().IsRoleLabelDefined()) << "The Source constraint's role label was set, so it should be defined.";
-    EXPECT_TRUE(relationClassBase->GetTarget().IsRoleLabelDefined()) << "The Target constraint's role label was set, so it should be defined.";
-    EXPECT_TRUE(relationClassBase->GetSource().IsRoleLabelDefinedLocally()) << "The Source constraint's role label was set locally, so it should be defined locally.";
-    EXPECT_TRUE(relationClassBase->GetTarget().IsRoleLabelDefinedLocally()) << "The Target constraint's role label was set locally, so it should be defined locally.";
-
-    ASSERT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase)) << "There should not be any conflicts between the class and the base class trying to be added.";
-
-    EXPECT_STREQ("Test Source", relationClass->GetSource().GetInvariantRoleLabel().c_str()) << "The Source constraint should find be able to find the role label from base relationship.";
-    EXPECT_STREQ("Test Target", relationClass->GetTarget().GetInvariantRoleLabel().c_str()) << "The Target constraint should find be able to find the role label from base relationship.";
-    EXPECT_TRUE(relationClass->GetSource().IsRoleLabelDefined()) << "The Source constraint's role label was set in a base class, so it should be defined.";
-    EXPECT_TRUE(relationClass->GetTarget().IsRoleLabelDefined()) << "The Target constraint's role label was set in a base class, so it should be defined.";
-    EXPECT_FALSE(relationClass->GetSource().IsRoleLabelDefinedLocally()) << "The Source constraint's role label was set in a base class, so it should not be locally defined.";
-    EXPECT_FALSE(relationClass->GetTarget().IsRoleLabelDefinedLocally()) << "The Target constraint's role label was set in a base class, so it should not be locally defined.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -737,106 +699,18 @@ TEST_F(ECRelationshipTests, TestAbstractConstraint)
     relationClass->GetTarget().AddClass(*entityClassC);
     relationClass->GetTarget().SetRoleLabel("ARelB (Reversed)");
 
-    EXPECT_FALSE(relationClass->GetSource().IsAbstractConstraintDefinedLocally()) << "The Source Constraint's Abstract Constraint should not be locally defined since there is only one .";
-    EXPECT_TRUE(relationClass->GetSource().IsAbstractConstraintDefined()) << "The Source Constraint's Abstract Constraint is implicity set therefore should return true.";
-    EXPECT_STREQ("A", relationClass->GetSource().GetAbstractConstraint()->GetName().c_str());
-    EXPECT_FALSE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint should be implicity set therefore not locally defined.";
-    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint should be implicity set since therefore should return true.";
-    EXPECT_STREQ("C", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+    EXPECT_FALSE(relationClass->GetSource().IsAbstractConstraintDefined()) << "The Source Constraint's Abstract Constraint is implicitly set therefore should be false.";
+    EXPECT_STREQ("A", relationClass->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should be implicitly set to the only constraint class.";
+    EXPECT_FALSE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint should be implicitly set since therefore should be false.";
+    EXPECT_STREQ("C", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should be implicitly set to the only constraint class.";
 
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*entityClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint cannot be set to B because C is not nor derived from B.";
     entityClassC->AddBaseClass(*entityClassB); // Making C derive from B
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint can now be set because B is a base class of C";
 
-    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint is explicitly set therefore should be locally defined.";
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint is locally set therefore should return true.";
     EXPECT_STREQ("B", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipTests, TestInheritedAbstractConstraint)
-    {
-    ECSchemaPtr schemaPtr;
-    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
-
-    ECSchemaP ecSchema = schemaPtr.get();
-
-    ECEntityClassP entityClassA;
-    ECEntityClassP entityClassB;
-    ECEntityClassP entityClassC;
-    ECEntityClassP entityClassD;
-    ECEntityClassP commonBaseClass;
-    ECEntityClassP unrelatedClass;
-    ecSchema->CreateEntityClass(unrelatedClass, "UnrelatedClass");
-    ecSchema->CreateEntityClass(commonBaseClass, "BaseClass");
-    ecSchema->CreateEntityClass(entityClassA, "A");
-    
-    ecSchema->CreateEntityClass(entityClassB, "B");
-    entityClassB->AddBaseClass(*commonBaseClass);
-
-    ecSchema->CreateEntityClass(entityClassC, "C");
-    entityClassC->AddBaseClass(*commonBaseClass);
-    entityClassC->AddBaseClass(*entityClassB);
-    
-    ecSchema->CreateEntityClass(entityClassD, "D");
-    entityClassD->AddBaseClass(*commonBaseClass);
-    entityClassD->AddBaseClass(*entityClassC);
-
-    ECRelationshipClassP relationClass;
-    ecSchema->CreateRelationshipClass(relationClass, "BaseRelationship");
-    relationClass->SetStrength(StrengthType::Referencing);
-    relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    relationClass->SetClassModifier(ECClassModifier::Abstract);
-    relationClass->GetSource().AddClass(*entityClassA);
-    relationClass->GetSource().SetRoleLabel("BaseRelationship");
-    relationClass->GetTarget().SetAbstractConstraint(*commonBaseClass);
-    relationClass->GetTarget().AddClass(*entityClassB);
-    relationClass->GetTarget().SetRoleLabel("BaseRelationship (Reversed)");
-
-    ECRelationshipClassP relationClass2;
-    ecSchema->CreateRelationshipClass(relationClass2, "DerivedRelationship");
-    relationClass2->SetStrength(StrengthType::Referencing);
-    relationClass2->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    relationClass2->SetClassModifier(ECClassModifier::Abstract);
-
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClass)) << "Adding a base class should succeed since there are no constraint classes on the derived class.";
-    
-    EXPECT_TRUE(relationClass2->GetSource().IsAbstractConstraintDefined()) << "The abstract constraint should be inherited from the base relationship.";
-    EXPECT_FALSE(relationClass2->GetSource().IsAbstractConstraintDefinedLocally()) << "The abstract constraint should be inherited from the base relationship, therefore not defined locally.";
-    EXPECT_STREQ("A", relationClass2->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
-    
-    EXPECT_TRUE(relationClass2->GetTarget().IsAbstractConstraintDefined()) << "The abstract constraint should be inherited from the base relationship.";
-    EXPECT_FALSE(relationClass2->GetTarget().IsAbstractConstraintDefinedLocally()) << "The abstract constraint should be inherited from the base relationship, therefore not defined locally.";
-    EXPECT_STREQ("BaseClass", relationClass2->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
-
-    ECRelationshipClassP relationClass3;
-    ecSchema->CreateRelationshipClass(relationClass3, "DerivedRelationship2");
-    relationClass3->SetStrength(StrengthType::Referencing);
-    relationClass3->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    relationClass3->SetClassModifier(ECClassModifier::Abstract);
-    
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass3->AddBaseClass(*relationClass2)) << "Adding a base class should succeed since there are no constraint classes on the derived class.";
-    EXPECT_TRUE(relationClass3->GetSource().IsAbstractConstraintDefined()) << "The abstract constraint should be inherited from the base relationship.";
-    EXPECT_FALSE(relationClass3->GetSource().IsAbstractConstraintDefinedLocally()) << "The abstract constraint should be inherited from the base relationship, therefore not defined locally.";
-    EXPECT_STREQ("A", relationClass3->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
-    EXPECT_TRUE(relationClass3->GetTarget().IsAbstractConstraintDefined()) << "The abstract constraint should be inherited from the base relationship.";
-    EXPECT_FALSE(relationClass3->GetTarget().IsAbstractConstraintDefinedLocally()) << "The abstract constraint should be inherited from the base relationship, therefore not defined locally.";
-    EXPECT_STREQ("BaseClass", relationClass3->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
-
-    relationClass3->GetSource().AddClass(*entityClassC);
-    EXPECT_TRUE(relationClass3->GetSource().IsAbstractConstraintDefined()) << "The abstract constraint should still be defined.";
-    EXPECT_STREQ("A", relationClass3->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
-
-    relationClass3->GetTarget().AddClass(*entityClassC);
-    EXPECT_EQ(1, relationClass3->GetTarget().GetConstraintClasses().size()) << "The number of constraint classes should increase to 1 when EntityClassC.";
-    relationClass3->GetTarget().AddClass(*entityClassD);
-    EXPECT_EQ(2, relationClass3->GetTarget().GetConstraintClasses().size()) << "The number of constraint classes should increase to 2 when EntityClassD.";
-
-    relationClass3->GetTarget().AddClass(*unrelatedClass);
-    EXPECT_EQ(2, relationClass3->GetTarget().GetConstraintClasses().size()) << "The UnrelatedClass should not be added to the constraint since it violates the abstract constraint.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -880,6 +754,10 @@ TEST_F(ECRelationshipTests, TestRelationshipDelayedValidation)
     ECRelationshipClassP relationClass;
     ecSchema->CreateRelationshipClass(relationClass, "relClass", false);
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*baseRelationClass));
+    relationClass->GetSource().SetRoleLabel("Source");
+    relationClass->GetTarget().SetRoleLabel("Target");
+    relationClass->GetSource().AddClass(*entityClassA);
+    relationClass->GetTarget().AddClass(*entityClassB);
     EXPECT_TRUE(relationClass->Verify()) << "Most attributes that are required on a relationship can be inherited so when the base class is added it should be valid.";
     EXPECT_TRUE(relationClass->GetIsVerified());
 
@@ -911,63 +789,6 @@ TEST_F(ECRelationshipTests, TestRelationshipSerialization)
     ECSchemaPtr roundTripSchema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(roundTripSchema, serializedSchemaXml.c_str(), *context)) << "Schema should fail deserialization because it is an invalid 3.1 schema.";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipTests, TestRelationshipConstraintClassInheritance)
-    {
-    ECSchemaPtr schemaPtr;
-    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
-
-    ECSchemaP ecSchema = schemaPtr.get();
-
-    ECEntityClassP entityClassA;
-    ECEntityClassP entityClassB;
-    ECEntityClassP entityClassC;
-    ECRelationshipClassP baseRelationClass;
-    ECRelationshipClassP derivedRelationClass;
-
-    ecSchema->CreateEntityClass(entityClassA, "A");
-    ecSchema->CreateEntityClass(entityClassB, "B");
-    ecSchema->CreateEntityClass(entityClassC, "C");
-
-    entityClassC->AddBaseClass(*entityClassB);
-
-    ecSchema->CreateRelationshipClass(baseRelationClass, "baseRelClass");
-    baseRelationClass->SetStrength(StrengthType::Referencing);
-    baseRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    baseRelationClass->SetClassModifier(ECClassModifier::Abstract);
-    baseRelationClass->GetSource().SetRoleLabel("Source");
-    baseRelationClass->GetSource().AddClass(*entityClassA);
-    baseRelationClass->GetTarget().SetRoleLabel("Target");
-    baseRelationClass->GetTarget().AddClass(*entityClassB);
-    EXPECT_TRUE(baseRelationClass->Verify());
-
-    ecSchema->CreateRelationshipClass(derivedRelationClass, "derivedRelClass");
-    derivedRelationClass->SetStrength(StrengthType::Referencing);
-    derivedRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    derivedRelationClass->SetClassModifier(ECClassModifier::Sealed);
-    derivedRelationClass->AddBaseClass(*baseRelationClass);
-    derivedRelationClass->GetSource().SetRoleLabel("Source");
-    derivedRelationClass->GetTarget().SetRoleLabel("Target");
-    EXPECT_TRUE(derivedRelationClass->Verify());
-    EXPECT_EQ(1, derivedRelationClass->GetSource().GetConstraintClasses().size()) << "The derived Source Constraint should get the base constraint's classes.";
-    EXPECT_EQ(1, derivedRelationClass->GetTarget().GetConstraintClasses().size()) << "The derived Target Constraint should get the base constraint's classes.";;
-
-    baseRelationClass->GetTarget().SetAbstractConstraint(*entityClassB);
-    baseRelationClass->GetTarget().AddClass(*entityClassC);
-
-    EXPECT_EQ(2, derivedRelationClass->GetTarget().GetConstraintClasses().size()) << "The derived relationship should get the updated constraint class list when the base relationship changes.";
-
-    derivedRelationClass->GetTarget().AddClass(*entityClassC);
-    EXPECT_EQ(1, derivedRelationClass->GetTarget().GetConstraintClasses().size()) << "The derived relationship should now get it's own constraint class instead of getting the inherited ones.";
-
-    derivedRelationClass->RemoveBaseClass(*baseRelationClass);
-    EXPECT_FALSE(derivedRelationClass->Verify());
-    EXPECT_EQ(0, derivedRelationClass->GetSource().GetConstraintClasses().size());
-    EXPECT_EQ(1, derivedRelationClass->GetTarget().GetConstraintClasses().size());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

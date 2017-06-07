@@ -91,12 +91,5 @@ struct EntityValidator : IECClassValidator
     bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsEntityClass();}
 };
 
-struct RelationshipValidator : IECClassValidator
-{
-    // Relationship local definition validation
-    ECObjectsStatus Validate(ECClassCR ecClass) const override;
-    bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsRelationshipClass();}
-    ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType) const;
-};
 END_BENTLEY_ECOBJECT_NAMESPACE
 

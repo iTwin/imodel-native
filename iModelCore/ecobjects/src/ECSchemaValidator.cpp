@@ -58,9 +58,6 @@ ECSchemaValidatorP ECSchemaValidator::GetSingleton()
 
         IECClassValidatorPtr entityValidator = new EntityValidator();
         ECSchemaValidatorSingleton->AddClassValidator(entityValidator);
-
-        IECClassValidatorPtr relationshipValidator = new RelationshipValidator();
-        ECSchemaValidatorSingleton->AddClassValidator(relationshipValidator);
         }    
 
     return ECSchemaValidatorSingleton;
@@ -237,66 +234,6 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
         status = ECObjectsStatus::Error;
         }
     
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  04/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
-    {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-    ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
-    if (nullptr == relClass)
-        return status;
-
-    ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
-    ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
-    
-    // Validate both target and source.  If one of them fails, the class fails.
-    ECObjectsStatus targetStatus, sourceStatus;
-    targetStatus = RelationshipValidator::CheckLocalDefinitions(targetConstraint, "Target");
-    sourceStatus = RelationshipValidator::CheckLocalDefinitions(sourceConstraint, "Source");
-
-    status = (ECObjectsStatus::Error == targetStatus) || (ECObjectsStatus::Error == sourceStatus) ? ECObjectsStatus::Error : ECObjectsStatus::Success;
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  04/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType) const
-    {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-    Utf8String className = constraint.GetRelationshipClass().GetFullName();
-    if (!constraint.AreConstraintClassesDefinedLocally())
-        {
-        LOG.errorv("Relationship class '%s' constraint does not define any constraint classes defined locally in %s. Each constraint must locally define at least one constraint class.",
-            className.c_str(), constraintType.c_str());
-
-        status = ECObjectsStatus::Error;
-        }
-
-    if (!constraint.IsAbstractConstraintDefinedLocally() && constraint.GetConstraintClasses().size() > 1)
-        {
-        if (constraint.AreConstraintClassesDefinedLocally())
-            LOG.errorv("Relationship class '%s' has more than one constraint class but does not have an abstract constraint in %s. An abstract constraint is required when there are more than one constraint classes defined.",
-                className.c_str(), constraint.GetAbstractConstraint()->GetFullName(), constraintType.c_str());
-        else
-            LOG.errorv("Relationship class '%s' must define one constraint class locally in %s, or if multiple constraint classes are desired, then an abstract constraint is required.",
-               className.c_str(), constraintType.c_str());
-
-        status = ECObjectsStatus::Error;
-        }
-
-    if (!constraint.IsRoleLabelDefinedLocally())
-        {
-        LOG.errorv("Relationship class '%s' has a role label, '%s', that is not defined locally in %s. Each constraint must define a role label locally.",
-            className.c_str(), constraint.GetRoleLabel().c_str(), constraintType.c_str());
-
-        status = ECObjectsStatus::Error;
-        }
-
     return status;
     }
 

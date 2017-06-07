@@ -1575,20 +1575,17 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                     return ECObjectsStatus::SchemaInUse;
                 }
 
-            if (targetConstraint.IsAbstractConstraintDefinedLocally())
+            if (targetConstraint.IsAbstractConstraintDefined())
                 {
                 if (targetConstraint.GetAbstractConstraint()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
 
-            if (targetConstraint.AreConstraintClassesDefinedLocally())
+            for (auto target : relClass->GetTarget().GetConstraintClasses())
                 {
-                for (auto target : relClass->GetTarget().GetConstraintClasses())
+                if (target->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     {
-                    if (target->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
-                        {
-                        return ECObjectsStatus::SchemaInUse;
-                        }
+                    return ECObjectsStatus::SchemaInUse;
                     }
                 }
 
@@ -1599,20 +1596,17 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                     return ECObjectsStatus::SchemaInUse;
                 }
 
-            if (sourceConstraint.IsAbstractConstraintDefinedLocally())
+            if (sourceConstraint.IsAbstractConstraintDefined())
                 {
                 if (sourceConstraint.GetAbstractConstraint()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
 
-            if (sourceConstraint.AreConstraintClassesDefinedLocally())
+            for (auto source : relClass->GetSource().GetConstraintClasses())
                 {
-                for (auto source : relClass->GetSource().GetConstraintClasses())
+                if (source->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     {
-                    if (source->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
-                        {
-                        return ECObjectsStatus::SchemaInUse;
-                        }
+                    return ECObjectsStatus::SchemaInUse;
                     }
                 }
             }

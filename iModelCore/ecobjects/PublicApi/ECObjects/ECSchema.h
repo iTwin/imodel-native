@@ -2103,8 +2103,6 @@ private:
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
 
-    ECObjectsStatus             _SetRoleLabel(Utf8CP value);
-
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
@@ -2143,13 +2141,10 @@ public:
     
     //! Get the invariant label of the constraint role in the relationship.
     //! @remarks If the role label is not defined on this constraint it will be inherited from its base constraint, if one exists.
-    ECOBJECTS_EXPORT Utf8String const GetInvariantRoleLabel() const;
+    Utf8String const GetInvariantRoleLabel() const {return m_roleLabel;}
 
     //! Determine whether the label of the constraint role has been set explicitly set on this constraint or inherited from a base constraint.
     bool IsRoleLabelDefined() const {return GetInvariantRoleLabel().length() > 0;}
-    
-    //! Determine whether the label of the constraint role has been set explicitly set on this constraint and not inherited from a base constraint.
-    bool IsRoleLabelDefinedLocally() const {return m_roleLabel.length() > 0;}
 
     //! Sets the bool value of whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
     //! @param[in] isPolymorphic String representation of true/false
@@ -2192,11 +2187,8 @@ public:
     //! @return The abstract constraint, ECEntityClass, if one is defined, if one cannot be found nullptr is returned.
     ECOBJECTS_EXPORT ECEntityClassCP const GetAbstractConstraint() const;
     
-    //! Determine whether the abstract constraint is set in this constraint or in a base constraint.
-    ECOBJECTS_EXPORT bool IsAbstractConstraintDefined() const;
-
-    //! Determine whether the abstract constraint is explicitly or implicitly set on this constraint.
-    bool IsAbstractConstraintDefinedLocally() const {return nullptr != m_abstractConstraint;}
+    //! Determine whether the abstract constraint is set in this constraint.
+    bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}
 
     //! Add the specified entity class to the constraint. 
     //! @param[in] classConstraint  The ECEntityClass to add as a constraint class
@@ -2208,14 +2200,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECEntityClassCR classConstraint);
 
     //! Removes all constraint classes.
-    ECOBJECTS_EXPORT void RemoveConstraintClasses();
+    void RemoveConstraintClasses() {m_constraintClasses.clear();}
 
     //! Returns the classes applied to the constraint.
-    //! @remarks If there are no classes defined in this constraint, the classes from the constraint in the base relationship, if one exists, will be returned.
-    ECOBJECTS_EXPORT ECRelationshipConstraintClassList const & GetConstraintClasses() const;
-
-    //! Determine whether the constraint classes are defined in this constraint of the relationship and not inherited from a constraint in a base relationship.
-    bool AreConstraintClassesDefinedLocally() const {return m_constraintClasses.size() > 0;}
+    ECRelationshipConstraintClassList const & GetConstraintClasses() const {return m_constraintClasses;}
 
     ECOBJECTS_EXPORT bool SupportsClass(ECClassCR ecClass) const;
     
@@ -3161,6 +3149,16 @@ public:
     bool OriginalECXmlVersionAtLeast(ECVersion version) const { return ((m_originalECXmlVersionMajor << 16) | m_originalECXmlVersionMinor) >= static_cast<uint32_t>(version); }
     //! Returns true if the original xml version is less than the input ECVersion
     bool OriginalECXmlVersionLessThan(ECVersion version) const { return ((m_originalECXmlVersionMajor << 16) | m_originalECXmlVersionMinor) < static_cast<uint32_t>(version); }
+
+    uint32_t GetOriginalECXmlVersionMajor() const {return m_originalECXmlVersionMajor;} //!< Gets the original major xml version.
+    uint32_t GetOriginalECXmlVersionMinor() const {return m_originalECXmlVersionMinor;} //!< Gets the original minor xml version.
+
+    //! Sets the original ECXml version of the schema. 
+    //! @remarks This method is intended for internal use only.
+    //! @param[in] major The version number to set as the major ECXml version
+    //! @param[in] minor The version number to set as the minor ECXml version
+    //! @return ECObjectsStatus::Success if the ECXml version is successfully set.
+    ECObjectsStatus SetOriginalECXmlVersion(uint32_t major, uint32_t minor) { m_originalECXmlVersionMajor = major; m_originalECXmlVersionMinor = minor; return ECObjectsStatus::Success; }
 
     ECVersion GetECVersion() const {return m_ecVersion;} //!< Gets the EC Version of the schema.
     bool IsECVersion(ECVersion ecVersion) const {return m_ecVersion == ecVersion;} //!< Returns true if this schema's EC version matches the given ECVersion
