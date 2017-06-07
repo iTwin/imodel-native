@@ -172,6 +172,7 @@ void CurlConstructor::RefreshToken()
     
     delete lpwstrToken;
     delete charToken;
+    CCApi_FreeApi(api);
     }
 
 //-------------------------------------------------------------------------------------
