@@ -55,19 +55,19 @@ typedef RefCountedPtr<IScalableMeshProgress>            IScalableMeshProgressPtr
 struct IScalableMeshProgressListener
     {
     public:
-        virtual void CheckContinueOnProgress(const IScalableMeshProgressPtr progress) const {};
+        virtual void CheckContinueOnProgress(const IScalableMeshProgress* progress) const {};
     };
 
 struct IScalableMeshProgress : public RefCountedBase
     {
     /*__PUBLISH_SECTION_END__*/
-    private:
-        const IScalableMeshProgressListener* m_listener;
 
     protected:
         virtual bool _IsCanceled() const =0 ;
         virtual void _Cancel() = 0;
 
+        virtual bool _AddListener(const IScalableMeshProgressListener& listener) = 0;
+        virtual void _UpdateListeners() const = 0;
         virtual std::atomic<ScalableMeshStep> const& _GetProgressStep() const = 0;
         virtual std::atomic<ScalableMeshStepProcess> const& _GetProgressStepProcess() const = 0;
         virtual int _GetTotalNumberOfSteps() const = 0;
@@ -90,16 +90,9 @@ struct IScalableMeshProgress : public RefCountedBase
 
     BENTLEY_SM_EXPORT static IScalableMeshProgressPtr Create(const ScalableMeshProcessType& processType, IScalableMeshPtr smPtr);
 
-    BENTLEY_SM_EXPORT void SetListener(const IScalableMeshProgressListener& listener)
-        {
-        m_listener = &listener;
-        }
+    BENTLEY_SM_EXPORT bool AddListener(const IScalableMeshProgressListener& listener);
 
-    BENTLEY_SM_EXPORT const IScalableMeshProgressListener* GetListener() const
-        {
-        return m_listener;
-        }
-
+    BENTLEY_SM_EXPORT void UpdateListeners() const;
 
     BENTLEY_SM_EXPORT std::atomic<ScalableMeshStep> const& GetProgressStep() const;
     BENTLEY_SM_EXPORT std::atomic<ScalableMeshStepProcess> const& GetProgressStepProcess() const;

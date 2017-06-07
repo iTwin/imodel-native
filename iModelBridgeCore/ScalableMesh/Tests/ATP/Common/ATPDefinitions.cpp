@@ -4748,21 +4748,20 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status);
+    IScalableMeshPtr smPtr = IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status);
 
-    if (smFile != 0 && status == SUCCESS)
+    if (smPtr != 0 && status == SUCCESS)
         {
         t = clock();
         if (changeGeometricError)
             {
-            status = smFile->ChangeGeometricError(cloudContainer, cloudName, server, geometricError);
+            status = smPtr->ChangeGeometricError(cloudContainer, cloudName, server, geometricError);
             }
         else
             {
-            auto progress = IScalableMeshProgress::Create(ScalableMeshProcessType::CONVERT_3DTILES, smFile);
             struct ProgressListener : IScalableMeshProgressListener
                 {
-                virtual void CheckContinueOnProgress(const IScalableMeshProgressPtr progress) const override
+                virtual void CheckContinueOnProgress(const IScalableMeshProgress* progress) const override
                     {
                     auto stepString = progress->GetProgressStep() == ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS ? "Saving index... " : "Saving data... ";
                     std::cout << std::setw(100) << "\r [" << std::this_thread::get_id()<< "] " << stepString << progress->GetProgress();
@@ -4775,8 +4774,16 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
                     };
                 };
             ProgressListener progressListener;
-            progress->SetListener(progressListener);
-            status = smFile->ConvertToCloud(cloudContainer, cloudName, server, progress);
+            auto progress = IScalableMeshProgress::Create(ScalableMeshProcessType::CONVERT_3DTILES, smPtr);
+            if (!progress->AddListener(progressListener))
+                {
+                status = smPtr->ConvertToCloud(cloudContainer, cloudName, server, progress);
+                }
+            else
+                {
+                result = L"FAILURE -> could not add listener in the ScalableMesh progress";
+                allTestPass = false;
+                }
             }
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";

@@ -1,4 +1,3 @@
-#include "ScalableMeshProgress.h"
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: STM/ScalableMeshProgress.cpp $
@@ -12,8 +11,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-//#include <ScalableMesh/IScalableMesh.h>
-
 #include "ScalableMeshProgress.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -35,6 +32,24 @@ bool IScalableMeshProgress::IsCanceled() const
 void IScalableMeshProgress::Cancel()
     {
     return _Cancel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Richard.Bois   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IScalableMeshProgress::AddListener(const IScalableMeshProgressListener& listener)
+    {
+    return _AddListener(listener);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Richard.Bois   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void IScalableMeshProgress::UpdateListeners() const
+    {
+    return _UpdateListeners();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -200,6 +215,30 @@ void ScalableMeshProgress::_Cancel()
 * @description
 * @bsimethod                                                  Richard.Bois   06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool ScalableMeshProgress::_AddListener(const IScalableMeshProgressListener& listener)
+    {
+    if (m_listener != nullptr)
+        {
+        assert(!"Only one listener is supported");
+        return false;
+        }
+    m_listener = &listener;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Richard.Bois   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshProgress::_UpdateListeners() const
+    {
+    m_listener->CheckContinueOnProgress(this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Richard.Bois   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 std::atomic<ScalableMeshStep> const& ScalableMeshProgress::_GetProgressStep() const
     {
     return m_currentStep;
@@ -232,7 +271,6 @@ std::atomic<ScalableMeshStep>& ScalableMeshProgress::_ProgressStep()
     {
     return m_currentStep;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @description

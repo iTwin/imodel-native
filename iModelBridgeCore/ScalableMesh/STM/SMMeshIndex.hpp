@@ -588,7 +588,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
         std::cout << "\nTime to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
         while (progress != nullptr && !distributor->empty())
             {
-            if (progress->GetListener()) progress->GetListener()->CheckContinueOnProgress(progress);
+            progress->UpdateListeners();
             if (progress->IsCanceled()) break;
             }
         distributor = nullptr; // join queue threads
@@ -5140,8 +5140,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
 
     while (m_progress != nullptr && !m_progress->IsCanceled() && m_progress->Progress() != 1.0)
         {
-        if (m_progress->GetListener()) m_progress->GetListener()->CheckContinueOnProgress(m_progress);
+        m_progress->UpdateListeners();
         }
+
     saveGroupsThread.join();
 
     if (m_progress != nullptr && m_progress->IsCanceled()) return SUCCESS;

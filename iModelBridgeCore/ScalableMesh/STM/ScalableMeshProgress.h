@@ -25,6 +25,7 @@ struct ScalableMeshProgress : public IScalableMeshProgress
 
     private:
 
+        const IScalableMeshProgressListener* m_listener;
         std::atomic<bool> m_canceled = 0;
         std::atomic<ScalableMeshStep> m_currentStep = ScalableMeshStep::STEP_NOT_STARTED;
         std::atomic<float> m_progressInStep = 0;
@@ -37,6 +38,9 @@ struct ScalableMeshProgress : public IScalableMeshProgress
 
         virtual bool _IsCanceled() const override;
         virtual void _Cancel() override;
+
+        virtual bool _AddListener(const IScalableMeshProgressListener& listener) override;
+        virtual void _UpdateListeners() const override;
 
         virtual std::atomic<ScalableMeshStep> const& _GetProgressStep() const override;
         virtual int _GetTotalNumberOfSteps() const override { return m_totalNSteps; }
