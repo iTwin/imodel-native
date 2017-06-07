@@ -758,8 +758,8 @@ bool reverseA,                  //!< [in] true to reverse pointA
 bvector<DPoint3d> &pointB,      //!< [in] points on second cap.
 bool reverseB,                  //!< [in] true to reverse pointA
 bool enableTriangulation = true,//!< [in] true to enable triangulation step
-bool edgeChainsPermitted = false,//! [in] true to enable chain step
-CurveTopologyId::Type chainType = CurveTopologyId::Type::Unknown
+bool edgeChainsPermitted = false,//!< [in] true to enable chain step
+CurveTopologyId::Type chainType = CurveTopologyId::Type::Unknown //!< [in] chainType
 );
 //! add edge chain(s) for points. (multiple chains if there are disconnects)
 GEOMDLLIMPEXP void AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points, bool addClosure = false);
