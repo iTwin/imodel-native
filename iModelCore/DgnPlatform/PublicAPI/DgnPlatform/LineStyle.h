@@ -677,7 +677,7 @@ protected:
     virtual         ~LsCompoundComponent        ();
     LsComponentPtr _Import(DgnImportContext& importer) const override;
     virtual LsRasterImageComponentP      _GetRasterImageComponent () override;
-    virtual bool        _HasRasterImageComponent () const;
+    virtual bool        _HasRasterImageComponent () const override;
 
 public:
     static LsCompoundComponentP  LoadCompoundComponent  (LsComponentReader*reader);
