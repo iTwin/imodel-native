@@ -11,3 +11,5 @@ NavigationECPropertyTests.InstanceWithNavProp_String
 
 MixinTest.MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass
 MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass
+
+SupplementalDeserializationTests.*

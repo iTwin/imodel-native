@@ -184,9 +184,12 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const 
             break;
             }
             case PRIMITIVETYPE_Integer:
-                if (!EXPECTED_CONDITION(jsonValueType == Json::intValue))
+                if (!EXPECTED_CONDITION(jsonValueType == Json::intValue || jsonValueType == Json::stringValue))
                     return ERROR;
-                status = ecValue.SetInteger(jsonValue.asInt());
+                if (jsonValue.isInt())
+                    status = ecValue.SetInteger(jsonValue.asInt());
+                else if (jsonValue.isString())
+                    status = ecValue.SetInteger(std::stoi(jsonValue.asCString()));
                 break;
             case PRIMITIVETYPE_Long:
                 if (!EXPECTED_CONDITION(jsonValueType == Json::stringValue  && "int64_t values need to be serialized as strings to allow use in Javascript"))
@@ -194,12 +197,14 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const 
                 status = ecValue.SetLong(BeJsonUtilities::Int64FromValue(jsonValue));
                 break;
             case PRIMITIVETYPE_Double:
-                if (!jsonValue.isConvertibleTo(Json::ValueType::realValue))
+                if (!jsonValue.isConvertibleTo(Json::ValueType::realValue) && !jsonValue.isString())
                     return ERROR;
                 if (jsonValue.isDouble())
                     status = ecValue.SetDouble(jsonValue.asDouble());
                 else if (jsonValue.isInt())
                     status = ecValue.SetDouble((double)jsonValue.asInt());
+                else if (jsonValue.isString())
+                    status = ecValue.SetDouble(std::stod(jsonValue.asCString()));
                 else
                     {
                     BeAssert(false && "Invalid type to convert to double");
