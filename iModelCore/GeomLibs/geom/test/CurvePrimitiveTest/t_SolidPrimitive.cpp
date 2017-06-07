@@ -20,6 +20,43 @@ IntTriple (int j0, int j1, int j2)
     }
 };
 
+void SaveEdgeChains (PolyfaceHeaderR facets, bool showNoChainX)
+    {
+    BlockedVector<PolyfaceEdgeChain>&edgeChains = facets.EdgeChain ();
+    bvector<DPoint3d> &point = facets.Point ();
+    if (edgeChains.empty ())
+        {
+        if (showNoChainX)
+            {
+            DRange3d range = facets.PointRange ();
+            bvector<DPoint3d> xyz;
+            DPoint3d corners[8];
+            range.Get8Corners (corners);
+            xyz.push_back (corners[0]);
+            xyz.push_back (corners[3]);
+            xyz.push_back (range.LocalToGlobal (0.5, 0.5, 0.0));
+            xyz.push_back (corners[2]);
+            xyz.push_back (corners[1]);
+            Check::SaveTransformed (xyz);
+            }
+        }
+    else
+        {
+        bvector<DPoint3d> xyz;
+        for (auto &chain : edgeChains)
+            {
+            chain.GetXYZ (xyz, point);
+            size_t n = xyz.size (); // clumsy way to expose n to debugger.
+            if (n > 0)
+                {
+                Check::SaveTransformed (xyz);
+                xyz.clear ();
+                }
+            }
+        }
+    }
+
+
 void CheckPick (ISolidPrimitivePtr primitive, DRay3dCR ray, size_t expectedHits = -1, bvector<IntTriple> * expectedIds = NULL)
     {
     bvector<SolidLocationDetail> pickData;
@@ -2469,35 +2506,8 @@ void ShowEdgeChains (bvector<IGeometryPtr> &geometry)
             Check::Shift (1.5 * DoubleOps::Max (range.XLength (), shift), 0,0);
             auto facets = builder->GetClientMeshPtr ();
             Check::SaveTransformed (*facets);
-            BlockedVector<PolyfaceEdgeChain>&edgeChains = facets->EdgeChain ();
-            bvector<DPoint3d> &point = facets->Point ();
             Check::Shift (0.0, 1.5 * DoubleOps::Max (range.YLength (), shift), 0);
-            if (edgeChains.empty ())
-                {
-                bvector<DPoint3d> xyz;
-                DPoint3d corners[8];
-                range.Get8Corners (corners);
-                xyz.push_back (corners[0]);
-                xyz.push_back (corners[3]);
-                xyz.push_back (range.LocalToGlobal (0.5, 0.5, 0.0));
-                xyz.push_back (corners[2]);
-                xyz.push_back (corners[1]);
-                Check::SaveTransformed (xyz);
-                }
-            else
-                {
-                bvector<DPoint3d> xyz;
-                for (auto &chain : edgeChains)
-                    {
-                    chain.GetXYZ (xyz, point);
-                    size_t n = xyz.size (); // clumsy way to expose n to debugger.
-                    if (n > 0)
-                        {
-                        Check::SaveTransformed (xyz);
-                        xyz.clear ();
-                        }
-                    }
-                }
+            SaveEdgeChains (*facets, true);
             }
         }
     Check::SetTransform (baseFrame);

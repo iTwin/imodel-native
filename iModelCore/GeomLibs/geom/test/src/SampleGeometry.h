@@ -65,3 +65,6 @@ double dyLeft,  //!< [in] vertical width of left bar (measured from top down
 double dxFillet,    //!< [in] x size under elliptic fillet
 double dyFillet    //!< [in] y size under elliptic fillet
 );
+
+
+void SaveEdgeChains (PolyfaceHeaderR facets, bool showNoChainX);

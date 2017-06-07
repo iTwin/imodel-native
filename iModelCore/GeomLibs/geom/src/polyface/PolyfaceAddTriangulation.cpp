@@ -9,7 +9,7 @@
 #include <Geom/cluster.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-void IPolyfaceConstruction::AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points)
+void IPolyfaceConstruction::AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points, bool addClosure)
     {
     bvector<size_t> pointIndex;
     bvector<PolyfaceEdgeChain> &chains = GetClientMeshR().EdgeChain ();
@@ -29,10 +29,20 @@ void IPolyfaceConstruction::AddEdgeChains (CurveTopologyId::Type type, uint32_t 
             {
             chains.push_back (PolyfaceEdgeChain (
                 CurveTopologyId (type, chainIndex)));
+            if (addClosure)
+                pointIndex.push_back (pointIndex.front ());
             chains.back ().AddZeroBasedIndices (pointIndex);
             pointIndex.clear ();
             }
         }
+    }
+
+void IPolyfaceConstruction::AddEdgeChainZeroBased (CurveTopologyId::Type type, uint32_t chainIndex, bvector <size_t> &pointIndices)
+    {
+    bvector<PolyfaceEdgeChain> &chains = GetClientMeshR().EdgeChain ();
+    chains.push_back (PolyfaceEdgeChain (
+        CurveTopologyId (type, chainIndex)));
+    chains.back ().AddZeroBasedIndices (pointIndices);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -264,6 +274,8 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> &inpoints)
             }
         }
     EndFace ();
+    if (GetFacetOptionsR ().GetEdgeChainsRequired ())
+        AddEdgeChains (CurveTopologyId::Type::TriangulationBoundary , 0, inpoints, true);
     return numFacet > 0;
     }
 

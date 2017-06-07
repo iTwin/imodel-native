@@ -750,9 +750,22 @@ GEOMDLLIMPEXP bool Stroke (CurveVectorCR curves, bvector<DPoint3d> &points, size
 GEOMDLLIMPEXP bool AddTriangulation (bvector<DPoint3d> &points);
 
 //! AddTriangulation on 2 sets of points, optionally reversing each.
-GEOMDLLIMPEXP void AddTriangulationPair (bvector<DPoint3d> &pointA, bool reverseA, bvector<DPoint3d> &pointB, bool reverseB);
+//! edgeChains are created only if enabled by both edgeChainsPermitted and GetEdgeChainsRequired ().
+GEOMDLLIMPEXP void AddTriangulationPair
+(
+bvector<DPoint3d> &pointA,      //!< [in] points on first cap
+bool reverseA,                  //!< [in] true to reverse pointA
+bvector<DPoint3d> &pointB,      //!< [in] points on second cap.
+bool reverseB,                  //!< [in] true to reverse pointA
+bool enableTriangulation = true,//!< [in] true to enable triangulation step
+bool edgeChainsPermitted = false,//! [in] true to enable chain step
+CurveTopologyId::Type chainType = CurveTopologyId::Type::Unknown
+);
 //! add edge chain(s) for points. (multiple chains if there are disconnects)
-GEOMDLLIMPEXP void AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points);
+GEOMDLLIMPEXP void AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points, bool addClosure = false);
+
+//! add a single edge chain with 0-based indices
+GEOMDLLIMPEXP void AddEdgeChainZeroBased (CurveTopologyId::Type type, uint32_t chainIndex, bvector <size_t> &pointIndices);
 
 //! Add a polygon
 GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> &points);
