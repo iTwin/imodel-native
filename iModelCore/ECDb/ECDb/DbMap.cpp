@@ -123,35 +123,46 @@ BentleyStatus DbMap::MapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaC
     if (schemas.empty())
         return SUCCESS;
 
+    PERFLOG_START("ECDb", "Schema import> Map schemas");
+
     if (SUCCESS != DoMapSchemas(ctx, schemas))
         return ERROR;
 
+    PERFLOG_START("ECDb", "Schema import> Persist mappings");
     if (SUCCESS != SaveDbSchema(ctx))
         {
         ClearCache();
         return ERROR;
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Persist mappings");
 
+    PERFLOG_START("ECDb", "Schema import> Create or update tables");
     if (SUCCESS != CreateOrUpdateRequiredTables())
         {
         ClearCache();
         return ERROR;
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Create or update tables");
 
+    PERFLOG_START("ECDb", "Schema import> Create or update indexes");
     if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
         {
         ClearCache();
         return ERROR;
         }
-    
+    PERFLOG_FINISH("ECDb", "Schema import> Create or update indexes");
+
+    PERFLOG_START("ECDb", "Schema import> Purge orphan tables");
     if (SUCCESS != PurgeOrphanTables())
         {
         ClearCache();
         return ERROR;
         }
-    
+    PERFLOG_FINISH("ECDb", "Schema import> Purge orphan tables");
+
     const BentleyStatus stat = ValidateDbMappings(m_ecdb, ctx.GetOptions() != SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
     ClearCache();
+    PERFLOG_FINISH("ECDb", "Schema import> Map schemas");
     return stat;
     }
 
@@ -230,27 +241,33 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
         }
 
     // Map mixin hierarchy before everything else. It does not map primary hierarchy and all classes map to virtual tables.
+    PERFLOG_START("ECDb", "Schema import> Map mixins");
     ctx.SetPhase(SchemaImportContext::Phase::MappingMixins);
     for (ECEntityClassCP mixin : rootMixins)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *mixin))
             return ERROR;
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Map mixins");
 
     // Starting with the root, recursively map the entire class hierarchy. 
+    PERFLOG_START("ECDb", "Schema import> Map entity classes");
     ctx.SetPhase(SchemaImportContext::Phase::MappingEntities);
     for (ECClassCP rootClass : rootClassList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootClass))
             return ERROR;
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Map entity classes");
 
+    PERFLOG_START("ECDb", "Schema import> Map relationships");
     ctx.SetPhase(SchemaImportContext::Phase::MappingRelationships);
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootRelationshipClass))
             return ERROR;
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Map relationships");
 
     ctx.SetPhase(SchemaImportContext::Phase::CreatingUserDefinedIndexes);
     for (auto& kvpair : ctx.GetClassMappingInfoCache())
@@ -390,7 +407,6 @@ ClassMappingStatus DbMap::AddClassMap(ClassMapPtr& classMap) const
 BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
     {
     m_ecdb.GetStatementCache().Empty();
-    StopWatch timer(true);
 
     int nCreated = 0;
     int nUpdated = 0;
@@ -422,8 +438,7 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
             }
         }
 
-    timer.Stop();
-    LOG.debugv("Created %d tables, updated %d tables, and %d tables were up-to-date (%.4f seconds).", nCreated, nUpdated, nWasUpToDate, timer.GetElapsedSeconds());
+    LOG.debugv("Created %d tables, updated %d tables, and %d tables were up-to-date.", nCreated, nUpdated, nWasUpToDate);
     return SUCCESS;
     }
 
@@ -720,7 +735,6 @@ BentleyStatus DbMap::GetClassMapsFromRelationshipEnd(SchemaImportContext& ctx, s
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
     {
-    StopWatch stopWatch(true);
     if (m_dbSchema.SaveOrUpdateTables() != SUCCESS)
         {
         BeAssert(false);
@@ -745,9 +759,6 @@ BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
         return ERROR;
 
     m_lightweightCache.Reset();
-    stopWatch.Stop();
-
-    LOG.debugv("Saving EC-DB mapping took %.4lf msecs.", stopWatch.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 

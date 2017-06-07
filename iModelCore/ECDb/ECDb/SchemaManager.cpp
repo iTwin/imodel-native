@@ -249,6 +249,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
         BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
+    PERFLOG_START("ECDb", "Schema import> Schema supplementation");
     bvector<ECSchemaCP> primarySchemas;
     bvector<ECSchemaP> suppSchemas;
     for (ECSchemaCP schema : schemasToImport)
@@ -299,6 +300,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
                 }
             }
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Schema supplementation");
 
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
     bvector<ECSchemaCP> primarySchemasOrderedByDependencies;
@@ -311,6 +313,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
 
     SchemaWriter schemaWriter(m_ecdb, context);
     return schemaWriter.ImportSchemas(schemasToMap, primarySchemasOrderedByDependencies);
+
     }
 
 /*---------------------------------------------------------------------------------------

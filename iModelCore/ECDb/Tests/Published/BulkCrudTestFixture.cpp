@@ -9,6 +9,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
+#include <Bentley/PerformanceLogger.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -452,7 +453,9 @@ void BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, BeFileName
     //BIS ECSchema needs this table to pre-exist
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)")) << ecdb.GetLastError().c_str();
     m_failed = false;
+    PERFLOG_START("ECDb ATP", "BIS schema import");
     ImportSchemasFromFolder(bisSchemaFolder);
+    PERFLOG_FINISH("ECDb ATP", "BIS schema import");
     }
 
 //---------------------------------------------------------------------------------------
@@ -462,7 +465,9 @@ void BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, BeFileName
 void BulkBisDomainCrudTestFixture::SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder)
     {
     CreateFakeBimFile(fileName, bisSchemaFolder);
+    PERFLOG_START("ECDb ATP", "BIS domain schema import");
     ImportSchemasFromFolder(domainSchemaFolder);
+    PERFLOG_FINISH("ECDb ATP", "BIS domain schema import");
     }
 
 //---------------------------------------------------------------------------------------

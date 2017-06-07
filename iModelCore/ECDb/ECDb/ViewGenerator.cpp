@@ -30,6 +30,8 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
 //static 
 BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
     {
+    PERFLOG_START("ECDb", "Schema import> Create updatable views");
+
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb,
                                      "SELECT distinct c.Id FROM " TABLE_Class " c, ec_ClassMap cm, " TABLE_ClassHasBaseClasses " cc "
@@ -66,6 +68,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
             return ERROR;
         }
 
+    PERFLOG_FINISH("ECDb", "Schema import> Create updatable views");
     return SUCCESS;
     }
 
@@ -248,6 +251,8 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 //static 
 BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
     {
+    PERFLOG_START("ECDb", "Schema import> Drop updatable views");
+
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT UpdatableViewName FROM ec_Table WHERE UpdatableViewName IS NOT NULL"))
         return ERROR;
@@ -260,6 +265,7 @@ BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
             return ERROR;
         }
 
+    PERFLOG_FINISH("ECDb", "Schema import> Drop updatable views");
     return SUCCESS;
     }
 
@@ -269,6 +275,7 @@ BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
 //static 
 BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     {
+    PERFLOG_START("ECDb", "Create ECClass views");
     if (ecdb.IsReadonly())
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
@@ -294,7 +301,9 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
         }
 
     stmt.Finalize();
-    return CreateECClassViews(ecdb, classIds);
+    const BentleyStatus stat = CreateECClassViews(ecdb, classIds);
+    PERFLOG_FINISH("ECDb", "Create ECClass views");
+    return stat;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -377,6 +386,8 @@ BentleyStatus ViewGenerator::CreateECClassView(ECDbCR ecdb, ClassMapCR classMap)
 //static 
 BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
     {
+    PERFLOG_START("ECDb", "Drop ECClass views");
+
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb,
                                      "SELECT ('DROP VIEW IF EXISTS [' || s.Alias || '.' || c.Name || '];') FROM ec_Class c "
@@ -390,6 +401,7 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
             return ERROR;
         }
 
+    PERFLOG_FINISH("ECDb", "Drop ECClass views");
     return SUCCESS;
     }
 

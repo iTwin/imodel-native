@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter const& issueReporter, bvector<ECN::ECSchemaCP> const& schemas)
     {
-    PERFLOG_START("ECDb", "SchemaValidation");
+    PERFLOG_START("ECDb", "Schema Validation");
     bool valid = true;
 
     ValidBaseClassesRule baseClassesRule;
@@ -58,7 +58,7 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter co
             }
         }
 
-    PERFLOG_FINISH("ECDb", "SchemaValidation");
+    PERFLOG_FINISH("ECDb", "Schema Validation");
     return valid;
     }
 

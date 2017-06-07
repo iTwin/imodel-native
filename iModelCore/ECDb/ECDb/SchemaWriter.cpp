@@ -14,6 +14,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies)
     {
+    PERFLOG_START("ECDb", "Schema import> Persist schemas");
+
     if (SUCCESS != ValidateSchemasPreImport(primarySchemasOrderedByDependencies))
         return ERROR;
 
@@ -37,6 +39,7 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
         return ERROR;
 
     schemasToMap.insert(schemasToMap.begin(), compareCtx.GetSchemasToImport().begin(), compareCtx.GetSchemasToImport().end());
+    PERFLOG_FINISH("ECDb", "Schema import> Persist schemas");
     return SUCCESS;
     }
 

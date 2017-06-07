@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "repopulate table " TABLE_ClassHierarchyCache);
+    PERFLOG_START("ECDb", "Repopulate table " TABLE_ClassHierarchyCache);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHierarchyCache))
         return ERROR;
 
@@ -37,7 +37,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
         return ERROR;
         }
 
-    PERFLOG_FINISH("ECDb", "repopulate table " TABLE_ClassHierarchyCache);
+    PERFLOG_FINISH("ECDb", "Repopulate table " TABLE_ClassHierarchyCache);
     return SUCCESS;
     }
 
@@ -47,7 +47,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
 //static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "repopulate table " TABLE_ClassHasTablesCache);
+    PERFLOG_START("ECDb", "Repopulate table " TABLE_ClassHasTablesCache);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHasTablesCache))
         return ERROR;
 
@@ -62,7 +62,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
                                         "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id"))
         return ERROR;
 
-    PERFLOG_FINISH("ECDb", "repopulate table " TABLE_ClassHasTablesCache);
+    PERFLOG_FINISH("ECDb", "Repopulate table " TABLE_ClassHasTablesCache);
     return SUCCESS;
     }
 

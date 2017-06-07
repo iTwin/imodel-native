@@ -71,6 +71,8 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Ty
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::SynchronizeExistingTables()
     {
+    PERFLOG_START("ECDb", "Schema import> Synchronize existing tables");
+
     UpdateTableCache();
 
     bvector<DbTable const*> tables;
@@ -136,10 +138,10 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
 
         table->GetEditHandleR().EndEdit();
         if (UpdateTable(*table) != SUCCESS)
-            return SUCCESS;
+            return ERROR;
         }
 
-   
+    PERFLOG_FINISH("ECDb", "Schema import> Synchronize existing tables");
     return SUCCESS;
     }
 
