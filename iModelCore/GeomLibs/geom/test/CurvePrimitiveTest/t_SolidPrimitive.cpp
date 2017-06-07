@@ -2445,6 +2445,64 @@ void ShowFacets (bvector<IGeometryPtr> &geometry)
     Check::Shift (0, 3.0 * range0.YLength (), 0);
     }
 
+void ShowEdgeChains (bvector<IGeometryPtr> &geometry)
+    {
+    auto baseFrame = Check::GetTransform ();
+    DRange3d range0;
+    range0.Init ();
+    double shift = 10.0;
+    for (size_t i = 0; i < geometry.size (); i++)
+        {
+        IGeometryPtr g = geometry[i];
+        DRange3d range;
+        ISolidPrimitivePtr primitive = g->GetAsISolidPrimitive ();
+        if (primitive.IsValid () && g->TryGetRange (range) )
+            {
+            SaveAndRestoreCheckTransform shifter (4.0 * DoubleOps::Max (range.XLength (), shift), 0,0);
+            range0.Extend (range.low);
+            range0.Extend (range.high);
+            IFacetOptionsPtr options = IFacetOptions::Create ();
+            options->SetEdgeChainsRequired (true);
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+            builder->AddSolidPrimitive (*primitive);
+            Check::SaveTransformed (*primitive);            
+            Check::Shift (1.5 * DoubleOps::Max (range.XLength (), shift), 0,0);
+            auto facets = builder->GetClientMeshPtr ();
+            Check::SaveTransformed (*facets);
+            BlockedVector<PolyfaceEdgeChain>&edgeChains = facets->EdgeChain ();
+            bvector<DPoint3d> &point = facets->Point ();
+            Check::Shift (0.0, 1.5 * DoubleOps::Max (range.YLength (), shift), 0);
+            if (edgeChains.empty ())
+                {
+                bvector<DPoint3d> xyz;
+                DPoint3d corners[8];
+                range.Get8Corners (corners);
+                xyz.push_back (corners[0]);
+                xyz.push_back (corners[3]);
+                xyz.push_back (range.LocalToGlobal (0.5, 0.5, 0.0));
+                xyz.push_back (corners[2]);
+                xyz.push_back (corners[1]);
+                Check::SaveTransformed (xyz);
+                }
+            else
+                {
+                bvector<DPoint3d> xyz;
+                for (auto &chain : edgeChains)
+                    {
+                    chain.GetXYZ (xyz, point);
+                    size_t n = xyz.size (); // clumsy way to expose n to debugger.
+                    if (n > 0)
+                        {
+                        Check::SaveTransformed (xyz);
+                        xyz.clear ();
+                        }
+                    }
+                }
+            }
+        }
+    Check::SetTransform (baseFrame);
+    Check::Shift (0, 5.0 * DoubleOps::Max (range0.YLength (), shift), 0);
+    }
 
 
 void AnnounceAllSolids (void (*function)(bvector<IGeometryPtr> &))
@@ -2501,5 +2559,15 @@ TEST(SolidPrimitive,Facets)
 
     AnnounceAllSolids (ShowFacets);
     Check::ClearGeometry ("SolidPrimitive.Facets");
+
+    }
+
+TEST(SolidPrimitive,EdgeChains)
+    {
+    Check::QuietFailureScope scoper;
+    //SampleGeometryCreator::AddAllSolidTypes (geometry);
+
+    AnnounceAllSolids (ShowEdgeChains);
+    Check::ClearGeometry ("SolidPrimitive.EdgeChains");
 
     }

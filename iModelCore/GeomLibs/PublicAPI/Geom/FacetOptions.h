@@ -751,6 +751,8 @@ GEOMDLLIMPEXP bool AddTriangulation (bvector<DPoint3d> &points);
 
 //! AddTriangulation on 2 sets of points, optionally reversing each.
 GEOMDLLIMPEXP void AddTriangulationPair (bvector<DPoint3d> &pointA, bool reverseA, bvector<DPoint3d> &pointB, bool reverseB);
+//! add edge chain(s) for points. (multiple chains if there are disconnects)
+GEOMDLLIMPEXP void AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points);
 
 //! Add a polygon
 GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> &points);
