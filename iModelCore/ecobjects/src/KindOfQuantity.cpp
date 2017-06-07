@@ -287,6 +287,27 @@ Json::Value KindOfQuantity::PresentationJson(BEU::QuantityCR qty, size_t indx, b
     return jval;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  06/2017
+//---------------------------------------------------------------------------------------
+Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
+    {
+    Json::Value arrayObj(Json::arrayValue);
+
+    bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
+    if (presentationUnits.size() > 0)
+        {
+        for (Formatting::FormatUnitSetCR fus : presentationUnits)
+            {
+            if (fus.HasProblem())
+                continue;
+
+            arrayObj.append(fus.ToText(useAlias));
+            }
+        }
+    return arrayObj;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 

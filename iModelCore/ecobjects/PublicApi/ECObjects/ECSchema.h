@@ -1883,6 +1883,9 @@ struct KindOfQuantity : NonCopyableClass
         void                SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; };
         bool                HasId() const { return m_kindOfQuantityId.IsValid(); };
         ECOBJECTS_EXPORT Json::Value PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias = true) const;
+
+        //! Return Json array of allowable presentation units.
+        ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
     };
 
 //struct KindOfQuantityFormatting
