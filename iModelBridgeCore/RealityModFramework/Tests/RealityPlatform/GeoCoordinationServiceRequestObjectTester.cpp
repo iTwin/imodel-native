@@ -259,8 +259,14 @@ TEST_P(SpatialEntityWithDetailsSpatialRequestFixture, SpatialEntityWithDetailsSp
 
     }
 
-INSTANTIATE_TEST_CASE_P(Default, SpatialEntityWithDetailsSpatialRequestFixture,
+INSTANTIATE_TEST_CASE_P(Classification, SpatialEntityWithDetailsSpatialRequestFixture,
                         ::testing::Combine(testing::Range(1, 9),
+                                           testing::Values(L"Id+eq+'1'"),
+                                           testing::Values(GeoCoordinationField::RawMetadataFormat),
+                                           testing::Values(true, false)));
+
+INSTANTIATE_TEST_CASE_P(CoordinationField, SpatialEntityWithDetailsSpatialRequestFixture,
+                        ::testing::Combine(testing::Range(1, 2),
                                            testing::Values(L"Id+eq+'1'"),
                                            testing::ValuesIn(GeoCoordinationServiceRequestsFixture::GetAllCoordinationField()),
                                            testing::Values(true, false)));

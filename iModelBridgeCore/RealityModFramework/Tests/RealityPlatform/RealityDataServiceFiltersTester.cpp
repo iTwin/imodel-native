@@ -8,6 +8,10 @@
 
 #include <Bentley/BeTest.h>
 #include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatform/RealityDataObjects.h>
+#include <ostream>
+
+using testing::ValuesIn;
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -184,3 +188,78 @@ TEST(RealityDataFilterCreator, GroupFiltersOR)
 	EXPECT_STREQ(filter.ToString().c_str(), "RealityDataId+eq+'MyRealityDataID'+or+ProjectId+eq+'MyProjectID'");
 	}
 
+//=====================================================================================
+//! @bsiclass                                  Remi.Charbonneau              06/2017
+//=====================================================================================
+struct RealityMap
+    {
+    friend std::ostream& operator<<(std::ostream& os, const RealityMap& obj)
+    {
+        return os
+            << "field: " << static_cast<int>(obj.field)
+            << " name: " << obj.name;
+    }
+
+    RealityDataField field;
+    Utf8String name;
+
+    RealityMap(RealityDataField field_, Utf8String name_) : field(field_), name(name_)
+        {}
+
+    static bvector<RealityMap> GetAllDataField()
+        {
+        bvector<RealityMap> realityDataFieldVector{};
+
+        realityDataFieldVector.emplace_back(RealityDataField::Id, "Id");
+        realityDataFieldVector.emplace_back(RealityDataField::OrganizationId, "OrganizationId");
+        realityDataFieldVector.emplace_back(RealityDataField::ContainerName, "ContainerName");
+        realityDataFieldVector.emplace_back(RealityDataField::Name, "Name");
+        realityDataFieldVector.emplace_back(RealityDataField::Dataset, "Dataset");
+        realityDataFieldVector.emplace_back(RealityDataField::Description, "Description");
+        realityDataFieldVector.emplace_back(RealityDataField::RootDocument, "RootDocument");
+        realityDataFieldVector.emplace_back(RealityDataField::Size, "Size");
+        realityDataFieldVector.emplace_back(RealityDataField::Classification, "Classification");
+        realityDataFieldVector.emplace_back(RealityDataField::Type, "Type");
+        realityDataFieldVector.emplace_back(RealityDataField::Streamed, "Streamed");
+        realityDataFieldVector.emplace_back(RealityDataField::Footprint, "Footprint");
+        realityDataFieldVector.emplace_back(RealityDataField::ThumbnailDocument, "ThumbnailDocument");
+        realityDataFieldVector.emplace_back(RealityDataField::MetadataUrl, "MetadataUrl");
+        realityDataFieldVector.emplace_back(RealityDataField::Copyright, "Copyright");
+        realityDataFieldVector.emplace_back(RealityDataField::TermsOfUse, "TermsOfUse");
+        realityDataFieldVector.emplace_back(RealityDataField::ResolutionInMeters, "ResolutionInMeters");
+        realityDataFieldVector.emplace_back(RealityDataField::AccuracyInMeters, "AccuracyInMeters");
+        realityDataFieldVector.emplace_back(RealityDataField::Visibility, "Visibility");
+        realityDataFieldVector.emplace_back(RealityDataField::Listable, "Listable");
+        realityDataFieldVector.emplace_back(RealityDataField::CreatedTimestamp, "CreatedTimestamp");
+        realityDataFieldVector.emplace_back(RealityDataField::ModifiedTimestamp, "ModifiedTimestamp");
+        realityDataFieldVector.emplace_back(RealityDataField::OwnedBy, "OwnedBy");
+        realityDataFieldVector.emplace_back(RealityDataField::Group, "Group");
+
+        return realityDataFieldVector;
+        }
+    };
+
+//=====================================================================================
+//! @bsiclass                                  Remi.Charbonneau              06/2017
+//=====================================================================================
+class RealityDataFieldFixture : public ::testing::TestWithParam<RealityMap> 
+    {
+
+    };
+
+//=====================================================================================
+//! @bsimethod                                Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_P(RealityDataFieldFixture, SortBy)
+    {
+    RealityDataPagedRequest request {};
+    request.SortBy(GetParam().field, true);
+
+    auto requestString = request.GetHttpRequestString();
+    EXPECT_TRUE(requestString.Contains(Utf8PrintfString("$orderby=%s", GetParam().name)));
+    }
+ 
+
+INSTANTIATE_TEST_CASE_P(Default,
+                        RealityDataFieldFixture,
+                        ValuesIn(RealityMap::GetAllDataField()));
