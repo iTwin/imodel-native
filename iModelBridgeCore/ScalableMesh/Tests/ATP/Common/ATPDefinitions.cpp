@@ -38,6 +38,7 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+#include <ScalableMesh/IScalableMeshProgress.h>
 
 #include <TerrainModel/Core/DTMDefs.h>
 #include <TerrainModel/TerrainModel.h>
@@ -4758,7 +4759,24 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
-            status = smFile->ConvertToCloud(cloudContainer, cloudName, server);
+            auto progress = IScalableMeshProgress::Create(ScalableMeshProcessType::CONVERT_3DTILES, smFile);
+            struct ProgressListener : IScalableMeshProgressListener
+                {
+                virtual void CheckContinueOnProgress(const IScalableMeshProgressPtr progress) const override
+                    {
+                    auto stepString = progress->GetProgressStep() == ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS ? "Saving index... " : "Saving data... ";
+                    std::cout << std::setw(100) << "\r [" << std::this_thread::get_id()<< "] " << stepString << progress->GetProgress();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                    //if (progress->GetProgressStep() == ScalableMeshStep::STEP_CONVERT_3DTILES_DATA && progress->GetProgress() > 0.01)
+                    //    {
+                    //    progress->Cancel();
+                    //    std::cout << "\nCanceled [" << (ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS ? "STEP_GENERATE_3DTILES_HEADERS" : "STEP_CONVERT_3DTILES_DATA") << "]" << std::endl;
+                    //    }
+                    };
+                };
+            ProgressListener progressListener;
+            progress->SetListener(progressListener);
+            status = smFile->ConvertToCloud(cloudContainer, cloudName, server, progress);
             }
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";

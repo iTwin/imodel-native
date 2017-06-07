@@ -60,6 +60,15 @@ __int64          ScalableMeshGroup::_GetPointCount()
     return ptCount;
     }
 
+uint64_t          ScalableMeshGroup::_GetNodeCount()
+    {
+    uint64_t nodeCount = 0;
+
+    for (auto& member : m_members)
+        nodeCount += member->GetNodeCount();
+    return nodeCount;
+    }
+
 bool          ScalableMeshGroup::_IsTerrain()
     {
     for (auto& member : m_members)

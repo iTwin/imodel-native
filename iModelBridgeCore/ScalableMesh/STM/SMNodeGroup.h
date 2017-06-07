@@ -140,7 +140,7 @@ struct SMGroupNodeIds : bvector<uint64_t> {
     };
 
 template <typename Type, typename Queue = std::queue<Type>>
-class SMNodeDistributor : Queue, std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> > {
+class SMNodeDistributor : public Queue, std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> > {
     typename Queue::size_type capacity;
     unsigned int m_concurrency;
     bool m_done = false;
@@ -150,7 +150,6 @@ class SMNodeDistributor : Queue, std::mutex, std::condition_variable, public HFC
 public:
     typedef HFCPtr<SMNodeDistributor<Type, Queue>> Ptr;
     SMNodeDistributor(unsigned int concurrency = std::thread::hardware_concurrency()
-                      //, unsigned int concurrency = 2
                       , typename Queue::size_type max_items_per_thread = 5000)
         : capacity{ concurrency * max_items_per_thread },
         m_concurrency{ concurrency }
@@ -184,19 +183,19 @@ public:
     ~SMNodeDistributor()
         {
         this->CancelAll();
-        {
-        std::unique_lock<std::mutex> lock(*this);
-        static std::atomic<uint64_t> lastNumberOfItems = Queue::size();
-        while (!wait_for(lock, 1000ms, [this]
-            {
-            return Queue::empty();
-            }))
-            {
-            std::lock_guard<mutex> clk(s_consoleMutex);
-            std::cout << std::setw(100) << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
-            lastNumberOfItems = Queue::size();
-            }
-        }
+        //{
+        //std::unique_lock<std::mutex> lock(*this);
+        //static std::atomic<uint64_t> lastNumberOfItems = Queue::size();
+        //while (!wait_for(lock, 1000ms, [this]
+        //    {
+        //    return Queue::empty();
+        //    }))
+        //    {
+        //    std::lock_guard<mutex> clk(s_consoleMutex);
+        //    std::cout << std::setw(100) << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
+        //    lastNumberOfItems = Queue::size();
+        //    }
+        //}
         for (auto &&thread : m_threads) if (thread.joinable()) thread.join();
         }
 
