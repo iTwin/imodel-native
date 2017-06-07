@@ -6,8 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <ECObjects/ECQuantityFormatting.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/Base64Utilities.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <json/value.h>
@@ -15,7 +17,7 @@
 BEGIN_UNNAMED_NAMESPACE
     BE_JSON_NAME(rawValue)
     BE_JSON_NAME(formattedValue)
-    BE_JSON_NAME(fusSpec)
+    BE_JSON_NAME(currentUnit)
 END_UNNAMED_NAMESPACE
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -968,125 +970,121 @@ void                 JsonEcInstanceWriter::AppendAccessString(Utf8String& compou
 // TODO: add koq process for all data types
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECValueCR ecValue, PrimitiveType propertyType, Utf8CP fusSpec)
+StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECValueCR ecValue, PrimitiveType propertyType, KindOfQuantityCP koq)
     {
+    ECQuantityFormattingStatus status = ECQuantityFormattingStatus::InvalidKOQ;
+
     // write the content according to type.
     switch (propertyType)
         {
-#if NOT_YET
         case PRIMITIVETYPE_Binary:
             {
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
+
             size_t      numBytes;
             const Byte* byteData;
             if (NULL != (byteData = ecValue.GetBinary(numBytes)))
                 {
                 Utf8String    byteString;
-                convertByteArrayToString(byteString, byteData, numBytes);
-                m_xmlWriter->WriteRaw(byteString.c_str());
+                Base64Utilities::Encode(byteString, byteData, numBytes);
+                valueToPopulate[propertyName] = byteString.c_str();
                 }
             return BSISUCCESS;
-            break;
             }
 
-            case PRIMITIVETYPE_IGeometry:
+        case PRIMITIVETYPE_IGeometry:
             {
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
+
             bmap<OrderedIGeometryPtr, BeExtendedData> extendedData;
             Utf8String beCgXml;
             BeXmlCGWriter::Write(beCgXml, *(ecValue.GetIGeometry()), &extendedData);
-            m_xmlWriter->WriteRaw(beCgXml.c_str());
-            //strcpy(outString, beCgXml.c_str());
+            valueToPopulate[propertyName] = beCgXml.c_str();
             return BSISUCCESS;
-            break;
             }
-#endif
+
         case PRIMITIVETYPE_Boolean:
             {
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
+
             valueToPopulate[propertyName] = ecValue.GetBoolean();
-            break;
+            return BSISUCCESS;
             }
 
         case PRIMITIVETYPE_DateTime:
             {
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
+
             valueToPopulate[propertyName] = ecValue.ToString();
-            break;
+            return BSISUCCESS;
             }
 
         case PRIMITIVETYPE_Double:
             {
-            if (fusSpec && *fusSpec)
+            if (koq)
                 {
-                // TODO: Quantities -- use fusSpec to get formatted string for value 
-                Utf8PrintfString formattedVal("%f", ecValue.GetDouble());
+                Utf8String formattedVal = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, 0, &status);
+                if (ECQuantityFormattingStatus::Success == status)
+                    {
+                    Json::Value quantityValue(Json::objectValue);
 
-                Json::Value quantityValue(Json::objectValue);
-                quantityValue[json_rawValue()] = ecValue.GetDouble();
-                quantityValue[json_formattedValue()] = formattedVal;
-                quantityValue[json_fusSpec()] = fusSpec;
+                    quantityValue[json_rawValue()] = ecValue.GetDouble();
+                    quantityValue[json_formattedValue()] = formattedVal;
+                    quantityValue[json_currentUnit()] = koq->GetDefaultPresentationUnit().ToText(true);
+                    valueToPopulate[propertyName] = quantityValue;
+                    return BSISUCCESS;
+                    }
+                }
 
-                valueToPopulate[propertyName] = quantityValue;
-                }
-            else
-                {
-                valueToPopulate[propertyName] = ecValue.GetDouble();
-                }
-            break;
+            valueToPopulate[propertyName] = ecValue.GetDouble();
+            return BSISUCCESS;
             }
 
         case PRIMITIVETYPE_Integer:
             {
-            if (fusSpec && *fusSpec)
-                {
-                // TODO: Quantities -- use fusSpec to get formatted string for value 
-                Utf8PrintfString formattedVal("%d", ecValue.GetDouble());
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
 
-                Json::Value quantityValue(Json::objectValue);
-                quantityValue[json_rawValue()] = ecValue.GetInteger();
-                quantityValue[json_formattedValue()] = formattedVal;
-                quantityValue[json_fusSpec()] = fusSpec;
-
-                valueToPopulate[propertyName] = quantityValue;
-                }
-            else
-                {
-                valueToPopulate[propertyName] = ecValue.GetInteger();
-                }
-            break;
+            valueToPopulate[propertyName] = ecValue.GetInteger();
+            return BSISUCCESS;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            if (fusSpec && *fusSpec)
-                {
-                // TODO: Quantities -- use fusSpec to get formatted string for value 
-                Json::Value quantityValue(Json::objectValue);
-                quantityValue[json_rawValue()] = ecValue.GetLong();
-                quantityValue[json_formattedValue()] = BeJsonUtilities::StringValueFromInt64(ecValue.GetLong());;
-                quantityValue[json_fusSpec()] = fusSpec;
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
 
-                valueToPopulate[propertyName] = quantityValue;
-                }
-            else
-                {
-                valueToPopulate[propertyName] = ecValue.GetLong();
-                }
-
-            break;
+            valueToPopulate[propertyName] = ecValue.GetLong();
+            return BSISUCCESS;
             }
 
         case PRIMITIVETYPE_Point2d:
             {
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
+
             return ECJsonUtilities::Point2dToJson(valueToPopulate[propertyName], ecValue.GetPoint2d());
             }
 
         case PRIMITIVETYPE_Point3d:
             {
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
+
             return ECJsonUtilities::Point3dToJson(valueToPopulate[propertyName], ecValue.GetPoint3d());
             }
 
         case PRIMITIVETYPE_String:
             {
+            if (koq)
+                BeAssert(false && "KOQ not yet support for this type");
+            
             valueToPopulate[propertyName] = ecValue.GetUtf8CP();
-            break;
+            return BSISUCCESS;
             }
 
         default:
@@ -1095,20 +1093,6 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
             return BSIERROR;
             }
         }
-
-    return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Bill.Steinbock                  05/2017
-//---------------------------------------------------------------------------------------
-static Utf8String getFusSpec(ECProperty const& primitiveProperty)
-    {
-    auto koq = primitiveProperty.GetKindOfQuantity();
-    if (koq)
-        return koq->GetName();
-
-    return "";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1120,9 +1104,9 @@ StatusInt     JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& val
     ECValue             ecValue;
     Utf8StringCR propertyName = primitiveProperty.GetName();
 
-    Utf8String fusSpec;
+    KindOfQuantityCP koq = nullptr;
     if (writeFormattedQuanties)
-        fusSpec = getFusSpec(primitiveProperty);
+        koq = primitiveProperty.GetKindOfQuantity();
 
     if (NULL == baseAccessString)
         {
@@ -1141,7 +1125,7 @@ StatusInt     JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& val
 
     PrimitiveType           propertyType = primitiveProperty.GetType();
 
-    StatusInt status = WritePrimitiveValue(valueToPopulate, propertyName.c_str(), ecValue, propertyType, fusSpec.c_str());
+    StatusInt status = WritePrimitiveValue(valueToPopulate, propertyName.c_str(), ecValue, propertyType, koq);
     return status;
     }
 
@@ -1191,9 +1175,9 @@ StatusInt     JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueTo
         PrimitiveType   memberType = arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
         Utf8CP          typeString = ECXml::GetPrimitiveTypeName(memberType);
 
-        Utf8String fusSpec;
+        KindOfQuantityCP koq = nullptr;
         if (writeFormattedQuanties)
-            fusSpec = getFusSpec(*primitiveProperty);
+            koq = primitiveProperty->GetKindOfQuantity();
 
         for (uint32_t index = 0; index < nElements; index++)
             {
@@ -1203,7 +1187,7 @@ StatusInt     JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueTo
                 break;
 
             // write the primitive value
-            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(entryObj, typeString, ecValue, memberType, fusSpec.c_str())))
+            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(entryObj, typeString, ecValue, memberType, koq)))
                 {
                 BeAssert(false);
                 return ixwStatus;
@@ -1269,7 +1253,7 @@ StatusInt     JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value
     thisAccessString.append(".");
 
     ECClassCR   structClass = structProperty.GetType();
-    WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, &thisAccessString);
+    WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, &thisAccessString, writeFormattedQuanties);
 
     return BSISUCCESS;
     }
