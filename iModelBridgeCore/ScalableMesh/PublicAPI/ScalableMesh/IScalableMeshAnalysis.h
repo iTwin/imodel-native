@@ -109,6 +109,7 @@ class IScalableMeshAnalysis abstract : public RefCountedBase
     protected:
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) = 0;
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) = 0;
+        virtual void _SetMaxThreadNumber(int num) =0;
 
     public:
         // Compute Volume between the 3SM and a given polygon
@@ -130,6 +131,12 @@ class IScalableMeshAnalysis abstract : public RefCountedBase
             {
             return _ComputeDiscreteVolume(polygon, anotherMesh, resolution, grid, pProgressListener);
             }
+
+        BENTLEY_SM_EXPORT void SetMaxThreadNumber(int num)
+            {
+            return _SetMaxThreadNumber(num);
+            }
+
     };
 
 typedef RefCountedPtr<IScalableMeshAnalysis>                          IScalableMeshAnalysisPtr;

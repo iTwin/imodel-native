@@ -47,7 +47,7 @@ bool SMProgressReport::_CheckContinueOnProgress(ISMProgressReport const& report)
 //=======================================================================================
 ScalableMeshAnalysis::ScalableMeshAnalysis(IScalableMesh* scMesh) : m_scmPtr(scMesh)
     {
-
+    m_ThreadNumber = omp_get_num_procs();
     }
 
 //=======================================================================================
@@ -222,9 +222,11 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     double m_xStep = grid.m_resolution;
     double m_yStep = grid.m_resolution;
 
-    int numProcs = omp_get_num_procs();
+    int numProcs = std::min(m_ThreadNumber, omp_get_num_procs());
     if (numProcs > 1)
         numProcs = numProcs - 1; // use all available CPUs minus one
+    if (numProcs <= 0)
+        numProcs = 1;
 
     const double progressStep = 1.0 / m_xSize;
     double progress = 0.0; // progress value between 0 and 1
@@ -421,9 +423,11 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     double m_xStep = grid.m_resolution;
     double m_yStep = grid.m_resolution;
 
-    int numProcs = omp_get_num_procs();
-    if (numProcs>1)
+    int numProcs = std::min(m_ThreadNumber, omp_get_num_procs());
+    if (numProcs > 1)
         numProcs = numProcs - 1; // use all available CPUs minus one
+    if (numProcs <= 0)
+        numProcs = 1;
 
     double progress = 0.0;
     double progressStep = 1.0 / m_xSize;
@@ -578,5 +582,11 @@ bool ScalableMeshAnalysis::_convertTo3SMSpace(const bvector<DPoint3d>& polygon, 
         }
     return DTMStatusInt::DTM_SUCCESS;
     }
+
+void ScalableMeshAnalysis::_SetMaxThreadNumber(int num)
+    {
+    m_ThreadNumber = num;
+    }
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

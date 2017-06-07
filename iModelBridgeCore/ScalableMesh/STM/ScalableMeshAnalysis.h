@@ -36,6 +36,7 @@ class ScalableMeshAnalysis : public IScalableMeshAnalysis
     {
     private:
         IScalableMesh* m_scmPtr;
+        int m_ThreadNumber;
 
         void _CreateCutVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction);
         void _CreateFillVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction);
@@ -48,6 +49,7 @@ class ScalableMeshAnalysis : public IScalableMeshAnalysis
     protected:
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) override;
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* anotherMesh, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) override;
+        virtual void _SetMaxThreadNumber(int num) override;
 
     public:
         ScalableMeshAnalysis(IScalableMesh* scmPtr);
