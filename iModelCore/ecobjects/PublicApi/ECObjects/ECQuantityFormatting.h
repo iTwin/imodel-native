@@ -32,7 +32,8 @@ enum class ECQuantityFormattingStatus
 
 struct ECQuantityFormatting
     {
-    ECOBJECTS_EXPORT static Utf8String StdFormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat=nullptr);
+    ECOBJECTS_EXPORT static Utf8String FormatPersistedValue(double dval, KindOfQuantityCP koq, size_t indx, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat = nullptr);
+    ECOBJECTS_EXPORT static Utf8String FormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat=nullptr);
     ECOBJECTS_EXPORT static Json::Value FormatQuantityJson(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, bool useAlias=true);
     ECOBJECTS_EXPORT ECValue static GetQuantityValue(BEU::QuantityCR qty, UnitCP useUnit = nullptr);
     };

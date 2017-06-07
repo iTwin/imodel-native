@@ -58,8 +58,8 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
                                 $(ecobjectsPublicAPISrc)SchemaResourceKeyHelper.h \
                                 $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
-                                $(ecobjectsPublicAPISrc)ECRelationshipPath.h
-
+                                $(ecobjectsPublicAPISrc)ECRelationshipPath.h \
+                                $(ecobjectsPublicAPISrc)ECQuantityFormatting.h
                         
 ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRules.h \
                                 $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
@@ -164,6 +164,8 @@ $(o)SchemaResourceKeyHelper$(oext)                         : $(baseDir)SchemaRes
 $(o)ECJsonUtilities$(oext)                                 : $(baseDir)ECJsonUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECRelationshipPath$(oext)                              : $(baseDir)ECRelationshipPath.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECQuantityFormatting$(oext)                            : $(baseDir)ECQuantityFormatting.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentationRules
 

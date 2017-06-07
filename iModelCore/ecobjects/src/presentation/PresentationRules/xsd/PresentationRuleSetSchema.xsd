@@ -416,7 +416,7 @@
                 <!-- Not supported yet
                 <xs:element name="DisplayRelatedItems" type="DisplayRelatedItemsDef" />
                 -->
-                <xs:element name="ContentRelatedProperties" type="ContentRelatedPropertiesDef" />
+                <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" />
                 <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
             </xs:choice>
             <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
