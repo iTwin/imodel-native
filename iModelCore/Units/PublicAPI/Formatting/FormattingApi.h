@@ -162,7 +162,9 @@ public:
     UNITS_EXPORT void SetUse1000Separator(bool use);
     bool IsUse1000Separator() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
     UNITS_EXPORT void SetApplyRounding(bool use);
-    bool IsApplyRounding() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); }
+    bool IsApplyRounding() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); } 
+    bool IsAppendUnit() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::AppendUnitName)) != 0); }
+    UNITS_EXPORT void SetAppendUnit(bool use);
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
     void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
     bool IsNegativeParentheses() const { return (m_signOption == ShowSignOption::NegativeParentheses); }

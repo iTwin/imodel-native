@@ -248,6 +248,19 @@ void NumericFormatSpec::SetApplyRounding(bool use)
     m_formatTraits = static_cast<FormatTraits>(temp);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+void NumericFormatSpec::SetAppendUnit(bool use)
+    {
+    size_t temp = static_cast<int>(m_formatTraits);
+    if (use)
+        temp |= static_cast<int>(FormatTraits::AppendUnitName);
+    else
+        temp &= ~static_cast<int>(FormatTraits::AppendUnitName);
+    m_formatTraits = static_cast<FormatTraits>(temp);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -885,7 +898,8 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
         if (nullptr == fmtP)
             return "";
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
-        majT = Utils::AppendUnitName(majT.c_str(), uomName, space);
+        if(fmtP->IsAppendUnit())
+           majT = Utils::AppendUnitName(majT.c_str(), uomName, space);
         /*if (nullptr != uomName)
         {
         if (!Utils::IsNameNullOrEmpty(space))
@@ -1287,14 +1301,23 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
 void StdFormatSet::StdInit()
     {
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
+    FormatTraits traitsU = FormatConstant::UnitizedFormatTraits();
     //AddFormat("DefaultReal", new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()), "real");
     AddFormat(FormatConstant::DefaultFormatName(), new NumericFormatSpec(NumericFormatSpec::DefaultFormat()), FormatConstant::DefaultFormatAlias());
+    AddFormat("DefaultRealU", new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, FormatConstant::DefaultDecimalPrecisionIndex()), "realu");
     AddFormat("Real2",       new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2),"real2");
     AddFormat("Real3",       new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 3),"real3");
     AddFormat("Real4",       new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4),"real4");
+
+    AddFormat("Real2U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 2), "real2u");
+    AddFormat("Real3U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 3), "real3u");
+    AddFormat("Real4U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), "real4u");
+    AddFormat("Real6U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6), "real6u");
+
     AddFormat("SignedReal",  new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"realSign");
     AddFormat("ParenthsReal", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"realPth");
-    AddFormat("DefaultFractional", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()),"fract");
+    AddFormat("DefaultFractional", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()), "fract"); 
+    AddFormat("DefaultFractionalU", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, FormatConstant::DefaultFractionalDenominator()),"fractu");
     AddFormat("SignedFractional", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::SignAlways, traits, FormatConstant::DefaultFractionalDenominator()),"fractSign");
     AddFormat("DefaultExp", new NumericFormatSpec(PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"sci");
     AddFormat("SignedExp", new NumericFormatSpec(PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"sciSign");
@@ -1305,6 +1328,15 @@ void StdFormatSet::StdInit()
     AddFormat("Fractional16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), "fract16");
     AddFormat("Fractional32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), "fract32");
     AddFormat("Fractional128", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 128), "fract128");
+   
+    AddFormat("Fractional4U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 4), "fract4u");
+    AddFormat("Fractional8U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8), "fract8u");
+    AddFormat("Fractional16U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 16), "fract16u");
+    AddFormat("Fractional32U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 32), "fract32u");
+    AddFormat("Fractional128U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 128), "fract128u");
+
+    
+    
     CompositeValueSpecP cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE", "ARC_SECOND", nullptr);
     cvs->SetUnitLabels("\xC2\xB0", u8"'", u8"\"");
     AddFormat("AngleDMS", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits,0), cvs, "dms");

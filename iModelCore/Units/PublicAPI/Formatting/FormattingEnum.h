@@ -156,7 +156,8 @@ enum class FormatTraits : int
     Use1000Separator = 0x40,
     ApplyRounding = 0x80,
     FractionDash = 0x100,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
-    UseFractSymbol = 0x200     // indicates that a limited set of fractional values can be presented by a single glyph
+    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph
+    AppendUnitName = 0x400     // indicates that the numeric expression can be followed by the unit name
     };
 
 enum class NumSequenceTraits
@@ -464,6 +465,7 @@ struct FormatConstant
         static const FractionalPrecision DefaultFractionalPrecision() { return  FractionalPrecision::Over_64; }
         static const size_t DefaultFractionalDenominator() { return Utils::FractionalPrecisionDenominator(DefaultFractionalPrecision()); }
         static const FormatTraits DefaultFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero)); }
+        static const FormatTraits UnitizedFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero) | static_cast<int>(FormatTraits::AppendUnitName)); }
         static const double FPV_MaxTokenLength() { return 256; }
         static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
         static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
@@ -512,6 +514,8 @@ struct FormatConstant
         static const Utf8CP FUSJsonUnit() { return "unit"; }
         static const Utf8CP FUSJsonValue() { return "value"; }
         static const Utf8CP FUSJsonDispValue() { return "displayValue"; }
+        static const Utf8CP FUSJsonPersist() { return "persistFUS"; }
+        static const Utf8CP FUSJsonDispaly() { return "displayFUS"; }
 
         static const size_t* SpecialUOM()
             {
