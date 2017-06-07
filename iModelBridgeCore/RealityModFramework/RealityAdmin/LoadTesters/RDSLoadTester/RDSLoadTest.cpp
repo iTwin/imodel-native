@@ -217,7 +217,6 @@ void RDSUser::DoNextBody(UserManager* owner)
                 if (m_linked)
                     {
                     m_currentOperation = OperationType::DELETE_RELATIONSHIP;
-                    curl = DeleteRelationship();
                     }
                 else
                     curl = CreateRelationship();
@@ -243,7 +242,13 @@ void RDSUser::DoNextBody(UserManager* owner)
             if (m_id.empty())
                 m_currentOperation = OperationType::CREATE_REALITYDATA;
             else
-                curl = DeleteRealityData();
+                if (m_linked) // Cannot delete a RD that has relationships
+                    {
+                    m_currentOperation = OperationType::DELETE_RELATIONSHIP;
+                    curl = DeleteRelationship();
+                    }
+                else
+                    curl = DeleteRealityData();
             }
     else if (m_currentOperation == OperationType::LIST_REALITYDATA)
             {
@@ -267,8 +272,16 @@ void RDSUser::DoNextBody(UserManager* owner)
                 curl = CreateRealityData();
             else
                 {
-                m_currentOperation = OperationType::DELETE_REALITYDATA;
-                curl = DeleteRealityData();
+                if (m_linked) // Cannot delete a RD that has relationships
+                    {
+                    m_currentOperation = OperationType::DELETE_RELATIONSHIP;
+                    curl = DeleteRelationship();
+                    }
+                else
+                    {
+                    m_currentOperation = OperationType::DELETE_REALITYDATA;
+                    curl = DeleteRealityData();
+                    }
                 }
             }
 
@@ -415,6 +428,8 @@ void RDSUser::ValidateAzureAddress(int activeUsers)
 
 CURL* RDSUser::CreateRealityData()
     {
+    BeAssert(m_id.empty());
+
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     
     properties.Insert(RealityDataField::Name, "Load Test (ERASE)");
@@ -478,7 +493,9 @@ void RDSUser::ValidateModifyRealityData(int activeUsers)
 
 CURL* RDSUser::CreateRelationship()
     {
-    RealityDataRelationshipCreateRequest relReq = RealityDataRelationshipCreateRequest(m_id, "1");
+    BeAssert(!m_linked);
+
+    RealityDataRelationshipCreateRequest relReq = RealityDataRelationshipCreateRequest(m_id, RealityDataService::GetProjectId());
 
     m_correspondance.response.clear();
     m_correspondance.req.url = relReq.GetHttpRequestString();
@@ -504,7 +521,9 @@ void RDSUser::ValidateCreateRelationship(int activeUsers)
 
 CURL* RDSUser::DeleteRelationship()
     {
-    RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete(m_id, "1");
+    BeAssert(m_linked);
+
+    RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete(m_id, RealityDataService::GetProjectId());
 
     m_correspondance.response.clear();
     m_correspondance.req.url = relReq.GetHttpRequestString();
@@ -530,6 +549,7 @@ void RDSUser::ValidateDeleteRelationship(int activeUsers)
 
 CURL* RDSUser::DeleteRealityData()
     {
+    BeAssert(!m_linked);
     RealityDataDelete realityDataReq = RealityDataDelete(m_id);
     m_correspondance.response.clear();
     m_correspondance.req.url = realityDataReq.GetHttpRequestString();
@@ -600,10 +620,27 @@ int main(int argc, char* argv[])
     LoadTester tester = LoadTester();
     RDSRPS rps = RDSRPS();
     RDSStats stats = RDSStats(&rps);
+    Utf8String projectId;
 
     LoadTester::SetupStaticClasses(&stats, &rps);
     if (tester.Main(argc, argv))
         return 0;
+
+    char* substringPosition;
+    for (int i = 0; i < argc; ++i)
+        {
+        if (strstr(argv[i], "-o:") || strstr(argv[i], "--project:"))
+            {
+            substringPosition = strstr(argv[i], ":");
+            substringPosition++;
+            projectId = Utf8String(substringPosition);
+            }
+        }
+
+    if (projectId.empty())
+        {
+        std::cout << "  -o, --project  A project id to an existing project for which you have required permissions is mandatory" << std::endl;
+        }
 
     std::queue<User*> inactiveUsers;
 
@@ -623,9 +660,17 @@ int main(int argc, char* argv[])
             }
         }
 
+    if (tester.m_serverType == RealityPlatform::CONNECTServerType::PROD)
+        RealityDataService::SetServerComponents("connect-realitydataservices.bentley.com", "2.4", "S3MXECPlugin--Server", "S3MX");
+    else if (tester.m_serverType == RealityPlatform::CONNECTServerType::QA)
+        RealityDataService::SetServerComponents("qa-connect-realitydataservices.bentley.com", "2.4", "S3MXECPlugin--Server", "S3MX");
+    else // (tester.m_serverType == RealityPlatform::CONNECTServerType::DEV)
+        RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
+
     tester.SetupInactiveUsers(inactiveUsers);
-    RealityDataService::SetServerComponents("perf-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
-    RealityDataService::SetProjectId("72524420-7d48-4f4e-8b0f-144e5fa0aa22");
+
+    RealityDataService::SetProjectId(projectId); // 0ae1fcca-ead6-4e94-b83f-38d25db1b16e
+
     tester.Main2(100);
     stats.WriteToFile(tester.userManager.m_userCount, tester.path);
     }

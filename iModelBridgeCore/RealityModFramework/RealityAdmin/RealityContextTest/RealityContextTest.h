@@ -82,9 +82,9 @@ public:
     std::uniform_real_distribution<double>* m_distribution;
     bvector<Utf8String>         m_selectedIds;
     Utf8String                  m_packageParameters;
-    RealityPlatform::ServerType m_serverType;
+    RealityPlatform::CONNECTServerType m_serverType;
 
-    User(Utf8StringP token, std::default_random_engine* generator, std::uniform_real_distribution<double>* distribution, RealityPlatform::ServerType serverType = RealityPlatform::ServerType::QA);
+    User(Utf8StringP token, std::default_random_engine* generator, std::uniform_real_distribution<double>* distribution, RealityPlatform::CONNECTServerType serverType = RealityPlatform::CONNECTServerType::QA);
     ~User();
     void SelectRegion();
     void SelectExtents();

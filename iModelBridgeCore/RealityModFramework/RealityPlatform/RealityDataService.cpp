@@ -822,7 +822,7 @@ void RealityDataListByOrganizationPagedRequest::_PrepareHttpRequestStringAndPayl
 void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RelatedId+eq+'%s'", m_encodedId));
 
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
@@ -844,7 +844,7 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
 void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RealityDataId+eq+'%s'", m_id));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RealityDataId+eq+'%s'", m_id));
 
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?

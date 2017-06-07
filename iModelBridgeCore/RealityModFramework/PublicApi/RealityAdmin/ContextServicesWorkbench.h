@@ -11,6 +11,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
+#include <RealityPlatform/WSGServices.h>
 
 /*#include <WebServices/Client/WSClient.h>
 #include <WebServices/Connect/Authentication.h>
@@ -34,15 +35,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 struct GeoCoordinationParams;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeoCoordinationParams)
 
-//=====================================================================================
-//! @bsiclass                                   Spencer.Mason            	     8/2016
-//=====================================================================================
-enum class ServerType
-    {
-    DEV,
-    QA,
-    PROD
-    };
+
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason            	     8/2016
@@ -51,14 +44,14 @@ struct GeoCoordinationParams
     {
     private:
         bvector<GeoPoint2d> m_filterPolygon;
-        ServerType m_serverType;
+        CONNECTServerType m_serverType;
         Utf8String m_filterString;
     public:
-        REALITYDATAPLATFORM_EXPORT GeoCoordinationParams() :m_filterPolygon(bvector<GeoPoint2d>()), m_serverType(ServerType::QA), m_filterString("") {}
-        REALITYDATAPLATFORM_EXPORT GeoCoordinationParams(bvector<GeoPoint2d> params, ServerType serverType = ServerType::QA, Utf8String filterString = "");
+        REALITYDATAPLATFORM_EXPORT GeoCoordinationParams() :m_filterPolygon(bvector<GeoPoint2d>()), m_serverType(CONNECTServerType::QA), m_filterString("") {}
+        REALITYDATAPLATFORM_EXPORT GeoCoordinationParams(bvector<GeoPoint2d> params, CONNECTServerType serverType = CONNECTServerType::QA, Utf8String filterString = "");
         REALITYDATAPLATFORM_EXPORT bvector<GeoPoint2d> GetPolygonVector() const { return m_filterPolygon; }
         REALITYDATAPLATFORM_EXPORT Utf8String GetPolygonAsString(bool urlEncode) const;
-        REALITYDATAPLATFORM_EXPORT ServerType GetServerType() const { return m_serverType; }
+        REALITYDATAPLATFORM_EXPORT CONNECTServerType GetServerType() const { return m_serverType; }
         REALITYDATAPLATFORM_EXPORT Utf8String GetFilterString() const { return m_filterString; }
     };
 
