@@ -679,7 +679,6 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
         ECClassId constraintClassId = stmt->GetValueId<ECClassId>(0);
         if (!actualConstraintClassIds.empty() && actualConstraintClassIds.back() == constraintClassId)
             {
-            BeAssert(false && "This should have been checked before");
             ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. More than one navigation property for the same relationship is defined on %s constraint class %s.",
                                                             relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target",
                                                             ecdb.Schemas().GetClass(constraintClassId)->GetFullName());

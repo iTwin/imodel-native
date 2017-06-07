@@ -1703,8 +1703,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                     "         <Class class='Hoo'/>"
                     "     </Target>"
                     "  </ECRelationshipClass>"
-                    "</ECSchema>",
-                    false),
+                    "</ECSchema>",  false, "Multi-constraint class rel which implicitly maps to link table because of missing nav prop"),
         SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='Foo' >"
                     "    <ECProperty propertyName='Name' typeName='string' />"
@@ -1762,6 +1761,31 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                    "    <BaseClass>Base</BaseClass>"
                    "    <ECProperty propertyName='Length' typeName='long' />"
                    "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                   "         <Class class='Hoo'/>"
+                   "     </Source>"
+                   "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
+                   "         <Class class='Base'/>"
+                   "         <Class class='Sub'/>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   true, "Nav prop overriding in class hierarchy is fine"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "  <ECEntityClass typeName='Base' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Sub' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "    <ECNavigationProperty propertyName='Hoo2' relationshipName='Rel' direction='Backward'/>"
                    "  </ECEntityClass>"
                    "  <ECEntityClass typeName='Hoo' >"
                    "    <ECProperty propertyName='Width' typeName='long' />"

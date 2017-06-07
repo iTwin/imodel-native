@@ -41,34 +41,6 @@ struct SchemaValidator final
             };
 
         //=======================================================================================
-        //! Makes sure an ECClass has only one navigation property (local or inherited) pointing to the same root relationship with same direction
-        // @bsiclass                                                Krischan.Eberle      05/2017
-        //+===============+===============+===============+===============+===============+======
-        struct ClassHasNoDuplicateNavigationPropertiesRule final : NonCopyableClass
-            {
-            public:
-                struct Context final : NonCopyableClass
-                    {
-                    ECN::ECClassCR m_ecClass;
-                    bmap<ECN::ECRelationshipClassCP, bmap<ECN::ECRelatedInstanceDirection, bset<ECN::NavigationECPropertyCP>>> m_navPropsByRelAndDirection;
-                    bool m_hasDuplicates = false;
-
-                    explicit Context(ECN::ECClassCR ecClass) : m_ecClass(ecClass) {}
-
-                    bool HasNavigationProperties() const { return !m_navPropsByRelAndDirection.empty(); }
-                    };
-
-            private:
-                void LogIssues(Context const&, IssueReporter const&) const;
-                static ECN::ECRelationshipClassCR GetRootRelationship(ECN::ECRelationshipClassCR);
-
-            public:
-                ClassHasNoDuplicateNavigationPropertiesRule() {}
-                bool Validate(Context&, IssueReporter const&, ECN::ECPropertyCR) const;
-                bool PostProcessValidation(Context&, IssueReporter const&) const;
-            };
-
-        //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      04/2014
         //+===============+===============+===============+===============+===============+======
         struct ValidPropertyRule final : NonCopyableClass

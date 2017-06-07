@@ -24,11 +24,10 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter co
     ValidRelationshipRule relRule;
 
     ValidPropertyRule validPropertyRule;
-    ClassHasNoDuplicateNavigationPropertiesRule classHasNoDupNavPropRule;
     for (ECSchemaCP schema : schemas)
         {
         if (schema->GetName().EqualsIAscii(ECSCHEMA_ECDbSystem))
-            continue; //skip because it would violate by design to ValidPropertyNameRule as it defines the ECSQL system props
+            continue; //skip because it would violate by design some of the property naming rules
 
         for (ECClassCP ecClass : schema->GetClasses())
             {
@@ -41,20 +40,12 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter co
             if (!succeeded)
                 valid = false;
 
-            ClassHasNoDuplicateNavigationPropertiesRule::Context classHasNoDupNavPropRuleCtx(*ecClass);
-            
             //per property rules
             for (ECPropertyCP prop : ecClass->GetProperties(false))
                 {
                 if (!validPropertyRule.Validate(issueReporter, *ecClass, *prop))
                     valid = false;
-
-                if (!classHasNoDupNavPropRule.Validate(classHasNoDupNavPropRuleCtx, issueReporter, *prop))
-                    valid = false;
                 }
-
-            if (!classHasNoDupNavPropRule.PostProcessValidation(classHasNoDupNavPropRuleCtx, issueReporter))
-                valid = false;
             }
         }
 
@@ -197,6 +188,17 @@ bool SchemaValidator::ValidPropertyRule::Validate(IssueReporter const& issueRepo
     if (!ValidatePropertyStructType(issueReporter, ecClass, prop))
         isValid = false;
 
+    if (prop.GetIsNavigation())
+        {
+        NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
+        if (navProp->GetRelationshipClass()->HasBaseClasses())
+            {
+            issueReporter.Report("Invalid navigation property in ECClass '%s': The navigation property '%s' references the relationship class '%s' which has a base class. Navigation properties must always reference the root relationship class though.", 
+                                 ecClass.GetFullName(), navProp->GetName().c_str(), navProp->GetRelationshipClass()->GetFullName());
+            isValid = false;
+            }
+        }
+
     return isValid;
     }
 
@@ -264,117 +266,5 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IssueReporte
 
     return true;
     }
-
-//*************************************************************************
-//SchemaValidator::ClassHasNoDuplicateNavigationPropertiesRule
-//*************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-bool SchemaValidator::ClassHasNoDuplicateNavigationPropertiesRule::Validate(Context& ctx, IssueReporter const& issueReporter, ECN::ECPropertyCR prop) const
-    {
-    NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
-    if (navProp == nullptr)
-        return true;
-
-    ECRelationshipClassCR rootRelClass = GetRootRelationship(*navProp->GetRelationshipClass());
-
-    bset<NavigationECPropertyCP>& duplicateNavProps = ctx.m_navPropsByRelAndDirection[&rootRelClass][navProp->GetDirection()];
-    duplicateNavProps.insert(navProp);
-    if (duplicateNavProps.size() > 1)
-        {
-        ctx.m_hasDuplicates = true;
-        return false;
-        }
-
-    return true;
-    }
-
-//-------------------------------------------------------------------------------------- -
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-bool SchemaValidator::ClassHasNoDuplicateNavigationPropertiesRule::PostProcessValidation(Context& ctx, IssueReporter const& issueReporter) const
-    {
-    bool isValid = true;
-
-    if (ctx.HasNavigationProperties())
-        {
-        for (ECClassCP baseClass : ctx.m_ecClass.GetBaseClasses())
-            {
-            //now include inherited nav props to avoid recursion
-            for (ECPropertyCP prop : baseClass->GetProperties(true))
-                {
-                NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
-                if (navProp == nullptr)
-                    continue;
-
-                //Duplicate relationships validation
-                ECRelationshipClassCR rootRelClass = GetRootRelationship(*navProp->GetRelationshipClass());
-                bset<NavigationECPropertyCP>& duplicateNavProps = ctx.m_navPropsByRelAndDirection[&rootRelClass][navProp->GetDirection()];
-                duplicateNavProps.insert(navProp);
-                if (duplicateNavProps.size() > 1)
-                    {
-                    ctx.m_hasDuplicates = true;
-                    isValid = false;
-                    }
-                }
-            }
-        }
-
-    LogIssues(ctx, issueReporter);
-    return isValid;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-void SchemaValidator::ClassHasNoDuplicateNavigationPropertiesRule::LogIssues(Context const& ctx, IssueReporter const& issueReporter) const
-    {
-    if (!ctx.m_hasDuplicates || !issueReporter.IsEnabled())
-        return;
-
-    for (auto const& kvPair1 : ctx.m_navPropsByRelAndDirection)
-        {
-        ECRelationshipClassCP rootRelClass = kvPair1.first;
-        for (auto const& kvPair2 : kvPair1.second)
-            {
-            ECRelatedInstanceDirection direction = kvPair2.first;
-            bset<NavigationECPropertyCP> const& duplicateNavProps = kvPair2.second;
-            if (duplicateNavProps.size() > 1)
-                {
-                Utf8String violatingNavProps;
-                bool isFirstItem = true;
-                for (NavigationECPropertyCP navProp : duplicateNavProps)
-                    {
-                    if (!isFirstItem)
-                        violatingNavProps.append(",");
-
-                    violatingNavProps.append(navProp->GetName());
-                    isFirstItem = false;
-                    }
-
-                issueReporter.Report("ECClass '%s' has violating navigation properties: More than one navigation property is defined for the relationship '%s' (or a subclass thereof) with direction '%s': %s",
-                                     ctx.m_ecClass.GetFullName(), rootRelClass->GetFullName(), direction == ECRelatedInstanceDirection::Forward ? "Forward" : "Backward",
-                                violatingNavProps.c_str());
-                }
-            }
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-//static
-ECRelationshipClassCR SchemaValidator::ClassHasNoDuplicateNavigationPropertiesRule::GetRootRelationship(ECN::ECRelationshipClassCR relClass)
-    {
-    if (!relClass.HasBaseClasses())
-        return relClass;
-
-    //multi-inheritance is not support for relationships (caught by another rule), so we
-    //can safely just use the first base class
-    return GetRootRelationship(*relClass.GetBaseClasses()[0]->GetRelationshipClassCP());
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
