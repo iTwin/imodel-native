@@ -3327,6 +3327,15 @@ bvector<DPoint3d> *endCapPointAccumulator
     double paramYStep = angleStep * aMax;
     bool needNormals = NeedNormals ();
     bool needParams = NeedParams ();
+    bool needEdgeChains = GetFacetOptionsR().GetEdgeChainsRequired ();
+    bvector<PolyfaceEdgeChain> &chains = GetClientMeshR().EdgeChain ();
+    bvector<size_t> edgeChainIndex;
+    if (needEdgeChains)
+        {
+        for (size_t j = 0; j < n; j++)
+            edgeChainIndex.push_back (SIZE_MAX);
+        }
+
     if (reverse)
         ToggleIndexOrderAndNormalReversal ();
     for (size_t step = 0; step <= numStep; step++)
@@ -3375,6 +3384,39 @@ bvector<DPoint3d> *endCapPointAccumulator
                         AddNormalIndexQuad (normalIndexA[j0], normalIndexB[j0], normalIndexB[j1], normalIndexA[j1]);
                     if (needParams)
                         AddParamIndexQuad (paramIndexA[j0], paramIndexB[j0], paramIndexB[j1], paramIndexA[j1]);
+                    }
+                }
+            if (needEdgeChains)
+                {
+                uint32_t numLateral = (uint32_t)n;
+                if (pointIndexA.front () == pointIndexA.back ()
+                    && pointIndexB.front () == pointIndexB.back ())
+                        {
+                        numLateral--;
+                        edgeChainIndex.back () = SIZE_MAX;
+                        }
+                for (uint32_t j = 0; j < numLateral; j++)
+                    {
+                    size_t chainIndex = edgeChainIndex[j];
+                    if (baseCurveBreak[j])
+                        {
+                        if (chainIndex == SIZE_MAX)
+                            {
+                            // This lateral does not have an active edge chain.
+                            /// Create a new one, record its index, and put the pointA index in ...
+                            chainIndex = chains.size ();
+                            chains.push_back (PolyfaceEdgeChain (CurveTopologyId (CurveTopologyId::Type::SweepLateral, j)));
+                            chains.back ().AddZeroBasedIndex ((int32_t)pointIndexA[j]);
+                            edgeChainIndex[j] = chainIndex;
+                            }
+                        // Add the pointB index to the evolving chain . . 
+                        chains[chainIndex].AddZeroBasedIndex((int32_t)pointIndexB[j]);
+                        }
+                    else
+                        {
+                        // there's nothing here for subsequent layers to connect to.
+                        edgeChainIndex[j] = SIZE_MAX;
+                        }
                     }
                 }
             }
@@ -3758,8 +3800,17 @@ bool     capped
     bvector<DPoint3d> capA, capB;
     bool reverse = ComputeRotationalSweepLoopSense (points, origin, axis, totalSweepRadians);
     AddRotationalSweepLoop (points, tangents, origin, axis, totalSweepRadians, reverse, curveLength, &capA, &capB);
-    //if (capped)
+    if (capped)
       AddTriangulationPair (capA, !reverse, capB, reverse);
+
+    if (GetFacetOptionsR ().GetEdgeChainsRequired () && !Angle::IsFullCircle (totalSweepRadians))
+        {
+        AddEdgeChains (CurveTopologyId::Type::SweepProfile, 0,
+                capA);
+        AddEdgeChains (CurveTopologyId::Type::SweepProfile, 1,
+                capB);
+        }
+
     }
 
 
@@ -3793,6 +3844,15 @@ bool     capped
             }
         if (capped)
             builder.AddTriangulationPair(startCapPoints, reverse, endCapPoints, !reverse);
+
+        if (builder.GetFacetOptionsR ().GetEdgeChainsRequired ()  && !Angle::IsFullCircle (totalSweepRadians))
+            {
+            builder.AddEdgeChains (CurveTopologyId::Type::SweepProfile, 0,
+                    startCapPoints);
+            builder.AddEdgeChains (CurveTopologyId::Type::SweepProfile, 1,
+                    endCapPoints);
+            }
+
         }
     }
 /*--------------------------------------------------------------------------------**//**

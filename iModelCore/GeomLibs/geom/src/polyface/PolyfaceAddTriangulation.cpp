@@ -9,7 +9,31 @@
 #include <Geom/cluster.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-
+void IPolyfaceConstruction::AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points)
+    {
+    bvector<size_t> pointIndex;
+    bvector<PolyfaceEdgeChain> &chains = GetClientMeshR().EdgeChain ();
+    for (size_t i = 0, n = points.size (); i < n; i++)
+        {
+        DPoint3d xyz = points[i];
+        bool doOutput = (i + 1 == n);
+        if (xyz.IsDisconnect ())
+            doOutput = true;
+        else
+            {
+            size_t newIndex = FindOrAddPoint (xyz);
+            if (pointIndex.empty () || pointIndex.back () != newIndex)
+                pointIndex.push_back (newIndex);
+            }
+        if (doOutput)
+            {
+            chains.push_back (PolyfaceEdgeChain (
+                CurveTopologyId (type, chainIndex)));
+            chains.back ().AddZeroBasedIndices (pointIndex);
+            pointIndex.clear ();
+            }
+        }
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
