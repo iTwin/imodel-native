@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{51022BD0-0741-4B55-B967-D2FD61CDD214}</ProjectGuid>
-    <RootNamespace>StructuralMaterialSchema</RootNamespace>
+    <RootNamespace>StructuralMaterialsSchema</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -114,11 +114,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="StructuralMaterialDomain.cpp" />
-    <ClCompile Include="StructuralMaterialSchemaInternal.cpp" />
+    <ClCompile Include="StructuralMaterialsDomain.cpp" />
+    <ClCompile Include="StructuralMaterialsSchemaInternal.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="StructuralMaterialSchemaInternal.h" />
+    <ClInclude Include="StructuralMaterialsSchemaInternal.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
