@@ -260,6 +260,21 @@ Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) cons
         return &m_persistenceFUS;
     };
 
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                David.Fox-Rabinovitz      06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String KindOfQuantity::GetPresentationFUSDescriptor(size_t indx, bool useAlias) const
+    {
+    Formatting::FormatUnitSetCP fusP;
+    if (m_presentationFUS.size() > 0)
+        {
+        fusP = (indx < m_presentationFUS.size()) ? &m_presentationFUS[indx] : m_presentationFUS.begin();
+        }
+    else
+        fusP = &m_persistenceFUS;
+    return fusP->ToText(useAlias);
+    };
+
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod                                David.Fox-Rabinovitz      05/2016
