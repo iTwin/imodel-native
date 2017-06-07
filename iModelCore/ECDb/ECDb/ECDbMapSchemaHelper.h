@@ -289,6 +289,9 @@ struct ForeignKeyConstraintCustomAttribute final
     public:
         ForeignKeyConstraintCustomAttribute() {}
 
+        //! @return true if the ForeignKeyConstraint CA exists on the navigation property, false if it doesn't exist on the navigation property.
+        bool IsValid() const { return m_navProp != nullptr && m_ca != nullptr; }
+
         //! Tries to get the value of the OnDeleteAction property from the ForeignKeyConstraint.
         //! @param[out] onDeleteAction OnDelete action. IsNull() is true, if the OnDeleteAction property 
         //! wasn't set in the ForeignKeyConstraint.

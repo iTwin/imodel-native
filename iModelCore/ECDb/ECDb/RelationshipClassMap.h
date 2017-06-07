@@ -163,8 +163,8 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         DbColumn* ConfigureForeignECClassIdKey(ClassMappingContext&, RelationshipMappingInfo const&, ECN::ECRelationshipEnd);
 
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
-        static Utf8String DetermineConstraintECInstanceIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const&, ECN::ECRelationshipEnd);
-        static Utf8String DetermineConstraintECClassIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const&, ECN::ECRelationshipEnd);
+        static Utf8String DetermineConstraintECInstanceIdColumnName(LinkTableMappingType const&, ECN::ECRelationshipEnd);
+        static Utf8String DetermineConstraintECClassIdColumnName(LinkTableMappingType const&, ECN::ECRelationshipEnd);
         static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
     public:

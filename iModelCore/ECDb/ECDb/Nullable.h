@@ -24,11 +24,11 @@ struct Nullable final
     {
 private:
     T m_value;
-    bool m_isNull;
+    bool m_isNull = true;
 
 public:
-    Nullable() : m_value(T()), m_isNull(true) {}
-    Nullable(std::nullptr_t) : m_value(T()), m_isNull(true) {}
+    Nullable() : m_value(T()) {}
+    Nullable(std::nullptr_t) : m_value(T()) {}
     Nullable(T const& value) : m_value(value), m_isNull(false) {}
     Nullable(Nullable<T> const& rhs) : m_value(rhs.m_value), m_isNull(rhs.m_isNull) {}
     Nullable(Nullable<T>&& rhs) : m_value(std::move(rhs.m_value)), m_isNull(std::move(rhs.m_isNull)) {}

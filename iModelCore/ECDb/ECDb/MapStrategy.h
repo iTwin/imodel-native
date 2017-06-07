@@ -84,12 +84,12 @@ public:
     static const MapStrategy DEFAULT = MapStrategy::OwnTable;
 
 private:
-    MapStrategy m_strategy;
+    MapStrategy m_strategy = MapStrategy::NotMapped;
     TablePerHierarchyInfo m_tphInfo;
-    bool m_isValid;
+    bool m_isValid = false;
 
 public:
-    MapStrategyExtendedInfo() : m_isValid(false), m_strategy(MapStrategy::NotMapped) {}
+    MapStrategyExtendedInfo() {}
     explicit MapStrategyExtendedInfo(MapStrategy strat) : m_strategy(strat), m_tphInfo(strat == MapStrategy::TablePerHierarchy), m_isValid(true) {}
     explicit MapStrategyExtendedInfo(TablePerHierarchyInfo const& tphInfo) : m_strategy(MapStrategy::TablePerHierarchy), m_tphInfo(tphInfo), m_isValid(true)
         {
@@ -113,16 +113,16 @@ struct ClassMappingCACache final
     {
 private:
     ClassMapCustomAttribute m_classMapCA;
-    bool m_hasMapStrategy;
-    MapStrategy m_mapStrategy;
+    bool m_hasMapStrategy = false;
+    MapStrategy m_mapStrategy = MapStrategy::NotMapped;
     ShareColumnsCustomAttribute m_shareColumnsCA;
-    bool m_hasJoinedTablePerDirectSubclassOption;
+    bool m_hasJoinedTablePerDirectSubclassOption = false;
     DbIndexListCustomAttribute m_dbIndexListCA;
 
     static BentleyStatus TryParse(MapStrategy&, Utf8CP str, ECN::ECClassCR);
 
 public:
-    ClassMappingCACache() : m_hasMapStrategy(false), m_mapStrategy(MapStrategy::NotMapped), m_hasJoinedTablePerDirectSubclassOption(false) {}
+    ClassMappingCACache() {}
     BentleyStatus Initialize(ECN::ECClassCR);
 
     ~ClassMappingCACache() {}

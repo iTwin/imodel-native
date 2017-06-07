@@ -387,8 +387,6 @@
     If the ForeignKeyConstraint custom attribute is not present:
     - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
 
-    @note This does not affect how ECDb enforces cardinality.
-    
     ## Foreign Key Mapping Requires Navigation Properties
     
     @b Rules: 

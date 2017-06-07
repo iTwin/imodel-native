@@ -161,7 +161,7 @@ DbColumn* RelationshipClassEndTableMap::CreateForeignKeyColumn(RelationshipMappi
 
     DbColumn* fkColumn = nullptr;
 
-    if (classMappingInfo.GetFkMappingInfo()->UseECInstanceIdAsFk())
+    if (classMappingInfo.GetMappingType().GetAs<ForeignKeyMappingType>().UseECInstanceIdAsFk())
         {
         DbColumn const* pkColumn = fkTable.FindFirst(DbColumn::Kind::ECInstanceId);
         DbColumn* pkColumnP = const_cast<DbColumn*> (pkColumn);
@@ -264,11 +264,16 @@ DbColumn * RelationshipClassEndTableMap::CreateReferencedClassIdColumn(DbTable &
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipClassEndTableMap::CreateForeignKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo)
     {
+    if (classMappingInfo.GetMappingType().GetType() != RelationshipMappingType::Type::PhysicalForeignKey)
+        return ClassMappingStatus::Success; // logical key don't get fk constraints (by definition)
+
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
+
     ForeignKeyDbConstraint::ActionType onDelete = ForeignKeyDbConstraint::ActionType::NotSpecified;
     ForeignKeyDbConstraint::ActionType onUpdate = ForeignKeyDbConstraint::ActionType::NotSpecified;
-    ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = classMappingInfo.GetFkMappingInfo()->IsPhysicalFk() ? classMappingInfo.GetFkMappingInfo()->GetOnDeleteAction() : ForeignKeyDbConstraint::ActionType::NotSpecified;
-    ForeignKeyDbConstraint::ActionType userRequestedUpdateAction = classMappingInfo.GetFkMappingInfo()->IsPhysicalFk() ? classMappingInfo.GetFkMappingInfo()->GetOnUpdateAction() : ForeignKeyDbConstraint::ActionType::NotSpecified;
+    ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = classMappingInfo.GetMappingType().GetAs<PhysicalForeignKeyMappingType>().GetOnDeleteAction();
+    ForeignKeyDbConstraint::ActionType userRequestedUpdateAction = classMappingInfo.GetMappingType().GetAs<PhysicalForeignKeyMappingType>().GetOnUpdateAction();
+
     if (userRequestedDeleteAction != ForeignKeyDbConstraint::ActionType::NotSpecified)
         onDelete = userRequestedDeleteAction;
     else
@@ -306,7 +311,7 @@ ClassMappingStatus RelationshipClassEndTableMap::CreateForeignKeyConstraint(DbTa
 
         if (fkTable.GetType() == DbTable::Type::Existing || fkTable.GetType() == DbTable::Type::Virtual ||
             referencedTable.GetType() == DbTable::Type::Virtual ||
-            fkCol->GetColumn().IsShared() || !classMappingInfo.GetFkMappingInfo()->IsPhysicalFk())
+            fkCol->GetColumn().IsShared())
             continue;
 
         DbColumn const* referencedColumnId = referencedTable.FindFirst(DbColumn::Kind::ECInstanceId);
@@ -980,12 +985,12 @@ BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(RelationshipMappingInfo const& relClassMappingInfo)
     {
+    if (relClassMappingInfo.GetMappingType().GetType() != RelationshipMappingType::Type::PhysicalForeignKey)
+        return; //indexes only for physical fks - even if they would be enforcing cardinality (via a unique index)
+
     //0:0 or 1:1 cardinalities imply unique index
     const bool isUniqueIndex = GetRelationshipClass().GetSource().GetMultiplicity().GetUpperLimit() <= 1 &&
                                GetRelationshipClass().GetTarget().GetMultiplicity().GetUpperLimit() <= 1;
-
-    if (!relClassMappingInfo.GetFkMappingInfo()->IsPhysicalFk())
-        return;
 
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
     for (SystemPropertyMap::PerTableIdPropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
@@ -1122,8 +1127,10 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     if (stat != ClassMappingStatus::Success)
         return stat;
 
+    LinkTableMappingType const& linkTableMappingType = relationClassMapInfo.GetMappingType().GetAs<LinkTableMappingType>();
+
     //only create constraints on TPH root or if not TPH and not existing table
-    if (GetPrimaryTable().GetType() != DbTable::Type::Existing && relationClassMapInfo.GetLinkTableMappingInfo()->GetCreateForeignKeyConstraintsFlag() &&
+    if (GetPrimaryTable().GetType() != DbTable::Type::Existing && linkTableMappingType.GetCreateForeignKeyConstraintsFlag() &&
         (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId())) 
         {
         //Create FK from Source-Primary to LinkTable
@@ -1140,7 +1147,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         }
 
 
-    AddIndices(ctx, relationClassMapInfo.GetLinkTableMappingInfo()->AllowDuplicateRelationships());
+    AddIndices(ctx, linkTableMappingType.AllowDuplicateRelationships());
     return ClassMappingStatus::Success;
     }
 
@@ -1214,7 +1221,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(ClassMappi
     ClassMap const* foreignEndClassMap = GetDbMap().GetClassMap(*foreignEndClass);
     size_t foreignEndTableCount = GetDbMap().GetTableCountOnRelationshipEnd(ctx.GetImportCtx(), foreignEndConstraint);
 
-    Utf8String columnName = DetermineConstraintECClassIdColumnName(*mapInfo.GetLinkTableMappingInfo(), relationshipEnd);
+    Utf8String columnName = DetermineConstraintECClassIdColumnName(mapInfo.GetMappingType().GetAs<LinkTableMappingType>(), relationshipEnd);
     if (GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr &&
         GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
@@ -1251,7 +1258,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Class
     bool addTargetECClassIdColumnToTable)
     {
     //**** SourceECInstanceId prop map 
-    Utf8String columnName = DetermineConstraintECInstanceIdColumnName(*mapInfo.GetLinkTableMappingInfo(), ECRelationshipEnd_Source);
+    Utf8String columnName = DetermineConstraintECInstanceIdColumnName(mapInfo.GetMappingType().GetAs<LinkTableMappingType>(), ECRelationshipEnd_Source);
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_SourceECInstanceId " column named '%s'.",
@@ -1281,7 +1288,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Class
 
 
     //**** TargetECInstanceId prop map 
-    columnName = DetermineConstraintECInstanceIdColumnName(*mapInfo.GetLinkTableMappingInfo(), ECRelationshipEnd_Target);
+    columnName = DetermineConstraintECInstanceIdColumnName(mapInfo.GetMappingType().GetAs<LinkTableMappingType>(), ECRelationshipEnd_Target);
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_TargetECInstanceId " column named '%s'.",
@@ -1418,26 +1425,26 @@ void RelationshipClassLinkTableMap::GenerateIndexColumnList(std::vector<DbColumn
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const& linkTableInfo, ECN::ECRelationshipEnd end)
+Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnName(LinkTableMappingType const& mappingType, ECN::ECRelationshipEnd end)
     {
     Utf8String colName;
     switch (end)
         {
             case ECRelationshipEnd_Source:
             {
-            if (linkTableInfo.GetSourceIdColumnName().IsNull())
+            if (mappingType.GetSourceIdColumnName().IsNull())
                 colName.assign(COL_DEFAULTNAME_SourceId);
             else
-                colName.assign(linkTableInfo.GetSourceIdColumnName().Value());
+                colName.assign(mappingType.GetSourceIdColumnName().Value());
 
             break;
             }
             case ECRelationshipEnd_Target:
             {
-            if (linkTableInfo.GetTargetIdColumnName().IsNull())
+            if (mappingType.GetTargetIdColumnName().IsNull())
                 colName.assign(COL_DEFAULTNAME_TargetId);
             else
-                colName.assign(linkTableInfo.GetTargetIdColumnName().Value());
+                colName.assign(mappingType.GetTargetIdColumnName().Value());
 
             break;
             }
@@ -1455,7 +1462,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const& linkTableInfo, ECN::ECRelationshipEnd end)
+Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName(LinkTableMappingType const& mappingType, ECN::ECRelationshipEnd end)
     {
     Utf8String colName;
     Utf8StringCP idColName = nullptr;
@@ -1463,20 +1470,20 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
         {
             case ECRelationshipEnd_Source:
             {
-            if (linkTableInfo.GetSourceIdColumnName().IsNull())
+            if (mappingType.GetSourceIdColumnName().IsNull())
                 colName.assign(COL_SourceECClassId);
             else
-                idColName = &linkTableInfo.GetSourceIdColumnName().Value();
+                idColName = &mappingType.GetSourceIdColumnName().Value();
             
             break;
             }
 
             case ECRelationshipEnd_Target:
             {
-            if (linkTableInfo.GetTargetIdColumnName().IsNull())
+            if (mappingType.GetTargetIdColumnName().IsNull())
                 colName.assign(COL_TargetECClassId);
             else
-                idColName = &linkTableInfo.GetTargetIdColumnName().Value();
+                idColName = &mappingType.GetTargetIdColumnName().Value();
             
             break;
             }
