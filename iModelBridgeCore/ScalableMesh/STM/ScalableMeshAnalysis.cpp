@@ -175,8 +175,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     if (polygon.size() < 3)
         return DTMStatusInt::DTM_ERROR; // invalid region
 
-    //_convertIn3SMSpace(polygonIn, polygon);
-
     SMProgressReport report(pProgressListener);
     if (!report.CheckContinueOnProgress())
         return DTMStatusInt::DTM_ERROR; //User abort
@@ -201,7 +199,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     int m_xSize, m_ySize;
     grid.GetGridSize(m_xSize, m_ySize);
 
-    if (m_xSize==0 || m_xSize==0)
+    if (m_xSize==0 || m_ySize==0)
         return DTMStatusInt::DTM_ERROR; // Zero sized Grid
 
     // Create the Polyface for intersections and queries
@@ -229,23 +227,38 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         numProcs = numProcs - 1; // use all available CPUs minus one
 
     const double progressStep = 1.0 / m_xSize;
-    bool bAbort = false;
+    double progress = 0.0; // progress value between 0 and 1
+    bool userAborted(false);
 
-#pragma omp parallel for num_threads(numProcs) 
+    const int nSeconds = 0.5; // check progress every nSeconds
+    clock_t timer = clock();
+
+#pragma omp parallel num_threads(numProcs)
+    {
+
+#pragma omp for
     for (int i = 0; i < m_xSize; i++)
         {
-        if (bAbort)
+        bool master = (omp_get_thread_num() == 0);
+        if (master)
+            {
+            float secs = ((float)(clock() - timer)) / CLOCKS_PER_SEC;
+            if (secs > nSeconds)
+                {
+                userAborted = !report.CheckContinueOnProgress();
+                report.m_workDone = progress;
+                timer = clock();
+                }
+            }
+
+        if (userAborted)
             continue;
 
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
 
 #pragma omp critical
-        {
-        if (!report.CheckContinueOnProgress())
-            bAbort = true; //User abort, cannot break in parallel for
-        report.m_workDone += progressStep;
-        }
+        progress += progressStep;
 
         for (int j = 0; j < m_ySize; j++)
             {
@@ -295,6 +308,13 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                 }
             }
         }
+    }
+
+    if (userAborted)
+        {
+        delete[] intersected;
+        return DTMStatusInt::DTM_ERROR; //User abort
+        }
 
     // Sum the discrete volumes
     double AreaCell = m_xStep*m_yStep;
@@ -325,7 +345,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     grid.m_fillVolume = _fillVolume;
     grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
 
-    if (!bAbort) // update only if not aborted
+    if (!userAborted) // update only if not aborted
         report.m_workDone = 1.0;
 
     delete[] intersected;
@@ -374,7 +394,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     int m_xSize, m_ySize;
     grid.GetGridSize(m_xSize, m_ySize);
 
-    if (m_xSize == 0 || m_xSize == 0)
+    if (m_xSize == 0 || m_ySize == 0)
         return DTMStatusInt::DTM_ERROR; // Zero sized Grid
 
     // Create the Polyface for intersections and queries
@@ -405,24 +425,37 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     if (numProcs>1)
         numProcs = numProcs - 1; // use all available CPUs minus one
 
+    double progress = 0.0;
     double progressStep = 1.0 / m_xSize;
-    bool bAbort = false;
+    bool userAborted(false);
+    const int nSeconds = 0.5; // check progress every nSeconds
+    clock_t timer = clock();
 
-#pragma omp parallel for num_threads(numProcs) 
+#pragma omp parallel num_threads(numProcs) 
+    {
+#pragma omp parallel for
     for (int i = 0; i < m_xSize; i++)
         {
-        if (bAbort)
+        bool master = (omp_get_thread_num() == 0);
+        if (master)
+            {
+            float secs = ((float)(clock() - timer)) / CLOCKS_PER_SEC;
+            if (secs > nSeconds)
+                {
+                userAborted = !report.CheckContinueOnProgress();
+                report.m_workDone = progress;
+                timer = clock();
+                }
+            }
+
+        if (userAborted)
             continue;
 
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
 
 #pragma omp critical
-        {
-        if (!report.CheckContinueOnProgress())
-            bAbort = true; //User abort, cannot break in parallel for
-        report.m_workDone += progressStep;
-        }
+        progress += progressStep;
 
         for (int j = 0; j < m_ySize; j++)
             {
@@ -452,6 +485,13 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                     }
                 }
             }
+        }
+    }
+
+    if (userAborted)
+        {
+        delete[] intersected;
+        return DTMStatusInt::DTM_ERROR; //User abort
         }
 
     // Sum the discrete volumes
@@ -487,7 +527,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
     delete[] intersected;
 
-    if (!bAbort) // update only if not aborted
+    if (!userAborted) // update only if not aborted
         report.m_workDone = 1.0;
 
     return DTMStatusInt::DTM_SUCCESS;
