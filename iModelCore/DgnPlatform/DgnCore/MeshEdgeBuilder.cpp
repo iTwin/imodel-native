@@ -225,7 +225,8 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
     int32_t const*          chainIndices = chain.GetIndexCP();
 
     for (size_t i=0; i<chain.GetIndexCount(); i++)
-        range.Extend(polyfacePoints[chainIndices[i]-1]);
+        if (0 != chainIndices[i])
+            range.Extend(polyfacePoints[chainIndices[i]-1]);
 
     polyline.m_rangeCenter = FPoint3d::From (range.LocalToGlobal(.5, .5, .5));
 
@@ -233,7 +234,7 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
         {
         auto const&   builderIndex = inverseVertexIndexMap.find((uint32_t) chainIndices[i]-1);
                  
-        if (i > 0)
+        if (i > 0 && 0 != chainIndices[i] && 0 != chainIndices[i-1])
             startDistance += polyfacePoints[chainIndices[i]-1].Distance(polyfacePoints[chainIndices[i-1]-1]);
 
         if (builderIndex == inverseVertexIndexMap.end())
