@@ -3044,6 +3044,11 @@ TEST_F(CodesManagerTest, PlantScenario)
     {
     DgnDbPtr pDb = SetupDb(L"PlantScenarioTest.bim", BeBriefcaseId(2));
     DgnDbR db = *pDb;
+
+    EXPECT_FALSE(db.BriefcaseManager().IsBulkOperation());
+    db.BriefcaseManager().StartBulkOperation();
+    EXPECT_TRUE(db.BriefcaseManager().IsBulkOperation());
+
     PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(db, "TestPhysicalModel");
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "TestSpatialCategory");
 
@@ -3066,6 +3071,8 @@ TEST_F(CodesManagerTest, PlantScenario)
     EXPECT_EQ(DgnDbStatus::Success, nozzleCodeSpec->Insert());
     EXPECT_TRUE(nozzleCodeSpec->IsParentElementScope());
     EXPECT_TRUE(nozzleCodeSpec->GetScope().IsFederationGuidRequired());
+
+    db.SaveChanges("1");
 
     BeGuid unitGuid(true);
     BeGuid equipment1Guid(true);
@@ -3167,12 +3174,11 @@ TEST_F(CodesManagerTest, PlantScenario)
     DgnCodeSet codesToRelease;
     codesToRelease.insert(nozzle24Code);
     codesToRelease.insert(nozzle25Code);
-    EXPECT_NE(RepositoryStatus::Success, db.BriefcaseManager().ReleaseCodes(codesToRelease)) << "ReleaseCodes should fail because of pending transaction";
 
-    db.SaveChanges("1");
-
-    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReleaseCodes(codesToRelease)) << "ReleaseCodes should succeed after SaveChanges is called";
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReleaseCodes(codesToRelease));
     EXPECT_FALSE(db.BriefcaseManager().AreCodesReserved(codesToRelease));
+
+    db.BriefcaseManager().StartBulkOperation();
 
     PhysicalElementPtr unitElement = InsertPhysicalElement(*physicalModel, categoryId, unitGuid, unitCode);
     PhysicalElementPtr equipment1Element = InsertPhysicalElement(*physicalModel, categoryId, equipment1Guid, equipment1Code);
