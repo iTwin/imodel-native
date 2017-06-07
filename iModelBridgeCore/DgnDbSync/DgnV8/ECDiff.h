@@ -133,7 +133,9 @@ enum class DiffNodeId
     MinimumValue = 46,
     MaximumValue = 47,
     AbstractConstraint = 48,
-    ECVersion = 49
+    ECVersion = 49,
+    ECXmlVersionMajor = 50,
+    ECXmlVersionMinor = 51,
     };
 
 //======================================================================================

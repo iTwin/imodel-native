@@ -853,6 +853,12 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
     if (left.GetECVersion() != right.GetECVersion())
         diff->Add(DiffNodeId::ECVersion)->SetValue(ECSchema::GetECVersionString(left.GetECVersion()), ECSchema::GetECVersionString(right.GetECVersion()));
 
+    if (left.GetOriginalECXmlVersionMajor() != right.GetOriginalECXmlVersionMajor())
+        diff->Add(DiffNodeId::ECXmlVersionMajor)->SetValue(left.GetOriginalECXmlVersionMajor(), right.GetOriginalECXmlVersionMajor());
+
+    if (left.GetOriginalECXmlVersionMinor() != right.GetOriginalECXmlVersionMinor())
+        diff->Add(DiffNodeId::ECXmlVersionMinor)->SetValue(left.GetOriginalECXmlVersionMinor(), right.GetOriginalECXmlVersionMinor());
+
     if (!left.GetDisplayLabel().Equals(right.GetDisplayLabel()))
         diff->Add (DiffNodeId::DisplayLabel)->SetValue (left.GetIsDisplayLabelDefined()? left.GetDisplayLabel().c_str() : NULL, right.GetIsDisplayLabelDefined()? right.GetDisplayLabel().c_str(): NULL);
 
@@ -1891,6 +1897,20 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     //Create Merge schema 
     if (ECSchema::CreateSchema (m_mergeSchema, schemaName, alias, versionRead, versionWrite, versionMinor, ecVersion) != ECObjectsStatus::Success)
         return MergeStatus::ErrorCreatingMergeSchema;
+
+    uint32_t ecXmlVersionMajor;
+    uint32_t ecXmlVersionMinor;
+    if (nullptr != (v = GetMergeValue(r, DiffNodeId::ECVersionMajor)))
+        ecXmlVersionMajor = (uint32_t)v->GetValueInt32();
+    else
+        ecXmlVersionMajor = GetDefault().GetOriginalECXmlVersionMajor();
+
+    if (nullptr != (v = GetMergeValue(r, DiffNodeId::ECVersionMinor)))
+        ecXmlVersionMinor = (uint32_t)v->GetValueInt32();
+    else
+        ecXmlVersionMinor = GetDefault().GetOriginalECXmlVersionMinor();
+
+    GetMerged().SetOriginalECXmlVersion(ecXmlVersionMajor, ecXmlVersionMinor);
 
     if ((v = GetMergeValue (r, DiffNodeId::DisplayLabel)) == NULL)
         {
