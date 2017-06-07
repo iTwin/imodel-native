@@ -217,7 +217,6 @@ void RDSUser::DoNextBody(UserManager* owner)
                 if (m_linked)
                     {
                     m_currentOperation = OperationType::DELETE_RELATIONSHIP;
-                    curl = DeleteRelationship();
                     }
                 else
                     curl = CreateRelationship();
@@ -273,8 +272,16 @@ void RDSUser::DoNextBody(UserManager* owner)
                 curl = CreateRealityData();
             else
                 {
-                m_currentOperation = OperationType::DELETE_REALITYDATA;
-                curl = DeleteRealityData();
+                if (m_linked) // Cannot delete a RD that has relationships
+                    {
+                    m_currentOperation = OperationType::DELETE_RELATIONSHIP;
+                    curl = DeleteRelationship();
+                    }
+                else
+                    {
+                    m_currentOperation = OperationType::DELETE_REALITYDATA;
+                    curl = DeleteRealityData();
+                    }
                 }
             }
 
@@ -421,6 +428,8 @@ void RDSUser::ValidateAzureAddress(int activeUsers)
 
 CURL* RDSUser::CreateRealityData()
     {
+    BeAssert(m_id.empty());
+
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     
     properties.Insert(RealityDataField::Name, "Load Test (ERASE)");
@@ -484,6 +493,8 @@ void RDSUser::ValidateModifyRealityData(int activeUsers)
 
 CURL* RDSUser::CreateRelationship()
     {
+    BeAssert(!m_linked);
+
     RealityDataRelationshipCreateRequest relReq = RealityDataRelationshipCreateRequest(m_id, RealityDataService::GetProjectId());
 
     m_correspondance.response.clear();
@@ -510,6 +521,8 @@ void RDSUser::ValidateCreateRelationship(int activeUsers)
 
 CURL* RDSUser::DeleteRelationship()
     {
+    BeAssert(m_linked);
+
     RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete(m_id, RealityDataService::GetProjectId());
 
     m_correspondance.response.clear();
@@ -536,6 +549,7 @@ void RDSUser::ValidateDeleteRelationship(int activeUsers)
 
 CURL* RDSUser::DeleteRealityData()
     {
+    BeAssert(!m_linked);
     RealityDataDelete realityDataReq = RealityDataDelete(m_id);
     m_correspondance.response.clear();
     m_correspondance.req.url = realityDataReq.GetHttpRequestString();
@@ -623,6 +637,11 @@ int main(int argc, char* argv[])
             }
         }
 
+    if (projectId.empty())
+        {
+        std::cout << "  -o, --project  A project id to an existing project for which you have required permissions is mandatory" << std::endl;
+        }
+
     std::queue<User*> inactiveUsers;
 
     if(!tester.trickle)
@@ -650,8 +669,7 @@ int main(int argc, char* argv[])
 
     tester.SetupInactiveUsers(inactiveUsers);
 
-    if (!projectId.empty())
-        RealityDataService::SetProjectId(projectId); // 0ae1fcca-ead6-4e94-b83f-38d25db1b16e
+    RealityDataService::SetProjectId(projectId); // 0ae1fcca-ead6-4e94-b83f-38d25db1b16e
 
     tester.Main2(100);
     stats.WriteToFile(tester.userManager.m_userCount, tester.path);

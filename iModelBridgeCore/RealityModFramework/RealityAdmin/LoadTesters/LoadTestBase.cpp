@@ -332,11 +332,11 @@ void ShowUsage(int argc, char* argv[])
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
 User::User() :
-    m_currentOperation(0)
+    m_currentOperation(0), m_linked(false)
     {}
 
 User::User(int id, Stats* stats) :
-    m_currentOperation(0), m_userId(id), 
+    m_currentOperation(0), m_userId(id), m_linked(false),
     m_fileName(BeFileName(Utf8PrintfString("%d", m_userId))), m_stats(stats)
     {}
 
