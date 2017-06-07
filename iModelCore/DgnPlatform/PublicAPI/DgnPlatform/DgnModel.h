@@ -751,12 +751,12 @@ public:
     public:
         Formatter()
             {
-            m_formatterFlags.m_linearUnitMode = 0;
-            m_formatterFlags.m_linearPrecType = 0;
-            m_formatterFlags.m_linearPrecision = 0;
-            m_formatterFlags.m_angularMode = 0;
-            m_formatterFlags.m_angularPrecision = 0;
-            m_formatterFlags.m_directionMode = 0;
+            m_formatterFlags.m_linearUnitMode = (uint32_t)DgnUnitFormat::MU;
+            m_formatterFlags.m_linearPrecType = (uint32_t)PrecisionType::Decimal;
+            m_formatterFlags.m_linearPrecision = (uint32_t)PrecisionFormat::Decimal8Places;
+            m_formatterFlags.m_angularMode = (uint32_t)AngleMode::Degrees;
+            m_formatterFlags.m_angularPrecision = (uint32_t)AnglePrecision::Use8Places;
+            m_formatterFlags.m_directionMode = (uint32_t)DirectionMode::Azimuth;
             m_formatterFlags.m_directionClockwise = 0;
             m_roundoffRatio = 0;
             m_formatterBaseDir = 0;

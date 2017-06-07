@@ -1817,7 +1817,7 @@ public:
     DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP accessString, PropertyArrayIndex aidx = PropertyArrayIndex()) const
         {
         ElementECPropertyAccessor access(*this, accessString);
-        return _GetPropertyValue(value, access, aidx);
+        return access.IsValid()? _GetPropertyValue(value, access, aidx): DgnDbStatus::WrongClass;
         }
 
     //! Get the value of a property. Also see @ref ElementProperties.
@@ -1828,7 +1828,7 @@ public:
     DgnDbStatus GetPropertyValue(ECN::ECValueR value, uint32_t propIndex, PropertyArrayIndex aidx = PropertyArrayIndex()) const
         {
         ElementECPropertyAccessor access(*this, propIndex);
-        return _GetPropertyValue(value, access, aidx);
+        return access.IsValid()? _GetPropertyValue(value, access, aidx): DgnDbStatus::WrongClass;
         }
 
     //! Set the value of a property. 
@@ -1841,7 +1841,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP accessString, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex())
         {
         ElementECPropertyAccessor access(*this, accessString);
-        return _SetPropertyValue(access, value, aidx);
+        return access.IsValid()? _SetPropertyValue(access, value, aidx): DgnDbStatus::WrongClass;
         }
 
     //! Set the value of a property. 
@@ -1854,7 +1854,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(uint32_t propIndex, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex())
         {
         ElementECPropertyAccessor access(*this, propIndex);
-        return _SetPropertyValue(access, value, aidx);
+        return access.IsValid()? _SetPropertyValue(access, value, aidx): DgnDbStatus::WrongClass;
         }
 
     //! Set the properties of this element from the specified instance. Calls _SetPropertyValue for each non-NULL property in the input instance.

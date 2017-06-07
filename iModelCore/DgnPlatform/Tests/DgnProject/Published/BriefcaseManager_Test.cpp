@@ -1019,7 +1019,7 @@ public:
         if (bcId.GetValue() != db->GetBriefcaseId().GetValue())
             {
             BeFileName name(db->GetFileName());
-            db->ChangeBriefcaseId(bcId);
+            db->AssignBriefcaseId(bcId);
             db->SaveChanges();
             db->CloseDb();
             DbResult result = BE_SQLITE_OK;
@@ -1274,6 +1274,8 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
     ~SingleBriefcaseLocksTest() {if (m_db.IsValid()) m_db->CloseDb();}
 
     DgnModelPtr CreateModel(Utf8CP name) { return T_Super::CreateModel(name, *m_db); }
+    void DoIterateOwnedLocks(bool bulkMode);
+    void DoDisconnectedWorkflow(bool bulkMode);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1356,6 +1358,150 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     // If we obtain an exclusive lock on a model, exclusive locks on its elements should be retained after refresh
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
     ExpectAcquire(model, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(el, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RefreshFromRepository());
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(el, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A single briefcase can always acquire locks with no contention ... bulk mode version.
+* @bsimethod                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Sam.Wilson      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, AcquireLocksBulkMode)
+    {
+    SetupDb(L"AcquireLocksTestBulkMode.bim", m_bcId);
+
+    DgnDbR db = *m_db;
+    DgnModelPtr pModel = db.Models().GetModel(m_modelId);
+    ASSERT_TRUE(pModel.IsValid());
+    DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+    ASSERT_TRUE(cpEl.IsValid());
+
+    DgnModelCR model = *pModel;
+    DgnElementCR el = *cpEl;
+    LockableSchemas lockableSchemas(db);
+
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ASSERT_TRUE(db.BriefcaseManager().IsBulkOperation()) << "StartBulkOperation should start bulk ops mode";
+    ExpectAcquire(lockableSchemas, LockLevel::Exclusive);
+    ExpectLevel(lockableSchemas, LockLevel::None);
+    ExpectLevel(db, LockLevel::None);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ASSERT_FALSE(db.BriefcaseManager().IsBulkOperation()) << "SaveChanges should end bulk ops mode";
+    ExpectLevel(lockableSchemas, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(model, LockLevel::Shared);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(db, LockLevel::Shared);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ExpectLevel(model, LockLevel::Shared);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(db, LockLevel::Shared);
+
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(model, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::Shared);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(el, LockLevel::None);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(el, LockLevel::Exclusive);
+
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(db, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(el, LockLevel::Exclusive);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ExpectLevel(db, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(el, LockLevel::Exclusive);
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
+
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(el, LockLevel::Shared);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(db, LockLevel::None);
+    ExpectLevel(lockableSchemas, LockLevel::None);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ExpectLevel(el, LockLevel::Exclusive);  // shared lock automatically upgraded to exclusive for elements, currently
+    ExpectLevel(model, LockLevel::Shared);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(lockableSchemas, LockLevel::None);
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
+    
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(model, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(db, LockLevel::None);
+    ExpectLevel(lockableSchemas, LockLevel::None);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(lockableSchemas, LockLevel::None);
+
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(model, LockLevel::Shared);
+    ExpectLevel(model, LockLevel::Exclusive);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ExpectLevel(model, LockLevel::Exclusive);
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
+
+    // An exclusive model lock results in exclusive locks on all of its elements
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(model, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(db, LockLevel::None);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(el, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(db, LockLevel::None);
+
+    // An exclusive db lock results in exclusive locks on all models, elements and schemas
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(db, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(db, LockLevel::None);
+    ExpectLevel(lockableSchemas, LockLevel::None);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(el, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Exclusive);
+    ExpectLevel(lockableSchemas, LockLevel::Exclusive);
+
+    // If we obtain an exclusive lock on a model, exclusive locks on its elements should be retained after refresh
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    ExpectAcquire(model, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(db, LockLevel::None);
+    db.SaveChanges();                                       // <<<<<<< end bulk ops
     ExpectLevel(model, LockLevel::Exclusive);
     ExpectLevel(el, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
@@ -1459,11 +1605,56 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Newly-created models and elements are implicitly exclusively locked by that briefcase ... bulk mode version.
+* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjectsBulkMode)
+    {
+    SetupDb(L"LocallyCreatedObjectsTestBulkMode.bim", m_bcId);
+
+    DgnDbR db = *m_db;
+    DgnModelPtr model = db.Models().GetModel(m_modelId);
+    DgnElementCPtr elem = db.Elements().GetElement(m_elemId);
+
+    // Create a new model.
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    DgnModelPtr newModel = CreateModel("NewModel");
+    ExpectLevel(db, LockLevel::None);
+    ExpectLevel(*newModel, LockLevel::None);
+    ExpectLevel(*model, LockLevel::None);
+    ExpectLevel(*elem, LockLevel::None);
+    db.BriefcaseManager().EndBulkOperation();               // <<<<<<<< end bulk ops
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(*newModel, LockLevel::Exclusive);
+    ExpectLevel(*model, LockLevel::None);
+    ExpectLevel(*elem, LockLevel::None);
+
+    // Note: EndBulkOperation actually acquired the (exclusive) lock on the new model from the server.
+
+    // Create a new element in our new model
+    db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
+    DgnElementCPtr newElem = CreateElement(*newModel);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(*newModel, LockLevel::Exclusive);
+    ExpectLevel(*newElem, LockLevel::None);
+    ExpectLevel(*model, LockLevel::None);
+    ExpectLevel(*elem, LockLevel::None);
+    db.BriefcaseManager().EndBulkOperation();               // <<<<<<<< end bulk ops
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(*newModel, LockLevel::Exclusive);
+    ExpectLevel(*newElem, LockLevel::Exclusive);
+    ExpectLevel(*model, LockLevel::None);
+    ExpectLevel(*elem, LockLevel::None);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SingleBriefcaseLocksTest, IterateOwnedLocks)
+void SingleBriefcaseLocksTest::DoIterateOwnedLocks(bool bulkMode)
     {
-    SetupDb(L"IterateOwnedLocksTest.bim", m_bcId);
+    WPrintfString bcname(L"IterateOwnedLocksTest%ls.bim", (bulkMode? L"BulkMode": L""));
+    SetupDb(bcname.c_str(), m_bcId);
     DgnDbR db = *m_db;
     IBriefcaseManagerR bc = db.BriefcaseManager();
 
@@ -1474,8 +1665,18 @@ TEST_F(SingleBriefcaseLocksTest, IterateOwnedLocks)
     EXPECT_EQ(0, CountLocks(*pIter));
 
     // Create a new model
+    if (bulkMode)
+        db.BriefcaseManager().StartBulkOperation();
+
     DgnModelPtr model = CreateModel("NewModel");
     pIter = bc.GetOwnedLocks();
+
+    if (bulkMode)
+        {
+        EXPECT_EQ(0, CountLocks(*pIter));
+        db.BriefcaseManager().EndBulkOperation();
+        pIter->Reset();
+        }
 
     // Creating a model involves creating a partition, which involves:
     //  - Shared lock on db
@@ -1544,10 +1745,27 @@ TEST_F(SingleBriefcaseLocksTest, IterateOwnedLocks)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, IterateOwnedLocks)
+    {
+    DoIterateOwnedLocks(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/17
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, IterateOwnedLocksBulkMode)
+    {
+    DoIterateOwnedLocks(true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Test that locks + codes acquired while connected are retained when disconnected.
 * @bsimethod                                                    Paul.Connelly   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
+void SingleBriefcaseLocksTest::DoDisconnectedWorkflow(bool bulkMode)
     {
     BeFileName filename;
     DgnModelId newModelId;
@@ -1558,24 +1776,49 @@ TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
         DgnModelPtr pModel = db.Models().GetModel(m_modelId);
         DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
 
+        if (bulkMode)
+            db.BriefcaseManager().StartBulkOperation();
+
         // Acquire locks with server available
         EXPECT_TRUE(nullptr != T_HOST.GetRepositoryAdmin()._GetRepositoryManager(db));
         ExpectAcquire(*cpEl, LockLevel::Exclusive);
-        ExpectLevel(db, LockLevel::Shared);
-        ExpectLevel(*pModel, LockLevel::Shared);
-        ExpectLevel(*cpEl, LockLevel::Exclusive);
+        if (bulkMode)
+            {
+            ExpectLevel(db, LockLevel::None);
+            ExpectLevel(*pModel, LockLevel::None);
+            ExpectLevel(*cpEl, LockLevel::None);
+            }
+        else
+            {
+            ExpectLevel(db, LockLevel::Shared);
+            ExpectLevel(*pModel, LockLevel::Shared);
+            ExpectLevel(*cpEl, LockLevel::Exclusive);
+            }
 
         // Create a new model (implicitly exclusively locked)
         DgnModelPtr newModel = CreateModel("NewModel");
         newModelId = newModel->GetModelId();
-        ExpectLevel(*newModel, LockLevel::Exclusive);
+        if (bulkMode)
+            ExpectLevel(*newModel, LockLevel::None);
+        else
+            ExpectLevel(*newModel, LockLevel::Exclusive);
 
         // Close the db and unregister the server
+        m_db->SaveChanges();
+
+        if (bulkMode)
+            {
+            // in build operation mode, all locks are acquired by savechanges
+            ExpectLevel(db, LockLevel::Shared);
+            ExpectLevel(*pModel, LockLevel::Shared);
+            ExpectLevel(*cpEl, LockLevel::Exclusive);
+            ExpectLevel(*newModel, LockLevel::Exclusive);
+            }
+
         filename = m_db->GetFileName();
         pModel = nullptr;
         newModel = nullptr;
         cpEl = nullptr;
-        m_db->SaveChanges();
         m_db->CloseDb();
         m_db = nullptr;
         UnregisterServer();
@@ -1607,6 +1850,24 @@ TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
         ASSERT_TRUE(newElem.IsValid());
         ExpectLevel(*newElem, LockLevel::Exclusive);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that locks + codes acquired while connected are retained when disconnected.
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
+    {
+    DoDisconnectedWorkflow(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that locks + codes acquired while connected are retained when disconnected.
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflowBulkMode)
+    {
+    DoDisconnectedWorkflow(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
