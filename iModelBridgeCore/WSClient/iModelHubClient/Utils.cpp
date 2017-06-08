@@ -420,6 +420,34 @@ void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, DgnCodeCR dgnCode, DgnCodeStat
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas           06/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus ValidateChangeSets(ChangeSets const& changeSets, DgnDbR db)
+    {
+    if (!changeSets.empty())
+        {
+        for (auto changeSet : changeSets)
+            {
+            if (changeSet->ContainsSchemaChanges(db))
+                return RevisionStatus::MergeSchemaChangesOnOpen;
+            }
+        }
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2017
+//---------------------------------------------------------------------------------------
+void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector)
+    {
+    pointersVector.clear();
+    for (auto changeSetPtr : changeSets)
+        {
+        pointersVector.push_back(changeSetPtr.get());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
 bool ExecutionManager::IsErrorForRetry(Error::Id errorId)
