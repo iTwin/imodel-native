@@ -1415,6 +1415,7 @@ bool  BcDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR 
 bool  BcDTM::_IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
     {
     // in DTM we return only one intersection for now
+    assert("DTM multiple Ray Intersect will return only one intersection" && false);
     DPoint3d interP;
     bool bRet = _IntersectRay(interP, direction, testPoint);
     if (bRet)
