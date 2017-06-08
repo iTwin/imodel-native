@@ -595,7 +595,7 @@ TEST(BeStringUtilitiesTests, RoundtripUtf8)
     ASSERT_STREQ(TESTDATA_StringW, strW);
 
     SUCCEED();
-	delete strW;
+    delete strW;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1296,7 +1296,7 @@ TEST(BeStringUtilitiesTests, WCharUtf16Roundtrip)
     BeStringUtilities::Utf16ToWChar((WCharP)strWString.data(), expected.size() + 1, strUtf16);
 
     EXPECT_EQ(0, wcscmp(expected.c_str(), strWString.c_str()));
-	delete strUtf16;
+    delete strUtf16;
     }
 
 #define EXPECT_SPRINTF_SSCANF(number,stringifiedNumber,Type,printfFormat,scanfFormat)\
