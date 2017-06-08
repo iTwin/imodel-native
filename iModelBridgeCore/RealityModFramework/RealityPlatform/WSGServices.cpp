@@ -172,6 +172,7 @@ void CurlConstructor::RefreshToken()
     
     delete lpwstrToken;
     delete charToken;
+    CCApi_FreeApi(api);
     }
 
 //-------------------------------------------------------------------------------------
@@ -350,7 +351,9 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
     {
     m_validRequestString = false;
     //https://localhost/ws/v2.1/
-    m_httpRequestString = "https://";
+    m_httpRequestString = "";
+    if(!m_serverName.StartsWith("https://"))
+        m_httpRequestString = "https://";
     m_httpRequestString.append(m_serverName);
     
     m_requestHeader.clear();

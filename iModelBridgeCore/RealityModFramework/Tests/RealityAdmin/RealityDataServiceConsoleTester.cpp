@@ -89,7 +89,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, ConnectivityTest)
     directory.append(L"ConnectivityTest");
     InitTestDirectory(directory.c_str());
 
-    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
+    Utf8String commandString = "dev\n"
         "n\n"
         "n\n"
         "quit\n";
@@ -114,7 +114,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, HelpTest)
     directory.append(L"HelpTest");
     InitTestDirectory(directory.c_str());
 
-    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
+    Utf8String commandString = "dev\n"
                         "n\n"
                         "8\n"
                         "n\n"
@@ -161,7 +161,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, StatTest)
     directory.append(L"StatTest");
     InitTestDirectory(directory.c_str());
 
-    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
+    Utf8String commandString = "dev\n"
         "n\n"
         "8\n"
         "n\n"
@@ -264,7 +264,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     
     id.append(Utf8PrintfString("%ldbuildTest(DELETE THIS)", currentTime));
 
-    Utf8String commandString = "dev-realitydataservices-eus.cloudapp.net\n"
+    Utf8String commandString = "dev\n"
                                 "n\n"
                                 "8\n"
                                 "y\n"
