@@ -213,6 +213,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     PolyfaceHeaderPtr polyface = polyfaceBuilder->GetClientMeshPtr();
 
     auto draping1 = m_scmPtr->GetDTMInterface()->GetDTMDraping();
+    bool isTerrain = m_scmPtr->IsTerrain();
 
     bool *intersected = new bool[m_xSize*m_ySize];
     memset(intersected, 0, sizeof(bool)*m_xSize*m_ySize);
@@ -285,25 +286,33 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                     visitor->Reset();
                     if (visitor->AdvanceToFacetBySearchRay(ray, tolerance, polyHit, rayFraction))
                         {
-                        // add the intersection with the polygon in the hit list
-                        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection rayInter;
-                        rayInter.point = polyHit;
-                        rayInter.rayFraction = rayFraction;
-                        rayInter.normal = -1.0 * grid.m_direction; // with inversed direction
-                        rayInter.hasNormal = true;
-                        Hits.push_back(rayInter);
-
-                        DTMIntersectionCompare Comparator;
-                        std::sort(Hits.begin(), Hits.end(), Comparator); // sort by ray fraction
-
                         SMVolumeSegment aSegment;
-                        _CreateFillVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
-                        _CreateCutVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
-
-                        if (aSegment.VolumeRanges.size() > 0)
+                        if (isTerrain) // just stack the 2 intersections
                             {
-                            grid.m_VolSegments[i*m_ySize + j] = aSegment;
-                            intersected[i*m_ySize + j] = true;
+                            aSegment.VolumeRanges.push_back(polyHit.z);
+                            aSegment.VolumeRanges.push_back(Hits[0].point.z);
+                            }
+                        else
+                            {
+                            // add the intersection with the polygon in the hit list
+                            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection rayInter;
+                            rayInter.point = polyHit;
+                            rayInter.rayFraction = rayFraction;
+                            rayInter.normal = -1.0 * grid.m_direction; // with inversed direction
+                            rayInter.hasNormal = true;
+                            Hits.push_back(rayInter);
+
+                            DTMIntersectionCompare Comparator;
+                            std::sort(Hits.begin(), Hits.end(), Comparator); // sort by ray fraction
+
+                            _CreateFillVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
+                            _CreateCutVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
+
+                            if (aSegment.VolumeRanges.size() > 0)
+                                {
+                                grid.m_VolSegments[i*m_ySize + j] = aSegment;
+                                intersected[i*m_ySize + j] = true;
+                                }
                             }
                         }
                     }
@@ -481,7 +490,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                     bret = draping2->IntersectRay(interP2, grid.m_direction, sourceW); // second SM is supposed to be in same GCS
                     if (bret)
                         {
-                        // Add one segment
+                        // Add one segment only for the diff case
                         grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interP1.z);
                         grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interP2.z);
                         intersected[i*m_ySize + j] = true;

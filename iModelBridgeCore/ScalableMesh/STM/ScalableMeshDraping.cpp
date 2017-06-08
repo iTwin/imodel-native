@@ -689,6 +689,7 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
             m_transform.Multiply(pointOnDTM);
             DTMRayIntersection rayInter;
             rayInter.point = pointOnDTM;
+            rayInter.rayFraction = (pointOnDTM - testPoint).Magnitude();
             pointsOnDTM.push_back(rayInter); // we add only this one
             return true;
             }
@@ -740,7 +741,7 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
                 }
             if (bInRegion)
                 {
-                DTMRayIntersection rayInter;;
+                DTMRayIntersection rayInter;
                 pointsOnDTM.push_back(rayInter); // add the point in the output vector
                 ret = true; // we have at least a hit
                 }
