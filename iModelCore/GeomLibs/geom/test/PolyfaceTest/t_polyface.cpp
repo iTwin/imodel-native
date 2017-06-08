@@ -1885,6 +1885,7 @@ void TestPolyfaceConstructionTriangulation (int numPerFace, bool convexRequired)
     options->SetMaxPerFace (numPerFace);
     options->SetConvexFacetsRequired (convexRequired);
     options->SetParamsRequired (true);
+    options->SetEdgeChainsRequired (true);
     IPolyfaceConstructionPtr builder =  IPolyfaceConstruction::Create (*options);
     double mySize = SetTransformToNewGridSpot (*builder, true);
 
@@ -1893,9 +1894,13 @@ void TestPolyfaceConstructionTriangulation (int numPerFace, bool convexRequired)
     double z = 0.0;
     double deltaZ = 0.5 * mySize;
     double deltaX = 2.5 * r;
-    
+    SaveAndRestoreCheckTransform shifter (0.0, 10.0 * r, 0);
+    double bigStep = 30.0 * r;
+    double oneStep = 4.0 * r;
     for (size_t numPoint = 3; numPoint < 10; numPoint++, z += deltaZ)
         {
+        SaveAndRestoreCheckTransform shifter (bigStep, 0,0);
+
         double dTheta = msGeomConst_2pi / numPoint;
         bvector<DPoint3d> points;
         for (size_t i = 0; i < numPoint; i++)
@@ -1908,13 +1913,16 @@ void TestPolyfaceConstructionTriangulation (int numPerFace, bool convexRequired)
         builder->AddTriangulation (points);
         sprintf (title, "TriangulatedRegularPolygon%d", (int)numPoint);
         ExaminePolyface (builder->GetClientMeshR (), title);
+        Check::SaveTransformed (builder->GetClientMeshR ());
+        Check::Shift (oneStep, 0, 0);
+        SaveEdgeChains (builder->GetClientMeshR (), true);
         size_t numFacet = builder->GetClientMeshR ().GetNumFacet ();
         if (numPerFace == 3)
             Check::Size (numFacet, numPoint - 2);
         else
             Check::True (numFacet <= numPoint - 2);
 
-
+        Check::Shift (2.0 * oneStep, 0, 0);
         // Add origin as final point -- figure becomes pie with one piece missing
         points.push_back (DPoint3d::FromXYZ (0,0,z));
         for (size_t i = 0; i < points.size (); i++)
@@ -1923,13 +1931,15 @@ void TestPolyfaceConstructionTriangulation (int numPerFace, bool convexRequired)
         builder->AddTriangulation (points);
         sprintf (title, "TriangulatedRegularPolygon%d_minusOneSlice", (int)numPoint);
         ExaminePolyface (builder->GetClientMeshR (), title);
+        Check::SaveTransformed (builder->GetClientMeshR ());
+        Check::Shift (oneStep, 0, 0);
+        SaveEdgeChains (builder->GetClientMeshR (), true);
         numFacet = builder->GetClientMeshR ().GetNumFacet ();
         if (numPerFace == 3)
             Check::Size (numFacet, numPoint - 1);
         else
             Check::True (numFacet <= numPoint - 1);
         }
-
     }
 
 TEST(PolyfaceConstruction, Triangulation)
@@ -1938,6 +1948,7 @@ TEST(PolyfaceConstruction, Triangulation)
     TestPolyfaceConstructionTriangulation (4, false);
     TestPolyfaceConstructionTriangulation (40, false);
     TestPolyfaceConstructionTriangulation (40, true);
+    Check::ClearGeometry ("PolyfaceConstruction.Triangulation");
     }
 
 TEST(PolyfaceConstruction, SpaceTriangulation)

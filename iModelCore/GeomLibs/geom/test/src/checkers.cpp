@@ -1524,6 +1524,12 @@ void Check::SaveTransformed (bvector<DSegment3d> const &data)
         }
     }
 
+void Check::SaveTransformed (DSegment3dCR data)
+    {
+    auto prim = ICurvePrimitive::CreateLine (data);
+    SaveTransformed (*prim);
+    }
+
 void Check::Shift (double dx, double dy, double dz)
     {
     s_transform = Transform::From (dx, dy, dz) * s_transform;
@@ -1579,6 +1585,9 @@ void Check::ClearGeometry (char const *name)
                 {
 //                printf ("%s\n", string.c_str ());
                 file.Write(&bytesWritten, string.c_str(), (uint32_t)string.size());
+#ifdef BENTLEY_WIN32
+                printf ("\n(#g=%d)%S", (uint32_t)s_cache.size (), path.c_str ());
+#endif
                 }
             file.Close ();
             }

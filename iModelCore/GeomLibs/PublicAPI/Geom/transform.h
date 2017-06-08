@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/transform.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -960,6 +960,10 @@ void SetFixedPoint (DPoint2dCR point);
 //! @param [in] index column index
 //!
 void GetMatrixColumn  (DVec3dR column, int index) const;
+DVec3d GetMatrixColumn 
+(
+int index       //!< [in] index of matrix column.(cyclic 012012) 
+) const;
 
 //!
 //! @description Set a column of the matrix part.

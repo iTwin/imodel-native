@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/reftransform.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1268,6 +1268,12 @@ int           index
     column.x = form3d[0][index];
     column.y = form3d[1][index];
     column.z = form3d[2][index];
+    }
+
+DVec3d Transform::GetMatrixColumn (int index) const
+    {
+    index = Angle::Cyclic3dAxis (index);
+    return DVec3d::From (form3d[0][index], form3d[1][index], form3d[2][index]);
     }
 
 /*-----------------------------------------------------------------*//**

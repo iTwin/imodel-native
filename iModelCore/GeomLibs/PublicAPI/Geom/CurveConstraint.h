@@ -38,23 +38,33 @@ struct CurveConstraint
 //! Type code for various constraints . . .
 enum class Type
     {
+    None,
     ThroughPoint,
     PointAndDirection,
     Center,
     PerpendicularNear,
     ClosestPoint,
-    Tangent
+    Tangent,
+    ResultFrame,
+    Radius
     };
 private:
 Type m_type;
 CurveLocationDetail m_location;
 ICurvePrimitivePtr m_curve; // redundant of the CurveLocationDetail -- but as a Ptr so the lifecycle management works
 DRay3d m_ray;
+ValidatedTransform m_resultFrame;
+ValidatedDouble m_distance;
 // constructor with detail
 CurveConstraint (Type type, CurveLocationDetailCR detail);
 // constructor with detail and ray
 CurveConstraint (Type type, CurveLocationDetailCR detail, DRay3dCR ray);
+// constructor with frame
+CurveConstraint (Type type, TransformCR frame);
+// constructor with distance
+CurveConstraint (Type type, double distance);
 
+friend struct ConstraintMatchTable;
 public:
 //! Create a constraint to pass through a point.
 GEOMDLLIMPEXP static CurveConstraint CreateThroughPoint (DPoint3dCR point);
@@ -68,6 +78,19 @@ GEOMDLLIMPEXP static CurveConstraint CreateClosestPoint (ICurvePrimitiveCP curve
 //! Create a constraint to use a perpendicular near a fractional position on a curve
 GEOMDLLIMPEXP static CurveConstraint CreatePerpendicularNear (ICurvePrimitiveCP curve, double fraction);
 
+//! Create a constraint to be tangent to a curve, with fraction at possible bias point
+GEOMDLLIMPEXP static CurveConstraint CreateTangent (ICurvePrimitiveCP curve, double fraction);
+
+//! Create a coordinate system for results
+//!<ul>
+//!<li>The XY columns of the matrix part are the plane for circle by center and radius
+//!<li>The XY columns of the matrix part are the plane for circle by center and point
+//!</ul>
+GEOMDLLIMPEXP static CurveConstraint CreateResultFrame (TransformCR frame);
+
+//! Create a radius constraint.
+GEOMDLLIMPEXP static CurveConstraint CreateRadius (double radius);
+
 
 //! return the type
 GEOMDLLIMPEXP Type GetType () const;
@@ -80,6 +103,10 @@ GEOMDLLIMPEXP DPoint3d Point () const;
 GEOMDLLIMPEXP DRay3d PointAndDirection () const;
 //! return a reference to the curve location detail ..
 GEOMDLLIMPEXP CurveLocationDetailCR Location () const;
+//! Return the distance value
+GEOMDLLIMPEXP ValidatedDouble GetDistance () const;
+//! Return the resultFrame
+GEOMDLLIMPEXP ValidatedTransform GetResultFrame () const;
 
 };
 

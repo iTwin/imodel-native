@@ -411,14 +411,12 @@ double yScale = 1.0,
 double zScale = 1.0
 )
     {
-    Transform transform;
+    Transform transform = Transform::From (translateX, translateY, translateZ);
     if (yawDegrees != 0.0 || pitchDegrees != 0.0 || rollDegrees != 0.0)
         {
         auto ypr = YawPitchRollAngles::FromDegrees (yawDegrees, pitchDegrees, rollDegrees);
         transform  = transform * ypr.ToTransform (DPoint3d::From (translateX, translateY, translateZ));
         }
-    else
-        transform = Transform::From (translateX, translateY, translateZ);
     if (xScale != 1.0 || yScale != 1.0 || zScale != 1.0)
         transform.ScaleMatrixColumns (xScale, yScale, zScale);
     return transform;

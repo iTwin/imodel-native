@@ -30,7 +30,8 @@ PolyfaceEdgeChain::PolyfaceEdgeChain (CurveTopologyIdCR id, int32_t index0, int3
     m_vertexIndices.push_back (index1);
     }
 
-void PolyfaceEdgeChain::AddIndex (int32_t index) { m_vertexIndices.push_back (index); }
+void PolyfaceEdgeChain::AddIndex(int32_t index) { m_vertexIndices.push_back (index); }
+void PolyfaceEdgeChain::AddZeroBasedIndex (uint32_t index) { m_vertexIndices.push_back (index + 1); }
 
 void PolyfaceEdgeChain::AddZeroBasedIndices (bvector<size_t> const &indices)
     {
@@ -38,6 +39,19 @@ void PolyfaceEdgeChain::AddZeroBasedIndices (bvector<size_t> const &indices)
         m_vertexIndices.push_back ((int32_t) (indices[i] + 1));
     }
 
+bool PolyfaceEdgeChain::GetXYZ (bvector<DPoint3d> &dest, bvector<DPoint3d> const &source) const
+    {
+    bool ok = true;
+    size_t n = source.size ();
+    for (auto index1 : m_vertexIndices)
+        {
+        if (index1 > 0 && index1 <= n)
+            dest.push_back (source[(size_t)(index1 - 1)]);
+        else
+            ok = false;
+        }
+    return ok;
+    }
 
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      12/2011

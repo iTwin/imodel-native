@@ -1813,6 +1813,31 @@ DVec3dCR  tangentA,         //!< [in] INBOUND (forward) tangent at start
 DPoint3dCR pointB,          //!< [in[ end point
 DVec3dCR  tangentB          //!< [in] OUTBOUND (forward) tangent at end point
 );
+
+//! construct fractional coordinates of lines tangent to two circles.
+static bool ConstructTangentLineRatios
+(
+double centerToCenterDistance,  //!< [in] distance between centers
+double radiusA,                 //!< [in] radius of first circle.
+double radiusB,                 //!< [in] radius of second circle
+bool outerTangents,             //!< [in] true for tangents from outside to ouside, false for tangents that cross between centers
+DPoint2dR uvA,                  //!< [in] fractional coordinates of tangency point on circle A, for use in DPoint3d::FromInterpolateAndPerpendicularXY 
+DPoint2dR uvB                  //!< [in] fractional coordinates of tangency point on circle B, for use in DPoint3d::FromInterpolateAndPerpendicularXY 
+);
+
+//! Construct an arc, line and arc to depart from pointA with directionA and radiusA, and arrive at pointB with directionB and radiusB
+static bool Construct_ArcLineArc_PointTangentRadius_PointTangentRadiusXY
+(
+DPoint3dCR pointA,          //!< [in] start point
+DVec3dCR   directionA,      //!< [in] direction at pointA
+double     radiusA,         //!< [in] radius at A.  Positive is left turn
+DPoint3dCR pointB,          //!< [in] end point
+DVec3dCR   directionB,      //!< [in] direction at pointB
+double     radiusB,         //!< [in] radius at pointB.  Positive is left turn
+DEllipse3dR arcA,           //!< [out] departure arc
+DSegment3dR tangentSegment, //!< [out] joining segment, tangent at both ends
+DEllipse3dR arcB            //!< [out] arrival arc
+);
 #endif
 
 };

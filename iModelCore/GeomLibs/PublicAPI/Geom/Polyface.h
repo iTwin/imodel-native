@@ -588,6 +588,8 @@ GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id, bvector
 GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id, PolyfaceQueryCR polyface);
 //! add an index.
 GEOMDLLIMPEXP void              AddIndex (int32_t index);
+//! add an index.
+GEOMDLLIMPEXP void              AddZeroBasedIndex (uint32_t index);
 //! add indices
 GEOMDLLIMPEXP void              AddZeroBasedIndices (bvector<size_t> const &indices);
 //! query the CurveTopologyId
@@ -596,8 +598,9 @@ GEOMDLLIMPEXP CurveTopologyIdCR GetId () const;
 GEOMDLLIMPEXP int32_t const*    GetIndexCP() const;
 //! Query the number of indices.
 GEOMDLLIMPEXP size_t            GetIndexCount () const;
-
-
+//! extract coordinates from points.
+//! @return false if any indices out of bounds.
+GEOMDLLIMPEXP bool GetXYZ (bvector<DPoint3d> &dest, bvector<DPoint3d> const &source) const;
 
 };
 

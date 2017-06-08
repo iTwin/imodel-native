@@ -549,7 +549,8 @@ void CurveVectorWithDistanceIndex::CloneAndAppenedPartialCurve(CurveVectorPtr &d
         && m_locations[(size_t)locationIndex].m_curveDetail.curve != nullptr)
         {
         auto fragment = m_locations[(size_t)locationIndex].m_curveDetail.curve->CloneBetweenFractions (fraction0, fraction1, allowExtrapolation);
-        if (fragment.IsValid())
+        double a;
+        if (fragment.IsValid() && fragment->Length (a) && a > DoubleOps::SmallMetricDistance ())
             {
             if (!dest.IsValid ())
                 dest = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);

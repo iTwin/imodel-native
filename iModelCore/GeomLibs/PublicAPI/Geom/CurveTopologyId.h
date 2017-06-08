@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/CurveTopologyId.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,6 +62,7 @@ enum class Type : uint8_t
     PolyfaceEdge                = 23,
     MeshEdgeVertices            = 24,       // SS3 Sheet edges stored only a single face edge which may not be unique. Replaced by start/end vertex edges.
     BRepPlanarFace              = 25,       // Draw Method Index, FaceId.   (For Planar Constraints).
+    TriangulationBoundary       = 26,        // triangulation of points
     Max,
     };
 

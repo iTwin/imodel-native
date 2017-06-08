@@ -859,3 +859,55 @@ TEST(CurveVectorWithXIndex,CloneIntervals)
             }
         }
     }
+
+TEST(CurveVectorWithXIndex,ClonePartialWithToleranceIssue)
+    {
+    double stationB = 30.0;
+    auto elevationCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    DPoint3d pointA = DPoint3d::From (0,0,1);
+    DPoint3d pointB = DPoint3d::From (stationB,0,2);
+    DPoint3d pointC = DPoint3d::From (60,0,4);
+    DPoint3d pointD = DPoint3d::From (70,0,4);
+    elevationCurve->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointB)));
+    elevationCurve->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointB, pointC)));
+    elevationCurve->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointC, pointD)));
+    auto indexPtr = CurveVectorWithXIndex::Create (*elevationCurve);
+    Check::Print (*elevationCurve, "ElevationCurve");
+    if (Check::True (indexPtr.IsValid ()))
+        {
+        double setback = 1.0e-6;
+        for (;setback > 1.1e-12; setback /= 10.0)
+            {
+            double startStation = stationB - setback;
+            double endStation = 70.0;
+            double lengthA = endStation - startStation;
+            ValidatedPathLocationDetail detailA = indexPtr->XToPathLocationDetail(startStation);
+            ValidatedPathLocationDetail detailB = indexPtr->XToPathLocationDetail(endStation);
+            if (detailA.IsValid () && detailB.IsValid ())
+                {
+                CurveVectorPtr result = indexPtr->GetCurveVectorPtr()->CloneBetweenDirectedFractions(
+                            (int)detailA.Value().PathIndex(), detailA.Value().CurveFraction(),
+                            (int)detailB.Value().PathIndex(), detailB.Value().CurveFraction(),
+                            false, true); // false: allowExtrapolation, true: usePartialCurves
+                // verify no crash in GetRange 
+                DRange3d range;
+                result->GetRange (range);
+
+                // Verify length with Metric tolerance
+                DPoint3d xyz0, xyz1;
+                result->GetStartEnd (xyz0, xyz1);
+                double lengthB = xyz1.x - xyz0.x;
+                Check::True (fabs (lengthB - lengthA) <= DoubleOps::SmallMetricDistance (), "ClonePartial with known small fragment matches length");
+                // (We expect this to be suppressed by volume controls)
+                Check::PrintIndent (0);
+                Check::Print (setback, "setback");
+                Check::Print ((int)result->size (), "count");
+                Check::Print (range.low, "range.low");
+                Check::Print (range.high, "range.high");
+                Check::Print (*result, "Partial Elevation");
+                }        
+            }
+        }
+
+    }
+

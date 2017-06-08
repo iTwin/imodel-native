@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dsegment3d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -547,7 +547,15 @@ DSegment3dCR    segmentA,
 DSegment3dCR    segmentB
 );
 
-
+//! Construct one of the 4 lines tangent to two circles as viewed in xy.
+//! Radius signs select which tangencies are selected
+static ValidatedDSegment3d  ConstructTangent_CircleCircleXY
+(
+DPoint3dCR centerA,     //!< [in] center of first circle
+double     radiusA,     //!< [in] radius of first circle.  Positive selects tangency to left of the line from centerA to centerB, negative to right.
+DPoint3dCR centerB,     //!< [in] center of second circle
+double     radiusB      //!< [in] radius of second circle.  Positive selects tangency to left of the line from centerA to centerB, negative to right.
+);
 
 #endif
 };
@@ -681,6 +689,7 @@ double      &param23,
 DSegment4dCR segment01,
 DSegment4dCR segment23
 );
+
 
 };
 /*__PUBLISH_SECTION_START__*/
