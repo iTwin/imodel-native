@@ -608,7 +608,7 @@ TEST(DSegment3d, TangentCC)
 
     bvector<double> radii {-1.1, -0.5, 0.0, 0.5, 1.1};
     double a = 10.0;
-    double tinyRadius = 0.001;
+    // unused - double tinyRadius = 0.001;
     for (auto rB : radii)
         {
         SaveAndRestoreCheckTransform shifter (0,a,0);
