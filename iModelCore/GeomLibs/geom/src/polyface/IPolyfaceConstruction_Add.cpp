@@ -3599,6 +3599,8 @@ bvector<double> &curveLengths
                 StrokeByUniformFractions <DEllipse3d>(ellipse,
                     options.EllipseStrokeCount (ellipse),
                     points.back (), tangents.back ());
+                if (ellipse.IsFullEllipse () && !points.back ().empty ())    // enforce bitwise closure
+                    points.back ().back () = points.back ().front ();
                 double a;
                 primitive->Length (a);
                 curveLengths.back () += a;
