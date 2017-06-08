@@ -54,7 +54,7 @@ void ECDb::Impl::OnDbClose() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
+DbResult ECDb::Impl::OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     {
     if (m_ecdb.IsReadonly())
         return BE_SQLITE_READONLY;

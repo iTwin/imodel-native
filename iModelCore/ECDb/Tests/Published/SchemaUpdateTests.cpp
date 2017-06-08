@@ -5855,7 +5855,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
+    GetECDb().AssignBriefcaseId(BeBriefcaseId(123));
 
     //Update schema 
     SchemaItem schemaItem2(
