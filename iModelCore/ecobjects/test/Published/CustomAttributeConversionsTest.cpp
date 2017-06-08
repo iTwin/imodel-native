@@ -12,6 +12,8 @@ using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
+struct RelationshipConversionTest : ECTestFixture {};
+
 struct StandardCustomAttributeConversionTests : ECTestFixture 
     {
     ECSchemaPtr m_coreCASchema;
@@ -263,7 +265,6 @@ struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
         return instance;
         }
     };
-
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Basanta.Kharel                 01 / 2016
@@ -2067,6 +2068,93 @@ TEST_F(StandardCustomAttributeConversionTests, TestSupplementedSchemaConversion)
     EXPECT_EQ(ECObjectsStatus::Success, suppInfo->GetSupplementalSchemaNames(suppSchemaNames));
     EXPECT_EQ(1, suppSchemaNames.size());
     EXPECT_STREQ("TestSchema_Supplemental_Testing.01.00.00", suppSchemaNames[0].c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipConversionTest, BaseClassHasConstraintClasses)
+    {
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="A" isDomainClass="true"/>
+                <ECClass typeName="B" isDomainClass="true"/>
+                <ECRelationshipClass typeName="ARelB" isDomainClass="true" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(1,1)" polymorphic="true">
+                        <Class class="A"/>
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic="true">
+                        <Class class="B"/>
+                    </Target>
+                </ECRelationshipClass>
+                <ECRelationshipClass typeName="DerivedARelB" isDomainClass="true" strength="referencing" strengthDirection="forward">
+                    <BaseClass>ARelB</BaseClass>
+                    <Source cardinality="(1,1)" polymorphic="true">
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic="true">
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    ECClassCP ecClass = schema->GetClassCP("DerivedARelB");
+    ECRelationshipClassCP derivedRelClass = ecClass->GetRelationshipClassCP();
+    EXPECT_EQ(1, derivedRelClass->GetSource().GetConstraintClasses().size());
+    EXPECT_STREQ("A", derivedRelClass->GetSource().GetConstraintClasses()[0]->GetName().c_str());
+    EXPECT_EQ(1, derivedRelClass->GetTarget().GetConstraintClasses().size());
+    EXPECT_STREQ("B", derivedRelClass->GetTarget().GetConstraintClasses()[0]->GetName().c_str());
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="A" isDomainClass="true"/>
+                <ECClass typeName="B" isDomainClass="true"/>
+                <ECClass typeName="C" isDomainClass="true">
+                    <BaseClass>A</BaseClass>
+                </ECClass>
+                <ECClass typeName="D" isDomainClass="true">
+                    <BaseClass>B</BaseClass>
+                </ECClass>
+                <ECRelationshipClass typeName="ARelB" isDomainClass="true" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(1,1)" polymorphic="true">
+                        <Class class="A"/>
+                        <Class class="C"/>
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic="true">
+                        <Class class="B"/>
+                        <Class class="D"/>
+                    </Target>
+                </ECRelationshipClass>
+                <ECRelationshipClass typeName="DerivedARelB" isDomainClass="true" strength="referencing" strengthDirection="forward">
+                    <BaseClass>ARelB</BaseClass>
+                    <Source cardinality="(1,1)" polymorphic="true">
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic="true">
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    ECClassCP ecClass = schema->GetClassCP("DerivedARelB");
+    ECRelationshipClassCP derivedRelClass = ecClass->GetRelationshipClassCP();
+    EXPECT_EQ(2, derivedRelClass->GetSource().GetConstraintClasses().size());
+    EXPECT_STREQ("A", derivedRelClass->GetSource().GetAbstractConstraint()->GetName().c_str());
+    EXPECT_EQ(2, derivedRelClass->GetTarget().GetConstraintClasses().size());
+    EXPECT_STREQ("B", derivedRelClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
