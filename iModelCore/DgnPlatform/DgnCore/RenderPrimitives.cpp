@@ -1584,7 +1584,7 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     if (polyface.IsValid() && polyface->HasFacets())
         {
         polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
-        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface));
+        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface, false));
         }
 
     return polyfaces;

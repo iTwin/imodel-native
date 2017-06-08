@@ -637,11 +637,12 @@ struct Polyface
 {
     DisplayParamsCPtr   m_displayParams;
     PolyfaceHeaderPtr   m_polyface;
+    bool                m_displayEdges = true;
 
-    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface) : m_displayParams(&displayParams), m_polyface(&polyface) { }
+    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges = true) : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges) { }
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
-    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone()); }
+    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges); }
 };
 
 //=======================================================================================
