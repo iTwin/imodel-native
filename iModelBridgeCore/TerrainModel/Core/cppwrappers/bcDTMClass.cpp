@@ -68,6 +68,14 @@ class FeatureCallbackTransformHelper
                 return &TransformFunction;
             return m_callBackFunctP;
             }
+		void* GetOriginalUserArg()
+			{
+			return m_userP;
+			}
+		DTMFeatureCallback GetOriginalCallBackFunc()
+			{
+			return m_callBackFunctP;
+			}
     private:
         static int TransformFunction (DTMFeatureType featureType, DTMUserTag featureTag, DTMFeatureId featureId, DPoint3d *tPoint, size_t nPoint, void *userP)
             {
@@ -2645,6 +2653,10 @@ DTMStatusInt BcDTM::BrowseFeatures (DTMFeatureType featureType, const DTMFencePa
                 // Not Yet Implemented So Return Error
                 break;
 
+			case DTMFeatureType::TriangleIndex:
+                status = (DTMStatusInt)bcdtmInterruptLoad_dtmFeatureTypeFromDtmObject (GetTinHandle (), featureType, maxSpots, helper.GetOriginalCallBackFunc(), isFence, fence.fenceType, fence.fenceOption,
+                                                                         TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, helper.GetOriginalUserArg());
+                break;
             default:
                 status = (DTMStatusInt)bcdtmInterruptLoad_dtmFeatureTypeFromDtmObject (GetTinHandle (), featureType, maxSpots, callBackFunctP, isFence, fence.fenceType, fence.fenceOption,
                                                                          TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP);
