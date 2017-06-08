@@ -234,7 +234,7 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
         {
         auto const&   builderIndex = inverseVertexIndexMap.find((uint32_t) chainIndices[i]-1);
                  
-        if (0 != chainIndices[i] && !polyline.m_indices.empty())
+        if (i > 0 && 0 != chainIndices[i] && 0 != chainIndices[i-1])
             startDistance += polyfacePoints[chainIndices[i]-1].Distance(polyfacePoints[chainIndices[i-1]-1]);
 
         if (builderIndex == inverseVertexIndexMap.end())
