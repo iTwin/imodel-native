@@ -159,32 +159,19 @@ DbColumn* RelationshipClassEndTableMap::CreateForeignKeyColumn(RelationshipMappi
     ECRelationshipConstraintCR referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
     DbColumn::Kind foreignKeyColumnKind = GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
 
-    DbColumn* fkColumn = nullptr;
-
-    if (classMappingInfo.GetMappingType().GetAs<ForeignKeyMappingType>().UseECInstanceIdAsFk())
-        {
-        DbColumn const* pkColumn = fkTable.FindFirst(DbColumn::Kind::ECInstanceId);
-        DbColumn* pkColumnP = const_cast<DbColumn*> (pkColumn);
-        pkColumnP->AddKind(foreignKeyColumnKind);
-        fkColumn = const_cast<DbColumn*>(pkColumn);
-
-        fkColInfo = ForeignKeyColumnInfo::FromPkColumnIfUseECInstanceIdAsFk(*fkColumn);
-        return fkColumn;
-        }
-
     fkColInfo = ForeignKeyColumnInfo::FromNavigationProperty(*navPropMap.GetProperty().GetAsNavigationProperty());
     const bool multiplicityImpliesNotNullOnFkCol = referencedEndConstraint.GetMultiplicity().GetLowerLimit() > 0;
 
-    DbColumn* fkCol = const_cast<DbColumn*>(fkTable.FindColumn(fkColInfo.GetFkColumnName().c_str()));
+    DbColumn* fkColumn = const_cast<DbColumn*>(fkTable.FindColumn(fkColInfo.GetFkColumnName().c_str()));
     if (fkTable.GetType() == DbTable::Type::Existing)
         {
         //for existing tables, the FK column must exist otherwise we fail schema import
-        if (fkCol != nullptr)
+        if (fkColumn != nullptr)
             {
-            if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
+            if (SUCCESS != ValidateForeignKeyColumn(*fkColumn, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
                 return nullptr;
 
-            return fkCol;
+            return fkColumn;
             }
 
         Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'.",
@@ -194,7 +181,7 @@ DbColumn* RelationshipClassEndTableMap::CreateForeignKeyColumn(RelationshipMappi
         }
 
     //table owned by ECDb
-    if (fkCol != nullptr)
+    if (fkColumn != nullptr)
         {
         Issues().Report("Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
                         relClass.GetFullName(), fkColInfo.GetFkColumnName().c_str(), fkTable.GetName().c_str());
@@ -1051,17 +1038,6 @@ RelationshipClassEndTableMap::ForeignKeyColumnInfo RelationshipClassEndTableMap:
     if (!navProp.GetName().EndsWithIAscii("id"))
         info.m_fkColName.assign(navProp.GetName()).append("Id");
 
-    info.m_relClassIdColName = DetermineRelClassIdColumnName(info.m_fkColName);
-    return info;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    01/2014
-//---------------------------------------------------------------------------------------
-//static
-RelationshipClassEndTableMap::ForeignKeyColumnInfo RelationshipClassEndTableMap::ForeignKeyColumnInfo::FromPkColumnIfUseECInstanceIdAsFk(DbColumn const& idCol)
-    {
-    ForeignKeyColumnInfo info(idCol.GetName());
     info.m_relClassIdColName = DetermineRelClassIdColumnName(info.m_fkColName);
     return info;
     }

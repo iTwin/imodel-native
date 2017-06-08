@@ -40,8 +40,6 @@
         <ECProperty propertyName="OnUpdateAction" typeName="string" description="Possible values: NoAction (default), Cascade (which updates child foreign key when parent primary key is updated)."/>
     </ECCustomAttributeClass>
     
-    <ECCustomAttributeClass typeName="UseECInstanceIdAsForeignKey" modifier="Sealed" appliesTo="RelationshipClass" description="Indicates that the ECInstanceId of the constraint ECClass of the ECRelationshipClass is to be used as foreign key."/>
-
     <ECCustomAttributeClass typeName="LinkTableRelationshipMap" modifier="Sealed" appliesTo="RelationshipClass">
         <ECProperty propertyName="SourceECInstanceIdColumn" typeName="string" description="Optional. If not set, a default column name will be used"/>
         <ECProperty propertyName="TargetECInstanceIdColumn" typeName="string" description="Optional. If not set, a default column name will be used"/>

@@ -97,7 +97,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             public:
                 ForeignKeyColumnInfo() {}
                 static ForeignKeyColumnInfo FromNavigationProperty(ECN::NavigationECPropertyCR);
-                static ForeignKeyColumnInfo FromPkColumnIfUseECInstanceIdAsFk(DbColumn const& idCol);
 
                 Utf8StringCR GetFkColumnName() const { return m_fkColName; }
                 Utf8StringCR GetRelClassIdColumnName() const { return m_relClassIdColName; }

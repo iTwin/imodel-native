@@ -124,11 +124,26 @@ END_ECDBUNITTESTS_NAMESPACE
 
 // GTest Format customizations for types not handled by GTest
 
+BEGIN_BENTLEY_NAMESPACE
+
+void PrintTo(BeInt64Id, std::ostream*);
+void PrintTo(DateTime const&, std::ostream*);
+
+END_BENTLEY_NAMESPACE
+
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+void PrintTo(ECClassId, std::ostream*);
+
+END_BENTLEY_ECOBJECT_NAMESPACE
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define ENUM_TOSTRING(value) #value
 
-void PrintTo(ECSqlStatus stat, std::ostream* os);
+void PrintTo(ECInstanceId, std::ostream*);
+void PrintTo(ECInstanceKey const&, std::ostream*);
+void PrintTo(ECSqlStatus, std::ostream*);
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

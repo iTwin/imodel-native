@@ -530,21 +530,10 @@ void ClassMappingInfo::LogClassNotMapped(NativeLogging::SEVERITY severity, ECCla
 //****************************************************************************************************
 //ForeignKeyMappingType
 //****************************************************************************************************
-std::unique_ptr<ForeignKeyMappingType> ForeignKeyMappingType::Create(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd fkEnd, ForeignKeyConstraintCustomAttribute const& fkConstraintCA, bool useECInstanceIdAsFk, IssueReporter const& issues)
+std::unique_ptr<ForeignKeyMappingType> ForeignKeyMappingType::Create(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd fkEnd, ForeignKeyConstraintCustomAttribute const& fkConstraintCA, IssueReporter const& issues)
     {
-    if (useECInstanceIdAsFk)
-        {
-        RelationshipMultiplicityCR referencedEndMult = fkEnd == ECRelationshipEnd_Source ? relClass.GetTarget().GetMultiplicity() : relClass.GetSource().GetMultiplicity();
-        if (referencedEndMult.GetLowerLimit() == 0)
-            {
-            issues.Report("Failed to map ECRelationshipClass %s. It has the 'UseECInstanceIdAsForeignKey' custom attribute, which requires the %s multiplicity's lower bound to not be 0 because the " ECDBSYS_PROP_ECInstanceId " can never be NULL.",
-                          relClass.GetFullName(), fkEnd == ECRelationshipEnd_Source ? "target" : "source");
-            return nullptr;
-            }
-        }
-
     if (!fkConstraintCA.IsValid())
-        return std::make_unique<LogicalForeignKeyMappingType>(fkEnd, useECInstanceIdAsFk);
+        return std::make_unique<LogicalForeignKeyMappingType>(fkEnd);
 
     Nullable<Utf8String> onDeleteActionStr;
     if (SUCCESS != fkConstraintCA.TryGetOnDeleteAction(onDeleteActionStr))
@@ -577,7 +566,7 @@ std::unique_ptr<ForeignKeyMappingType> ForeignKeyMappingType::Create(ECN::ECRela
         return nullptr;
         }
 
-    return std::make_unique<PhysicalForeignKeyMappingType>(fkEnd, onDeleteAction, onUpdateAction, useECInstanceIdAsFk);
+    return std::make_unique<PhysicalForeignKeyMappingType>(fkEnd, onDeleteAction, onUpdateAction);
     }
 
 
@@ -625,13 +614,13 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
     ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationshipMapCA, relClass);
 
     ForeignKeyConstraintCustomAttribute const& foreignKeyConstraintCA = ctx.GetFkConstraintCAFromCache(relClass.GetId());
-    const bool useECInstanceIdAsFk = ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(relClass);
 
     if (relClass.HasBaseClasses())
         {
-        if (foreignKeyConstraintCA.IsValid() || useECInstanceIdAsFk || linkTableRelationshipMapCA.IsValid())
+        BeAssert(!foreignKeyConstraintCA.IsValid() && "Should have been caught before because a nav prop cannot point to a rel subclass");
+        if (linkTableRelationshipMapCA.IsValid())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. It has a base class and therefore must not have any of the 'ForeignKeyConstraint', 'UseECInstanceIdAsForeignKey', 'LinkTableRelationshipMap' custom attributes. Only the root relationship class of a hierarchy can have these custom attributes.",
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. It has a base class and therefore must not have the 'LinkTableRelationshipMap' custom attribute. Only the root relationship class of a hierarchy can have this custom attribute.",
                                                           relClass.GetFullName());
             return ERROR;
             }
@@ -642,9 +631,9 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
     if (linkTableRelationshipMapCA.IsValid() || (relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1 && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1) ||
         relClass.GetPropertyCount() > 0)
         {
-        if (foreignKeyConstraintCA.IsValid() || useECInstanceIdAsFk)
+        if (foreignKeyConstraintCA.IsValid())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. It has the 'UseECInstanceIdAsForeignKey' custom attribute or its navigation property has the 'ForeignKeyConstraint' custom attribute. The relationship implies a link table mapping though (see API docs for rules when link table mapping is implied).",
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. Its navigation property has the 'ForeignKeyConstraint' custom attribute. The relationship implies a link table mapping though (see API docs for rules when link table mapping is implied).",
                                                           relClass.GetFullName());
             return ERROR;
             }
@@ -700,22 +689,9 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
             }
         }
 
-    if (useECInstanceIdAsFk)
-        {
-        if (actualConstraintClassIds.empty())
-            {
-            mappingType = ForeignKeyMappingType::Create(relClass, fkEnd, foreignKeyConstraintCA, useECInstanceIdAsFk, ecdb.GetECDbImplR().GetIssueReporter());
-            return mappingType != nullptr ? SUCCESS : ERROR;
-            }
-
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. It has the 'UseECInstanceIdAsForeignKey' custom attribute, but at the same time a navigation property is defined for it "
-                                                        "on the %s constraint class(es).", relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
-        return ERROR;
-        }
-
     if (actualConstraintClassIds.empty())
         {
-        BeAssert(!foreignKeyConstraintCA.IsValid() && !useECInstanceIdAsFk && "Should have been handled before");
+        BeAssert(!foreignKeyConstraintCA.IsValid() && "Should have been handled before");
 
         LOG.debugv("ECRelationshipClass '%s' is mapped to a link table because none of the constraint classes on the %s end define a navigation property for this relationship class.",
                    relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
@@ -766,7 +742,7 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
             }
         }
 
-    mappingType = ForeignKeyMappingType::Create(relClass, fkEnd, foreignKeyConstraintCA, useECInstanceIdAsFk, ecdb.GetECDbImplR().GetIssueReporter());
+    mappingType = ForeignKeyMappingType::Create(relClass, fkEnd, foreignKeyConstraintCA, ecdb.GetECDbImplR().GetIssueReporter());
     return mappingType != nullptr ? SUCCESS : ERROR;
     }
 

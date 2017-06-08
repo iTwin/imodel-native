@@ -79,11 +79,6 @@ struct ECDbMapCustomAttributeHelper final
         //! @param[in] navProp Navigation property to retrieve the custom attribute from.
         //! @return true if @p navProp has the custom attribute. false, if @p navProp doesn't have the custom attribute
         static bool TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyConstraint, ECN::NavigationECPropertyCR navProp);
-
-        //! Indicates whether the specified ECRelationshipClass has the UseECInstanceIdAsForeignKey custom attribute or not.
-        //! @param[in] relClass ECRelationshipClass to retrieve the custom attribute from.
-        //! @return true if @p relClass has the custom attribute. false, if @p relClass doesn't have the custom attribute
-        static bool HasUseECInstanceIdAsForeignKey(ECN::ECRelationshipClassCR relClass);
     };
 
 //=======================================================================================    

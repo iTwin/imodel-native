@@ -124,15 +124,6 @@ bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstrai
     return true;
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   12 / 2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(ECRelationshipClassCR relClass)
-    {
-    return relClass.GetCustomAttributeLocal(ECDBMAP_SCHEMANAME, "UseECInstanceIdAsForeignKey") != nullptr;
-    }
-
 
 //*****************************************************************
 //SchemaMapCustomAttribute

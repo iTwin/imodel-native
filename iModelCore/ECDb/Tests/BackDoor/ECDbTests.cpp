@@ -910,10 +910,49 @@ ECObjectsStatus ECDbTestUtility::CopyStruct(IECInstanceR target, IECInstanceCR s
 END_ECDBUNITTESTS_NAMESPACE
 
 //************************************************************************************
-//GTest PrintTo customazations
+//GTest PrintTo customizations
 //************************************************************************************
 
+BEGIN_BENTLEY_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(BeInt64Id id, std::ostream* os) {  *os << id.GetValueUnchecked();  }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(DateTime const& dt, std::ostream* os) { *os << dt.ToString().c_str(); }
+
+END_BENTLEY_NAMESPACE
+
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECClassId id, std::ostream* os) { PrintTo((BeInt64Id) id, os); }
+
+END_BENTLEY_ECOBJECT_NAMESPACE
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECInstanceId id, std::ostream* os) { PrintTo((BeInt64Id) id, os); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECInstanceKey const& key, std::ostream* os) 
+    { 
+    *os << "{ECInstanceId:";
+    PrintTo(key.GetInstanceId(), os);
+    *os << ",ECClassId:";
+    PrintTo(key.GetClassId(), os);
+    *os << "}";
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  05/17

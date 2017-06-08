@@ -137,17 +137,15 @@ struct ForeignKeyMappingType : RelationshipMappingType
     {
 private:
     ECN::ECRelationshipEnd m_fkEnd;
-    bool m_useECInstanceIdAsFk = false;
 
 protected:
-    ForeignKeyMappingType(Type type, ECN::ECRelationshipEnd fkEnd, bool useECInstanceIdAsFk) : RelationshipMappingType(type), m_fkEnd(fkEnd), m_useECInstanceIdAsFk(useECInstanceIdAsFk) {}
+    ForeignKeyMappingType(Type type, ECN::ECRelationshipEnd fkEnd) : RelationshipMappingType(type), m_fkEnd(fkEnd) {}
 
 public:
-    static std::unique_ptr<ForeignKeyMappingType> Create(ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd, ForeignKeyConstraintCustomAttribute const&, bool useECInstanceIdAsFk, IssueReporter const&);
+    static std::unique_ptr<ForeignKeyMappingType> Create(ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd, ForeignKeyConstraintCustomAttribute const&, IssueReporter const&);
 
     virtual ~ForeignKeyMappingType() {}
     ECN::ECRelationshipEnd GetFkEnd() const { return m_fkEnd; }
-    bool UseECInstanceIdAsFk() const { return m_useECInstanceIdAsFk; }
     };
 
 //======================================================================================
@@ -156,7 +154,7 @@ public:
 struct LogicalForeignKeyMappingType final : ForeignKeyMappingType
     {
     public:
-        LogicalForeignKeyMappingType(ECN::ECRelationshipEnd fkEnd, bool useECInstanceIdAsFk) : ForeignKeyMappingType(Type::LogicalForeignKey, fkEnd, useECInstanceIdAsFk) {}
+        explicit LogicalForeignKeyMappingType(ECN::ECRelationshipEnd fkEnd) : ForeignKeyMappingType(Type::LogicalForeignKey, fkEnd) {}
         ~LogicalForeignKeyMappingType() {}
     };
 
@@ -170,8 +168,8 @@ struct PhysicalForeignKeyMappingType final : ForeignKeyMappingType
         ForeignKeyDbConstraint::ActionType m_onUpdateAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
 
     public:
-        PhysicalForeignKeyMappingType(ECN::ECRelationshipEnd fkEnd, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction, bool useECInstanceIdAsFk)
-            : ForeignKeyMappingType(Type::PhysicalForeignKey, fkEnd, useECInstanceIdAsFk), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
+        PhysicalForeignKeyMappingType(ECN::ECRelationshipEnd fkEnd, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
+            : ForeignKeyMappingType(Type::PhysicalForeignKey, fkEnd), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
             {}
 
         ~PhysicalForeignKeyMappingType() {}
