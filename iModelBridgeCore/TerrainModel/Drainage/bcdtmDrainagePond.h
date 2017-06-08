@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 class DTMDrainageTables;
 struct DTMZeroSlopePolygon;
 typedef bvector<DTMZeroSlopePolygon> DTMZeroSlopePolygonVector ;
@@ -71,3 +73,5 @@ int bcdtmDrainage_indexAllPointsAtZeroSlopeElevationDtmObject(BC_DTM_OBJ *dtmP,D
 int bcdtmDrainage_writeZeroSlopePolygonPointsDtmObject(BC_DTM_OBJ *dtmP,DTMZeroSlopePolygonVector *zeroSlopePolygonsP,int zeroSlopePolygon) ;
 int bcdtmDrainage_createDepressionDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ **depressionDtmPP,DTMFeatureCallback loadFunctionP,void *userP) ;
 int bcdtmDrainage_designPondToATargetVolumeOrElevationDtmObject(BC_DTM_OBJ* pondObjectP, DTMPondResult& pondFlag, double* pondElevationP, double* pondVolumeP, DPoint3d* pondPtsP, long numPondPts, DTMPondDesignMethod outsideInsideOpt, DTMPondTarget volElevOpt, double volume, double elevation, double pondSlope, double freeBoard, bool isBerm, double bermSlope, double bermWidth, bool isCrown, double crownWidth, double cornerStrokeTolerance, bool isBermFillOnly, BC_DTM_OBJ* fillTinP, double fillSlope);
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

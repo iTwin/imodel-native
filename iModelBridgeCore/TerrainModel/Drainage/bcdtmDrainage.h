@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainage.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,28 +25,3 @@ extern double DTM_2PYE;
 #include "bcdtmDrainageUtility.h"
 #include "bcdtmDrainageFeatures.h"
 
-/*-------------------------------------------------------------------+
-|                                                                    |
-|                                                                    |
-|                                                                    |
-+-------------------------------------------------------------------*/
-
-class DTMDrainage
-{
- public :
- 
-    DTMDrainage(void) 
-       {
-        m_pointCache = new DTMPointCache() ;
-       }
-      
-    ~DTMDrainage()
-       {
-        m_pointCache->FreeCache() ;
-       }  
- 
- private :
- 
-    DTMPointCache*  m_pointCache ;
-    
-} ;   

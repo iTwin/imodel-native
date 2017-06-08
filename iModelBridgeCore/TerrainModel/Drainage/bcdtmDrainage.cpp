@@ -8,6 +8,9 @@
 //
 
 #include "bcdtmDrainage.h"
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -112,10 +115,6 @@ DTMStatusInt BcDTMDrainage::TraceMaximumDescent
         bcdtmWrite_message(1,0,0, "DTM is Read Only");
         return DTM_ERROR;
         }
-
-    // Create Drainage Class
-
-    DTMDrainage  dtmDrainage ;
 
     // Convert Trace Start Point
 
@@ -761,3 +760,5 @@ DTMPondResult DtmPondDesignCriteria::CreatePond(BENTLEY_NAMESPACE_NAME::TerrainM
     return result;
 
     }
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

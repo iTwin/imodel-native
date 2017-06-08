@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMMeshEnumerator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -15,6 +15,7 @@ DTMMeshEnumerator::DTMMeshEnumerator (DTM^ dtm) : m_dtm (dtm)
     {
     m_marshaller = ReleaseMarshaller::GetMarshaller();
     DTMMeshEnumeratorPtr native = Bentley::TerrainModel::DTMMeshEnumerator::Create(*m_dtm->Handle);
+    native->SetUsePolyfaceHeader(true);
     m_native = native.get ();
     m_native->AddRef ();
     }

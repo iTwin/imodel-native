@@ -10,6 +10,8 @@
 #include <TerrainModel/Core/bcdtmSideSlope.h>
 //#pragma optimize('p', on )
 
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 int DrainageDebug = 0;
 
 /*-------------------------------------------------------------------+
@@ -1007,60 +1009,73 @@ int bcdtmDrainage_tracePondBoundaryDtmObject
         if (pointCache.StorePointInCache(contourStart.x, contourStart.y, pondElevation)) goto errexit;
         if (dbg == 2) bcdtmWrite_message(0, 0, 0, "x = %12.5lf y = %12.5lf z = %10.4lf  ** Contour Start", contourStart.x, contourStart.y, pondElevation);
         tracePond = true;
+        DPoint3d *pointAddrNp;
+        DPoint3d *pointAddrSp;
+        pointAddrSp = pointAddrP(dtmP, sp);
+        pointAddrNp = pointAddrP(dtmP, np);
         while (tracePond)
             {
             if (dbg == 2)
                 {
-                bcdtmWrite_message(0, 0, 0, "sp  = %8ld ** %12.5lf %12.5lf %10.4lf", sp, pointAddrP(dtmP, sp)->x, pointAddrP(dtmP, sp)->y, pointAddrP(dtmP, sp)->z);
-                bcdtmWrite_message(0, 0, 0, "np  = %8ld ** %12.5lf %12.5lf %10.4lf", np, pointAddrP(dtmP, np)->x, pointAddrP(dtmP, np)->y, pointAddrP(dtmP, np)->z);
+                bcdtmWrite_message(0, 0, 0, "sp  = %8ld ** %12.5lf %12.5lf %10.4lf", sp, pointAddrSp->x, pointAddrSp->y, pointAddrSp->z);
+                bcdtmWrite_message(0, 0, 0, "np  = %8ld ** %12.5lf %12.5lf %10.4lf", np, pointAddrNp->x, pointAddrNp->y, pointAddrNp->z);
                 }
             /*
             **  Check For Intersection On Line Sp-Np
             */
-            if ((pointAddrP(dtmP, np)->z > pondElevation && pointAddrP(dtmP, sp)->z < pondElevation) ||
-                (pointAddrP(dtmP, np)->z < pondElevation && pointAddrP(dtmP, sp)->z > pondElevation))
+            if ((pointAddrNp->z > pondElevation && pointAddrSp->z < pondElevation) ||
+                (pointAddrNp->z < pondElevation && pointAddrSp->z > pondElevation))
                 {
                 if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Intersection On Line Sp-Np");
-                ratio = (pondElevation - pointAddrP(dtmP, sp)->z) / (pointAddrP(dtmP, np)->z - pointAddrP(dtmP, sp)->z);
-                x = pointAddrP(dtmP, sp)->x + (pointAddrP(dtmP, np)->x - pointAddrP(dtmP, sp)->x) * ratio;
-                y = pointAddrP(dtmP, sp)->y + (pointAddrP(dtmP, np)->y - pointAddrP(dtmP, sp)->y) * ratio;
+                ratio = (pondElevation - pointAddrSp->z) / (pointAddrNp->z - pointAddrSp->z);
+                x = pointAddrSp->x + (pointAddrNp->x - pointAddrSp->x) * ratio;
+                y = pointAddrSp->y + (pointAddrNp->y - pointAddrSp->y) * ratio;
                 if (pointCache.StorePointInCache(x, y, pondElevation)) goto errexit;
                 if (x == contourStart.x && y == contourStart.y) tracePond = false;
                 if (dbg == 2) bcdtmWrite_message(0, 0, 0, "x = %12.5lf y = %12.5lf z = %10.4lf ** 00", x, y, pondElevation);
                 if ((np = bcdtmList_nextAntDtmObject(dtmP, sp, np)) < 0) goto errexit;
+                pointAddrNp = pointAddrP(dtmP, np);
                 }
             /*
             **     Check For Contour CoinCident With Line Sp-Np - Can Only Occur On Tptr Polygon
             */
-            else if (pointAddrP(dtmP, np)->z == pondElevation && pointAddrP(dtmP, sp)->z == pondElevation)
+            else if (pointAddrNp->z == pondElevation && pointAddrSp->z == pondElevation)
                 {
                 if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Contour CoinCident With Sp-Np");
-                x = pointAddrP(dtmP, np)->x;
-                y = pointAddrP(dtmP, np)->y;
+                x = pointAddrNp->x;
+                y = pointAddrNp->y;
                 if (pointCache.StorePointInCache(x, y, pondElevation)) goto errexit;
                 if (x == contourStart.x && y == contourStart.y) tracePond = false;
                 sp = np;
                 np = nodeAddrP(dtmP, sp)->tPtr;
+                pointAddrSp = pointAddrP(dtmP, sp);
+                pointAddrNp = pointAddrP(dtmP, np);
                 if (dbg == 2)bcdtmWrite_message(0, 0, 0, "x = %12.5lf y = %12.5lf z = %10.4lf ** 01", x, y, pondElevation);
                 }
             /*
             **  Check For Contour CoinCident With Np - Can Only Occur On Tptr Polygon
             */
-            else if (pointAddrP(dtmP, np)->z == pondElevation && pointAddrP(dtmP, sp)->z != pondElevation)
+            else if (pointAddrNp->z == pondElevation && pointAddrSp->z != pondElevation)
                 {
                 if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Contour CoinCident With Np");
-                x = pointAddrP(dtmP, np)->x;
-                y = pointAddrP(dtmP, np)->y;
+                x = pointAddrNp->x;
+                y = pointAddrNp->y;
                 if (pointCache.StorePointInCache(x, y, pondElevation)) goto errexit;
                 if (x == contourStart.x && y == contourStart.y) tracePond = false;
                 sp = np;
                 np = nodeAddrP(dtmP, sp)->tPtr;
+                if (np == dtmP->nullPnt)
+                    goto errexit;
+
+                pointAddrSp = pointAddrP(dtmP, sp);
+                pointAddrNp = pointAddrP(dtmP, np);
+
                 if (dbg == 2) bcdtmWrite_message(0, 0, 0, "x = %12.5lf y = %12.5lf z = %10.4lf ** 01", x, y, pondElevation);
                 }
             /*
             **  Check For Contour CoinCident With Sp - Can Only Occur On Tptr Polygon
             */
-            else if (pointAddrP(dtmP, sp)->z == pondElevation && pointAddrP(dtmP, np)->z != pondElevation)
+            else if (pointAddrSp->z == pondElevation && pointAddrNp->z != pondElevation)
                 {
                 if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Contour CoinCident With Sp");
                 ap = np;
@@ -1073,8 +1088,10 @@ int bcdtmDrainage_tracePondBoundaryDtmObject
                         process = 0;
                         sp = apn;
                         np = nodeAddrP(dtmP, sp)->tPtr;
-                        x = pointAddrP(dtmP, sp)->x;
-                        y = pointAddrP(dtmP, sp)->y;
+                        pointAddrSp = pointAddrP(dtmP, sp);
+                        pointAddrNp = pointAddrP(dtmP, np);
+                        x = pointAddrSp->x;
+                        y = pointAddrSp->y;
                         if (pointCache.StorePointInCache(x, y, pondElevation)) goto errexit;
                         if (x == contourStart.x && y == contourStart.y) tracePond = false;
                         if (dbg == 2) bcdtmWrite_message(0, 0, 0, "x = %12.5lf y = %12.5lf z = %10.4lf ** 02", x, y, pondElevation);
@@ -1085,13 +1102,16 @@ int bcdtmDrainage_tracePondBoundaryDtmObject
                         process = 0;
                         sp = apn;
                         np = ap;
-                        ratio = (pondElevation - pointAddrP(dtmP, sp)->z) / (pointAddrP(dtmP, np)->z - pointAddrP(dtmP, sp)->z);
-                        x = pointAddrP(dtmP, sp)->x + (pointAddrP(dtmP, np)->x - pointAddrP(dtmP, sp)->x) * ratio;
-                        y = pointAddrP(dtmP, sp)->y + (pointAddrP(dtmP, np)->y - pointAddrP(dtmP, sp)->y) * ratio;
+                        pointAddrSp = pointAddrP(dtmP, sp);
+                        pointAddrNp = pointAddrP(dtmP, np);
+                        ratio = (pondElevation - pointAddrSp->z) / (pointAddrNp->z - pointAddrSp->z);
+                        x = pointAddrSp->x + (pointAddrNp->x - pointAddrSp->x) * ratio;
+                        y = pointAddrSp->y + (pointAddrNp->y - pointAddrSp->y) * ratio;
                         if (pointCache.StorePointInCache(x, y, pondElevation)) goto errexit;
                         if (x == contourStart.x && y == contourStart.y) tracePond = false;
                         if ((np = bcdtmList_nextAntDtmObject(dtmP, sp, np)) < 0) goto errexit;
                         if (dbg == 2) bcdtmWrite_message(0, 0, 0, "x = %12.5lf y = %12.5lf z = %10.4lf ** 03", x, y, pondElevation);
+                        pointAddrNp = pointAddrP(dtmP, np);
                         }
                     else
                         {
@@ -1109,6 +1129,8 @@ int bcdtmDrainage_tracePondBoundaryDtmObject
                 if ((ap = bcdtmList_nextAntDtmObject(dtmP, np, sp)) < 0) goto errexit;
                 sp = np;
                 np = ap;
+                pointAddrSp = pointAddrP(dtmP, sp);
+                pointAddrNp = pointAddrP(dtmP, np);
                 }
             }
         /*
@@ -10258,3 +10280,5 @@ errexit:
     ret = DTM_ERROR;
     goto cleanup;
     }
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

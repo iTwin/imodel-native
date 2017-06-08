@@ -60,6 +60,11 @@ nameToDefine = jmdlgeom_static
 
 %endif
 
+%if defined(DEBUG)
+nameToDefine = DEBUG
+%include cdefapnd.mki
+%endif
+
 nameToDefine = XM
 %include cdefapnd.mki
 

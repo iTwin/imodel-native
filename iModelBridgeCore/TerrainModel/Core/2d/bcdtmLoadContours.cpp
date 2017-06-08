@@ -15,6 +15,8 @@
 #include <condition_variable>
 #include <thread>
 
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+
 #pragma float_control(precise, on, push)
 
 thread_local static DPoint3d  *conPtsP = nullptr;               /* DTM Contour Points                                      */
@@ -1012,7 +1014,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
          contourParams.depressionOption = depressionOption != 0;
          contourParams.maxSlopeOption = maxSlopeOption;
          contourParams.maxSlopeValue = maxSlopeValue;
-         return bcdtmLoad_contoursFromDtmObject (dtmP, contourParams, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (useFence ? DTMFenceType::None : fenceType, fenceOption, fencePtsP, numFencePts), loadFunctionP, userP);
+         return bcdtmLoad_contoursFromDtmObject (dtmP, contourParams, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (!useFence ? DTMFenceType::None : fenceType, fenceOption, fencePtsP, numFencePts), loadFunctionP, userP);
          }
 
      //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmList.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1365,6 +1365,18 @@ BENTLEYDTM_Public int bcdtmList_testForVoidTriangleDtmObject(BC_DTM_OBJ *dtmP,lo
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_Public bool bcdtmList_testForVoidTriangleDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long P3)
+    {
+    bool voidTriangle = false;
+    bcdtmList_testForVoidTriangleDtmObject(dtmP, P1, P2, P3, voidTriangle);
+    return voidTriangle;
+    }
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -6379,7 +6391,8 @@ BENTLEYDTM_Public int bcdtmList_checkForNoneNullTptrValuesDtmObject(BC_DTM_OBJ *
  for( node = 0 ; node < dtmP->numPoints  && ! *noneNullSptrP  ; ++node  )
    {
     nP = nodeAddrP(dtmP,node) ;
-    if( nP->cPtr != dtmP->nullPtr && nP->tPtr != dtmP->nullPnt ) *noneNullSptrP = 1 ;
+    if( nP->cPtr != dtmP->nullPtr && nP->tPtr != dtmP->nullPnt )
+        *noneNullSptrP = 1 ;
    }
 /*
 ** Job Completed

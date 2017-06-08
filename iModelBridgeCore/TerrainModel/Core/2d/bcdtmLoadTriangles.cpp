@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadTriangles.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -178,7 +178,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_trianglesFromDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmInterruptLoad_trianglesDtmObject
+int bcdtmInterruptLoad_trianglesDtmObject
 (
  BC_DTM_OBJ *dtmP,
  DTMFeatureCallback loadFunctionP,
@@ -837,7 +837,7 @@ BENTLEYDTM_Public int bcdtmInterruptLoadCSharp_trianglesDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmInterruptLoad_trianglesDtmObjectOld
+int bcdtmInterruptLoad_trianglesDtmObjectOld
 (
  BC_DTM_OBJ *dtmP,
  DTMFeatureCallback loadFunctionP,
@@ -860,7 +860,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_trianglesDtmObjectOld
  DPoint3d             trgPts[4] ;
  DTM_TIN_NODE    *nodeP,*node1P,*node2P,*node3P ;
  BC_DTM_OBJ      *clipDtmP=NULL  ;
- DPoint3d   *p1P,*p2P,*p3P,*pntP  ;
+ DPoint3d   *p1P = nullptr,*p2P,*p3P,*pntP  ;
  DTM_POINT_ARRAY **clipArraysPP=NULL ;
  DTM_CIR_LIST    *clistP ;
  static long     pointMarkOffset=0;

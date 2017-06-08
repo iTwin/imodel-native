@@ -5,13 +5,25 @@
       <Configuration>Debug Local LKG</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug Local LKG|x64">
+      <Configuration>Debug Local LKG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
@@ -27,8 +39,7 @@
     <ClCompile Include="..\Drainage\bcdtmDrainageTables.cpp" />
     <ClCompile Include="..\Drainage\bcdtmDrainageTrace.cpp" />
     <ClCompile Include="..\Drainage\bcdtmDrainageUtility.cpp" />
-    <ClCompile Include="..\Drainage\drainage.cpp" />
-    <ClCompile Include="..\Drainage\NewTrace.cpp" />
+    <ClCompile Include="..\Drainage\WaterAnalysis.cpp" />
     <ClCompile Include="2d\bcdtm3DModel.cpp" />
     <ClCompile Include="2d\bcdtmBtree.cpp" />
     <ClCompile Include="2d\bcdtmCheck.cpp" />
@@ -116,6 +127,7 @@
     <ClInclude Include="..\Drainage\bcdtmDrainageTrace.h" />
     <ClInclude Include="..\Drainage\bcdtmDrainageUtility.h" />
     <ClInclude Include="..\Drainage\PublicAPI\drainage.h" />
+    <ClInclude Include="..\Drainage\PublicAPI\WaterAnalysis.h" />
     <ClInclude Include="..\PublicAPI\TerrainModel\TerrainModel.h" />
     <ClInclude Include="cppwrappers\bcDTMImpl.h" />
     <ClInclude Include="PrivateAPI\base\bcConversion.h" />
@@ -156,7 +168,19 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
@@ -168,16 +192,31 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -191,6 +230,16 @@
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>BentleyBuild.py -p Core -f  TerrainModel -r  TerrainModel re  Core -x64     </NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakeCleanCommandLine>BentleyBuild.py -p Core -f  TerrainModel -r  TerrainModel re  Core -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -p Core -f  TerrainModel -r  TerrainModel re  Core -x64   -c
+BentleyBuild.py -p Core -f  TerrainModel -r  TerrainModel re  Core -x64 </NMakeReBuildCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
@@ -206,6 +255,18 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelCore\TerrainModelCor
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|x64'">
+    <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
+xcopy /S /Y /r $(SrcRoot)TerrainModel\Core\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\TerrainModel\Core
+xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelCore\TerrainModelCore.lib $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelCore\TerrainModelCore.dll $(Root)\out\LKG\Winx64\TerrainModel\Delivery\</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>set DEBUG=
 set NDEBUG=1
@@ -220,6 +281,18 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>set DEBUG=
+set NDEBUG=1
+python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core
+</NMakeBuildCommandLine>
+    <NMakeOutput />
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 CoreDll</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>

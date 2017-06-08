@@ -6,13 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 class DTMDrainageTables;
-enum class ZeroSlopeTraceOption
-    {
-    None = 0,
-    TraceLastAngle = 1,
-    Pond = 2,
-    };
 
 int bcdtmDrainage_sumpLinePondTableCompareFunction(const void *void1P,const void *void2P ) ;
 
@@ -65,3 +62,5 @@ int bcdtmDrainage_checkTraceToDrainPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTa
 int bcdtmDrainage_rangeScanPointForMaximumDescentSumpLineDtmObject(BC_DTM_OBJ *dtmP, DTMDrainageTables *drainageTablesP, long point, long startPoint, long endPoint, long *sumpPointP, double *sumpSlopeP) ;
 int bcdtmDrainage_rangeScanPointForMaximumDescentDtmObject(BC_DTM_OBJ *dtmP, DTMDrainageTables *drainageTablesP, long point, long startPoint, long endPoint, long *descentTypeP, long *descentPnt1P, long *descentPnt2P, double *descentSlopeP, double *descentAngleP);
 int  bcdtmDrainage_rangeScanPointForMaximumDescentTriangleDtmObject(BC_DTM_OBJ *dtmP, DTMDrainageTables *drainageTablesP, long point, long startPoint, long endPoint, long *trgBasePnt1P, long *trgBasePnt2P, double *trgDescentAngleP, double *trgSlopeP) ;
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

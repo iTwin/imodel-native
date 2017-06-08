@@ -8,6 +8,8 @@
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
 
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 #ifdef WIP
 // ToDo : Check for low low point is false low point
 // Struct Pt1, Pt2, done?
@@ -1501,3 +1503,5 @@ int bcdtmDrainage_returnZeroSlopePolygonsDtmObject
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

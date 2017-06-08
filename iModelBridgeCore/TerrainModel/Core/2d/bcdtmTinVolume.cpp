@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmTinVolume.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -644,7 +644,7 @@ static int bcdtmTinVolume_prismoidalVolumeArea (double elevation, double X1, dou
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmTinVolume_prismToFlatPlaneDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2, long P3, double elevation, double &cutP, double &fillP, double &cutAreaP, double &fillAreaP)
+int bcdtmTinVolume_prismToFlatPlaneDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2, long P3, double elevation, double &cutP, double &fillP, double &cutAreaP, double &fillAreaP)
 /*
 ** This Function Calculates the Volume Of A Prism Othogonal With A Flat Plane
 */
@@ -665,7 +665,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_prismToFlatPlaneDtmObject (BC_DTM_OBJ *dtmP
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmTinVolume_prismToFlatPlane (double elevation, double X1, double Y1, double Z1, double X2, double Y2, double Z2, double X3, double Y3, double Z3, double *cutP, double *fillP, double *areaP)
+int bcdtmTinVolume_prismToFlatPlane (double elevation, double X1, double Y1, double Z1, double X2, double Y2, double Z2, double X3, double Y3, double Z3, double *cutP, double *fillP, double *areaP)
     {
     double cutArea = 0, fillArea = 0;
     int status = bcdtmTinVolume_prismToFlatPlane (elevation, X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, *cutP, *fillP, cutArea, fillArea);
@@ -677,7 +677,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_prismToFlatPlane (double elevation, double
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmTinVolume_prismToFlatPlane (double elevation, double X1, double Y1, double Z1, double X2, double Y2, double Z2, double X3, double Y3, double Z3, double &cutP, double &fillP, double &cutAreaP, double &fillAreaP)
+int bcdtmTinVolume_prismToFlatPlane (double elevation, double X1, double Y1, double Z1, double X2, double Y2, double Z2, double X3, double Y3, double Z3, double &cutP, double &fillP, double &cutAreaP, double &fillAreaP)
 /*
 ** This Function Calculates the Volume Of A Prism Othogonal With A Flat Plane
 */
@@ -2839,7 +2839,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
        else if( TRUE )
          {
           diff = fabs(fabs(tptrArea-trgArea)/trgArea) ;
-          if( trgArea > 0.01 && diff > 0.05 ) bcdtmWrite_message(0,0,0,"Insert Area Difference     ** trgNum = %6ld Triangle Area = %12.7lf Tptr Area = %12.7lf Percentage Difference = %10.4lf",trgNum,trgArea,tptrArea,diff*100.0) ;
+          if( trgArea > 0.01 && diff > 0.05 )
+              bcdtmWrite_message(0,0,0,"Insert Area Difference     ** trgNum = %6ld Triangle Area = %12.7lf Tptr Area = %12.7lf Percentage Difference = %10.4lf",trgNum,trgArea,tptrArea,diff*100.0) ;
          }
       }
 /*
@@ -2852,11 +2853,12 @@ BENTLEYDTM_Private int bcdtmTinVolume_surfaceToSurfaceVolumeForTriangleDtmObject
 /*
 **     Check Prismoidal Area Against Triangle Area
 */
-       if( TRUE )
-         {
-          diff = fabs(fabs((cutAreaP + fillAreaP)+voidAreaP-tptrArea)/tptrArea) ;
-          if( trgArea > 0.01 && diff > 0.01 ) bcdtmWrite_message(0,0,0,"Prismoidal Area Difference ** trgNum = %6ld Tptr Triangle Area = %12.4lf Calculated Volume Area = %10.4lf Percentage Difference = %10.4lf",trgNum,tptrArea,cutAreaP + fillAreaP,diff*100.0) ;
-         }
+       // This check isn't valid as no volume triangles aren't included in the cut/fill/void areas.
+       //if( TRUE )
+       //  {
+       //   diff = fabs((fabs((cutAreaP + fillAreaP)+voidAreaP)-tptrArea)/tptrArea) ;
+       //   if( trgArea > 0.01 && diff > 0.01 ) bcdtmWrite_message(0,0,0,"Prismoidal Area Difference ** trgNum = %6ld Tptr Triangle Area = %12.4lf Calculated Volume Area = %10.4lf Percentage Difference = %10.4lf",trgNum,tptrArea,cutAreaP + fillAreaP,diff*100.0) ;
+       //  }
       }
     else
       {

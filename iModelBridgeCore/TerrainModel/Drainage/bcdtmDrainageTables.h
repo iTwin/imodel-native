@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <stack>
 
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  Class For Caching DTM Points                                      |
@@ -1115,3 +1117,4 @@ typedef  bvector<DTMZeroSlopePolygon>  DTMZeroSlopePolygonVector ;
 BENTLEYDTMDRAINAGE_EXPORT int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP) ;
     
     
+END_BENTLEY_TERRAINMODEL_NAMESPACE
