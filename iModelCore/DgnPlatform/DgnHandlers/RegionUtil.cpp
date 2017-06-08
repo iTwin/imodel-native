@@ -2,158 +2,388 @@
 |
 |     $Source: DgnHandlers/RegionUtil.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
+#include <Regions/regionsAPI.h>
+#include <Regions/rimsbsAPI.h>
 
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-RegionParams::RegionParams()
-    {
-    m_type              = RegionType::ExclusiveOr;
-    m_regionLoops       = RegionLoops::Ignore;
+BEGIN_BENTLEY_DGN_NAMESPACE
 
-    m_interiorText      = false;
-    m_associative       = false;
-    m_invisibleBoundary = false;
-    m_forcePlanar       = true;
-    m_dirty             = false;
-
-    m_reservedFlags     = 0;
-
-    m_gapTolerance      = 0.0;
-    m_textMarginFactor  = 0.0;
-
-    m_flatten.InitIdentity();
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionParams::SetType(RegionType regionType)
-    {
-    m_type = regionType;
-    }
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  05/17
++===============+===============+===============+===============+===============+======*/
+struct RegionData : RefCounted<IRegionData>
+{
+RegionGraphicsContext&  m_context;
+RG_Header*              m_pRG;
+RIMSBS_Context*         m_pCurves;
+MTG_MarkSet             m_activeFaces;
+Transform               m_worldToViewTrans = Transform::FromIdentity();
+Transform               m_viewToWorldTrans = Transform::FromIdentity();
+bool                    m_graphIsValid = false;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionParams::SetFloodParams(RegionLoops regionLoops, double gapTolerance)
+RegionData(RegionGraphicsContext& context) : m_context(context)
     {
-    m_regionLoops  = regionLoops;
-    m_gapTolerance = gapTolerance;
+    m_pRG = jmdlRG_new();
+    m_pCurves = jmdlRIMSBS_newContext();
+
+    jmdlRIMSBS_setupRGCallbacks(m_pCurves, m_pRG);
+    jmdlRG_setFunctionContext(m_pRG, m_pCurves);
+    jmdlRG_setDistanceTolerance(m_pRG, DgnUnits::OneMillimeter()); // Good tolerance???
+    m_activeFaces.Attach(jmdlRG_getGraph(m_pRG), MTG_ScopeFace);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionParams::SetInteriorText(bool interiorText, double textMarginFactor)
+~RegionData()
     {
-    m_interiorText     = interiorText;
-    m_textMarginFactor = textMarginFactor;
+    if (m_pCurves)
+        {
+        int iCurve = 0;
+
+        do
+            {
+            void* userDataP = nullptr;
+
+            if (!jmdlRIMSBS_getUserPointer(m_pCurves, &userDataP, iCurve++))
+                break;
+
+            if (userDataP)
+                free(userDataP);
+
+            } while (true);
+        }
+
+    jmdlRIMSBS_freeContext(m_pCurves);
+
+    // Must Attach to nullptr graph BEFORE freeing m_pRG (so Attach can release the old mask back to m_pRG)
+    m_activeFaces.Attach(nullptr, MTG_ScopeFace);
+    jmdlRG_free(m_pRG);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionParams::SetAssociative(bool yesNo)
+static IRegionDataPtr Create(RegionGraphicsContext& context) {return new RegionData(context);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SetupGraph(double gapTolerance, bool mergeHoles)
     {
-    m_associative = yesNo;
+    m_graphIsValid = false;
+
+    // Apply explicit flatten to plane transform to entire graph, not pushed on context since it's non-invertable...
+    if (m_context.m_forcePlanar && !m_context.m_flattenTrans.IsIdentity())
+        jmdlRG_multiplyByTransform(m_pRG, &m_context.m_flattenTrans);
+
+    if (m_context.GetViewport())
+        {
+        m_worldToViewTrans.InitFrom(*m_context.GetViewport()->GetWorldToViewMap(), false);
+        m_viewToWorldTrans.InverseOf(m_worldToViewTrans);
+        }
+    else if (m_context.m_forcePlanar && RegionType::Flood == m_context.m_operation)
+        {
+        // A non-planar graph isn't an error if we'll be post-flattening loops (flood only!)
+        jmdlRG_getPlaneTransform(m_pRG, &m_viewToWorldTrans, nullptr);
+        m_worldToViewTrans.InverseOf(m_viewToWorldTrans);
+        }
+    else
+        {
+        if (!jmdlRG_getPlaneTransform(m_pRG, &m_viewToWorldTrans, nullptr) || !m_worldToViewTrans.InverseOf(m_viewToWorldTrans))
+            {
+            m_context.m_regionError = REGION_ERROR_NonCoplanar;
+
+            return ERROR;
+            }
+        }
+
+    DVec3d zAxis, zAxisWorld;
+
+    zAxisWorld.Init(0.0, 0.0, 1.0);
+    m_viewToWorldTrans.GetMatrixColumn(zAxis, 2);
+
+    if (!zAxis.IsParallelTo(zAxisWorld) || m_context.GetViewport())
+        jmdlRG_multiplyByTransform(m_pRG, &m_worldToViewTrans);
+
+    jmdlRG_mergeWithGapTolerance(m_pRG, gapTolerance, gapTolerance);
+    jmdlRG_buildFaceRangeTree(m_pRG, 0.0, jmdlRG_getTolerance(m_pRG));
+
+    if (mergeHoles)
+        jmdlRG_buildFaceHoleArray(m_pRG);
+
+    m_graphIsValid = true;
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionParams::SetInvisibleBoundary(bool yesNo)
+void GetFaceLoops(CurveVectorPtr& region, bvector<MTGNodeId>& faceNodeIds)
     {
-    m_invisibleBoundary = yesNo;
+    int         seedIndex;
+    MTGNodeId   seedNodeId;
+
+    jmdlMTGMarkSet_initIteratorIndex(&m_activeFaces, &seedIndex);
+
+    if (!jmdlMTGMarkSet_getNextNode(&m_activeFaces, &seedIndex, &seedNodeId))
+        m_context.ResetPostFlattenTransform(); // Compute new transform when there is no current active faces...
+
+    MTG_MarkSet markSet;
+
+    markSet.Attach(jmdlRG_getGraph(m_pRG), MTG_ScopeFace);
+
+    // Add faces to temporary mark set so that we can share the same code for dynamic faces and accepted faces...
+    for (int nodeId: faceNodeIds)
+        markSet.AddNode(nodeId);
+
+    GetMarkedRegions(region, &markSet);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionParams::SetFlattenBoundary(bool yesNo, RotMatrixCP flatten)
+void AddFaceLoop(MTGNodeId faceNodeId)
     {
-    m_forcePlanar = yesNo;
+    jmdlMTGMarkSet_addNode(&m_activeFaces, faceNodeId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void RemoveFaceLoop(MTGNodeId faceNodeId)
+    {
+    jmdlMTGMarkSet_removeNode(&m_activeFaces, faceNodeId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ToggleFaceLoop(MTGNodeId faceNodeId)
+    {
+    if (jmdlMTGMarkSet_isNodeInSet(&m_activeFaces, faceNodeId))
+        {
+        RemoveFaceLoop(faceNodeId);
+
+        return false;
+        }
+
+    AddFaceLoop(faceNodeId);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsFaceLoopSelected(MTGNodeId faceNodeId)
+    {
+    return TO_BOOL (jmdlMTGMarkSet_isNodeInSet(&m_activeFaces, faceNodeId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void CollectFaceLoopsAtPoint(bvector<MTGNodeId>* faceNodeIds, DPoint3dCR seedPoint, RegionLoops floodSelect, bool stepOutOfHoles)
+    {
+    DPoint3d    tmpPt = seedPoint;
+    MTGNodeId   seedNodeId;
     
-    if (flatten)
-        m_flatten = *flatten;
+    m_worldToViewTrans.Multiply(tmpPt);
+    jmdlRG_smallestContainingFace(m_pRG, &seedNodeId, &tmpPt);
+
+    if (stepOutOfHoles)
+        {
+        MTGNodeId   adjacentFaceNodeId = jmdlRG_stepOutOfHole(m_pRG, seedNodeId);
+
+        if (MTG_NULL_NODEID != adjacentFaceNodeId)
+            seedNodeId = jmdlRG_resolveFaceNodeId(m_pRG, adjacentFaceNodeId);
+        }
+
+    if (MTG_NULL_NODEID == seedNodeId)
+        return;
+
+    if (stepOutOfHoles)
+        {
+        double  areaToFace = 0.0;
+
+        jmdlRG_getFaceSweepProperties(m_pRG, &areaToFace, nullptr, nullptr, seedNodeId);
+
+        if (!(areaToFace > 0.0 || !jmdlRG_faceIsTrueExterior(m_pRG, seedNodeId)))
+            return;
+        }
+
+    bvector<MTGNodeId> activeFaceNodes; 
+
+    if (floodSelect == RegionLoops::Alternating)
+        jmdlRG_collectAllNodesOnInwardParitySearch(m_pRG, &activeFaceNodes, nullptr, seedNodeId);
+    else
+        jmdlRG_resolveHoleNodeId(m_pRG, &activeFaceNodes, seedNodeId);
+
+    for (size_t i = 0; i < activeFaceNodes.size(); i++)
+        faceNodeIds->push_back(jmdlRG_resolveFaceNodeId(m_pRG, activeFaceNodes[i]));
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionParams::SetDirty(bool yesNo)
+BentleyStatus CollectBooleanFaces(RGBoolSelect boolOp, int highestOperandA, int highestOperandB)
     {
-    m_dirty = yesNo;
+    if (!jmdlRG_collectBooleanFaces(m_pRG, boolOp, RGBoolSelect_Difference, highestOperandA, highestOperandB, &m_activeFaces))
+        return ERROR;
+
+    int       seedIndex;
+    MTGNodeId seedNodeId;
+
+    jmdlMTGMarkSet_initIteratorIndex(&m_activeFaces, &seedIndex);
+
+    return (jmdlMTGMarkSet_getNextNode(&m_activeFaces, &seedIndex, &seedNodeId) ? SUCCESS : ERROR);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-RegionType      RegionParams::GetType() const
+void CollectByInwardParitySearch(bool parityWithinComponent, bool vertexContactSufficient)
     {
-    return m_type;
+    EmbeddedIntArray holeArray;
+
+    jmdlRG_collectAllNodesOnInwardParitySearchExt(m_pRG, &holeArray, nullptr, MTG_NULL_NODEID, parityWithinComponent, vertexContactSufficient);
+
+    MTGNodeId faceNodeId = -1;
+
+    for (int i = 0; jmdlEmbeddedIntArray_getInt(&holeArray, &faceNodeId, i); i++)
+        jmdlMTGMarkSet_addNode(&m_activeFaces, faceNodeId);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-RegionLoops     RegionParams::GetFloodParams(double* gapTolerance) const
+BentleyStatus GetMarkedRegions(CurveVectorPtr& regionOut, MTG_MarkSet* markSet)
     {
-    if (gapTolerance)
-        *gapTolerance = m_gapTolerance;
+    CurveVectorPtr baseRegion = jmdlRG_collectExtendedFaces(m_pRG, m_pCurves, markSet);
 
-    return m_regionLoops;
+    if (!baseRegion.IsValid())
+        return ERROR;
+
+    regionOut = baseRegion;
+    regionOut->TransformInPlace(m_viewToWorldTrans);
+
+    // Flatten to plane defined by "average" geometry depth...
+    if (m_context.ComputePostFlattenTransform(*regionOut))
+        regionOut->TransformInPlace(m_context.m_flattenTrans);
+
+    return regionOut.IsValid() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionParams::GetInteriorText(double* textMarginFactor) const
+BentleyStatus GetActiveRegions(CurveVectorPtr& regionOut)
     {
-    if (textMarginFactor)
-        *textMarginFactor = m_textMarginFactor;
+    EmbeddedIntArray startArray;
+    EmbeddedIntArray sequenceArray;
 
-    return m_interiorText;
+    jmdlRG_collectAndNumberExtendedFaceLoops(m_pRG, &startArray, &sequenceArray, &m_activeFaces);
+
+    if (SUCCESS != GetMarkedRegions(regionOut, &m_activeFaces))
+        return ERROR;
+
+    // This won't affect our info ptr as it modifies linestring primitives in-place and the simplified boundary is always desirable...
+    regionOut->SimplifyLinestrings(-1.0, true, true);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionParams::GetAssociative() const
+BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curvePrimitive)
     {
-    return m_associative;
+    CurveNodeInfo const* nodeInfo = dynamic_cast <CurveNodeInfo const*> (curvePrimitive.GetCurvePrimitiveInfo().get());
+
+    if (!nodeInfo)
+        return SUCCESS;
+
+    for (int nodeId: nodeInfo->m_nodeIds)
+        {
+        int     parentIndex;
+
+        if (!jmdlRG_getParentCurveIndex(m_pRG, &parentIndex, nodeId) || parentIndex < 0)
+            continue;
+
+        void*   userDataP = nullptr; // held by context...
+
+        if (!jmdlRIMSBS_getUserPointer(m_pCurves, &userDataP, parentIndex) || !userDataP)
+            continue;
+
+        int     userInt = 0;
+
+        // NOTE: Dependency root order matters for assoc region re-evaluate of boolean difference...first root is geometry to subtract from!
+        if (RegionType::Flood != m_context.m_operation && jmdlRIMSBS_getUserInt(m_pCurves, &userInt, parentIndex) && 1 == userInt)
+            regionRoots.insert(regionRoots.begin(), *((DgnElementId*) userDataP)); 
+        else
+            regionRoots.push_back(*((DgnElementId*) userDataP));
+        }
+
+    return (regionRoots.empty() ? ERROR : SUCCESS);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionParams::GetInvisibleBoundary() const
+BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, CurveVectorCR region)
     {
-    return m_invisibleBoundary;
+    for (ICurvePrimitivePtr curvePrimitive: region)
+        {
+        if (curvePrimitive.IsNull())
+            continue;
+
+        GetRoots(regionRoots, *curvePrimitive);
+        }
+
+    return (regionRoots.empty() ? ERROR : SUCCESS);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionParams::GetFlattenBoundary(RotMatrixP flatten) const
+BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots)
     {
-    if (flatten)
-        *flatten = m_flatten;
+    EmbeddedIntArray startArray;
+    EmbeddedIntArray sequenceArray;
 
-    return m_forcePlanar;
+    jmdlRG_collectAndNumberExtendedFaceLoops(m_pRG, &startArray, &sequenceArray, &m_activeFaces);
+
+    for (int iCmpn=0, nodeId=0; jmdlEmbeddedIntArray_getInt(&sequenceArray, &nodeId, iCmpn++); )
+        {
+        int     parentIndex;
+
+        if (jmdlRG_getParentCurveIndex(m_pRG, &parentIndex, nodeId) && parentIndex >= 0)
+            {
+            void*   userDataP = nullptr;
+
+            if (jmdlRIMSBS_getUserPointer(m_pCurves, &userDataP, parentIndex) && userDataP)
+                regionRoots.push_back(*((DgnElementId*) userDataP)); // held by context...
+            }
+        }
+
+    // NOTE: Cull duplicate entries. Used by DgnRegionElementTool for "process originals"...
+    std::sort(regionRoots.begin(), regionRoots.end());
+    regionRoots.erase(std::unique(regionRoots.begin(), regionRoots.end()), regionRoots.end());
+
+    return (regionRoots.empty() ? ERROR : SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionParams::GetDirty() const
-    {
-    return m_dirty;
-    }
+}; // RegionData
+
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
@@ -176,221 +406,10 @@ static RGBoolSelect getRGBoolSelect(RegionType operation, bool counted = false)
         }
     }
 
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus getPathRoots(DependencyRoot& root, DisplayPathCP path, DgnModelP homeModel, bool allowFarElm)
-    {
-    AssocGeom   assoc;
-
-    memset(&assoc, 0, sizeof (assoc));
-    assoc.type = CUSTOM_ASSOC;
-
-    // NOTE: Loop roots only for DWG (no far roots) so it's ok to add the dependency even in dynamics!
-    if (SUCCESS != AssociativePoint::SetRoot((AssocPoint&) assoc, path, homeModel, allowFarElm))
-        return ERROR;
-
-    memset(&root, 0, sizeof (root));
-    root.elemid = assoc.singleElm.uniqueId;
-//    root.refattid = assoc.singleElm.refAttachmentId;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void getDependencyRoots(bvector<DependencyRoot>& depRoots, bvector<DisplayPathCP>& regionRoots, DgnModelP homeModel, bool allowFarElm)
-    {
-    // NOTE: SetBoundaryRoots culls duplicates...but we don't want getPathRoots creating multiple far-elems for duplicate paths!
-    DisplayPathCP   first = regionRoots.front();
-
-    std::sort(regionRoots.begin(), regionRoots.end());
-    regionRoots.erase(std::unique(regionRoots.begin(), regionRoots.end()), regionRoots.end());
-
-    for (DisplayPathCP path: regionRoots)
-        {
-        DependencyRoot  root;
-
-        // Create DependencyRoot from path (may be far root)...
-        if (SUCCESS != getPathRoots(root, path, homeModel, allowFarElm))
-            continue;
-
-        // Preserve first root for boolean difference, std::sort may have changed order...
-        if (path == first)
-            depRoots.insert(depRoots.begin(), root);
-        else
-            depRoots.push_back(root);
-        }
-    }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  09/13
-+===============+===============+===============+===============+===============+======*/
-struct TextBoxInfo : RefCounted <ICurvePrimitiveInfo>
-{
-GeometricElementCPtr  m_element;
-bool                  m_used;
-
-TextBoxInfo(GeometricElementCP element) {m_element = element; m_used = false;}
-
-static ICurvePrimitiveInfoPtr Create(GeometricElementCP element) {return new TextBoxInfo(element);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void ClearUsed(CurveVectorCR curves)
-    {
-    if (curves.IsUnionRegion() || curves.IsParityRegion())
-        {
-        for (ICurvePrimitivePtr curve: curves)
-            {
-            if (curve.IsNull() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
-                continue;
-
-            ClearUsed(*curve->GetChildCurveVectorCP ());
-            }
-        }
-    else
-        {
-        for (ICurvePrimitivePtr curve: curves)
-            {
-            if (!curve.IsValid())
-                continue;
-
-            TextBoxInfo* textInfo = dynamic_cast <TextBoxInfo*> (curve->GetCurvePrimitiveInfo().get());
-
-            if (!textInfo)
-                continue;
-
-            textInfo->m_used = false;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void GetUsed(CurveVectorCR curves, bvector<DgnElementId>& regionRoots)
-    {
-    if (curves.IsUnionRegion() || curves.IsParityRegion())
-        {
-        for (ICurvePrimitivePtr curve: curves)
-            {
-            if (curve.IsNull() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
-                continue;
-
-            GetUsed(*curve->GetChildCurveVectorCP (), regionRoots);
-            }
-        }
-    else
-        {
-        for (ICurvePrimitivePtr curve: curves)
-            {
-            if (!curve.IsValid())
-                continue;
-
-            TextBoxInfo* textInfo = dynamic_cast <TextBoxInfo*> (curve->GetCurvePrimitiveInfo().get());
-
-            if (!textInfo || !textInfo->m_used || !textInfo->m_element.IsValid())
-                continue;
-
-            regionRoots.push_back(textInfo->m_element->GetElementId());
-            }
-        }
-    }
-
-}; // TextBoxInfo
-#endif
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  09/09
-+===============+===============+===============+===============+===============+======*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-RegionGraphicsDrawGeom::RegionGraphicsDrawGeom()
-    {
-    m_pRG     = jmdlRG_new();
-    m_pCurves = jmdlRIMSBS_newContext();
-
-    jmdlRIMSBS_setupRGCallbacks(m_pCurves, m_pRG);
-    jmdlRG_setFunctionContext(m_pRG, m_pCurves);
-    jmdlRG_setDistanceTolerance(m_pRG, 1.0); // one uor...not so good...
-    m_activeFaces.Attach(jmdlRG_getGraph(m_pRG), MTG_ScopeFace);
-
-    m_currentGeomMarkerId = 0;
-    m_textMarginFactor = 0.0;
-    m_interiorText = false;
-
-    m_forcePlanar = false;
-    m_flattenTrans.InitIdentity();
-    m_flattenDir.Zero();
-
-    m_regionError = REGION_ERROR_None;
-    m_isFlood = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-RegionGraphicsDrawGeom::~RegionGraphicsDrawGeom()
-    {
-    if (m_pCurves)
-        {
-        int     iCurve = 0;
-
-        do
-            {
-            void*   userDataP;
-
-            if (!jmdlRIMSBS_getUserPointer(m_pCurves, &userDataP, iCurve++))
-                break;
-
-#if defined (NEEDS_WORK_DGNITEM)
-            if (userDataP)
-                ((DisplayPath*) userDataP)->Release();
-#endif
-
-            } while (true);
-        }
-
-    jmdlRIMSBS_freeContext(m_pCurves);
-
-    // Must Attach to NULL graph BEFORE freeing m_pRG (so Attach can release the old mask back to m_pRG)
-    m_activeFaces.Attach(NULL, MTG_ScopeFace);
-    jmdlRG_free(m_pRG);
-    }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RegionGraphicsDrawGeom::_SetDrawViewFlags(ViewFlags flags)
-    {
-    T_Super::_SetDrawViewFlags(flags);
-
-    // Prefer "edge" geometry...
-    m_viewFlags.SetRenderMode(RenderMode::Wireframe);
-
-    // Apply overrides to flags...
-    m_viewFlags.styles = false;
-    m_viewFlags.fill = false;
-    m_viewFlags.patterns = false;
-
-    // Only turn off text, otherwise find text based on current view attribute...
-    if (m_interiorText)
-        return;
-
-    m_viewFlags.text = false;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionGraphicsDrawGeom::ComputePostFlattenTransform(CurveVectorCR curves)
+bool RegionGraphicsContext::ComputePostFlattenTransform(CurveVectorCR curves)
     {
     if (!m_forcePlanar || 0.0 == m_flattenDir.Magnitude())
         return false;
@@ -424,7 +443,7 @@ bool            RegionGraphicsDrawGeom::ComputePostFlattenTransform(CurveVectorC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::ResetPostFlattenTransform()
+void RegionGraphicsContext::ResetPostFlattenTransform()
     {
     if (!m_forcePlanar || 0.0 == m_flattenDir.Magnitude())
         return;
@@ -433,218 +452,61 @@ void            RegionGraphicsDrawGeom::ResetPostFlattenTransform()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
+* @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::GetMarkedRegions(CurveVectorPtr& regionOut, MTG_MarkSet* markSet)
+void RegionGraphicsContext::AddFaceLoopsByInwardParitySearch(bool parityWithinComponent, bool vertexContactSufficient)
     {
-    CurveVectorPtr    baseRegion = jmdlRG_collectExtendedFaces(m_pRG, m_pCurves, markSet);
-    TransformCP       localToWorldP = NULL;
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
 
-    if (NULL != m_context)
-        localToWorldP = &GetLocalToWorldTransform();
-
-    if (!baseRegion.IsValid())
-        return ERROR;
-
-    if (m_textBoundaries.IsValid())
-        {
-        CurvePrimitivePtrPairVector newToOld;
-
-#if defined (NEEDS_WORK_DGNITEM)
-        TextBoxInfo::ClearUsed(*m_textBoundaries); // Clear flag that tells us whether this text loop becames part of result region boundary...
-#endif
-
-        if (NULL == localToWorldP)
-            {
-            regionOut = CurveVector::AreaDifference(*baseRegion, *m_textBoundaries, &newToOld);
-            }
-        else
-            {
-            CurveVectorPtr  localText = m_textBoundaries->Clone();
-            Transform       worldToLocal;
-
-            worldToLocal.InverseOf(*localToWorldP);
-            localText->TransformInPlace(worldToLocal);
-            regionOut = CurveVector::AreaDifference(*baseRegion, *localText, &newToOld);
-            }
-
-        if (regionOut.IsValid())
-            {
-            // transfer root information from old curves to new ...
-            for (size_t i = 0; i < newToOld.size(); i++)
-                {
-                if (newToOld[i].curveB.IsValid() && newToOld[i].curveA.IsValid())
-                    {
-                    newToOld[i].curveA->SetCurvePrimitiveInfo(newToOld[i].curveB->GetCurvePrimitiveInfo());
-
-#if defined (NEEDS_WORK_DGNITEM)
-                    // Text box appeared in region result...mark as used for DgnRegionElementTool call to GetRoots for process originals...
-                    TextBoxInfo* textInfo = dynamic_cast <TextBoxInfo*> (newToOld[i].curveA->GetCurvePrimitiveInfo().get());
-
-                    if (textInfo)
-                        textInfo->m_used = true;
-#endif
-                    }
-                }
-            }
-        else
-            {
-            regionOut = baseRegion; // Region w/o text is better than nothing...
-            }
-        }
-    else
-        {
-        regionOut = baseRegion;
-        }
-
-    if (!regionOut.IsValid())
-        return ERROR;
-
-    if (localToWorldP)
-        regionOut->TransformInPlace(*localToWorldP);
-
-    // Flatten to plane defined by "average" geometry depth...
-    if (ComputePostFlattenTransform(*regionOut))
-        regionOut->TransformInPlace(m_flattenTrans);
-
-    return regionOut.IsValid() ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::GetActiveRegions(CurveVectorPtr& regionOut)
-    {
-    EmbeddedIntArray  startArray;
-    EmbeddedIntArray  sequenceArray;
-
-    jmdlRG_collectAndNumberExtendedFaceLoops(m_pRG, &startArray, &sequenceArray, &m_activeFaces);
-
-    if (SUCCESS != GetMarkedRegions(regionOut, &m_activeFaces))
-        return ERROR;
-
-    // This won't affect our info ptr as it modifies linestring primitives in-place and the simplified boundary is always desirable...
-    regionOut->SimplifyLinestrings(-1.0, true, true);
-
-    return SUCCESS;
+    data.CollectByInwardParitySearch(parityWithinComponent, vertexContactSufficient);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::GetRoots(bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curvePrimitive)
+BentleyStatus RegionGraphicsContext::GetRoots(bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curvePrimitive)
     {
-    CurveNodeInfo const* nodeInfo = dynamic_cast <CurveNodeInfo const*> (curvePrimitive.GetCurvePrimitiveInfo().get());
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
 
-    if (!nodeInfo)
-        {
-#if defined (NEEDS_WORK_DGNITEM)
-        TextBoxInfo const* textInfo = dynamic_cast <TextBoxInfo const*> (curvePrimitive.GetCurvePrimitiveInfo().get());
-
-        if (!textInfo)
-            return ERROR;
-
-        regionRoots.push_back(textInfo->m_element->GetElementId());
-#endif
-
-        return SUCCESS;
-        }
-
-    for (int nodeId: nodeInfo->m_nodeIds)
-        {
-        int     parentIndex;
-
-        if (!jmdlRG_getParentCurveIndex(m_pRG, &parentIndex, nodeId) || parentIndex < 0)
-            continue;
-
-        void*   userDataP; // held by context...
-
-        if (!jmdlRIMSBS_getUserPointer(m_pCurves, &userDataP, parentIndex) || !userDataP)
-            continue;
-
-#if defined (NEEDS_WORK_DGNITEM)
-        int     userInt = 0;
-
-        // NOTE: Dependency root order matters for assoc region re-evaluate of boolean difference...first root is geometry to subtract from!
-        if (!m_isFlood && jmdlRIMSBS_getUserInt(m_pCurves, &userInt, parentIndex) && 1 == userInt)
-            regionRoots.insert(regionRoots.begin(), (DisplayPathCP) userDataP); 
-        else
-            regionRoots.push_back((DisplayPathCP) userDataP);
-#endif
-        }
-
-    return (regionRoots.empty() ? ERROR : SUCCESS);
+    return data.GetRoots(regionRoots, curvePrimitive);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::GetRoots(bvector<DgnElementId>& regionRoots, CurveVectorCR region)
+BentleyStatus RegionGraphicsContext::GetRoots(bvector<DgnElementId>& regionRoots, CurveVectorCR region)
     {
-    for (ICurvePrimitivePtr curvePrimitive: region)
-        {
-        if (curvePrimitive.IsNull())
-            continue;
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
 
-        GetRoots(regionRoots, *curvePrimitive);
-        }
-
-    return (regionRoots.empty() ? ERROR : SUCCESS);
+    return data.GetRoots(regionRoots, region);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::GetRoots(bvector<DgnElementId>& regionRoots)
+BentleyStatus RegionGraphicsContext::GetRoots(bvector<DgnElementId>& regionRoots)
     {
-    EmbeddedIntArray  startArray;
-    EmbeddedIntArray  sequenceArray;
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
 
-    jmdlRG_collectAndNumberExtendedFaceLoops(m_pRG, &startArray, &sequenceArray, &m_activeFaces);
-
-    for (int iCmpn=0, nodeId=0; jmdlEmbeddedIntArray_getInt(&sequenceArray, &nodeId, iCmpn++); )
-        {
-        int     parentIndex;
-
-        if (jmdlRG_getParentCurveIndex(m_pRG, &parentIndex, nodeId) && parentIndex >= 0)
-            {
-            void*   userDataP;
-
-            if (jmdlRIMSBS_getUserPointer(m_pCurves, &userDataP, parentIndex) && userDataP)
-#if defined (NEEDS_WORK_DGNITEM)
-                regionRoots.push_back((DisplayPathCP) userDataP); // held by context...
-#else
-                regionRoots.push_back(DgnElementId()); // held by context...
-#endif
-            }
-        }
-
-#if defined (NEEDS_WORK_DGNITEM)
-    if (m_textBoundaries.IsValid())
-        TextBoxInfo::GetUsed(*m_textBoundaries, regionRoots); // Add text box paths that have been marked as used in result region boundary...
-#endif
-
-    // NOTE: Cull duplicate entries. Used by DgnRegionElementTool for "process originals"...
-    std::sort(regionRoots.begin(), regionRoots.end());
-    regionRoots.erase(std::unique(regionRoots.begin(), regionRoots.end()), regionRoots.end());
-
-    return (regionRoots.empty() ? ERROR : SUCCESS);
+    return data.GetRoots(regionRoots);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled)
+bool RegionGraphicsContext::_ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled, SimplifyGraphic& graphic)
     {
-    TransformCP placementTrans = &GetLocalToWorldTransform();
-#if defined (NEEDS_WORK_DGNITEM)
-    GeometricElementCP element = GetCurrentElement();
+    Transform     placementTrans = graphic.GetLocalToWorldTransform();
+    DgnElementCP  elem = (m_currentGeomSource ? m_currentGeomSource->ToElement() : nullptr);
+    DgnElementId* userDataP = nullptr;
 
-    if (path)
-        path->AddRef();
-#else
-    void*       userDataP = nullptr;
-#endif
+    if (nullptr != elem)
+        {
+        userDataP = (DgnElementId*) malloc(sizeof(DgnElementId));
+        *userDataP = elem->GetElementId();
+        }
+
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
 
     switch (primitive.GetCurvePrimitiveType())
         {
@@ -652,22 +514,20 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive(ICurvePrimitiveCR
             {
             DSegment3d  segment = *primitive.GetLineCP ();
 
-            if (placementTrans)
-                placementTrans->Multiply(segment.point, 2);
+            placementTrans.Multiply(segment.point, 2);
 
-            jmdlRG_addLinear(m_pRG, segment.point, 2, false, jmdlRIMSBS_addDataCarrier(m_pCurves, m_currentGeomMarkerId, userDataP));
-            break;
+            jmdlRG_addLinear(data.m_pRG, segment.point, 2, false, jmdlRIMSBS_addDataCarrier(data.m_pCurves, m_currentGeomMarkerId, userDataP));
+            return true;
             }
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
             {
             bvector<DPoint3d> points = *primitive.GetLineStringCP ();
 
-            if (placementTrans)
-                placementTrans->Multiply(&points[0], (int) points.size());
+            placementTrans.Multiply(&points[0], (int) points.size());
 
-            jmdlRG_addLinear(m_pRG, &points[0], (int) points.size(), false, jmdlRIMSBS_addDataCarrier(m_pCurves, m_currentGeomMarkerId, userDataP));
-            break;
+            jmdlRG_addLinear(data.m_pRG, &points[0], (int) points.size(), false, jmdlRIMSBS_addDataCarrier(data.m_pCurves, m_currentGeomMarkerId, userDataP));
+            return true;
             }
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
@@ -675,12 +535,11 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive(ICurvePrimitiveCR
             DEllipse3d  ellipse = *primitive.GetArcCP ();
             int         curveId;
             
-            if (placementTrans)
-                placementTrans->Multiply(ellipse);
+            placementTrans.Multiply(ellipse);
 
-            curveId = jmdlRIMSBS_addDEllipse3d(m_pCurves, m_currentGeomMarkerId, userDataP, &ellipse);
-            jmdlRG_addCurve(m_pRG, curveId, curveId);
-            break;
+            curveId = jmdlRIMSBS_addDEllipse3d(data.m_pCurves, m_currentGeomMarkerId, userDataP, &ellipse);
+            jmdlRG_addCurve(data.m_pRG, curveId, curveId);
+            return true;
             }
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
@@ -692,319 +551,35 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive(ICurvePrimitiveCR
             MSBsplineCurve    tmpCurve; // Requires copy of curve...do NOT free!
             int               curveId;
 
-            if (placementTrans)
-                tmpCurve.CopyTransformed(bcurve, *placementTrans);
-            else
-                tmpCurve.CopyFrom(bcurve);
+            tmpCurve.CopyTransformed(bcurve, placementTrans);
 
-            curveId = jmdlRIMSBS_addMSBsplineCurve(m_pCurves, m_currentGeomMarkerId, userDataP, &tmpCurve);
-            jmdlRG_addCurve(m_pRG, curveId, curveId);
-            break;
+            curveId = jmdlRIMSBS_addMSBsplineCurve(data.m_pCurves, m_currentGeomMarkerId, userDataP, &tmpCurve);
+            jmdlRG_addCurve(data.m_pRG, curveId, curveId);
+            return true;
+            }
+
+        default:
+            {
+            if (userDataP)
+                free(userDataP);
+
+            return false;
             }
         }
-
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       RegionGraphicsDrawGeom::_ProcessCurveVector(CurveVectorCR curves, bool filled)
+bool RegionGraphicsContext::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& graphic)
     {
-    if (m_inTextDraw)
-        {
-        if (curves.IsClosedPath() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive())
-            {
-#if defined (NEEDS_WORK_DGNITEM)
-            TransformCP     placementTransform = m_context->GetCurrLocalToWorldTransformCP ();
-            CurveVectorPtr  textBox = curves.Clone();
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
 
-            if (NULL != placementTransform)
-                textBox->TransformInPlace(*placementTransform);
+    jmdlRIMSBS_setCurrGroupId(data.m_pCurves, ++m_currentGeomMarkerId);
 
-            GeometricElementCP element = GetCurrentElement();
-
-            if (element)
-                textBox->front()->SetCurvePrimitiveInfo(TextBoxInfo::Create(element));
-
-            if (!m_textBoundaries.IsValid())
-                m_textBoundaries = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
-
-            m_textBoundaries->Add(textBox);
-#endif
-            }
-
-        return SUCCESS;
-        }
-
-    jmdlRIMSBS_setCurrGroupId(m_pCurves, ++m_currentGeomMarkerId);
-
-    return ERROR; // Output curve primitives...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::_AddTextString(TextStringCR text, double* zDepth)
-    {
-    if (!m_interiorText)
-        return;
-
-    if (text.GetText().empty())
-        return;
-
-    AutoRestore <bool> saveInTextDraw(&m_inTextDraw, true);
-
-    double padding = (text.GetStyle().GetHeight() * m_textMarginFactor);
-    DPoint3d    points[5];
-
-    text.ComputeBoundingShape(points, padding);
-    text.ComputeTransform().Multiply(points, _countof(points));
-
-    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
-
-    curve->push_back(ICurvePrimitive::CreateLineString(points, 5));
-
-    ClipAndProcessCurveVector(*curve, false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-int             RegionGraphicsDrawGeom::GetCurrentGeomMarkerId()
-    {
-    return m_currentGeomMarkerId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::SetupGraph(double gapTolerance, bool mergeHoles)
-    {
-    // Apply explicit flatten to plane transform to entire graph, not pushed on context since it's non-invertable...
-    if (m_forcePlanar && !m_flattenTrans.IsIdentity())
-        jmdlRG_multiplyByTransform(m_pRG, &m_flattenTrans);
-
-    Transform   activeToViewTrans, viewToActiveTrans;
-
-    if (m_context->GetViewport())
-        {
-        DMap4dCP    rootToViewMap = m_context->GetViewport()->GetWorldToViewMap();
-//        DMap4dCP    activeToRootMap = m_context->GetViewport ()->GetActiveToRootMap ();
-        DMap4d      activeToViewMap;
-
-//        if (activeToRootMap)
-//            activeToViewMap.InitProduct (*rootToViewMap, *activeToRootMap);
-//        else
-            activeToViewMap = *rootToViewMap;
-
-        activeToViewTrans.InitFrom(activeToViewMap, false);
-        viewToActiveTrans.InverseOf(activeToViewTrans);
-        }
-    else if (m_forcePlanar && m_isFlood)
-        {
-        // A non-planar graph isn't an error if we'll be post-flattening loops (flood only!)
-        jmdlRG_getPlaneTransform(m_pRG, &viewToActiveTrans, NULL);
-        activeToViewTrans.InverseOf(viewToActiveTrans);
-        }
-    else
-        {
-        if (!jmdlRG_getPlaneTransform(m_pRG, &viewToActiveTrans, NULL) || !activeToViewTrans.InverseOf(viewToActiveTrans))
-            {
-            m_regionError = REGION_ERROR_NonCoplanar;
-
-            return ERROR;
-            }
-        }
-
-    DVec3d      zAxis, zAxisWorld;
-
-    zAxisWorld.Init(0.0, 0.0, 1.0);
-    viewToActiveTrans.GetMatrixColumn(zAxis, 2);
-
-    m_context->GetTransformClipStack().PopAll(*m_context);
-
-    if (!zAxis.IsParallelTo(zAxisWorld) || m_context->GetViewport())
-        {
-        jmdlRG_multiplyByTransform(m_pRG, &activeToViewTrans);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        m_context->PushTransform(viewToActiveTrans);
-#endif
-        }
-
-    TransformCP placementTransform = &GetLocalToWorldTransform();
-
-    if (NULL != placementTransform)
-        {
-        DVec3d  xDir;
-
-        placementTransform->GetMatrixColumn(xDir, 0);
-        gapTolerance /= xDir.Magnitude();
-        }
-
-    jmdlRG_mergeWithGapTolerance(m_pRG, gapTolerance, gapTolerance);
-    jmdlRG_buildFaceRangeTree(m_pRG, 0.0, jmdlRG_getTolerance(m_pRG));
-
-    if (mergeHoles)
-        jmdlRG_buildFaceHoleArray(m_pRG);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::GetFaceLoops(CurveVectorPtr& region, bvector<MTGNodeId>& faceNodeIds)
-    {
-    int         seedIndex;
-    MTGNodeId   seedNodeId;
-
-    jmdlMTGMarkSet_initIteratorIndex(&m_activeFaces, &seedIndex);
-
-    if (!jmdlMTGMarkSet_getNextNode(&m_activeFaces, &seedIndex, &seedNodeId))
-        ResetPostFlattenTransform(); // Compute new transform when there is no current active faces...
-
-    MTG_MarkSet markSet;
-
-    markSet.Attach(jmdlRG_getGraph(m_pRG), MTG_ScopeFace);
-
-    // Add faces to temporary mark set so that we can share the same code for dynamic faces and accepted faces...
-    for (int nodeId: faceNodeIds)
-        markSet.AddNode(nodeId);
-
-    GetMarkedRegions(region, &markSet);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::AddFaceLoop(MTGNodeId faceNodeId)
-    {
-    jmdlMTGMarkSet_addNode(&m_activeFaces, faceNodeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::RemoveFaceLoop(MTGNodeId faceNodeId)
-    {
-    jmdlMTGMarkSet_removeNode(&m_activeFaces, faceNodeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionGraphicsDrawGeom::ToggleFaceLoop(MTGNodeId faceNodeId)
-    {
-    if (jmdlMTGMarkSet_isNodeInSet(&m_activeFaces, faceNodeId))
-        {
-        RemoveFaceLoop(faceNodeId);
-
-        return false;
-        }
-
-    AddFaceLoop(faceNodeId);
+    graphic.ProcessAsCurvePrimitives(curves, filled);
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionGraphicsDrawGeom::IsFaceLoopSelected(MTGNodeId faceNodeId)
-    {
-    return TO_BOOL (jmdlMTGMarkSet_isNodeInSet(&m_activeFaces, faceNodeId));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::CollectFaceLoopsAtPoint(bvector<MTGNodeId>* faceNodeIds, DPoint3dCR seedPoint, RegionLoops floodSelect, bool stepOutOfHoles)
-    {
-    DPoint3d    tmpPt = seedPoint;
-    TransformCP placementTransP = &GetLocalToWorldTransform();
-
-    if (placementTransP)
-        {
-        Transform   inverseTrans;
-
-        inverseTrans.InverseOf(*placementTransP);
-        inverseTrans.Multiply(tmpPt);
-        }
-
-    MTGNodeId   seedNodeId;
-    
-    jmdlRG_smallestContainingFace(m_pRG, &seedNodeId, &tmpPt);
-
-    if (stepOutOfHoles)
-        {
-        MTGNodeId   adjacentFaceNodeId = jmdlRG_stepOutOfHole(m_pRG, seedNodeId);
-
-        if (MTG_NULL_NODEID != adjacentFaceNodeId)
-            seedNodeId = jmdlRG_resolveFaceNodeId(m_pRG, adjacentFaceNodeId);
-        }
-
-    if (MTG_NULL_NODEID == seedNodeId)
-        return;
-
-    if (stepOutOfHoles)
-        {
-        double  areaToFace = 0.0;
-
-        jmdlRG_getFaceSweepProperties(m_pRG, &areaToFace, NULL, NULL, seedNodeId);
-
-        if (!(areaToFace > 0.0 || !jmdlRG_faceIsTrueExterior(m_pRG, seedNodeId)))
-            return;
-        }
-
-    bvector<MTGNodeId> activeFaceNodes; 
-
-    if (floodSelect == RegionLoops::Alternating)
-        jmdlRG_collectAllNodesOnInwardParitySearch(m_pRG, &activeFaceNodes, NULL, seedNodeId);
-    else
-        jmdlRG_resolveHoleNodeId(m_pRG, &activeFaceNodes, seedNodeId);
-
-    for (size_t i = 0; i < activeFaceNodes.size(); i++)
-        faceNodeIds->push_back(jmdlRG_resolveFaceNodeId(m_pRG, activeFaceNodes[i]));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::CollectBooleanFaces(RGBoolSelect boolOp, int highestOperandA, int highestOperandB)
-    {
-    if (!jmdlRG_collectBooleanFaces(m_pRG, boolOp, RGBoolSelect_Difference, highestOperandA, highestOperandB, &m_activeFaces))
-        return ERROR;
-
-    int         seedIndex;
-    MTGNodeId   seedNodeId;
-
-    jmdlMTGMarkSet_initIteratorIndex(&m_activeFaces, &seedIndex);
-
-    return (jmdlMTGMarkSet_getNextNode(&m_activeFaces, &seedIndex, &seedNodeId) ? SUCCESS : ERROR);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::CollectByInwardParitySearch(bool parityWithinComponent, bool vertexContactSufficient)
-    {
-    EmbeddedIntArray  holeArray;
-
-    jmdlRG_collectAllNodesOnInwardParitySearchExt(m_pRG, &holeArray, NULL, MTG_NULL_NODEID, parityWithinComponent, vertexContactSufficient);
-
-    MTGNodeId   faceNodeId = -1;
-
-    for (int i = 0; jmdlEmbeddedIntArray_getInt(&holeArray, &faceNodeId, i); i++)
-        jmdlMTGMarkSet_addNode(&m_activeFaces, faceNodeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::SetAbortFunction(RGC_AbortFunction abort)
-    {
-    jmdlRG_setAbortFunction(m_pRG, abort);
     }
 
 /*=================================================================================**//**
@@ -1015,137 +590,96 @@ void            RegionGraphicsDrawGeom::SetAbortFunction(RGC_AbortFunction abort
 +---------------+---------------+---------------+---------------+---------------+------*/
 RegionGraphicsContext::RegionGraphicsContext()
     {
-    m_purpose           = DrawPurpose::RegionFlood;
-    m_targetModel       = NULL; // Destination for geometry when not using vp target...
-
-    m_operation         = RegionType::Flood;
-    m_regionLoops       = RegionLoops::Ignore;
-    m_gapTolerance      = 0.0;
-
-    m_stepOutOfHoles    = false;
-    m_setLoopSymbology  = false;
-    m_updateAssocRegion = false;
-    m_cullRedundantLoop = false;
-
-    m_output = new RegionGraphicsDrawGeom();
-
-    m_output->SetViewContext(this);
-    m_output->SetIsFlood(RegionType::Flood == m_operation);
+    m_purpose = DrawPurpose::RegionFlood;
+    m_regionData = RegionData::Create(*this);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/2009
+* @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::_SetupOutputs()
+StatusInt RegionGraphicsContext::_OutputGeometry(GeometrySourceCR element)
     {
-    SetIViewDraw(m_output);
+    // NOTE: Ignore regions that are probably used as a text frame by skipping any element that contains text.
+    //       A text boundary/frame would always need to be treated as a hole, this is a bit of a pain and more 
+    //       difficult that the frame is just stored as loose geometry in the GeometryStream. Going forward it's 
+    //       probably better if the user makes use of display priority/z with a text background anyway.
+    GeometryCollection collection(element);
+
+    for (auto iter : collection)
+        {
+        if (GeometryCollection::Iterator::EntryType::TextString == iter.GetEntryType())
+            return SUCCESS;
+        }
+
+    m_currentGeomSource = &element;
+    StatusInt status = T_Super::_OutputGeometry(element);
+    m_currentGeomSource = nullptr;
     
-    m_output->SetViewContext(this);
-    m_output->SetIsFlood(RegionType::Flood == m_operation);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::_AddTextString(TextStringCR text)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Don't draw background shape and other adornments...
-    text.GetGlyphSymbology(GetCurrentGeometryParams());
-    CookGeometryParams();
-
-    GetCurrentGraphicR().AddTextString(text, NULL);
-#endif
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::VisitFloodCandidate(GeometrySourceCR element, TransformCP trans)
+BentleyStatus RegionGraphicsContext::VisitBooleanCandidate(GeometrySourceCR element, bvector<DMatrix4d>* wireProducts, bool allowText)
     {
-    ViewContext::ContextMark mark(this);
+    CurveVectorPtr curves;
+    GeometryCollection collection(element);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (trans)
-        _PushTransform(*trans);
-#endif
-
-    return (BentleyStatus) _VisitGeometry(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PushBooleanCandidate(GeometrySourceCR element, TransformCP trans)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (trans)
-        _PushTransform(*trans);
-
-    m_currentGeomSource = &element; // Push path entry since we aren't calling _VisitGeometry...
-#endif
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate(GeometrySourceCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts, bool allowText)
-    {
-#if defined (V10_WIP_ELEMENTHANDLER)
-    CurveVectorPtr  curves = ICurvePathQuery::ElementToCurveVector(eh);
-
-    if (!curves.IsValid())
+    for (auto iter : collection)
         {
-        ITextQueryCP    textQuery;
+        if (curves.IsValid())
+            return ERROR; // Multiple geometric primitives...
 
-        // Collect text boundaries for difference operand (For update of AssocRegions from DWG)...
-        if (!allowText || !m_updateAssocRegion || !m_output->GetInteriorText() || NULL == (textQuery = eh.GetITextQuery()))
-            return ERROR;
+        GeometryCollection::Iterator::EntryType entryType = iter.GetEntryType();
 
-        T_ITextPartIdPtrVector  textParts;
-
-        textQuery->GetTextPartIds(eh, *ITextQueryOptions::CreateDefault(), textParts);
-
-        if (0 == textParts.size())
-            return ERROR;
-
-        ViewContext::ContextMark mark(this);
-
-        if (SUCCESS != PushBooleanCandidate(eh, trans))
-            return ERROR;
-
-        for (ITextPartIdPtr& partId : textParts)
+        switch (entryType)
             {
-            TextBlockPtr  textBlock = textQuery->GetTextPart(eh, *partId);
+            case GeometryCollection::Iterator::EntryType::CurvePrimitive:
+                {
+                GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
-            if (!textBlock.IsValid())
-                continue;
+                if (!geom.IsValid())
+                    return ERROR;
 
-            DrawTextBlock(*textBlock); // Output text strings...
+                if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == geom->GetAsICurvePrimitive()->GetCurvePrimitiveType())
+                    return ERROR;
+
+                double length = 0.0;
+                DPoint3d pointS, pointE;
+
+                if (!geom->GetAsICurvePrimitive()->GetStartEnd(pointS, pointE) || !pointS.AlmostEqual(pointE) || !geom->GetAsICurvePrimitive()->FastLength(length) || length < DoubleOps::SmallCoordinateRelTol())
+                    return ERROR; // Reject zero-length lines and paths that aren'tphysically closed.
+
+                curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, geom->GetAsICurvePrimitive());
+                curves->TransformInPlace(iter.GetGeometryToWorld());
+                break;
+                }
+
+            case GeometryCollection::Iterator::EntryType::CurveVector:
+                {
+                GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+
+                if (!geom.IsValid())
+                    return ERROR;
+
+                if (!geom->GetAsCurveVector()->IsAnyRegionType() && !geom->GetAsCurveVector()->IsPhysicallyClosedPath())
+                    return ERROR;
+
+                curves = geom->GetAsCurveVector()->Clone();
+                curves->TransformInPlace(iter.GetGeometryToWorld());
+                break;
+                }
+
+            default:
+                return ERROR;
             }
-
-        return SUCCESS;
         }
-#else
-    CurveVectorPtr  curves;
 
     if (!curves.IsValid())
-        return SUCCESS;
-#endif
+        return ERROR;
 
-    // Require closed (or phsically closed) for booleans (Ignore for update of AssocRegions from DWG can have open roots that form closed area)...
-    if (!curves->IsAnyRegionType() && !m_updateAssocRegion)
-        {
-        DPoint3d    endPoints[2];
-
-        if (!curves->IsOpenPath() || !curves->GetStartEnd(endPoints[0], endPoints[1]) || !endPoints[0].IsEqual(endPoints[1], 1.0e-6))
-            return ERROR;
-        }
-
-    if (wireProducts)
+    if (wireProducts) // This logic was originally added to cull redundant loops for DWG hatch creation...
         {
         DMatrix4d   productB;
 
@@ -1166,12 +700,12 @@ BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate(GeometrySourceCR el
         wireProducts->push_back(productB);
         }
 
-    ViewContext::ContextMark mark(this);
+    Render::GraphicBuilderPtr builder = CreateGraphic();
+    SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.get());
 
-    if (SUCCESS != PushBooleanCandidate(element, trans))
-        return ERROR;
-
-    m_output->ClipAndProcessCurveVector(*curves, false);
+    m_currentGeomSource = &element;
+    _ProcessCurveVector(*curves, false, *graphic);
+    m_currentGeomSource = nullptr;
 
     return SUCCESS;
     }
@@ -1179,71 +713,45 @@ BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate(GeometrySourceCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::SetFloodParams(RegionLoops regionLoops, double gapTolerance, bool stepOutOfHoles)
+void RegionGraphicsContext::SetFloodParams(RegionLoops regionLoops, double gapTolerance, bool stepOutOfHoles)
     {
-    m_regionLoops    = regionLoops;
-    m_gapTolerance   = gapTolerance;
+    m_regionLoops = regionLoops;
+    m_gapTolerance = gapTolerance;
     m_stepOutOfHoles = stepOutOfHoles;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::SetInteriorText(bool interiorText, double textMarginFactor)
+void RegionGraphicsContext::SetFlattenBoundary(TransformCR flattenTrans)
     {
-    m_output->SetTextMarginFactor(interiorText, textMarginFactor);
+    m_forcePlanar = true;
+    m_flattenTrans = flattenTrans;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::SetFlattenBoundary(TransformCR flattenTrans)
+void RegionGraphicsContext::SetFlattenBoundary(DVec3dCR flattenDir)
     {
-    m_output->SetFlattenBoundary(flattenTrans);
+    m_forcePlanar = true;
+    m_flattenDir = flattenDir;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::SetFlattenBoundary(DVec3dCR flattenDir)
-    {
-    m_output->SetFlattenBoundary(flattenDir);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::SetTargetModel(DgnModelR targetModel)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    _SetupOutputs();
-#endif
-
-    m_targetModel = &targetModel;
-    SetDgnDb(targetModel.GetDgnDb());
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    SetViewFlags(GetViewFlags()); // Force _SetDrawViewFlags to be called on output...
-#endif
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::InitRegionParams(RegionParams& params)
+void RegionGraphicsContext::InitRegionParams(RegionParams& params)
     {
     params.SetType(m_operation);
     params.SetFloodParams(m_regionLoops, m_gapTolerance);
-    params.SetInteriorText(GetViewFlags().text, m_output->GetTextMarginFactor());
     params.SetAssociative(true);
 
-    if (NULL != m_output->GetFlattenBoundary())
+    if (m_forcePlanar)
         {
-        RotMatrix   flatten;
+        RotMatrix flatten;
 
-        m_output->GetFlattenBoundary()->GetMatrix(flatten);
+        m_flattenTrans.GetMatrix(flatten);
         params.SetFlattenBoundary(true, &flatten);
         }
     }
@@ -1251,34 +759,17 @@ void            RegionGraphicsContext::InitRegionParams(RegionParams& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionGraphicsContext::GetAdjustedSeedPoints(bvector<DPoint3d>* seedPoints)
+bool RegionGraphicsContext::GetAdjustedSeedPoints(bvector<DPoint3d>* seedPoints)
     {
     if (RegionType::Flood != m_operation)
         return false;
 
-    TransformCP placementTransP = &m_output->GetLocalToWorldTransform();
-
     for (size_t iSeed = 0; iSeed < m_floodSeeds.size(); iSeed++)
         {
-        DPoint3d    tmpPt = m_floodSeeds[iSeed].m_pt;
+        DPoint3d tmpPt = m_floodSeeds[iSeed].m_pt;
 
-        if (NULL != m_output->GetFlattenBoundary()) // project seeds into plane of region...
-            {
-            m_output->GetFlattenBoundary()->Multiply(tmpPt);
-
-            if (placementTransP)
-                {
-                DVec3d      planeNormal;
-
-                if (0.0 != planeNormal.NormalizedDifference(tmpPt, *(&m_floodSeeds[iSeed].m_pt)))
-                    {
-                    DVec3d      projectDir;
-
-                    placementTransP->GetMatrixColumn(projectDir, 2);
-                    LegacyMath::Vec::LinePlaneIntersect(&tmpPt, &m_floodSeeds[iSeed].m_pt, &projectDir, &tmpPt, &planeNormal, false);
-                    }
-                }
-            }
+        if (m_forcePlanar) // project seeds into plane of region...
+            m_flattenTrans.Multiply(tmpPt);
 
         seedPoints->push_back(tmpPt);
         }
@@ -1287,333 +778,19 @@ bool            RegionGraphicsContext::GetAdjustedSeedPoints(bvector<DPoint3d>* 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::CreateRegionElement(DgnElementPtr& element, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d)
-    {
-#if defined (NEEDS_WORK_DGNITEM)
-    switch (region.GetBoundaryType())
-        {
-        case CurveVector::BOUNDARY_TYPE_UnionRegion:
-            {
-            ElementAgenda   solidAgenda;
-
-            for (ICurvePrimitivePtr curvePrimitive: region)
-                {
-                if (curvePrimitive.IsNull())
-                    continue;
-            
-                if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curvePrimitive->GetCurvePrimitiveType())
-                    return ERROR;
-
-                EditElementHandle  tmpEeh;
-
-                if (SUCCESS != CreateRegionElement(tmpEeh, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
-                    return ERROR;
-
-                solidAgenda.InsertElemDescr(tmpEeh.ExtractWriteableElement().get());
-                }
-
-            RegionParams    params;
-
-            params.SetType(RegionType::Union);
-
-            if (SUCCESS != AssocRegionCellHeaderHandler::CreateAssocRegionElement(eeh, solidAgenda, NULL, 0, NULL, 0, params, NULL))
-                return ERROR;
-            
-            break;
-            }
-
-        case CurveVector::BOUNDARY_TYPE_ParityRegion:
-            {
-            EditElementHandle   solidEeh;
-            ElementAgenda       holeAgenda;
-
-            for (ICurvePrimitivePtr curvePrimitive: region)
-                {
-                if (curvePrimitive.IsNull())
-                    continue;
-            
-                if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curvePrimitive->GetCurvePrimitiveType())
-                    return ERROR;
-
-                if (CurveVector::BOUNDARY_TYPE_Outer == curvePrimitive->GetChildCurveVectorCP ()->GetBoundaryType())
-                    {
-                    if (SUCCESS != CreateRegionElement(solidEeh, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
-                        return ERROR;
-                    }
-                else
-                    {
-                    EditElementHandle  tmpEeh;
-
-                    if (SUCCESS != CreateRegionElement(tmpEeh, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
-                        return ERROR;
-
-                    holeAgenda.InsertElemDescr(tmpEeh.ExtractWriteableElement().get());
-                    }
-                }
-
-            if (SUCCESS != GroupedHoleHandler::CreateGroupedHoleElement(eeh, solidEeh, holeAgenda))
-                return ERROR;
-
-            break;
-            }
-
-        default:
-            {
-            if (SUCCESS != DraftingElementSchema::ToElement(eeh, region, NULL, is3d, *_GetViewTarget()))
-                return ERROR;
-
-            // Set symbology of entire loop based on primitive curve/segment root of greatest length (NOTE: For pseudo-legacy grouped hole tool behavior...)
-            if (m_setLoopSymbology)
-                {
-                double              length = 0.0;
-                size_t              segmentIndex = 0;
-                ICurvePrimitiveCP   templateCurve = NULL;
-
-                for (ICurvePrimitivePtr curvePrimitive: region)
-                    {
-                    if (curvePrimitive.IsNull())
-                        continue;
-
-                    double  thisLength = 0.0;
-                    size_t  thisSegmentIndex = 0;
-
-                    bvector<DPoint3d> const* points = curvePrimitive->GetLineStringCP ();
-
-                    // NOTE: Linear segments were concatinated to a single linestring with curve roots for each segment. Multiple segments 
-                    //       can refer to the same parent curve. Too much effort to get per-root lengths, segment length is hopefully good enough...
-                    if (points)
-                        {
-                        for (size_t iPt = 0; iPt < points->size()-1; ++iPt)
-                            {
-                            double  thisSegmentLength = points->at(iPt).Distance(points->at(iPt+1));
-
-                            if (thisSegmentLength <= thisLength)
-                                continue;
-
-                            thisLength = thisSegmentLength;
-                            thisSegmentIndex = iPt;
-                            }
-                        }
-                    else
-                        {
-                        curvePrimitive->Length(thisLength);
-                        }
-
-                    if (thisLength <= length)
-                        continue;
-
-                    length = thisLength;
-                    segmentIndex = thisSegmentIndex;
-
-                    templateCurve = curvePrimitive.get();
-                    }
-
-                if (templateCurve)
-                    {
-                    bvector<DisplayPathCP>  curveRoots;
-
-                    if (SUCCESS == GetRoots(curveRoots, *templateCurve))
-                        {
-                        DisplayPathCP       templatePath = curveRoots.at(segmentIndex < curveRoots.size() ? segmentIndex : 0);
-                        EditElementHandle   templateEeh(templatePath->GetCursorElem());
-
-                        ElementPropertiesSetter::ApplyTemplate(eeh, templateEeh);
-                        }
-                    }
-                }
-
-            if (!regionRoots)
-                break;
-
-            bvector<DisplayPathCP>  loopRoots;
-
-            if (SUCCESS != GetRoots(loopRoots, region)) // Get roots for this loop...
-                break;
-
-            regionRoots->insert(regionRoots->end(), loopRoots.begin(), loopRoots.end()); // Accumulate roots for all loops...
-
-            int     loopOEDCode = (CurveVector::BOUNDARY_TYPE_Outer == region.GetBoundaryType() ? DWG_OUTERMOST_PATH : DWG_EXTERNAL_PATH);
-
-            // NOTE: What's important for DWG is setting DWG_TEXTBOX_PATH...loop OED code is supposed to be a mask...
-            for (DisplayPathCP path: loopRoots)
-                {
-                ElementHandle  pathEh(path->GetCursorElem());
-
-                if (NULL != pathEh.GetITextQuery())
-                    {
-                    loopOEDCode = DWG_TEXTBOX_PATH;
-                    break;
-                    }
-                }
-
-            AssocRegionCellHeaderHandler::SetLoopOedCode(eeh, loopOEDCode);
-
-            // NOTE: Loop roots are only for DWG which doesn't allow far roots, so it's ok to create the dependency even in dynamics...
-            bvector<DependencyRoot>  depRoots;
-
-            getDependencyRoots(depRoots, loopRoots, _GetViewTarget(), false); // Create DependencyRoot from path (may NOT be far root)...
-            AssocRegionCellHeaderHandler::SetLoopRoots(eeh, &depRoots[0], depRoots.size());
-            break;
-            }
-        }
-
-    return SUCCESS;
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::CreateRegionElements(DgnElementPtrVec& out, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d)
-    {
-    // Return agenda of solid areas instead of a single union region...
-    if (CurveVector::BOUNDARY_TYPE_UnionRegion == region.GetBoundaryType())
-        {
-        for (ICurvePrimitivePtr curvePrimitive: region)
-            {
-            if (curvePrimitive.IsNull())
-                continue;
-            
-            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curvePrimitive->GetCurvePrimitiveType())
-                return ERROR;
-
-            DgnElementPtr element;
-
-            if (SUCCESS != CreateRegionElement(element, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
-                return ERROR;
-
-            out.push_back(element);
-            }
-        }
-    else
-        {
-        DgnElementPtr element;
-
-        if (SUCCESS != CreateRegionElement(element, region, regionRoots, is3d))
-            return ERROR;
-
-        out.push_back(element);
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::GetRegion(CurveVectorPtr& region)
+BentleyStatus RegionGraphicsContext::GetRegion(CurveVectorPtr& region)
     {
-    return m_output->GetActiveRegions(region);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::GetRegion(DgnElementPtr& element)
-    {
-    CurveVectorPtr  region;
-
-    if (SUCCESS != m_output->GetActiveRegions(region))
-        return ERROR;
-
-    return CreateRegionElement(element, *region, NULL, GetViewTarget()->Is3d());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::GetRegions(DgnElementPtrVec& out)
-    {
-    CurveVectorPtr  region;
-
-    if (SUCCESS != m_output->GetActiveRegions(region))
-        return ERROR;
-
-    return CreateRegionElements(out, *region, NULL, GetViewTarget()->Is3d());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::GetAssociativeRegion(DgnElementPtr& element, RegionParams const& params, WCharCP cellName)
-    {
-    if (params.GetType() != m_operation)
-        return ERROR;
-
-    if (!params.GetAssociative())
-        return ERROR; // Should not create an un-associated assoc region except to represent a union region, which is handled by GetRegion...
-
-    CurveVectorPtr  region;
-
-    if (SUCCESS != m_output->GetActiveRegions(region))
-        return ERROR;
-
-    DgnElementPtrVec        out;
-    bvector<DgnElementId>   regionRoots;
-
-    if (SUCCESS != CreateRegionElements(out, *region, &regionRoots, GetViewTarget()->Is3d()))
-        return ERROR;
-
-#if defined (NEEDS_WORK_DGNITEM)
-    bvector<DependencyRoot> depRoots;
-
-    getDependencyRoots(depRoots, regionRoots, _GetViewTarget(), true); // Create DependencyRoot from path (may be far root)...
-
-    if (0 == depRoots.size())
-        return ERROR;
-
-    bvector<DPoint3d> seedPoints;
-
-    GetAdjustedSeedPoints(&seedPoints);
-
-    return AssocRegionCellHeaderHandler::CreateAssocRegionElement(eeh, out, &depRoots[0], depRoots.size(), &seedPoints[0], seedPoints.size(), params, cellName);
-#endif
-    return ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::UpdateAssociativeRegion(DgnElementPtr& element)
-    {
-    m_targetModel = element->GetModel().get(); // Model to use to create new geometry...
-
-    CurveVectorPtr  region;
-
-    if (SUCCESS != m_output->GetActiveRegions(region))
-        return ERROR;
-
-    DgnElementPtrVec        out;
-    bvector<DgnElementId>   regionRoots;
-
-    // NOTE: Can't use model dimension to update assoc region boundary in dictionary model...
-    if (SUCCESS != CreateRegionElements(out, *region, &regionRoots, element->Is3d()))
-        return ERROR;
-
-#if defined (NEEDS_WORK_DGNITEM)
-    if (NULL != m_output->GetFlattenBoundary())
-        {
-        bvector<DPoint3d> seedPoints;
-
-        // update seeds points with seeds projected into plane of region...
-        if (GetAdjustedSeedPoints(&seedPoints))
-            AssocRegionCellHeaderHandler::SetFloodSeedPoints(eeh, &seedPoints[0], seedPoints.size());
-        }
-
-    return AssocRegionCellHeaderHandler::UpdateAssocRegionBoundary(eeh, out);
-#else
-    return ERROR;
-#endif
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+    
+    return data.GetActiveRegions(region);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-int             RegionGraphicsContext::GetCurrentFaceNodeId()
+int RegionGraphicsContext::GetCurrentFaceNodeId()
     {
     return (0 != m_dynamicFaceSeed.m_faceNodeIds.size() ? m_dynamicFaceSeed.m_faceNodeIds[0] : 0);
     }
@@ -1621,17 +798,18 @@ int             RegionGraphicsContext::GetCurrentFaceNodeId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionGraphicsContext::GetFaceAtPoint(CurveVectorPtr& region, DPoint3dCR seedPoint)
+bool RegionGraphicsContext::GetFaceAtPoint(CurveVectorPtr& region, DPoint3dCR seedPoint)
     {
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
     FloodSeed   floodSeed;
 
     floodSeed.m_pt = seedPoint;
-    m_output->CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
+    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
 
     if (0 == floodSeed.m_faceNodeIds.size())
         {
         m_dynamicFaceSeed.m_faceNodeIds.clear();
-        region = NULL;
+        region = nullptr;
 
         return false; // No closed loop found at point...
         }
@@ -1644,7 +822,7 @@ bool            RegionGraphicsContext::GetFaceAtPoint(CurveVectorPtr& region, DP
     // New face hit...populate gpa with new face geometry...
     m_dynamicFaceSeed = floodSeed;
 
-    m_output->GetFaceLoops(region, floodSeed.m_faceNodeIds);
+    data.GetFaceLoops(region, floodSeed.m_faceNodeIds);
     
     return region.IsValid(); // Return true when a new face is identified...
     }
@@ -1652,10 +830,10 @@ bool            RegionGraphicsContext::GetFaceAtPoint(CurveVectorPtr& region, DP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionGraphicsContext::GetActiveFaces(CurveVectorPtr& region)
+bool RegionGraphicsContext::GetActiveFaces(CurveVectorPtr& region)
     {
-    if (SUCCESS != m_output->GetActiveRegions(region))
-        region = NULL;
+    if (SUCCESS != GetRegion(region))
+        region = nullptr;
 
     return region.IsValid();
     }
@@ -1663,19 +841,20 @@ bool            RegionGraphicsContext::GetActiveFaces(CurveVectorPtr& region)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionGraphicsContext::IsFaceAtPointSelected(DPoint3dCR seedPoint)
+bool RegionGraphicsContext::IsFaceAtPointSelected(DPoint3dCR seedPoint)
     {
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
     FloodSeed   floodSeed;
 
     floodSeed.m_pt = seedPoint;
-    m_output->CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
+    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
 
     if (0 == floodSeed.m_faceNodeIds.size())
         return false;
 
     for (size_t iFace = 0; iFace < floodSeed.m_faceNodeIds.size(); iFace++)
         {
-        if (m_output->IsFaceLoopSelected(floodSeed.m_faceNodeIds[iFace]))
+        if (data.IsFaceLoopSelected(floodSeed.m_faceNodeIds[iFace]))
             return true;
         }
 
@@ -1685,21 +864,22 @@ bool            RegionGraphicsContext::IsFaceAtPointSelected(DPoint3dCR seedPoin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            RegionGraphicsContext::ToggleFaceAtPoint(DPoint3dCR seedPoint)
+bool RegionGraphicsContext::ToggleFaceAtPoint(DPoint3dCR seedPoint)
     {
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
     FloodSeed   floodSeed;
 
     floodSeed.m_pt = seedPoint;
-    m_output->CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
+    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
 
     if (0 == floodSeed.m_faceNodeIds.size())
         return false;
 
-    bool        added = false;
+    bool added = false;
 
     for (size_t iFace = 0; iFace < floodSeed.m_faceNodeIds.size(); iFace++)
         {
-        if (m_output->ToggleFaceLoop(floodSeed.m_faceNodeIds[iFace]) && 0 == iFace)
+        if (data.ToggleFaceLoop(floodSeed.m_faceNodeIds[iFace]) && 0 == iFace)
             added = true;
         }
 
@@ -1745,20 +925,22 @@ bool            RegionGraphicsContext::ToggleFaceAtPoint(DPoint3dCR seedPoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::AddFaceLoopsAtPoints(DPoint3dCP seedPoints, size_t numSeed)
+BentleyStatus RegionGraphicsContext::AddFaceLoopsAtPoints(DPoint3dCP seedPoints, size_t numSeed)
     {
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
     for (size_t iSeed = 0; iSeed < numSeed; iSeed++)
         {
         FloodSeed   floodSeed;
 
         floodSeed.m_pt = seedPoints[iSeed];
-        m_output->CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, m_stepOutOfHoles);
+        data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, m_stepOutOfHoles);
 
         if (0 == floodSeed.m_faceNodeIds.size())
             continue;
 
         for (size_t iFace = 0; iFace < floodSeed.m_faceNodeIds.size(); iFace++)
-            m_output->AddFaceLoop(floodSeed.m_faceNodeIds[iFace]);
+            data.AddFaceLoop(floodSeed.m_faceNodeIds[iFace]);
 
         m_floodSeeds.push_back(floodSeed);
         }
@@ -1769,24 +951,13 @@ BentleyStatus   RegionGraphicsContext::AddFaceLoopsAtPoints(DPoint3dCP seedPoint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in)
+BentleyStatus RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in)
     {
     m_operation = RegionType::Flood;
     m_ignoreViewRange = false;
 
     if (SUCCESS != Attach(vp, m_purpose))
         return ERROR;
-
-    //DMap4dCP    activeToRootMap = vp->GetActiveToRootMap (); 
-    //
-    //if (activeToRootMap)
-    //    {
-    //    Transform   rootToActiveTrans;
-    //
-    //    // Collect geometry in active coords instead of root...
-    //    rootToActiveTrans.InitFrom (*activeToRootMap, true);
-    //    _PushTransform (rootToActiveTrans);
-    //    }
 
     if (in)
         {
@@ -1797,7 +968,7 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElement
             if (nullptr == geomElement)
                 continue;
 
-            VisitFloodCandidate(*geomElement, NULL);
+            _VisitGeometry(*geomElement);
             }
         }
     else
@@ -1805,61 +976,64 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElement
         VisitAllViewElements();
         }
 
-    Detach();
-    m_targetModel = vp->GetViewController().GetTargetModel(); // Detach clears path/Current Model...
-
     if (WasAborted())
         return ERROR;
 
-    return m_output->SetupGraph(m_gapTolerance, RegionLoops::Ignore != m_regionLoops);
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    return data.SetupGraph(m_gapTolerance, RegionLoops::Ignore != m_regionLoops);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans)
+BentleyStatus RegionGraphicsContext::PopulateGraph(DgnElementCPtrVec const& in)
     {
-    m_operation = RegionType::Flood;
-
-    if (SUCCESS != SetTargetModel(targetModel))
+    if (in.empty())
         return ERROR;
+
+    SetDgnDb(in.front()->GetDgnDb());
+    m_operation = RegionType::Flood;
 
     for (DgnElementCPtr curr : in)
         {
         GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
-        if (nullptr != geomElement)
-            VisitFloodCandidate(*geomElement, inTrans);
+        if (nullptr == geomElement)
+            continue;
 
-        if (nullptr != inTrans)
-            inTrans++;
+        _VisitGeometry(*geomElement);
         }
 
-    return m_output->SetupGraph(m_gapTolerance, RegionLoops::Ignore != m_regionLoops);
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    return data.SetupGraph(m_gapTolerance, RegionLoops::Ignore != m_regionLoops);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Flood(DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed)
+BentleyStatus RegionGraphicsContext::Flood(DgnElementCPtrVec const& in, DPoint3dCP seedPoints, size_t numSeed)
     {
-    m_operation = RegionType::Flood;
-
-    if (SUCCESS != SetTargetModel(targetModel))
+    if (in.empty())
         return ERROR;
+
+    SetDgnDb(in.front()->GetDgnDb());
+    m_operation = RegionType::Flood;
 
     for (DgnElementCPtr curr : in)
         {
         GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
-        if (nullptr != geomElement)
-            VisitFloodCandidate(*geomElement, inTrans);
+        if (nullptr == geomElement)
+            continue;
 
-        if (nullptr != inTrans)
-            inTrans++;
+        _VisitGeometry(*geomElement);
         }
 
-    if (SUCCESS != m_output->SetupGraph(m_gapTolerance, RegionLoops::Ignore != m_regionLoops))
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    if (SUCCESS != data.SetupGraph(m_gapTolerance, RegionLoops::Ignore != m_regionLoops))
         return ERROR;
 
     return AddFaceLoopsAtPoints(seedPoints, numSeed);
@@ -1868,125 +1042,126 @@ BentleyStatus   RegionGraphicsContext::Flood(DgnModelR targetModel, DgnElementCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Boolean(DgnModelR targetModel, bvector<CurveVectorPtr> const& in, RegionType operation)
+BentleyStatus RegionGraphicsContext::Boolean(DgnDbR db, bvector<CurveVectorPtr> const& in, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
 
+    SetDgnDb(db);
     m_operation = operation;
 
-    if (SUCCESS != SetTargetModel(targetModel))
-        return ERROR;
+    Render::GraphicBuilderPtr builder = CreateGraphic();
+    SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.get());
 
     for (CurveVectorPtr const& curve: in)
         {
         if (!curve.IsValid())
             continue;
 
-        m_output->ClipAndProcessCurveVector(*curve, false);
+        _ProcessCurveVector(*curve, false, *graphic);
         }
 
-    if (SUCCESS != m_output->SetupGraph(0.0, true))
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    if (SUCCESS != data.SetupGraph(0.0, true))
         return ERROR;
 
     if (RegionType::Intersection == operation || RegionType::ExclusiveOr == operation)
-        return m_output->CollectBooleanFaces(getRGBoolSelect(operation, true), m_output->GetCurrentGeomMarkerId(), m_output->GetCurrentGeomMarkerId());
+        return data.CollectBooleanFaces(getRGBoolSelect(operation, true), m_currentGeomMarkerId, m_currentGeomMarkerId);
 
-    return m_output->CollectBooleanFaces(getRGBoolSelect(operation), 1, m_output->GetCurrentGeomMarkerId());
+    return data.CollectBooleanFaces(getRGBoolSelect(operation), 1, m_currentGeomMarkerId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Boolean(DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans, RegionType operation)
+BentleyStatus RegionGraphicsContext::Boolean(DgnElementCPtrVec const& in, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
 
-    m_operation = operation;
-
-    if (SUCCESS != SetTargetModel(targetModel))
+    if (in.empty())
         return ERROR;
+
+    SetDgnDb(in.front()->GetDgnDb());
+    m_operation = operation;
 
     for (DgnElementCPtr curr : in)
         {
         GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
-            VisitBooleanCandidate(*geomElement, inTrans, nullptr, true);
-
-        if (nullptr != inTrans)
-            inTrans++;
+            VisitBooleanCandidate(*geomElement, nullptr, true);
         }
 
-    int highestOperand = m_output->GetCurrentGeomMarkerId();
+    int highestOperand = m_currentGeomMarkerId;
 
-    if (SUCCESS != m_output->SetupGraph(0.0, true))
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    if (SUCCESS != data.SetupGraph(0.0, true))
         return ERROR;
 
     if (RegionType::Intersection == operation || RegionType::ExclusiveOr == operation)
-        return m_output->CollectBooleanFaces(getRGBoolSelect(operation, true), highestOperand, highestOperand);
+        return data.CollectBooleanFaces(getRGBoolSelect(operation, true), highestOperand, highestOperand);
 
-    return m_output->CollectBooleanFaces(getRGBoolSelect(operation), 1, highestOperand);
+    return data.CollectBooleanFaces(getRGBoolSelect(operation), 1, highestOperand);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Boolean(DgnModelR targetModel, DgnElementCPtrVec const& target, DgnElementCPtrVec const& tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation)
+BentleyStatus RegionGraphicsContext::Boolean(DgnElementCPtrVec const& target, DgnElementCPtrVec const& tool, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
 
-    m_operation = operation;
-
-    if (SUCCESS != SetTargetModel(targetModel))
+    if (target.empty())
         return ERROR;
+
+    SetDgnDb(target.front()->GetDgnDb());
+    m_operation = operation;
 
     for (DgnElementCPtr curr : target)
         {
         GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
-            VisitBooleanCandidate(*geomElement, targetTrans, nullptr, false);
-
-        if (nullptr != targetTrans)
-            targetTrans++;
+            VisitBooleanCandidate(*geomElement, nullptr, false);
         }
 
-    int highestOperandA = m_output->GetCurrentGeomMarkerId();
+    int highestOperandA = m_currentGeomMarkerId;
 
     for (DgnElementCPtr curr : tool)
         {
         GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
-            VisitBooleanCandidate(*geomElement, toolTrans, nullptr, true);
-
-        if (nullptr != toolTrans)
-            toolTrans++;
+            VisitBooleanCandidate(*geomElement, nullptr, true);
         }
 
-    int highestOperandB = m_output->GetCurrentGeomMarkerId();
+    int highestOperandB = m_currentGeomMarkerId;
 
-    if (SUCCESS != m_output->SetupGraph(0.0, true))
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    if (SUCCESS != data.SetupGraph(0.0, true))
         return ERROR;
 
-    return m_output->CollectBooleanFaces(getRGBoolSelect(operation), highestOperandA, highestOperandB);
+    return data.CollectBooleanFaces(getRGBoolSelect(operation), highestOperandA, highestOperandB);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::BooleanWithHoles(DgnModelR targetModel, DgnElementCPtrVec const& in, DgnElementCPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation)
+BentleyStatus RegionGraphicsContext::BooleanWithHoles(DgnElementCPtrVec const& in, DgnElementCPtrVec const& holes, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
 
-    m_operation = operation;
-
-    if (SUCCESS != SetTargetModel(targetModel))
+    if (in.empty())
         return ERROR;
+
+    SetDgnDb(in.front()->GetDgnDb());
+    m_operation = operation;
 
     bvector<DMatrix4d> wireProducts;
 
@@ -1995,40 +1170,49 @@ BentleyStatus   RegionGraphicsContext::BooleanWithHoles(DgnModelR targetModel, D
         GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
-            VisitBooleanCandidate(*geomElement, inTrans, m_cullRedundantLoop ? &wireProducts : nullptr);
-
-        if (nullptr != inTrans)
-            inTrans++;
+            VisitBooleanCandidate(*geomElement, m_cullRedundantLoop ? &wireProducts : nullptr);
         }
 
-    int highestOperand = m_output->GetCurrentGeomMarkerId();
+    int highestOperand = m_currentGeomMarkerId;
 
     for (DgnElementCPtr curr : holes)
         {
         GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
-            VisitBooleanCandidate(*geomElement, holeTrans);
-
-        if (nullptr != holeTrans)
-            holeTrans++;
+            VisitBooleanCandidate(*geomElement);
         }
 
-    if (SUCCESS != m_output->SetupGraph(0.0, true))
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    if (SUCCESS != data.SetupGraph(0.0, true))
         return ERROR;
 
     if (RegionType::Intersection == operation || RegionType::ExclusiveOr == operation)
-        return m_output->CollectBooleanFaces(getRGBoolSelect(operation, true), highestOperand, highestOperand);
+        return data.CollectBooleanFaces(getRGBoolSelect(operation, true), highestOperand, highestOperand);
 
-    return m_output->CollectBooleanFaces(getRGBoolSelect(operation), 1, highestOperand);
+    return data.CollectBooleanFaces(getRGBoolSelect(operation), 1, highestOperand);
     }
+
+#if defined (NOT_NOW)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void RegionGraphicsContext::SetAbortFunction(RGC_AbortFunction abort)
+    {
+//    m_output->SetAbortFunction(abort);
+    jmdlRG_setAbortFunction(m_pRG, abort);
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::SetAbortFunction(RGC_AbortFunction abort)
+bool RegionGraphicsContext::IsGraphInitialized()
     {
-    m_output->SetAbortFunction(abort);
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    return data.m_graphIsValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2038,4 +1222,3 @@ RegionGraphicsContextPtr RegionGraphicsContext::Create()
     {
     return new RegionGraphicsContext();
     }
-#endif

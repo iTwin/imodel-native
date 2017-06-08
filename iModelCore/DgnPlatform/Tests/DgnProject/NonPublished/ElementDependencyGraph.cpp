@@ -235,7 +235,7 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetUpForRelationshipTests()
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     ASSERT_TRUE(m_db->IsBriefcase());
     ASSERT_TRUE(m_db->Txns().IsTracking());
     }

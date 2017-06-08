@@ -178,7 +178,7 @@ private:
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
-    BeSQLite::DbResult MergeSchemaRevision(BeSQLite::Db::OpenParams const& params);
+    BeSQLite::DbResult MergeSchemaRevisions(BeSQLite::Db::OpenParams const& params);
 
 protected:
     friend struct Txns;
@@ -204,7 +204,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBriefcaseIdChanged(BeSQLite::BeBriefcaseId newBriefcaseId) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBriefcaseIdAssigned(BeSQLite::BeBriefcaseId newBriefcaseId) override;
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnAfterSchemaImport() const override;
