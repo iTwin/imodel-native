@@ -105,17 +105,19 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         bool m_mapping = true;
 
         RelationshipClassEndTableMap(ECDb const& ecdb, ECN::ECClassCR relClass, MapStrategyExtendedInfo const& mapStrategy) : RelationshipClassMap(ecdb, Type::RelationshipEndTable, relClass, mapStrategy) {}
-        void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
         ClassMappingStatus _Map(ClassMappingContext&) override;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
-        BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
+
+        void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
+        BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind);
         DbColumn* CreateForeignKeyColumn(RelationshipMappingInfo const& classMappingInfo, DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo &fkColInfo);
-        DbColumn* CreateReferencedClassIdColumn(DbTable& fkTable) const;
-        DbColumn* CreateRelECClassIdColumn(DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap) const;
         ClassMappingStatus CreateForeignKeyConstraint(DbTable const& referencedTable, RelationshipMappingInfo const& classMappingInfo);
         ClassMappingStatus UpdatePersistedEndForChild(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap);
-        RelationshipClassEndTableMap* GetRootRelationshipMap(SchemaImportContext& ctx);
         ClassMappingStatus FinishMappingForChild(SchemaImportContext& ctx);
+
+        static RelationshipClassEndTableMap* GetRootRelationshipMap(DbMap const& dbMap, ECN::ECClassCR ecClass, SchemaImportContext& ctx);
+        static DbColumn* CreateReferencedClassIdColumn(DbTable& fkTable, ECN::ECRelationshipEnd foreignEnd);
+        static DbColumn* CreateRelECClassIdColumn(DbMap const& dbMap, ECN::ECClassCR ecClass, DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap);
 
     public:
         ~RelationshipClassEndTableMap() {}
