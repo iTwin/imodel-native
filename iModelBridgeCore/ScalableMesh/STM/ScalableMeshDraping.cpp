@@ -689,6 +689,7 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
             m_transform.Multiply(pointOnDTM);
             DTMRayIntersection rayInter;
             rayInter.point = pointOnDTM;
+            rayInter.rayFraction = (pointOnDTM - testPoint).Magnitude();
             pointsOnDTM.push_back(rayInter); // we add only this one
             return true;
             }
@@ -701,11 +702,17 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
     bool ret = false;
     for (auto& node : nodes)
         {
-        if (!node->ArePoints3d())
+        if (!node->ArePoints3d() && (newDirection.x == 0 && newDirection.y == 0))
             {
             BcDTMPtr dtmP = node->GetBcDTM();
-            if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(AllHits, newDirection, transformedPt))
+            DPoint3d interP;
+            if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(interP, newDirection, transformedPt))
                 {
+                DTMRayIntersection RayInter;
+                RayInter.point = interP;
+                RayInter.hasNormal = false;
+                RayInter.rayFraction = (interP - transformedPt).Magnitude();
+                AllHits.push_back(RayInter);
                 ret = true;
                 }
             }
@@ -740,7 +747,7 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
                 }
             if (bInRegion)
                 {
-                DTMRayIntersection rayInter;;
+                DTMRayIntersection rayInter;
                 pointsOnDTM.push_back(rayInter); // add the point in the output vector
                 ret = true; // we have at least a hit
                 }
