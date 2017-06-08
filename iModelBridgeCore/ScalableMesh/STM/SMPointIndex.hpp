@@ -8196,7 +8196,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::GatherCoun
     for (size_t level = 0; level < GetDepth()+1; ++level)
         {
         vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode> nodes;
-        ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT> query(GetIndexExtent(), level, true, true);
+        ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT> query(GetIndexExtent(), level, true/*alwaysVisible*/, false/*includeUnbalancedLeafs*/, true/*ignoreIndexes*/);
         Query(&query, nodes);
         m_countsOfNodesAtLevel[level] = nodes.size();
         }
@@ -8985,6 +8985,20 @@ template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetCou
         return 0;
 
     return m_pRootNode->GetCount();
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Richard.Bois 06/2017
+//=======================================================================================
+template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNodeCount()
+    {
+    HINVARIANTS;
+    
+    // NEEDS_WORK_SM : Would querying the node count directly from sqlite be more efficient?
+    if (m_countsOfNodesTotal == 0)
+        GatherCounts();
+
+    return m_countsOfNodesTotal;
     }
 
 /**----------------------------------------------------------------------------

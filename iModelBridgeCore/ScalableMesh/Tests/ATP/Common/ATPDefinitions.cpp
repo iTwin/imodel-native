@@ -4775,12 +4775,13 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
                 };
             ProgressListener progressListener;
             auto progress = IScalableMeshProgress::Create(ScalableMeshProcessType::CONVERT_3DTILES, smPtr);
-            if (!progress->AddListener(progressListener))
+            if (progress->AddListener(progressListener))
                 {
-                status = smPtr->ConvertToCloud(cloudContainer, cloudName, server, progress);
+                status = smPtr->Generate3DTiles(cloudContainer, cloudName, server, progress);
                 }
             else
                 {
+                status = ERROR;
                 result = L"FAILURE -> could not add listener in the ScalableMesh progress";
                 allTestPass = false;
                 }
