@@ -1423,9 +1423,20 @@ TEST(BeStringUtilitiesTests, IsValidCodePage)
 //---------------------------------------------------------------------------------------
 TEST(BeStringUtilitiesTests, GetDecimalSeparator)
     {
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
+    lconv* obj1 = localeconv();
+    WString refrenced_str;
+    WStringR decimal_separator = refrenced_str;
+    ASSERT_EQ(BentleyStatus::SUCCESS, BeStringUtilities::GetDecimalSeparator(decimal_separator));
+    WString decimalOut;
+    decimalOut.AssignA(obj1->decimal_point);
+    EXPECT_EQ(decimalOut, decimal_separator);
+
+#elif defined (__unix__)
     WString refrenced_str;
     WStringR decimal_separator = refrenced_str;
     ASSERT_EQ(BentleyStatus::SUCCESS, BeStringUtilities::GetDecimalSeparator(decimal_separator));
     WString expected_decimal_str = L".";
     EXPECT_STREQ(expected_decimal_str.c_str(), decimal_separator.c_str());
+#endif
     }
