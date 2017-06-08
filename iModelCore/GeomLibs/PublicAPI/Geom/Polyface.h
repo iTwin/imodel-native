@@ -558,8 +558,10 @@ GEOMDLLIMPEXP                   PolyfaceEdgeChain ();
 GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id);
 //! construct a chain with two initial indices.
 GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id, int32_t index0, int32_t index1);
-//! add an index.
+//! add an index, caller responsible for 1-based shift
 GEOMDLLIMPEXP void              AddIndex (int32_t index);
+//! add an index.
+GEOMDLLIMPEXP void              AddZeroBasedIndex (uint32_t index);
 //! add indices
 GEOMDLLIMPEXP void              AddZeroBasedIndices (bvector<size_t> const &indices);
 //! query the CurveTopologyId
@@ -568,6 +570,9 @@ GEOMDLLIMPEXP CurveTopologyIdCR GetId () const;
 GEOMDLLIMPEXP int32_t const*      GetIndexCP() const;
 //! Query the number of indices.
 GEOMDLLIMPEXP size_t            GetIndexCount () const;
+//! extract coordinates from points.
+//! @return false if any indices out of bounds.
+GEOMDLLIMPEXP bool GetXYZ (bvector<DPoint3d> &dest, bvector<DPoint3d> const &source) const;
 
 };
 

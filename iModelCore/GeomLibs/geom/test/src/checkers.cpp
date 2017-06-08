@@ -1585,6 +1585,9 @@ void Check::ClearGeometry (char const *name)
                 {
 //                printf ("%s\n", string.c_str ());
                 file.Write(&bytesWritten, string.c_str(), (uint32_t)string.size());
+#ifdef BENTLEY_WIN32
+                printf ("\n(#g=%d)%S", (uint32_t)s_cache.size (), path.c_str ());
+#endif
                 }
             file.Close ();
             }

@@ -306,8 +306,10 @@ bool IPolyfaceConstruction::Add (DgnTorusPipeDetailCR detail)
         bvector<DPoint3d> startPoints, endPoints;
         bool reverse = majorSweepRadians * DgnTorusPipeDetail::GetVector90Sign () < 0.0;   // ellipse orientation is controlled.
         AddRotationalSweepLoop (points, pipeTangents, axis.origin, axis.direction, majorSweepRadians, reverse, arcLength, &startPoints, &endPoints);
-        if (detail.HasRealCaps ())
-            AddTriangulationPair (startPoints, reverse, endPoints, !reverse);
+        
+        AddTriangulationPair (startPoints, reverse, endPoints, !reverse,
+                detail.HasRealCaps (),
+                !Angle::IsFullCircle (majorSweepRadians), CurveTopologyId::Type::SweepProfile);
         if (detail.IsClosedVolume ())
             GetClientMeshR().SetTwoSided (false);
         return true;
