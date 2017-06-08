@@ -167,7 +167,7 @@ DgnDbPtr BriefcasePerformanceTest::SetupDb(WCharCP testFile, BeBriefcaseId bcId)
     if (bcId.GetValue() != m_db->GetBriefcaseId().GetValue())
         {
         TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
-        m_db->ChangeBriefcaseId(bcId);
+        m_db->AssignBriefcaseId(bcId);
         }
 
     return m_db;

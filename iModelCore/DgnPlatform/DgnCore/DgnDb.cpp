@@ -116,14 +116,13 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 
     if (BE_SQLITE_OK != (rc = InitializeSchemas(params)))
         {
+        // *** NEEDS WORK: how can we be sure that DbClose won't automatically save the partial changes?
+        // Should we call AbandonChanges(); here?
         m_txnManager = nullptr; // Deletes ref counted ptr so that statement caches are freed
         return rc;
         }
 
-    if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
-        return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
-
-    if (BE_SQLITE_OK != (rc = MergeSchemaRevision(params))) // Ensure InitializeTableHandlers() is called before this - txn related tables are necessary for any change propagation
+    if (BE_SQLITE_OK != (rc = MergeSchemaRevisions(params))) 
         return rc;
 
     Fonts().Update(); // ensure the font Id cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
@@ -158,6 +157,8 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaTooOld;
         case SchemaStatus::SchemaUpgradeRequired:
             return BE_SQLITE_ERROR_SchemaUpgradeRequired;
+        case SchemaStatus::CouldNotAcquireLocksOrCodes:
+            return BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes;
         default:
             return isUpgrade ? BE_SQLITE_ERROR_SchemaUpgradeFailed : BE_SQLITE_ERROR_SchemaImportFailed;
         }
@@ -166,14 +167,25 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::MergeSchemaRevision(Db::OpenParams const& params)
+DbResult DgnDb::MergeSchemaRevisions(Db::OpenParams const& params)
     {
-    DgnRevisionCP schemaRevision = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions()).GetUpgradeRevision();
-    if (schemaRevision == nullptr)
+    bvector<DgnRevisionCP> revisions = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions()).GetUpgradeRevisions();
+    if (revisions.empty())
         return BE_SQLITE_OK;
 
-    RevisionStatus revStatus = Revisions().DoMergeRevision(*schemaRevision); 
-    return (revStatus == RevisionStatus::Success) ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
+    for (DgnRevisionCP revision : revisions)
+        {
+        if (!revision)
+            {
+            BeAssert(false);
+            return BE_SQLITE_ERROR_SchemaUpgradeFailed;
+            }
+
+        if (RevisionStatus::Success != Revisions().DoMergeRevision(*revision))
+            return BE_SQLITE_ERROR_SchemaUpgradeFailed;
+        }
+
+    return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
@@ -191,13 +203,24 @@ DbResult DgnDb::_OnDbOpening()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
+DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     {
-    DbResult result = T_Super::_OnBriefcaseIdChanged(newBriefcaseId);
+    if (newBriefcaseId.IsMasterId())
+        {
+        BeAssert(false && "Can only change Master -> Briefcase");
+        return BE_SQLITE_ERROR;
+        }
+
+    DbResult result = T_Super::_OnBriefcaseIdAssigned(newBriefcaseId);
     if (result != BE_SQLITE_OK)
         return result;
 
-    return ResetElementIdSequence(newBriefcaseId);
+    result = ResetElementIdSequence(newBriefcaseId);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    Txns().EnableTracking(true);
+    return Txns().InitializeTableHandlers(); // Note: The briefcase id can be changed only once from master->briefcase
     }
 
 //--------------------------------------------------------------------------------------

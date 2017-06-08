@@ -490,7 +490,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     OpenParams oparams(OpenMode::ReadWrite);
     DbResult status = DoOpenDgnDb(fileName, oparams);
 
-    ChangeBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    AssignBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
     SaveChanges();
     CloseDb();
 

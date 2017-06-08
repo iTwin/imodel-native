@@ -743,6 +743,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
                 if (m_lineTexture.IsValid())
                     {
+                    textureWidth *= lsSymb.GetScale();
                     m_trueWidthStart = textureWidth;
                     m_trueWidthEnd = textureWidth;
                     }
