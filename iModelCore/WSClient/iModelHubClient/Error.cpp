@@ -157,6 +157,11 @@ Error::Error(RevisionStatus const& status)
         m_id = Id::MergeError;
         m_message = GetDefaultMessage(Id::MergeError);
         }
+    else if (RevisionStatus::MergeSchemaChangesOnOpen == status)
+        {
+        m_id = Id::MergeSchemaChangesOnOpen;
+        m_message = GetDefaultMessage(Id::MergeSchemaChangesOnOpen);
+        }
     else
         {
         m_id = Id::RevisionManagerError;
@@ -201,6 +206,7 @@ Utf8StringCR Error::GetDefaultMessage(Error::Id id)
 
         map[Id::MergeError] = ErrorLocalizedString(MESSAGE_MergeError);
         map[Id::RevisionManagerError] = ErrorLocalizedString(MESSAGE_RevisionManagerError);
+        map[Id::MergeSchemaChangesOnOpen] = ErrorLocalizedString(MESSAGE_MergeSchemaChangesOnOpen);
         map[Id::ChangeSetDoesNotExist] = ErrorLocalizedString(MESSAGE_ChangeSetDoesNotExist);
 
         map[Id::EventCallbackAlreadySubscribed] = ErrorLocalizedString(MESSAGE_EventCallbackAlreadySubscribed);
