@@ -234,7 +234,7 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
         {
         auto const&   builderIndex = inverseVertexIndexMap.find((uint32_t) chainIndices[i]-1);
                  
-        if (i > 0 && 0 != chainIndices[i] && 0 != chainIndices[i-1])
+        if (0 != chainIndices[i] && !polyline.m_indices.empty())
             startDistance += polyfacePoints[chainIndices[i]-1].Distance(polyfacePoints[chainIndices[i-1]-1]);
 
         if (builderIndex == inverseVertexIndexMap.end())
@@ -263,9 +263,6 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
     {
-    bool                    useExistingEdgeChains = nullptr != builderPolyface && 0 != builderPolyface->m_polyface.GetEdgeChainCount();
-    bvector<PolyfaceEdge>   visibleEdges;
-
     for (auto& edge : m_edgeMap)
         {
         if (edge.second.m_visible)
@@ -300,7 +297,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
         for (auto& vertexIndex : builderPolyface->m_vertexIndexMap)
             inverseVertexIndexMap.Insert(vertexIndex.second, vertexIndex.first);
 
-        if (useExistingEdgeChains)
+        if (0 != builderPolyface->m_polyface.GetEdgeChainCount())
             {
             for (size_t i=0; i<builderPolyface->m_polyface.GetEdgeChainCount(); i++)
                 BuildPolylineFromEdgeChain(edges, *(builderPolyface->m_polyface.GetEdgeChainCP() + i), *builderPolyface, inverseVertexIndexMap);
