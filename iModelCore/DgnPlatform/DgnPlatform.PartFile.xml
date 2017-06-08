@@ -151,7 +151,7 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
-        <RequiredRepository>CompatibilityTestFiles-2-0-1-38</RequiredRepository>
+        <RequiredRepository>CompatibilityTestFiles-2-0-1-46</RequiredRepository>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script" SourceName="Delivery/UnitTests/Script" />
@@ -445,6 +445,12 @@
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnPlatformTest.log</Files>
         </Bindings>
+    </Part>
+
+	<!-- Memory leak testing of DgnPlatform tests. Only called on demand -->
+	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x64">
+		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+		<SubProduct ProductName="DgnPlatform-Gtest" />
     </Part>
 
     

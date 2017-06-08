@@ -233,10 +233,6 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     SetupSeedProject();
     BeFileName fileName = m_db->GetFileName();
     SaveDb();
-    
-    // Flush any local changes to allow importing schemas
-    CreateRevision();
-
     CloseDb();
 
     DbResult result = BE_SQLITE_OK;
@@ -359,10 +355,6 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
      */
     SetupSeedProject();
     BeFileName fileName = m_db->GetFileName();
-
-    // Flush any local changes to allow importing schemas
-    CreateRevision();
-
     SaveDb();
 
     SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::Yes, DgnDomain::Readonly::No);
@@ -373,11 +365,7 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
 
     SchemaVersionTestDomain::GetDomain().SetReadonly(DgnDomain::Readonly::No);
 
-    // Flush any local changes to allow importing schemas
-    CreateRevision();
-
     SaveDb();
-
     BackupTestFile();
 
     /* 
@@ -465,10 +453,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     RevisionStatus status = RevisionStatus::Success;
 
     /* Setup baseline */
-    SetupSeedProject();
-    SaveDb();
-    DgnRevisionPtr revision0 = CreateRevision();
-    EXPECT_TRUE(revision0.IsValid());
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     BeFileName fileName = m_db->GetFileName();
     BackupTestFile();
 
@@ -552,10 +537,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
 TEST_F(SchemaVersionTestFixture, IncompatibleUpgrade)
     {
     /* Setup baseline */
-    SetupSeedProject();
-    SaveDb();
-    DgnRevisionPtr revision0 = CreateRevision();
-    EXPECT_TRUE(revision0.IsValid());
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     BeFileName fileName = m_db->GetFileName();
     BackupTestFile();
 

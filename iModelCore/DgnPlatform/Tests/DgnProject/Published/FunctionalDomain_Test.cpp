@@ -184,12 +184,8 @@ void FunctionalDomainTests::SetupFunctionalTestDomain()
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
-    FlushLocalChanges(); // Flush any un-committed or committed transactions before importing the schema
-
     SchemaStatus status = FunctionalDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_EQ(SchemaStatus::Success, status);
-
-    FlushLocalChanges(); // Flush any un-committed or committed transactions before importing the schema
 
     status = FunctionalTestDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_EQ(SchemaStatus::Success, status);

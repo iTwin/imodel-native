@@ -332,6 +332,13 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDomains::OnDbOpened()
     {
+    if (m_dgndb.IsBriefcase() && !m_dgndb.IsReadonly())
+        {
+        TxnManagerR txnManager = m_dgndb.Txns();
+        txnManager.EnableTracking(true);
+        txnManager.InitializeTableHandlers(); // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges(). 
+        }
+
     for (DgnDomainCP domain : m_domains)
         domain->_OnDgnDbOpened(m_dgndb);
     }
@@ -411,9 +418,14 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
         return status;
 
     SyncWithSchemas();
+    
+    m_dgndb.BriefcaseManager().StartBulkOperation();
 
     for (DgnDomainP domain : domainsToImport)
         domain->_OnSchemaImported(m_dgndb);
+
+    if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().EndBulkOperation().Result())
+        return SchemaStatus::CouldNotAcquireLocksOrCodes;
 
     SaveDevelopmentPhase();
 
@@ -438,7 +450,7 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     SchemaUpgradeOptions::AllowedDomainUpgrades allowedUpgrades = m_schemaUpgradeOptions.GetAllowedDomainUpgrades();
     
     if (m_dgndb.IsBriefcase())
-        m_dgndb.Txns().EnableTracking(true); // Ensure all changes are captured in the txn table for creating revisions
+        m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
     SchemaManager::SchemaImportOptions importOptions = (allowedUpgrades == SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly) ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::Poisoning;
     status = DoImportSchemas(importSchemas, importOptions);
@@ -450,18 +462,28 @@ SchemaStatus DgnDomains::UpgradeSchemas()
 
     SyncWithSchemas();
 
-    for (DgnDomainCP domain : m_domains)
+    if (m_dgndb.IsBriefcase())
         {
-        if (std::find(domainsToImport.begin(), domainsToImport.end(), domain) != domainsToImport.end())
-            continue;
-        domain->_OnDgnDbOpened(m_dgndb); // Necessary to setup dependent domains before importing new domains
+        m_dgndb.Txns().InitializeTableHandlers(); 
+        // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges(). 
         }
         
+    for (DgnDomainCP domain : m_domains)
+        {
+        // Call domain handlers of dependent domains before the newly imported domains
+        if (std::find(domainsToImport.begin(), domainsToImport.end(), domain) != domainsToImport.end())
+            continue;
+        domain->_OnDgnDbOpened(m_dgndb); 
+        }
+        
+    m_dgndb.BriefcaseManager().StartBulkOperation();
     for (DgnDomainP domain : domainsToImport)
         {
         domain->_OnSchemaImported(m_dgndb);
-        domain->_OnDgnDbOpened(m_dgndb); // Necessary to setup dependent domains before importing new domains.
+        domain->_OnDgnDbOpened(m_dgndb);
         }
+    if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().EndBulkOperation().Result())
+        return SchemaStatus::CouldNotAcquireLocksOrCodes;
 
     return SchemaStatus::Success;
     }

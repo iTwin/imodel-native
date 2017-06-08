@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/w32tools.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -18,7 +18,21 @@
 #include    <io.h>
 #include    <shlwapi.h>
 #include    <psapi.h>
-#include    <dbghelp.h>
+
+// ...\DbgHelp.h(1544): error C2220: warning treated as error - no 'object' file generated
+// ...\DbgHelp.h(1544): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+// ...\DbgHelp.h(3190): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+#if defined (_MSC_VER)
+    #pragma warning(push)
+    #pragma warning(disable:4091)
+#endif
+
+#include <dbghelp.h>
+
+#if defined (_MSC_VER)
+    #pragma warning(pop)
+#endif
+
 #include    <tlhelp32.h>
 #include    <Winternl.h>
 #include    <DgnPlatform/DesktopTools/ConfigurationManager.h>

@@ -140,17 +140,16 @@ public:
     //! @{
 
     //! @private - internal function called by seed data managers
-    static DgnDbPtr CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBriefcase);
+    static DgnDbPtr CreateDgnDb(WCharCP relPath, bool isRoot);
 
     //! Create a DgnDb from scratch in the test output directory. 
     //! The specified name must be a relative path, including an optional subdirectory path, and a filename.
     //! If the file already exists, that is an ERROR, indicating that two test classs are trying to create seed DgnDbs with the same names.
     //! Each test class should use its own class-specific, unique name for its subdirectory and/or seed DgnDbs.
     //! @param relPath  The subdirectory/filename for the new file. Be sure to use forward slash (/) as a directory separator.
-    //! @param mustBeBriefcase If true, the new DgnDb is marked as a (fake) briefcase. This is the default.
     //! @return a pointer to the newly created file, or nullptr if the location is invalid
     //! @note Normally, this should be called only once for an entire test class in the class's SetUpTestCase function.
-    static DgnDbPtr CreateSeedDb(WCharCP relPath, bool mustBeBriefcase = true) {return CreateDgnDb(relPath, false, mustBeBriefcase);}
+    static DgnDbPtr CreateSeedDb(WCharCP relPath) {return CreateDgnDb(relPath, false);}
 
     //! Open the specified seed DgnDb read-only
     //! @param relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test class's SetUpTestCase logic, then you must specify the
