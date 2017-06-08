@@ -657,6 +657,10 @@ void RealityDataConsole::ConfigureServer()
         std::getline(*s_inputSource, input);
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(input.c_str()).Trim());
         }
+    else if (str.length() == 36) //they input the project id right away
+        {
+        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(str.c_str()).Trim());
+        }
     else if (verifyCertificate)
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
     else

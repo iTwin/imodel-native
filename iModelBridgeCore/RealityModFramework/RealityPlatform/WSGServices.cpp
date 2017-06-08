@@ -355,7 +355,10 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
     if(!m_serverName.StartsWith("https://"))
         m_httpRequestString = "https://";
     m_httpRequestString.append(m_serverName);
-    
+
+    if (!m_httpRequestString.EndsWith("/"))
+        m_httpRequestString.append("/");
+
     m_requestHeader.clear();
 
     EncodeId();
@@ -525,7 +528,10 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
     BeStringUtilities::Split(nodePath.c_str(), "~", lines);
     Utf8String rootNode = lines[0];
 
-    Utf8String rootId = rootNode.substr(rootNode.length() - 36, rootNode.length()); // 36 = size of GUID
+    Utf8String guidString = rootNode;
+    guidString.ReplaceAll("--","-");
+
+    Utf8String rootId = guidString.substr(guidString.length() - 36, rootNode.length()); // 36 = size of GUID
 
     bvector<NavNode> returnVector;
     RawServerResponse versionResponse = RawServerResponse();
@@ -567,7 +573,7 @@ WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8
 void WSGNavRootRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -593,7 +599,7 @@ WSGNavNodeRequest::WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8
 void WSGNavNodeRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -623,7 +629,7 @@ WSGObjectRequest::WSGObjectRequest(Utf8String server, Utf8String version, Utf8St
 void WSGObjectRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -656,7 +662,7 @@ WSGObjectContentRequest::WSGObjectContentRequest(Utf8String server, Utf8String v
 void WSGObjectContentRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -691,7 +697,7 @@ WSGObjectListPagedRequest::WSGObjectListPagedRequest(Utf8String server, Utf8Stri
 void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
