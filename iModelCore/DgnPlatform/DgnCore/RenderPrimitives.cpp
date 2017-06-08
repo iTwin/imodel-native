@@ -1071,6 +1071,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         polyfaceBuilder->Add(*bsplineSurface);
 
     PolyfaceList    polyfaces;
+    bool            isOutlinedRegion = curveVector.IsValid() && FillFlags::None != GetDisplayParams().GetFillFlags() && GetDisplayParams().GetLineColor() != GetDisplayParams().GetFillColor();
 
     polyface = polyfaceBuilder->GetClientMeshPtr();
     if (polyface.IsValid())
@@ -1078,7 +1079,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         if (!GetTransform().IsIdentity())
             polyface->Transform(GetTransform());
 
-        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface));
+        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface, !isOutlinedRegion));
         }
 
     return polyfaces;
@@ -1089,11 +1090,17 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
     {
-    CurveVectorPtr          curveVector = m_geometry->GetAsCurveVector();
     StrokesList             tileStrokes;
+    CurveVectorPtr          curveVector = m_geometry->GetAsCurveVector();
+    
+    if (!curveVector.IsValid())
+        return tileStrokes;
+
+    bool            isOutlinedRegion = curveVector.IsValid() && FillFlags::None != GetDisplayParams().GetFillFlags() && GetDisplayParams().GetLineColor() != GetDisplayParams().GetFillColor();
+
     Strokes::PointLists     strokePoints;
 
-    if (curveVector.IsValid() && ! curveVector->IsAnyRegionType())
+    if (! curveVector->IsAnyRegionType() || isOutlinedRegion)
         {
         strokePoints.clear();
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
