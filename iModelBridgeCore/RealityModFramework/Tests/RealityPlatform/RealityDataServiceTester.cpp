@@ -9,6 +9,7 @@
 
 #include <Bentley/BeTest.h>
 #include <RealityPlatform/RealityDataService.h>
+#include "../../RealityPlatform/RealityDataServiceInternal.h"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -90,7 +91,6 @@ public:
 RealityDataService* RealityDataServiceFixture::s_realityDataService = nullptr;
 ErrorClass* RealityDataServiceFixture::s_errorClass = nullptr;
 NiceMock<MockWSGRequest>* RealityDataServiceFixture::s_mockWSGInstance = nullptr;
-
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              05/2017
 //=====================================================================================
@@ -103,6 +103,12 @@ TEST_F(RealityDataServiceFixture, SetServerComponents)
 	EXPECT_STREQ(s_realityDataService->GetSchemaName().c_str(), "mySchema");
 	EXPECT_STREQ(s_realityDataService->GetProjectId().c_str(), "myProjectID");
 	EXPECT_TRUE(s_realityDataService->AreParametersSet());
+
+    s_realityDataService->SetProjectId("newProjectID");
+    EXPECT_STREQ(s_realityDataService->GetProjectId().c_str(), "newProjectID");
+
+    // Reset the project ID for all the other test
+    s_realityDataService->SetProjectId("myProjectID");
 	}
 
 //=====================================================================================
@@ -427,7 +433,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdPaged
 	requestUT.SetProject("MyProject");	
 
 	auto requestString = requestUT.GetHttpRequestString();
-	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=ProjectId+eq+'MyIdentifier'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RelatedId+eq+'MyIdentifier'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=Copyright+desc"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=0&$top=25"));
@@ -450,7 +456,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdP
 
 	auto requestString = requestUT.GetHttpRequestString();
 
-	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RealityDataId+eq+'MyIdentifier'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RealityDataId+eq+'MyIdentifier'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=Dataset+desc"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=0&$top=25"));
@@ -851,9 +857,28 @@ TEST_F(RealityDataServiceFixture, RealityDataCreateRequestBadRequest)
 	RealityDataCreateRequest requestUT("RealityDataID", "SomeProperties");
 	RawServerResponse rawResponse{};
 
-	s_realityDataService->Request(requestUT ,rawResponse);
+	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
 	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataPagedRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataPagedRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
+
+	RealityDataPagedRequest requestUT{};
+	RawServerResponse rawResponse{};
+
+	auto resultVector = s_realityDataService->Request(requestUT, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
@@ -960,4 +985,201 @@ TEST_F(RealityDataServiceTransferFixture, EmptyFileToTransfer)
 	EXPECT_CALL(*s_transferServiceCallback, statusCallBack(Eq(0), Eq(nullptr), Eq(-1), StrEq("No files to transfer, please verify that the previous steps completed without failure"))).Times(1);
 	auto report = s_dataServiceTransfer->Perform();
 	//EXPECT_EQ(report.results[0]->progress, 0);
+	}
+
+//=====================================================================================
+//! @bsiclass                                   Remi.Charbonneau              05/2017
+//! RealityDataServiceBadComponentsFixture
+//=====================================================================================
+class RealityDataServiceBadComponentsFixture : public testing::Test
+	{
+public:
+	static RealityDataService* s_realityDataService;
+
+	static void SetUpTestCase()
+		{
+		s_realityDataService = new RealityDataService();
+        RealityDataServiceHelper::ResetServerComponents();
+		}
+
+	static void TearDownTestCase()
+		{
+		delete s_realityDataService;
+		s_realityDataService = nullptr;
+		}
+
+	};
+
+RealityDataService* RealityDataServiceBadComponentsFixture::s_realityDataService = nullptr;
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataDeleteBadComponents)
+	{
+	RealityDataDelete requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataEnterpriseStatRequestBadComponents)
+	{
+	RealityDataEnterpriseStatRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+    RealityDataEnterpriseStat stat {};
+	s_realityDataService->Request(requestUT, stat, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataByIdRequestBadComponents)
+	{
+	RealityDataByIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataDocumentByIdRequestBadComponents)
+	{
+	RealityDataDocumentByIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataDocumentContentByIdRequestBadComponents)
+	{
+	RealityDataDocumentContentByIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT,new BeFile() ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataFolderByIdRequestBadComponents)
+	{
+	RealityDataFolderByIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataListByOrganizationPagedRequestBadComponents)
+	{
+	RealityDataListByOrganizationPagedRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+    EXPECT_TRUE(realityDataVector.empty());
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataProjectRelationshipByProjectIdRequestBadComponents)
+	{
+	RealityDataProjectRelationshipByProjectIdRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+    EXPECT_TRUE(realityDataVector.empty());
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataProjectRelationshipByProjectIdPagedRequestBadComponents)
+	{
+	RealityDataProjectRelationshipByProjectIdPagedRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+    EXPECT_TRUE(realityDataVector.empty());
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataChangeRequestBadComponents)
+	{
+	RealityDataChangeRequest requestUT("RealityDataID", "SomeProperties");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataRelationshipCreateRequestBadComponents)
+	{
+	RealityDataRelationshipCreateRequest requestUT("RealityDataID", "SomeProperties");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataRelationshipDeleteBadComponents)
+	{
+	RealityDataRelationshipDelete requestUT("RealityDataID", "SomeProperties");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataCreateRequestBadComponents)
+	{
+	RealityDataCreateRequest requestUT("RealityDataID", "SomeProperties");
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataPagedRequestBadComponents)
+	{
+	RealityDataPagedRequest requestUT{};
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
 	}
