@@ -468,17 +468,23 @@ Utf8String RealityDataConsole::MakeBuddiCall(int region)
 void RealityDataConsole::ConfigureServer()
     {
     DisplayInfo("Welcome to the RealityDataService Navigator.\n", DisplayOption::Tip);
-    DisplayInfo("If you want to specifically contact dev or qa, enter dev or qa.\n"
+    DisplayInfo("If you want to specifically contact dev or qa, enter dev or qa. For a custom server url, type \"custom\".\n"
         "Otherwise, enter blank and we will connect you to the proper server for you ConnectionClient configuration\n", DisplayOption::Question);
-    Utf8String server;
+    Utf8String server, serverChoice;
     std::string input;
     std::getline(*s_inputSource, input);
-    server = Utf8String(input.c_str()).Trim();
+    serverChoice = Utf8String(input.c_str()).Trim();
     
-    if (server.EqualsI("dev"))
+    if (serverChoice.EqualsI("dev"))
         server = MakeBuddiCall(103);
-    else if (server.EqualsI("qa"))
+    else if (serverChoice.EqualsI("qa"))
         server = MakeBuddiCall(102);
+    else if (serverChoice.EqualsI("custom"))
+        {
+        DisplayInfo("Enter server url\n", DisplayOption::Question);
+        std::getline(*s_inputSource, input);
+        server = Utf8String(input.c_str()).Trim();
+        }
     else
         server = MakeBuddiCall();
 
