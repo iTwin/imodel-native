@@ -701,7 +701,7 @@ BentleyStatus RegionGraphicsContext::VisitBooleanCandidate(GeometrySourceCR elem
         }
 
     Render::GraphicBuilderPtr builder = CreateGraphic();
-    SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.GetGraphic());
+    SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.get());
 
     m_currentGeomSource = &element;
     _ProcessCurveVector(*curves, false, *graphic);
@@ -1051,7 +1051,7 @@ BentleyStatus RegionGraphicsContext::Boolean(DgnDbR db, bvector<CurveVectorPtr> 
     m_operation = operation;
 
     Render::GraphicBuilderPtr builder = CreateGraphic();
-    SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.GetGraphic());
+    SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.get());
 
     for (CurveVectorPtr const& curve: in)
         {

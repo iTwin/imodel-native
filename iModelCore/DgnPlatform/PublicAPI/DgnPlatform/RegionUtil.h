@@ -131,7 +131,7 @@ GeometrySourceCP    m_currentGeomSource = nullptr;
 bool ComputePostFlattenTransform(CurveVectorCR region);
 void ResetPostFlattenTransform();
 
-Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
+Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override {SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
 bool _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled, SimplifyGraphic&) override;
 bool _ProcessCurveVector(CurveVectorCR, bool filled, SimplifyGraphic&) override;
 StatusInt _OutputGeometry(GeometrySourceCR) override;
