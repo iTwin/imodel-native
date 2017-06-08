@@ -148,6 +148,11 @@ _int64 IScalableMesh::GetPointCount()
     return _GetPointCount();
     }
 
+uint64_t IScalableMesh::GetNodeCount()
+    {
+    return _GetNodeCount();
+    }
+
 bool IScalableMesh::IsTerrain()
     {
     return _IsTerrain();
@@ -456,9 +461,9 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const
+int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
     {
-    return _ConvertToCloud(outContainerName, outDatasetName, server);
+    return _ConvertToCloud(outContainerName, outDatasetName, server, progress);
     }
 
 BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
@@ -1747,6 +1752,24 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount()
     return nbPoints;
     }
 
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_GetNodeCount
++----------------------------------------------------------------------------*/
+template <class POINT> uint64_t ScalableMesh<POINT>::_GetNodeCount()
+    {
+    //NEEDS_WORK_SM : #nodes == next nodeID?
+    uint64_t nbNodes = 0;
+
+    if (m_scmIndexPtr != 0)
+        {
+        //m_scmIndexPtr->GatherCounts();
+        //return m_scmIndexPtr->GetNodeCount();
+        m_scmIndexPtr->LoadIndexNodes(nbNodes, 0/*load up to level, all=0*/, true /*headers only*/);
+        }
+
+    return nbNodes;
+    }
+
 template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
     {
 
@@ -2766,7 +2789,7 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_ConvertToCloud
 +----------------------------------------------------------------------------*/
-template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const
+template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
@@ -2808,7 +2831,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
         }
     
     //s_stream_from_grouped_store = false;
-
+    m_scmIndexPtr->SetProgressCallback(progress);
     return m_scmIndexPtr->Publish3DTiles(path, this->_GetGCS().GetGeoRef().GetBasePtr());
     }
 
@@ -3088,7 +3111,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
 +----------------------------------------------------------------------------*/
 template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const
     {    
-    m_scmIndexPtr->LoadTree(nbLoadedNodes, level, true);
+    m_scmIndexPtr->LoadIndexNodes(nbLoadedNodes, level, true);
     return SUCCESS;
     } 
 
@@ -3097,7 +3120,7 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLo
 +----------------------------------------------------------------------------*/
 template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeData(size_t& nbLoadedNodes, int level) const
 {
-    m_scmIndexPtr->LoadTree(nbLoadedNodes, level, false);
+    m_scmIndexPtr->LoadIndexNodes(nbLoadedNodes, level, false);
     return SUCCESS;
 }
 
@@ -3160,6 +3183,13 @@ template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_
 template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>::_GetPointCount()
     {
     return m_scmIndexPtr->GetNbObjectsAtLevel(m_resolutionIndex);
+    }
+
+template <class POINT> uint64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetNodeCount()
+    {
+    uint64_t numNodes = 0;
+    m_scmIndexPtr->LoadIndexNodes(numNodes, m_resolutionIndex, true);
+    return numNodes;
     }
 
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_IsTerrain()

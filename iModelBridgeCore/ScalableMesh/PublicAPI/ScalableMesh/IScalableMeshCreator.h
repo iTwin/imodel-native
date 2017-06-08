@@ -40,70 +40,9 @@ namespace BENTLEY_NAMESPACE_NAME
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-enum ScalableMeshStep
-    {
-    STEP_NOT_STARTED = 0,
-    STEP_IMPORT_SOURCE,
-    STEP_BALANCE,
-    STEP_MESH,
-    STEP_GENERATE_LOD,
-    STEP_TEXTURE,
-    STEP_SAVE,
-    STEP_DETECT_GROUND,
-    STEP_GENERATE_TEXTURE,
-    STEP_QTY
-    };
-
-enum ScalableMeshStepProcess
-    {
-    PROCESS_INACTIVE = 0,
-    PROCESS_GENERATION,
-    PROCESS_TEXTURING,
-    PROCESS_DETECT_GROUND
-    };
 
 struct IScalableMeshCreator;
 typedef RefCountedPtr<IScalableMeshCreator>            IScalableMeshCreatorPtr;
-
-struct IScalableMeshProgress
-    {
-    protected:
-        virtual bool _IsCanceled() const =0 ;
-        virtual void _Cancel() = 0;
-
-        virtual std::atomic<ScalableMeshStep> const& _GetProgressStep() const = 0;
-        virtual std::atomic<ScalableMeshStepProcess> const& _GetProgressStepProcess() const = 0;
-        virtual int _GetTotalNumberOfSteps() const = 0;
-        virtual std::atomic<int> const& _GetProgressStepIndex() const = 0;
-
-        virtual void _SetTotalNumberOfSteps(int step) = 0;
-
-        virtual std::atomic<float> const& _GetProgress() const = 0; //Progress of current step ([0..1])
-
-        virtual std::atomic<float>& _Progress() = 0;
-        virtual std::atomic<ScalableMeshStep>& _ProgressStep() = 0;
-        virtual std::atomic<ScalableMeshStepProcess>& _ProgressStepProcess() = 0;
-        virtual std::atomic<int>& _ProgressStepIndex() = 0;
-
-
-    public:
-    BENTLEY_SM_EXPORT bool IsCanceled() const;
-    BENTLEY_SM_EXPORT void Cancel();
-
-    BENTLEY_SM_EXPORT std::atomic<ScalableMeshStep> const& GetProgressStep() const;
-    BENTLEY_SM_EXPORT std::atomic<ScalableMeshStepProcess> const& GetProgressStepProcess() const;
-    BENTLEY_SM_EXPORT std::atomic<int> const& GetProgressStepIndex() const;
-    BENTLEY_SM_EXPORT int GetTotalNumberOfSteps() const;
-
-    BENTLEY_SM_EXPORT void SetTotalNumberOfSteps(int step);
-
-    BENTLEY_SM_EXPORT std::atomic<float> const& GetProgress() const; //Progress of current step ([0..1])
-    
-    BENTLEY_SM_EXPORT std::atomic<float>& Progress();
-    BENTLEY_SM_EXPORT std::atomic<ScalableMeshStep>& ProgressStep();
-    BENTLEY_SM_EXPORT std::atomic<ScalableMeshStepProcess>& ProgressStepProcess();
-    BENTLEY_SM_EXPORT std::atomic<int>& ProgressStepIndex();
-    };
 
  
 /*=================================================================================**//**

@@ -4,6 +4,7 @@
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh\IScalableMeshQuery.h>
 #include <ImagePP/all/h/HCDCodecIdentity.h>
+#include "ScalableMeshProgress.h"
 
 #include "Stores/SMStreamingDataStore.h"
 #include "ScalableMesh/IScalableMeshPublisher.h"
@@ -449,7 +450,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
 
 extern std::mutex s_createdNodeMutex;
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS)
+template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress)
     {
     assert(pi_pDataStore != nullptr);
 
@@ -460,48 +461,53 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     static std::atomic<uint64_t> nbProcessedNodes = 0;
     static std::atomic<uint64_t> nbNodes = 0;
 
-    ++nbNodes;
+    if (progress != nullptr && progress->IsCanceled()) return false;
 
     if (!IsLoaded())
         Load();
 
-    static const int nbThreads = 5;
+    ++nbNodes;
+
+    static const uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
+    static const uint64_t maxQueueSize = /*std::max((uint64_t)m_SMIndex->m_totalNumNodes, (uint64_t)*/30000;//);
 
     typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
-    static Distribution_Type::Ptr distributor (new Distribution_Type([&pi_pDataStore, sourceGCS, destinationGCS](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
+    static auto nodeDataSaver = [&pi_pDataStore, sourceGCS, destinationGCS, progress](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
-            // Gather all data in one place
-            double t = clock();
-            node->GetPointsPtr();
-            node->GetPtsIndicePtr();
-            node->GetUVCoordsPtr();
-            node->GetUVsIndicesPtr();
-            node->GetTextureCompressedPtr();
+        if (progress != nullptr  && progress->IsCanceled()) return;
 
-            loadDataTime += clock() - t;
+        // Gather all data in one place
+        double t = clock();
+        node->GetPointsPtr();
+        node->GetPtsIndicePtr();
+        node->GetUVCoordsPtr();
+        node->GetUVsIndicesPtr();
+        node->GetTextureCompressedPtr();
 
-            // Convert data
-            t = clock();
+        loadDataTime += clock() - t;
 
-            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
-            IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+        // Convert data
+        t = clock();
 
-            IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
-            bvector<Byte> cesiumData;
-            cesiumPublisher->Publish(nodeP, sourceGCS, destinationGCS, cesiumData);
+        auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
+        IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+
+        IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
+        bvector<Byte> cesiumData;
+        cesiumPublisher->Publish(nodeP, sourceGCS, destinationGCS, cesiumData);
 
 
-            convertTime += clock() - t;
+        convertTime += clock() - t;
 
-            // Store data
-            t = clock();
-            ISMTileMeshDataStorePtr tileStore;
-            bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
-            assert(result == true); // problem getting the tile mesh data store
+        // Store data
+        t = clock();
+        ISMTileMeshDataStorePtr tileStore;
+        bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
+        assert(result == true); // problem getting the tile mesh data store
 
-            if (!cesiumData.empty())
-                tileStore->StoreBlock(&cesiumData, cesiumData.size(), node->GetBlockID());
-            storeTime += clock() - t;
+        if (!cesiumData.empty())
+            tileStore->StoreBlock(&cesiumData, cesiumData.size(), node->GetBlockID());
+        storeTime += clock() - t;
         //// Store header
         //pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
@@ -510,7 +516,15 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
         //std::wcout << "[" << std::this_thread::get_id() << "] Done publishing --> " << node->m_nodeId << "    addr: "<< node <<"   ref count: " << node->GetRefCount() << std::endl;
         //}
         node = nullptr;
-        }, nbThreads));
+
+        if (progress != nullptr)
+            {
+            // Report progress
+            static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(++nbProcessedNodes);
+            }
+        };
+
+    static Distribution_Type::Ptr distributor (new Distribution_Type(nodeDataSaver, nbThreads, maxQueueSize));
 
     static auto loadChildExtentHelper = [](SMPointIndexNode<POINT, EXTENT>* parent, SMPointIndexNode<POINT, EXTENT>* child) ->void
         {
@@ -522,27 +536,27 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
             }
         };
 
-    static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
-        {
-        child->SetParentNodePtr(0);
-
-        s_createdNodeMutex.lock();
-
-        CreatedNodeMap::iterator nodeIter(child->m_createdNodeMap->find(child->GetBlockID().m_integerID));
-
-        if (nodeIter != child->m_createdNodeMap->end())
-            {
-            child->m_createdNodeMap->erase(nodeIter);
-            }
-
-        s_createdNodeMutex.unlock();
-        child = NULL;
-        };
+    //static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
+    //    {
+    //    child->SetParentNodePtr(0);
+    //
+    //    s_createdNodeMutex.lock();
+    //
+    //    CreatedNodeMap::iterator nodeIter(child->m_createdNodeMap->find(child->GetBlockID().m_integerID));
+    //
+    //    if (nodeIter != child->m_createdNodeMap->end())
+    //        {
+    //        child->m_createdNodeMap->erase(nodeIter);
+    //        }
+    //
+    //    s_createdNodeMutex.unlock();
+    //    child = NULL;
+    //    };
 
     if (m_pSubNodeNoSplit != nullptr)
         {
         assert(GetNumberOfSubNodesOnSplit() == 1);
-        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS);
+        if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS, progress)) return false;
         loadChildExtentHelper(this, this->m_pSubNodeNoSplit.GetPtr());
         //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
         //this->m_pSubNodeNoSplit = nullptr;
@@ -555,7 +569,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
             assert(this->m_apSubNodes[indexNode] != nullptr); // A sub node will be skipped
             if (this->m_apSubNodes[indexNode] != nullptr)
                 {
-                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS);
+                if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS, progress)) return false;
                 loadChildExtentHelper(this, this->m_apSubNodes[indexNode].GetPtr());
                 //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
                 //this->m_apSubNodes[indexNode] = nullptr;
@@ -566,14 +580,18 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
     if (this->m_nodeHeader.m_nodeCount > 0)
         {
         distributor->AddWorkItem(this/*, false*/);
-        ++nbProcessedNodes;
         }
 
     if (this->m_nodeHeader.m_level == 0)
         {
         //distributor->Go();
         std::cout << "\nTime to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
-        distributor = nullptr;
+        while (progress != nullptr && !distributor->empty())
+            {
+            progress->UpdateListeners();
+            if (progress->IsCanceled()) break;
+            }
+        distributor = nullptr; // join queue threads
         std::cout << "\nTime to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / nbThreads << std::endl;
         std::cout << "Time to convert data: " << (double)convertTime / CLOCKS_PER_SEC / nbThreads << std::endl;
         std::cout << "Time to store data: " << (double)storeTime / CLOCKS_PER_SEC / nbThreads << std::endl;
@@ -581,9 +599,10 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
         std::cout << "Total time: " << tTime << std::endl;
         std::cout << "Number processed nodes: " << nbProcessedNodes << std::endl;
         std::cout << "Total number of nodes: " << nbNodes << std::endl;
-        std::cout << "Convert speed (nodes/sec): " << nbNodes / tTime << std::endl;
+        std::cout << "Convert speed (nodes/sec): " << nbProcessedNodes / tTime << std::endl;
 
         }
+    return true;
     }
 
     template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue)
@@ -661,7 +680,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
             }
         }
     
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
     {
 
     static std::atomic<uint64_t> loadHeaderTime = 0;
@@ -709,15 +728,13 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTre
             loadDataTime += clock() - loadTime;
         }));
 
-    if (headersOnly || (level != 0 && this->GetLevel() + 1 > level)) return;
-
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
             //s_distributor->AddWorkItem(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_pSubNodeNoSplit)));
             //RunOnNextAvailableThread(std::bind(loadNodeHelper, m_pSubNodeNoSplit, std::placeholders::_1));
-            m_pSubNodeNoSplit->LoadTreeNode(nLoaded, level, headersOnly);
+            m_pSubNodeNoSplit->LoadIndexNodes(nLoaded, level, headersOnly);
             }
         else
             {
@@ -728,10 +745,13 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTre
             //    }
             for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
                 {
-                m_apSubNodes[indexNodes]->LoadTreeNode(nLoaded, level, headersOnly);
+                m_apSubNodes[indexNodes]->LoadIndexNodes(nLoaded, level, headersOnly);
                 }
             }
         }
+
+    if (headersOnly || (level != 0 && this->GetLevel() + 1 > level)) return;
+
     if (this->GetNbPoints() > 0)
         {
         distributor->AddWorkItem(this/*, false*/);
@@ -1394,9 +1414,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
                     isStitched = m_mesher3d->Stitch(this);
                     }
 
-                size_t nOfNodes = std::accumulate(m_SMIndex->m_countsOfNodesAtLevel.begin(), m_SMIndex->m_countsOfNodesAtLevel.end(), (size_t)0);
                 m_SMIndex->m_nStitchedNodes++;
-                float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+                float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / m_SMIndex->m_countsOfNodesTotal * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / m_SMIndex->m_countsOfNodesTotal * 1 / 3;
 
                 if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                 if (isStitched)
@@ -3731,9 +3750,8 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
-    size_t nOfNodes = std::accumulate(m_SMIndex->m_countsOfNodesAtLevel.begin(), m_SMIndex->m_countsOfNodesAtLevel.end(), (size_t)0);
     m_SMIndex->m_nTexturedNodes++;
-    float progressForStep = (float)(m_SMIndex->m_nTexturedNodes) / nOfNodes;
+    float progressForStep = (float)(m_SMIndex->m_nTexturedNodes) / m_SMIndex->m_countsOfNodesTotal;
 
     if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
 
@@ -5063,6 +5081,14 @@ Publish Cesium ready format
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS)
     {
+    if (m_progress != nullptr)
+        {
+        m_progress->ProgressStep() = ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS;
+        m_progress->ProgressStepIndex() = 1;
+        m_progress->Progress() = 0.0f;
+        }
+
+    // Create store for 3DTiles output
     typedef SMStreamingStore<EXTENT>::SMStreamingSettings StreamingSettingsType;
     SMStreamingStore<EXTENT>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
     settings->m_url = Utf8String(path.c_str());
@@ -5078,22 +5104,19 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
 #endif
     );
 
-    // Register this index to the store
+    // Register 3DTiles index to the store
     pDataStore->Register(m_smID);
 
-    //this->SaveMasterHeaderToCloud(pDataStore);
-    // NEEDS_WORK_SM : publish Cesium 3D tiles tileset
+    // Destination coordinates will be ECEF
     static GeoCoordinates::BaseGCSPtr destinationGCS = GeoCoordinates::BaseGCS::CreateGCS(L"ll84");
 
-    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore, sourceGCS, destinationGCS);
-    GetRootNode()->Unload();
 
     SMIndexMasterHeader<EXTENT> oldMasterHeader;
     this->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
 
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
-    
+
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount());
     SMGroupCache::Ptr groupCache = nullptr;
     SMNodeGroupPtr group = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
@@ -5104,28 +5127,36 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
 
     strategy->SetOldMasterHeader(oldMasterHeader);
     strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
-    GetRootNode()->SaveGroupedNodeHeaders(group);
 
-    // Handle all open groups 
-    strategy->SaveAllOpenGroups();
+    // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
+    std::thread saveGroupsThread([this, strategy, group]()
+        {
+        GetRootNode()->SaveGroupedNodeHeaders(group, m_progress);
 
-    //// Save group master file which contains info about all the generated groups (groupID and blockID)
-    //BeFileName masterHeaderPath(path.c_str());
-    //masterHeaderPath.PopDir();
-    //masterHeaderPath.PopDir();
-    //
-    //strategy->SaveMasterHeader(masterHeaderPath);
+        // Handle all open groups 
+        strategy->SaveAllOpenGroups();
+        if (m_progress != nullptr) m_progress->Progress() = 1.0f;
+        });
 
+    while (m_progress != nullptr && !m_progress->IsCanceled() && m_progress->Progress() != 1.0)
+        {
+        m_progress->UpdateListeners();
+        }
 
-    //Json::Value         rootJson;
-    //
-    //rootJson["refine"] = "replace";
-    //rootJson["geometricError"] = 1.E+06; // What should this value be?
-    //TilePublisher::WriteBoundingVolume(rootJson, GetRootNode()->GetNodeExtent());
-    //
-    //rootJson["content"]["url"] = Utf8String((BeFileName(path) + L"quebeccity.json").c_str());
+    saveGroupsThread.join();
 
+    if (m_progress != nullptr && m_progress->IsCanceled()) return SUCCESS;
 
+    if (m_progress != nullptr)
+        {
+        m_progress->ProgressStep() = ScalableMeshStep::STEP_CONVERT_3DTILES_DATA;
+        m_progress->ProgressStepIndex() = 2;
+        m_progress->Progress() = 0.0f;
+        }
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore, sourceGCS, destinationGCS, m_progress);
+
+    if (m_progress != nullptr) m_progress->Progress() = 1.0f;
+    
     return SUCCESS;
     }
 

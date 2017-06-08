@@ -123,6 +123,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual __int64          _GetPointCount() override;
 
+        virtual uint64_t          _GetNodeCount() override;
+
         virtual bool          _IsTerrain() override;
 
         virtual bool          _IsTextured() override;
@@ -193,7 +195,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
-        virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override { return ERROR; }
+        virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const override { return ERROR; }
         virtual void                               _ImportTerrainSM(WString terrainPath) override {  }
         virtual IScalableMeshPtr                    _GetTerrainSM() override { return nullptr; }
 
