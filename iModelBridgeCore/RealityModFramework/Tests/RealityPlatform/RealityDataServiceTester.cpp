@@ -433,7 +433,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdPaged
 	requestUT.SetProject("MyProject");	
 
 	auto requestString = requestUT.GetHttpRequestString();
-	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=ProjectId+eq+'MyIdentifier'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RelatedId+eq+'MyIdentifier'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=Copyright+desc"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=0&$top=25"));
@@ -456,7 +456,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdP
 
 	auto requestString = requestUT.GetHttpRequestString();
 
-	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RealityDataId+eq+'MyIdentifier'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RealityDataId+eq+'MyIdentifier'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=Dataset+desc"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=0&$top=25"));
