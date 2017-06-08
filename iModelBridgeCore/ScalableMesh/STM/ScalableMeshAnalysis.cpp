@@ -307,12 +307,12 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
                             _CreateFillVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
                             _CreateCutVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
+                            }
 
-                            if (aSegment.VolumeRanges.size() > 0)
-                                {
-                                grid.m_VolSegments[i*m_ySize + j] = aSegment;
-                                intersected[i*m_ySize + j] = true;
-                                }
+                        if (aSegment.VolumeRanges.size() > 0)
+                            {
+                            grid.m_VolSegments[i*m_ySize + j] = aSegment;
+                            intersected[i*m_ySize + j] = true;
                             }
                         }
                     }
