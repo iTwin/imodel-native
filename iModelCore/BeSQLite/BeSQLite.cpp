@@ -1434,16 +1434,24 @@ void Db::ChangeDbGuid(BeGuid guid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::ChangeBriefcaseId(BeBriefcaseId id)
+DbResult Db::AssignBriefcaseId(BeBriefcaseId id)
     {
     if (IsReadonly())
         return BE_SQLITE_READONLY;
 
+    BeBriefcaseId currentId = GetBriefcaseId();
+
     //If the passed id is the same as the existing one, we must not do anything. The call ClearBriefcaseLocalValues 
     //deletes all briefcase local values, which is fine if the briefcase id really changes. If it doesn't change
     //it would mean though to destroy the current state of those values.
-    if (!id.IsValid() || (GetBriefcaseId().IsValid() && GetBriefcaseId() == id))
+    if (!id.IsValid() || (currentId.IsValid() && currentId == id))
         return BE_SQLITE_ERROR;
+
+    if (!currentId.IsMasterId() || id.IsMasterId())
+        {
+        BeAssert(false && "Can only change Master -> Briefcase");
+        return BE_SQLITE_ERROR;
+        }
 
     // changing the BeBriefcaseId invalidates all BriefcaseLocalValues. Delete them.
     DbResult stat = ClearBriefcaseLocalValues();
@@ -1461,7 +1469,7 @@ DbResult Db::ChangeBriefcaseId(BeBriefcaseId id)
         return stat;
         }
 
-    stat =_OnBriefcaseIdChanged(id);
+    stat =_OnBriefcaseIdAssigned(id);
     if (stat != BE_SQLITE_OK)
         {
         AbandonChanges();
@@ -1661,8 +1669,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
 
-    if (params.m_createStandalone)
-        m_dbFile->m_briefcaseId = BeBriefcaseId(BeBriefcaseId::Standalone());
+    m_dbFile->m_briefcaseId = (params.m_dbType == Db::CreateParams::DbType::Standalone) ? BeBriefcaseId(BeBriefcaseId::Standalone()) : BeBriefcaseId(BeBriefcaseId::Master());
 
     ExecuteSql(SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\";", params.m_pagesize,
                               params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,

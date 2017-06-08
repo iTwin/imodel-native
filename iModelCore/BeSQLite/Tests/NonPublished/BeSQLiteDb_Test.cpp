@@ -145,7 +145,7 @@ TEST(BeSQLiteDb, CheckProfileVersion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(BeSQLiteDb, ChangeBriefcaseIdInReadonlyMode)
+TEST(BeSQLiteDb, AssignBriefcaseIdInReadonlyMode)
     {
     Utf8String dbPath;
 
@@ -163,22 +163,22 @@ TEST(BeSQLiteDb, ChangeBriefcaseIdInReadonlyMode)
     ASSERT_EQ(BE_SQLITE_OK, stat) << L"Reopening test Bim '" << dbPath.c_str() << L"' failed.";
 
     BeTest::SetFailOnAssert(false);
-    stat = db.ChangeBriefcaseId(BeBriefcaseId(12345));
+    stat = db.AssignBriefcaseId(BeBriefcaseId(12345));
     BeTest::SetFailOnAssert(true);
-    ASSERT_EQ(BE_SQLITE_READONLY, stat) << L"Calling ChangeBriefcaseId on readonly Bim file is expected to fail.";
+    ASSERT_EQ(BE_SQLITE_READONLY, stat) << L"Calling AssignBriefcaseId on readonly Bim file is expected to fail.";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(BeSQLiteDb, ChangeBriefcaseId)
+TEST(BeSQLiteDb, AssignBriefcaseId)
     {
     Utf8String dbPath;
 
     //prepare test dgn db
     {
     Db db;
-    auto stat = SetupDb(db, L"changebriefcaseid.db");
+    auto stat = SetupDb(db, L"assignbriefcaseid.db");
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Creation of test BeSQLite DB failed.";
     dbPath.assign(db.GetDbFileName());
 
@@ -210,7 +210,7 @@ TEST(BeSQLiteDb, ChangeBriefcaseId)
     //now change briefcase id. This should truncate be_local and reinsert the new briefcase id
     const BeBriefcaseId currentBriefcaseId = db.GetBriefcaseId();
     expectedBriefcaseId = currentBriefcaseId.GetNextBriefcaseId();
-    stat = db.ChangeBriefcaseId(expectedBriefcaseId);
+    stat = db.AssignBriefcaseId(expectedBriefcaseId);
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Changing the briefcase id is not expected to fail.";
     }
 
