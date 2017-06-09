@@ -31,7 +31,7 @@ TEST(WSGURLBase, ConstructorWithFullDetails)
     auto wsgUrlToTest = WSGURL("myserver.com", "Version1", "RepoID", "schema", "MyClassName", "MyID");
 
     EXPECT_TRUE(wsgUrlToTest.GetRequestType() == WSGURL::HttpRequestType::GET_Request);
-    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com");
+    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com/");
     EXPECT_STREQ(wsgUrlToTest.GetServerName().c_str(), "myserver.com");
     EXPECT_STREQ(wsgUrlToTest.GetVersion().c_str(), "Version1");
     EXPECT_STREQ(wsgUrlToTest.GetRepoId().c_str(), "RepoID");
@@ -91,7 +91,7 @@ TEST(WSGURLBase, AssignmentOperator)
 	wsgUrlToTest = basedURL;
 
 	EXPECT_TRUE(wsgUrlToTest.GetRequestType() == WSGURL::HttpRequestType::GET_Request);
-    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com");
+    EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com/");
     EXPECT_STREQ(wsgUrlToTest.GetServerName().c_str(), "myserver.com");
     EXPECT_STREQ(wsgUrlToTest.GetVersion().c_str(), "Version1");
     EXPECT_STREQ(wsgUrlToTest.GetRepoId().c_str(), "RepoID");
