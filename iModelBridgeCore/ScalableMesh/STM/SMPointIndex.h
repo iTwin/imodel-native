@@ -1554,6 +1554,14 @@ public:
     uint64_t              GetCount() const;
 
     /**----------------------------------------------------------------------------
+    Returns the total number of nodes in index
+
+    @return The number of objects
+
+    -----------------------------------------------------------------------------*/
+    uint64_t              GetNodeCount();
+
+    /**----------------------------------------------------------------------------
     Indicates if the index is empty
 
     @return true if the index is empty and false otherwise
@@ -1652,7 +1660,7 @@ protected:
 
     //progress info
     bvector<size_t> m_countsOfNodesAtLevel;
-    size_t m_countsOfNodesTotal;
+    size_t m_countsOfNodesTotal = 0;
 
     std::atomic<size_t> m_nMeshedNodes;
     std::atomic<size_t> m_nStitchedNodes;

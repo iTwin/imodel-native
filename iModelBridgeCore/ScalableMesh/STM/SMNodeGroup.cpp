@@ -447,6 +447,15 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
             Json::Value tileset;
             if (!this->DownloadCesiumTileset(url, tileset))
                 {
+                if (this->m_isRoot)
+                    {
+                    // This is a serious error, the root tileset could not be downloaded...
+                    // Either the dataset does not exist or a connection problem occured.
+                    // Since this is not immediately recoverable, we throw here.
+                    throw runtime_error("Error loading root Cesium tileset!");
+                    }
+                // The connection may be temporarily lost and the entire tileset will be missing 
+                // but can be recoverable when the connection comes back live.
                 m_isLoading = false;
                 return ERROR;
                 }

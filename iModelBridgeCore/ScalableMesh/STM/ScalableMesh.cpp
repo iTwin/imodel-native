@@ -461,9 +461,9 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
+int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
     {
-    return _ConvertToCloud(outContainerName, outDatasetName, server, progress);
+    return _Generate3DTiles(outContainerName, outDatasetName, server, progress);
     }
 
 BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
@@ -1766,17 +1766,11 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount()
 +----------------------------------------------------------------------------*/
 template <class POINT> uint64_t ScalableMesh<POINT>::_GetNodeCount()
     {
-    //NEEDS_WORK_SM : #nodes == next nodeID?
-    uint64_t nbNodes = 0;
-
     if (m_scmIndexPtr != 0)
         {
-        //m_scmIndexPtr->GatherCounts();
-        //return m_scmIndexPtr->GetNodeCount();
-        m_scmIndexPtr->LoadIndexNodes(nbNodes, 0/*load up to level, all=0*/, true /*headers only*/);
+        return m_scmIndexPtr->GetNodeCount();
         }
-
-    return nbNodes;
+    return 0;
     }
 
 template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
@@ -2807,9 +2801,9 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
     } 
 
 /*----------------------------------------------------------------------------+
-|ScalableMesh::_ConvertToCloud
+|ScalableMesh::_Generate3DTiles
 +----------------------------------------------------------------------------*/
-template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
+template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
@@ -3065,7 +3059,7 @@ template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrai
 
 #ifdef SCALABLE_MESH_ATP
 /*----------------------------------------------------------------------------+
-|ScalableMesh::_ConvertToCloud
+|ScalableMesh::_ChangeGeometricError
 +----------------------------------------------------------------------------*/
 template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const
     {
