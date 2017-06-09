@@ -97,6 +97,7 @@ struct FloodSeed
 struct IRegionData : public IRefCounted {};
 typedef RefCountedPtr<IRegionData> IRegionDataPtr;
 typedef RefCountedPtr<RegionGraphicsContext> RegionGraphicsContextPtr;
+typedef bool (*RegionGraphicsContext_AbortFunction) (void*);
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/09
@@ -141,11 +142,11 @@ bool _WantLineStyles() override {return false;}
 DGNPLATFORM_EXPORT RegionGraphicsContext();
 
 RegionErrors GetRegionError() {return m_regionError;}
-//DGNPLATFORM_EXPORT void SetAbortFunction (RGC_AbortFunction abort);
 void SetCullRedundantLoops() {m_cullRedundantLoop = true;}
 BentleyStatus VisitBooleanCandidate(GeometrySourceCR element, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
 
 DGNPLATFORM_EXPORT bool IsGraphInitialized();
+DGNPLATFORM_EXPORT void SetAbortFunction(RegionGraphicsContext_AbortFunction abort);
 DGNPLATFORM_EXPORT BentleyStatus PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in);
 DGNPLATFORM_EXPORT BentleyStatus PopulateGraph(DgnElementCPtrVec const& in);
 DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints(DPoint3dCP seedPoints, size_t numSeed);
