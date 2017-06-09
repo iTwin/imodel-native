@@ -185,19 +185,9 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         bvector<PolyfaceHeaderPtr> volumeMeshVector;
-        totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, *const_cast<PolyfaceHeaderP>(transformedMesh), true, meshRange, volumeMeshVector);
+        totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, *const_cast<PolyfaceHeaderP>(mesh), true, meshRange, m_transform, volumeMeshVector);
         totalCut += tileCut;
         totalFill += tileFill;
-        }
-
-    double scaleFactor;
-    Transform t2;
-    double tol = 1e-6;
-    if (!m_transform.IsIdentity() && m_transform.IsNearRigidScale(t2,0,tol) && t2.IsRigidScale(scaleFactor))
-        {
-        totalCut *= pow(scaleFactor, 3);
-        totalFill *= pow(scaleFactor, 3);
-        totalVolume *= pow(scaleFactor, 3);
         }
 
     if (cut != 0)
@@ -810,7 +800,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
         return DTMStatusInt::DTM_SUCCESS;
     }
 
-double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr smTile, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, DRange3d meshExtent, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
+double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr smTile, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, DRange3d meshExtent, Transform meshTransform, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
     {
     double totalVolume = 0.0, totalCut = 0.0, totalFill = 0.0;
 #ifdef SCALABLE_MESH_ATP
@@ -1344,6 +1334,8 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
             if (meshExtent.high.x >= triRange.low.x && meshExtent.high.y >= triRange.low.y && meshExtent.low.x <= triRange.high.x && meshExtent.low.y <= triRange.high.y) builder->AddTriStrip(triangle, NULL, NULL, 3, true);
             }
         terrainMesh = builder->GetClientMeshPtr();
+        if(!meshTransform.IsIdentity()) //Compute cut and fill in the destination coordinates, do not need to convert results afterwards.
+            terrainMesh->Transform(meshTransform);
         PolyfaceQuery::ComputeCutAndFill(*terrainMesh, mesh, cutSections, fillSections);
 #ifdef SCALABLE_MESH_ATP
         if (cutSections.size() == 0 && fillSections.size() == 0)
@@ -1426,7 +1418,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
         IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags);
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
-        totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, intersectingMeshSurface, true, meshRange, volumeMeshVector);
+        totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, intersectingMeshSurface, true, meshRange, Transform::FromIdentity(), volumeMeshVector);
         totalCut += tileCut;
         totalFill += tileFill;
         }

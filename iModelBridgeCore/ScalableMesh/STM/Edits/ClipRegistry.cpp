@@ -225,7 +225,7 @@ size_t ClipRegistry::GetNbClips()
 void ClipRegistry::SetClipMetadata(uint64_t id, double importance, int nDimensions)
     {    
     ISM3DPtDataStorePtr dataStore;
-    if (m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, false))
+    if (!m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, false))
         { 
         assert(!"Should exist");
         return;

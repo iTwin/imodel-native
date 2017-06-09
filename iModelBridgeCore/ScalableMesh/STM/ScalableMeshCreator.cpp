@@ -339,7 +339,7 @@ void IScalableMeshCreator::Cancel()
 
 IScalableMeshProgress* IScalableMeshCreator::GetProgress()
     {
-    return m_implP->GetProgress();
+    return &*m_implP->GetProgress();
     }
 
 /*----------------------------------------------------------------------------+
@@ -353,7 +353,8 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     //   m_sourceEnv(CreateSourceEnvFrom(scmFileName)),
     m_compressionType(SCM_COMPRESSION_DEFLATE),
     m_workingLayer(DEFAULT_WORKING_LAYER),
-    m_isCanceled(false)
+    m_isCanceled(false),
+    m_progress(new ScalableMeshProgress())
     {
 
 
@@ -363,11 +364,11 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     s_useThreadsInMeshing = true;
     s_useThreadsInStitching = true;
     s_useThreadsInFiltering = true;
-    m_progress.ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
-    m_progress.ProgressStepIndex() = 0;
-    m_progress.Progress() = 0;
-    m_progress.ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
-    m_progress.SetTotalNumberOfSteps(0);
+    m_progress->ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
+    m_progress->ProgressStepIndex() = 0;
+    m_progress->Progress() = 0;
+    m_progress->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
+    m_progress->SetTotalNumberOfSteps(0);
     }
 
 IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
@@ -839,9 +840,9 @@ void IScalableMeshCreator::Impl::Cancel()
     if (m_dataIndex) m_dataIndex->SetCanceled(true);
     }
 
-ScalableMeshProgress* IScalableMeshCreator::Impl::GetProgress()
+IScalableMeshProgressPtr IScalableMeshCreator::Impl::GetProgress()
     {
-    return const_cast<ScalableMeshProgress*>(&m_progress);
+    return m_progress;
     }
 
 /*---------------------------------------------------------------------------------**//**
