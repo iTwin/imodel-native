@@ -65,21 +65,25 @@ SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(filePath));
 
     auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="TestClass" />
-            <ECClass typeName="TestClass2" />
-            <ECClass typeName="TestClass3" />
-            <ECRelationshipClass typeName="ReferencingRel" strength="referencing">
-                <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
-                <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
+        <ECSchema schemaName="TestSchema" alias="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="TestClass" />
+            <ECEntityClass typeName="TestClass2" />
+            <ECEntityClass typeName="TestClass3" />
+            <ECRelationshipClass typeName="ReferencingRel" strength="referencing" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
-            <ECRelationshipClass typeName="HoldingRel" strength="holding">
-                <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
-                <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
+            <ECRelationshipClass typeName="HoldingRel" strength="holding" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
-            <ECRelationshipClass typeName="EmbeddingRel" strength="embedding">
-                <Source cardinality="(0,1)"><Class class="TestClass" /></Source>
-                <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
+            <ECRelationshipClass typeName="EmbeddingRel" strength="embedding" modifier="Sealed">
+                <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="EmbeddingRequiredRel" strength="embedding" modifier="Sealed">
+                <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
         </ECSchema>)xml");
 
