@@ -3,7 +3,7 @@
 #----------------------------------------------------------------------------------------
 
 #Navigation properties are being reworked and only support the long primitive type at the moment
-NavigationECPropertyTests.InstanceWithNavProp_String
+NavigationPropertyValueTests.InstanceWithNavProp_String
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
