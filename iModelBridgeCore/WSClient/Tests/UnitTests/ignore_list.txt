@@ -6,12 +6,6 @@ DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
 DataSourceCacheUpgradeTests.Open_V1*
 
-# ECSchema update in ECDb does not support deletions yet
-DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable_KnownIssue
-
-# Pending fix on UniqueTaskHolder
-ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent_KnownIssue
-
 ChangeManagerTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Random crashes among at least half a dozen of these tests, no output or stack printed>
@@ -84,10 +78,10 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUr
     #            Actual: never called - unsatisfied and active
     # *********************************************************************************
 
-#Following tests were disabled and are added to ignore list instead
+# Following tests were disabled and are added to ignore list instead
+*_KnownIssue*
 ChangeManagerTests.GetObjectChangeStatus_ObjectDeleted_Deleted
 ChangeManagerTests.GetObjectChangeStatus_CreatedObjectDeleted_Deleted
-DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors_KnownIssue
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds
@@ -125,14 +119,14 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
     # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
     #          Expected: to be called once
     #            Actual: never called - unsatisfied and active
-    # 
+    #
     # GMOCK WARNING:
     # Uninteresting mock function call - taking default action specified at:
     # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(130):
     #     Function call: _GetValue(00007FFCFB8A20D8 pointing to "UrlCache", 00007FFCFB8A20C8 pointing to "Environment")
     #           Returns: "null"
     # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
-    # 
+    #
     # GMOCK WARNING:
     # Uninteresting mock function call - taking default action specified at:
     # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(131):
@@ -147,8 +141,8 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
     #            Actual: called twice - over-saturated and active
     # [  FAILED  ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi (35 ms)
 
-	#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
-	*ConnectWebServicesClientCTests*
+#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
+*ConnectWebServicesClientCTests*
 
 # bim0200dev, x86, DEBUG, hang
 ConnectSignInManagerTests.GetTokenProvider_DelegationAndIdentityTokenRequestFailsDueToAuthentication_CallsExpirationHandlerAndReturnsNull
@@ -232,7 +226,7 @@ DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty
     # [2] BaseThreadInitThunk (0x76807be0)
     # [1] RtlInitializeExceptionChain (0x77a4ab00)
     # [0] RtlInitializeExceptionChain (0x77a4ab00)
-    # 
+    #
     # [  FAILED  ] DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty (1916 ms)
 
 #Affan: Following test are failing because endtable relationship used in these test does not have ECDbMap::ForeignKeyConstraint customAttribute on them
@@ -258,7 +252,7 @@ DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelatio
     # [  FAILED  ] DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching (68 ms)
 
 ConnectSignInManagerTests.GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens
-    # bim0200dev, x64 & x86, DEBUG, 
+    # bim0200dev, x64 & x86, DEBUG,
     # hangs
 
 DataSourceCacheTests.Create_ValidParameters_Success

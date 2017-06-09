@@ -182,7 +182,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCac
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_FailsAsECDbRequiresSharedColumnsCA_KnownIssue)
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_SuccessAndSchemasAccessable)
     {
     auto cache = GetTestCache();
 
@@ -205,6 +205,10 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_Fail
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
 
     EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    auto ecClass = cache->GetAdapter().GetECSchema("UpdateSchema")->GetClassCP("TestClass");
+    ASSERT_TRUE(nullptr != ecClass->GetPropertyP("A"));
+    ASSERT_TRUE(nullptr == ecClass->GetPropertyP("B"));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
@@ -3119,7 +3123,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     BeTest::SetFailOnAssert(true);
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors_KnownIssue)
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
     {
     // Arrange
     auto cache = GetTestCache();
