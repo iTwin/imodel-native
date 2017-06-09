@@ -1150,14 +1150,18 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
 
     bset<ECInstanceKey> additionalInstancesSet;
     ECInstanceKeyMultiMap allInstancesBeingDeletedMap;
+    ECInstanceKeyMultiMap allRelationshipsBeingDeletedMap;
 
     for (ECInstanceKeyCR key : allInstancesBeingDeleted)
         {
-        allInstancesBeingDeletedMap.insert({key.GetClassId(), key.GetInstanceId()});
-
         ECClassCP ecClass = GetECClass(key);
         if (nullptr == ecClass)
             return ERROR;
+
+        if (ecClass->IsRelationshipClass())
+            allRelationshipsBeingDeletedMap.insert({key.GetClassId(), key.GetInstanceId()});
+        else
+            allInstancesBeingDeletedMap.insert({key.GetClassId(), key.GetInstanceId()});
 
         for (auto listener : m_deleteListeners)
             {
@@ -1167,6 +1171,8 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
         }
 
     if (SUCCESS != DeleteInstancesDirectly(allInstancesBeingDeletedMap, deleted))
+        return ERROR;
+    if (SUCCESS != DeleteInstancesDirectly(allRelationshipsBeingDeletedMap, deleted))
         return ERROR;
 
     ECInstanceKeyMultiMap additionalInstancesMap;

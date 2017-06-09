@@ -81,9 +81,12 @@ SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
                 <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
                 <Target multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
+            <ECEntityClass typeName="TestChildClass">
+                <ECNavigationProperty propertyName="ParentId" relationshipName="EmbeddingRequiredRel" direction="backward" />
+            </ECEntityClass>
             <ECRelationshipClass typeName="EmbeddingRequiredRel" strength="embedding" modifier="Sealed">
-                <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
-                <Target multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
+                <Source multiplicity="(1..1)" polymorphic="false" roleLabel="TestClass"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..1)" polymorphic="false" roleLabel="TestChildClass"><Class class="TestChildClass" /></Target>
             </ECRelationshipClass>
         </ECSchema>)xml");
 
@@ -2147,6 +2150,40 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationship_DeletesRelatio
     auto notDeletedInstances = adapter.FindInstances(ecClass);
     EXPECT_EQ(1, notDeletedInstances.size());
     EXPECT_CONTAINS(notDeletedInstances, a.GetInstanceId());
+    EXPECT_EQ(0, adapter.FindInstances(relClass).size());
+    }
+
+TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithRequiredParent_DeletesRelationshipAndChild)
+    {
+    auto db = GetTestDb();
+    ECDbAdapter adapter(*db);
+
+    auto parentClass = adapter.GetECClass("TestSchema.TestClass");
+    auto childClass = adapter.GetECClass("TestSchema.TestChildClass");
+    auto relClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRequiredRel");
+
+    ECInstanceKey a, b, rel;
+    INSERT_INSTANCE(*db, parentClass, a);
+
+    ASSERT_FALSE(childClass == nullptr); 
+    Json::Value instance;
+    instance["ParentId"]["id"] = a.GetInstanceId().ToString();
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *childClass, nullptr).Insert(b, instance));
+    rel = ECInstanceKey(relClass->GetId(), b.GetInstanceId());
+
+    EXPECT_EQ(1, adapter.FindInstances(relClass).size());
+
+    CREATE_MockECDbAdapterDeleteListener(listener);
+    EXPECT_CALL_OnBeforeDelete(listener, db, b);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel);
+    adapter.RegisterDeleteListener(&listener);
+
+    EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
+
+    auto notDeletedInstances = adapter.FindInstances(parentClass);
+    EXPECT_EQ(1, notDeletedInstances.size());
+    EXPECT_CONTAINS(notDeletedInstances, a.GetInstanceId());
+    EXPECT_EQ(0, adapter.FindInstances(childClass).size());
     EXPECT_EQ(0, adapter.FindInstances(relClass).size());
     }
 
