@@ -300,12 +300,25 @@ void RDSUser::WrapUp(UserManager* owner)
     if (m_id.empty())
         return;
 
+    if (m_linked)
+        {
+        m_currentOperation = OperationType::DELETE_RELATIONSHIP;
+        CURL* curl1 = DeleteRelationship();
+        DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_start);
+        if (curl1 != nullptr)
+            owner->SetupCurl(curl1, this);
+        DoNextBody(owner);
+        }
+    
+
+
+
     m_currentOperation = OperationType::DELETE_REALITYDATA;
-    CURL* curl = DeleteRealityData();
+    CURL* curl2 = DeleteRealityData();
     
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_start);
-    if (curl != nullptr)
-        owner->SetupCurl(curl, this);
+    if (curl2 != nullptr)
+        owner->SetupCurl(curl2, this);
     }
 
 CURL* RDSUser::ListRealityData()
@@ -387,7 +400,7 @@ CURL* RDSUser::Details()
     m_correspondance.req.headers = idReq.GetRequestHeaders();
     m_correspondance.req.payload = idReq.GetRequestPayload();
 
-    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("RealityData for %s", m_id));
+    m_correspondance.id = m_stats->LogRequest(Utf8PrintfString("Details of RealityData for %s", m_id));
 
     return WSGRequest::GetInstance().PrepareRequest(idReq, m_correspondance.response, false, nullptr);
         
@@ -459,10 +472,15 @@ void RDSUser::ValidateCreateRealityData(int activeUsers)
         (m_correspondance.response.ValidateJSONResponse(instances, "changedInstance") == RequestStatus::OK),
         activeUsers);
 
-    if(m_correspondance.response.status == RequestStatus::OK)
-        m_id = instances["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
-
     m_linked = false;
+
+    if(m_correspondance.response.status == RequestStatus::OK)
+        {
+        m_id = instances["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
+        // if a project id is specified then relationship is automatically created
+        if (!RealityDataService::GetProjectId().empty())
+            m_linked = true;
+        }
     }
 
 CURL* RDSUser::ModifyRealityData()
