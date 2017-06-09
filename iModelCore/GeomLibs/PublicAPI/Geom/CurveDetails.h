@@ -884,7 +884,28 @@ GEOMDLLIMPEXP void AnnouncePoint (CurveLocationDetailCR worldDetail, KeyPointTyp
 GEOMDLLIMPEXP bool GetResult (CurveLocationDetailR detail, KeyPointType &selector) const;
 };
 
-
+//! structure to carry adjacency information extracted from graph structures
+//! Use of fields is documented in methods that return NeighborIndices.
+struct NeighborIndices
+{
+   struct NeighborEntry
+    {
+    size_t siteIndex;
+    size_t neighborIndex;
+    NeighborEntry (size_t site, size_t neighbor) : siteIndex (site), neighborIndex(neighbor) {}
+    };
+private:
+size_t m_siteIndex;
+size_t m_auxIndex;
+bvector<NeighborEntry> m_neighbor;
+public:
+NeighborIndices (size_t siteIndex) : m_siteIndex (siteIndex){}
+void AddNeighbor (size_t siteIndex, size_t neighborIndex) {m_neighbor.push_back (NeighborEntry (siteIndex, neighborIndex));}
+void SetAuxIndex (size_t index) {m_auxIndex = index;}
+size_t GetSiteIndex (){return m_siteIndex;}
+size_t GetAuxIndex (){return m_auxIndex;}
+bvector<NeighborEntry> &Neighbors (){return m_neighbor;}
+};
 #endif
 
 END_BENTLEY_GEOMETRY_NAMESPACE

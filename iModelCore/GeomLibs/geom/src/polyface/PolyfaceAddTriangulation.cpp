@@ -638,15 +638,18 @@ static PolyfaceHeaderPtr CreateVoronoi (VuSetP graph)
     auto facets = PolyfaceHeader::CreateVariableSizeIndexed ();
     VU_SET_LOOP (vertexSeed, graph)
         {
-        vertexSeed->SetMaskAroundVertex (visitMask.Mask ());
-        bvector<DPoint3d> points;
-        VU_VERTEX_LOOP (sector, vertexSeed)
+        if (!visitMask.IsSetAtNode (vertexSeed))
             {
-            AppendPseudoCenters (sector, points);
+            vertexSeed->SetMaskAroundVertex (visitMask.Mask ());
+            bvector<DPoint3d> points;
+            VU_VERTEX_LOOP (sector, vertexSeed)
+                {
+                AppendPseudoCenters (sector, points);
+                }
+            END_VU_VERTEX_LOOP (sector, vertexSeed)
+            DPoint3dOps::Compress (points, DoubleOps::SmallMetricDistance ());
+            facets->AddPolygon (points);
             }
-        END_VU_VERTEX_LOOP (sector, vertexSeed)
-        DPoint3dOps::Compress (points, DoubleOps::SmallMetricDistance ());
-        facets->AddPolygon (points);
         }
     END_VU_SET_LOOP (vertexSeed, graph)
     facets->Compress ();
@@ -691,7 +694,14 @@ void InstallPointIndices (VuSetP graph, bvector<DPoint3d> const &points)
             }
         }
     }
-PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, bvector<double> const &radii, int voronoiMetric, bvector<size_t> &pointIndexToReadIndex)
+PolyfaceHeaderPtr CreateVoronoi
+(
+VuSetP graph,
+bvector<DPoint3d> const &points,
+bvector<double> const &radii,
+int voronoiMetric,
+bvector<NeighborIndices> *cellData = nullptr  //!< [out] optional array giving [siteIndex==pointIndex, auxIndex==facetRead, neighborIndex==array of indices of adjacent cells within cellData array]
+)
     {
     PolyfaceHeaderPtr voronoi = PolyfaceHeader::CreateVariableSizeIndexed ();
     InstallPointIndices (graph, points);
@@ -713,8 +723,8 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
     static bool s_interior = false;
     static double s_sign = -1.0;
     size_t errors = 0;
-    for (size_t i = 0; i < points.size (); i++)
-        pointIndexToReadIndex.push_back (SIZE_MAX);
+    if (nullptr != cellData)
+        cellData->clear ();
 
     VU_SET_LOOP (vertexSeed, graph)
         {
@@ -722,6 +732,10 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
             {
             visited.SetAroundVertex (vertexSeed);
             planes.clear ();
+            if (cellData != nullptr)
+                cellData->push_back (NeighborIndices((size_t)vertexSeed->GetUserData1 ()));
+
+
             VU_VERTEX_LOOP (outboundEdge, vertexSeed)
                 {
                 size_t indexA = (size_t)outboundEdge->GetUserData1 ();
@@ -738,30 +752,68 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
                         plane1.normal = s_sign * plane1.normal;
                         planes.push_back (ClipPlane (plane1, false, s_interior));
                         }
+                    // Store the neighbor point index .. later it will become a cellData index.
+                    if (nullptr != cellData)
+                        cellData->back ().AddNeighbor (indexB, SIZE_MAX);
                     }
                 }
             END_VU_VERTEX_LOOP (outboundEdge, vertexSeed)
             planes.ConvexPolygonClip (outerBox, clip1, clip2);
-            size_t readIndex = voronoi->Point().size ();
-            ptrdiff_t pointIndex = vertexSeed->GetUserData1 ();
-            voronoi->AddPolygon (clip1);
-            if (pointIndex >= 0 && (size_t)pointIndex < points.size ())
-                pointIndexToReadIndex[pointIndex] = readIndex;
+            DPoint3dOps::Compress (clip1, DoubleOps::SmallMetricDistance ());
+            if (clip1.size () > 2)
+                {
+                size_t readIndex = voronoi->PointIndex().size ();
+                voronoi->AddPolygon (clip1);
+                if (nullptr != cellData)
+                    cellData->back ().SetAuxIndex (readIndex);
+                }
             }
         }
     END_VU_SET_LOOP (vertexSeed, graph)
-    voronoi->Compress ();
+
+    if (nullptr != cellData)
+        {
+        size_t numPoint = points.size ();
+        size_t numCell  = cellData->size ();
+        // CrossReference the neighbors
+        bvector<size_t> pointIndexToCellIndex;
+        for (size_t i = 0;i < numPoint; i++)
+            pointIndexToCellIndex.push_back (SIZE_MAX);
+        for (size_t i = 0; i < numCell; i++)
+            {
+            auto k = cellData->at(i).GetSiteIndex ();
+            if (k < numPoint)
+                pointIndexToCellIndex[k] = i;
+            }
+        for (auto &cell : *cellData)
+            {
+            for (auto &neighborPair : cell.Neighbors ())
+                {
+                if (neighborPair.siteIndex < numPoint)
+                    neighborPair.neighborIndex = pointIndexToCellIndex[neighborPair.siteIndex];
+                }
+            }
+        }
+    //voronoi->Compress ();
     return voronoi;
     }
 
-bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, bvector<double> const &radii, int voronoiMetric, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
+bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY
+(
+bvector<DPoint3d> const &points,
+bvector<double> const &radii,
+int voronoiMetric,
+PolyfaceHeaderPtr &delauney,
+PolyfaceHeaderPtr &voronoi,
+bvector<NeighborIndices> *cellData  //!< [out] optional array giving [siteIndex==pointIndex, auxIndex==facetRead, neighborIndex==array of indices of adjacent cells within cellData array]
+
+)
     {
     VuSetP graph = CreateDelauney (points);
-    bvector<size_t> pointIndexToReadIndex;
     if (graph != nullptr)
         {
         delauney = vu_toPolyface (graph, VU_EXTERIOR_EDGE);
-        voronoi = CreateVoronoi (graph, points, radii, voronoiMetric, pointIndexToReadIndex);
+        voronoi = CreateVoronoi (graph, points, radii, voronoiMetric, cellData);
         vu_freeVuSet (graph);
         return true;
         }
