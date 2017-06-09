@@ -15,7 +15,7 @@
 
 // Define this if you want to generate a root tile containing geometry.
 // By default the root tile is empty.
-//#define POPULATE_ROOT_TILE
+#define POPULATE_ROOT_TILE
 
 USING_NAMESPACE_ELEMENT_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
@@ -1939,6 +1939,7 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
 
     IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(m_tolerance);
 
+    facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false);        // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
     Transform transformFromDgn;
     transformFromDgn.InverseOf(root.GetLocation());
 
