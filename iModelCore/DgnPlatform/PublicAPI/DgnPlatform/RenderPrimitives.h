@@ -140,7 +140,7 @@ public:
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
     bool IsTextured() const { BeAssert(m_resolved); return nullptr != GetTexture(); }
-    bool NeverRegionOutline() const { return FillFlags::Blanking == GetFillFlags() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
+    bool NeverRegionOutline() const { return 0 != ((int) FillFlags::Blanking & (int) GetFillFlags()) || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
     bool HasRegionOutline() const;
 
     enum class ComparePurpose
@@ -466,7 +466,7 @@ private:
     TriangleList                    m_triangles;
     PolylineList                    m_polylines;
     QVertex3dList                   m_verts;
-    QPoint3dList                    m_normals;
+    QPoint3dList                    m_normals;                          
     bvector<FPoint2d>               m_uvParams;
     ColorTable                      m_colorTable;
     bvector<uint16_t>               m_colors;

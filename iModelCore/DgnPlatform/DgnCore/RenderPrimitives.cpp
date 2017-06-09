@@ -242,7 +242,7 @@ bool DisplayParams::HasRegionOutline() const
     if (m_gradient.IsValid())
         return m_gradient->GetIsOutlined();
     else
-        return m_fillColor != m_lineColor;
+        return !NeverRegionOutline() && m_fillColor != m_lineColor;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1089,7 +1089,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         if (!GetTransform().IsIdentity())
             polyface->Transform(GetTransform());
                                                                                                // If there is a region outline it will be displayed seperately as a polyline.. 
-        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface, !curveVector.IsValid() || (!GetDisplayParams().HasRegionOutline() && !GetDisplayParams().NeverRegionOutline())));
+        polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, !curveVector.IsValid() || !GetDisplayParams().HasRegionOutline()));
         }
 
     return polyfaces;
