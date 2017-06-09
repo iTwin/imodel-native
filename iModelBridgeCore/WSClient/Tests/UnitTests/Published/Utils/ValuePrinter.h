@@ -58,9 +58,8 @@ namespace rapidjson
     void PrintTo(const Document& value, ::std::ostream* os);
     }
 
-// In case of Aggregate build set Environment Variable (BUILD_AGGREGATE_TESTS) which will make (#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS) in active
-
-#ifdef BUILD_FOR_AGGREGATE_TESTS
+// In case of Aggregate build set Environment Variable (BUILD_AGGREGATE_TESTS) which will make (#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS) inactive
+#ifndef BUILD_FOR_AGGREGATE_TESTS
 #define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
 #endif
 
