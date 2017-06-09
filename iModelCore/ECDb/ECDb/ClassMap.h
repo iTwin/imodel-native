@@ -16,24 +16,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct DbMap;
-
-/* ----------------Required Refactor--------------------------------------
-struct ClassMap
-    {};
-struct IRelationshipClassMap
-    {};
-struct ForeignKeyRelationshipClassMap :ClassMap, IRelationshipClassMap
-    {};
-struct SingleTableClassMap :ClassMap
-    {};
-struct EntityClassMap :SingleTableClassMap
-    {};
-struct LinkTableRelationshipClassMap :SingleTableClassMap, IRelationshipClassMap
-    {};
-*/
-
-
-//=======================================================================================
+ //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
 //+===============+===============+===============+===============+===============+======
 struct ClassMapLoadContext : NonCopyableClass
@@ -144,7 +127,7 @@ struct ClassMap : RefCountedBase
         ClassMappingStatus MapProperties(ClassMappingContext&);
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
-
+        virtual BentleyStatus _ValidateMapping() const;
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         BentleyStatus MapSystemColumns();
@@ -158,64 +141,15 @@ struct ClassMap : RefCountedBase
         ObjectState GetState() const { return m_state; }
         template<typename TClassMap>
         TClassMap const& GetAs() const { BeAssert(dynamic_cast<TClassMap const*> (this) != nullptr); return *static_cast<TClassMap const*>(this); }
-        Type GetType() const { return m_type; }
+        Type GetType() const { return m_type;}
         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
         ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
         ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
-        bool IsMixin() const
-            {
-            if (auto entity = GetClass().GetEntityClassCP())
-                {
-                return entity->IsMixin();
-                }
-
-            return false;
-            }
         std::vector<DbTable*>& GetTables() const { return m_tables; }
-        DbTable& GetPrimaryTable() const 
-            { 
-            if (GetType() == Type::RelationshipEndTable)
-                return *m_tables.front();
-
-            for (DbTable* table : GetTables())
-                {
-                if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
-                    return *table;
-                }
-
-            BeAssert(false);
-            DbTable* nulltable = nullptr;
-            return *nulltable;
-            }
-        DbTable& GetJoinedOrPrimaryTable() const 
-            {
-            DbTable* joinedTable = nullptr;
-            DbTable* primaryTable = nullptr;
-            for (DbTable* table : m_tables)
-                {
-                if (table->GetType() == DbTable::Type::Joined)
-                    joinedTable = table;
-                else if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
-                    primaryTable = table;
-                
-                if (joinedTable != nullptr)
-                    return *joinedTable;
-                }
-
-            BeAssert(primaryTable != nullptr);
-            return *primaryTable;
-            }
-        DbTable* GetOverflowTable() const
-            {
-            for (DbTable* table : GetTables())
-                {
-                if (table->GetType() == DbTable::Type::Overflow)
-                    return table;
-                }
-
-            return nullptr;
-            }
-
+        DbTable& GetPrimaryTable() const;
+        DbTable& GetJoinedOrPrimaryTable() const;
+        DbTable* GetOverflowTable() const;
+        bool IsMixin() const;
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
 

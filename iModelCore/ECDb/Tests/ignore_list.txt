@@ -22,6 +22,3 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 
 #Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
-
-#TFS 710929
-RelationshipMappingTestFixture.LogicalForeignKeyRelationshipMappedToSharedColumn

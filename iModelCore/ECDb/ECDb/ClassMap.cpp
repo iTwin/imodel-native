@@ -25,6 +25,86 @@ ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyEx
         m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                           07/2012
+//---------------------------------------------------------------------------------------
+DbTable& ClassMap::GetPrimaryTable() const
+    {
+    if (GetType() == Type::RelationshipEndTable)
+        return *m_tables.front();
+
+    for (DbTable* table : GetTables())
+        {
+        if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
+            return *table;
+        }
+
+    BeAssert(false);
+    DbTable* nulltable = nullptr;
+    return *nulltable;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                           07/2012
+//---------------------------------------------------------------------------------------
+DbTable& ClassMap::GetJoinedOrPrimaryTable() const
+    {
+    DbTable* joinedTable = nullptr;
+    DbTable* primaryTable = nullptr;
+    for (DbTable* table : m_tables)
+        {
+        if (table->GetType() == DbTable::Type::Joined)
+            joinedTable = table;
+        else if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
+            primaryTable = table;
+
+        if (joinedTable != nullptr)
+            return *joinedTable;
+        }
+
+    BeAssert(primaryTable != nullptr);
+    return *primaryTable;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                           07/2012
+//---------------------------------------------------------------------------------------
+DbTable* ClassMap::GetOverflowTable() const
+    {
+    for (DbTable* table : GetTables())
+        {
+        if (table->GetType() == DbTable::Type::Overflow)
+            return table;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                           07/2012
+//---------------------------------------------------------------------------------------
+bool ClassMap::IsMixin() const
+    {
+    if (auto entity = GetClass().GetEntityClassCP())
+        {
+        return entity->IsMixin();
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                           07/2012
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::_ValidateMapping() const
+    {
+    if (GetPropertyMaps().Size() == 0)
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013

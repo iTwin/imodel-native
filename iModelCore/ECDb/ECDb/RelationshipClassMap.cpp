@@ -86,13 +86,13 @@ Utf8CP RelationshipClassEndTableMap::RELECCLASSID_COLNAME_TOKEN = "RelECClassId"
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol,NavigationPropertyMap const& navPropMap) const
+DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbMap const& dbMap, ECClassCR ecClass, DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol,NavigationPropertyMap const& navPropMap) 
     {
-    BeAssert(!GetClass().HasBaseClasses() && "CreateRelECClassIdColumn is expected to only be called for root rel classes");
+    BeAssert(!ecClass.HasBaseClasses() && "CreateRelECClassIdColumn is expected to only be called for root rel classes");
     const bool makeRelClassIdColNotNull = fkCol.DoNotAllowDbNull();
 
     PersistenceType persType = PersistenceType::Physical;
-    if (fkTable.GetType() == DbTable::Type::Virtual || fkTable.GetType() == DbTable::Type::Existing || GetClass().GetClassModifier() == ECClassModifier::Sealed)
+    if (fkTable.GetType() == DbTable::Type::Virtual || fkTable.GetType() == DbTable::Type::Existing || ecClass.GetClassModifier() == ECClassModifier::Sealed)
         persType = PersistenceType::Virtual;
 
     DbColumn* relClassIdCol = fkTable.FindColumnP(fkColInfo.GetRelClassIdColumnName().c_str());
@@ -135,7 +135,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& fkTabl
         {
         Nullable<Utf8String> indexName("ix_");
         indexName.ValueR().append(fkTable.GetName()).append("_").append(relClassIdCol->GetName());
-        DbIndex* index = GetDbMap().GetDbSchemaR().CreateIndex(fkTable, indexName, false, {relClassIdCol}, true, true, GetClass().GetId());
+        DbIndex* index = dbMap.GetDbSchemaR().CreateIndex(fkTable, indexName, false, {relClassIdCol}, true, true, ecClass.GetId());
         if (index == nullptr)
             {
             LOG.errorv("Failed to create index on " ECDBSYS_PROP_NavPropRelECClassId " column %s on Table %s.", relClassIdCol->GetName().c_str(), fkTable.GetName().c_str());
@@ -213,14 +213,14 @@ DbColumn* RelationshipClassEndTableMap::CreateForeignKeyColumn(RelationshipMappi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn * RelationshipClassEndTableMap::CreateReferencedClassIdColumn(DbTable & fkTable) const
+DbColumn * RelationshipClassEndTableMap::CreateReferencedClassIdColumn(DbTable & fkTable, ECRelationshipEnd foreignEnd) 
     {
     DbColumn* fkClassIdColumn = const_cast<DbColumn*>(fkTable.FindFirst(DbColumn::Kind::ECClassId));
     if (fkClassIdColumn != nullptr)
         return fkClassIdColumn;
 
-    Utf8CP colName = GetForeignEnd() == ECRelationshipEnd_Source ? ECDBSYS_PROP_SourceECClassId : ECDBSYS_PROP_TargetECClassId;
-    DbColumn::Kind kind = GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId;
+    Utf8CP colName = foreignEnd == ECRelationshipEnd_Source ? ECDBSYS_PROP_SourceECClassId : ECDBSYS_PROP_TargetECClassId;
+    DbColumn::Kind kind = foreignEnd == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId;
 
     fkClassIdColumn = const_cast<DbColumn*>(fkTable.FindColumn(colName));
     if (fkClassIdColumn == nullptr)
@@ -323,7 +323,7 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMappingForChild(SchemaImp
         return ClassMappingStatus::Error;
         }
 
-    RelationshipClassEndTableMap* baseClassMap = GetRootRelationshipMap(ctx);
+    RelationshipClassEndTableMap* baseClassMap = GetRootRelationshipMap(GetDbMap(),GetClass(), ctx);
     if (baseClassMap->FinishMapping(ctx) != ClassMappingStatus::Success)
         return ClassMappingStatus::Error;
 
@@ -538,9 +538,9 @@ ClassMappingStatus RelationshipClassEndTableMap::FinishMapping(SchemaImportConte
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-RelationshipClassEndTableMap* RelationshipClassEndTableMap::GetRootRelationshipMap(SchemaImportContext& ctx)
+RelationshipClassEndTableMap* RelationshipClassEndTableMap::GetRootRelationshipMap(DbMap const& dbMap, ECClassCR ecClass, SchemaImportContext& ctx)
     {
-    ECClassCP c = &GetClass();
+    ECClassCP c = &ecClass;
     while (c->HasBaseClasses())
         {
         if (c->GetBaseClasses().size() > 1 || !c->IsRelationshipClass())
@@ -553,14 +553,14 @@ RelationshipClassEndTableMap* RelationshipClassEndTableMap::GetRootRelationshipM
         }
 
     ECRelationshipClassCP relationshipClass = static_cast<ECRelationshipClassCP>(c);
-    ClassMapCP classMap = GetDbMap().GetClassMap(*relationshipClass);
+    ClassMapCP classMap = dbMap.GetClassMap(*relationshipClass);
     if (classMap == nullptr)
         {
-        if (GetDbMap().MapRelationshipClass(ctx, *relationshipClass) != ClassMappingStatus::Success)
+        if (dbMap.MapRelationshipClass(ctx, *relationshipClass) != ClassMappingStatus::Success)
             return nullptr;
         }
 
-    return const_cast<RelationshipClassEndTableMap*>(&GetDbMap().GetClassMap(*relationshipClass)->GetAs<RelationshipClassEndTableMap>());
+    return const_cast<RelationshipClassEndTableMap*>(&dbMap.GetClassMap(*relationshipClass)->GetAs<RelationshipClassEndTableMap>());
     }
 
 //---------------------------------------------------------------------------------------
@@ -568,7 +568,7 @@ RelationshipClassEndTableMap* RelationshipClassEndTableMap::GetRootRelationshipM
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEndForChild(SchemaImportContext & ctx, NavigationPropertyMap& navPropMap)
     {
-    RelationshipClassEndTableMap* relationshipMap = GetRootRelationshipMap(ctx);
+    RelationshipClassEndTableMap* relationshipMap = GetRootRelationshipMap(GetDbMap(), GetClass(), ctx);
     if (relationshipMap == nullptr)
         return ClassMappingStatus::Error;
 
@@ -695,13 +695,13 @@ ClassMappingStatus RelationshipClassEndTableMap::UpdatePersistedEnd(SchemaImport
     if (columnId == nullptr)
         return ClassMappingStatus::Error;
 
-    DbColumn* columnClassId = CreateRelECClassIdColumn(columnRefId->GetTableR(), fkColInfo, *columnRefId, navPropMap);
+    DbColumn* columnClassId = CreateRelECClassIdColumn(GetDbMap(), GetClass(), columnRefId->GetTableR(), fkColInfo, *columnRefId, navPropMap);
     if (columnClassId == nullptr)
         return ClassMappingStatus::Error;
 
     columnClassId->AddKind(DbColumn::Kind::RelECClassId);
 
-    DbColumn* columnForeignClassId = CreateReferencedClassIdColumn(columnRefId->GetTableR());
+    DbColumn* columnForeignClassId = CreateReferencedClassIdColumn(columnRefId->GetTableR(), GetForeignEnd());
     if (columnForeignClassId == nullptr)
         return ClassMappingStatus::Error;
 
@@ -935,7 +935,7 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
 //--------------------------------------------------------------------------------------
 //@bsimethod                                 Krischan.Eberle                   04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind fkColKind) const
+BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind fkColKind) 
     {
     DbTable& fkTable = fkColumn.GetTableR();
 
