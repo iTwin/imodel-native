@@ -490,6 +490,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
 
     if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel) && (node->GetParentNode() == nullptr || node->GetParentNode()->GetMinResolution() >= m_pixelTolerance))
         {
+        if (!m_includeUnbalancedLeafs && node->IsLeaf() && node->GetLevel() < m_requestedLevel)
+            {
+            // Could not reach requested level because the index is not balanced; do not add node in the results
+            return false;
+            }
+
         // If this is the appropriate level or it is a higher level and progressive is set.
         if (
             m_useAllRes || m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf() || (m_pixelTolerance != 0.0 && resNode != 0.0 && resNode <= m_pixelTolerance)) /*||
