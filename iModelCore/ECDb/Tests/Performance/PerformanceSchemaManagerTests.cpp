@@ -22,9 +22,10 @@ struct PerformanceSchemaManagerTests : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
     {
-    ECDbCR ecdb = SetupECDb("ecclassidlookup.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10, ECDb::OpenParams(ECDb::OpenMode::Readonly));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 10));
 
-    bvector<ECSchemaCP> schemas = ecdb.Schemas().GetSchemas(true);
+    bvector<ECSchemaCP> schemas = m_ecdb.Schemas().GetSchemas(true);
     bmap<Utf8String, bmap<Utf8String, ECClassId>> expectedClassIds;
     int classCount = 0;
     for (ECSchemaCP schema : schemas)
@@ -62,7 +63,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
 
     const int repetitionCount = 50;
     StopWatch timer(false);
-    runLookup(timer, ecdb, expectedClassIds, repetitionCount);
+    runLookup(timer, m_ecdb, expectedClassIds, repetitionCount);
     Utf8String logMessage;
     logMessage.Sprintf("ECClassId look-up by name for %d ECClasses in %d ECSchemas.", classCount, (int) schemas.size());
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, logMessage.c_str());
@@ -73,12 +74,13 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
     {
-    ECDbCR ecdb = SetupECDb("ecclassidlookup.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10, ECDb::OpenParams(ECDb::OpenMode::Readonly));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 10));
 
     int classCount = -1;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM meta.ECClassDef"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT count(*) FROM meta.ECClassDef"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     classCount = stmt.GetValueInt(0);
     ASSERT_GT(classCount, 0);
@@ -86,14 +88,14 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
 
     Utf8CP testSchemaName = "ECSqlTest";
     Utf8CP testClassName = "PSA";
-    ECClassId expectedClassId = ecdb.Schemas().GetClassId(testSchemaName, testClassName);
+    ECClassId expectedClassId = m_ecdb.Schemas().GetClassId(testSchemaName, testClassName);
     ASSERT_TRUE(expectedClassId.IsValid());
 
     const int repetitionCount = 100000;
     StopWatch timer(true);
     for (int i = 0; i < repetitionCount; i++)
         {
-        ECClassId actualClassId = ecdb.Schemas().GetClassId(testSchemaName, testClassName);
+        ECClassId actualClassId = m_ecdb.Schemas().GetClassId(testSchemaName, testClassName);
         ASSERT_EQ(expectedClassId.GetValue(), actualClassId.GetValue());
         }
 
@@ -109,12 +111,13 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_SingleClass)
     {
-    ECDbCR ecdb = SetupECDb("ecclassidlookup.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10, ECDb::OpenParams(ECDb::OpenMode::Readonly));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 10));
 
     int classCount = -1;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM meta.ECClassDef"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT count(*) FROM meta.ECClassDef"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     classCount = stmt.GetValueInt(0);
     ASSERT_GT(classCount, 0);
@@ -122,7 +125,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
 
     Utf8CP testSchemaName = "ECSqlTest";
     Utf8CP testClassName = "PSA";
-    ECClassId expectedClassId = ecdb.Schemas().GetClassId(testSchemaName, testClassName);
+    ECClassId expectedClassId = m_ecdb.Schemas().GetClassId(testSchemaName, testClassName);
     ASSERT_TRUE(expectedClassId.IsValid());
 
     Utf8String ecsql;
@@ -133,7 +136,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
     for (int i = 0; i < repetitionCount; i++)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
         }
 
     timer.Stop();
@@ -148,23 +151,22 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSchemaManagerTests, GetECClassIdSqlScenarios)
     {
-    ECDbCR ecdb = SetupECDb("ecclassidsqlscenarios.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidsqlscenarios.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
-    ECSchemaCP expectedSchema = ecdb.Schemas().GetSchema("ECSqlTest", false);
+    ECSchemaCP expectedSchema = m_ecdb.Schemas().GetSchema("ECSqlTest", false);
     ASSERT_TRUE(expectedSchema != nullptr);
     Utf8CP testClassName1 = "ABounded";
     Utf8CP testClassName2 = "PSA";
-    ECClassId expectedClassId1 = ecdb.Schemas().GetClassId("ECSqlTest", testClassName1);
+    ECClassId expectedClassId1 = m_ecdb.Schemas().GetClassId("ECSqlTest", testClassName1);
     ASSERT_TRUE(expectedClassId1.IsValid());
-    ECClassId expectedClassId2 = ecdb.Schemas().GetClassId("ECSqlTest", testClassName2);
+    ECClassId expectedClassId2 = m_ecdb.Schemas().GetClassId("ECSqlTest", testClassName2);
     ASSERT_TRUE(expectedClassId2.IsValid());
 
     const int opCount = 100000;
 
     //Scenario 1: By schema and class name (via join)
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Name=? AND c.Name=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Name=? AND c.Name=?"));
     StopWatch timer(true);
     for (int i = 0; i < opCount; i++)
         {
@@ -187,7 +189,7 @@ TEST_F(PerformanceSchemaManagerTests, GetECClassIdSqlScenarios)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, "ECClassId by schema and class name (via join)");
 
     //Scenario 2: By schema id and no join
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?"));
     timer.Start();
     for (int i = 0; i < opCount; i++)
         {

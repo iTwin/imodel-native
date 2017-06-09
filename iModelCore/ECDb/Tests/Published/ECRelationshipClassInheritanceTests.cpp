@@ -25,7 +25,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     {
     Utf8String ecdbFilePath;
     {
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipinheritance.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                           "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='Model' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
@@ -138,13 +138,9 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
                           "      <Class class='Annotation3dElement' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
-                          "</ECSchema>");
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipinheritance.ecdb");
-    ASSERT_FALSE(asserted);
+                          "</ECSchema>")));
 
-    ecdbFilePath.assign(ecdb.GetDbFileName());
+    ecdbFilePath.assign(m_ecdb.GetDbFileName());
     }
 
     ECClassId modelHasGeom3dElementsRelClassId, modelHasLinkElementsRelClassId;
@@ -359,65 +355,62 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
     {
             {
             ECDb ecdb;
-            bool asserted = false;
-            AssertSchemaImport(ecdb, asserted,
-                               SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                          "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                          "  <ECEntityClass typeName='Model' >"
-                                          "    <ECProperty propertyName='Name' typeName='string' />"
-                                          "  </ECEntityClass>"
-                                          "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-                                          "    <ECCustomAttributes>"
-                                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                          "        </ClassMap>"
-                                          "    </ECCustomAttributes>"
-                                          "    <ECProperty propertyName='Code' typeName='string' />"
-                                          "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
-                                          "  </ECEntityClass>"
-                                          "  <ECEntityClass typeName='PhysicalElement'>"
-                                          "    <BaseClass>Element</BaseClass>"
-                                          "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-                                          "  </ECEntityClass>"
-                                          "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-                                          "      <Class class='Model' />"
-                                          "    </Source>"
-                                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-                                          "      <Class class='Element' />"
-                                          "    </Target>"
-                                          "  </ECRelationshipClass>"
-                                          "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
-                                          "    <ECCustomAttributes>"
-                                          "        <ClassMap xmlns='ECDbMap.02.00'>"
-                                          "                <MapStrategy>NotMapped</MapStrategy>"
-                                          "        </ClassMap>"
-                                          "    </ECCustomAttributes>"
-                                          "   <BaseClass>ModelHasElements</BaseClass>"
-                                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-                                          "      <Class class='Model' />"
-                                          "    </Source>"
-                                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-                                          "      <Class class='PhysicalElement' />"
-                                          "    </Target>"
-                                          "  </ECRelationshipClass>"
-                                          "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
-                                          "    <ECCustomAttributes>"
-                                          "        <ClassMap xmlns='ECDbMap.02.00'>"
-                                          "                <MapStrategy>NotMapped</MapStrategy>"
-                                          "        </ClassMap>"
-                                          "    </ECCustomAttributes>"
-                                          "   <BaseClass>ModelHasElements</BaseClass>"
-                                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-                                          "      <Class class='Model' />"
-                                          "    </Source>"
-                                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-                                          "      <Class class='PhysicalElement' />"
-                                          "    </Target>"
-                                          "  </ECRelationshipClass>"
-                                          "</ECSchema>", true, "Subclass can have ClassMap CA for FK mapping if MapStrategy is set to NotMapped"),
-                               "validrelinheritance.ecdb");
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                              "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                              "  <ECEntityClass typeName='Model' >"
+                                                                              "    <ECProperty propertyName='Name' typeName='string' />"
+                                                                              "  </ECEntityClass>"
+                                                                              "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                                                              "    <ECCustomAttributes>"
+                                                                              "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                              "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                              "        </ClassMap>"
+                                                                              "    </ECCustomAttributes>"
+                                                                              "    <ECProperty propertyName='Code' typeName='string' />"
+                                                                              "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+                                                                              "  </ECEntityClass>"
+                                                                              "  <ECEntityClass typeName='PhysicalElement'>"
+                                                                              "    <BaseClass>Element</BaseClass>"
+                                                                              "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                                              "  </ECEntityClass>"
+                                                                              "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                                                                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+                                                                              "      <Class class='Model' />"
+                                                                              "    </Source>"
+                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+                                                                              "      <Class class='Element' />"
+                                                                              "    </Target>"
+                                                                              "  </ECRelationshipClass>"
+                                                                              "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                                                                              "    <ECCustomAttributes>"
+                                                                              "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                              "                <MapStrategy>NotMapped</MapStrategy>"
+                                                                              "        </ClassMap>"
+                                                                              "    </ECCustomAttributes>"
+                                                                              "   <BaseClass>ModelHasElements</BaseClass>"
+                                                                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+                                                                              "      <Class class='Model' />"
+                                                                              "    </Source>"
+                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+                                                                              "      <Class class='PhysicalElement' />"
+                                                                              "    </Target>"
+                                                                              "  </ECRelationshipClass>"
+                                                                              "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
+                                                                              "    <ECCustomAttributes>"
+                                                                              "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                              "                <MapStrategy>NotMapped</MapStrategy>"
+                                                                              "        </ClassMap>"
+                                                                              "    </ECCustomAttributes>"
+                                                                              "   <BaseClass>ModelHasElements</BaseClass>"
+                                                                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+                                                                              "      <Class class='Model' />"
+                                                                              "    </Source>"
+                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+                                                                              "      <Class class='PhysicalElement' />"
+                                                                              "    </Target>"
+                                                                              "  </ECRelationshipClass>"
+                                                                              "</ECSchema>"), "validrelinheritance.ecdb")) << "Subclass can have ClassMap CA for FK mapping if MapStrategy is set to NotMapped";
 
             MapStrategyInfo mapStrategy;
             ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasElements")->GetId()));
@@ -432,9 +425,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
 
             {
             ECDb ecdb;
-            bool asserted = false;
-            AssertSchemaImport(ecdb, asserted,
-                               SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                           "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                           "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                           "  <ECEntityClass typeName='Model' >"
@@ -480,8 +471,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "      <Class class='Element' />"
                                           "    </Target>"
                                           "  </ECRelationshipClass>"
-                                          "</ECSchema>"),
-                               "validrelinheritance.ecdb");
+                                          "</ECSchema>"), "validrelinheritance.ecdb"));
 
             MapStrategyInfo mapStrategy;
             ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasElements")->GetId()));
@@ -505,9 +495,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     {
-    std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
@@ -542,10 +530,9 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
-    "</ECSchema>", false, "Subclass must not imply link table if base class has FK mapping"));
+    "</ECSchema>"))) << "Subclass must not imply link table if base class has FK mapping";
 
-    testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
@@ -583,10 +570,9 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
-    "</ECSchema>", false, "Subclasses must not have LinkTableRelationshipMap even if it doesn't violate the base class mapping"));
+    "</ECSchema>"))) << "Subclasses must not have LinkTableRelationshipMap even if it doesn't violate the base class mapping";
 
-    testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
@@ -627,10 +613,9 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
-    "</ECSchema>", false, "Subclass must not add ECProperties if base class has FK mapping"));
+    "</ECSchema>"))) << "Subclass must not add ECProperties if base class has FK mapping";
     
-    testSchemas.push_back(
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -670,11 +655,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "      <Class class='PhysicalElement' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
-                   "</ECSchema>", false, "Subclass must not have ClassMap CA if base class has FK mapping"));
+                   "</ECSchema>"))) << "Subclass must not have ClassMap CA if base class has FK mapping";
 
 
-    testSchemas.push_back(
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -718,11 +702,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "      <Class class='PhysicalElement' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
-                   "</ECSchema>", false, "Subclass must not have define NotMapped if base class did already"));
+                   "</ECSchema>"))) << "Subclass must not have define NotMapped if base class did already";
 
 
-/*    testSchemas.push_back(
-        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -743,9 +726,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "      <Class class='Element' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
-                   "</ECSchema>", false, "FK end maps to multiple primary tables"));
-                   */
-    AssertSchemaImport(testSchemas, "invalidrelinheritance.ecdb");
+                   "</ECSchema>"))) << "FK end maps to multiple primary tables";
     }
 
 
@@ -857,9 +838,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
 
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false);
     assertRelECClassId(ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false);
@@ -907,9 +886,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+
 
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false);
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, true);
@@ -975,9 +953,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+
 
     Utf8CP tableName = SCHEMAALIAS "_B";
     assertRelECClassId(ecdb, tableName, "A1RelECClassId", RelClassIdExistenceMode::Persisted, false);
@@ -1026,9 +1003,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+
 
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false);
     //cardinality would imply NOT NULL on rel class id, but the column is shared by other base class rows, so no enforcement of NOT NULL.
@@ -1086,9 +1062,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+
 
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, true);
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false);
@@ -1124,9 +1099,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+
 
     ASSERT_TRUE(ecdb.TableExists(SCHEMAALIAS "_AHasB"));
     ASSERT_FALSE(ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
@@ -1169,9 +1143,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+
 
     ASSERT_TRUE(ecdb.TableExists(SCHEMAALIAS "_AHasB"));
     ASSERT_TRUE(ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
@@ -1186,9 +1159,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted,
-                       SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                   "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1240,9 +1211,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
                                   "      <Class class='BoltElement' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
-                                  "</ECSchema>", true),
-                       "narrowingsemanticsrelinheritance_fkmapping.ecdb");
-    ASSERT_FALSE(asserted);
+                                  "</ECSchema>"), "narrowingsemanticsrelinheritance_fkmapping.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
@@ -1298,9 +1267,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbstractRelBaseClass)
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted,
-                        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                     "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                     "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1352,9 +1319,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbst
                                     "      <Class class='BoltElement' />"
                                     "    </Target>"
                                     "  </ECRelationshipClass>"
-                                    "</ECSchema>", true),
-                        "narrowingsemanticsrelinheritance_fkmapping_nonabstractrelbaseclass.ecdb");
-    ASSERT_FALSE(asserted);
+                                    "</ECSchema>"), "narrowingsemanticsrelinheritance_fkmapping_nonabstractrelbaseclass.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
@@ -1410,9 +1375,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbst
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted,
-                       SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                   "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1472,9 +1435,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
                                   "      <Class class='BoltElement' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
-                                  "</ECSchema>", true),
-                       "narrowingsemanticsrelinheritance_linktable.ecdb");
-    ASSERT_FALSE(asserted);
+                                  "</ECSchema>"), "narrowingsemanticsrelinheritance_linktable.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
@@ -1545,7 +1506,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationships)
     {
-    ECDbCR ecdb = SetupECDb("ecrelinheritance_allowduplicaterelationships.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, SetupECDb("ecrelinheritance_allowduplicaterelationships.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                "  <ECEntityClass typeName='A' >"
                "    <ECProperty propertyName='Name' typeName='string' />"
@@ -1575,31 +1536,30 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
                "      <Class class='B' />"
                "    </Target>"
                "  </ECRelationshipClass>"
-               "</ECSchema>"), 3);
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
+               "</ECSchema>")));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
 
     ECInstanceKey a, b;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, ECInstanceId FROM ts.A LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId FROM ts.A LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     a = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(a.IsValid());
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, ECInstanceId FROM ts.B LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId FROM ts.B LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     b = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(b.IsValid());
     }
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SubRel(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubRel(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, a.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetClassId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of first relationship: " << ecdb.GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of first relationship: " << m_ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
     //now insert same rel again.
@@ -1607,7 +1567,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetClassId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of duplicate relationship: " << ecdb.GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of duplicate relationship: " << m_ecdb.GetLastError().c_str();
     }
 
 END_ECDBUNITTESTS_NAMESPACE

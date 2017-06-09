@@ -42,9 +42,9 @@ void BulkCrudTestFixture::AssertInsert(TestDataset& testData)
             inserter = it->second.get();
         else
             {
-            ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
+            ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId);
             ASSERT_TRUE(ecClass != nullptr);
-            std::unique_ptr<JsonInserter> inserterPtr(new JsonInserter(GetECDb(), *ecClass, nullptr));
+            std::unique_ptr<JsonInserter> inserterPtr(new JsonInserter(m_ecdb, *ecClass, nullptr));
             inserter = inserterPtr.get();
             inserterCache[classId] = std::move(inserterPtr);
             }
@@ -447,11 +447,10 @@ void BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, BeFileName
 
     m_failed = true;
 
-    ECDbCR ecdb = SetupECDb(fileName);
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb(fileName));
 
     //BIS ECSchema needs this table to pre-exist
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)")) << ecdb.GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)")) << m_ecdb.GetLastError().c_str();
     m_failed = false;
     PERFLOG_START("ECDb ATP", "BIS schema import");
     ImportSchemasFromFolder(bisSchemaFolder);
@@ -481,7 +480,7 @@ void BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName const& sch
 
     m_failed = true;
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
-    ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
     ctx->AddSchemaPath(schemaFolder);
 
     bvector<BeFileName> schemaPaths;
@@ -497,9 +496,9 @@ void BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName const& sch
         ASSERT_TRUE(SchemaReadStatus::Success == stat || SchemaReadStatus::DuplicateSchema == stat) << "Deserializing " << schemaXml.GetNameUtf8().c_str();
         }
 
-    ASSERT_EQ(SUCCESS, GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas())) << schemaFolder.GetNameUtf8().c_str();
-    GetECDb().ClearECDbCache();
-    ASSERT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges()) << GetECDb().GetDbFileName();
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas())) << schemaFolder.GetNameUtf8().c_str();
+    m_ecdb.ClearECDbCache();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges()) << m_ecdb.GetDbFileName();
     m_failed = false;
     }
 

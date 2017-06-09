@@ -163,26 +163,25 @@ TEST_F(PerformanceOverflowTablesResearch_NullColumnsTestFixture, Delete)
 //---------------------------------------------------------------------------------------
 TEST_F(PerformanceOverflowTablesResearchTestFixture, ViewsWithTriggers)
     {
-    ECDbR db = SetupECDb("performanceoverflowtables_viewswithtriggers.ecdb");
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("performanceoverflowtables_viewswithtriggers.ecdb"));
 
-    db.ExecuteSql("create table test1(id integer primary key, sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10)");
-    db.ExecuteSql("create view test1_view as select id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10 from test1");
-    db.ExecuteSql("create trigger update_test1 instead of update on test1_view begin update test1 set sc1=new.sc1,sc2=new.sc2,sc3=new.sc3,sc4=new.sc4,sc5=new.sc5,sc6=new.sc6,sc7=new.sc7,sc8=new.sc8,sc9=new.sc9,sc10=new.sc10 where id =new.id; end");
-    db.ExecuteSql("create trigger insert_test1 instead of insert on test1_view begin insert into test1(id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10)values(new.id,new.sc1,new.sc2,new.sc3,new.sc4,new.sc5,new.sc6,new.sc7,new.sc8,new.sc9,new.sc10); end");
-    db.ExecuteSql("create trigger delete_test1 instead of delete on test1_view begin delete from test1 where id=old.id; end");
+    m_ecdb.ExecuteSql("create table test1(id integer primary key, sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10)");
+    m_ecdb.ExecuteSql("create view test1_view as select id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10 from test1");
+    m_ecdb.ExecuteSql("create trigger update_test1 instead of update on test1_view begin update test1 set sc1=new.sc1,sc2=new.sc2,sc3=new.sc3,sc4=new.sc4,sc5=new.sc5,sc6=new.sc6,sc7=new.sc7,sc8=new.sc8,sc9=new.sc9,sc10=new.sc10 where id =new.id; end");
+    m_ecdb.ExecuteSql("create trigger insert_test1 instead of insert on test1_view begin insert into test1(id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10)values(new.id,new.sc1,new.sc2,new.sc3,new.sc4,new.sc5,new.sc6,new.sc7,new.sc8,new.sc9,new.sc10); end");
+    m_ecdb.ExecuteSql("create trigger delete_test1 instead of delete on test1_view begin delete from test1 where id=old.id; end");
 
     Statement insert_test1, update_test1, delete_test1, select_test1;
-    insert_test1.Prepare(db, "insert into test1(id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10)values(?,?,?,?,?,?,?,?,?,?,?)");
-    update_test1.Prepare(db, "update test1 set sc1=?,sc2=?,sc3=?,sc4=?,sc5=?,sc6=?,sc7=?,sc8=?,sc9=?,sc10=? where id=?");
-    delete_test1.Prepare(db, "delete from test1 where id=?");
-    select_test1.Prepare(db, "select id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10 from test1 where id=?");
+    insert_test1.Prepare(m_ecdb, "insert into test1(id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10)values(?,?,?,?,?,?,?,?,?,?,?)");
+    update_test1.Prepare(m_ecdb, "update test1 set sc1=?,sc2=?,sc3=?,sc4=?,sc5=?,sc6=?,sc7=?,sc8=?,sc9=?,sc10=? where id=?");
+    delete_test1.Prepare(m_ecdb, "delete from test1 where id=?");
+    select_test1.Prepare(m_ecdb, "select id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10 from test1 where id=?");
 
     Statement insert_test1_view, update_test1_view, delete_test1_view, select_test1_view;
-    insert_test1_view.Prepare(db, "insert into test1_view(id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10)values(?,?,?,?,?,?,?,?,?,?,?)");
-    update_test1_view.Prepare(db, "update test1_view set sc1=?,sc2=?,sc3=?,sc4=?,sc5=?,sc6=?,sc7=?,sc8=?,sc9=?,sc10=? where id=?");
-    delete_test1_view.Prepare(db, "delete from test1_view where id=?");
-    select_test1_view.Prepare(db, "select id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10 from test1_view where id=?");
+    insert_test1_view.Prepare(m_ecdb, "insert into test1_view(id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10)values(?,?,?,?,?,?,?,?,?,?,?)");
+    update_test1_view.Prepare(m_ecdb, "update test1_view set sc1=?,sc2=?,sc3=?,sc4=?,sc5=?,sc6=?,sc7=?,sc8=?,sc9=?,sc10=? where id=?");
+    delete_test1_view.Prepare(m_ecdb, "delete from test1_view where id=?");
+    select_test1_view.Prepare(m_ecdb, "select id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10 from test1_view where id=?");
 
     const int start = 1;
     const int end = 500000;
@@ -242,7 +241,7 @@ TEST_F(PerformanceOverflowTablesResearchTestFixture, ViewsWithTriggers)
             }
         }, "Delete using table");
 
-    db.SaveChanges();
+    m_ecdb.SaveChanges();
     //insert
     exec([&] ()
         {

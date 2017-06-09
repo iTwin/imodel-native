@@ -190,11 +190,10 @@ TEST_F(JoinedTableTestFixture, TableLayout)
         {
         Utf8String ecdbName;
         ecdbName.Sprintf("joinedtablemapstrategy_%s.ecdb", testItem.m_testSchema.m_name.c_str());
-        ECDbR ecdb = SetupECDb(ecdbName.c_str(), testItem.m_testSchema);
-        ASSERT_TRUE(ecdb.IsDbOpen()) << testItem.m_testSchema.m_name;
+        ASSERT_EQ(SUCCESS, SetupECDb(ecdbName.c_str(), testItem.m_testSchema));
 
-        AssertTableLayouts(ecdb, testItem.m_expectedTableLayout, testItem.m_testSchema.m_name.c_str());
-        ecdb.CloseDb();
+        AssertTableLayouts(m_ecdb, testItem.m_expectedTableLayout, testItem.m_testSchema.m_name.c_str());
+        m_ecdb.CloseDb();
         }
     }
 
@@ -460,41 +459,40 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         fileNameSuffix++;
         Utf8String fileName;
         fileName.Sprintf("JoinedTableTest%d.ecdb", fileNameSuffix);
-        ECDbR ecdb = SetupECDb(fileName.c_str(), testSchema);
-        ASSERT_TRUE(ecdb.IsDbOpen());
+        ASSERT_EQ(SUCCESS, SetupECDb(fileName.c_str(), testSchema));
         for (Utf8StringCR nonSelectECSql : nonSelectECSqls)
             {
-            assertNonSelectECSql(ecdb, testSchema.m_name.c_str(), nonSelectECSql.c_str());
+            assertNonSelectECSql(m_ecdb, testSchema.m_name.c_str(), nonSelectECSql.c_str());
             }
 
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Foo", 3, 16);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo", 3, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Foo WHERE A = 102 AND B = 'b2'", 3, 1);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo WHERE A = 102 AND B = 'b2'", 3, 0);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo  WHERE A = 104 AND B = 'b17'", 3, 1);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Foo", 3, 16);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo", 3, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Foo WHERE A = 102 AND B = 'b2'", 3, 1);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo WHERE A = 102 AND B = 'b2'", 3, 0);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo  WHERE A = 104 AND B = 'b17'", 3, 1);
 
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM dgn.Goo", 5, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Goo", 3, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, C, D FROM dgn.Goo", 3, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo", 5, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", 5, 1);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", 5, 1);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM dgn.Goo", 5, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Goo", 3, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, C, D FROM dgn.Goo", 3, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo", 5, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", 5, 1);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", 5, 1);
 
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM dgn.Boo", 5, 8);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Boo", 3, 8);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, E, F FROM dgn.Boo", 3, 8);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo", 5, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", 5, 1);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", 5, 1);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM dgn.Boo", 5, 8);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Boo", 3, 8);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, E, F FROM dgn.Boo", 3, 8);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo", 5, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", 5, 1);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", 5, 1);
 
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM dgn.Roo", 5, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Roo", 3, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, G, H FROM dgn.Roo", 3, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo", 5, 4);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", 5, 1);
-        assertSelectECSql(ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", 5, 1);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM dgn.Roo", 5, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Roo", 3, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, G, H FROM dgn.Roo", 3, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo", 5, 4);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", 5, 1);
+        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", 5, 1);
 
-        ecdb.CloseDb();
+        m_ecdb.CloseDb();
         }
     }
 
@@ -503,7 +501,7 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(JoinedTableTestFixture, Update)
     {
-    ECDbCR ecdb = SetupECDb("joinedtable.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("joinedtable.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract">
@@ -521,8 +519,7 @@ TEST_F(JoinedTableTestFixture, Update)
                       <ECProperty propertyName="SubProp1" typeName="string" />
                       <ECProperty propertyName="SubProp2" typeName="int" />
                      </ECEntityClass>
-               </ECSchema>)xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+               </ECSchema>)xml")));
 
     auto assertRow = [] (ECDbCR ecdb, std::tuple<Utf8CP, int, Utf8CP, int> const& expectedRowValues, ECInstanceKey const& key)
         {
@@ -539,13 +536,13 @@ TEST_F(JoinedTableTestFixture, Update)
     ECInstanceKey key;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Sub(Prop1,Prop2,SubProp1,SubProp2) VALUES('1',1,'1',1)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Sub(Prop1,Prop2,SubProp1,SubProp2) VALUES('1',1,'1',1)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
-    assertRow(ecdb, {"1",1,"1",1}, key);
+    assertRow(m_ecdb, {"1",1,"1",1}, key);
     }
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE ECInstanceId=?"));
 
     std::tuple<Utf8CP, int, Utf8CP, int> expectedRow {"2",2,"2",2};
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, std::get<0>(expectedRow), IECSqlBinder::MakeCopy::No));
@@ -554,32 +551,32 @@ TEST_F(JoinedTableTestFixture, Update)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(4, std::get<3>(expectedRow)));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(5, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << stmt.GetECSql();
+    ASSERT_EQ(1, m_ecdb.GetModifiedRowCount()) << stmt.GetECSql();
     stmt.Finalize();
-    assertRow(ecdb, expectedRow, key);
+    assertRow(m_ecdb, expectedRow, key);
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE Prop2=2 AND SubProp2=2"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE Prop2=2 AND SubProp2=2"));
     expectedRow = std::tuple<Utf8CP, int, Utf8CP, int> {"3",3,"3",3};
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, std::get<0>(expectedRow), IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, std::get<1>(expectedRow)));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, std::get<2>(expectedRow), IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(4, std::get<3>(expectedRow)));
-    int totalModifiedRowCountBefore = ecdb.GetTotalModifiedRowCount();
+    int totalModifiedRowCountBefore = m_ecdb.GetTotalModifiedRowCount();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << "SQL: " << stmt.GetNativeSql();
-    ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowCountBefore) << stmt.GetECSql() << "SQL: " << stmt.GetNativeSql();
+    ASSERT_EQ(2, m_ecdb.GetTotalModifiedRowCount() - totalModifiedRowCountBefore) << stmt.GetECSql() << "SQL: " << stmt.GetNativeSql();
     stmt.Finalize();
-    assertRow(ecdb, expectedRow, key);
+    assertRow(m_ecdb, expectedRow, key);
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE Prop2=3 AND SubProp2=1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Prop1=?, Prop2=?, SubProp1=?,SubProp2=? WHERE Prop2=3 AND SubProp2=1"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "4", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 4));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, "4", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(4, 4));
-    totalModifiedRowCountBefore = ecdb.GetTotalModifiedRowCount();
+    totalModifiedRowCountBefore = m_ecdb.GetTotalModifiedRowCount();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowCountBefore) << stmt.GetECSql();
+    ASSERT_EQ(0, m_ecdb.GetTotalModifiedRowCount() - totalModifiedRowCountBefore) << stmt.GetECSql();
     //values shouldn't have been modified, so must have values from previous update
-    assertRow(ecdb, expectedRow, key);
+    assertRow(m_ecdb, expectedRow, key);
     }
 
 //---------------------------------------------------------------------------------------
@@ -605,7 +602,7 @@ TEST_F(JoinedTableTestFixture, ECSqlInsertAffectingOneTableOnly)
                <ECProperty propertyName="SubNo" typeName="int" />
            </ECEntityClass>
         </ECSchema>)xml"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     auto assertRow = [] (ECDbCR ecdb, ECInstanceKey const& key, std::pair<int const*, int const*> const& expectedValues)
         {
@@ -636,26 +633,26 @@ TEST_F(JoinedTableTestFixture, ECSqlInsertAffectingOneTableOnly)
     const int expectedSubNo = 200;
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Sub(Code,SubNo) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Sub(Code,SubNo) VALUES(?,?)"));
 
     //don't insert any values
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-    assertRow(GetECDb(), key, {nullptr, nullptr});
+    assertRow(m_ecdb, key, {nullptr, nullptr});
     stmt.Reset();
     stmt.ClearBindings();
 
     //insert first value only
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1,expectedCode));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-    assertRow(GetECDb(), key, {&expectedCode, nullptr});
+    assertRow(m_ecdb, key, {&expectedCode, nullptr});
     stmt.Reset();
     stmt.ClearBindings();
 
     //insert second value only
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, expectedSubNo));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-    assertRow(GetECDb(), key, {nullptr, &expectedSubNo});
+    assertRow(m_ecdb, key, {nullptr, &expectedSubNo});
     stmt.Reset();
     stmt.ClearBindings();
 
@@ -663,7 +660,7 @@ TEST_F(JoinedTableTestFixture, ECSqlInsertAffectingOneTableOnly)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, expectedCode));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, expectedSubNo));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-    assertRow(GetECDb(), key, {&expectedCode, &expectedSubNo});
+    assertRow(m_ecdb, key, {&expectedCode, &expectedSubNo});
     stmt.Reset();
     stmt.ClearBindings();
     }
@@ -691,11 +688,11 @@ TEST_F(JoinedTableTestFixture, ECSqlUpdateOptimization)
                <ECProperty propertyName="SubNo" typeName="int" />
            </ECEntityClass>
         </ECSchema>)xml"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Sub(Code,SubNo) VALUES(100,200)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Sub(Code,SubNo) VALUES(100,200)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -717,63 +714,63 @@ TEST_F(JoinedTableTestFixture, ECSqlUpdateOptimization)
             }
         };
 
-    ECClassId subClassId = GetECDb().Schemas().GetClassId("TestSchema", "Sub");
+    ECClassId subClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Sub");
     ASSERT_TRUE(subClassId.IsValid());
     Utf8String subClassIdStr = subClassId.ToString();
 
     //Set prop in first table
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200 WHERE Code=100"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200 WHERE Code=100"));
     Utf8String expectedSql;
     expectedSql.Sprintf("UPDATE [ts_Base] SET [Code]=200 WHERE [Code]=100 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         subClassIdStr.c_str());
     assertNativeSql(expectedSql.c_str(), stmt);
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200 WHERE SubNo=200"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200 WHERE SubNo=200"));
     assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id])", stmt);
     stmt.Finalize();
 
     //now without classid filter
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
     assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE [Code]=100", stmt);
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200 WHERE SubNo=200 ECSQLOPTIONS NoECClassIdFilter"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200 WHERE SubNo=200 ECSQLOPTIONS NoECClassIdFilter"));
     assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id])", stmt);
     stmt.Finalize();
 
     //Set prop in second table
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET SubNo=300 WHERE SubNo=200"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET SubNo=300 WHERE SubNo=200"));
     expectedSql.Sprintf("UPDATE [ts_Sub] SET [SubNo]=300 WHERE [SubNo]=200 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         subClassIdStr.c_str());
     assertNativeSql(expectedSql.c_str(), stmt);
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET SubNo=300 WHERE Code=100"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET SubNo=300 WHERE Code=100"));
     assertNativeSql("UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
     stmt.Finalize();
 
     //now without classid filter
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET SubNo=300 WHERE SubNo=200 ECSQLOPTIONS NoECClassIdFilter"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET SubNo=300 WHERE SubNo=200 ECSQLOPTIONS NoECClassIdFilter"));
     assertNativeSql("UPDATE [ts_Sub] SET [SubNo]=300 WHERE [SubNo]=200", stmt);
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET SubNo=300 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET SubNo=300 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
     assertNativeSql("UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
     stmt.Finalize();
 
     //Set prop in both tables
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE Code=100"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE Code=100"));
     assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id]);"
                     "UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
     stmt.Finalize();
 
     //now without classid filter
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE Code=100 ECSQLOPTIONS NoECClassIdFilter"));
     assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id]);UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
     stmt.Finalize();
 
     //Set prop in both tables, but filter by ECInstanceId
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=?"));
     expectedSql.Sprintf("UPDATE [ts_Base] SET [Code]=200 WHERE [Id]=:_ecdb_ecsqlparam_ix1_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s));"
                         "UPDATE [ts_Sub] SET [SubNo]=300 WHERE [BaseId]=:_ecdb_ecsqlparam_ix1_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         subClassIdStr.c_str(), subClassIdStr.c_str());
@@ -781,12 +778,12 @@ TEST_F(JoinedTableTestFixture, ECSqlUpdateOptimization)
     stmt.Finalize();
 
     //now without classid filter
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
     assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE [Id]=:_ecdb_ecsqlparam_ix1_col1;UPDATE [ts_Sub] SET [SubNo]=300 WHERE [BaseId]=:_ecdb_ecsqlparam_ix1_col1", stmt);
     stmt.Finalize();
 
     //Set prop in both tables, but filter by ECClassId
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECClassId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECClassId=?"));
     expectedSql.Sprintf("UPDATE [ts_Base] SET [Code]=200 WHERE [ECClassId]=:_ecdb_ecsqlparam_ix1_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s));"
                         "UPDATE [ts_Sub] SET [SubNo]=300 WHERE [ECClassId]=:_ecdb_ecsqlparam_ix1_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         subClassIdStr.c_str(), subClassIdStr.c_str());
@@ -794,12 +791,12 @@ TEST_F(JoinedTableTestFixture, ECSqlUpdateOptimization)
     stmt.Finalize();
 
     //now without classid filter
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECClassId=? ECSQLOPTIONS NoECClassIdFilter"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECClassId=? ECSQLOPTIONS NoECClassIdFilter"));
     assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE [ECClassId]=:_ecdb_ecsqlparam_ix1_col1;UPDATE [ts_Sub] SET [SubNo]=300 WHERE [ECClassId]=:_ecdb_ecsqlparam_ix1_col1", stmt);
     stmt.Finalize();
 
     //Set prop in both tables, but filter by ECInstanceId and a regular prop
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=? OR Code=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Sub SET Code=200, SubNo=300 WHERE ECInstanceId=? OR Code=?"));
     assertNativeSql("UPDATE [ts_Base] SET [Code]=200 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[Id]);"
                     "UPDATE [ts_Sub] SET [SubNo]=300 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[BaseId])", stmt);
     stmt.Finalize();
@@ -834,8 +831,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("crud.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("crud.ecdb", schemaItem));
 
     ECSqlStatement stmt;
     Utf8String sql;
@@ -846,7 +842,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
     for (size_t i = 0; i < 3; i++)
         {
         sql.Sprintf("Select ColumnKind from ec_Column c Inner Join ec_PropertyMap pm on c.id=pm.ColumnId Inner join ec_PropertyPath pp on pm.PropertyPathId=pp.Id Where AccessString='%c'", Props[i]);
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(GetECDb(), sql.c_str())) << "Prepare failed for sql: " << sql;
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, sql.c_str())) << "Prepare failed for sql: " << sql;
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
         switch (i)
             {
@@ -861,7 +857,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
         }
 
     //-----------------------------INSERT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(ecdb, "INSERT INTO ts.Foo (ECInstanceId, A, B, C) VALUES (?,?,?,?)"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo (ECInstanceId, A, B, C) VALUES (?,?,?,?)"), ECSqlStatus::Success);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 100));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "val1", IECSqlBinder::MakeCopy::No));
@@ -881,7 +877,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
     stmt.Finalize();
 
     //-----------------------------SELECT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 100));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -894,7 +890,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
 
     //-----------------------------UPDATE----------------------------------------------------
 
-    ASSERT_EQ(stmt.Prepare(ecdb, "UPDATE ts.Foo SET A= ?, B= ?, C= ? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET A= ?, B= ?, C= ? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "modVal1", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 44));
@@ -903,9 +899,9 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
 
     stmt.Finalize();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
-    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = 100"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = 100"), ECSqlStatus::Success);
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
     ASSERT_STRCASEEQ(stmt.GetValueText(0), "modVal1");
@@ -915,13 +911,13 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
 
     //-----------------------------DELETE----------------------------------------------------
 
-    ASSERT_EQ(stmt.Prepare(ecdb, "DELETE FROM ts.Foo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "DELETE FROM ts.Foo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 200));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
-    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = 200"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "SELECT A, B, C FROM ts.Foo WHERE ECInstanceId = 200"), ECSqlStatus::Success);
     ASSERT_NE(stmt.Step(), BE_SQLITE_ROW);
     stmt.Finalize();
     }
@@ -948,7 +944,7 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
         "         <BaseClass>Base</BaseClass>"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "Mapstrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to succeed");
+        "</ECSchema>");
 
     SchemaItem secondTestItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -963,23 +959,19 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
         "         <BaseClass>rs:Sub1</BaseClass>"
         "        <ECProperty propertyName='P11' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "Mapstrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to be honored from base Class of Refered schema");
+        "</ECSchema>");
 
     Utf8String ecdbFilePath;
     {
-    ECDbR ecdb = SetupECDb("JoinedTablePerDirectSubclass.ecdb", baseTestSchema);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, baseTestSchema, "JoinedTablePerDirectSubclass.ecdb")) << "Mapstrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to succeed";
     ecdbFilePath = ecdb.GetDbFileName();
     ecdb.CloseDb();
     }
 
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, secondTestItem);
-    ASSERT_FALSE(asserted);
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, ImportSchema(ecdb, secondTestItem)) << "Mapstrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to be honored from base Class of Refered schema";
 
     bmap<Utf8String, Utf8String> expectedTableLayouts;
     expectedTableLayouts["rs_Base"] = "p0";
@@ -1042,26 +1034,25 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbCR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
-    ECClassId gooClassId = db.Schemas().GetClassId("JoinedTableTest", "Goo");
+    ECClassId gooClassId = m_ecdb.Schemas().GetClassId("JoinedTableTest", "Goo");
     ASSERT_TRUE(gooClassId.IsValid());
     //Only properties in joined table accessed should not unnecessarily add join to base table.
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter"), ECSqlStatus::Success);
     ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId]=:id_col1", stmt.GetNativeSql());
     }
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
     ASSERT_STREQ("DELETE FROM [dgn_Foo] WHERE [Id]=:id_col1", stmt.GetNativeSql());
     }
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
     Utf8String expectedSql;
     expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId]=:id_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
     gooClassId.ToString().c_str());
@@ -1069,7 +1060,7 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
     }
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
     expectedSql.Sprintf("DELETE FROM [dgn_Foo] WHERE [Id]=:id_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
@@ -1080,23 +1071,23 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
     //accessing property of parent should add join to base
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
     ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[FooId])", stmt.GetNativeSql());
     }
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
     ASSERT_STREQ("DELETE FROM [dgn_Foo] WHERE [Id]=:id_col1 AND [A]=:a_col1", stmt.GetNativeSql());
     }
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
     ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE InVirtualSet(:_ecdb_ecsqlparam_id_col1,[FooId])", stmt.GetNativeSql()) << stmt.GetECSql();
     }
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
     expectedSql.Sprintf("DELETE FROM [dgn_Foo] WHERE [Id]=:id_col1 AND [A]=:a_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
@@ -1141,12 +1132,11 @@ TEST_F(JoinedTableTestFixture, InsertWithParameterBinding)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
     ECSqlStatement stmt;
     //-----------------------------INSERT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(db, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( :id, :a, :b, :c, :d)"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( :id, :a, :b, :c, :d)"), ECSqlStatus::Success);
     auto idIndex = stmt.GetParameterIndex("id");
     auto aIndex = stmt.GetParameterIndex("a");
     auto bIndex = stmt.GetParameterIndex("b");
@@ -1178,7 +1168,7 @@ TEST_F(JoinedTableTestFixture, InsertWithParameterBinding)
     stmt.Finalize();
 
     //-----------------------------SELECT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
     idIndex = stmt.GetParameterIndex("id");
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idIndex, 101));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
@@ -1193,7 +1183,7 @@ TEST_F(JoinedTableTestFixture, InsertWithParameterBinding)
 
     //-----------------------------UPDATE----------------------------------------------------
 
-    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET A= :a, B= :b, C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE dgn.Goo SET A= :a, B= :b, C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
 
     aIndex = stmt.GetParameterIndex("a");
     bIndex = stmt.GetParameterIndex("b");
@@ -1214,8 +1204,8 @@ TEST_F(JoinedTableTestFixture, InsertWithParameterBinding)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(dIndex, "d2001", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
-    db.SaveChanges();
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
     ASSERT_EQ(stmt.GetValueInt64(0), 10001);
@@ -1226,7 +1216,7 @@ TEST_F(JoinedTableTestFixture, InsertWithParameterBinding)
 
     //-----------------------------DELETE----------------------------------------------------
 
-    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
 
     idIndex = stmt.GetParameterIndex("id");
     ASSERT_EQ(idIndex, 1);
@@ -1235,7 +1225,7 @@ TEST_F(JoinedTableTestFixture, InsertWithParameterBinding)
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
@@ -1276,12 +1266,11 @@ TEST_F(JoinedTableTestFixture, InsertWithUnnamedParameterBinding)
                           "    </ECEntityClass>"
                           "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
     ECSqlStatement stmt;
     //-----------------------------INSERT----------------------------------------------------
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( ?, ?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( ?, ?, ?, ?, ?)"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 10000));
@@ -1302,7 +1291,7 @@ TEST_F(JoinedTableTestFixture, InsertWithUnnamedParameterBinding)
     stmt.Finalize();
 
     //-----------------------------SELECT----------------------------------------------------
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = ?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -1316,7 +1305,7 @@ TEST_F(JoinedTableTestFixture, InsertWithUnnamedParameterBinding)
 
     //-----------------------------UPDATE----------------------------------------------------
 
-    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET A= :a, B= :b, C= :c, D= :d WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE dgn.Goo SET A= :a, B= :b, C= :c, D= :d WHERE ECInstanceId = ?"), ECSqlStatus::Success);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 10001));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "a1001", IECSqlBinder::MakeCopy::No));
@@ -1326,8 +1315,8 @@ TEST_F(JoinedTableTestFixture, InsertWithUnnamedParameterBinding)
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    db.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ASSERT_EQ(10001, stmt.GetValueInt64(0));
@@ -1338,12 +1327,12 @@ TEST_F(JoinedTableTestFixture, InsertWithUnnamedParameterBinding)
 
     //-----------------------------DELETE----------------------------------------------------
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM dgn.Goo WHERE ECInstanceId = ?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     }
@@ -1374,25 +1363,24 @@ TEST_F(JoinedTableTestFixture, AbstractBaseAndEmptyChildClass)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
-    auto assert_ecsql = [&db] (Utf8CP sql, ECSqlStatus expectedStatus, DbResult expectedStepStatus)
+    auto assert_ecsql = [this] (Utf8CP sql, ECSqlStatus expectedStatus, DbResult expectedStepStatus)
         {
         ECSqlStatement stmt;
         LOG.infov("Executing : %s", sql);
-        ASSERT_EQ(stmt.Prepare(db, sql), expectedStatus);
+        ASSERT_EQ(stmt.Prepare(m_ecdb, sql), expectedStatus);
         LOG.infov("NativeSQL : %s", stmt.GetNativeSql());
         if (expectedStatus == ECSqlStatus::Success)
             {
             ASSERT_EQ(stmt.Step(), expectedStepStatus);
             }
         };
-    auto assert_ecsql2 = [&db] (Utf8CP sql, ECSqlStatus expectedStatus, int columnCountExpected, int rowCountExpected)
+    auto assert_ecsql2 = [this] (Utf8CP sql, ECSqlStatus expectedStatus, int columnCountExpected, int rowCountExpected)
         {
         ECSqlStatement stmt;
         LOG.infov("Executing : %s", sql);
-        ASSERT_EQ(stmt.Prepare(db, sql), expectedStatus);
+        ASSERT_EQ(stmt.Prepare(m_ecdb, sql), expectedStatus);
         LOG.infov("NativeSQL : %s", stmt.GetNativeSql());
         ASSERT_EQ(stmt.GetColumnCount(), columnCountExpected);
 
@@ -1611,18 +1599,17 @@ TEST_F(JoinedTableTestFixture, SelfJoinRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
-    ECClassId fooClassId = db.Schemas().GetClassId("JoinedTableTest", "Foo");
+    ECClassId fooClassId = m_ecdb.Schemas().GetClassId("JoinedTableTest", "Foo");
 
     EC::ECInstanceId fooInstanceId1;
     EC::ECInstanceId fooInstanceId2;
 
     //Insert two Instances each Per class
     {
-    fooInstanceId1 = InsertTestInstance(db, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
-    fooInstanceId2 = InsertTestInstance(db, "INSERT INTO dgn.Foo (A, B) VALUES(100002, 'Class Foo Instance 2')");
+    fooInstanceId1 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
+    fooInstanceId2 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Foo (A, B) VALUES(100002, 'Class Foo Instance 2')");
 
     if (!fooInstanceId1.IsValid() || !fooInstanceId2.IsValid())
         ASSERT_TRUE(false) << "Instance Id's not valid";
@@ -1631,37 +1618,37 @@ TEST_F(JoinedTableTestFixture, SelfJoinRelationships)
     //Insert 1-1 Relationship
     {
     EC::ECInstanceId fooHasFooInstanceId1;
-    Savepoint savePoint(db, "1-1 Relationship Instances");
+    Savepoint savePoint(m_ecdb, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    fooHasFooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
+    fooHasFooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
     savePoint.Commit();
-    ecsql.Sprintf(ToSelectECSql(db, "FooHasFoo").c_str(), fooHasFooInstanceId1.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasFoo").c_str(), fooHasFooInstanceId1.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
     }
 
     //Insert 1-N Relationship
     {
     EC::ECInstanceId fooHasManyFooInstanceId1;
     EC::ECInstanceId fooHasManyFooInstanceId2;
-    Savepoint savePoint(db, "1-N Relationship Instances");
+    Savepoint savePoint(m_ecdb, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    fooHasManyFooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
+    fooHasManyFooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId2.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    fooHasManyFooInstanceId2 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId2.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
+    fooHasManyFooInstanceId2 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
     savePoint.Commit();
 
-    ecsql.Sprintf(ToSelectECSql(db, "FooHasManyFoo").c_str(), fooHasManyFooInstanceId1.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasManyFoo").c_str(), fooHasManyFooInstanceId1.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
 
-    ecsql.Sprintf(ToSelectECSql(db, "FooHasManyFoo").c_str(), fooHasManyFooInstanceId2.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, fooInstanceId2, fooClassId, fooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasManyFoo").c_str(), fooHasManyFooInstanceId2.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, fooInstanceId2, fooClassId, fooClassId);
     }
 
     //Insert N-N Relationship
@@ -1670,34 +1657,34 @@ TEST_F(JoinedTableTestFixture, SelfJoinRelationships)
     EC::ECInstanceId manyFooHasManyFooInstanceId2;
     EC::ECInstanceId manyFooHasManyFooInstanceId3;
     EC::ECInstanceId manyFooHasManyFooInstanceId4;
-    Savepoint savePoint(db, "N-N Relationship Instances");
+    Savepoint savePoint(m_ecdb, "N-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "ManyFooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    manyFooHasManyFooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "ManyFooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
+    manyFooHasManyFooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
-    ecsql.Sprintf(ToInsertECSql(db, "ManyFooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId2.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    manyFooHasManyFooInstanceId2 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "ManyFooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId2.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
+    manyFooHasManyFooInstanceId2 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
-    ecsql.Sprintf(ToInsertECSql(db, "ManyFooHasManyFoo").c_str(), fooInstanceId2.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    manyFooHasManyFooInstanceId3 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "ManyFooHasManyFoo").c_str(), fooInstanceId2.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
+    manyFooHasManyFooInstanceId3 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
-    ecsql.Sprintf(ToInsertECSql(db, "ManyFooHasManyFoo").c_str(), fooInstanceId2.GetValue(), fooInstanceId2.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    manyFooHasManyFooInstanceId4 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "ManyFooHasManyFoo").c_str(), fooInstanceId2.GetValue(), fooInstanceId2.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
+    manyFooHasManyFooInstanceId4 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
     savePoint.Commit();
 
-    ecsql.Sprintf(ToSelectECSql(db, "ManyFooHasManyFoo").c_str(), manyFooHasManyFooInstanceId1.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "ManyFooHasManyFoo").c_str(), manyFooHasManyFooInstanceId1.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
 
-    ecsql.Sprintf(ToSelectECSql(db, "ManyFooHasManyFoo").c_str(), manyFooHasManyFooInstanceId2.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, fooInstanceId2, fooClassId, fooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "ManyFooHasManyFoo").c_str(), manyFooHasManyFooInstanceId2.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, fooInstanceId2, fooClassId, fooClassId);
 
-    ecsql.Sprintf(ToSelectECSql(db, "ManyFooHasManyFoo").c_str(), manyFooHasManyFooInstanceId3.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId2, fooInstanceId1, fooClassId, fooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "ManyFooHasManyFoo").c_str(), manyFooHasManyFooInstanceId3.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId2, fooInstanceId1, fooClassId, fooClassId);
 
-    ecsql.Sprintf(ToSelectECSql(db, "ManyFooHasManyFoo").c_str(), manyFooHasManyFooInstanceId4.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId2, fooInstanceId2, fooClassId, fooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "ManyFooHasManyFoo").c_str(), manyFooHasManyFooInstanceId4.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId2, fooInstanceId2, fooClassId, fooClassId);
     }
 
     }
@@ -1766,11 +1753,10 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
-    ECClassId fooClassId = db.Schemas().GetClassId("JoinedTableTest", "Foo");
-    ECClassId gooClassId = db.Schemas().GetClassId("JoinedTableTest", "Goo");
+    ECClassId fooClassId = m_ecdb.Schemas().GetClassId("JoinedTableTest", "Foo");
+    ECClassId gooClassId = m_ecdb.Schemas().GetClassId("JoinedTableTest", "Goo");
 
     EC::ECInstanceId fooInstanceId1;
     EC::ECInstanceId fooInstanceId2;
@@ -1779,10 +1765,10 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
 
     //Insert Instances for Constraint classes of Relationships
     {
-    fooInstanceId1 = InsertTestInstance(db, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
-    fooInstanceId2 = InsertTestInstance(db, "INSERT INTO dgn.Foo (A, B) VALUES(100002, 'Class Foo Instance 2')");
-    gooInstanceId1 = InsertTestInstance(db, "INSERT INTO dgn.Goo (C, D) VALUES(200001, 'Class Goo Instance 1')");
-    gooInstanceId2 = InsertTestInstance(db, "INSERT INTO dgn.Goo (C, D) VALUES(200002, 'Class Goo Instance 2')");
+    fooInstanceId1 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
+    fooInstanceId2 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Foo (A, B) VALUES(100002, 'Class Foo Instance 2')");
+    gooInstanceId1 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Goo (C, D) VALUES(200001, 'Class Goo Instance 1')");
+    gooInstanceId2 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Goo (C, D) VALUES(200002, 'Class Goo Instance 2')");
 
     if (!fooInstanceId1.IsValid() || !fooInstanceId2.IsValid() || !gooInstanceId1.IsValid() || !gooInstanceId2.IsValid())
         ASSERT_TRUE(false) << "Instance Id's not valid";
@@ -1791,38 +1777,38 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
     //Insert 1-1 Relationship
     {
     EC::ECInstanceId fooHasGooInstanceId1;
-    Savepoint savePoint(db, "1-1 Relationship Instances");
+    Savepoint savePoint(m_ecdb, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    fooHasGooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
+    fooHasGooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
     savePoint.Commit();
 
-    ecsql.Sprintf(ToSelectECSql(db, "FooHasGoo").c_str(), fooHasGooInstanceId1.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasGoo").c_str(), fooHasGooInstanceId1.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
     }
 
     //Insert 1-N Relationship
     {
     EC::ECInstanceId fooHasManyGooInstanceId1;
     EC::ECInstanceId fooHasManyGooInstanceId2;
-    Savepoint savePoint(db, "1-N Relationship Instances");
+    Savepoint savePoint(m_ecdb, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    fooHasManyGooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
+    fooHasManyGooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId2.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    fooHasManyGooInstanceId2 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId2.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
+    fooHasManyGooInstanceId2 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
     savePoint.Commit();
 
-    ecsql.Sprintf(ToSelectECSql(db, "FooHasManyGoo").c_str(), fooHasManyGooInstanceId1.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasManyGoo").c_str(), fooHasManyGooInstanceId1.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
 
-    ecsql.Sprintf(ToSelectECSql(db, "FooHasManyGoo").c_str(), fooHasManyGooInstanceId2.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, gooInstanceId2, fooClassId, gooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasManyGoo").c_str(), fooHasManyGooInstanceId2.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, gooInstanceId2, fooClassId, gooClassId);
     }
 
     //Insert N-N Relationship
@@ -1831,34 +1817,34 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
     EC::ECInstanceId manyFooHasManyGooInstanceId2;
     EC::ECInstanceId manyFooHasManyGooInstanceId3;
     EC::ECInstanceId manyFooHasManyGooInstanceId4;
-    Savepoint savePoint(db, "N-N Relationship Instances");
+    Savepoint savePoint(m_ecdb, "N-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "ManyFooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    manyFooHasManyGooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "ManyFooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
+    manyFooHasManyGooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
-    ecsql.Sprintf(ToInsertECSql(db, "ManyFooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId2.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    manyFooHasManyGooInstanceId2 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "ManyFooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId2.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
+    manyFooHasManyGooInstanceId2 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
-    ecsql.Sprintf(ToInsertECSql(db, "ManyFooHasManyGoo").c_str(), fooInstanceId2.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    manyFooHasManyGooInstanceId3 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "ManyFooHasManyGoo").c_str(), fooInstanceId2.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
+    manyFooHasManyGooInstanceId3 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
-    ecsql.Sprintf(ToInsertECSql(db, "ManyFooHasManyGoo").c_str(), fooInstanceId2.GetValue(), gooInstanceId2.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    manyFooHasManyGooInstanceId4 = InsertTestInstance(db, ecsql.c_str());
+    ecsql.Sprintf(ToInsertECSql(m_ecdb, "ManyFooHasManyGoo").c_str(), fooInstanceId2.GetValue(), gooInstanceId2.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
+    manyFooHasManyGooInstanceId4 = InsertTestInstance(m_ecdb, ecsql.c_str());
 
     savePoint.Commit();
 
-    ecsql.Sprintf(ToSelectECSql(db, "ManyFooHasManyGoo").c_str(), manyFooHasManyGooInstanceId1.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "ManyFooHasManyGoo").c_str(), manyFooHasManyGooInstanceId1.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
 
-    ecsql.Sprintf(ToSelectECSql(db, "ManyFooHasManyGoo").c_str(), manyFooHasManyGooInstanceId2.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, gooInstanceId2, fooClassId, gooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "ManyFooHasManyGoo").c_str(), manyFooHasManyGooInstanceId2.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, gooInstanceId2, fooClassId, gooClassId);
 
-    ecsql.Sprintf(ToSelectECSql(db, "ManyFooHasManyGoo").c_str(), manyFooHasManyGooInstanceId3.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId2, gooInstanceId1, fooClassId, gooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "ManyFooHasManyGoo").c_str(), manyFooHasManyGooInstanceId3.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId2, gooInstanceId1, fooClassId, gooClassId);
 
-    ecsql.Sprintf(ToSelectECSql(db, "ManyFooHasManyGoo").c_str(), manyFooHasManyGooInstanceId4.GetValue());
-    VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId2, gooInstanceId2, fooClassId, gooClassId);
+    ecsql.Sprintf(ToSelectECSql(m_ecdb, "ManyFooHasManyGoo").c_str(), manyFooHasManyGooInstanceId4.GetValue());
+    VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId2, gooInstanceId2, fooClassId, gooClassId);
     }
     }
 
@@ -1939,9 +1925,8 @@ TEST_F(JoinedTableTestFixture, RelationshipBetweenSubClasses)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
-
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ECDbR db = m_ecdb;
     db.SaveChanges();
     ECClassId gooClassId = db.Schemas().GetClassId("JoinedTableTest", "Goo");
     ECClassId rooClassId = db.Schemas().GetClassId("JoinedTableTest", "Roo");
@@ -2105,8 +2090,8 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ECDbR db = m_ecdb;
 
     ECClassId fooClassId = db.Schemas().GetClassId("JoinedTableTest", "Foo");
     ECClassId rooClassId = db.Schemas().GetClassId("JoinedTableTest", "Roo");
@@ -2269,8 +2254,8 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass1)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ECDbR db = m_ecdb;
 
     ECClassId fooClassId = db.Schemas().GetClassId("JoinedTableTest", "Foo");
     ECClassId rooClassId = db.Schemas().GetClassId("JoinedTableTest", "Roo");
@@ -2445,8 +2430,8 @@ TEST_F(JoinedTableTestFixture, PolymorphicRelationshipWithStandAloneClass)
         "   </ECRelationshipClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ECDbR db = m_ecdb;
 
     ECClassId booClassId = db.Schemas().GetClassId("JoinedTableTest", "Boo");
     ECClassId gooClassId = db.Schemas().GetClassId("JoinedTableTest", "Goo");
@@ -2605,10 +2590,8 @@ TEST_F(JoinedTableTestFixture, DropFKConstraintForSharedColumnForSubClasses)
                         "  </ECRelationshipClass>"
                         "</ECSchema>");
 
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "fkconstraintsonsharedcolumnsforsubclasses.ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, SetupECDb("fkconstraintsonsharedcolumnsforsubclasses.ecdb", testItem));
+    ECDbR ecdb = m_ecdb;
 
     AssertForeignKey(false, ecdb, "ts_B1Sub", "sc_02");
 
@@ -2694,13 +2677,10 @@ TEST_F(JoinedTableTestFixture, VerifyONDeleteRestrictWithJoinedTable)
                         "      <Class class = 'B1'/>"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  </ECSchema>",
-                        true, "Supported cases");
+                        "  </ECSchema>");
 
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "ondeleterestrictforjoinedtable.ecdb");
-    ASSERT_FALSE(asserted);
+    ASSERT_EQ(SUCCESS, SetupECDb("ondeleterestrictforjoinedtable.ecdb", testItem));
+    ECDbR ecdb = m_ecdb;
 
     ECInstanceKey sourceKey;
     ECInstanceKey targetKey;
@@ -2771,7 +2751,7 @@ struct JoinedTableECSqlStatementsTests : DbMappingTestFixture
 void JoinedTableECSqlStatementsTests::ImportSchemaWithCA(ECSchemaPtr& ecSchema, Utf8CP className)
     {
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
-    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    readContext->AddSchemaLocater(m_ecdb.GetSchemaLocater());
     SchemaKey ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
     ECSchemaPtr ecdbmapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestWriteCompatible);
     ASSERT_TRUE(ecdbmapSchema.IsValid());
@@ -2794,7 +2774,7 @@ void JoinedTableECSqlStatementsTests::ImportSchemaWithCA(ECSchemaPtr& ecSchema, 
     EXPECT_TRUE(customAttribute != nullptr);
     ASSERT_TRUE(personClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
 
-    ASSERT_EQ(SUCCESS, GetECDb().Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -2810,7 +2790,7 @@ void JoinedTableECSqlStatementsTests::SetUpECSqlStatementTestsDb()
 
     ImportSchemaWithCA(schemaPtr, "Person");
 
-    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(GetECDb());
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2826,7 +2806,7 @@ void JoinedTableECSqlStatementsTests::SetUpNestedStructArrayDb()
 
     ImportSchemaWithCA(schemaPtr, "ClassA");
 
-    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(GetECDb(), true);
+    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(m_ecdb, true);
     }
 
 struct PowSqlFunction : ScalarFunction
@@ -2877,12 +2857,12 @@ TEST_F(JoinedTableECSqlStatementsTests, UpdateForAbstractBaseClass)
 
     //update Instance
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ECST.Customer Set Phone=10000, PersonName.FirstName='Jones' WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ECST.Customer Set Phone=10000, PersonName.FirstName='Jones' WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
     //verify Updated Instance
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Phone FROM ECST.Person WHERE PersonName.FirstName='Jones' AND PersonName.LastName='Baron'"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Phone FROM ECST.Person WHERE PersonName.FirstName='Jones' AND PersonName.LastName='Baron'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(10000, statement.GetValueInt(0));
     statement.Finalize();
@@ -2897,12 +2877,12 @@ TEST_F(JoinedTableECSqlStatementsTests, DeleteForAbstractBaseClass)
 
     //Delete Instance
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM ECST.Person WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "DELETE FROM ECST.Person WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
     //Verify Delete
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ECST.Person WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ECST.Person WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
 
@@ -2914,7 +2894,7 @@ TEST_F(JoinedTableECSqlStatementsTests, PersistSqlForQueryOnAbstractBaseClass)
     SetUpECSqlStatementTestsDb();
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId FROM ECST.Person"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECST.Person"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("SELECT [Person].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [ECST_Person]) [Person]", stmt.GetNativeSql());
     }
@@ -2928,14 +2908,14 @@ TEST_F(JoinedTableECSqlStatementsTests, UnionTests)
     m_ecdb.SaveChanges();
     int rowCount;
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT COUNT(*) FROM (SELECT CompanyName FROM ECST.Supplier UNION ALL SELECT CompanyName FROM ECST.Shipper)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM (SELECT CompanyName FROM ECST.Supplier UNION ALL SELECT CompanyName FROM ECST.Shipper)"));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
     int count = stmt.GetValueInt(0);
     EXPECT_EQ(6, count);
     stmt.Finalize();
 
     //Select Statement containing Union All Clause and also Order By clause
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT CompanyName, Phone FROM ECST.Supplier UNION ALL SELECT CompanyName, Phone FROM ECST.Shipper ORDER BY Phone"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CompanyName, Phone FROM ECST.Supplier UNION ALL SELECT CompanyName, Phone FROM ECST.Shipper ORDER BY Phone"));
     rowCount = 0;
     Utf8CP expectedContactNames = "ABCD-Rio Grand-GHIJ-Rio Grand-Rue Perisnon-Salguero-";
     Utf8String actualContactNames;
@@ -2950,7 +2930,7 @@ TEST_F(JoinedTableECSqlStatementsTests, UnionTests)
     stmt.Finalize();
 
     //Select Statement using UNION Clause, so we should get only distinct results
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT City FROM ECST.Supplier UNION SELECT City FROM ECST.Customer ORDER BY City"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT City FROM ECST.Supplier UNION SELECT City FROM ECST.Customer ORDER BY City"));
     rowCount = 0;
     Utf8CP expectedCityNames = "ALASKA-AUSTIN-CA-MD-NC-SAN JOSE-";
     Utf8String actualCityNames;
@@ -2965,7 +2945,7 @@ TEST_F(JoinedTableECSqlStatementsTests, UnionTests)
     stmt.Finalize();
 
     //Select Statement Using UNION ALL Clause so we should get even Duplicate Results
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT City FROM ECST.Supplier UNION ALL SELECT City FROM ECST.Customer ORDER BY City"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT City FROM ECST.Supplier UNION ALL SELECT City FROM ECST.Customer ORDER BY City"));
     rowCount = 0;
     expectedCityNames = "ALASKA-AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
     actualCityNames.clear();
@@ -2981,8 +2961,8 @@ TEST_F(JoinedTableECSqlStatementsTests, UnionTests)
 
     //use Custom Scaler function in union query
     PowSqlFunction func;
-    ASSERT_EQ(0, GetECDb().AddFunction(func));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "Select POW(ECInstanceId, 2), ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
+    ASSERT_EQ(0, m_ecdb.AddFunction(func));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "Select POW(ECInstanceId, 2), ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
     rowCount = 0;
     while (stmt.Step() != BE_SQLITE_DONE)
         {
@@ -2994,14 +2974,14 @@ TEST_F(JoinedTableECSqlStatementsTests, UnionTests)
     stmt.Finalize();
 
     //use aggregate function in Union Query
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Count(*), AVG(Phone) FROM (SELECT Phone FROM ECST.Supplier UNION ALL SELECT Phone FROM ECST.Customer)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Count(*), AVG(Phone) FROM (SELECT Phone FROM ECST.Supplier UNION ALL SELECT Phone FROM ECST.Customer)"));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
     ASSERT_EQ(7, stmt.GetValueInt(0));
     ASSERT_EQ(1400, stmt.GetValueInt(1));
     stmt.Finalize();
 
     //Use GROUP BY clause in Union Query
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT COUNT(*), Phone FROM (SELECT ECClassId, Phone FROM ECST.Supplier UNION ALL SELECT ECClassId, Phone FROM ECST.Customer) GROUP BY ECClassId ORDER BY Phone"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*), Phone FROM (SELECT ECClassId, Phone FROM ECST.Supplier UNION ALL SELECT ECClassId, Phone FROM ECST.Customer) GROUP BY ECClassId ORDER BY Phone"));
 
     //Get Row one
     ASSERT_TRUE(stmt.Step() == BE_SQLITE_ROW);
@@ -3026,11 +3006,11 @@ TEST_F(JoinedTableECSqlStatementsTests, PolymorphicUpdate)
 
     //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId, ECClassId, I,T FROM nsat.ClassA"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, I,T FROM nsat.ClassA"));
     while (stmt.Step() != BE_SQLITE_DONE)
         {
         EXPECT_EQ(2, stmt.GetValueInt(2)) << "Int Value don't match for instance " << stmt.GetValueInt64(0) << " with class id: " << stmt.GetValueInt64(1);
@@ -3046,17 +3026,17 @@ TEST_F(JoinedTableECSqlStatementsTests, PolymorphicDelete)
     {
     SetUpNestedStructArrayDb();
 
-    ASSERT_TRUE(GetECDb().TableExists("nsat_DerivedA"));
-    ASSERT_TRUE(GetECDb().TableExists("nsat_DerivedB"));
-    ASSERT_FALSE(GetECDb().TableExists("nsat_DoubleDerivedA"));
-    ASSERT_FALSE(GetECDb().TableExists("nsat_DoubleDerivedC"));
+    ASSERT_TRUE(m_ecdb.TableExists("nsat_DerivedA"));
+    ASSERT_TRUE(m_ecdb.TableExists("nsat_DerivedB"));
+    ASSERT_FALSE(m_ecdb.TableExists("nsat_DoubleDerivedA"));
+    ASSERT_FALSE(m_ecdb.TableExists("nsat_DoubleDerivedC"));
 
     //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM nsat.ClassA"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "DELETE FROM nsat.ClassA"));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
-    GetECDb().SaveChanges();
+    m_ecdb.SaveChanges();
 
     bvector<Utf8String> tableNames = {"ClassA", "DerivedA", "DerivedB", "BaseHasDerivedA", "DerivedBHasChildren"};
 
@@ -3065,7 +3045,7 @@ TEST_F(JoinedTableECSqlStatementsTests, PolymorphicDelete)
         Utf8String selectSql = "SELECT count(*) FROM nsat_";
         selectSql.append(tableName);
         Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), selectSql.c_str())) << "Prepare failed for " << selectSql.c_str();
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, selectSql.c_str())) << "Prepare failed for " << selectSql.c_str();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Step failed for " << selectSql.c_str();
         ASSERT_EQ(0, stmt.GetValueInt(0)) << "Table " << tableName.c_str() << " is expected to be empty after DELETE FROM nsat.ClassA";
         stmt.Finalize();
@@ -3080,7 +3060,7 @@ TEST_F(JoinedTableECSqlStatementsTests, ExceptTests)
     SetUpECSqlStatementTestsDb();
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT CompanyName FROM ECST.Supplier EXCEPT SELECT CompanyName FROM ECST.Shipper"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CompanyName FROM ECST.Supplier EXCEPT SELECT CompanyName FROM ECST.Shipper"));
     int rowCount = 0;
     Utf8CP expectedContactNames = "ABCD-GHIJ-";
     Utf8String actualContactNames;
@@ -3094,7 +3074,7 @@ TEST_F(JoinedTableECSqlStatementsTests, ExceptTests)
     ASSERT_EQ(2, rowCount);
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ContactTitle FROM ECST.Customer EXCEPT SELECT ContactTitle FROM ECST.Supplier"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ContactTitle FROM ECST.Customer EXCEPT SELECT ContactTitle FROM ECST.Supplier"));
     rowCount = 0;
     expectedContactNames = "AM-Adm-SPIELMANN-";
     actualContactNames.clear();
@@ -3116,7 +3096,7 @@ TEST_F(JoinedTableECSqlStatementsTests, IntersectTests)
     SetUpECSqlStatementTestsDb();
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT CompanyName FROM ECST.Supplier INTERSECT SELECT CompanyName FROM ECST.Shipper ORDER BY CompanyName"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CompanyName FROM ECST.Supplier INTERSECT SELECT CompanyName FROM ECST.Shipper ORDER BY CompanyName"));
     int rowCount = 0;
     Utf8CP expectedContactNames = "Rio Grand";
     Utf8String actualContactNames;
@@ -3129,7 +3109,7 @@ TEST_F(JoinedTableECSqlStatementsTests, IntersectTests)
     ASSERT_EQ(1, rowCount);
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ContactTitle FROM ECST.Supplier INTERSECT SELECT ContactTitle FROM ECST.Customer ORDER BY ContactTitle"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ContactTitle FROM ECST.Supplier INTERSECT SELECT ContactTitle FROM ECST.Customer ORDER BY ContactTitle"));
     rowCount = 0;
     expectedContactNames = "Brathion";
     actualContactNames.clear();
@@ -3174,12 +3154,11 @@ TEST_F(JoinedTableTestFixture, JoinedTableForClassesWithoutBusinessProperties)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR db = SetupECDb("ClassesWithoutBusinessProperties.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("ClassesWithoutBusinessProperties.ecdb", testSchema));
 
     //Verify that only one base table and one Secondary Table have been created, rest of the tables will not be mapped as joined table because they don't have business properties.
     Statement statement;
-    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(db, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'dgn_%'"));
+    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(m_ecdb, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'dgn_%'"));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(4, statement.GetValueInt(0));
     }

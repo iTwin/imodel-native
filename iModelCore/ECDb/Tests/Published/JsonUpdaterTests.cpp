@@ -69,14 +69,14 @@ struct JsonUpdaterTests : SchemaImportTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, InvalidInput)
     {
-    ECDbCR ecdb = SetupECDb("jsonupdatertests.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("jsonupdatertests.ecdb"));
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo");
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo");
     ASSERT_TRUE(testClass != nullptr);
 
     ECInstanceKey key;
     {
-    JsonInserter inserter(ecdb, *testClass, nullptr);
+    JsonInserter inserter(m_ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
 
     Json::Value val;
@@ -85,7 +85,7 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, val));
     }
 
-    JsonUpdater updater(ecdb, *testClass, nullptr);
+    JsonUpdater updater(m_ecdb, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
     Json::Value val;
@@ -110,22 +110,18 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     ECInstanceKey targetKey;
 
     {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "    <ECEntityClass typeName='A' >"
-                        "        <ECProperty propertyName='P1' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "    <ECRelationshipClass typeName='AHasA' strength='referencing' modifier='Sealed'>"
-                        "        <ECProperty propertyName='Name' typeName='string' />"
-                        "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
-                        "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
-                        "    </ECRelationshipClass>"
-                        "</ECSchema>",
-                        true, "");
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                            "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                                            "    <ECEntityClass typeName='A' >"
+                                                            "        <ECProperty propertyName='P1' typeName='int' />"
+                                                            "    </ECEntityClass>"
+                                                            "    <ECRelationshipClass typeName='AHasA' strength='referencing' modifier='Sealed'>"
+                                                            "        <ECProperty propertyName='Name' typeName='string' />"
+                                                            "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
+                                                            "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
+                                                            "    </ECRelationshipClass>"
+                                                            "</ECSchema>"), "updaterelationshipprop.ecdb"));
 
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "updaterelationshipprop.ecdb");
-    ASSERT_FALSE(asserted);
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.A (P1) VALUES(?)"));
@@ -205,31 +201,26 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, UpdateProperties)
     {
-    ECDb ecdb;
     ECInstanceKey key;
     {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("updateClassProperties.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "    <ECEntityClass typeName='A' >"
                         "        <ECProperty propertyName='P1' typeName='int' />"
                         "        <ECProperty propertyName='P2' typeName='string' />"
                         "        <ECProperty propertyName='P3' typeName='double' readOnly='True'/>"
                         "    </ECEntityClass>"
-                        "</ECSchema>",
-                        true, "");
+                        "</ECSchema>")));
 
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "updateClassProperties.ecdb");
-    ASSERT_FALSE(asserted);
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.A (P1, P2, P3) VALUES(100, 'JsonTest', 1000.10)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (P1, P2, P3) VALUES(100, 'JsonTest', 1000.10)"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
     }
 
-    ECClassCP ecClass = ecdb.Schemas().GetClass("testSchema", "A");
+    ECClassCP ecClass = m_ecdb.Schemas().GetClass("testSchema", "A");
     ASSERT_TRUE(ecClass != nullptr);
-    JsonReader reader(ecdb, ecClass->GetId());
+    JsonReader reader(m_ecdb, ecClass->GetId());
     Json::Value ecClassJson;
     ASSERT_EQ(SUCCESS, reader.ReadInstance(ecClassJson, key.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
     ASSERT_EQ(100, ecClassJson["P1"].asInt());
@@ -238,7 +229,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
 
     // Update ecClass properties
-    JsonUpdater updater(ecdb, *ecClass, nullptr);
+    JsonUpdater updater(m_ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
     /*
@@ -252,7 +243,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), ecClassJson));
 
     ECSqlStatement checkStmt;
-    ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(ecdb, "SELECT NULL FROM ts.A WHERE ECInstanceId=? AND P1=? AND P2=? AND P3=?"));
+    ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A WHERE ECInstanceId=? AND P1=? AND P2=? AND P3=?"));
 
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindInt(2, 200));
@@ -289,7 +280,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     {
-    ECDbR ecdb = SetupECDb("cgjsonserialization.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("cgjsonserialization.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                                                   "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                                   "   <ECEntityClass typeName='SpatialLocation' >"
                                                                   "       <ECProperty propertyName='Center' typeName='Bentley.Geometry.Common.IGeometry' />"
@@ -297,10 +288,10 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
                                                                   "       <ECProperty propertyName='LLP' typeName='Bentley.Geometry.Common.IGeometry' />"
                                                                   "   <ECProperty propertyName='Location' typeName='Bentley.Geometry.Common.IGeometry'/>"
                                                                   "   </ECEntityClass>"
-                                                                  "</ECSchema>"), 3);
+                                                                  "</ECSchema>")));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ECClassCP spatialClass = ecdb.Schemas().GetClass("Test", "SpatialLocation");
+    ECClassCP spatialClass = m_ecdb.Schemas().GetClass("Test", "SpatialLocation");
     ASSERT_TRUE(nullptr != spatialClass);
 
     BeFileName pathname;
@@ -317,7 +308,7 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     ASSERT_TRUE(parseSuccessful);
 
     // Insert using RapidJson API
-    JsonInserter inserter(ecdb, *spatialClass, nullptr);
+    JsonInserter inserter(m_ecdb, *spatialClass, nullptr);
     ECInstanceKey rapidJsonInstanceKey;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
 
@@ -325,11 +316,11 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     ECInstanceKey jsonCppInstanceKey;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
 
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     // Validate
-    ValidateSpatialInstance(ecdb, rapidJsonInstanceKey, expectedJsonCppValue);
-    ValidateSpatialInstance(ecdb, jsonCppInstanceKey, expectedJsonCppValue);
+    ValidateSpatialInstance(m_ecdb, rapidJsonInstanceKey, expectedJsonCppValue);
+    ValidateSpatialInstance(m_ecdb, jsonCppInstanceKey, expectedJsonCppValue);
     }
 
 //---------------------------------------------------------------------------------------
@@ -337,8 +328,7 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     {
-    ECDb ecdb;
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("updateClassProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
@@ -352,13 +342,9 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
         "           </ECCustomAttributes>"
         "       </ECProperty>"
         "     </ECEntityClass>"
-        "</ECSchema>", true, "");
+        "</ECSchema>")));
 
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "updateClassProperties.ecdb");
-    ASSERT_FALSE(asserted);
-
-    ECClassCP ecClass = ecdb.Schemas().GetClass("testSchema", "Foo");
+    ECClassCP ecClass = m_ecdb.Schemas().GetClass("testSchema", "Foo");
 
     const int oldNum = 2;
     Utf8CP oldSquare = "4";
@@ -370,19 +356,19 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     Json::Value properties;
     properties["Num"] = oldNum;
     properties["Square"] = oldSquare;
-    JsonInserter inserter(ecdb, *ecClass, nullptr);
+    JsonInserter inserter(m_ecdb, *ecClass, nullptr);
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, properties));
 
     //Update test instance
     properties["Num"] = newNum;
 
     ECSqlStatement validateStmt;
-    ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(ecdb, "SELECT Num, Square FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(m_ecdb, "SELECT Num, Square FROM ts.Foo WHERE ECInstanceId=?"));
 
     //default updater
     {
-    Savepoint sp(ecdb, "default updater");
-    JsonUpdater updater(ecdb, *ecClass, nullptr);
+    Savepoint sp(m_ecdb, "default updater");
+    JsonUpdater updater(m_ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), properties));
 
@@ -399,7 +385,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
 
     //updater with readonly prop options
     {
-    JsonUpdater updater(ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
+    JsonUpdater updater(m_ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), properties));
 

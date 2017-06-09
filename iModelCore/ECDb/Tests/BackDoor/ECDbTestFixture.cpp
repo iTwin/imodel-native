@@ -15,97 +15,140 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsimethod                                     Carole.MacDonald     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 // static
-bmap<bpair<WString, int>, Utf8String> ECDbTestFixture::s_seedECDbs; // empty
 bool ECDbTestFixture::s_isInitialized = false;
+bmap<BeFileName, Utf8String> ECDbTestFixture::s_seedECDbs;
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-//virtual
-void ECDbTestFixture::SetUp()
-    {
-    Initialize();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle     10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
+DbResult ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
     {
     if (m_ecdb.IsDbOpen())
         m_ecdb.CloseDb();
 
-    CreateECDb(m_ecdb, ecdbFileName);
-    return GetECDb();
+    return CreateECDb(m_ecdb, ecdbFileName);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan     02/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDb& ECDbTestFixture::Reopen()
-    {
-    EXPECT_TRUE(m_ecdb.IsDbOpen()) << "Don't call Reopen on a closed ECDb";
-    
-    if (m_ecdb.IsDbOpen()) 
-        {
-        BeFileName ecdbFileName(m_ecdb.GetDbFileName());
-        const bool isReadonly = m_ecdb.IsReadonly();
-        m_ecdb.CloseDb();
-        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite)));
-        }
-
-    return GetECDb();
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, int instanceCountPerClass, ECDb::OpenParams openParams)
+BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams)
     {
     if (m_ecdb.IsDbOpen())
         m_ecdb.CloseDb();
 
-    bpair<WString, int> seedFileKey(schemaECXmlFileName.c_str(), instanceCountPerClass);
-
     BeFileName seedFilePath;
-    auto seedIter = s_seedECDbs.find(seedFileKey);
+    auto seedIter = s_seedECDbs.find(schemaECXmlFileName);
     if (s_seedECDbs.end() == seedIter)
         {
         Utf8String seedFileName;
-        seedFileName.Sprintf("seed_%s_%d", schemaECXmlFileName.GetNameUtf8().c_str(), instanceCountPerClass);
+        seedFileName.Sprintf("seed_%s", schemaECXmlFileName.GetNameUtf8().c_str());
         seedFileName.ReplaceAll(".", "_");
         seedFileName.append(".ecdb");
 
-        if (SUCCESS != CreateECDb(seedFilePath, seedFileName.c_str(), schemaECXmlFileName, instanceCountPerClass))
-            return m_ecdb; //return a closed ECDb in case of error
+        ECDb seedECDb;
+        if (SUCCESS != CreateECDb(seedECDb, seedFileName.c_str()))
+            return ERROR;
 
-        s_seedECDbs[seedFileKey] = seedFilePath.GetNameUtf8();
+        if (SUCCESS != ImportSchema(seedECDb, schemaECXmlFileName))
+            {
+            EXPECT_TRUE(false) << "Importing schema " << schemaECXmlFileName.GetNameUtf8().c_str() << " failed";
+            return ERROR;
+            }
+
+        seedFilePath.AssignUtf8(seedECDb.GetDbFileName());
+        s_seedECDbs[schemaECXmlFileName] = Utf8String(seedECDb.GetDbFileName());
         }
     else
-        seedFilePath.AppendUtf8(seedIter->second.c_str());
+        seedFilePath.AssignUtf8(seedIter->second.c_str());
 
-    CloneECDb(m_ecdb, ecdbFileName, seedFilePath, openParams);
-    return m_ecdb;
+    return CloneECDb(m_ecdb, ecdbFileName, seedFilePath, openParams) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, int instanceCountPerClass, ECDb::OpenParams openParams) const
+BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams)
     {
     if (m_ecdb.IsDbOpen())
         m_ecdb.CloseDb();
 
     BeFileName ecdbPath;
-
     {
-    if (BE_SQLITE_OK != CreateECDb(ecdbPath, ecdbFileName, schema, instanceCountPerClass))
-        return GetECDb();
+    ECDb ecdb;
+    if (SUCCESS != CreateECDbAndImportSchema(ecdb, schema, ecdbFileName))
+        {
+        EXPECT_TRUE(false) << "Importing schema failed: " << schema.ToString().c_str();
+        return ERROR;
+        }
+
+    ecdbPath.AssignUtf8(ecdb.GetDbFileName());
+    }
+    
+    //reopen the file after creating and importing the schema
+    return BE_SQLITE_OK == m_ecdb.OpenBeSQLiteDb(ecdbPath, openParams) ? SUCCESS : ERROR;
     }
 
-    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(ecdbPath, openParams));
-    return GetECDb();
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan     02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDbTestFixture::ReopenECDb()
+    {
+    if (!m_ecdb.IsDbOpen())
+        return BE_SQLITE_ERROR;
+
+    BeFileName ecdbFileName(m_ecdb.GetDbFileName());
+    const bool isReadonly = m_ecdb.IsReadonly();
+    m_ecdb.CloseDb();
+    return m_ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle  10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
+    {
+    Initialize();
+
+    Utf8String effectiveFileName;
+    if (Utf8String::IsNullOrEmpty(ecdbFileName))
+        {
+        DateTime timeStamp = DateTime::GetCurrentTimeUtc();
+        uint64_t timeStampJd = 0;
+        if (SUCCESS != timeStamp.ToJulianDay(timeStampJd))
+            return BE_SQLITE_ERROR;
+
+        effectiveFileName.Sprintf("ecdbtest_%" PRIu64 ".ecdb", timeStampJd);
+        }
+    else
+        effectiveFileName.assign(ecdbFileName);
+
+    BeFileName ecdbFilePath = BuildECDbPath(effectiveFileName.c_str());
+    if (ecdbFilePath.DoesPathExist())
+        {  // Delete any previously created file
+        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(ecdbFilePath.GetName()))
+            {
+            EXPECT_FALSE(true) << "Could not delete ecdb file " << ecdbFilePath.GetNameUtf8().c_str();
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    BeFileName seedFilePath = BuildECDbPath("seed.ecdb");
+    if (!seedFilePath.DoesPathExist())
+        {
+        ECDb seedDb;
+        EXPECT_EQ(BE_SQLITE_OK, seedDb.CreateNewDb(seedFilePath)) << seedFilePath.GetNameUtf8().c_str();
+        const DbResult stat = seedDb.CreateNewDb(seedFilePath);
+        EXPECT_EQ(BE_SQLITE_OK, stat) << "Could not create file " << seedFilePath.GetNameUtf8().c_str();
+        if (BE_SQLITE_OK != stat)
+            return stat;
+        }
+
+    return CloneECDb(ecdb, ecdbFileName, seedFilePath, Db::OpenParams(Db::OpenMode::ReadWrite));
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle    10/2015
@@ -125,79 +168,91 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
 
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle    10/2015
+// @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName, BeFileNameCR schemaECXmlFileName, int instanceCountPerClass)
+BentleyStatus ECDbTestFixture::CreateECDbAndImportSchema(ECDbR ecdb, SchemaItem const& schema, Utf8CP fileName)
     {
-    ECDb ecdb;
-    if (SUCCESS != CreateECDb(ecdb, fileName))
+    if (BE_SQLITE_OK != CreateECDb(ecdb, fileName))
         return ERROR;
 
-    ECSchemaReadContextPtr schemaReadContext = nullptr;
-    ECSchemaPtr schema = ReadECSchemaFromDisk(schemaReadContext, ecdb, schemaECXmlFileName);
+    return ImportSchema(ecdb, schema);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ECDbTestFixture::ImportSchema(ECDbCR ecdb, SchemaItem const& testItem)
+    {
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
+    if (SUCCESS != ReadECSchemaFromString(context, ecdb, testItem))
+        return ERROR;
+
+    Savepoint sp(const_cast<ECDbR>(ecdb), "ECSchema Import");
+    if (SUCCESS == ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
+        {
+        sp.Commit();
+        return !HasDataCorruptingMappingIssues(ecdb) ? SUCCESS : ERROR;
+        }
+
+    sp.Cancel();
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ECDbTestFixture::ImportSchema(ECDbCR ecdb, BeFileNameCR schemaXmlFilePath)
+    {
+    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaPtr schema = ReadECSchemaFromDisk(context, ecdb, schemaXmlFilePath);
     if (schema == nullptr)
         return ERROR;
 
-    if (SUCCESS != ecdb.Schemas().ImportSchemas(schemaReadContext->GetCache().GetSchemas()))
-        return ERROR;
-
-    Populate(ecdb, instanceCountPerClass);
-    ecdb.SaveChanges();
-
-    filePath.AssignUtf8(ecdb.GetDbFileName());
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle    10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName, SchemaItem const& schemaItem, int instanceCountPerClass)
-    {
-    ECDb ecdb;
-    if (SUCCESS != CreateECDb(ecdb, fileName))
-        return ERROR;
-
-    ECSchemaReadContextPtr context = nullptr;
-    if (SUCCESS != ReadECSchemaFromString(context, ecdb, schemaItem))
-        return ERROR;
-
-    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
-        return ERROR;
-
-    Populate(ecdb, instanceCountPerClass);
-    ecdb.SaveChanges();
-    filePath.AppendUtf8(ecdb.GetDbFileName());
-    return SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle  10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
-    {
-    Initialize();
-
-    BeFileName ecdbFilePath = BuildECDbPath(ecdbFileName);
-    if (ecdbFilePath.DoesPathExist())
-        {  // Delete any previously created file
-        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(ecdbFilePath.GetName()));
-        }
-
-    BeFileName seedFilePath = BuildECDbPath("seed.ecdb");
-    if (!seedFilePath.DoesPathExist())
+    Savepoint sp(const_cast<ECDbR>(ecdb), "ECSchema Import");
+    if (SUCCESS == ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
         {
-        ECDb seedDb;
-        DbResult stat = seedDb.CreateNewDb(seedFilePath);
-        if (BE_SQLITE_OK != stat)
-            return stat;
+        sp.Commit();
+        return !HasDataCorruptingMappingIssues(ecdb) ? SUCCESS : ERROR;
         }
 
-    return CloneECDb(ecdb, ecdbFileName, seedFilePath, Db::OpenParams(Db::OpenMode::ReadWrite));
+    sp.Cancel();
+    return ERROR;
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                       02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
+    {
+    EXPECT_TRUE(ecdb.IsDbOpen());
+
+    if (!ecdb.IsDbOpen())
+        return true;
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, SchemaManager::GetValidateDbMappingSql()))
+        {
+        EXPECT_TRUE(false) << ecdb.GetLastError().c_str();
+        return true;
+        }
+
+    bool hasError = false;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        hasError = true;
+        LOG.errorv("ECClass '%s:%s' with invalid mapping: %s. Table name: %s - %s", stmt.GetValueText(0),
+                   stmt.GetValueText(2), stmt.GetValueText(5), stmt.GetValueText(3), stmt.GetValueText(6));
+        }
+
+    return hasError;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle  11/2015
@@ -253,14 +308,14 @@ BentleyStatus ECDbTestFixture::GetInstances(bvector<ECN::IECInstancePtr>& instan
     {
     instances.clear();
 
-    ECN::ECClassCP ecClass = GetECDb().Schemas().GetClass(schemaName, className);
+    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetClass(schemaName, className);
     EXPECT_TRUE(ecClass != nullptr) << "ECDbTestFixture::GetInstances> ECClass '" << className << "' not found.";
     if (ecClass == nullptr)
         return ERROR;
 
     SqlPrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), className);
     ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare(GetECDb(), ecSql.GetUtf8CP());
+    ECSqlStatus status = ecStatement.Prepare(m_ecdb, ecSql.GetUtf8CP());
     EXPECT_EQ(ECSqlStatus::Success, status) << "ECDbTestFixture::GetInstances> Preparing ECSQL '" << ecSql.GetUtf8CP() << "' failed.";
     if (status != ECSqlStatus::Success)
         return ERROR;
@@ -321,6 +376,34 @@ Utf8String ECDbTestFixture::RetrieveDdl(ECDbCR ecdb, Utf8CP entityName, Utf8CP e
     }
 
 //---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDbTestFixture::ExecuteNonSelectECSql(ECDbCR ecdb, Utf8CP ecsql)
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
+        return BE_SQLITE_ERROR;
+
+    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
+    return stmt.Step();
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDbTestFixture::ExecuteInsertECSql(ECInstanceKey& key, ECDbCR ecdb, Utf8CP ecsql)
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
+        return BE_SQLITE_ERROR;
+
+    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
+    return stmt.Step(key);
+    }
+
+//---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     02/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -350,19 +433,7 @@ ECSchemaPtr ECDbTestFixture::ReadECSchemaFromDisk(ECSchemaReadContextPtr& contex
     return schema;
     }
 
-//---------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                     03/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-DbResult ECDbTestFixture::ExecuteNonSelectECSql(ECDbCR ecdb, Utf8CP ecsql)
-    {
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
-        return BE_SQLITE_ERROR;
 
-    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
-    return stmt.Step();
-    }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     02/17

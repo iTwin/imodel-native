@@ -190,11 +190,10 @@ struct DateTimeTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, DifferingDateTimeInfos)
     {
-    ECDbCR ecdb = SetupECDb("ecdbdatetime.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsqltest.PSADateTime(nodatetimeinfo, emptydatetimeinfo, utc, unspecified, dateonly, structwithdatetimes.nodatetimeinfo, structwithdatetimes.utc, structwithdatetimes.dateonly) VALUES (?,?,?,?,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsqltest.PSADateTime(nodatetimeinfo, emptydatetimeinfo, utc, unspecified, dateonly, structwithdatetimes.nodatetimeinfo, structwithdatetimes.utc, structwithdatetimes.dateonly) VALUES (?,?,?,?,?,?,?,?)"));
     DateTime utc = DateTime::GetCurrentTimeUtc();
     ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(1, utc)) << "Property nodatetimeinfo";
     ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(2, utc)) << "Property emptydatetimeinfo";
@@ -240,10 +239,9 @@ TEST_F(DateTimeTestFixture, DifferingDateTimeInfos)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, ECSqlStatementGetValueDateTime)
     {
-    ECDbCR ecdb = SetupECDb("ecdbdatetime.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "PSADateTime");
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSADateTime");
 
     //test set up -> insert test data
     bvector<Utf8String> nonArrayPropertyAccessStringList;
@@ -251,11 +249,11 @@ TEST_F(DateTimeTestFixture, ECSqlStatementGetValueDateTime)
     bvector<bool> expectedNonArrayDateTimeInfoMatchesList;
     bvector<DateTime> expectedArrayDateTimeElements;
     bvector<IECInstancePtr> expectedStructArrayElements;
-    const ECInstanceKey ecInstanceKey = InsertTestInstance(nonArrayPropertyAccessStringList, expectedNonArrayDateTimeList, expectedNonArrayDateTimeInfoMatchesList, expectedArrayDateTimeElements, expectedStructArrayElements, ecdb, testClass);
+    const ECInstanceKey ecInstanceKey = InsertTestInstance(nonArrayPropertyAccessStringList, expectedNonArrayDateTimeList, expectedNonArrayDateTimeInfoMatchesList, expectedArrayDateTimeElements, expectedStructArrayElements, m_ecdb, testClass);
 
     //actual test
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT nodatetimeinfo, emptydatetimeinfo, utc, unspecified, dateonly, structwithdatetimes.nodatetimeinfo, structwithdatetimes.utc, structwithdatetimes.dateonly, utcarray, arrayofstructwithdatetimes FROM ONLY ecsqltest.PSADateTime WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT nodatetimeinfo, emptydatetimeinfo, utc, unspecified, dateonly, structwithdatetimes.nodatetimeinfo, structwithdatetimes.utc, structwithdatetimes.dateonly, utcarray, arrayofstructwithdatetimes FROM ONLY ecsqltest.PSADateTime WHERE ECInstanceId=?"));
     statement.BindId(1, ecInstanceKey.GetInstanceId());
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Executing ECSQL '" << statement.GetECSql() << "' didn't return the expected row.";
@@ -332,8 +330,7 @@ TEST_F(DateTimeTestFixture, ECSqlStatementGetValueDateTime)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, DateTimeStorageAccuracyTest)
     {
-    ECDbCR ecdb = SetupECDb("ecdbdatetime.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
 
     //DateTime accuracy in ECDb(SQLite) is millisecs
     bvector<DateTime> testDateList;
@@ -345,7 +342,7 @@ TEST_F(DateTimeTestFixture, DateTimeStorageAccuracyTest)
     testDateList.push_back(DateTime(DateTime::Kind::Unspecified, -1000, 2, 28, 1, 4, 13, 555));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO stco.AAA(t) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO stco.AAA(t) VALUES(?)"));
 
     bmap<ECInstanceId, DateTime> testDataset;
     for (DateTime const& testDate : testDateList)
@@ -360,7 +357,7 @@ TEST_F(DateTimeTestFixture, DateTimeStorageAccuracyTest)
 
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, t FROM stco.AAA"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, t FROM stco.AAA"));
     size_t rowCount = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {

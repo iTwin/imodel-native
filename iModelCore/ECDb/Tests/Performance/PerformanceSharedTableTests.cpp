@@ -79,10 +79,11 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                     "    </ECEntityClass>"
                     "</ECSchema>");
 
-                ECDbR seed = SetupECDb(seedFileName.c_str(), testSchema);
+                if (SUCCESS != SetupECDb(seedFileName.c_str(), testSchema))
+                    return ERROR;
 
                 ECSqlStatement stmt;
-                if (ECSqlStatus::Success != stmt.Prepare(seed, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"))
+                if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"))
                     return ERROR;
 
                 for (int i = 0; i < s_initialInstanceCount; i++)
@@ -111,10 +112,10 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                     stmt.ClearBindings();
                     }
 
-                seed.SaveChanges();
+                m_ecdb.SaveChanges();
                 }
 
-            return CloneECDb(ecdb, "sharedTableperformance.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            return CloneECDb(m_ecdb, "sharedTableperformance.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
             }
 
 

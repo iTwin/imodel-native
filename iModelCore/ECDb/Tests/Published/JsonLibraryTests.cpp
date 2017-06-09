@@ -408,8 +408,7 @@ TEST_F(RapidJsonTests, RoundTripInt64)
 //---------------------------------------------------------------------------------------
 TEST_F(RapidJsonTests, InsertIntoECDb)
     {
-    ECDbR ecdb = SetupECDb("RapidJsonInsertIntoECDb.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("RapidJsonInsertIntoECDb.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -426,29 +425,29 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE(parseSuccessful);
 
-    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
+    ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
-    JsonInserter inserter(ecdb, *documentClass, nullptr);
+    JsonInserter inserter(m_ecdb, *documentClass, nullptr);
 
     // insert 1 row using JsonCpp
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonInput));
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     // insert 1 row using RapidJson
     ECInstanceKey ecInstanceKey;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(ecInstanceKey, rapidJsonInput));
     ASSERT_TRUE(ecInstanceKey.IsValid());
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     // now update the row that was just inserted
-    JsonUpdater updater(ecdb, *documentClass, nullptr);
+    JsonUpdater updater(m_ecdb, *documentClass, nullptr);
 
     rapidJsonInput["$ECInstanceId"].SetNull();
     rapidJsonInput["Urx"].SetDouble(3.3);
     rapidJsonInput["Ury"].SetDouble(4.4);
 
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(ecInstanceKey.GetInstanceId(), rapidJsonInput));
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1303,8 +1302,7 @@ struct SqliteJsonTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SqliteJsonTests, Int64Rendering)
     {
-    ECDbCR ecdb = SetupECDb("sqlitejsontests.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("sqlitejsontests.ecdb"));
 
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
     const int64_t expectedPositiveInt64 = id.GetValue();
@@ -1316,7 +1314,7 @@ TEST_F(SqliteJsonTests, Int64Rendering)
     expectedNegativeInt64Str.Sprintf("%" PRIi64, expectedNegativeInt64);
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT json_object('positive',?), json_object('negative',?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT json_object('positive',?), json_object('negative',?)"));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(1, expectedPositiveInt64));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(2, expectedNegativeInt64));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -1336,8 +1334,7 @@ TEST_F(SqliteJsonTests, Int64Rendering)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
     {
-    ECDbCR ecdb = SetupECDb("sqlitejsontests.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("sqlitejsontests.ecdb"));
 
     const double expectedPositiveDouble = PI;
     const double expectedNegativeDouble = -1.0 / 17.0;
@@ -1348,7 +1345,7 @@ TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
 
     //double round-trip
     Statement toStmt;
-    ASSERT_EQ(BE_SQLITE_OK, toStmt.Prepare(ecdb, "SELECT json_object('positive',?,'negative',?)"));
+    ASSERT_EQ(BE_SQLITE_OK, toStmt.Prepare(m_ecdb, "SELECT json_object('positive',?,'negative',?)"));
     ASSERT_EQ(BE_SQLITE_OK, toStmt.BindDouble(1, expectedPositiveDouble));
     ASSERT_EQ(BE_SQLITE_OK, toStmt.BindDouble(2, expectedNegativeDouble));
     ASSERT_EQ(BE_SQLITE_ROW, toStmt.Step());
@@ -1357,7 +1354,7 @@ TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
     toStmt.ClearBindings();
 
     Statement fromStmt;
-    ASSERT_EQ(BE_SQLITE_OK, fromStmt.Prepare(ecdb, "SELECT json_extract(?1,'$.positive'), json_extract(?1,'$.negative')"));
+    ASSERT_EQ(BE_SQLITE_OK, fromStmt.Prepare(m_ecdb, "SELECT json_extract(?1,'$.positive'), json_extract(?1,'$.negative')"));
     ASSERT_EQ(BE_SQLITE_OK, fromStmt.BindText(1, jsonStr.c_str(), Statement::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_ROW, fromStmt.Step());
     ASSERT_NEAR(expectedPositiveDouble, fromStmt.GetValueDouble(0), 0.00000000000001);

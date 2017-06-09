@@ -104,7 +104,7 @@ TEST_F(PerformanceOverflowPropsTests, Point3DOverflowRetrieval)
 
     StopWatch timer(true);
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), compoundSql.c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, compoundSql.c_str()));
     int actualRowCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -127,7 +127,7 @@ TEST_F(PerformanceOverflowPropsTests, Point3DOverflowRetrieval)
                         colName.c_str(), colName.c_str(), colName.c_str());
 
     timer.Start();
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), expandedSql.c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, expandedSql.c_str()));
 
     actualRowCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
@@ -143,7 +143,7 @@ TEST_F(PerformanceOverflowPropsTests, Point3DOverflowRetrieval)
 
     LogTiming(timer, "SELECT - Overflow Property - expanded", PRIMITIVETYPE_Point3d, propCount, INITIALROWCOUNT);
 
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ TEST_F(PerformanceOverflowPropsTests, ParsingRapidJsonVersusSqliteJson)
 
     StopWatch timer(true);
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), "SELECT " OVERFLOWPROP_NAME " FROM " TABLE_NAME));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT " OVERFLOWPROP_NAME " FROM " TABLE_NAME));
     int actualRowCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -182,7 +182,7 @@ TEST_F(PerformanceOverflowPropsTests, ParsingRapidJsonVersusSqliteJson)
     jsonExtractSql.Sprintf("SELECT json_extract(" OVERFLOWPROP_NAME ",'$.%s') FROM " TABLE_NAME, colName.c_str());
 
     timer.Start();
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), jsonExtractSql.c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, jsonExtractSql.c_str()));
 
     actualRowCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
@@ -197,7 +197,7 @@ TEST_F(PerformanceOverflowPropsTests, ParsingRapidJsonVersusSqliteJson)
 
     LogTiming(timer, "SELECT - Overflow Property - SQLite json_extract", propType, propCount, INITIALROWCOUNT);
 
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -398,7 +398,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(PrimitiveT
     sql.append(")").append(valuesClause).append(")");
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
         return ERROR;
 
     for (int i = 0; i < rowCount; i++)
@@ -416,7 +416,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(PrimitiveT
     stmt.Finalize();
     timer.Stop();
     LogTiming(timer, "INSERT - Regular Property", propertyType, propCount, rowCount);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     return SUCCESS;
     }
 
@@ -449,7 +449,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
 
     sql.append(" FROM " TABLE_NAME);
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
         return ERROR;
 
     int actualRowCount = 0;
@@ -560,7 +560,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
         }
 
     LogTiming(timer, "SELECT - Regular Property",propertyType, propCount, INITIALROWCOUNT);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     return SUCCESS;
     }
 
@@ -575,7 +575,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertOverflowProperty(JsonApi j
     StopWatch timer(true);
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "INSERT INTO " TABLE_NAME "(" OVERFLOWPROP_NAME ") VALUES(?)"))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "INSERT INTO " TABLE_NAME "(" OVERFLOWPROP_NAME ") VALUES(?)"))
         return ERROR;
 
     for (int i = 0; i < rowCount; i++)
@@ -599,7 +599,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertOverflowProperty(JsonApi j
     Utf8String message;
     message.Sprintf("INSERT - OverflowProperty - JSON API: %s", JsonApiToString(jsonApi));
     LogTiming(timer, message.c_str(), propertyType, propCount, rowCount);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     return SUCCESS;
     }
 
@@ -620,7 +620,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
     sql.Sprintf("SELECT json_extract(" OVERFLOWPROP_NAME ",'$.%s') FROM " TABLE_NAME, colName.c_str());
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
         return ERROR;
 
     int actualRowCount = 0;
@@ -772,7 +772,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
         message.Sprintf("SELECT - OverflowProperty - JSON API: %s", JsonApiToString(pointxdJsonApi));
 
     LogTiming(timer, message.c_str(), propertyType, propCount, INITIALROWCOUNT);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     return SUCCESS;
     }
 
@@ -1107,7 +1107,7 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
     BeFileName seedPath = BuildECDbPath(seedFileName.c_str());
     if (!seedPath.DoesPathExist())
         {
-        ECDbR ecdb = SetupECDb(seedFileName.c_str());
+        EXPECT_EQ(BE_SQLITE_OK, SetupECDb(seedFileName.c_str()));
 
         Utf8String tableDdl("CREATE TABLE " TABLE_NAME "(ECInstanceId INTEGER PRIMARY KEY, ");
         Utf8String insertSql("INSERT INTO " TABLE_NAME "(");
@@ -1176,11 +1176,11 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
         insertValuesClause.append("?)");
         insertSql.append(insertValuesClause);
 
-        if (BE_SQLITE_OK != ecdb.ExecuteSql(tableDdl.c_str()))
+        if (BE_SQLITE_OK != m_ecdb.ExecuteSql(tableDdl.c_str()))
             return ERROR;
 
         Statement insertStmt;
-        if (BE_SQLITE_OK != insertStmt.Prepare(ecdb, insertSql.c_str()))
+        if (BE_SQLITE_OK != insertStmt.Prepare(m_ecdb, insertSql.c_str()))
             return ERROR;
 
         int overflowParameterIndex = propCount + 1;
@@ -1209,8 +1209,8 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
             }
 
         insertStmt.Finalize();
-        ecdb.SaveChanges();
-        ecdb.CloseDb();
+        m_ecdb.SaveChanges();
+        m_ecdb.CloseDb();
         }
 
     Utf8String fileName(fileNameNoExt);

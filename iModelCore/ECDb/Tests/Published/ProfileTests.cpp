@@ -50,20 +50,20 @@ TEST_F(ECDbTestFixture, Profile)
 
     //now create an ECDb file
     {
-    ECDbR ecdb = SetupECDb("ecdbprofiletest.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
 
-    EXPECT_TRUE(ecdb.TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
+    EXPECT_TRUE(m_ecdb.TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
     Utf8String actualProfileVersionStr;
-    EXPECT_EQ(BE_SQLITE_ROW, ecdb.QueryProperty(actualProfileVersionStr, PROFILEVERSION_PROPSPEC)) << L"ECDb file is expected to contain an entry for the ECDb profile version in be_prop.";
+    EXPECT_EQ(BE_SQLITE_ROW, m_ecdb.QueryProperty(actualProfileVersionStr, PROFILEVERSION_PROPSPEC)) << L"ECDb file is expected to contain an entry for the ECDb profile version in be_prop.";
     ProfileVersion actualProfileVersion(actualProfileVersionStr.c_str());
     EXPECT_TRUE(EXPECTED_PROFILEVERSION == actualProfileVersion) << "Unexpected ECDb profile version of new ECDb file. Actual version: " << actualProfileVersionStr.c_str();
 
     size_t sequenceIndex = 0;
-    ASSERT_TRUE(ecdb.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
+    ASSERT_TRUE(m_ecdb.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
 
     uint64_t lastECInstanceId = -1LL;
-    EXPECT_EQ(BE_SQLITE_OK, ecdb.GetBLVCache().QueryValue(lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.GetBLVCache().QueryValue(lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
     }
     }
 
@@ -72,15 +72,15 @@ TEST_F(ECDbTestFixture, Profile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, ProfileSchemas)
     {
-    ECDbCR ecdb = SetupECDb("empty.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("empty.ecdb"));
 
-    ECSchemaCP systemSchema = ecdb.Schemas().GetSchema("ECDbSystem");
+    ECSchemaCP systemSchema = m_ecdb.Schemas().GetSchema("ECDbSystem");
     ASSERT_TRUE(systemSchema != nullptr);
 
     //Terminology of system/standard schemas is not clear yet for the EC3 world. Right now, the profile schemas are neither of that.
     ASSERT_FALSE(systemSchema->IsSystemSchema());
 
-    ECSchemaCP fileInfoSchema = ecdb.Schemas().GetSchema("ECDbFileInfo");
+    ECSchemaCP fileInfoSchema = m_ecdb.Schemas().GetSchema("ECDbFileInfo");
     ASSERT_TRUE(fileInfoSchema != nullptr);
 
     ASSERT_FALSE(fileInfoSchema->IsSystemSchema());
@@ -92,14 +92,14 @@ TEST_F(ECDbTestFixture, ProfileSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
     {
-    ECDbR ecdb = SetupECDb("ecdbprofiletest2.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest2.ecdb"));
 
-    EXPECT_TRUE(ecdb.TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
+    EXPECT_TRUE(m_ecdb.TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
     //Drop a few tables
-    EXPECT_EQ(BE_SQLITE_OK, ecdb.DropTable("ec_ClassMap"));
-    EXPECT_EQ(BE_SQLITE_OK, ecdb.DropTable("be_Local"));
-    ecdb.CloseDb();
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.DropTable("ec_ClassMap"));
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.DropTable("be_Local"));
+    m_ecdb.CloseDb();
 
     WString ecdbFileNameW("ecdbprofiletest2.ecdb", BentleyCharEncoding::Utf8);
     BeFileName ecdbFilePath;
@@ -108,13 +108,13 @@ TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
     Utf8String ecdbFilePathUtf8 = ecdbFilePath.GetNameUtf8();
 
     //create the Db again, it should fail at already existing
-    DbResult stat = ecdb.CreateNewDb(ecdbFilePathUtf8.c_str());
+    DbResult stat = m_ecdb.CreateNewDb(ecdbFilePathUtf8.c_str());
     EXPECT_EQ(BE_SQLITE_ERROR_FileExists, stat);
 
     //create the Db again with SetFailIfDbExist set to false i.e. force re-creation
     BeSQLite::Db::CreateParams params;
     params.SetFailIfDbExist(false);
-    stat = ecdb.CreateNewDb(ecdbFilePathUtf8.c_str(), BeSQLite::BeGuid(true), params);
+    stat = m_ecdb.CreateNewDb(ecdbFilePathUtf8.c_str(), BeSQLite::BeGuid(true), params);
     EXPECT_EQ(BE_SQLITE_ERROR, stat);
     }
 
@@ -165,7 +165,7 @@ TEST_F(ECDbTestFixture, ProfileCreation)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
     {
-    ECDbR ecdb = SetupECDb("ecdbprofiletest.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
 
     std::vector<std::tuple<ProfileVersion, Db::OpenMode, DbResult, bool>> testVersions {
             {ProfileVersion(3,6,99,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
@@ -199,13 +199,13 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
         };
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'"));
     for (std::tuple<ProfileVersion, Db::OpenMode, DbResult, bool> const& testVersion : testVersions)
         {
         Utf8String schemaVersionJson = std::get<0>(testVersion).ToJson();
         ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, schemaVersionJson, Statement::MakeCopy::Yes));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << schemaVersionJson.c_str();
-        ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << schemaVersionJson.c_str();
+        ASSERT_EQ(1, m_ecdb.GetModifiedRowCount()) << schemaVersionJson.c_str();
         stmt.Reset();
         stmt.ClearBindings();
 
@@ -214,11 +214,11 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
         bool expectedNeedsUpgrade = std::get<3>(testVersion);
         
         bool actualNeedsUpgrade = false;
-        ASSERT_EQ(expectedResult, ecdb.CheckECDbProfileVersion(actualNeedsUpgrade, openMode == Db::OpenMode::Readonly)) << schemaVersionJson.c_str() << " OpenMode readonly:" << (openMode == Db::OpenMode::Readonly ? "yes" : "no");
+        ASSERT_EQ(expectedResult, m_ecdb.CheckECDbProfileVersion(actualNeedsUpgrade, openMode == Db::OpenMode::Readonly)) << schemaVersionJson.c_str() << " OpenMode readonly:" << (openMode == Db::OpenMode::Readonly ? "yes" : "no");
         ASSERT_EQ(expectedNeedsUpgrade, actualNeedsUpgrade) << schemaVersionJson.c_str() << " OpenMode readonly:" << (openMode == Db::OpenMode::Readonly ? "yes" : "no");
         }
 
-    ecdb.AbandonChanges();
+    m_ecdb.AbandonChanges();
     }
 
 END_ECDBUNITTESTS_NAMESPACE

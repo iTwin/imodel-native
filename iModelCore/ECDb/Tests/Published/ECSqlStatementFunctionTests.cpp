@@ -27,8 +27,8 @@ struct ExpectedResult
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
     {
-    ECDbR ecdb = SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 5, ECDb::OpenParams(Db::OpenMode::Readonly));
-
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 5));
     std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},
             {"SELECT ANY(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
@@ -89,7 +89,7 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
         const ECSqlStatus expectedPrepareStat = expectedResult.m_isPrepareSupported ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
 
         ECSqlStatement stmt;
-        ASSERT_EQ(expectedPrepareStat, stmt.Prepare(ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(expectedPrepareStat, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
 
         if (!expectedResult.m_isStepSupported)
             continue;
@@ -108,13 +108,13 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
     {
-    ECDbR ecdb = SetupECDb("builtinfunctiontests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(SUCCESS, SetupECDb("builtinfunctiontests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     
     {
     //insert two test rows
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(I,L) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.P(I,L) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 123));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
@@ -124,7 +124,7 @@ TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
 
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I,L,COALESCE(I,L),COALESCE(L,I) FROM ecsql.P"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I,L,COALESCE(I,L),COALESCE(L,I) FROM ecsql.P"));
     while (BE_SQLITE_ROW == stmt.Step())
         {
         if (stmt.IsValueNull(0))
@@ -142,17 +142,17 @@ TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
         }
 
     stmt.Finalize();
-    ecdb.AbandonChanges();
+    m_ecdb.AbandonChanges();
     }
 
     {
     //insert a test row
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(I,L) VALUES(123,124)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.P(I,L) VALUES(123,124)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I,L, NULLIF(I,123), NULLIF(I,124), NULLIF(L,123), NULLIF(L,124) FROM ecsql.P"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I,L, NULLIF(I,123), NULLIF(I,124), NULLIF(L,123), NULLIF(L,124) FROM ecsql.P"));
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
 
@@ -174,7 +174,7 @@ TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
     {
-    ECDbR ecdb = SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     auto getIntScalar = [] (ECDbCR ecdb, Utf8CP ecsql)
         {
@@ -211,7 +211,7 @@ TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
     //2|'3'
     //2|'3'
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(I,S) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.P(I,S) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 1));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "1", IECSqlBinder::MakeCopy::Yes));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -237,15 +237,15 @@ TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
-    ASSERT_EQ(5, getIntScalar(ecdb, "SELECT count(*) from ecsql.P"));
-    ASSERT_EQ(5, getIntScalar(ecdb, "SELECT count(distinct ECInstanceId) from ecsql.P"));
-    ASSERT_EQ(2, getIntScalar(ecdb, "SELECT count(distinct I) from ecsql.P"));
-    ASSERT_EQ(3, getIntScalar(ecdb, "SELECT count(distinct S) from ecsql.P"));
+    ASSERT_EQ(5, getIntScalar(m_ecdb, "SELECT count(*) from ecsql.P"));
+    ASSERT_EQ(5, getIntScalar(m_ecdb, "SELECT count(distinct ECInstanceId) from ecsql.P"));
+    ASSERT_EQ(2, getIntScalar(m_ecdb, "SELECT count(distinct I) from ecsql.P"));
+    ASSERT_EQ(3, getIntScalar(m_ecdb, "SELECT count(distinct S) from ecsql.P"));
 
-    ASSERT_STREQ("1,1,2,3,3", getStringScalar(ecdb, "SELECT group_concat(S) from ecsql.P").c_str());
-    ASSERT_STREQ("1&1&2&3&3", getStringScalar(ecdb, "SELECT group_concat(S,'&') from ecsql.P").c_str());
-    ASSERT_STREQ("11233", getStringScalar(ecdb, "SELECT group_concat(S,'') from ecsql.P").c_str());
-    ASSERT_STREQ("1,2,3", getStringScalar(ecdb, "SELECT group_concat(DISTINCT S) from ecsql.P").c_str());
+    ASSERT_STREQ("1,1,2,3,3", getStringScalar(m_ecdb, "SELECT group_concat(S) from ecsql.P").c_str());
+    ASSERT_STREQ("1&1&2&3&3", getStringScalar(m_ecdb, "SELECT group_concat(S,'&') from ecsql.P").c_str());
+    ASSERT_STREQ("11233", getStringScalar(m_ecdb, "SELECT group_concat(S,'') from ecsql.P").c_str());
+    ASSERT_STREQ("1,2,3", getStringScalar(m_ecdb, "SELECT group_concat(DISTINCT S) from ecsql.P").c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -253,7 +253,8 @@ TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Base64Functions)
     {
-    ECDbCR ecdb = SetupECDb("base64functions.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(SUCCESS, SetupECDb("base64functions.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
 
     BeGuid guid(true);
     void const* expectedBlob = &guid;
@@ -263,7 +264,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     ECInstanceKey key;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(Bi, S) VALUES(:blobparam,BlobToBase64(:blobparam))"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.P(Bi, S) VALUES(:blobparam,BlobToBase64(:blobparam))"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(stmt.GetParameterIndex("blobparam"), expectedBlob, sizeof(BeGuid), IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
     }
@@ -271,7 +272,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     //ECSQL
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsql.P WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsql.P WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -300,7 +301,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     ecsql.Sprintf("SELECT Base64ToBlob('%s') FROM ecsql.P WHERE ECInstanceId=?", expectedBase64Str.c_str());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -313,7 +314,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     //BeSQLite
     {
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsqltest_P WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsqltest_P WHERE Id=?"));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -338,7 +339,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     sql.Sprintf("SELECT Base64ToBlob('%s') FROM ecsqltest_P WHERE Id=?", expectedBase64Str.c_str());
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, sql.c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, sql.c_str()));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -350,7 +351,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     //NULL input
     {
     ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(ecdb, "SELECT BlobToBase64(NULL), BlobToBase64(?), Base64ToBlob(NULL), Base64ToBlob(?) FROM ecsql.P LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "SELECT BlobToBase64(NULL), BlobToBase64(?), Base64ToBlob(NULL), Base64ToBlob(?) FROM ecsql.P LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
     ASSERT_TRUE(ecsqlStmt.IsValueNull(0)) << ecsqlStmt.GetECSql();
     ASSERT_TRUE(ecsqlStmt.IsValueNull(1)) << ecsqlStmt.GetECSql();
@@ -358,7 +359,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     ASSERT_TRUE(ecsqlStmt.IsValueNull(3)) << ecsqlStmt.GetECSql();
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT BlobToBase64(NULL), BlobToBase64(?), Base64ToBlob(NULL), Base64ToBlob(?) FROM ecsqltest_P LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT BlobToBase64(NULL), BlobToBase64(?), Base64ToBlob(NULL), Base64ToBlob(?) FROM ecsqltest_P LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_TRUE(stmt.IsColumnNull(0)) << stmt.GetSql();
     ASSERT_TRUE(stmt.IsColumnNull(1)) << stmt.GetSql();
@@ -369,31 +370,31 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     //invalid input
     {
     ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(ecdb, "SELECT BlobToBase64() FROM ecsql.P"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(m_ecdb, "SELECT BlobToBase64() FROM ecsql.P"));
     ecsqlStmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(ecdb, "SELECT Base64ToBlob() FROM ecsql.P"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(m_ecdb, "SELECT Base64ToBlob() FROM ecsql.P"));
     ecsqlStmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(ecdb, "SELECT BlobToBase64(randomblob(10), 1000) FROM ecsql.P"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(m_ecdb, "SELECT BlobToBase64(randomblob(10), 1000) FROM ecsql.P"));
     ecsqlStmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(ecdb, "SELECT Base64ToBlob('ddd',12312) FROM ecsql.P"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(m_ecdb, "SELECT Base64ToBlob('ddd',12312) FROM ecsql.P"));
     ecsqlStmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(ecdb, "SELECT Base64ToBlob('a_d') FROM ecsql.P LIMIT 1")) << "invalid base64 string";
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "SELECT Base64ToBlob('a_d') FROM ecsql.P LIMIT 1")) << "invalid base64 string";
     ASSERT_EQ(BE_SQLITE_ERROR, ecsqlStmt.Step()) << "invalid base64 string in ECSQL " << ecsqlStmt.GetECSql();
     ecsqlStmt.Finalize();
     BeTest::SetFailOnAssert(false);
     {
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(ecdb, "SELECT BlobToBase64() FROM ecsqltest_P"));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(m_ecdb, "SELECT BlobToBase64() FROM ecsqltest_P"));
     stmt.Finalize();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(ecdb, "SELECT Base64ToBlob() FROM ecsqltest_P"));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(m_ecdb, "SELECT Base64ToBlob() FROM ecsqltest_P"));
     stmt.Finalize();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(ecdb, "SELECT BlobToBase64(randomblob(10), 133) FROM ecsqltest_P"));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(m_ecdb, "SELECT BlobToBase64(randomblob(10), 133) FROM ecsqltest_P"));
     stmt.Finalize();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(ecdb, "SELECT Base64ToBlob('ddd',12312) FROM ecsqltest_P"));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(m_ecdb, "SELECT Base64ToBlob('ddd',12312) FROM ecsqltest_P"));
     stmt.Finalize();
 
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Base64ToBlob('a_d') FROM ecsqltest_P LIMIT 1")) << "invalid base64 string";
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Base64ToBlob('a_d') FROM ecsqltest_P LIMIT 1")) << "invalid base64 string";
     ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "invalid base64 string in ECSQL " << stmt.GetSql();
     stmt.Finalize();
 
@@ -407,13 +408,14 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
     {
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
     const int perClassRowCount = 10;
-    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, perClassRowCount));
 
     bvector<ECInstanceId> allIds;
     {
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.PSA"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT ECInstanceId FROM ecsql.PSA"));
     while (BE_SQLITE_ROW == statement.Step())
         {
         allIds.push_back(statement.GetValueId<ECInstanceId>(0));
@@ -430,7 +432,7 @@ TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
     idSet.insert(allIds[6]);
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE I<>? AND InVirtualSet(?, ECInstanceId)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT count(*) FROM ecsql.PSA WHERE I<>? AND InVirtualSet(?, ECInstanceId)"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
 
@@ -454,7 +456,7 @@ TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
 
     //now same statement but with InVirtualSet in parentheses
     statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE (InVirtualSet(?, ECInstanceId))"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT count(*) FROM ecsql.PSA WHERE (InVirtualSet(?, ECInstanceId))"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding a virtual set in parentheses";

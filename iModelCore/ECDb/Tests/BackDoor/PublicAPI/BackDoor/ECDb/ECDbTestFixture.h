@@ -23,51 +23,66 @@ public:
         {
         Utf8String m_name;
         std::vector<Utf8String> m_schemaXmlList;
-        bool m_expectedToSucceed;
-        Utf8String m_assertMessage;
 
         explicit SchemaItem(Utf8CP schemaXml) : SchemaItem("", schemaXml) {}
-        SchemaItem(Utf8CP name, Utf8CP schemaXml) : m_name(name), m_expectedToSucceed(true) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
-        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
-        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_expectedToSucceed(expectedToSucceeed) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
-        SchemaItem(std::vector<Utf8String> const& schemaXmlList, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList(schemaXmlList), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
+        SchemaItem(Utf8CP name, Utf8CP schemaXml) : m_name(name) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
+        explicit SchemaItem(std::vector<Utf8String> const& schemaXmlList) : m_schemaXmlList(schemaXmlList) {}
+
+        Utf8String ToString() const
+            {
+            if (!m_name.empty())
+                return m_name;
+
+            Utf8String schemaXmlList;
+            for (Utf8StringCR schemaXml : m_schemaXmlList)
+                {
+                schemaXmlList.append(schemaXml).append("\r\n");
+                }
+
+            return schemaXmlList;
+            }
         };
 
 private:
-    static bmap<bpair<WString, int>, Utf8String> s_seedECDbs;
+    static bmap<BeFileName, Utf8String> s_seedECDbs;
 
     static bool s_isInitialized;
 
 protected:
-    mutable ECDb m_ecdb;
+    ECDb m_ecdb;
 
-private:
-    static BentleyStatus CreateECDb(BeFileNameR filePath, Utf8CP fileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount = 0);
-    static BentleyStatus CreateECDb(BeFileNameR filePath, Utf8CP fileName, SchemaItem const&, int perClassRowCount = 0);
+    DbResult SetupECDb(Utf8CP ecdbFileName);
+    BentleyStatus SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    DbResult ReopenECDb();
+
+    static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+
+
+    static BentleyStatus CreateECDbAndImportSchema(SchemaItem const& schema, Utf8CP fileName = nullptr) { ECDb ecdb;  return CreateECDbAndImportSchema(ecdb, schema, fileName); }
+    static BentleyStatus CreateECDbAndImportSchema(ECDbR, SchemaItem const&, Utf8CP fileName = nullptr);
+    static BentleyStatus ImportSchema(ECDbCR, SchemaItem const&);
+    static BentleyStatus ImportSchema(ECDbCR, BeFileNameCR schemaXmlFilePath);
 
     static BentleyStatus Populate(ECDbCR, ECN::ECSchemaCR, int instanceCountPerClass);
     static BentleyStatus Populate(ECDbCR, int instanceCountPerClass);
 
-protected:
-    ECDb& SetupECDb(Utf8CP ecdbFileName);
-    ECDb& SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount = 0, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-    ECDb& SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, int perClassRowCount = 0, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) const;
-    static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-    ECDb& Reopen();
+    //!logs the issues if there are any
+    static bool HasDataCorruptingMappingIssues(ECDbCR);
 
-    ECDb& GetECDb() const { return m_ecdb; }
     BentleyStatus GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
 
     static Utf8String RetrieveDdl(ECDbCR ecdb, Utf8CP entityName, Utf8CP entityType = "table");
 
-    ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr& ctx, BeFileNameCR schemaFileName) const { return ReadECSchemaFromDisk(ctx, GetECDb(), schemaFileName); }
+    ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr& ctx, BeFileNameCR schemaFileName) const { return ReadECSchemaFromDisk(ctx, m_ecdb, schemaFileName); }
 
     static DbResult ExecuteNonSelectECSql(ECDbCR, Utf8CP ecsql);
+    static DbResult ExecuteInsertECSql(ECInstanceKey&, ECDbCR, Utf8CP ecsql);
 
 public:
     ECDbTestFixture() : ::testing::Test() {}
-    virtual ~ECDbTestFixture () {};
-    void SetUp() override;
+    virtual ~ECDbTestFixture () {}
+    void SetUp() override { Initialize(); }
     void TearDown () override {}
 
     //! Initializes the test environment by setting up the schema read context and search dirs etc.
@@ -76,7 +91,7 @@ public:
     static void Initialize();
 
     static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
-    static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName);
+    static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName = nullptr);
     static ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr&, ECDbCR, BeFileNameCR schemaFileName);
     static BentleyStatus ReadECSchemaFromString(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
     };

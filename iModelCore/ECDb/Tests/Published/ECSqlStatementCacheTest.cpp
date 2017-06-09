@@ -22,7 +22,7 @@ struct ECSqlStatementCacheTests : ECDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
     {
-    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
     Utf8CP ecSqlInsert = "INSERT INTO ecsql.PSA(S,I) VALUES (?, ?)";
     Utf8CP ecSqlSelect = "SELECT S,I FROM ecsql.PSA";
@@ -31,7 +31,7 @@ TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
     ASSERT_TRUE(cache.IsEmpty());
 
     {
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecSqlInsert);
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, ecSqlInsert);
     ASSERT_TRUE(stmt != nullptr);
     ASSERT_TRUE(stmt->IsPrepared());
     ASSERT_EQ(stmt->BindText(1, "Hello", IECSqlBinder::MakeCopy::No), ECSqlStatus::Success) << "Binding string value failed";
@@ -43,7 +43,7 @@ TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
     cache.Log();
 
     {
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecSqlSelect);
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, ecSqlSelect);
     ASSERT_EQ(stmt->Step(), BE_SQLITE_ROW);
     Utf8String formateName = stmt->GetValueText(0);
     ASSERT_EQ(formateName, "Hello");
@@ -54,7 +54,7 @@ TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
     cache.Log();
 
     {
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecSqlInsert);
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, ecSqlInsert);
     ASSERT_EQ(stmt->BindText(1, "World", IECSqlBinder::MakeCopy::No), ECSqlStatus::Success) << "Binding string value failed";
     ASSERT_EQ(stmt->BindInt(2, 2), ECSqlStatus::Success) << "Binding Integer Value failed";
     ASSERT_TRUE(stmt->Step() == BE_SQLITE_DONE);
@@ -65,7 +65,7 @@ TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
     //Again accessing ECSqlSelect from cache and the size of cache should not change
     {
     size_t rowCount = 0;
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecSqlSelect);
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, ecSqlSelect);
     while (stmt->Step() != BE_SQLITE_DONE)
         {
         rowCount++;
@@ -83,22 +83,22 @@ TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementCacheTests, VerifyCacheSizeMustNotExceedLimit)
     {
-    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
     Utf8CP ecSql1 = "INSERT INTO ecsql.PSA(I,D) VALUES (?, ?)";
     Utf8CP ecSql2 = "SELECT * FROM ecsql.PSA";
     Utf8CP ecSql3 = "SELECT * FROM ecsql.P";
 
     ECSqlStatementCache cache(2);
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecSql1);//insert first ECSql to cache
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, ecSql1);//insert first ECSql to cache
     ASSERT_TRUE(stmt != nullptr);
     ASSERT_EQ(cache.Size(), 1);
 
-    stmt = cache.GetPreparedStatement(ecdb, ecSql2);//insert 2nd ECSql to cache
+    stmt = cache.GetPreparedStatement(m_ecdb, ecSql2);//insert 2nd ECSql to cache
     ASSERT_TRUE(stmt != nullptr);
     ASSERT_EQ(cache.Size(), 2);
 
-    stmt = cache.GetPreparedStatement(ecdb, ecSql3);//insert 3rd ECSql to cache
+    stmt = cache.GetPreparedStatement(m_ecdb, ecSql3);//insert 3rd ECSql to cache
     ASSERT_TRUE(stmt != nullptr);
     ASSERT_EQ(cache.Size(), 2) << "cache size exceeded the limit";
 
@@ -110,7 +110,7 @@ TEST_F(ECSqlStatementCacheTests, VerifyCacheSizeMustNotExceedLimit)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementCacheTests, GetPreparedStatement)
     {
-    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
     Utf8CP ecsql1 = "SELECT * FROM ecsql.PSA";
     Utf8CP ecsql2 = "SELECT * FROM ecsql.P";
@@ -120,7 +120,7 @@ TEST_F(ECSqlStatementCacheTests, GetPreparedStatement)
 
     //get cached statement and release it again
     {
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecsql1);
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, ecsql1);
     ASSERT_TRUE(stmt != nullptr);
     ASSERT_EQ(2, stmt->GetRefCount());
     ASSERT_TRUE(stmt->IsPrepared());
@@ -130,7 +130,7 @@ TEST_F(ECSqlStatementCacheTests, GetPreparedStatement)
 
     //get already existing statement and release it again
     {
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecsql1);
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, ecsql1);
     ASSERT_TRUE(stmt != nullptr);
     ASSERT_EQ(2, stmt->GetRefCount());
     ASSERT_TRUE(stmt->IsPrepared());
@@ -140,7 +140,7 @@ TEST_F(ECSqlStatementCacheTests, GetPreparedStatement)
 
     //get other statement and release it again
     {
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecsql2);
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, ecsql2);
     ASSERT_TRUE(stmt != nullptr);
     ASSERT_EQ(2, stmt->GetRefCount());
     ASSERT_TRUE(stmt->IsPrepared());
@@ -157,20 +157,20 @@ TEST_F(ECSqlStatementCacheTests, GetPreparedStatement)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementCacheTests, GetAlreadyUsedPreparedStatement)
     {
-    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
     Utf8CP ecsql = "SELECT * FROM ecsql.PSA";
 
     ECSqlStatementCache cache(10);
 
-    CachedECSqlStatementPtr stmt1 = cache.GetPreparedStatement(ecdb, ecsql);
+    CachedECSqlStatementPtr stmt1 = cache.GetPreparedStatement(m_ecdb, ecsql);
     ASSERT_TRUE(stmt1 != nullptr);
     ASSERT_EQ(2, stmt1->GetRefCount());
     ASSERT_TRUE(stmt1->IsPrepared());
 
     ASSERT_EQ(1, cache.Size());
 
-    CachedECSqlStatementPtr stmt2 = cache.GetPreparedStatement(ecdb, ecsql);
+    CachedECSqlStatementPtr stmt2 = cache.GetPreparedStatement(m_ecdb, ecsql);
     ASSERT_TRUE(stmt2 != nullptr);
     ASSERT_EQ(2, stmt2->GetRefCount());
     ASSERT_TRUE(stmt2->IsPrepared());
@@ -178,7 +178,7 @@ TEST_F(ECSqlStatementCacheTests, GetAlreadyUsedPreparedStatement)
     ASSERT_FALSE(stmt1.get() == stmt2.get()) << "Two different statement objects are expected for same ECSQL as first one was in use";
     ASSERT_EQ(2, cache.Size());
 
-    CachedECSqlStatementPtr stmt3 = cache.GetPreparedStatement(ecdb, ecsql);
+    CachedECSqlStatementPtr stmt3 = cache.GetPreparedStatement(m_ecdb, ecsql);
     ASSERT_TRUE(stmt3 != nullptr);
     ASSERT_EQ(2, stmt3->GetRefCount());
     ASSERT_TRUE(stmt3->IsPrepared());
@@ -192,21 +192,21 @@ TEST_F(ECSqlStatementCacheTests, GetAlreadyUsedPreparedStatement)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementCacheTests, PrepareFailure)
     {
-    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
     ECSqlStatementCache cache(10);
 
     //try get with wrong ECSQL
-    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, "SELECT * FROM blabla");
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(m_ecdb, "SELECT * FROM blabla");
     ASSERT_TRUE(stmt == nullptr);
     ASSERT_EQ(1, cache.Size()) << "ECSqlStatements are added to the cache even if preparation fails";
 
     //get with a valid ECSQL
-    cache.GetPreparedStatement(ecdb, "SELECT * FROM ecsql.PSA");
+    cache.GetPreparedStatement(m_ecdb, "SELECT * FROM ecsql.PSA");
 
     //try get with wrong ECSQL again -> adds a new statement to the cache
     ASSERT_EQ(2, cache.Size());
-    stmt = cache.GetPreparedStatement(ecdb, "SELECT * FROM blabla");
+    stmt = cache.GetPreparedStatement(m_ecdb, "SELECT * FROM blabla");
     ASSERT_TRUE(stmt == nullptr);
     ASSERT_EQ(3, cache.Size());
     }
@@ -216,7 +216,7 @@ TEST_F(ECSqlStatementCacheTests, PrepareFailure)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementCacheTests, CacheExcess)
     {
-    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
     Utf8CP ecsql1 = "SELECT * FROM ecsql.PSA";
     Utf8CP ecsql2 = "SELECT * FROM ecsql.P";
@@ -226,17 +226,17 @@ TEST_F(ECSqlStatementCacheTests, CacheExcess)
 
     //populate cache
     //hold raw pointers of the statement for testing purposes to not increment ref count
-    CachedECSqlStatement* stmt1A = cache.GetPreparedStatement(ecdb, ecsql1).get();
-    CachedECSqlStatementPtr stmt2 = cache.GetPreparedStatement(ecdb, ecsql2);
+    CachedECSqlStatement* stmt1A = cache.GetPreparedStatement(m_ecdb, ecsql1).get();
+    CachedECSqlStatementPtr stmt2 = cache.GetPreparedStatement(m_ecdb, ecsql2);
     ASSERT_EQ(2, cache.Size());
 
     //this should not add a new statement to the cache
     //but will move it to the top of the cache.
-    CachedECSqlStatementPtr stmt1B = cache.GetPreparedStatement(ecdb, ecsql1);
+    CachedECSqlStatementPtr stmt1B = cache.GetPreparedStatement(m_ecdb, ecsql1);
     ASSERT_TRUE(stmt1A == stmt1B.get()) << "Statement is expected to still be in cache";
 
     //now second statement should be removed from cache, as stmt1 was moved to top of cache
-    cache.GetPreparedStatement(ecdb, ecsql3);
+    cache.GetPreparedStatement(m_ecdb, ecsql3);
     ASSERT_EQ(2, cache.Size());
 
     ASSERT_EQ(1, stmt2->GetRefCount()) << "Statement was removed from cache, so only holder is expected to be stmt1B";

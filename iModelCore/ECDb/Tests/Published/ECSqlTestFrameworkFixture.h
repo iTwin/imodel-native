@@ -17,9 +17,9 @@ BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 struct ECSqlTestFrameworkFixture : public ECDbTestFixture
     {
     protected:
-        void RunTest(ECSqlTestDataset const&, ECSqlAsserterList const&) const;
+        void RunTest(ECSqlTestDataset const&, ECSqlAsserterList const&);
 
-        virtual void RunTest(ECSqlTestDataset const&) const = 0;
+        virtual void RunTest(ECSqlTestDataset const&) = 0;
 
     public:
         ECSqlTestFrameworkFixture() : ECDbTestFixture() {}
@@ -36,7 +36,7 @@ struct ECSqlSelectTestFramework : public ECSqlTestFrameworkFixture
 
         ECSqlSelectTestFramework() : ECSqlTestFrameworkFixture() {}
 
-        void RunTest(ECSqlTestDataset const&) const override;
+        void RunTest(ECSqlTestDataset const&) override;
         using ECSqlTestFrameworkFixture::RunTest;
 
     public:
@@ -54,7 +54,7 @@ struct ECSqlNonSelectTestFrameworkFixture : public ECSqlTestFrameworkFixture
     protected:
         static const int PerClassRowCount = 10;
 
-        void RunTest(ECSqlTestDataset const&) const override;
+        void RunTest(ECSqlTestDataset const&) override;
         using ECSqlTestFrameworkFixture::RunTest;
 
         ECSqlNonSelectTestFrameworkFixture() : ECSqlTestFrameworkFixture() {}

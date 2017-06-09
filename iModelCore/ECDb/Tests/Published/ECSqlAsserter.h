@@ -35,10 +35,12 @@ struct ECSqlAsserter
 
 #define DISABLE_BEASSERTS DisableBeAsserts disableBeAsserts;
 
+    protected:
+        ECDb& m_ecdb;
+
     private:
         static BentleyApi::NativeLogging::ILogger* s_logger;
 
-        ECDb& m_ecdb;
 
         virtual void _Assert(ECSqlTestItem const& testItem) const = 0;
 
@@ -46,8 +48,6 @@ struct ECSqlAsserter
         static BentleyApi::NativeLogging::ILogger& GetLogger();
 
     protected:
-        ECDb& GetECDb() const { return m_ecdb; }
-
         void AssertPrepare(bool& prepareSucceeded, ECSqlTestItem const& testItem, ECSqlStatement& statement, PrepareECSqlExpectedResult const& expectedResult) const;
 
         ECSqlStatus PrepareStatement(ECSqlStatement& statement, Utf8CP ecsql, bool disableBeAsserts) const;

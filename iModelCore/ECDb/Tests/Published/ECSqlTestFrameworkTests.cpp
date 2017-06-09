@@ -18,28 +18,28 @@ BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, ArrayTests)
+TEST_F(ECSqlSelectTestFramework, ArrayTests)
     {
-    auto dataset = ECSqlSelectTestDataset::ArrayTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::ArrayTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, BetweenOperatorTests)
+TEST_F(ECSqlSelectTestFramework, BetweenOperatorTests)
     {
-    auto dataset = ECSqlSelectTestDataset::BetweenOperatorTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::BetweenOperatorTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, CastTests)
+TEST_F(ECSqlSelectTestFramework, CastTests)
     {
-    auto dataset = ECSqlSelectTestDataset::CastTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::CastTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -47,124 +47,124 @@ TEST_F (ECSqlSelectTestFramework, CastTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectTestFramework, CasingTests)
     {
-    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Select, GetECDb(), PerClassRowCount);
+    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, CommonGeometryTests)
+TEST_F(ECSqlSelectTestFramework, CommonGeometryTests)
     {
-    auto dataset = ECSqlSelectTestDataset::CommonGeometryTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::CommonGeometryTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, DateTimeTests)
+TEST_F(ECSqlSelectTestFramework, DateTimeTests)
     {
-    auto dataset = ECSqlSelectTestDataset::DateTimeTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::DateTimeTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                      10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, AliasTests)
+TEST_F(ECSqlSelectTestFramework, AliasTests)
     {
-    auto dataset = ECSqlSelectTestDataset::AliasTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::AliasTests(PerClassRowCount);
+    RunTest(dataset);
     }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, ECInstanceIdTests)
+TEST_F(ECSqlSelectTestFramework, ECInstanceIdTests)
     {
-    auto dataset = ECSqlSelectTestDataset::ECInstanceIdTests (GetECDb(), PerClassRowCount);
-    RunTest (dataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, FromTests)
-    {
-    auto dataset = ECSqlSelectTestDataset::FromTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::ECInstanceIdTests(m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, FunctionTests)
+TEST_F(ECSqlSelectTestFramework, FromTests)
     {
-    auto dataset = ECSqlSelectTestDataset::FunctionTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::FromTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, GroupByTests)
+TEST_F(ECSqlSelectTestFramework, FunctionTests)
     {
-    auto dataset = ECSqlSelectTestDataset::GroupByTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::FunctionTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, InOperatorTests)
+TEST_F(ECSqlSelectTestFramework, GroupByTests)
     {
-    auto dataset = ECSqlSelectTestDataset::InOperatorTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::GroupByTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, JoinTests)
+TEST_F(ECSqlSelectTestFramework, InOperatorTests)
     {
-    auto dataset = ECSqlSelectTestDataset::JoinTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::InOperatorTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, LikeOperatorTests)
+TEST_F(ECSqlSelectTestFramework, JoinTests)
     {
-    auto dataset = ECSqlSelectTestDataset::LikeOperatorTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::JoinTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, LimitTests)
+TEST_F(ECSqlSelectTestFramework, LikeOperatorTests)
     {
-    auto dataset = ECSqlSelectTestDataset::LimitTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::LikeOperatorTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, MiscTests)
+TEST_F(ECSqlSelectTestFramework, LimitTests)
     {
-    auto dataset = ECSqlSelectTestDataset::MiscTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::LimitTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, NullLiteralTests)
+TEST_F(ECSqlSelectTestFramework, MiscTests)
     {
-    auto dataset = ECSqlSelectTestDataset::NullLiteralTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::MiscTests(PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  09/13
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectTestFramework, NullLiteralTests)
+    {
+    auto dataset = ECSqlSelectTestDataset::NullLiteralTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -172,53 +172,53 @@ TEST_F (ECSqlSelectTestFramework, NullLiteralTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectTestFramework, OptionsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Select, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, OrderByTests)
+TEST_F(ECSqlSelectTestFramework, OrderByTests)
     {
-    auto dataset = ECSqlSelectTestDataset::OrderByTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::OrderByTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, ParameterAdvancedTests)
+TEST_F(ECSqlSelectTestFramework, ParameterAdvancedTests)
     {
-    auto dataset = ECSqlSelectTestDataset::ParameterAdvancedTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::ParameterAdvancedTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, PointTests)
+TEST_F(ECSqlSelectTestFramework, PointTests)
     {
-    auto dataset = ECSqlSelectTestDataset::PointTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::PointTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, PolymorphicTests)
+TEST_F(ECSqlSelectTestFramework, PolymorphicTests)
     {
-    auto dataset = ECSqlSelectTestDataset::PolymorphicTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::PolymorphicTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, PrimitiveTests)
+TEST_F(ECSqlSelectTestFramework, PrimitiveTests)
     {
-    auto dataset = ECSqlSelectTestDataset::PrimitiveTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::PrimitiveTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -233,28 +233,28 @@ TEST_F(ECSqlSelectTestFramework, SelectClauseTests)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, SourceTargetConstraintTests)
+TEST_F(ECSqlSelectTestFramework, SourceTargetConstraintTests)
     {
-    auto dataset = ECSqlSelectTestDataset::SourceTargetConstraintTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::SourceTargetConstraintTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, StructTests)
+TEST_F(ECSqlSelectTestFramework, StructTests)
     {
-    auto dataset = ECSqlSelectTestDataset::StructTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::StructTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, SubqueryTests)
+TEST_F(ECSqlSelectTestFramework, SubqueryTests)
     {
-    auto dataset = ECSqlSelectTestDataset::SubqueryTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlSelectTestDataset::SubqueryTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -269,10 +269,10 @@ TEST_F(ECSqlSelectTestFramework, UnionTests)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereAbstractClassTests)
+TEST_F(ECSqlSelectTestFramework, WhereAbstractClassTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -280,35 +280,35 @@ TEST_F (ECSqlSelectTestFramework, WhereAbstractClassTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectTestFramework, WhereAndOrPrecedenceTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Select, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereBasicsTests)
+TEST_F(ECSqlSelectTestFramework, WhereBasicsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereCommonGeometryTests)
+TEST_F(ECSqlSelectTestFramework, WhereCommonGeometryTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereFunctionTests)
+TEST_F(ECSqlSelectTestFramework, WhereFunctionTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -316,44 +316,44 @@ TEST_F (ECSqlSelectTestFramework, WhereFunctionTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectTestFramework, WhereMatchTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Select, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereRelationshipEndTableMappingTests)
+TEST_F(ECSqlSelectTestFramework, WhereRelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereRelationshipLinkTableMappingTests)
+TEST_F(ECSqlSelectTestFramework, WhereRelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereRelationshipWithAdditionalPropsTests)
+TEST_F(ECSqlSelectTestFramework, WhereRelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereStructTests)
+TEST_F(ECSqlSelectTestFramework, WhereStructTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereStructTests(ECSqlType::Select, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //********************* Insert **********************
@@ -362,18 +362,18 @@ TEST_F (ECSqlSelectTestFramework, WhereStructTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECSqlInsertTestFramework : public ECSqlNonSelectTestFrameworkFixture
     {
-public:
-    ECSqlInsertTestFramework () : ECSqlNonSelectTestFrameworkFixture () {}
-    virtual ~ECSqlInsertTestFramework () {}
+    public:
+        ECSqlInsertTestFramework() : ECSqlNonSelectTestFrameworkFixture() {}
+        virtual ~ECSqlInsertTestFramework() {}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, ArrayTests)
+TEST_F(ECSqlInsertTestFramework, ArrayTests)
     {
-    auto dataset = ECSqlInsertTestDataset::ArrayTests ();
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::ArrayTests();
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -381,53 +381,53 @@ TEST_F (ECSqlInsertTestFramework, ArrayTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlInsertTestFramework, CasingTests)
     {
-    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Insert, GetECDb(), PerClassRowCount);
+    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Insert, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, CommonGeometryTests)
+TEST_F(ECSqlInsertTestFramework, CommonGeometryTests)
     {
-    auto dataset = ECSqlInsertTestDataset::CommonGeometryTests ();
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::CommonGeometryTests();
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, DateTimeTests)
+TEST_F(ECSqlInsertTestFramework, DateTimeTests)
     {
-    auto dataset = ECSqlInsertTestDataset::DateTimeTests ();
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::DateTimeTests();
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, FunctionTests)
+TEST_F(ECSqlInsertTestFramework, FunctionTests)
     {
-    auto dataset = ECSqlInsertTestDataset::FunctionTests ();
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::FunctionTests();
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, IntoTests)
+TEST_F(ECSqlInsertTestFramework, IntoTests)
     {
-    auto dataset = ECSqlInsertTestDataset::IntoTests ();
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::IntoTests();
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, MiscTests)
+TEST_F(ECSqlInsertTestFramework, MiscTests)
     {
-    auto dataset = ECSqlInsertTestDataset::MiscTests (GetECDb());
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::MiscTests(m_ecdb);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -435,62 +435,62 @@ TEST_F (ECSqlInsertTestFramework, MiscTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlInsertTestFramework, OptionsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Insert, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Insert, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, ParameterAdvancedTests)
+TEST_F(ECSqlInsertTestFramework, ParameterAdvancedTests)
     {
-    auto dataset = ECSqlInsertTestDataset::ParameterAdvancedTests ();
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::ParameterAdvancedTests();
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, RelationshipEndTableMappingTests)
+TEST_F(ECSqlInsertTestFramework, RelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipEndTableMappingTests (GetECDb());
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::RelationshipEndTableMappingTests(m_ecdb);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, RelationshipLinkTableMappingTests)
+TEST_F(ECSqlInsertTestFramework, RelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (GetECDb());
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::RelationshipLinkTableMappingTests(m_ecdb);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, RelationshipWithAdditionalPropsTests)
+TEST_F(ECSqlInsertTestFramework, RelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests (GetECDb());
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests(m_ecdb);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, RelationshipWithParametersTests)
+TEST_F(ECSqlInsertTestFramework, RelationshipWithParametersTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipWithParametersTests (GetECDb());
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::RelationshipWithParametersTests(m_ecdb);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, StructTests)
+TEST_F(ECSqlInsertTestFramework, StructTests)
     {
-    auto dataset = ECSqlInsertTestDataset::StructTests ();
-    RunTest (dataset);
+    auto dataset = ECSqlInsertTestDataset::StructTests();
+    RunTest(dataset);
     }
 
 
@@ -500,18 +500,18 @@ TEST_F (ECSqlInsertTestFramework, StructTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECSqlUpdateTestFramework : public ECSqlNonSelectTestFrameworkFixture
     {
-public:
-    ECSqlUpdateTestFramework () : ECSqlNonSelectTestFrameworkFixture () {}
-    virtual ~ECSqlUpdateTestFramework () {}
+    public:
+        ECSqlUpdateTestFramework() : ECSqlNonSelectTestFrameworkFixture() {}
+        virtual ~ECSqlUpdateTestFramework() {}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, ArrayTests)
+TEST_F(ECSqlUpdateTestFramework, ArrayTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::ArrayTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::ArrayTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -519,44 +519,44 @@ TEST_F (ECSqlUpdateTestFramework, ArrayTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdateTestFramework, CasingTests)
     {
-    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Update, GetECDb(), PerClassRowCount);
+    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, CommonGeometryTests)
+TEST_F(ECSqlUpdateTestFramework, CommonGeometryTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::CommonGeometryTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::CommonGeometryTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, DateTimeTests)
+TEST_F(ECSqlUpdateTestFramework, DateTimeTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::DateTimeTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::DateTimeTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, FunctionTests)
+TEST_F(ECSqlUpdateTestFramework, FunctionTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::FunctionTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::FunctionTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, MiscTests)
+TEST_F(ECSqlUpdateTestFramework, MiscTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::MiscTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::MiscTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -564,80 +564,80 @@ TEST_F (ECSqlUpdateTestFramework, MiscTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdateTestFramework, OptionsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Update, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, ParameterAdvancedTests)
+TEST_F(ECSqlUpdateTestFramework, ParameterAdvancedTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::ParameterAdvancedTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::ParameterAdvancedTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, PolymorphicTests)
+TEST_F(ECSqlUpdateTestFramework, PolymorphicTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::PolymorphicTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::PolymorphicTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, RelationshipEndTableMappingTests)
+TEST_F(ECSqlUpdateTestFramework, RelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::RelationshipEndTableMappingTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::RelationshipEndTableMappingTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, RelationshipLinkTableMappingTests)
+TEST_F(ECSqlUpdateTestFramework, RelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, RelationshipWithAdditionalPropsTests)
+TEST_F(ECSqlUpdateTestFramework, RelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests(m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, StructTests)
+TEST_F(ECSqlUpdateTestFramework, StructTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::StructTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::StructTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, TargetClassTests)
+TEST_F(ECSqlUpdateTestFramework, TargetClassTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::TargetClassTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlUpdateTestDataset::TargetClassTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereAbstractClassTests)
+TEST_F(ECSqlUpdateTestFramework, WhereAbstractClassTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -645,35 +645,35 @@ TEST_F (ECSqlUpdateTestFramework, WhereAbstractClassTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdateTestFramework, WhereAndOrPrecedenceTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Update, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereBasicsTests)
+TEST_F(ECSqlUpdateTestFramework, WhereBasicsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereCommonGeometryTests)
+TEST_F(ECSqlUpdateTestFramework, WhereCommonGeometryTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereFunctionTests)
+TEST_F(ECSqlUpdateTestFramework, WhereFunctionTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -681,44 +681,44 @@ TEST_F (ECSqlUpdateTestFramework, WhereFunctionTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdateTestFramework, WhereMatchTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Update, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereRelationshipEndTableMappingTests)
+TEST_F(ECSqlUpdateTestFramework, WhereRelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereRelationshipLinkTableMappingTests)
+TEST_F(ECSqlUpdateTestFramework, WhereRelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereRelationshipWithAdditionalPropsTests)
+TEST_F(ECSqlUpdateTestFramework, WhereRelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereStructTests)
+TEST_F(ECSqlUpdateTestFramework, WhereStructTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereStructTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //********************* Delete **********************
@@ -727,9 +727,9 @@ TEST_F (ECSqlUpdateTestFramework, WhereStructTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECSqlDeleteTestFramework : public ECSqlNonSelectTestFrameworkFixture
     {
-public:
-    ECSqlDeleteTestFramework () : ECSqlNonSelectTestFrameworkFixture () {}
-    virtual ~ECSqlDeleteTestFramework () {}
+    public:
+        ECSqlDeleteTestFramework() : ECSqlNonSelectTestFrameworkFixture() {}
+        virtual ~ECSqlDeleteTestFramework() {}
     };
 
 
@@ -738,26 +738,26 @@ public:
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlDeleteTestFramework, CasingTests)
     {
-    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Delete, GetECDb(), PerClassRowCount);
+    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, FromTests)
+TEST_F(ECSqlDeleteTestFramework, FromTests)
     {
-    auto dataset = ECSqlDeleteTestDataset::FromTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlDeleteTestDataset::FromTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, MiscTests)
+TEST_F(ECSqlDeleteTestFramework, MiscTests)
     {
-    auto dataset = ECSqlDeleteTestDataset::MiscTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlDeleteTestDataset::MiscTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -765,25 +765,25 @@ TEST_F (ECSqlDeleteTestFramework, MiscTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlDeleteTestFramework, OptionsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Delete, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, PolymorphicTests)
+TEST_F(ECSqlDeleteTestFramework, PolymorphicTests)
     {
-    auto dataset = ECSqlDeleteTestDataset::PolymorphicTests (PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlDeleteTestDataset::PolymorphicTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereAbstractClassTests)
+TEST_F(ECSqlDeleteTestFramework, WhereAbstractClassTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -791,35 +791,35 @@ TEST_F (ECSqlDeleteTestFramework, WhereAbstractClassTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlDeleteTestFramework, WhereAndOrPrecedenceTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Delete, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereBasicsTests)
+TEST_F(ECSqlDeleteTestFramework, WhereBasicsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereCommonGeometryTests)
+TEST_F(ECSqlDeleteTestFramework, WhereCommonGeometryTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereFunctionTests)
+TEST_F(ECSqlDeleteTestFramework, WhereFunctionTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -827,44 +827,44 @@ TEST_F (ECSqlDeleteTestFramework, WhereFunctionTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlDeleteTestFramework, WhereMatchTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Delete, GetECDb(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereRelationshipEndTableMappingTests)
+TEST_F(ECSqlDeleteTestFramework, WhereRelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereRelationshipLinkTableMappingTests)
+TEST_F(ECSqlDeleteTestFramework, WhereRelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereRelationshipWithAdditionalPropsTests)
+TEST_F(ECSqlDeleteTestFramework, WhereRelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereStructTests)
+TEST_F(ECSqlDeleteTestFramework, WhereStructTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
+    auto dataset = ECSqlCommonTestDataset::WhereStructTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
+    RunTest(dataset);
     }
 
 END_ECSQLTESTFRAMEWORK_NAMESPACE

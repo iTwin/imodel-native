@@ -109,7 +109,7 @@ ECSqlStatus ECSqlAsserter::PrepareStatement(ECSqlStatement& statement, Utf8CP ec
     {
     DisableBeAsserts d(disableBeAsserts);
 
-    return statement.Prepare(GetECDb(), ecsql);
+    return statement.Prepare(m_ecdb, ecsql);
     }
 
 //---------------------------------------------------------------------------------------
@@ -397,7 +397,7 @@ void ECSqlSelectAsserter::AssertArrayCell(ECSqlTestItem const& testItem, ECSqlSt
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlSelectAsserter::AssertColumnInfo(ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const* parentDataType) const
     {
-    ECDbIssueListener issueListener(GetECDb());
+    ECDbIssueListener issueListener(m_ecdb);
     ECSqlColumnInfo const& columnInfo = value.GetColumnInfo();
     ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlValue::GetColumnInfo unexpectedly caused an error.";
 

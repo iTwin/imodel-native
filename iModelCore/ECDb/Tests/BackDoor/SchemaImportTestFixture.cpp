@@ -6,101 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/SchemaImportTestFixture.h"
+#include <Bentley/DateTime.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(std::vector<SchemaItem> const& testItems, Utf8CP ecdbFileName) const
-    {
-    for (SchemaItem const& testItem : testItems)
-        {
-        AssertSchemaImport(testItem, ecdbFileName);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(SchemaItem const& testItem, Utf8CP ecdbFileName) const
-    {
-    ECDb localECDb;
-    bool asserted = false;
-    AssertSchemaImport(localECDb, asserted, testItem, ecdbFileName);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  07/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, SchemaItem const& testItem, Utf8CP ecdbFileName) const
-    {
-    asserted = true;
-    ASSERT_EQ(BE_SQLITE_OK, CreateECDb(ecdb, ecdbFileName));
-    AssertSchemaImport(asserted, ecdb, testItem);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  07/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, SchemaItem const& testItem) const
-    {
-    asserted = true;
-    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
-    BeTest::SetFailOnAssert(false);
-    const BentleyStatus deserializeStat = ReadECSchemaFromString(context, ecdb, testItem);
-    BeTest::SetFailOnAssert(true);
-    if (SUCCESS != deserializeStat)
-        {
-        ASSERT_FALSE(testItem.m_expectedToSucceed) << "ECSchema deserialization failed. " << testItem.m_name.c_str() << " " << testItem.m_assertMessage.c_str();
-        asserted = false;
-        return;
-        }
-
-    Savepoint sp(const_cast<ECDbR>(ecdb), "ECSchema Import");
-    BentleyStatus schemaImportStatus = ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
-    if (schemaImportStatus == SUCCESS)
-        sp.Commit();
-    else
-        sp.Cancel();
-
-    ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == schemaImportStatus) << testItem.m_name.c_str()  << " " << testItem.m_assertMessage.c_str();
-
-    if (SUCCESS == schemaImportStatus)
-        ASSERT_EQ(testItem.m_expectedToSucceed, !HasDataCorruptingMappingIssues(ecdb)) << testItem.m_name.c_str() << " " << testItem.m_assertMessage.c_str();
-
-    asserted = false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                       02/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool SchemaImportTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
-    {
-    EXPECT_TRUE(ecdb.IsDbOpen());
-
-    if (!ecdb.IsDbOpen())
-        return true;
-
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, SchemaManager::GetValidateDbMappingSql()))
-        {
-        EXPECT_TRUE(false) << ecdb.GetLastError().c_str();
-        return true;
-        }
-    
-    bool hasError = false;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        hasError = true;
-        LOG.errorv("ECClass '%s:%s' with invalid mapping: %s. Table name: %s - %s", stmt.GetValueText(0),
-                   stmt.GetValueText(2), stmt.GetValueText(5), stmt.GetValueText(3), stmt.GetValueText(6));
-        }
-
-    return hasError;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle               05/17

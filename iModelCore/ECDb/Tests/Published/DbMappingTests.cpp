@@ -17,7 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Simple_MixIn)
     {
-    ECDbCR ecdb = SetupECDb("Simple_MixIn.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("Simple_MixIn.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />
                    <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
@@ -83,21 +83,18 @@ TEST_F(DbMappingTestFixture, Simple_MixIn)
                        <ECProperty propertyName='F2' typeName='long' />
                        <ECProperty propertyName='F3' typeName='long' />
                    </ECEntityClass>
+                 </ECSchema>)xml")));
 
-                 </ECSchema>)xml"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    //ComparerContext a(ecdb, "SimpleFK");
-    //a.CreateBaseline(); 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT M1, M2, M3 FROM ts.MyMixin")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT M1, M2, M3 FROM ts.MyMixin")); stmt.Finalize();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SimpleFK_Dervied)
     {
-    ECDbCR ecdb = SetupECDb("SimpleFK.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleFK.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="A">
@@ -141,19 +138,16 @@ TEST_F(DbMappingTestFixture, SimpleFK_Dervied)
                       <Class class ="B1" />
                   </Target>
                </ECRelationshipClass>
-            </ECSchema>)xml"));
+            </ECSchema>)xml")));
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    //ComparerContext a(ecdb, "SimpleFK");
-    //a.CreateBaseline(); 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.A1HasB1")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.A1HasB1")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
 
 
-    MapContext ctx(ecdb);
+    MapContext ctx(m_ecdb);
 
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECInstanceId"), "ts_A", "Id");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECClassId"), "ts_A", "ECClassId");
@@ -182,7 +176,7 @@ TEST_F(DbMappingTestFixture, SimpleFK_Dervied)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SimpleFK)
     {
-    ECDbCR ecdb = SetupECDb("SimpleFK.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleFK.ecdb", SchemaItem(
       R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                 <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
                 <ECEntityClass typeName='A'>
@@ -204,18 +198,14 @@ TEST_F(DbMappingTestFixture, SimpleFK)
                       <Class class ='B' />
                   </Target>
                </ECRelationshipClass>
-            </ECSchema>)xml"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    //ComparerContext a(ecdb, "SimpleFK");
-    //a.CreateBaseline(); 
+            </ECSchema>)xml")));
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
 
 
-    MapContext ctx(ecdb);
+    MapContext ctx(m_ecdb);
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECInstanceId"), "ts_A", "Id");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECClassId"), "ts_A", "ECClassId");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "Price"), "ts_A", "Price");
@@ -236,15 +226,14 @@ TEST_F(DbMappingTestFixture, SimpleFK)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SimpleTest)
     {
-    ECDbCR ecdb = SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="SimpleTable" modifier="Abstract">
                 <ECProperty propertyName="Prop1" typeName="string" />
             </ECEntityClass>
-          </ECSchema>)xml"));
+          </ECSchema>)xml")));
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    MapContext ctx(ecdb);
+    MapContext ctx(m_ecdb);
     ASSERT_EXISTS_CLASSMAP(ctx, "TestSchema", "SimpleTable");
     ASSERT_NOTEXISTS_CLASSMAP(ctx, "TestSchemaBoo", "SimpleTableBoo");
     ASSERT_EXISTS_PROPERTYMAP(ctx, PropertyAccessString("TestSchema", "SimpleTable", "Prop1"));
@@ -275,7 +264,7 @@ TEST_F(DbMappingTestFixture, SimpleTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Max_15)
     {
-    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
@@ -347,11 +336,9 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Max_15)
                     <BaseClass>IP</BaseClass>
                     <BaseClass>IA</BaseClass>
                 </ECEntityClass>
-            </ECSchema>)xml"));
+            </ECSchema>)xml")));
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    const_cast<ECDbR>(ecdb).SaveChanges();
-    MapContext ctx(ecdb);
+    MapContext ctx(m_ecdb);
 
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IA");
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IP");
@@ -410,7 +397,7 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Max_15)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Default)
     {
-    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
@@ -481,13 +468,9 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Default)
                 <BaseClass>IP</BaseClass>
                 <BaseClass>IA</BaseClass>
             </ECEntityClass>
-        </ECSchema>)xml"));
+        </ECSchema>)xml")));
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    const_cast<ECDbR>(ecdb).SaveChanges();
-    //ComparerContext aa(ecdb,"Test3");
-    //aa.CreateBaseline();
-    MapContext ctx(ecdb);
+    MapContext ctx(m_ecdb);
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IA");
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IP");
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_BaseClass");
@@ -541,7 +524,7 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Default)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_0)
     {
-    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
@@ -613,10 +596,9 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_0)
             <BaseClass>IP</BaseClass>
             <BaseClass>IA</BaseClass>
         </ECEntityClass>
-    </ECSchema>)xml"));
+    </ECSchema>)xml")));
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    MapContext ctx(ecdb);
+    MapContext ctx(m_ecdb);
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IA");
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IP");
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_BaseClass");
@@ -669,7 +651,7 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_0)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SimpleTree_TPH_JT)
     {
-    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -714,11 +696,8 @@ TEST_F(DbMappingTestFixture, SimpleTree_TPH_JT)
                     <BaseClass>R</BaseClass>
                     <ECProperty propertyName="RR_S" typeName="string" />
                 </ECEntityClass>
-            </ECSchema>)xml"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    const_cast<ECDbR>(ecdb).SaveChanges();
-    MapContext ctx(ecdb);
+            </ECSchema>)xml")));
+    MapContext ctx(m_ecdb);
     Utf8CP testSchema = "TestSchema";
     //==================================================================================
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_M");
@@ -755,7 +734,7 @@ TEST_F(DbMappingTestFixture, SimpleTree_TPH_JT)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SimpleTree_TPH)
     {
-    ECDbCR ecdb = SetupECDb("SimpleTree.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleTree.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -799,11 +778,9 @@ TEST_F(DbMappingTestFixture, SimpleTree_TPH)
                     <BaseClass>R</BaseClass>
                     <ECProperty propertyName="RR_S" typeName="string" />
                 </ECEntityClass>
-            </ECSchema>)xml"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    const_cast<ECDbR>(ecdb).SaveChanges();
-    MapContext ctx(ecdb);
+            </ECSchema>)xml")));
+    
+    MapContext ctx(m_ecdb);
     Utf8CP testSchema = "TestSchema";
     Utf8CP tableName = "ts_M";
     //==================================================================================
@@ -845,7 +822,7 @@ TEST_F(DbMappingTestFixture, SimpleTree_TPH)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SimpleTree)
     {
-    ECDbCR ecdb = SetupECDb("SimpleTreeWithTablePerClass.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleTreeWithTablePerClass.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="M" modifier="Abstract">
@@ -883,9 +860,8 @@ TEST_F(DbMappingTestFixture, SimpleTree)
                     <BaseClass>R</BaseClass>
                     <ECProperty propertyName="RR_S" typeName="string" />
                 </ECEntityClass>
-            </ECSchema>)xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    MapContext ctx(ecdb);
+            </ECSchema>)xml")));
+    MapContext ctx(m_ecdb);
     const Utf8CP testSchema = "TestSchema";
     //==================================================================================
     ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_M");
@@ -934,8 +910,7 @@ TEST_F(DbMappingTestFixture, SimpleTree)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -950,9 +925,9 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
         "    <ECEntityClass typeName='ClassAB'>"
         "        <BaseClass>ClassA</BaseClass>"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Invalid MapStrategy"));
+        "</ECSchema>"))) << "Invalid MapStrategy";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -962,9 +937,9 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "ShareColumnsCA cannot be used without a strategy"));
+        "</ECSchema>"))) << "ShareColumnsCA cannot be used without a strategy";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -976,9 +951,9 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "MapStrategy None not allowed"));
+        "</ECSchema>"))) << "MapStrategy None not allowed";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -994,9 +969,9 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -1008,9 +983,9 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
                 </ECCustomAttributes>
                 <ECProperty propertyName="Price" typeName="double" />
             </ECEntityClass>
-        </ECSchema>)xml", false, "TablePerHierarchy on sealed class is not allowed"));
+        </ECSchema>)xml"))) << "TablePerHierarchy on sealed class is not allowed";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1020,9 +995,9 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "JoinedTablePerDirectSubclass cannot be used without a strategy"));
+        "</ECSchema>"))) << "JoinedTablePerDirectSubclass cannot be used without a strategy";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1035,9 +1010,9 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "ShareColumnsCA not allowed with Strategy NotMapped"));
+        "</ECSchema>"))) << "ShareColumnsCA not allowed with Strategy NotMapped";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1050,9 +1025,7 @@ TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "sharedTable only allowed with SharedTable strategy"));
-
-    AssertSchemaImport(testItems, "invalidmapstrategycatests.ecdb");
+        "</ECSchema>"))) << "sharedTable only allowed with SharedTable strategy";
     }
 
 
@@ -1063,8 +1036,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
     {
         {
         ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Base" modifier="Abstract">
                     <ECProperty propertyName="BaseProp1" typeName="string" />
@@ -1081,8 +1053,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                     <BaseClass>Sub2</BaseClass>
                     <ECProperty propertyName="Sub21Prop1" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml"), "updatableviews1.ecdb");
-        ASSERT_FALSE(asserted);
+                </ECSchema>)xml"), "updatableviews1.ecdb"));
 
         ASSERT_FALSE(ecdb.TableExists("ts1_Base")) << "abstract class";
         ASSERT_TRUE(ecdb.TableExists("_ts1_Base")) << "expects updatable view as it has at least one concrete subclass";
@@ -1099,8 +1070,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 
         {
         ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                         <ECEntityClass typeName="Base" modifier="Abstract">
@@ -1126,8 +1096,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                             <BaseClass>Sub2</BaseClass>
                             <ECProperty propertyName="Sub21Prop1" typeName="string" />
                         </ECEntityClass>
-                </ECSchema>)xml"), "updatableviews2.ecdb");
-        ASSERT_FALSE(asserted);
+                </ECSchema>)xml"), "updatableviews2.ecdb"));
 
         ASSERT_FALSE(ecdb.TableExists("ts2_Base")) << "abstract class";
         ASSERT_TRUE(ecdb.TableExists("_ts2_Base")) << "expects updatable view as it has at least one concrete subclass";
@@ -1147,8 +1116,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 
         {
         ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Base" modifier="Abstract">
                     <ECProperty propertyName="BaseProp1" typeName="string" />
@@ -1165,8 +1133,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                     <BaseClass>Sub2</BaseClass>
                     <ECProperty propertyName="Sub21Prop1" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml"), "updatableviews3.ecdb");
-        ASSERT_FALSE(asserted);
+                </ECSchema>)xml"), "updatableviews3.ecdb"));
 
         ASSERT_FALSE(ecdb.TableExists("ts3_Base")) << "No tables expected as all classes are abstract";
         ASSERT_FALSE(ecdb.TableExists("_ts3_Base")) << "No updatable view expected as all classes are abstract";
@@ -1183,14 +1150,12 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 
         {
         ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Base" modifier="Abstract">
                     <ECProperty propertyName="BaseProp1" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml"), "updatableviews4.ecdb");
-        ASSERT_FALSE(asserted);
+                </ECSchema>)xml"), "updatableviews4.ecdb"));
 
         ASSERT_FALSE(ecdb.TableExists("ts4_Base")) << "abstract class";
         ASSERT_FALSE(ecdb.TableExists("_ts4_Base")) << "No updatable view expected as abstract class doesn't have subclasses";
@@ -1202,7 +1167,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
     {
-    ECDbCR ecdb = SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
 
@@ -1270,77 +1235,76 @@ TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
         <ECProperty propertyName="Prop2" typeName="string" />
     </ECEntityClass>
 
-    </ECSchema>)xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    </ECSchema>)xml")));
 
-    ASSERT_FALSE(ecdb.TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
+    ASSERT_FALSE(m_ecdb.TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
 
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_OwnTable","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECClassId"), ColumnInfo("ts_Base_Abstract_OwnTable","ECClassId", true));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "Prop1"), ColumnInfo("ts_Base_Abstract_OwnTable","Prop1"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "ECClassId"), ColumnInfo("ts_Base_Abstract_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_OwnTable", "Prop1"), ColumnInfo("ts_Base_Abstract_OwnTable","Prop1"));
 
-    AssertColumnNames(ecdb, "ts_Sub_Of_Base_Abstract_OwnTable", {"Id","Prop1","Prop2"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","ECClassId", true));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop1"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop1"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop2"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop2"));
-
-
-
-    AssertColumnNames(ecdb, "ts_Base_OwnTable", {"Id","Prop1"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_OwnTable","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECClassId"), ColumnInfo("ts_Base_OwnTable","ECClassId", true));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_OwnTable", "Prop1"), ColumnInfo("ts_Base_OwnTable","Prop1"));
-
-    AssertColumnNames(ecdb, "ts_Sub_Of_Base_OwnTable", {"Id","Prop1","Prop2"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECInstanceId"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECClassId"), ColumnInfo("ts_Sub_Of_Base_OwnTable","ECClassId", true));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop1"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop1"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop2"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop2"));
+    AssertColumnNames(m_ecdb, "ts_Sub_Of_Base_Abstract_OwnTable", {"Id","Prop1","Prop2"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop1"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop1"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop2"), ColumnInfo("ts_Sub_Of_Base_Abstract_OwnTable","Prop2"));
 
 
 
-    ASSERT_FALSE(ecdb.TableExists("ts_Base_Abstract_NoSubclass_OwnTable")) << "is expected to be virtual";
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","ECClassId", true));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Prop1"));
+    AssertColumnNames(m_ecdb, "ts_Base_OwnTable", {"Id","Prop1"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_OwnTable", "ECClassId"), ColumnInfo("ts_Base_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_OwnTable", "Prop1"), ColumnInfo("ts_Base_OwnTable","Prop1"));
+
+    AssertColumnNames(m_ecdb, "ts_Sub_Of_Base_OwnTable", {"Id","Prop1","Prop2"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECInstanceId"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "ECClassId"), ColumnInfo("ts_Sub_Of_Base_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop1"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop1"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_OwnTable", "Prop2"), ColumnInfo("ts_Sub_Of_Base_OwnTable","Prop2"));
 
 
 
-    AssertColumnNames(ecdb, "ts_Base_Abstract_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","ECClassId"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Prop1"));
+    ASSERT_FALSE(m_ecdb.TableExists("ts_Base_Abstract_NoSubclass_OwnTable")) << "is expected to be virtual";
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","ECClassId", true));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1"), ColumnInfo("ts_Base_Abstract_NoSubclass_OwnTable","Prop1"));
 
 
 
-    AssertColumnNames(ecdb, "ts_Base_Abstract_TPH", {"Id","ECClassId","Prop1","Prop2"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_TPH","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_TPH","ECClassId"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_TPH","Prop1"));
-
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_TPH","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_TPH","ECClassId"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_TPH","Prop1"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop2"), ColumnInfo("ts_Base_Abstract_TPH","Prop2"));
+    AssertColumnNames(m_ecdb, "ts_Base_Abstract_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_NoSubclass_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_NoSubclass_TPH","Prop1"));
 
 
 
-    AssertColumnNames(ecdb, "ts_Base_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECInstanceId"), ColumnInfo("ts_Base_NoSubclass_TPH","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECClassId"), ColumnInfo("ts_Base_NoSubclass_TPH","ECClassId"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "Prop1"), ColumnInfo("ts_Base_NoSubclass_TPH","Prop1"));
+    AssertColumnNames(m_ecdb, "ts_Base_Abstract_TPH", {"Id","ECClassId","Prop1","Prop2"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_Abstract_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_TPH","Prop1"));
+
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECInstanceId"), ColumnInfo("ts_Base_Abstract_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECClassId"), ColumnInfo("ts_Base_Abstract_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop1"), ColumnInfo("ts_Base_Abstract_TPH","Prop1"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop2"), ColumnInfo("ts_Base_Abstract_TPH","Prop2"));
 
 
-    AssertColumnNames(ecdb, "ts_Base_TPH", {"Id","ECClassId","Prop1","Prop2"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_TPH", "ECInstanceId"), ColumnInfo("ts_Base_TPH","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_TPH", "ECClassId"), ColumnInfo("ts_Base_TPH","ECClassId"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Base_TPH", "Prop1"), ColumnInfo("ts_Base_TPH","Prop1"));
 
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECInstanceId"), ColumnInfo("ts_Base_TPH","Id"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECClassId"), ColumnInfo("ts_Base_TPH","ECClassId"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop1"), ColumnInfo("ts_Base_TPH","Prop1"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop2"), ColumnInfo("ts_Base_TPH","Prop2"));
+    AssertColumnNames(m_ecdb, "ts_Base_NoSubclass_TPH", {"Id","ECClassId","Prop1"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECInstanceId"), ColumnInfo("ts_Base_NoSubclass_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "ECClassId"), ColumnInfo("ts_Base_NoSubclass_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_NoSubclass_TPH", "Prop1"), ColumnInfo("ts_Base_NoSubclass_TPH","Prop1"));
+
+
+    AssertColumnNames(m_ecdb, "ts_Base_TPH", {"Id","ECClassId","Prop1","Prop2"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_TPH", "ECInstanceId"), ColumnInfo("ts_Base_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_TPH", "ECClassId"), ColumnInfo("ts_Base_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Base_TPH", "Prop1"), ColumnInfo("ts_Base_TPH","Prop1"));
+
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECInstanceId"), ColumnInfo("ts_Base_TPH","Id"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "ECClassId"), ColumnInfo("ts_Base_TPH","ECClassId"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop1"), ColumnInfo("ts_Base_TPH","Prop1"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Sub_Of_Base_TPH", "Prop2"), ColumnInfo("ts_Base_TPH","Prop2"));
     }
 
 
@@ -1349,8 +1313,7 @@ TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
     {
-    std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'>"
@@ -1369,9 +1332,9 @@ TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
         "          <Class class ='B' />"
         "      </Target>"
         "   </ECRelationshipClass>"
-        "</ECSchema>", false, "NavigationProperty to 'Many' end of relationship is not supported"));
+        "</ECSchema>"))) << "NavigationProperty to 'Many' end of relationship is not supported";
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'"
@@ -1389,9 +1352,9 @@ TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
         "          <Class class ='B' />"
         "      </Target>"
         "   </ECRelationshipClass>"
-        "</ECSchema>", false, "NavigationProperty for link table relationships is not supported"));
+        "</ECSchema>"))) << "NavigationProperty for link table relationships is not supported";
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'>"
@@ -1410,9 +1373,9 @@ TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
         "          <Class class ='B' />"
         "      </Target>"
         "   </ECRelationshipClass>"
-        "</ECSchema>", false, "NavigationProperty on class which is not on FK end of relationship is not supported"));
+        "</ECSchema>"))) << "NavigationProperty on class which is not on FK end of relationship is not supported";
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'>"
@@ -1431,9 +1394,7 @@ TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
         "          <Class class ='B' />"
         "      </Target>"
         "   </ECRelationshipClass>"
-        "</ECSchema>", false, "NavigationProperty on class which is not on FK end of relationship is not supported"));
-
-    AssertSchemaImport(testSchemas, "invalidnavprops.ecdb");
+        "</ECSchema>"))) << "NavigationProperty on class which is not on FK end of relationship is not supported";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1441,8 +1402,7 @@ TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, OwnTableCATests)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA'>"
@@ -1454,9 +1414,9 @@ TEST_F(DbMappingTestFixture, OwnTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "Option ShareColumnsCA can only be used with strategy SharedTable"));
+                                   "</ECSchema>"))) << "Option ShareColumnsCA can only be used with strategy SharedTable";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -1468,9 +1428,9 @@ TEST_F(DbMappingTestFixture, OwnTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "Option JoinedTablePerDirectSubclass can only be used with strategy SharedTable (applied to subclasses)"));
+                                   "</ECSchema>"))) << "Option JoinedTablePerDirectSubclass can only be used with strategy SharedTable (applied to subclasses)";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='Class' modifier='None'>"
@@ -1482,10 +1442,10 @@ TEST_F(DbMappingTestFixture, OwnTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "MapStrategy OwnTable doesn't allow TableName to be set."));
+                                   "</ECSchema>"))) << "MapStrategy OwnTable doesn't allow TableName to be set.";
 
    
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1506,9 +1466,9 @@ TEST_F(DbMappingTestFixture, OwnTableCATests)
         "        <BaseClass>Base</BaseClass>"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "NotMapped within Class Hierarchy is supported"));
+        "</ECSchema>"))) << "NotMapped within Class Hierarchy is supported";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1529,9 +1489,9 @@ TEST_F(DbMappingTestFixture, OwnTableCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "OwnTable allows a child class to have it's own strategy."));
+        "</ECSchema>"))) << "OwnTable allows a child class to have it's own strategy.";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1552,9 +1512,9 @@ TEST_F(DbMappingTestFixture, OwnTableCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P3' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "OwnTable allows a child class to have it's own strategy."));
+        "</ECSchema>"))) << "OwnTable allows a child class to have it's own strategy.";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1567,9 +1527,7 @@ TEST_F(DbMappingTestFixture, OwnTableCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Own Table doesn't allows a user Defined table name."));
-
-    AssertSchemaImport(testItems, "owntablecatests.ecdb");
+        "</ECSchema>"))) << "Own Table doesn't allows a user Defined table name.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1577,8 +1535,7 @@ TEST_F(DbMappingTestFixture, OwnTableCATests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='Class' modifier='None'>"
@@ -1590,10 +1547,10 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "MapStrategy TablePerHierarchy doesn't allow TableName to be set."));
+                                   "</ECSchema>"))) << "MapStrategy TablePerHierarchy doesn't allow TableName to be set.";
 
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='Base' modifier='None'>"
@@ -1617,9 +1574,9 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
                                    "        <BaseClass>Sub</BaseClass>"
                                    "        <ECProperty propertyName='P2' typeName='int' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "MapStrategy TablePerHierarchy on child class where base has TablePerHierarchy is not supported."));
+                                   "</ECSchema>"))) << "MapStrategy TablePerHierarchy on child class where base has TablePerHierarchy is not supported.";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='Base1' modifier='None'>"
@@ -1643,9 +1600,9 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
                                    "        <BaseClass>Base2</BaseClass>"
                                    "        <ECProperty propertyName='P3' typeName='int' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "Child class has two base classes which both have MapStrategy TablePerHierarchy. This is not expected to be supported."));
+                                   "</ECSchema>"))) << "Child class has two base classes which both have MapStrategy TablePerHierarchy. This is not expected to be supported.";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1674,9 +1631,9 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
         "        <BaseClass>SubSub</BaseClass>"
         "        <ECProperty propertyName='P3' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "MapStrategy NotMapped on child class where base has TablePerHierarchy is supported."));
+        "</ECSchema>"))) << "MapStrategy NotMapped on child class where base has TablePerHierarchy is supported.";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TeststructClassInPolymorphicSharedTable' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='BaseClass' modifier='Abstract'>"
@@ -1691,9 +1648,9 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
                                    "        <BaseClass>BaseClass</BaseClass>"
                                    "        <ECProperty propertyName='p2' typeName='string' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", true, "Abstract Class in a Hierarchy with TablePerHierarchy CA is expected to be supported."));
+                                   "</ECSchema>"))) << "Abstract Class in a Hierarchy with TablePerHierarchy CA is expected to be supported.";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1713,12 +1670,11 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
         "        <BaseClass>Sub</BaseClass>"
         "        <ECProperty propertyName='P2' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "TablePerHierarchy within Class Hierarchy is expected to be supported where Root class has default MapStrategy"));
-
-    AssertSchemaImport(testItems, "tableperhierarchycatests.ecdb");
+        "</ECSchema>"))) << "TablePerHierarchy within Class Hierarchy is expected to be supported where Root class has default MapStrategy";
 
     {
-    SchemaItem testSchema("<?xml version='1.0' encoding='utf-8'?>"
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                           "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                           "    <ECEntityClass typeName='Parent' modifier='None'>"
@@ -1737,11 +1693,7 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
                           "        <BaseClass>Parent</BaseClass>"
                           "        <ECProperty propertyName='Price' typeName='double' />"
                           "    </ECEntityClass>"
-                          "</ECSchema>");
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "tableperhierarchycatests.ecdb");
-    ASSERT_FALSE(asserted);
+                          "</ECSchema>"), "tableperhierarchycatests.ecdb"));
 
     Utf8CP tableName = "ts_Parent";
     bvector<Utf8String> columnNames;
@@ -1761,8 +1713,7 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ExistingTableCATests)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='Class' modifier='None'>"
@@ -1773,9 +1724,9 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "MapStrategy ExistingTable expects TableName to be set"));
+                                   "</ECSchema>"))) << "MapStrategy ExistingTable expects TableName to be set";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -1787,9 +1738,9 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "Option JoinedTablePerDirectSubclass can only be used with strategy SharedTable (applied to subclasses)"));
+                                   "</ECSchema>"))) << "Option JoinedTablePerDirectSubclass can only be used with strategy SharedTable (applied to subclasses)";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='Class' modifier='None'>"
@@ -1801,9 +1752,9 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "MapStrategy ExistingTable expects table specified by TableName to preexist"));
+                                   "</ECSchema>"))) << "MapStrategy ExistingTable expects table specified by TableName to preexist";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1817,9 +1768,9 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
         "        <ECProperty propertyName='Namespace' typeName='string' />"
         "        <ECProperty propertyName='PropNotMappedToAnExistingCol' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Cannot add new column to existing table"));
+        "</ECSchema>"))) << "Cannot add new column to existing table";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbFileInfo' version='02.00' prefix='ecdbf' />"
@@ -1837,13 +1788,12 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
         "          <Class class ='ecdb.EmbeddedFileInfo' />"
         "      </Target>"
         "   </ECRelationshipClass>"
-        "</ECSchema>", false, "Cannot add FK column to existing table"));
+        "</ECSchema>"))) << "Cannot add FK column to existing table";
 
-    AssertSchemaImport(testItems, "existingtablecatests.ecdb");
-
+ 
 
     {
-    ECDbCR ecdb = SetupECDb("existingtablecatests.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablecatests.ecdb"));
 
     bmap<Utf8String, bool> testDataset;
     testDataset["SELECT * FROM ecdbf.ExternalFileInfo"] = true;
@@ -1869,7 +1819,7 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
         const bool expectedSuccess = testItem.second;
         Utf8CP ecsql = testItem.first.c_str();
         ECSqlStatement stmt;
-        const ECSqlStatus stat = stmt.Prepare(ecdb, ecsql);
+        const ECSqlStatus stat = stmt.Prepare(m_ecdb, ecsql);
 
         if (expectedSuccess)
             ASSERT_EQ(ECSqlStatus::Success, stat) << ecsql;
@@ -1877,24 +1827,24 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
             ASSERT_EQ(ECSqlStatus::InvalidECSql, stat) << ecsql;
         }
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("ECDbMeta", "ECClassDef");
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("ECDbMeta", "ECClassDef");
     ASSERT_TRUE(testClass != nullptr);
 
     {
-    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
+    ECInstanceInserter inserter(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
-    ECInstanceUpdater updater(ecdb, *testClass, nullptr);
+    ECInstanceUpdater updater(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(updater.IsValid());
-    ECInstanceDeleter deleter(ecdb, *testClass, nullptr);
+    ECInstanceDeleter deleter(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(deleter.IsValid());
     }
 
     {
-    JsonInserter inserter(ecdb, *testClass, nullptr);
+    JsonInserter inserter(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
-    JsonUpdater updater(ecdb, *testClass, nullptr);
+    JsonUpdater updater(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(updater.IsValid());
-    JsonDeleter deleter(ecdb, *testClass, nullptr);
+    JsonDeleter deleter(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(deleter.IsValid());
     }
     }
@@ -1905,9 +1855,7 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, RelationshipMappingTests)
     {
-
-    std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'>"
@@ -1938,9 +1886,9 @@ TEST_F(DbMappingTestFixture, RelationshipMappingTests)
         "           <Class class='B' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", false, "BaseRelationshipClass having OwnTable mapping strategy is not supported in ECRelationshipClassHeirarchy."));
+        "</ECSchema>"))) << "BaseRelationshipClass having OwnTable mapping strategy is not supported in ECRelationshipClassHeirarchy.";
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'>"
@@ -1971,9 +1919,9 @@ TEST_F(DbMappingTestFixture, RelationshipMappingTests)
         "           <Class class='B' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", true, "BaseRelationshipClass having TablePerHeirarchy mapping strategy is expected to be supported in ECRelationshipClassHeirarchy."));
+        "</ECSchema>"))) << "BaseRelationshipClass having TablePerHeirarchy mapping strategy is expected to be supported in ECRelationshipClassHeirarchy.";
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A' modifier='Abstract'>"
@@ -1990,10 +1938,7 @@ TEST_F(DbMappingTestFixture, RelationshipMappingTests)
         "           <Class class='B' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", false, "Source or target constraint classes are abstract without subclasses. Apply the MapStrategy 'TablePerHierarchy' to the abstract constraint class"));
-
-    AssertSchemaImport(testSchemas, "RelationshipMappingTests.ecdb");
-
+        "</ECSchema>"))) << "Source or target constraint classes are abstract without subclasses. Apply the MapStrategy 'TablePerHierarchy' to the abstract constraint class";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2001,8 +1946,7 @@ TEST_F(DbMappingTestFixture, RelationshipMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, NotMappedCATests)
     {
-    std::vector<SchemaItem> invalidSchemas;
-    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                         "    <ECEntityClass typeName='Class' modifier='None'>"
@@ -2014,9 +1958,9 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                                         "        </ECCustomAttributes>"
                                         "        <ECProperty propertyName='Price' typeName='double' />"
                                         "    </ECEntityClass>"
-                                        "</ECSchema>", false, "MapStrategy NotMapped doesn't allow TableName to be set."));
+                                        "</ECSchema>"))) << "MapStrategy NotMapped doesn't allow TableName to be set.";
 
-    invalidSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2037,9 +1981,9 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
         "        <BaseClass>Base</BaseClass>"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Conflicting MapStrategy TablePerHierarchy within Class Hierarchy not supported where Root has Strategy NotMapped"));
+        "</ECSchema>"))) << "Conflicting MapStrategy TablePerHierarchy within Class Hierarchy not supported where Root has Strategy NotMapped";
 
-    invalidSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2060,9 +2004,9 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
         "        <BaseClass>Base</BaseClass>"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Conflicting mapStrategies OwnTable within Class Hierarchy not supported where Root has MapStrategy NotMapped"));
+        "</ECSchema>"))) << "Conflicting mapStrategies OwnTable within Class Hierarchy not supported where Root has MapStrategy NotMapped";
 
-    invalidSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2086,9 +2030,9 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
         "           <Class class='B' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", false, "ECRelationshipClass with FK mapping must not have a ClassMap CA unless it has MapStrategy NotMapped"));
+        "</ECSchema>"))) << "ECRelationshipClass with FK mapping must not have a ClassMap CA unless it has MapStrategy NotMapped";
 
-    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                          "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                          "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                          "    <ECEntityClass typeName='A' modifier='None'>"
@@ -2111,9 +2055,9 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                                          "           <Class class='B' />"
                                          "       </Target>"
                                          "     </ECRelationshipClass>"
-                                         "</ECSchema>", false, "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped only if nav prop class has it too"));
+                                         "</ECSchema>"))) << "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped only if nav prop class has it too";
 
-    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                          "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                          "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                          "    <ECEntityClass typeName='A' modifier='None'>"
@@ -2136,14 +2080,12 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                                          "           <Class class='B' />"
                                          "       </Target>"
                                          "     </ECRelationshipClass>"
-                                         "</ECSchema>", false, "ECRelationshipClass with FK mapping if constraint class has NotMapped strategy"));
+                                         "</ECSchema>"))) << "ECRelationshipClass with FK mapping if constraint class has NotMapped strategy";
 
-    AssertSchemaImport(invalidSchemas, "notmappedcatests.ecdb");
 
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2167,8 +2109,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
         "        <BaseClass>SubSub</BaseClass>"
         "        <ECProperty propertyName='P3' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "NotMapped on subclass"), "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>"), "notmappedcatests.ecdb"));
 
     MapStrategyInfo mapStrategy;
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Sub")->GetId()));
@@ -2179,13 +2120,9 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
 
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "SubSubSub")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
-
     }
 
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2205,83 +2142,65 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
         "        <BaseClass>Sub</BaseClass>"
         "        <ECProperty propertyName='P2' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "NotMapped within Class Hierarchy is expected to be supported where Root class has default MapStrategy"),
-        "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
-    }
+        "</ECSchema>"), "notmappedcatests.ecdb")) << "NotMapped within Class Hierarchy is expected to be supported where Root class has default MapStrategy";
 
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                  "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                                  "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                  "    <ECEntityClass typeName='Base' modifier='None'>"
-                                                  "        <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>NotMapped</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "        </ECCustomAttributes>"
-                                                  "        <ECProperty propertyName='P0' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='Sub' modifier='None'>"
-                                                  "        <BaseClass>Base</BaseClass>"
-                                                  "        <ECProperty propertyName='P1' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='SubSub' modifier='None'>"
-                                                  "        <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>NotMapped</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "        </ECCustomAttributes>"
-                                                  "        <BaseClass>Sub</BaseClass>"
-                                                  "        <ECProperty propertyName='P2' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='SubSubSub' modifier='None'>"
-                                                  "        <BaseClass>SubSub</BaseClass>"
-                                                  "        <ECProperty propertyName='P3' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "</ECSchema>", false, "NotMapped cannot be set on subclass if base class already defined it"),
-                       "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
-    }
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                          "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                                          "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                                          "    <ECEntityClass typeName='Base' modifier='None'>"
+                                                          "        <ECCustomAttributes>"
+                                                          "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                          "                <MapStrategy>NotMapped</MapStrategy>"
+                                                          "            </ClassMap>"
+                                                          "        </ECCustomAttributes>"
+                                                          "        <ECProperty propertyName='P0' typeName='int' />"
+                                                          "    </ECEntityClass>"
+                                                          "    <ECEntityClass typeName='Sub' modifier='None'>"
+                                                          "        <BaseClass>Base</BaseClass>"
+                                                          "        <ECProperty propertyName='P1' typeName='int' />"
+                                                          "    </ECEntityClass>"
+                                                          "    <ECEntityClass typeName='SubSub' modifier='None'>"
+                                                          "        <ECCustomAttributes>"
+                                                          "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                          "                <MapStrategy>NotMapped</MapStrategy>"
+                                                          "            </ClassMap>"
+                                                          "        </ECCustomAttributes>"
+                                                          "        <BaseClass>Sub</BaseClass>"
+                                                          "        <ECProperty propertyName='P2' typeName='int' />"
+                                                          "    </ECEntityClass>"
+                                                          "    <ECEntityClass typeName='SubSubSub' modifier='None'>"
+                                                          "        <BaseClass>SubSub</BaseClass>"
+                                                          "        <ECProperty propertyName='P3' typeName='int' />"
+                                                          "    </ECEntityClass>"
+                                                          "</ECSchema>"))) << "NotMapped cannot be set on subclass if base class already defined it";
 
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                  "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                                  "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                  "    <ECEntityClass typeName='Base' modifier='None'>"
-                                                  "        <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>NotMapped</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "        </ECCustomAttributes>"
-                                                  "        <ECProperty propertyName='P0' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='Sub' modifier='None'>"
-                                                  "        <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "        </ECCustomAttributes>"
-                                                  "        <BaseClass>Base</BaseClass>"
-                                                  "        <ECProperty propertyName='P1' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='SubSub' modifier='None'>"
-                                                  "        <BaseClass>Sub</BaseClass>"
-                                                  "        <ECProperty propertyName='P2' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "</ECSchema>", false, "TPH within Class Hierarchy is not supported where Root has Strategy NotMapped"),
-                       "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
-    }
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                          "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                                          "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                                          "    <ECEntityClass typeName='Base' modifier='None'>"
+                                                          "        <ECCustomAttributes>"
+                                                          "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                          "                <MapStrategy>NotMapped</MapStrategy>"
+                                                          "            </ClassMap>"
+                                                          "        </ECCustomAttributes>"
+                                                          "        <ECProperty propertyName='P0' typeName='int' />"
+                                                          "    </ECEntityClass>"
+                                                          "    <ECEntityClass typeName='Sub' modifier='None'>"
+                                                          "        <ECCustomAttributes>"
+                                                          "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                          "            </ClassMap>"
+                                                          "        </ECCustomAttributes>"
+                                                          "        <BaseClass>Base</BaseClass>"
+                                                          "        <ECProperty propertyName='P1' typeName='int' />"
+                                                          "    </ECEntityClass>"
+                                                          "    <ECEntityClass typeName='SubSub' modifier='None'>"
+                                                          "        <BaseClass>Sub</BaseClass>"
+                                                          "        <ECProperty propertyName='P2' typeName='int' />"
+                                                          "    </ECEntityClass>"
+                                                          "</ECSchema>"))) << "TPH within Class Hierarchy is not supported where Root has Strategy NotMapped";
 
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                   "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                   "    <ECEntityClass typeName='Base' modifier='None'>"
@@ -2305,15 +2224,11 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                                                   "        <BaseClass>Sub</BaseClass>"
                                                   "        <ECProperty propertyName='P2' typeName='int' />"
                                                   "    </ECEntityClass>"
-                                                  "</ECSchema>", false, "OwnTable within Class Hierarchy is not supported where Root has Strategy NotMapped"),
-                       "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
-    }
+                                                  "</ECSchema>"))) << "OwnTable within Class Hierarchy is not supported where Root has Strategy NotMapped";
 
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                   "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                   "    <ECEntityClass typeName='Base' modifier='None'>"
@@ -2336,9 +2251,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                                                   "        <BaseClass>SubSub</BaseClass>"
                                                   "        <ECProperty propertyName='P3' typeName='int' />"
                                                   "    </ECEntityClass>"
-                                                  "</ECSchema>", true, "NotMapped applied to non-sealed classes means to apply to subclasses, too"),
-                       "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
+                                                  "</ECSchema>"), "notmappedcatests.ecdb")) << "NotMapped applied to non-sealed classes means to apply to subclasses, too";
 
     MapStrategyInfo mapStrategy;
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Base")->GetId()));
@@ -2355,42 +2268,35 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
 
     }
 
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                  "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                                  "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                  "    <ECEntityClass typeName='Base' modifier='None'>"
-                                                  "        <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>NotMapped</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "        </ECCustomAttributes>"
-                                                  "        <ECProperty propertyName='P0' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='Sub' modifier='None'>"
-                                                  "        <ECCustomAttributes>"
-                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                  "            </ClassMap>"
-                                                  "        </ECCustomAttributes>"
-                                                  "        <BaseClass>Base</BaseClass>"
-                                                  "        <ECProperty propertyName='P1' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "    <ECEntityClass typeName='SubSub' modifier='None'>"
-                                                  "        <BaseClass>Sub</BaseClass>"
-                                                  "        <ECProperty propertyName='P2' typeName='int' />"
-                                                  "    </ECEntityClass>"
-                                                  "</ECSchema>", false, "TablePerHierarchy cannot be applied to subclass if base class has NotMapped"),
-                       "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
-    }
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                                                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                                                "    <ECEntityClass typeName='Base' modifier='None'>"
+                                                                "        <ECCustomAttributes>"
+                                                                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                "                <MapStrategy>NotMapped</MapStrategy>"
+                                                                "            </ClassMap>"
+                                                                "        </ECCustomAttributes>"
+                                                                "        <ECProperty propertyName='P0' typeName='int' />"
+                                                                "    </ECEntityClass>"
+                                                                "    <ECEntityClass typeName='Sub' modifier='None'>"
+                                                                "        <ECCustomAttributes>"
+                                                                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                "            </ClassMap>"
+                                                                "        </ECCustomAttributes>"
+                                                                "        <BaseClass>Base</BaseClass>"
+                                                                "        <ECProperty propertyName='P1' typeName='int' />"
+                                                                "    </ECEntityClass>"
+                                                                "    <ECEntityClass typeName='SubSub' modifier='None'>"
+                                                                "        <BaseClass>Sub</BaseClass>"
+                                                                "        <ECProperty propertyName='P2' typeName='int' />"
+                                                                "    </ECEntityClass>"
+                                                                "</ECSchema>"))) << "TablePerHierarchy cannot be applied to subclass if base class has NotMapped";
 
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                   "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                   "    <ECEntityClass typeName='Base' modifier='Abstract'>"
@@ -2410,9 +2316,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                                                   "        <BaseClass>Base</BaseClass>"
                                                   "        <ECProperty propertyName='P1' typeName='int' />"
                                                   "    </ECEntityClass>"
-                                                  "</ECSchema>", true),
-                       "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
+                                                  "</ECSchema>"), "notmappedcatests.ecdb"));
 
     MapStrategyInfo mapStrategy;
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Base")->GetId()));
@@ -2424,8 +2328,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
 
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "    <ECEntityClass typeName='A' modifier='None'>"
@@ -2453,8 +2356,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                 "           <Class class='B' />"
                 "       </Target>"
                 "     </ECRelationshipClass>"
-                "</ECSchema>", true, "Both rel and nav prop class have NotMapped strategy"), "notmappedcatests.ecdb");
-    ASSERT_FALSE(asserted);
+                "</ECSchema>"), "notmappedcatests.ecdb")) << "Both rel and nav prop class have NotMapped strategy";
 
     MapStrategyInfo mapStrategy;
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "B")->GetId()));
@@ -2471,8 +2373,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, JoinedTableCATests)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -2484,41 +2385,9 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", true, "Option JoinedTablePerDirectSubclass is expected to work with strategy TablePerHierarchy"));
+                                   "</ECSchema>"))) << "Option JoinedTablePerDirectSubclass is expected to work with strategy TablePerHierarchy";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                   "    <ECEntityClass typeName='ClassA' modifier='None'>"
-                                   "        <ECCustomAttributes>"
-                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                   "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                   "            </ClassMap>"
-                                   "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                   "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                   "            </ShareColumns>"
-                                   "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                   "        </ECCustomAttributes>"
-                                   "        <ECProperty propertyName='Price' typeName='double' />"
-                                   "    </ECEntityClass>"
-                                   "</ECSchema>", true, "Combination of options JoinedTablePerDirectSubclass and ShareColumns(applytosubclassesonly) is expected to work with strategy TablePerHierarchy"));
-
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                   "    <ECEntityClass typeName='ClassA' modifier='None'>"
-                                   "        <ECCustomAttributes>"
-                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                   "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                   "            </ClassMap>"
-                                   "            <ShareColumns xmlns='ECDbMap.02.00'/>"
-                                   "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                   "        </ECCustomAttributes>"
-                                   "        <ECProperty propertyName='Price' typeName='double' />"
-                                   "    </ECEntityClass>"
-                                   "</ECSchema>", false, "Combination of options JoinedTablePerDirectSubclass and ShareColumns on same class is expected to fail with strategy TablePerHierarchy"));
-
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -2533,9 +2402,41 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", true, "Combination of options ShareColumns and JoinedTablePerDirectSubclass is expected to work with strategy TablePerHierarchy"));
+                                   "</ECSchema>"))) << "Combination of options JoinedTablePerDirectSubclass and ShareColumns(applytosubclassesonly) is expected to work with strategy TablePerHierarchy";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                   "    <ECEntityClass typeName='ClassA' modifier='None'>"
+                                   "        <ECCustomAttributes>"
+                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                   "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                   "            </ClassMap>"
+                                   "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+                                   "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                   "        </ECCustomAttributes>"
+                                   "        <ECProperty propertyName='Price' typeName='double' />"
+                                   "    </ECEntityClass>"
+                                   "</ECSchema>"))) << "Combination of options JoinedTablePerDirectSubclass and ShareColumns on same class is expected to fail with strategy TablePerHierarchy";
+
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                   "    <ECEntityClass typeName='ClassA' modifier='None'>"
+                                   "        <ECCustomAttributes>"
+                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                   "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                   "            </ClassMap>"
+                                   "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                                   "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                                   "            </ShareColumns>"
+                                   "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                   "        </ECCustomAttributes>"
+                                   "        <ECProperty propertyName='Price' typeName='double' />"
+                                   "    </ECEntityClass>"
+                                   "</ECSchema>"))) << "Combination of options ShareColumns and JoinedTablePerDirectSubclass is expected to work with strategy TablePerHierarchy";
+
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -2544,9 +2445,9 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "JoinedTablePerDirectSubclass cannot be applied without MapStrategy TablePerHierarchy"));
+                                   "</ECSchema>"))) << "JoinedTablePerDirectSubclass cannot be applied without MapStrategy TablePerHierarchy";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -2555,10 +2456,10 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "ShareColumns cannot be applied without MapStrategy TablePerHierarchy"));
+                                   "</ECSchema>"))) << "ShareColumns cannot be applied without MapStrategy TablePerHierarchy";
 
-    std::vector<Utf8String> testSchemas;
-    testSchemas.push_back("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+                          {"<?xml version='1.0' encoding='utf-8'?>"
                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                           "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                           "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -2574,9 +2475,9 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                           "        <BaseClass>ClassA</BaseClass>"
                           "        <ECProperty propertyName='Cost' typeName='double' />"
                           "    </ECEntityClass>"
-                          "</ECSchema>");
+                          "</ECSchema>",
 
-    testSchemas.push_back("<?xml version='1.0' encoding='utf-8'?>"
+                        "<?xml version='1.0' encoding='utf-8'?>"
                           "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                           "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                           "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
@@ -2587,11 +2488,9 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                           "        <BaseClass>ts:ClassB</BaseClass>"
                           "        <ECProperty propertyName='Name' typeName='string' />"
                           "    </ECEntityClass>"
-                          "</ECSchema>");
-    testItems.push_back(SchemaItem(testSchemas, false, "JoinedTablePerDirectSubclass cannot be applied if it was already specified higher up in the hierarchy"));
-    testSchemas.clear();
+                          "</ECSchema>"}))) << "JoinedTablePerDirectSubclass cannot be applied if it was already specified higher up in the hierarchy";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -2603,9 +2502,9 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "Option JoinedTablePerDirectSubclass can only be used with strategy TablePerHierarchy"));
+                                   "</ECSchema>"))) << "Option JoinedTablePerDirectSubclass can only be used with strategy TablePerHierarchy";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2632,9 +2531,9 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
         "        <BaseClass>SubSub</BaseClass>"
         "        <ECProperty propertyName='P3' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "Option JoinedTablePerDirectSubclass can be applied to subclass where base has TablePerHierarchy."));
+        "</ECSchema>"))) << "Option JoinedTablePerDirectSubclass can be applied to subclass where base has TablePerHierarchy.";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
@@ -2649,9 +2548,8 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                    "        <BaseClass>ClassA</BaseClass>"
                                    "        <ECProperty propertyName='Cost' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", true, "JoinedTable on a class without any property is expected to be successful"));
+                                   "</ECSchema>"))) << "JoinedTable on a class without any property is expected to be successful";
 
-    AssertSchemaImport(testItems, "joinedtablecatests.ecdb");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2659,8 +2557,7 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECPropertyCATests)
     {
-    std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'>"
@@ -2677,9 +2574,9 @@ TEST_F(DbMappingTestFixture, ECPropertyCATests)
         "        </ECCustomAttributes>"
         "        </ECProperty>"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "ColumnName can only be set for ExistingTable map strategy."));
+        "</ECSchema>"))) << "ColumnName can only be set for ExistingTable map strategy.";
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'>"
@@ -2696,10 +2593,7 @@ TEST_F(DbMappingTestFixture, ECPropertyCATests)
         "        </ECCustomAttributes>"
         "        </ECProperty>"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "ECProperty has invalid value for Collation."));
-
-
-    AssertSchemaImport(testSchemas, "ECPropertyCATests.ecdb");
+        "</ECSchema>"))) << "ECProperty has invalid value for Collation.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2707,22 +2601,21 @@ TEST_F(DbMappingTestFixture, ECPropertyCATests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, IdNameCollisions)
     {
-    std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                               <ECEntityClass typeName="Foo">
                                 <ECProperty propertyName="ECInstanceId" typeName="string" />
                               </ECEntityClass>
-                            </ECSchema>)xml", false, "ECInstanceId is a system property"));
+                            </ECSchema>)xml"))) << "ECInstanceId is a system property";
 
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                               <ECEntityClass typeName="Foo">
                                 <ECProperty propertyName="Id" typeName="string" />
                               </ECEntityClass>
-                            </ECSchema>)xml", false, "Id is an alias for the ECInstanceId system property"));
+                            </ECSchema>)xml"))) << "Id is an alias for the ECInstanceId system property";
 
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                               <ECEntityClass typeName="A">
                                 <ECProperty propertyName="Name" typeName="string" />
@@ -2739,9 +2632,9 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                                      </Target>
                                 <ECProperty propertyName="SourceECInstanceId" typeName="string" />
                               </ECRelationshipClass>
-                            </ECSchema>)xml", false, "SourceECInstanceId is a system property and therefore a reserved name"));
+                            </ECSchema>)xml"))) << "SourceECInstanceId is a system property and therefore a reserved name";
 
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                               <ECEntityClass typeName="A">
                                 <ECProperty propertyName="Name" typeName="string" />
@@ -2758,9 +2651,9 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                                      </Target>
                                 <ECProperty propertyName="SourceId" typeName="string" />
                               </ECRelationshipClass>
-                            </ECSchema>)xml", false, "SourceId is an alias for the SourceECInstanceId system property and therefore a reserved name"));
+                            </ECSchema>)xml"))) << "SourceId is an alias for the SourceECInstanceId system property and therefore a reserved name";
 
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
             <ECSchema schemaName="TestSchema" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="A">
                 <ECProperty propertyName="Name" typeName="string" />
@@ -2777,9 +2670,9 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                         </Target>
                 <ECProperty propertyName="TargetECInstanceId" typeName="string" />
                 </ECRelationshipClass>
-            </ECSchema>)xml", false, "TargetECInstanceId is a system property and therefore a reserved name"));
+            </ECSchema>)xml"))) << "TargetECInstanceId is a system property and therefore a reserved name";
 
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
             <ECSchema schemaName="TestSchema" alias="ts6" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="A">
                 <ECProperty propertyName="Name" typeName="string" />
@@ -2796,16 +2689,16 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                         </Target>
                 <ECProperty propertyName="TargetId" typeName="string" />
                 </ECRelationshipClass>
-            </ECSchema>)xml", false, "TargetId is the alias for the TargetECInstanceId system property and therefore a reserved name"));
+            </ECSchema>)xml"))) << "TargetId is the alias for the TargetECInstanceId system property and therefore a reserved name";
 
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                               <ECEntityClass typeName="Foo">
                                 <ECProperty propertyName="ECClassId" typeName="string" />
                               </ECEntityClass>
-                            </ECSchema>)xml", false, "ECClassId is a system property"));
+                            </ECSchema>)xml"))) << "ECClassId is a system property";
 
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
@@ -2823,9 +2716,9 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                                      </Target>
                                 <ECProperty propertyName="SourceECClassId" typeName="string" />
                               </ECRelationshipClass>
-                            </ECSchema>)xml", false, "SourceECClassId is a system property and therefore a reserved name"));
+                            </ECSchema>)xml"))) << "SourceECClassId is a system property and therefore a reserved name";
 
-    testSchemas.push_back(SchemaItem(R"xml(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
@@ -2843,14 +2736,12 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                                      </Target>
                                 <ECProperty propertyName="TargetECClassId" typeName="string" />
                               </ECRelationshipClass>
-                            </ECSchema>)xml", false, "TargetECClassId is a system property and therefore a reserved name"));
+                            </ECSchema>)xml"))) << "TargetECClassId is a system property and therefore a reserved name";
 
-    AssertSchemaImport(testSchemas, "idnamecollisions.ecdb");
 
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Foo">
@@ -2861,8 +2752,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                                 </ECCustomAttributes>
                                 <ECProperty propertyName="MyId" typeName="string" />
                               </ECEntityClass>
-                            </ECSchema>)xml"), "idnamecollisions.ecdb");
-    ASSERT_FALSE(asserted);
+                            </ECSchema>)xml"), "idnamecollisions.ecdb"));
 
     ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Foo", "MyId"), {ColumnInfo("ts_Foo","MyId1")});
     }
@@ -2870,8 +2760,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
 
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Base">
@@ -2886,8 +2775,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                                 <BaseClass>Base</BaseClass>
                                 <ECProperty propertyName="BaseId" typeName="string" />
                               </ECEntityClass>
-                            </ECSchema>)xml"), "idnamecollisions.ecdb");
-    ASSERT_FALSE(asserted);
+                            </ECSchema>)xml"), "idnamecollisions.ecdb"));
 
     ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Sub", "BaseId"), {ColumnInfo("ts_Sub","BaseId1")});
     }
@@ -2895,8 +2783,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
 
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
@@ -2919,8 +2806,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                                      </Target>
                                 <ECProperty propertyName="MySourceId" typeName="string" />
                               </ECRelationshipClass>
-                            </ECSchema>)xml"), "idnamecollisions.ecdb");
-    ASSERT_FALSE(asserted);
+                            </ECSchema>)xml"), "idnamecollisions.ecdb"));
 
     ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Rel", "MySourceId"), {ColumnInfo("ts_Rel","MySourceId1")});
     }
@@ -2928,8 +2814,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
 
     {
     ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(R"xml(
                               <ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
@@ -2952,8 +2837,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
                                      </Target>
                                 <ECProperty propertyName="MyTargetId" typeName="string" />
                               </ECRelationshipClass>
-                            </ECSchema>)xml"), "idnamecollisions.ecdb");
-    ASSERT_FALSE(asserted);
+                            </ECSchema>)xml"), "idnamecollisions.ecdb"));
 
     ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Rel", "MyTargetId"), {ColumnInfo("ts_Rel","MyTargetId1")});
     }
@@ -2964,8 +2848,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='A' modifier='None'>"
@@ -2986,9 +2869,9 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "           <Class class='B' />"
                                    "       </Target>"
                                    "     </ECRelationshipClass>"
-                                   "</ECSchema>", false, "ForeignKeyConstraint on relationship is not supported"));
+                                   "</ECSchema>"))) << "ForeignKeyConstraint on relationship is not supported";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='A' modifier='None'>"
@@ -3012,9 +2895,9 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "           <Class class='B' />"
                                    "       </Target>"
                                    "     </ECRelationshipClass>"
-                                   "</ECSchema>", true, "Cascading delete only supported for embedding relationships"));
+                                   "</ECSchema>"))) << "Cascading delete only supported for embedding relationships";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema3' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='A' modifier='None'>"
@@ -3038,9 +2921,9 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "           <Class class='B' />"
                                    "       </Target>"
                                    "     </ECRelationshipClass>"
-                                   "</ECSchema>", false, "Cascading delete only supported for embedding relationships"));
+                                   "</ECSchema>"))) << "Cascading delete only supported for embedding relationships";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema4' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='A' modifier='None'>"
@@ -3064,9 +2947,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
                                    "           <Class class='B' />"
                                    "       </Target>"
                                    "     </ECRelationshipClass>"
-                                   "</ECSchema>", false, "Cascading delete only supported for embedding relationships"));
-
-    AssertSchemaImport(testItems, "ForeignKeyMapCATests.ecdb");
+                                   "</ECSchema>"))) << "Cascading delete only supported for embedding relationships";
     }
 
 //---------------------------------------------------------------------------------------
@@ -3074,9 +2955,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ShareColumnsCA)
     {
-    std::vector<SchemaItem> testItems;
-
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3103,9 +2982,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Defining ShareColumns multiple times in class hierarchy is expected to fail"));
+        "</ECSchema>"))) << "Defining ShareColumns multiple times in class hierarchy is expected to fail";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3134,9 +3013,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Defining ShareColumns multiple times in class hierarchy is expected to fail"));
+        "</ECSchema>"))) << "Defining ShareColumns multiple times in class hierarchy is expected to fail";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3164,9 +3043,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Defining ShareColumns multiple times in class hierarchy is expected to fail"));
+        "</ECSchema>"))) << "Defining ShareColumns multiple times in class hierarchy is expected to fail";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3190,9 +3069,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, ""));
+        "</ECSchema>")));
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3218,9 +3097,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+        "</ECSchema>"))) << "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3246,9 +3125,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+        "</ECSchema>"))) << "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3276,9 +3155,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy"));
-
-    AssertSchemaImport(testItems, "sharedtablecatests.ecdb");
+        "</ECSchema>"))) << "MaxSharedColumnsBeforeOverflow can only be defined on first occurrence of SharedColumn option in a hierarchy";
     }
 
 //---------------------------------------------------------------------------------------
@@ -3286,7 +3163,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, StatementBindingInvalidScenarios)
     {
-    ECDbR ecdb = SetupECDb("incompletePoints.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("incompletePoints.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3295,20 +3172,17 @@ TEST_F(DbMappingTestFixture, StatementBindingInvalidScenarios)
         "        <ECProperty propertyName='P2D' typeName='point2d'/>"
         "        <ECProperty propertyName='P3D' typeName='point3d'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+        "</ECSchema>")));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element (P2D,P3D,Code) VALUES (?,?,'C1')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element (P2D,P3D,Code) VALUES (?,?,'C1')"));
     //Binding Point 2d & 3d
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(1, DPoint2d::From(-21, 22.1)));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(-12.53, 21.76, -32.22)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT P2D,P3D FROM ts.Element WHERE Code='C1'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P2D,P3D FROM ts.Element WHERE Code='C1'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     //GetValuePoint3d can't be called for a 2d column.
@@ -3330,7 +3204,6 @@ TEST_F(DbMappingTestFixture, StatementBindingInvalidScenarios)
 
     //GetValueInt can't be called for a 2d/3d column.
     ASSERT_EQ(0, stmt.GetValueInt(1));
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -3338,9 +3211,7 @@ TEST_F(DbMappingTestFixture, StatementBindingInvalidScenarios)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ShareColumnsCAWithoutTPH)
     {
-    std::vector<SchemaItem> testItems;
-
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3354,9 +3225,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAWithoutTPH)
         "        <BaseClass>Parent</BaseClass>"
         "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "ShareColumns without MapStrategy is not supported"));
+        "</ECSchema>"))) << "ShareColumns without MapStrategy is not supported";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3373,9 +3244,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAWithoutTPH)
         "        <BaseClass>Parent</BaseClass>"
         "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "ShareColumns with MapStrategy OwnTable is not supported"));
+        "</ECSchema>"))) << "ShareColumns with MapStrategy OwnTable is not supported";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3392,9 +3263,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAWithoutTPH)
         "        <BaseClass>Parent</BaseClass>"
         "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "ShareColumns with MapStrategy ExistingTable is not supported"));
-
-    AssertSchemaImport(testItems, "invalidsharecolumnsca.ecdb");
+        "</ECSchema>"))) << "ShareColumns with MapStrategy ExistingTable is not supported";
     }
 
 //---------------------------------------------------------------------------------------
@@ -3402,7 +3271,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAWithoutTPH)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
     {
-    SchemaItem testSchema(
+    ASSERT_EQ(SUCCESS, SetupECDb("sharecolumnsandcolumnconstraints.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3445,14 +3314,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
         "           </ECCustomAttributes>"
         "        </ECProperty>"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "Column constraints on property that maps to shared column");
+        "</ECSchema>"))) << "Column constraints on property that maps to shared column";
 
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "sharecolumnsandcolumnconstraints.ecdb");
-    ASSERT_FALSE(asserted);
-
-    Utf8String ddl = RetrieveDdl(ecdb, "ts_TestClass");
+    Utf8String ddl = RetrieveDdl(m_ecdb, "ts_TestClass");
     ASSERT_FALSE(ddl.empty());
 
     bvector<Utf8String> columnDdlList;
@@ -3476,8 +3340,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflow)
     {
-            {
-            AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                           "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                                           "   <ECEntityClass typeName='Parent' modifier='None' >"
@@ -3491,37 +3354,32 @@ TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflow)
                                           "        </ECCustomAttributes>"
                                           "       <ECProperty propertyName='P1' typeName='int' />"
                                           "   </ECEntityClass>"
-                                          "</ECSchema>", false, "MaxSharedColumnsBeforeOverflow must not be negative. It must be >= 1"), "sharedcolcount.ecdb");
+                                          "</ECSchema>"))) << "MaxSharedColumnsBeforeOverflow must not be negative. It must be >= 1";
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>")));
 
-            }
-
-            {
-            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-                "   <ECEntityClass typeName='Parent' modifier='None' >"
-                "        <ECCustomAttributes>"
-                "            <ClassMap xmlns='ECDbMap.02.00'>"
-                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                "            </ClassMap>"
-                "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-                "            </ShareColumns>"
-                "        </ECCustomAttributes>"
-                "       <ECProperty propertyName='P1' typeName='int' />"
-                "   </ECEntityClass>"
-                "</ECSchema>"));
-            ASSERT_TRUE(ecdb.IsDbOpen());
-            ecdb.SaveChanges();
-
-            std::vector<std::pair<Utf8String, int>> testItems;
-            testItems.push_back(std::make_pair("ts_Parent", 3));
-            AssertColumnCount(ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
-            }
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(m_ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
+    }
 
             {
-            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -3537,17 +3395,15 @@ TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflow)
                 "        </ECCustomAttributes>"
                 "       <ECProperty propertyName='P1' typeName='int' />"
                 "   </ECEntityClass>"
-                "</ECSchema>"));
-            ASSERT_TRUE(ecdb.IsDbOpen());
-            ecdb.SaveChanges();
+                "</ECSchema>")));
 
             std::vector<std::pair<Utf8String, int>> testItems;
             testItems.push_back(std::make_pair("ts_Parent", 3));
-            AssertColumnCount(ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
+            AssertColumnCount(m_ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
             }
 
             {
-            ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
+            ASSERT_EQ(SUCCESS, SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3575,16 +3431,13 @@ TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflow)
                 "        <BaseClass>Sub1</BaseClass>"
                 "        <ECProperty propertyName='Diameter' typeName='double' />"
                 "    </ECEntityClass>"
-                "</ECSchema>"));
-
-            ASSERT_TRUE(ecdb.IsDbOpen());
-            ecdb.SaveChanges();
+                "</ECSchema>")));
 
             std::vector<std::pair<Utf8String, int>> testItems;
             testItems.push_back(std::make_pair("ts_Parent", 5));
-            AssertColumnCount(ecdb, testItems, "After first schema import");
+            AssertColumnCount(m_ecdb, testItems, "After first schema import");
 
-            SchemaItem secondSchema(
+            ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
@@ -3596,15 +3449,11 @@ TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflow)
                 "        <BaseClass>ts:Sub11</BaseClass>"
                 "        <ECProperty propertyName='Prop111' typeName='double' />"
                 "    </ECEntityClass>"
-                "</ECSchema>");
-
-            bool asserted = false;
-            AssertSchemaImport(asserted, ecdb, secondSchema);
-            ASSERT_FALSE(asserted);
+                "</ECSchema>")));
 
             testItems.clear();
             testItems.push_back(std::make_pair("ts_Parent", 6));
-            AssertColumnCount(ecdb, testItems, "After second schema import");
+            AssertColumnCount(m_ecdb, testItems, "After second schema import");
             }
     }
 
@@ -3613,7 +3462,7 @@ TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflow)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_SubsequentSchemaImports)
     {
-    ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -3642,18 +3491,15 @@ TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_Subse
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    ecdb.SaveChanges();
+        "</ECSchema>")));
 
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
     testItems.push_back(std::make_pair("ts_Sub1", 4));
     testItems.push_back(std::make_pair("ts_Sub2", 3));
-    AssertColumnCount(ecdb, testItems, "After first schema import");
+    AssertColumnCount(m_ecdb, testItems, "After first schema import");
 
-    SchemaItem secondSchema(
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='TestSchema' version='01.00' alias='ts' />"
@@ -3665,18 +3511,14 @@ TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_Subse
         "        <BaseClass>ts:Sub11</BaseClass>"
         "        <ECProperty propertyName='Prop111' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, secondSchema);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
 
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
     testItems.push_back(std::make_pair("ts_Sub1", 5));
     testItems.push_back(std::make_pair("ts_Sub2", 3));
     testItems.push_back(std::make_pair("ts2_Sub3", 3));
-    AssertColumnCount(ecdb, testItems, "After second schema import");
+    AssertColumnCount(m_ecdb, testItems, "After second schema import");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3684,7 +3526,7 @@ TEST_F(DbMappingTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_Subse
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
     {
-    ECDbR ecdb = SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("maxsharedcolumnsbeforeoverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -3803,9 +3645,8 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         "        <BaseClass>Sub61</BaseClass>"
         "        <ECProperty propertyName='PropSub611_1' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+        "</ECSchema>")));
+
     std::vector<std::pair<Utf8CP, std::vector<Utf8CP>>> expectedTableLayouts {
             //Base1 hierarchy
             {"ts_Base1", {"Id", "ECClassId", "PropBase1_1", "PropSub1_1"}},
@@ -3832,7 +3673,7 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
         Utf8CP tableName = expectedTableLayout.first;
         std::vector<Utf8CP> const& expectedColNames = expectedTableLayout.second;
         bvector<Utf8String> actualColNames;
-        ASSERT_TRUE(ecdb.GetColumns(actualColNames, tableName));
+        ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, tableName));
         ASSERT_EQ(expectedColNames.size(), actualColNames.size()) << tableName;
         for (size_t i = 0; i < expectedColNames.size(); i++)
             {
@@ -3840,12 +3681,13 @@ TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
             }
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Overflow_InsertWithNoParameters)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3886,17 +3728,15 @@ TEST_F(DbMappingTestFixture, Overflow_InsertWithNoParameters)
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
         "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
+        "</ECSchema>")));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN, Geom) "
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN, Geom) "
                                                  "VALUES ('C1', 'Str', 123, 12345, 23.5453, TIMESTAMP '2013-02-09T12:00:00', true, 12.34, 45.45, 56.34, 67.44, 14.44, 22312.34, 34.14, 86.54, 34.23, 23.55, 64.34, 34.45, null, null, null, null)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN, Geom FROM  ts.TestElement WHERE Code = 'C1'"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN, Geom FROM  ts.TestElement WHERE Code = 'C1'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     int idx = 0;
     ASSERT_STREQ("C1", stmt.GetValueText(idx++));   //Code
@@ -3931,7 +3771,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertWithNoParameters)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Overflow_InsertExplicitNullsUsingECSql)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3970,18 +3810,15 @@ TEST_F(DbMappingTestFixture, Overflow_InsertExplicitNullsUsingECSql)
         "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+        "</ECSchema>")));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN) "
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN) "
                                                  "VALUES ('C2', null, null, null, null, null, null, null,null, null, null, null, null, null, null, null, null, null, null, null, null, null)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code ='C2'"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code ='C2'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     int idx = 0;
     ASSERT_STREQ("C2", stmt.GetValueText(idx++));   //Code
@@ -4014,7 +3851,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertExplicitNullsUsingECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Overflow_SharedColumns2)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4058,10 +3895,10 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns2)
         "        <ECProperty propertyName='D21C' typeName='int'/>"
         "        <ECProperty propertyName='D21D' typeName='int'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
     
 
-    SchemaItem thirdSchema(
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='TestSchema1' version='01.00' prefix='ts1' />"
@@ -4075,21 +3912,17 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns2)
         "        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
         "        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>",true);
+        "</ECSchema>")));
 
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, thirdSchema);
-    ASSERT_FALSE(asserted);
-
-    ecdb.Schemas().CreateClassViewsInDb();
-    ecdb.SaveChanges();
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    m_ecdb.SaveChanges();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Overflow_SharedColumns)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4155,15 +3988,14 @@ TEST_F(DbMappingTestFixture, Overflow_SharedColumns)
         "        <ECProperty propertyName='D9_I' typeName='int'/>"
         "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+        "</ECSchema>")));
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Overflow_InsertImplicitNullsUsingECSql)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4202,16 +4034,14 @@ TEST_F(DbMappingTestFixture, Overflow_InsertImplicitNullsUsingECSql)
         "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code) VALUES ('C3')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code) VALUES ('C3')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C3'"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C3'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     int idx = 0;
     ASSERT_STREQ("C3", stmt.GetValueText(idx++));   //Code
@@ -4245,7 +4075,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertImplicitNullsUsingECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersAndMixOrder)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4286,15 +4116,12 @@ TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersAnd
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
         "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
 
     //Point2D(3,4) (23,43,32)
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
-
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, arrayOfST1, I, arrayOfP3d, L, ST1P, D, DT, B, P2D, P3D, BIN, Geom) "
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, S, arrayOfST1, I, arrayOfP3d, L, ST1P, D, DT, B, P2D, P3D, BIN, Geom) "
                                                  "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"));
     int idx = 1;
     Utf8CP pCode = "C8";
@@ -4370,8 +4197,8 @@ TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersAnd
     //SELECT * .. []
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN, Geom FROM  ts.TestElement WHERE Code = 'C8'"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN, Geom FROM  ts.TestElement WHERE Code = 'C8'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     idx = 0;
     ASSERT_STREQ(pCode, stmt.GetValueText(idx++));  //Code
@@ -4420,7 +4247,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersAnd
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypes)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4459,15 +4286,11 @@ TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypes)
         "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-
+        "</ECSchema>")));
 
     //Point2D(3,4) (23,43,32)
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
-
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D, P3D, BIN, ST1P, arrayOfP3d, arrayOfST1) "
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D, P3D, BIN, ST1P, arrayOfP3d, arrayOfST1) "
                                                  "VALUES (:code, :s, :i, :l, :d, :dt, :b, :p2d, :p3d, :bin, :st1p, :arrayOfP3d, :arrayOfST1)"));
     Utf8CP pCode = "C8";
     Utf8CP pS = "SampleText";
@@ -4526,8 +4349,8 @@ TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypes)
     //SELECT * .. []
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C8'"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C8'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ(pCode, stmt.GetValueText(0)) << stmt.GetECSql(); 
     ASSERT_STREQ(pS, stmt.GetValueText(1)) << stmt.GetECSql();
@@ -4574,7 +4397,7 @@ TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Overflow_UpdateComplexTypes)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4613,19 +4436,16 @@ TEST_F(DbMappingTestFixture, Overflow_UpdateComplexTypes)
         "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-
+        "</ECSchema>")));
 
     //Point2D(3,4) (23,43,32)
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code) VALUES ('C9')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code) VALUES ('C9')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.TestElement SET Code = :code, S = :s, I = :i, L = :l, D = :d, DT = :dt, B = :b, P2D = :p2d, P3D = :p3d, BIN = :bin, ST1P = :st1p, arrayOfP3d = :arrayOfP3d, arrayOfST1 = :arrayOfST1  WHERE Code = 'C9'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.TestElement SET Code = :code, S = :s, I = :i, L = :l, D = :d, DT = :dt, B = :b, P2D = :p2d, P3D = :p3d, BIN = :bin, ST1P = :st1p, arrayOfP3d = :arrayOfP3d, arrayOfST1 = :arrayOfST1  WHERE Code = 'C9'"));
     int idx = 1;
     Utf8CP pCode = "C9";
     Utf8CP pS = "SampleText";
@@ -4684,8 +4504,8 @@ TEST_F(DbMappingTestFixture, Overflow_UpdateComplexTypes)
     //SELECT * .. []
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C9'"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C9'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     idx = 0;
     ASSERT_STREQ(pCode, stmt.GetValueText(idx++));  //Code
@@ -4732,9 +4552,7 @@ TEST_F(DbMappingTestFixture, Overflow_UpdateComplexTypes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
     {
-    std::vector<SchemaItem> testItems;
-
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName='Model' >"
@@ -4763,9 +4581,9 @@ TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
         "      <Class class='Element' />"
         "    </Target>"
         "  </ECRelationshipClass>"
-        "</ECSchema>", false, "ForeignKey End of a relationship mapped to a Joined Table, doesn't allow the strength to be 'embedding'."));
+        "</ECSchema>"))) << "ForeignKey End of a relationship mapped to a Joined Table, doesn't allow the strength to be 'embedding'.";
 
-    testItems.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName='Model' >"
@@ -4796,10 +4614,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
         "      <Class class='Element' />"
         "    </Target>"
         "  </ECRelationshipClass>"
-        "</ECSchema>", false, "The ForeignKeyConstraintCA can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'."));
-
-    AssertSchemaImport(testItems, "ForeignKeyOnJoinedTable.ecdb");
-
+        "</ECSchema>"))) << "The ForeignKeyConstraintCA can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -4807,7 +4622,7 @@ TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
     {
-    ECDbR ecdb = SetupECDb("MaxSharedColumnsBeforeOverflow.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("MaxSharedColumnsBeforeOverflow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4880,10 +4695,7 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
         "        <ECProperty propertyName='Sub3Prop3' typeName='double' />"
         "        <ECProperty propertyName='Sub3Prop4' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    ecdb.SaveChanges();
+        "</ECSchema>")));
 
     const int elementExpectedColCount = 3;
     const int definitionElementExpectedColCount = 5;
@@ -4896,9 +4708,9 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
     testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
 
-    AssertColumnCount(ecdb, testItems, "after first schema import");
+    AssertColumnCount(m_ecdb, testItems, "after first schema import");
 
-    SchemaItem secondSchema(
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
@@ -4914,10 +4726,7 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
         "        <BaseClass>ts:Sub3</BaseClass>"
         "        <ECProperty propertyName='Sub31Prop1' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, secondSchema);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
     m_ecdb.SaveChanges();
 
     int geometricElement2dOverflowExpectedColCount = 3;
@@ -4932,9 +4741,9 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
     testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
     testItems.push_back(std::make_pair("ts_GeometricElement3d_Overflow", geometricElement3dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
-    AssertColumnCount(ecdb, testItems, "after second schema import");
+    AssertColumnCount(m_ecdb, testItems, "after second schema import");
 
-    SchemaItem thirdSchema(
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema3' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
@@ -4943,11 +4752,7 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
         "        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
         "        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
-
-    asserted = false;
-    AssertSchemaImport(asserted, ecdb, thirdSchema);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
     m_ecdb.SaveChanges();
     
     geometricElement3dOverflowExpectedColCount+=1;
@@ -4960,7 +4765,7 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
     testItems.push_back(std::make_pair("ts_GeometricElement3d_Overflow", geometricElement3dOverflowExpectedColCount));
     testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
 
-    AssertColumnCount(ecdb, testItems, "after third schema import");
+    AssertColumnCount(m_ecdb, testItems, "after third schema import");
     }
 
 //---------------------------------------------------------------------------------------
@@ -4968,7 +4773,7 @@ TEST_F(DbMappingTestFixture, MaxSharedcolumnsbeforeoverflowBisScenario)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ShareColumnsCA_TableLayout)
     {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("ShareColumnsCA.ecdb",SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='SchemaWithShareColumnsCA' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
                         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4999,36 +4804,31 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA_TableLayout)
                         "        <BaseClass>ChildDomainClassA</BaseClass>"
                         "        <ECProperty propertyName='P5' typeName='string' />"
                         "    </ECEntityClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "ShareColumnsCA.ecdb");
-    ASSERT_FALSE(asserted);
+                        "</ECSchema>")));
 
     //verify tables
-    ASSERT_TRUE(db.TableExists("rc_BaseClass"));
-    ASSERT_FALSE(db.TableExists("rc_ChildDomainClassA"));
-    ASSERT_FALSE(db.TableExists("rc_ChildDomainClassB"));
-    ASSERT_FALSE(db.TableExists("rc_DerivedA"));
-    ASSERT_FALSE(db.TableExists("rc_DerivedB"));
+    ASSERT_TRUE(m_ecdb.TableExists("rc_BaseClass"));
+    ASSERT_FALSE(m_ecdb.TableExists("rc_ChildDomainClassA"));
+    ASSERT_FALSE(m_ecdb.TableExists("rc_ChildDomainClassB"));
+    ASSERT_FALSE(m_ecdb.TableExists("rc_DerivedA"));
+    ASSERT_FALSE(m_ecdb.TableExists("rc_DerivedB"));
 
     //verify ECSqlStatments
     ECSqlStatement s1, s2, s3, s4, s5;
-    ASSERT_EQ(s1.Prepare(db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"), ECSqlStatus::Success);
+    ASSERT_EQ(s1.Prepare(m_ecdb, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"), ECSqlStatus::Success);
     ASSERT_EQ(BE_SQLITE_DONE, s1.Step());
-    ASSERT_EQ(s2.Prepare(db, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"), ECSqlStatus::Success);
+    ASSERT_EQ(s2.Prepare(m_ecdb, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"), ECSqlStatus::Success);
     ASSERT_EQ(BE_SQLITE_DONE, s2.Step());
-    ASSERT_EQ(s3.Prepare(db, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"), ECSqlStatus::Success);
+    ASSERT_EQ(s3.Prepare(m_ecdb, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"), ECSqlStatus::Success);
     ASSERT_EQ(BE_SQLITE_DONE, s3.Step());
-    ASSERT_EQ(s4.Prepare(db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"), ECSqlStatus::Success);
+    ASSERT_EQ(s4.Prepare(m_ecdb, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"), ECSqlStatus::Success);
     ASSERT_EQ(BE_SQLITE_DONE, s4.Step());
-    ASSERT_EQ(s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
+    ASSERT_EQ(s5.Prepare(m_ecdb, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
     ASSERT_EQ(BE_SQLITE_DONE, s5.Step());
 
     //verify No of Columns in BaseClass
     Statement statement;
-    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(db, "SELECT * FROM rc_BaseClass"));
+    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(m_ecdb, "SELECT * FROM rc_BaseClass"));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(5, statement.GetColumnCount());
 
@@ -5048,37 +4848,35 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA_TableLayout)
 TEST_F(DbMappingTestFixture, TablePrefix)
     {
             {
-            SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                                "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                "        <ECCustomAttributes>"
-                                "            <SchemaMap xmlns='ECDbMap.02.00'>"
-                                "                <TablePrefix>myownprefix</TablePrefix>"
-                                "            </SchemaMap>"
-                                "        </ECCustomAttributes>"
-                                "    <ECEntityClass typeName='A' modifier='None'>"
-                                "        <ECProperty propertyName='P1' typeName='string' />"
-                                "    </ECEntityClass>"
-                                "    <ECEntityClass typeName='B' modifier='None'>"
-                                "        <ECProperty propertyName='P2' typeName='string' />"
-                                "    </ECEntityClass>"
-                                "</ECSchema>",
-                                true, "");
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "tableprefix.ecdb");
-            ASSERT_FALSE(asserted);
+            ECDb ecdb;
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb,
+                                                         SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                    "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                                                    "        <ECCustomAttributes>"
+                                                                    "            <SchemaMap xmlns='ECDbMap.02.00'>"
+                                                                    "                <TablePrefix>myownprefix</TablePrefix>"
+                                                                    "            </SchemaMap>"
+                                                                    "        </ECCustomAttributes>"
+                                                                    "    <ECEntityClass typeName='A' modifier='None'>"
+                                                                    "        <ECProperty propertyName='P1' typeName='string' />"
+                                                                    "    </ECEntityClass>"
+                                                                    "    <ECEntityClass typeName='B' modifier='None'>"
+                                                                    "        <ECProperty propertyName='P2' typeName='string' />"
+                                                                    "    </ECEntityClass>"
+                                                                    "</ECSchema>"), "tableprefix.ecdb"));
 
             //verify tables
-            ASSERT_TRUE(db.TableExists("myownprefix_A"));
-            ASSERT_TRUE(db.TableExists("myownprefix_B"));
-            ASSERT_FALSE(db.TableExists("ts_A"));
-            ASSERT_FALSE(db.TableExists("ts_B"));
+            ASSERT_TRUE(ecdb.TableExists("myownprefix_A"));
+            ASSERT_TRUE(ecdb.TableExists("myownprefix_B"));
+            ASSERT_FALSE(ecdb.TableExists("ts_A"));
+            ASSERT_FALSE(ecdb.TableExists("ts_B"));
             }
 
             {
-            SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+            ECDb ecdb;
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb,
+                                                         SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                 "        <ECCustomAttributes>"
@@ -5091,17 +4889,11 @@ TEST_F(DbMappingTestFixture, TablePrefix)
                                 "    <ECEntityClass typeName='B' modifier='None'>"
                                 "        <ECProperty propertyName='P2' typeName='string' />"
                                 "    </ECEntityClass>"
-                                "</ECSchema>",
-                                true, "");
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "tableprefix.ecdb");
-            ASSERT_FALSE(asserted);
+                                "</ECSchema>"), "tableprefix.ecdb"));
 
             //verify tables
-            ASSERT_TRUE(db.TableExists("ts_A"));
-            ASSERT_TRUE(db.TableExists("ts_B"));
+            ASSERT_TRUE(ecdb.TableExists("ts_A"));
+            ASSERT_TRUE(ecdb.TableExists("ts_B"));
             }
     }
 
@@ -5110,7 +4902,7 @@ TEST_F(DbMappingTestFixture, TablePrefix)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
     {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("ShareColumnsCAForSubclasses.ecdb",SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                         "    <ECEntityClass typeName='Base' modifier='None'>"
@@ -5129,9 +4921,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
                         "         <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='P1' typeName='int' />"
                         "    </ECEntityClass>"
-                        "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to succeed");
+                        "</ECSchema>"))) << "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to succeed";
 
-    SchemaItem secondTestItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                               "    <ECSchemaReference name='ReferredSchema' version='01.00' prefix='rs' />"
@@ -5139,29 +4931,12 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
                               "         <BaseClass>rs:Sub1</BaseClass>"
                               "        <ECProperty propertyName='P2' typeName='int' />"
                               "    </ECEntityClass>"
-                              "</ECSchema>", true, "MapStrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
-
-    Utf8String ecdbFilePath;
-    {
-    ECDb testDb;
-    bool asserted = false;
-    AssertSchemaImport(testDb, asserted, testItem, "ShareColumnsCAForSubclasses.ecdb");
-    ASSERT_FALSE(asserted);
-    testDb.SaveChanges();
-    ecdbFilePath = testDb.GetDbFileName();
-    }
-
-    ECDb testDb;
-    ASSERT_EQ(BE_SQLITE_OK, testDb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, testDb, secondTestItem);
-    ASSERT_FALSE(asserted);
+                              "</ECSchema>"))) << "MapStrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to be honored from base Class of Refered schema";
 
     //verify Number and Names of Columns in BaseClass
     Statement statement;
     const int expectedColCount = 5;
-    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(testDb, "SELECT * FROM rs_Base"));
+    ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(m_ecdb, "SELECT * FROM rs_Base"));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     ASSERT_EQ(expectedColCount, statement.GetColumnCount());
 
@@ -5180,8 +4955,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, AbstractClass)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='AbstractClassTest' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='AbstractClass' modifier='Abstract'>"
@@ -5192,19 +4966,17 @@ TEST_F(DbMappingTestFixture, AbstractClass)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Prop' typeName='int' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>",
-                                   true, "Abstract class with TablePerHierarchy MapStrategy"));
+                                   "</ECSchema>"))) << "Abstract class with TablePerHierarchy MapStrategy";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='AbstractClassTest' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='AbstractClass' modifier='Abstract'>"
                                    "        <ECProperty propertyName='Prop' typeName='int' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>",
-                                   true, "Abstract class with no MapStrategy specified"));
+                                   "</ECSchema>"))) << "Abstract class with no MapStrategy specified";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='AbstractClassTest' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='AbstractClass' modifier='Abstract'>"
@@ -5216,10 +4988,9 @@ TEST_F(DbMappingTestFixture, AbstractClass)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Prop' typeName='int' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>",
-                                   false, "Abstract class can only have TablePerHierarchy MapStrategy"));
+                                   "</ECSchema>"))) << "Abstract class can only have TablePerHierarchy MapStrategy";
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='AbstractClassTest' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='AbstractClass' modifier='Abstract'>"
@@ -5230,10 +5001,7 @@ TEST_F(DbMappingTestFixture, AbstractClass)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Prop' typeName='int' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>",
-                                   false, "Abstract class can only have TablePerHierarchy MapStrategy"));
-
-    AssertSchemaImport(testItems, "abstractclass_mapstrategy.ecdb");
+                                   "</ECSchema>"))) << "Abstract class can only have TablePerHierarchy MapStrategy";
     }
 
 //---------------------------------------------------------------------------------------
@@ -5242,7 +5010,8 @@ TEST_F(DbMappingTestFixture, AbstractClass)
 TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     {
             {
-            SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            ECDb ecdb;
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                 "  <ECStructClass typeName='ElementCode' modifier='None'>"
                                 "    <ECProperty propertyName='Name' typeName='string' />"
                                 "  </ECStructClass>"
@@ -5250,12 +5019,7 @@ TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
                                 "    <ECProperty propertyName='Code_Name' typeName='string' />"
                                 "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                                 "  </ECEntityClass>"
-                                "</ECSchema>", true, "");
-
-            ECDb ecdb;
-            bool asserted = false;
-            AssertSchemaImport(ecdb, asserted, testItem, "propertywithsamenameasstructmembercol.ecdb");
-            ASSERT_FALSE(asserted);
+                                "</ECSchema>"), "propertywithsamenameasstructmembercol.ecdb"));
 
             ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "Code_Name"));
 
@@ -5269,7 +5033,8 @@ TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
 
             {
             //now flip order of struct prop and prim prop
-            SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            ECDb ecdb;
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                 "  <ECStructClass typeName='ElementCode' modifier='None'>"
                                 "    <ECProperty propertyName='Name' typeName='string' />"
                                 "  </ECStructClass>"
@@ -5277,12 +5042,8 @@ TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
                                 "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                                 "    <ECProperty propertyName='Code_Name' typeName='string' />"
                                 "  </ECEntityClass>"
-                                "</ECSchema>", true, "");
+                                "</ECSchema>"), "propertywithsamenameasstructmembercol.ecdb"));
 
-            ECDb ecdb;
-            bool asserted = false;
-            AssertSchemaImport(ecdb, asserted, testItem, "propertywithsamenameasstructmembercol.ecdb");
-            ASSERT_FALSE(asserted);
 
             ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "Code_Name"));
             ECClassId fooClassId = ecdb.Schemas().GetClassId("TestSchema", "Foo");
@@ -5299,15 +5060,14 @@ TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
     {
-    ECDbR ecdb = SetupECDb("VerifyInstanceInsertionForClassMappedToExistingTable.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("VerifyInstanceInsertionForClassMappedToExistingTable.ecdb"));
 
-    ASSERT_FALSE(ecdb.TableExists("TestTable"));
-    ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
-    ASSERT_TRUE(ecdb.TableExists("TestTable"));
-    ecdb.SaveChanges();
+    ASSERT_FALSE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
+    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.SaveChanges();
 
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5321,25 +5081,21 @@ TEST_F(DbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
         "  <ECProperty propertyName='Name' typeName='string'/>"
         "  <ECProperty propertyName='Date' typeName='int'/>"
         "</ECEntityClass>"
-        "</ECSchema>", true);
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, testItem);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
 
     //Verifying that the class is not mapped to any table other than the Existing Table.
-    ASSERT_FALSE(ecdb.TableExists("t_Class"));
+    ASSERT_FALSE(m_ecdb.TableExists("t_Class"));
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
     ASSERT_TRUE(testClass != nullptr);
 
-    ECInstanceInserter inserter(ecdb, *testClass, nullptr);
+    ECInstanceInserter inserter(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
 
-    ECInstanceUpdater updater(ecdb, *testClass, nullptr);
+    ECInstanceUpdater updater(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(updater.IsValid());
 
-    ECInstanceDeleter deleter(ecdb, *testClass, nullptr);
+    ECInstanceDeleter deleter(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(deleter.IsValid());
     }
 
@@ -5352,13 +5108,13 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
     LinkTable relationship against existing link table
     ------------------------------------------------*/
     {
-    SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb"));
 
-    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, relProp INTEGER, SourceId INTEGER, TargetId INTEGER");
-    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
-    GetECDb().SaveChanges();
+    m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, relProp INTEGER, SourceId INTEGER, TargetId INTEGER");
+    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.SaveChanges();
 
-    SchemaItem testItem("link table mapping to existing table",
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5385,35 +5141,31 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
         "    </Target>"
         "   <ECProperty propertyName='relProp' typeName='int' />"
         "</ECRelationshipClass>"
-        "</ECSchema>");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), testItem);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>"))) << "link table mapping to existing table";
 
     //Verify ECSql
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO t.Foo(ECInstanceId, FooProp) VALUES(1, 1)")) << testItem.m_name.c_str();
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " " << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO t.Foo(ECInstanceId, FooProp) VALUES(1, 1)")) << " link table mapping to existing table";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " link table mapping to existing table";
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO t.Goo(ECInstanceId, GooProp) VALUES(1, 1)")) << testItem.m_name.c_str();
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " " << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO t.Goo(ECInstanceId, GooProp) VALUES(1, 1)")) << " link table mapping to existing table";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " link table mapping to existing table";
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM t.FooHasGoo")) << testItem.m_name.c_str();
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " " << testItem.m_name.c_str();
-    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql() << " " << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT count(*) FROM t.FooHasGoo")) << " link table mapping to existing table";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " link table mapping to existing table";
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql() << " link table mapping to existing table";
     stmt.Finalize();
 
     //cannot modify classes with 'existing table' 
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "INSERT INTO t.FooHasGoo (SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)")) << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO t.FooHasGoo (SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)")) << " link table mapping to existing table";
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "UPDATE t.FooHasGoo set relProp=10 WHERE ECInstanceId=1")) << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE t.FooHasGoo set relProp=10 WHERE ECInstanceId=1")) << " link table mapping to existing table";
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "DELETE FROM t.FooHasGoo")) << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM t.FooHasGoo")) << " link table mapping to existing table";
     stmt.Finalize();
     }
 
@@ -5421,13 +5173,13 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
     CA linkTableRelationshipMap not applied nor the ExistingTable Contains Columns named SourceId and TargetId
     -----------------------------------------------------------------------------------------------------------------------------*/
     {
-    SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb"));
 
-    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, relProp INTEGER, MySourceId INTEGER, MyTargetId INTEGER");
-    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
-    GetECDb().SaveChanges();
+    m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, relProp INTEGER, MySourceId INTEGER, MyTargetId INTEGER");
+    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.SaveChanges();
 
-    SchemaItem testItem(
+    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5451,25 +5203,20 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
         "      <Class class = 'Goo' />"
         "    </Target>"
         "   <ECProperty propertyName='relProp' typeName='int' />"
-        "</ECRelationshipClass>"
-        "</ECSchema>", false, "CA LinkTableRelationshipMap should be applied to specify source and target class Columns in existing table.");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), testItem);
-    ASSERT_FALSE(asserted);
+        "</ECRelationshipClass>")));
     }
 
     /*---------------------------------------------
     FK relationship class mapping to existing table
     ----------------------------------------------*/
     {
-    SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb"));
 
-    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, ForeignKeyId INTEGER");
-    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
-    GetECDb().SaveChanges();
+    m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, ForeignKeyId INTEGER");
+    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.SaveChanges();
 
-    SchemaItem testItem("FK mapping to existing table", 
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5494,42 +5241,38 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
         "      <Class class = 'Goo' />"
         "    </Target>"
         "</ECRelationshipClass>"
-        "</ECSchema>");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), testItem);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>"))) << "FK mapping to existing table";
 
     //verify ECSql
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO t.Foo(ECInstanceId, FooProp) VALUES(1, 1)")) << testItem.m_name.c_str();
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " " << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO t.Foo(ECInstanceId, FooProp) VALUES(1, 1)")) << "FK mapping to existing table";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " FK mapping to existing table";
     stmt.Finalize();
 
     //ECSql on Classes mapped to existing table
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT COUNT(*) FROM t.Goo")) << testItem.m_name.c_str();
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " " << testItem.m_name.c_str();
-    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql() << " " << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM t.Goo")) << "FK mapping to existing table";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " FK mapping to existing table";
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql() << " FK mapping to existing table";
     stmt.Finalize();
 
     //cannot modify classes mapped to existing table
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "INSERT INTO t.Goo(ECInstanceId, GooProp) VALUES(2, 2)")) << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO t.Goo(ECInstanceId, GooProp) VALUES(2, 2)")) << "FK mapping to existing table";
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "UPDATE t.Goo SET GooProp=3 WHERE GooProp=2 AND ECInstanceId=2")) << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE t.Goo SET GooProp=3 WHERE GooProp=2 AND ECInstanceId=2")) << "FK mapping to existing table";
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "DELETE FROM t.Goo")) << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM t.Goo")) << "FK mapping to existing table";
     stmt.Finalize();
 
     //ECSql on FK relationship mapped to existing table
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT COUNT(*) FROM t.FooHasGoo")) << testItem.m_name.c_str();
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " " << testItem.m_name.c_str();
-    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql() << " " << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM t.FooHasGoo")) << "FK mapping to existing table";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " FK mapping to existing table";
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql() << " FK mapping to existing table";
     stmt.Finalize();
 
     //cannot modify relationship mapped to existing table
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "INSERT INTO t.FooHasGoo(SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)")) << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO t.FooHasGoo(SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)")) << "FK mapping to existing table";
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "DELETE FROM t.FooHasGoo")) << testItem.m_name.c_str();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM t.FooHasGoo")) << "FK mapping to existing table";
     stmt.Finalize();
     }
 
@@ -5538,12 +5281,12 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
     CA ForiegnKeyRelationshipMap not applied to relationshp class nor the Existing table contains column with required name
     ---------------------------------------------------------------------------------------------------------------------*/
     {
-    SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb");
-    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, ForeignKeyId INTEGER");
-    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
-    GetECDb().SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb"));
+    m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, ForeignKeyId INTEGER");
+    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.SaveChanges();
 
-    SchemaItem testItem(
+    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5568,24 +5311,20 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
         "      <Class class = 'Goo' />"
         "    </Target>"
         "</ECRelationshipClass>"
-        "</ECSchema>", false, "ForiegnKeyRelationshipMap CA not found nor the Existing table contains column with required name");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), testItem);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>"))) << "ForeignKeyRelationshipMap CA not found nor the Existing table contains column with required name";
     }
 
     
 
     //Cardinality implying NotNull or FK Column should not be allowed to map to existing table.
     {
-    SetupECDb("existingtablenavproperty.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablenavproperty.ecdb"));
 
-    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, navProp INTEGER");
-    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
-    GetECDb().SaveChanges();
+    m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, navProp INTEGER");
+    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.SaveChanges();
 
-    SchemaItem testItem(
+    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5610,11 +5349,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
         "      <Class class = 'Goo' />"
         "    </Target>"
         "</ECRelationshipClass>"
-        "</ECSchema>", false, "Cardinality implying NotNull or FK Column is expected to be not supported");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), testItem);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>"))) << "Cardinality implying NotNull or FK Column is expected to be not supported";
     }
     }
 
@@ -5626,7 +5361,8 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
 
             //NotNull constraint on FK Relationship for OwnTable
             {
-            SchemaItem testItem(
+            ECDb db;
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -5649,12 +5385,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
                 "      <Class class = 'Goo' />"
                 "    </Target>"
                 "</ECRelationshipClass>"
-                "</ECSchema>", true, "NotNull constraint is honoured when a single class is mapped to a table.");
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "NotNull.ecdb");
-            ASSERT_FALSE(asserted);
+                "</ECSchema>"), "NotNull.ecdb")) << "NotNull constraint is honoured when a single class is mapped to a table.";
 
             Statement sqlstmt;
             ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FooId'"));
@@ -5664,8 +5395,8 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
 
             //NotNull constraint on FK Relationship for SharedTable CA 
             {
-
-            SchemaItem testItem(
+            ECDb db;
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5694,12 +5425,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
                 "      <Class class = 'Child' />"
                 "    </Target>"
                 "</ECRelationshipClass>"
-                "</ECSchema>", true, "NotNull constraint is honoured when multiple classes are mapped to a same table.");
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "NotNull.ecdb");
-            ASSERT_FALSE(asserted);
+                "</ECSchema>"), "NotNull.ecdb")) << "NotNull constraint is honoured when multiple classes are mapped to a same table.";
 
             Statement sqlstmt;
             ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='ParentId'"));
@@ -5713,9 +5439,8 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, NotNullConstraintForRelationshipClassId)
     {
-
     //NotNull determination on RelClassIdColumn for FK Relationship
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("NotNullConstraintOnRelClassIdColumn.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -5734,15 +5459,10 @@ TEST_F(DbMappingTestFixture, NotNullConstraintForRelationshipClassId)
         "      <Class class = 'Goo' />"
         "    </Target>"
         "</ECRelationshipClass>"
-        "</ECSchema>", true, "NotNull constraint is honoured for an FK Relationship.");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "NotNullConstraintOnRelClassIdColumn.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>"))) << "NotNull constraint is honoured for an FK Relationship.";
 
     Statement sqlstmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FooRelECClassId'"));
+    ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FooRelECClassId'"));
     ASSERT_EQ(BE_SQLITE_ROW, sqlstmt.Step());
     ASSERT_EQ(0, sqlstmt.GetValueInt(0));
     }
@@ -5753,7 +5473,8 @@ TEST_F(DbMappingTestFixture, NotNullConstraintForRelationshipClassId)
 TEST_F(DbMappingTestFixture, ConstraintCheckOnProperties)
     {
             {
-            SchemaItem testItem(
+            ECDb db;
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -5782,13 +5503,7 @@ TEST_F(DbMappingTestFixture, ConstraintCheckOnProperties)
                 "<BaseClass>Foo</BaseClass>"
                 "   <ECProperty propertyName='GooProp' typeName='string' />"
                 "</ECEntityClass>"
-                "</ECSchema>", true, "NotNull and IsUnique constraints on a subclass are expected to succeed.");
-
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "ConstraintCheckOnProperties.ecdb");
-            ASSERT_FALSE(asserted);
+                "</ECSchema>"), "ConstraintCheckOnProperties.ecdb")) << "NotNull and IsUnique constraints on a subclass are expected to succeed.";
 
             //Verifying IsUnique constraint.
             ECSqlStatement stmt;
@@ -5836,7 +5551,8 @@ TEST_F(DbMappingTestFixture, ConstraintCheckOnProperties)
 
             //Verification of IsUnique/IsNullable properties on Shared Columns
             {
-            SchemaItem testItem(
+            ECDb db;
+            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -5867,12 +5583,7 @@ TEST_F(DbMappingTestFixture, ConstraintCheckOnProperties)
                 "<BaseClass>Foo</BaseClass>"
                 "   <ECProperty propertyName='GooProp' typeName='string' />"
                 "</ECEntityClass>"
-                "</ECSchema>", true, "NotNull and IsUnique constraints on a subclass are expected to succeed.");
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "ConstraintCheckOnProperties.ecdb");
-            ASSERT_FALSE(asserted);
+                "</ECSchema>"),"ConstraintCheckOnProperties.ecdb")) << "NotNull and IsUnique constraints on a subclass are expected to succeed.";
 
             //IsUnique/IsNull constraints are ignored as the properties are mapped to SharedColumn, so insertion should be successfull
             ECSqlStatement stmt;
@@ -5908,7 +5619,7 @@ TEST_F(DbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTable)
         statement.Finalize();
         };
 
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("DuplicateRelationshipsFlagForSubClassesInLinkTable.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -5959,20 +5670,15 @@ TEST_F(DbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTable)
         "      <Class class='C' />"
         "    </Target>"
         "</ECRelationshipClass>"
-        "</ECSchema>", true, "");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "DuplicateRelationshipsFlagForSubClassesInLinkTable.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
 
     ECSqlStatement stmt;
-    assertECSql("INSERT INTO t.B(ECInstanceId, B_Prop) VALUES(1, 'B1')", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-    assertECSql("INSERT INTO t.C(ECInstanceId, C_Prop) VALUES(2, 'C1')", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-    assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(1, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-    assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(2, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-    assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(3, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-    assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(4, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.B(ECInstanceId, B_Prop) VALUES(1, 'B1')", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.C(ECInstanceId, C_Prop) VALUES(2, 'C1')", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(1, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(2, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(3, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(4, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     }
 
 //---------------------------------------------------------------------------------------
@@ -5980,7 +5686,7 @@ TEST_F(DbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, IndexSkippedForIdSpecificationCA)
     {
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("IdSpecification.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' alias='ecdbmap' />"
@@ -6008,27 +5714,22 @@ TEST_F(DbMappingTestFixture, IndexSkippedForIdSpecificationCA)
         "           </ECCustomAttributes>"
         "   <ECProperty propertyName='Name' typeName='string' />"
         "</ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>")));
 
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "IdSpecification.ecdb");
-    ASSERT_FALSE(asserted);
-
-    ASSERT_EQ(1, db.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithBusinessKey")->GetPropertyCount(false));
-    ASSERT_EQ(1, db.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithGlobalId")->GetPropertyCount(false));
-    ASSERT_EQ(1, db.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithSyncId")->GetPropertyCount(false));
+    ASSERT_EQ(1, m_ecdb.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithBusinessKey")->GetPropertyCount(false));
+    ASSERT_EQ(1, m_ecdb.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithGlobalId")->GetPropertyCount(false));
+    ASSERT_EQ(1, m_ecdb.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithSyncId")->GetPropertyCount(false));
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithBusinessKey_BusinessKeySpecification_Name' AND type='index'"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithBusinessKey_BusinessKeySpecification_Name' AND type='index'"));
     ASSERT_NE(BE_SQLITE_ROW, stmt.Step()) << "Index for BusinessKeyCA should'nt be created";
     stmt.Finalize();
 
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithGlobalId_GlobalIdSpecification_Name' AND type='index'"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithGlobalId_GlobalIdSpecification_Name' AND type='index'"));
     ASSERT_NE(BE_SQLITE_ROW, stmt.Step()) << "Index for GlobalIdCA should'nt be created";
     stmt.Finalize();
 
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithSyncId_SyncIDSpecification_Name' AND type='index'"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithSyncId_SyncIDSpecification_Name' AND type='index'"));
     ASSERT_NE(BE_SQLITE_ROW, stmt.Step()) << "Index for SyncIdCA should'nt be created";
     }
 
@@ -6038,7 +5739,7 @@ TEST_F(DbMappingTestFixture, IndexSkippedForIdSpecificationCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ClassAndPropertyWithSameName)
     {
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("InstanceCRUD.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -6046,46 +5747,41 @@ TEST_F(DbMappingTestFixture, ClassAndPropertyWithSameName)
         "        <ECProperty propertyName='Product' typeName='string' />"
         "        <ECProperty propertyName='Price' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "InstanceCRUD.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
 
     //Inserts Instances.
     ECSqlStatement stmt, s1, s2, s3, s4;
-    ASSERT_EQ(ECSqlStatus::Success, s1.Prepare(db, "INSERT INTO ts.Product (Product,Price) VALUES('Book',100)"));
+    ASSERT_EQ(ECSqlStatus::Success, s1.Prepare(m_ecdb, "INSERT INTO ts.Product (Product,Price) VALUES('Book',100)"));
     ASSERT_EQ(BE_SQLITE_DONE, s1.Step());
-    ASSERT_EQ(ECSqlStatus::Success, s2.Prepare(db, "INSERT INTO ts.Product (Product,Price) VALUES('E-Reader',200)"));
+    ASSERT_EQ(ECSqlStatus::Success, s2.Prepare(m_ecdb, "INSERT INTO ts.Product (Product,Price) VALUES('E-Reader',200)"));
     ASSERT_EQ(BE_SQLITE_DONE, s2.Step());
-    ASSERT_EQ(ECSqlStatus::Success, s3.Prepare(db, "INSERT INTO ts.Product (Product,Price) VALUES('I-Pod',700)"));
+    ASSERT_EQ(ECSqlStatus::Success, s3.Prepare(m_ecdb, "INSERT INTO ts.Product (Product,Price) VALUES('I-Pod',700)"));
     ASSERT_EQ(BE_SQLITE_DONE, s3.Step());
-    ASSERT_EQ(ECSqlStatus::Success, s4.Prepare(db, "INSERT INTO ts.Product (Product,Price) VALUES('Goggles',500)"));
+    ASSERT_EQ(ECSqlStatus::Success, s4.Prepare(m_ecdb, "INSERT INTO ts.Product (Product,Price) VALUES('Goggles',500)"));
     ASSERT_EQ(BE_SQLITE_DONE, s4.Step());
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT COUNT(*) FROM ts.Product"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Product"));
     ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
     ASSERT_EQ(4, stmt.GetValueInt(0));
     stmt.Finalize();
 
     //Deletes the instance
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "DELETE FROM ts.Product WHERE Price=200"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Product WHERE Price=200"));
     ASSERT_TRUE(BE_SQLITE_DONE == stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT COUNT(*) FROM ts.Product"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Product"));
     ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
     ASSERT_EQ(3, stmt.GetValueInt(0));
     stmt.Finalize();
 
     //Updates the instance
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "UPDATE ts.Product SET Product='Watch' WHERE Price=500"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Product SET Product='Watch' WHERE Price=500"));
     ASSERT_TRUE(BE_SQLITE_DONE == stmt.Step());
     stmt.Finalize();
 
     //Select the instance matching the query.
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT Product.Product FROM ts.Product WHERE Price=700"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Product.Product FROM ts.Product WHERE Price=700"));
     ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("I-Pod", stmt.GetValueText(0));
     stmt.Finalize();
@@ -6096,7 +5792,7 @@ TEST_F(DbMappingTestFixture, ClassAndPropertyWithSameName)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECSqlForUnmappedClass)
     {
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlForUnmappedClass.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6109,16 +5805,11 @@ TEST_F(DbMappingTestFixture, ECSqlForUnmappedClass)
         "        <ECProperty propertyName='Name'  typeName='string' />"
         "        <ECProperty propertyName='Price' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "Mapping Strategy NotMapped applied on subclasses is expected to succeed.");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "ECSqlForUnmappedClass.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>"))) << "Mapping Strategy NotMapped applied on subclasses is expected to succeed.";
 
     ECSqlStatement stmt;
-    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Product (Name,Price) VALUES('Book',100)"));
-    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(db, "SELECT FROM ts.Product WHERE Name='Book'"));
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Product (Name,Price) VALUES('Book',100)"));
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT FROM ts.Product WHERE Name='Book'"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -6126,7 +5817,7 @@ TEST_F(DbMappingTestFixture, ECSqlForUnmappedClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECClassIdAsVirtualColumn)
     {
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("ECClassIdAsVirtualColumn.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6134,19 +5825,14 @@ TEST_F(DbMappingTestFixture, ECClassIdAsVirtualColumn)
         "        <ECProperty propertyName='Name' typeName='string' />"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "ECClassIdAsVirtualColumn.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
 
     Statement sqlstmt;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "INSERT INTO ts_Product(Name,Price) VALUES('Book',100)"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, "INSERT INTO ts_Product(Name,Price) VALUES('Book',100)"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, sqlstmt.Step());
     sqlstmt.Finalize();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT IsVirtual FROM ec_Column WHERE Name='ECClassId' AND TableId = (SELECT Id FROM ec_Table WHERE Name='ts_Product')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, "SELECT IsVirtual FROM ec_Column WHERE Name='ECClassId' AND TableId = (SELECT Id FROM ec_Table WHERE Name='ts_Product')"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
     ASSERT_EQ(1, sqlstmt.GetValueInt(0));
     }
@@ -6156,7 +5842,7 @@ TEST_F(DbMappingTestFixture, ECClassIdAsVirtualColumn)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, NotMappedCAForLinkTable)
     {
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("NotMappedCAForLinkTable.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6183,12 +5869,7 @@ TEST_F(DbMappingTestFixture, NotMappedCAForLinkTable)
         "      <Class class = 'Goo' />"
         "    </Target>"
         "</ECRelationshipClass>"
-        "</ECSchema>", true, "Mapping strategy NotMapped can be applied to LinkTable ECRelationship. ");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "NotMappedCAForLinkTable.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>"))) << "Mapping strategy NotMapped can be applied to LinkTable ECRelationship. ";
     }
 
 //---------------------------------------------------------------------------------------
@@ -6196,15 +5877,14 @@ TEST_F(DbMappingTestFixture, NotMappedCAForLinkTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MismatchDataTypesInExistingTable)
     {
-    ECDbR ecdb = SetupECDb("DataTypeMismatchInExistingTableTest.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("DataTypeMismatchInExistingTableTest.ecdb"));
 
-    ASSERT_FALSE(ecdb.TableExists("TestTable"));
-    ecdb.CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
-    ASSERT_TRUE(ecdb.TableExists("TestTable"));
-    ecdb.SaveChanges();
+    ASSERT_FALSE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
+    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    m_ecdb.SaveChanges();
 
-    SchemaItem testItem(
+    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6219,11 +5899,7 @@ TEST_F(DbMappingTestFixture, MismatchDataTypesInExistingTable)
         "  <ECProperty propertyName='Name' typeName='string'/>"
         "  <ECProperty propertyName='Date' typeName='double'/>"
         "</ECEntityClass>"
-        "</ECSchema>", false);
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, testItem);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -6231,15 +5907,14 @@ TEST_F(DbMappingTestFixture, MismatchDataTypesInExistingTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
     {
-    ECDbR ecdb = SetupECDb("InvalidPrimaryKeyInExistingTable.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("InvalidPrimaryKeyInExistingTable.ecdb"));
 
-    ASSERT_FALSE(ecdb.TableExists("TestTable"));
+    ASSERT_FALSE(m_ecdb.TableExists("TestTable"));
 
-    ecdb.CreateTable("TestTable", "MyId INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
-    ASSERT_TRUE(ecdb.TableExists("TestTable"));
+    m_ecdb.CreateTable("TestTable", "MyId INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
+    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
 
-    SchemaItem testItem(
+    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6253,11 +5928,7 @@ TEST_F(DbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
         "  <ECProperty propertyName='Name' typeName='string'/>"
         "  <ECProperty propertyName='Date' typeName='int'/>"
         "</ECEntityClass>"
-        "</ECSchema>", false);
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, testItem);
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -6265,13 +5936,12 @@ TEST_F(DbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
     {
-    ECDbR ecdb = SetupECDb("existingtablemapstrategy.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablemapstrategy.ecdb"));
 
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateTable("Foo", "Id INTEGER PRIMARY KEY, P1 TEXT, P2 INTEGER"));
-    ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateTable("Foo", "Id INTEGER PRIMARY KEY, P1 TEXT, P2 INTEGER"));
+    m_ecdb.SaveChanges();
 
-    SchemaItem testItem(
+    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6287,14 +5957,7 @@ TEST_F(DbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
         "  <ECProperty propertyName='P3' typeName='int'/>"
         "  <ECProperty propertyName='P4' typeName='string'/>"
         "</ECEntityClass>"
-        "</ECSchema>", false); //schema import should ideally fail for properties without columns in existing table. TFS#268976
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, testItem);
-    ASSERT_FALSE(asserted);
-
-    ASSERT_FALSE(ecdb.ColumnExists("Foo", "P3"));
-    ASSERT_FALSE(ecdb.ColumnExists("Foo", "P4"));
+        "</ECSchema>")));
     }
 
 
@@ -6303,7 +5966,7 @@ TEST_F(DbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, IndexGenerationOnClassId)
     {
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("IndexGenerationOnClassId.ecdb",SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -6323,20 +5986,15 @@ TEST_F(DbMappingTestFixture, IndexGenerationOnClassId)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P0' typeName='string' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true);
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "IndexGenerationOnClassId.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
 
     Statement sqlstmt;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT Name FROM ec_Index WHERE Id=(SELECT IndexId FROM ec_IndexColumn WHERE ColumnId=(SELECT Id FROM ec_Column WHERE Name='ECClassId' AND TableId=(SELECT Id FROM ec_Table WHERE Name='ts_ClassA')))"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, "SELECT Name FROM ec_Index WHERE Id=(SELECT IndexId FROM ec_IndexColumn WHERE ColumnId=(SELECT Id FROM ec_Column WHERE Name='ECClassId' AND TableId=(SELECT Id FROM ec_Table WHERE Name='ts_ClassA')))"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
     ASSERT_STREQ("ix_ts_ClassA_ecclassid", sqlstmt.GetValueText(0));
     sqlstmt.Finalize();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT Name FROM ec_Index WHERE Id=(SELECT IndexId FROM ec_IndexColumn WHERE ColumnId=(SELECT Id FROM ec_Column WHERE Name='ECClassId' AND TableId=(SELECT Id FROM ec_Table WHERE Name='ts_ClassB')))"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, "SELECT Name FROM ec_Index WHERE Id=(SELECT IndexId FROM ec_IndexColumn WHERE ColumnId=(SELECT Id FROM ec_Column WHERE Name='ECClassId' AND TableId=(SELECT Id FROM ec_Table WHERE Name='ts_ClassB')))"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
     ASSERT_STREQ("ix_ts_ClassB_ecclassid", sqlstmt.GetValueText(0));
     sqlstmt.Finalize();
@@ -6347,7 +6005,7 @@ TEST_F(DbMappingTestFixture, IndexGenerationOnClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, NotMappedWithinClassHierarchy)
     {
-    SchemaItem testItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("NotMappedWithinClassHierarchy.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -6367,27 +6025,22 @@ TEST_F(DbMappingTestFixture, NotMappedWithinClassHierarchy)
         "        <BaseClass>Sub</BaseClass>"
         "        <ECProperty propertyName='P2' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true);
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "NotMappedWithinClassHierarchy.ecdb");
-    ASSERT_FALSE(asserted);
+        "</ECSchema>")));
 
     //verify tables
-    ASSERT_TRUE(db.TableExists("ts_Base"));
-    ASSERT_TRUE(db.TableExists("ts_Sub"));
-    ASSERT_FALSE(db.TableExists("ts_SubSub"));
+    ASSERT_TRUE(m_ecdb.TableExists("ts_Base"));
+    ASSERT_TRUE(m_ecdb.TableExists("ts_Sub"));
+    ASSERT_FALSE(m_ecdb.TableExists("ts_SubSub"));
 
     //verify ECSQL
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(db, "INSERT INTO ts.SubSub (P1, P2) VALUES(1,2)")) << "INSERT not possible against unmapped class";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubSub (P1, P2) VALUES(1,2)")) << "INSERT not possible against unmapped class";
     }
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(db, "SELECT * FROM ts.SubSub")) << "SELECT not possible against unmapped class";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.SubSub")) << "SELECT not possible against unmapped class";
     }
 
     }
@@ -6398,9 +6051,7 @@ TEST_F(DbMappingTestFixture, NotMappedWithinClassHierarchy)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
     {
-    std::vector<SchemaItem> unsupportedSchemas;
-
-    unsupportedSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6435,9 +6086,9 @@ TEST_F(DbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
         "        <BaseClass>Sub2</BaseClass>"
         "        <ECProperty propertyName='MyProp' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Multi-inheritance with base classes mapped to different shared tables"));
+        "</ECSchema>"))) << "Multi-inheritance with base classes mapped to different shared tables";
 
-    unsupportedSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6463,9 +6114,9 @@ TEST_F(DbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
         "        <BaseClass>Sub2</BaseClass>"
         "        <ECProperty propertyName='MyProp' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Multi-inheritance with base classes mapped to different joined tables"));
+        "</ECSchema>"))) << "Multi-inheritance with base classes mapped to different joined tables";
 
-    unsupportedSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='Test3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6494,9 +6145,9 @@ TEST_F(DbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
             "        <BaseClass>Sub2</BaseClass>"
             "        <ECProperty propertyName='MyProp' typeName='int' />"
             "    </ECEntityClass>"
-            "</ECSchema>", false, "Multi-inheritance with one TPH base class and one OwnedTable base class"));
+            "</ECSchema>"))) << "Multi-inheritance with one TPH base class and one OwnedTable base class";
 
-    unsupportedSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6530,11 +6181,10 @@ TEST_F(DbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
         "        <BaseClass>Sub2</BaseClass>"
         "        <ECProperty propertyName='MyProp' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", 
-        false, "Multi-inheritance with one TPH base class and one NotMapped base class"));
+        "</ECSchema>"))) << "Multi-inheritance with one TPH base class and one NotMapped base class";
 
 
-    unsupportedSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test5' alias='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6569,9 +6219,7 @@ TEST_F(DbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
         "        <BaseClass>Sub2</BaseClass>"
         "        <ECProperty propertyName='MyProp' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Multi-inheritance with two TPH base classes"));
-
-    AssertSchemaImport(unsupportedSchemas, "multiinheritance_unsupportedcases.ecdb");
+        "</ECSchema>"))) << "Multi-inheritance with two TPH base classes";
     }
 
 //---------------------------------------------------------------------------------------
@@ -6579,7 +6227,7 @@ TEST_F(DbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTable)
     {
-    ECDbCR ecdb = SetupECDb("multiinheritance.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("multiinheritance.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6609,15 +6257,15 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTabl
         "        <BaseClass>Base2</BaseClass>"
         "        <ECProperty propertyName='MyProp' typeName='string' />"
         "    </ECEntityClass>"
-        "</ECSchema>"), 3);
-    ASSERT_TRUE(ecdb.IsDbOpen());
+        "</ECSchema>")));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
 
-    ECClassId myClassId = ecdb.Schemas().GetClassId("ts1", "MyClass", SchemaLookupMode::ByAlias);
+    ECClassId myClassId = m_ecdb.Schemas().GetClassId("ts1", "MyClass", SchemaLookupMode::ByAlias);
     ASSERT_TRUE(myClassId.IsValid());
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, Base2_Prop1 FROM ts1.Base2"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, Base2_Prop1 FROM ts1.Base2"));
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ASSERT_EQ(myClassId.GetValue(), stmt.GetValueId<ECClassId>(0).GetValue()) << stmt.GetECSql();
@@ -6627,7 +6275,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTabl
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, Base2_Prop1 FROM ts1.MyClass"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, Base2_Prop1 FROM ts1.MyClass"));
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ASSERT_EQ(myClassId.GetValue(), stmt.GetValueId<ECClassId>(0).GetValue()) << stmt.GetECSql();
@@ -6761,9 +6409,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
         {
         Utf8CP scenarioName = testSchema.m_name.c_str();
         ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, testSchema, "multinheritance_diamond.ecdb");
-        ASSERT_FALSE(asserted) << scenarioName;
+        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "multinheritance_diamond.ecdb")) << scenarioName;
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Base_Prop1,Sub1_Prop1,IMixin_Prop1,Sub12_Prop1,MyClass_Prop1) "
@@ -6887,948 +6533,896 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
     {
-            {
-            std::vector<SchemaItem> testItems;
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                "    <ECEntityClass typeName='Element' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='int' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "DbIndexList CA with empty Indexes property is not supported"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "DbIndexList CA with empty Indexes property is not supported";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                "    <ECEntityClass typeName='Element' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='int' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "Empty DbIndexList CA is not supported"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Empty DbIndexList CA is not supported";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                "    <ECEntityClass typeName='Element' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                   </DbIndex>"
-                "                  </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='int' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "DbIndexList CA with empty DbIndex is not supported"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                   </DbIndex>"
+        "                  </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "DbIndexList CA with empty DbIndex is not supported";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                "    <ECEntityClass typeName='Element' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                      <Properties>"
-                "                      </Properties>"
-                "                   </DbIndex>"
-                "                  </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='int' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "DbIndexList CA with DbIndex with empty Properties is not supported"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                      <Properties>"
+        "                      </Properties>"
+        "                   </DbIndex>"
+        "                  </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "DbIndexList CA with DbIndex with empty Properties is not supported";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='Element' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>True</IsUnique>"
-                "                       <Name>uix_element_code</Name>"
-                "                       <Properties>"
-                "                          <string>Bla</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='int' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "Property in index does not exist"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_element_code</Name>"
+        "                       <Properties>"
+        "                          <string>Bla</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Property in index does not exist";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECStructClass typeName='ElementCode' modifier='None'>"
-                "        <ECProperty propertyName='AuthorityId' typeName='long' />"
-                "        <ECProperty propertyName='Namespace' typeName='string' />"
-                "        <ECProperty propertyName='Val' typeName='string' />"
-                "    </ECStructClass>"
-                "    <ECEntityClass typeName='Element' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <ClassMap xmlns='ECDbMap.02.00'>"
-                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                "            </ClassMap>"
-                "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                "            </ShareColumns>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>True</IsUnique>"
-                "                       <Name>uix_element_code</Name>"
-                "                       <Properties>"
-                "                          <string>Code</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "Cannot define index on struct prop"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECStructClass typeName='ElementCode' modifier='None'>"
+        "        <ECProperty propertyName='AuthorityId' typeName='long' />"
+        "        <ECProperty propertyName='Namespace' typeName='string' />"
+        "        <ECProperty propertyName='Val' typeName='string' />"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_element_code</Name>"
+        "                       <Properties>"
+        "                          <string>Code</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Cannot define index on struct prop";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECStructClass typeName='ElementCode' modifier='None'>"
-                "        <ECProperty propertyName='AuthorityId' typeName='long' />"
-                "        <ECProperty propertyName='Namespace' typeName='string' />"
-                "        <ECProperty propertyName='Val' typeName='string' />"
-                "    </ECStructClass>"
-                "    <ECEntityClass typeName='Element' modifier='None' >"
-                "        <ECCustomAttributes>"
-                "            <ClassMap xmlns='ECDbMap.02.00'>"
-                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                "            </ClassMap>"
-                "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                "            </ShareColumns>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>True</IsUnique>"
-                "                       <Name>uix_element_code</Name>"
-                "                       <Properties>"
-                "                          <string>Codes</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECStructArrayProperty propertyName='Codes' typeName='ElementCode' minOccurs='0' maxOccurs='unbounded' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "Cannot define index on struct array prop"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECStructClass typeName='ElementCode' modifier='None'>"
+        "        <ECProperty propertyName='AuthorityId' typeName='long' />"
+        "        <ECProperty propertyName='Namespace' typeName='string' />"
+        "        <ECProperty propertyName='Val' typeName='string' />"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='Element' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_element_code</Name>"
+        "                       <Properties>"
+        "                          <string>Codes</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECStructArrayProperty propertyName='Codes' typeName='ElementCode' minOccurs='0' maxOccurs='unbounded' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Cannot define index on struct array prop";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                "    <ECEntityClass typeName='DgnModel' modifier='None' >"
-                "        <ECProperty propertyName='Name' typeName='string' />"
-                "    </ECEntityClass>"
-                "    <ECEntityClass typeName='DgnElement' modifier='None' >"
-                "        <ECCustomAttributes>"
-                "            <ClassMap xmlns='ECDbMap.02.00'>"
-                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                "            </ClassMap>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>False</IsUnique>"
-                "                       <Name>ix_model</Name>"
-                "                       <Properties>"
-                "                          <string>Model</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
-                "    </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ModelHasElements' strength='embedding'>"
-                "    <Source multiplicity='(1..1)' polymorphic='true' roleLabel='Model'>"
-                "      <Class class='DgnModel' />"
-                "    </Source>"
-                "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='Element'>"
-                "      <Class class='DgnElement' />"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>", false, "Cannot define index on navigation prop"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='DgnModel' modifier='None' >"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='DgnElement' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>False</IsUnique>"
+        "                       <Name>ix_model</Name>"
+        "                       <Properties>"
+        "                          <string>Model</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+        "    </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' strength='embedding'>"
+        "    <Source multiplicity='(1..1)' polymorphic='true' roleLabel='Model'>"
+        "      <Class class='DgnModel' />"
+        "    </Source>"
+        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='Element'>"
+        "      <Class class='DgnElement' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>"))) << "Cannot define index on navigation prop";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='Element' modifier='None' >"
-                "        <ECCustomAttributes>"
-                "            <ClassMap xmlns='ECDbMap.02.00'>"
-                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>True</IsUnique>"
-                "                       <Name>uix_element_code</Name>"
-                "                       <Properties>"
-                "                          <string>Codes</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </ClassMap>"
-                "            </ShareColumns>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>True</IsUnique>"
-                "                       <Name>uix_element_code</Name>"
-                "                       <Properties>"
-                "                          <string>Codes</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECArrayProperty propertyName='Codes' typeName='string' minOccurs='0' maxOccurs='unbounded' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "Cannot define index on primitive array prop"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_element_code</Name>"
+        "                       <Properties>"
+        "                          <string>Codes</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </ClassMap>"
+        "            </ShareColumns>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_element_code</Name>"
+        "                       <Properties>"
+        "                          <string>Codes</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECArrayProperty propertyName='Codes' typeName='string' minOccurs='0' maxOccurs='unbounded' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Cannot define index on primitive array prop";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='A' modifier='None' >"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>True</IsUnique>"
-                "                       <Name>mypoorlynamedindex</Name>"
-                "                       <Properties>"
-                "                          <string>Code</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='string'/>"
-                "    </ECEntityClass>"
-                "    <ECEntityClass typeName='B' modifier='None' >"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>False</IsUnique>"
-                "                       <Name>mypoorlynamedindex</Name>"
-                "                       <Properties>"
-                "                          <string>BB</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='BB' typeName='string'/>"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "Duplicate indexes"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>mypoorlynamedindex</Name>"
+        "                       <Properties>"
+        "                          <string>Code</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>False</IsUnique>"
+        "                       <Name>mypoorlynamedindex</Name>"
+        "                       <Properties>"
+        "                          <string>BB</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='BB' typeName='string'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Duplicate indexes";
 
-            testItems.push_back(SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='A' modifier='None' >"
-                "        <ECCustomAttributes>"
-                "            <ClassMap xmlns='ECDbMap.02.00'>"
-                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                "            </ClassMap>"
-                "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='AProp' typeName='string'/>"
-                "    </ECEntityClass>"
-                "    <ECEntityClass typeName='B' modifier='None' >"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "                 <Indexes>"
-                "                   <DbIndex>"
-                "                       <IsUnique>False</IsUnique>"
-                "                       <Name>MyIndex</Name>"
-                "                       <Properties>"
-                "                          <string>AProp</string>"
-                "                          <string>BProp</string>"
-                "                       </Properties>"
-                "                   </DbIndex>"
-                "                 </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <BaseClass>A</BaseClass>"
-                "        <ECProperty propertyName='BProp' typeName='string'/>"
-                "    </ECEntityClass>"
-                "</ECSchema>", false, "Index with properties that map to different tables is not supported"));
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='AProp' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>False</IsUnique>"
+        "                       <Name>MyIndex</Name>"
+        "                       <Properties>"
+        "                          <string>AProp</string>"
+        "                          <string>BProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>A</BaseClass>"
+        "        <ECProperty propertyName='BProp' typeName='string'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Index with properties that map to different tables is not supported";
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>ix_base_code</Name>"
+        "                       <Properties>"
+        "                          <string>Code</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "             </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "userdefinedindextest1.ecdb"));
 
 
-            AssertSchemaImport(testItems, "userdefinedindextest.ecdb");
-            }
+    AssertIndex(ecdb, "ix_base_code", false, "ts1_Base", {"Code"});
+    }
 
-                {
-                SchemaItem testItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                    "    <ECEntityClass typeName='Base' modifier='Abstract'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                    "            </ClassMap>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <Name>ix_base_code</Name>"
-                    "                       <Properties>"
-                    "                          <string>Code</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "             </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='Code' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub1' modifier='None'>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub2' modifier='None'>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "</ECSchema>", true, "");
+    {
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>ix_base_code</Name>"
+        "                       <Properties>"
+        "                          <string>Code</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "             </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>ix_sub1_prop</Name>"
+        "                       <Properties>"
+        "                          <string>Sub1_Prop</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "userdefinedindextest2.ecdb"));
 
-                ECDb db;
-                bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest1.ecdb");
-                ASSERT_FALSE(asserted);
+    AssertIndex(ecdb, "ix_sub1_prop", false, "ts2_Base", {"Sub1_Prop"});
+    }
 
-                AssertIndex(db, "ix_base_code", false, "ts1_Base", {"Code"});
-                }
+    {
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>uix_sub1_code</Name>"
+        "                       <IsUnique>true</IsUnique>"
+        "                       <Properties>"
+        "                          <string>Code</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "userdefinedindextest3.ecdb"));
 
-                {
-                SchemaItem testItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                    "    <ECEntityClass typeName='Base' modifier='Abstract'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                    "            </ClassMap>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <Name>ix_base_code</Name>"
-                    "                       <Properties>"
-                    "                          <string>Code</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "             </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='Code' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub1' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <Name>ix_sub1_prop</Name>"
-                    "                       <Properties>"
-                    "                          <string>Sub1_Prop</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub2' modifier='None'>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "</ECSchema>", true, "");
+    ECClassId baseClassId = ecdb.Schemas().GetClassId("TestSchema", "Base");
+    Utf8String indexWhereClause;
+    indexWhereClause.Sprintf("ECClassId<>%s", baseClassId.ToString().c_str());
+    AssertIndex(ecdb, "uix_sub1_code", true, "ts3_Base", {"Code"}, indexWhereClause.c_str());
+    }
 
-                ECDb db;
-                bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest2.ecdb");
-                ASSERT_FALSE(asserted);
+    {
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>uix_base_code</Name>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Properties>"
+        "                          <string>Code</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub3' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>uix_sub3_prop</Name>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Properties>"
+        "                          <string>Sub3_Prop</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Sub3_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "userdefinedindextest4.ecdb"));
 
-                AssertIndex(db, "ix_sub1_prop", false, "ts2_Base", {"Sub1_Prop"});
-                }
 
-                {
-                SchemaItem testItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                    "    <ECEntityClass typeName='Base' modifier='Abstract'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                    "            </ClassMap>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='Code' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub1' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <Name>uix_sub1_code</Name>"
-                    "                       <IsUnique>true</IsUnique>"
-                    "                       <Properties>"
-                    "                          <string>Code</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub2' modifier='None'>"
-                    "        <BaseClass>Sub1</BaseClass>"
-                    "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "</ECSchema>", true, "");
+    ECClassId sub3ClassId = ecdb.Schemas().GetClassId("TestSchema", "Sub3");
 
-                ECDb db;
-                bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest3.ecdb");
-                ASSERT_FALSE(asserted);
 
-                ECClassId baseClassId = db.Schemas().GetClassId("TestSchema", "Base");
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("ECClassId<>%s", baseClassId.ToString().c_str());
-                AssertIndex(db, "uix_sub1_code", true, "ts3_Base", {"Code"}, indexWhereClause.c_str());
-                }
+    AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
 
-                {
-                SchemaItem testItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                    "    <ECEntityClass typeName='Base' modifier='Abstract'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                    "            </ClassMap>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <Name>uix_base_code</Name>"
-                    "                       <IsUnique>True</IsUnique>"
-                    "                       <Properties>"
-                    "                          <string>Code</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='Code' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub1' modifier='None'>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub2' modifier='None'>"
-                    "        <BaseClass>Sub1</BaseClass>"
-                    "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub3' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <Name>uix_sub3_prop</Name>"
-                    "                       <IsUnique>True</IsUnique>"
-                    "                       <Properties>"
-                    "                          <string>Sub3_Prop</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Sub3_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "</ECSchema>", true, "");
+    Utf8String indexWhereClause = "ECClassId=" + sub3ClassId.ToString();
+    AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
 
-                SchemaItem secondSchemaTestItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts42' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts4' />"
-                    "    <ECEntityClass typeName='Sub4' modifier='None'>"
-                    "        <BaseClass>ts4:Sub3</BaseClass>"
-                    "        <ECProperty propertyName='Sub4_Prop' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "</ECSchema>", true, "");
+    Utf8String ecdbFilePath(ecdb.GetDbFileName());
+    ecdb.CloseDb();
+    //after second import new subclass in hierarchy must be reflected by indices
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-                ECClassId sub3ClassId;
-                Utf8String ecdbFilePath;
+    ASSERT_EQ(SUCCESS, ImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts42' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts4' />"
+        "    <ECEntityClass typeName='Sub4' modifier='None'>"
+        "        <BaseClass>ts4:Sub3</BaseClass>"
+        "        <ECProperty propertyName='Sub4_Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
-                {
-                ECDb ecdb;
-                bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "userdefinedindextest4.ecdb");
-                ASSERT_FALSE(asserted);
-                ecdb.SaveChanges();
-                ecdbFilePath = ecdb.GetDbFileName();
-                sub3ClassId = ecdb.Schemas().GetClassId("TestSchema", "Sub3");
+    //This index is not affected as index is still applying to entire hierarchy
+    AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
 
-                AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
+    //This index must include the new subclass Sub4
+    ECClassId sub4ClassId = ecdb.Schemas().GetClassId("TestSchema2", "Sub4");
+    indexWhereClause = "ECClassId=" + sub3ClassId.ToString() + " OR ECClassId=" + sub4ClassId.ToString();
+    AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
+    }
 
-                Utf8String indexWhereClause = "ECClassId=" + sub3ClassId.ToString();
-                AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
-                }
+    {
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Base' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>ix_sub1_aid</Name>"
+        "                       <Properties>"
+        "                          <string>AId</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='AId' typeName='long' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1_1' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "userdefinedindextest5.ecdb"));
 
-                //after second import new subclass in hierarchy must be reflected by indices
-                ECDb ecdb;
-                ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    AssertIndex(ecdb, "ix_sub1_aid", false, "ts5_Base", {"ps1"});
+    }
 
-                bool asserted = false;
-                AssertSchemaImport(asserted, ecdb, secondSchemaTestItem);
-                ASSERT_FALSE(asserted);
+    {
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Base' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_sub1_aid</Name>"
+        "                       <Properties>"
+        "                          <string>AId</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='AId' typeName='long' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub3' modifier='None'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Name2' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "userdefinedindextest6.ecdb")) << "Unique indices on shared columns are supported.";
 
-                //This index is not affected as index is still applying to entire hierarchy
-                AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
+    ECClassId sub1ClassId = ecdb.Schemas().GetClassId("TestSchema", "Sub1");
+    ECClassId sub11ClassId = ecdb.Schemas().GetClassId("TestSchema", "Sub11");
+    Utf8String indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
+    AssertIndex(ecdb, "uix_sub1_aid", true, "ts6_Base", {"ps1"}, indexWhereClause.c_str());
+    }
 
-                //This index must include the new subclass Sub4
-                ECClassId sub4ClassId = ecdb.Schemas().GetClassId("TestSchema2", "Sub4");
-                Utf8String indexWhereClause = "ECClassId=" + sub3ClassId.ToString() + " OR ECClassId=" + sub4ClassId.ToString();
-                AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
-                }
+    {
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECStructClass typeName='ElementCode' modifier='None'>"
+        "        <ECProperty propertyName='AuthorityId' typeName='long' />"
+        "        <ECProperty propertyName='Namespace' typeName='string' />"
+        "        <ECProperty propertyName='Val' typeName='string' />"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_element_code</Name>"
+        "                       <Properties>"
+        "                          <string>Code.AuthorityId</string>"
+        "                          <string>Code.Namespace</string>"
+        "                          <string>Code.Val</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "userdefinedindextest7.ecdb"));
 
-                {
-                SchemaItem testItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                    "    <ECEntityClass typeName='Base' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                    "            </ClassMap>"
-                    "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                    "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-                    "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                    "            </ShareColumns>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='Code' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub1' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <Name>ix_sub1_aid</Name>"
-                    "                       <Properties>"
-                    "                          <string>AId</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='AId' typeName='long' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub2' modifier='None'>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Name' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub1_1' modifier='None'>"
-                    "        <BaseClass>Sub1</BaseClass>"
-                    "        <ECProperty propertyName='Cost' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "</ECSchema>", true, "");
+    AssertIndex(ecdb, "uix_element_code", true, "ts7_Element", {"Code_AuthorityId", "Code_Namespace", "Code_Val"});
+    }
 
-                ECDb db;
-                bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest5.ecdb");
-                ASSERT_FALSE(asserted);
+    {
+    ECDb ecdb;
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Root' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_root</Name>"
+        "                       <Properties>"
+        "                          <string>RootProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='RootProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
+        "            </IsMixin>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_interface</Name>"
+        "                       <Properties>"
+        "                          <string>InterfaceProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_sub</Name>"
+        "                       <Properties>"
+        "                          <string>SubProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "       <BaseClass>Root</BaseClass>"
+        "       <BaseClass>Interface</BaseClass>"
+        "        <ECProperty propertyName='SubProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='SubSub'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_subsub</Name>"
+        "                       <Properties>"
+        "                          <string>SubSubProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "       <BaseClass>Sub</BaseClass>"
+        "        <ECProperty propertyName='SubSubProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_sub2</Name>"
+        "                       <Properties>"
+        "                          <string>Sub2Prop</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "       <BaseClass>Root</BaseClass>"
+        "       <BaseClass>Interface</BaseClass>"
+        "        <ECProperty propertyName='Sub2Prop' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='RootUnshared' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_rootunshared</Name>"
+        "                       <Properties>"
+        "                          <string>RootUnsharedProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='RootUnsharedProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='SubUnshared'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_subunshared</Name>"
+        "                       <Properties>"
+        "                          <string>SubUnsharedProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "       <BaseClass>RootUnshared</BaseClass>"
+        "        <ECProperty propertyName='SubUnsharedProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "userdefinedindextest8.ecdb")) << "Index on abstract classes - Schema 1";
 
-                AssertIndex(db, "ix_sub1_aid", false, "ts5_Base", {"ps1"});
-                }
+    ASSERT_EQ(SUCCESS, ImportSchema(ecdb, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts82' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts8' />"
+        "    <ECEntityClass typeName='Sub3'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_sub3</Name>"
+        "                       <Properties>"
+        "                          <string>Sub3Prop</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "       <BaseClass>ts8:Root</BaseClass>"
+        "       <BaseClass>ts8:Interface</BaseClass>"
+        "        <ECProperty propertyName='Sub3Prop' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2Unshared'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_sub2unshared</Name>"
+        "                       <Properties>"
+        "                          <string>Sub2UnsharedProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "       <BaseClass>ts8:RootUnshared</BaseClass>"
+        "        <ECProperty propertyName='Sub2UnsharedProp' typeName='int' />"
+        "    </ECEntityClass>"
+        " </ECSchema>"))) << "Index on abstract classes - Schema 2";
 
-                {
-                SchemaItem testItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                    "    <ECEntityClass typeName='Base' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                    "            </ClassMap>"
-                    "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                    "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-                    "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                    "            </ShareColumns>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='Code' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub1' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <IsUnique>True</IsUnique>"
-                    "                       <Name>uix_sub1_aid</Name>"
-                    "                       <Properties>"
-                    "                          <string>AId</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='AId' typeName='long' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub2' modifier='None'>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Name' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub3' modifier='None'>"
-                    "        <BaseClass>Base</BaseClass>"
-                    "        <ECProperty propertyName='Name2' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='Sub11' modifier='None'>"
-                    "        <BaseClass>Sub1</BaseClass>"
-                    "        <ECProperty propertyName='Cost' typeName='double' />"
-                    "    </ECEntityClass>"
-                    "</ECSchema>", true, "Unique indices on shared columns are supported.");
+    //class hierarchy with shared table
+    AssertIndex(ecdb, "uix_root", true, "ts8_Root", {"RootProp"});
 
-                ECDb db;
-                bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest6.ecdb");
-                ASSERT_FALSE(asserted);
+    //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
+    AssertIndex(ecdb, "uix_interface_ts8_Sub", true, "ts8_Sub", {"InterfaceProp"});
+    AssertIndex(ecdb, "uix_interface_ts8_Sub2", true, "ts8_Sub2", {"InterfaceProp"});
+    AssertIndex(ecdb, "uix_interface_ts82_Sub3", true, "ts82_Sub3", {"InterfaceProp"});
+    AssertIndex(ecdb, "uix_sub", true, "ts8_Sub", {"SubProp"});
+    AssertIndex(ecdb, "uix_sub2", true, "ts8_Sub2", {"Sub2Prop"});
+    AssertIndex(ecdb, "uix_sub3", true, "ts82_Sub3", {"Sub3Prop"});
 
-                ECClassId sub1ClassId = db.Schemas().GetClassId("TestSchema", "Sub1");
-                ECClassId sub11ClassId = db.Schemas().GetClassId("TestSchema", "Sub11");
-                Utf8String indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
-                AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"ps1"}, indexWhereClause.c_str());
-                }
+    ECClassCP subSubClass = ecdb.Schemas().GetClass("TestSchema", "SubSub");
+    ASSERT_TRUE(subSubClass != nullptr);
+    Utf8String indexWhere = "ECClassId=" + subSubClass->GetId().ToString();
 
-                {
-                SchemaItem testItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                    "    <ECStructClass typeName='ElementCode' modifier='None'>"
-                    "        <ECProperty propertyName='AuthorityId' typeName='long' />"
-                    "        <ECProperty propertyName='Namespace' typeName='string' />"
-                    "        <ECProperty propertyName='Val' typeName='string' />"
-                    "    </ECStructClass>"
-                    "    <ECEntityClass typeName='Element' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                    "            </ClassMap>"
-                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <IsUnique>True</IsUnique>"
-                    "                       <Name>uix_element_code</Name>"
-                    "                       <Properties>"
-                    "                          <string>Code.AuthorityId</string>"
-                    "                          <string>Code.Namespace</string>"
-                    "                          <string>Code.Val</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </DbIndexList>"
-                    "        </ECCustomAttributes>"
-                    "        <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-                    "    </ECEntityClass>"
-                    "</ECSchema>", true, "");
+    AssertIndex(ecdb, "uix_subsub", true, "ts8_Sub", {"SubSubProp"}, indexWhere.c_str());
 
-                ECDb db;
-                bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest8.ecdb");
-                ASSERT_FALSE(asserted);
+    //class hierarchy without shared table
+    AssertIndex(ecdb, "uix_rootunshared_ts8_SubUnshared", true, "ts8_SubUnshared", {"RootUnsharedProp"});
+    AssertIndex(ecdb, "uix_rootunshared_ts82_Sub2Unshared", true, "ts82_Sub2Unshared", {"RootUnsharedProp"});
+    AssertIndex(ecdb, "uix_subunshared", true, "ts8_SubUnshared", {"SubUnsharedProp"});
+    AssertIndex(ecdb, "uix_sub2unshared", true, "ts82_Sub2Unshared", {"Sub2UnsharedProp"});
+    }
 
-                AssertIndex(db, "uix_element_code", true, "ts7_Element", {"Code_AuthorityId", "Code_Namespace", "Code_Val"});
-                }
+        {
+        ECDb ecdb;
+        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "    <ECEntityClass typeName='DgnModel' modifier='None' >"
+            "        <ECProperty propertyName='Name' typeName='string' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='DgnElement' modifier='None' >"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.02.00'>"
+            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "            <DbIndexList xmlns='ECDbMap.02.00'>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>False</IsUnique>"
+            "                       <Name>ix_dgnelement_model_id_code</Name>"
+            "                       <Properties>"
+            "                          <string>Model.Id</string>"
+            "                          <string>Code</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </DbIndexList>"
+            "        </ECCustomAttributes>"
+            "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+            "        <ECProperty propertyName='Code' typeName='int' />"
+            "    </ECEntityClass>"
+            "  <ECRelationshipClass typeName='ModelHasElements' strength='embedding' modifier='Sealed'>"
+            "    <Source multiplicity='(1..1)' polymorphic='true' roleLabel='Model'>"
+            "      <Class class='DgnModel' />"
+            "    </Source>"
+            "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='Element'>"
+            "      <Class class='DgnElement' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>"), "userdefinedindextest9.ecdb"));
 
-                {
-                SchemaItem testItem("Index on abstract classes - Schema 1",
-                                    "<?xml version='1.0' encoding='utf-8'?>"
-                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                    "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
-                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                    "    <ECEntityClass typeName='Root' modifier='Abstract'>"
-                                    "        <ECCustomAttributes>"
-                                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                    "            </ClassMap>"
-                                    "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                    "                 <Indexes>"
-                                    "                   <DbIndex>"
-                                    "                       <IsUnique>True</IsUnique>"
-                                    "                       <Name>uix_root</Name>"
-                                    "                       <Properties>"
-                                    "                          <string>RootProp</string>"
-                                    "                       </Properties>"
-                                    "                   </DbIndex>"
-                                    "                 </Indexes>"
-                                    "            </DbIndexList>"
-                                    "        </ECCustomAttributes>"
-                                    "        <ECProperty propertyName='RootProp' typeName='int' />"
-                                    "    </ECEntityClass>"
-                                    "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
-                                    "        <ECCustomAttributes>"
-                                    "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-                                    "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
-                                    "            </IsMixin>"
-                                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                    "                 <Indexes>"
-                                    "                   <DbIndex>"
-                                    "                       <IsUnique>True</IsUnique>"
-                                    "                       <Name>uix_interface</Name>"
-                                    "                       <Properties>"
-                                    "                          <string>InterfaceProp</string>"
-                                    "                       </Properties>"
-                                    "                   </DbIndex>"
-                                    "                 </Indexes>"
-                                    "            </DbIndexList>"
-                                    "        </ECCustomAttributes>"
-                                    "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
-                                    "    </ECEntityClass>"
-                                    "    <ECEntityClass typeName='Sub'>"
-                                    "        <ECCustomAttributes>"
-                                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                    "                 <Indexes>"
-                                    "                   <DbIndex>"
-                                    "                       <IsUnique>True</IsUnique>"
-                                    "                       <Name>uix_sub</Name>"
-                                    "                       <Properties>"
-                                    "                          <string>SubProp</string>"
-                                    "                       </Properties>"
-                                    "                   </DbIndex>"
-                                    "                 </Indexes>"
-                                    "            </DbIndexList>"
-                                    "        </ECCustomAttributes>"
-                                    "       <BaseClass>Root</BaseClass>"
-                                    "       <BaseClass>Interface</BaseClass>"
-                                    "        <ECProperty propertyName='SubProp' typeName='int' />"
-                                    "    </ECEntityClass>"
-                                    "    <ECEntityClass typeName='SubSub'>"
-                                    "        <ECCustomAttributes>"
-                                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                    "                 <Indexes>"
-                                    "                   <DbIndex>"
-                                    "                       <IsUnique>True</IsUnique>"
-                                    "                       <Name>uix_subsub</Name>"
-                                    "                       <Properties>"
-                                    "                          <string>SubSubProp</string>"
-                                    "                       </Properties>"
-                                    "                   </DbIndex>"
-                                    "                 </Indexes>"
-                                    "            </DbIndexList>"
-                                    "        </ECCustomAttributes>"
-                                    "       <BaseClass>Sub</BaseClass>"
-                                    "        <ECProperty propertyName='SubSubProp' typeName='int' />"
-                                    "    </ECEntityClass>"
-                                    "    <ECEntityClass typeName='Sub2'>"
-                                    "        <ECCustomAttributes>"
-                                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                    "                 <Indexes>"
-                                    "                   <DbIndex>"
-                                    "                       <IsUnique>True</IsUnique>"
-                                    "                       <Name>uix_sub2</Name>"
-                                    "                       <Properties>"
-                                    "                          <string>Sub2Prop</string>"
-                                    "                       </Properties>"
-                                    "                   </DbIndex>"
-                                    "                 </Indexes>"
-                                    "            </DbIndexList>"
-                                    "        </ECCustomAttributes>"
-                                    "       <BaseClass>Root</BaseClass>"
-                                    "       <BaseClass>Interface</BaseClass>"
-                                    "        <ECProperty propertyName='Sub2Prop' typeName='int' />"
-                                    "    </ECEntityClass>"
-                                    "    <ECEntityClass typeName='RootUnshared' modifier='Abstract'>"
-                                    "        <ECCustomAttributes>"
-                                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                    "                 <Indexes>"
-                                    "                   <DbIndex>"
-                                    "                       <IsUnique>True</IsUnique>"
-                                    "                       <Name>uix_rootunshared</Name>"
-                                    "                       <Properties>"
-                                    "                          <string>RootUnsharedProp</string>"
-                                    "                       </Properties>"
-                                    "                   </DbIndex>"
-                                    "                 </Indexes>"
-                                    "            </DbIndexList>"
-                                    "        </ECCustomAttributes>"
-                                    "        <ECProperty propertyName='RootUnsharedProp' typeName='int' />"
-                                    "    </ECEntityClass>"
-                                    "    <ECEntityClass typeName='SubUnshared'>"
-                                    "        <ECCustomAttributes>"
-                                    "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                    "                 <Indexes>"
-                                    "                   <DbIndex>"
-                                    "                       <IsUnique>True</IsUnique>"
-                                    "                       <Name>uix_subunshared</Name>"
-                                    "                       <Properties>"
-                                    "                          <string>SubUnsharedProp</string>"
-                                    "                       </Properties>"
-                                    "                   </DbIndex>"
-                                    "                 </Indexes>"
-                                    "            </DbIndexList>"
-                                    "        </ECCustomAttributes>"
-                                    "       <BaseClass>RootUnshared</BaseClass>"
-                                    "        <ECProperty propertyName='SubUnsharedProp' typeName='int' />"
-                                    "    </ECEntityClass>"
-                                    "</ECSchema>");
-
-                ECDb db;
-                bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest8.ecdb");
-                ASSERT_FALSE(asserted);
-
-                SchemaItem secondSchema("Index on abstract classes - Schema 2",
-                                        "<?xml version='1.0' encoding='utf-8'?>"
-                                        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts82' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts8' />"
-                                        "    <ECEntityClass typeName='Sub3'>"
-                                        "        <ECCustomAttributes>"
-                                        "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                        "                 <Indexes>"
-                                        "                   <DbIndex>"
-                                        "                       <IsUnique>True</IsUnique>"
-                                        "                       <Name>uix_sub3</Name>"
-                                        "                       <Properties>"
-                                        "                          <string>Sub3Prop</string>"
-                                        "                       </Properties>"
-                                        "                   </DbIndex>"
-                                        "                 </Indexes>"
-                                        "            </DbIndexList>"
-                                        "        </ECCustomAttributes>"
-                                        "       <BaseClass>ts8:Root</BaseClass>"
-                                        "       <BaseClass>ts8:Interface</BaseClass>"
-                                        "        <ECProperty propertyName='Sub3Prop' typeName='int' />"
-                                        "    </ECEntityClass>"
-                                        "    <ECEntityClass typeName='Sub2Unshared'>"
-                                        "        <ECCustomAttributes>"
-                                        "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                                        "                 <Indexes>"
-                                        "                   <DbIndex>"
-                                        "                       <IsUnique>True</IsUnique>"
-                                        "                       <Name>uix_sub2unshared</Name>"
-                                        "                       <Properties>"
-                                        "                          <string>Sub2UnsharedProp</string>"
-                                        "                       </Properties>"
-                                        "                   </DbIndex>"
-                                        "                 </Indexes>"
-                                        "            </DbIndexList>"
-                                        "        </ECCustomAttributes>"
-                                        "       <BaseClass>ts8:RootUnshared</BaseClass>"
-                                        "        <ECProperty propertyName='Sub2UnsharedProp' typeName='int' />"
-                                        "    </ECEntityClass>"
-                                        " </ECSchema>");
-
-                asserted = false;
-                AssertSchemaImport(asserted, db, secondSchema);
-                ASSERT_FALSE(asserted);
-
-                //class hierarchy with shared table
-                AssertIndex(db, "uix_root", true, "ts8_Root", {"RootProp"});
-
-                //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
-                AssertIndex(db, "uix_interface_ts8_Sub", true, "ts8_Sub", {"InterfaceProp"});
-                AssertIndex(db, "uix_interface_ts8_Sub2", true, "ts8_Sub2", {"InterfaceProp"});
-                AssertIndex(db, "uix_interface_ts82_Sub3", true, "ts82_Sub3", {"InterfaceProp"});
-                AssertIndex(db, "uix_sub", true, "ts8_Sub", {"SubProp"});
-                AssertIndex(db, "uix_sub2", true, "ts8_Sub2", {"Sub2Prop"});
-                AssertIndex(db, "uix_sub3", true, "ts82_Sub3", {"Sub3Prop"});
-
-                ECClassCP subSubClass = db.Schemas().GetClass("TestSchema", "SubSub");
-                ASSERT_TRUE(subSubClass != nullptr);
-                Utf8String indexWhere = "ECClassId=" + subSubClass->GetId().ToString();
-
-                AssertIndex(db, "uix_subsub", true, "ts8_Sub", {"SubSubProp"}, indexWhere.c_str());
-
-                //class hierarchy without shared table
-                AssertIndex(db, "uix_rootunshared_ts8_SubUnshared", true, "ts8_SubUnshared", {"RootUnsharedProp"});
-                AssertIndex(db, "uix_rootunshared_ts82_Sub2Unshared", true, "ts82_Sub2Unshared", {"RootUnsharedProp"});
-                AssertIndex(db, "uix_subunshared", true, "ts8_SubUnshared", {"SubUnsharedProp"});
-                AssertIndex(db, "uix_sub2unshared", true, "ts82_Sub2Unshared", {"Sub2UnsharedProp"});
-                }
-
-                    {
-                    SchemaItem testItem(
-                        "<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' alias='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                        "    <ECEntityClass typeName='DgnModel' modifier='None' >"
-                        "        <ECProperty propertyName='Name' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='DgnElement' modifier='None' >"
-                        "        <ECCustomAttributes>"
-                        "            <ClassMap xmlns='ECDbMap.02.00'>"
-                        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                        "            </ClassMap>"
-                        "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                        "                 <Indexes>"
-                        "                   <DbIndex>"
-                        "                       <IsUnique>False</IsUnique>"
-                        "                       <Name>ix_dgnelement_model_id_code</Name>"
-                        "                       <Properties>"
-                        "                          <string>Model.Id</string>"
-                        "                          <string>Code</string>"
-                        "                       </Properties>"
-                        "                   </DbIndex>"
-                        "                 </Indexes>"
-                        "            </DbIndexList>"
-                        "        </ECCustomAttributes>"
-                        "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
-                        "        <ECProperty propertyName='Code' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ModelHasElements' strength='embedding' modifier='Sealed'>"
-                        "    <Source multiplicity='(1..1)' polymorphic='true' roleLabel='Model'>"
-                        "      <Class class='DgnModel' />"
-                        "    </Source>"
-                        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='Element'>"
-                        "      <Class class='DgnElement' />"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
-
-                    ECDb db;
-                    bool asserted = false;
-                    AssertSchemaImport(db, asserted, testItem, "userdefinedindextest9.ecdb");
-                    ASSERT_FALSE(asserted);
-
-                    AssertIndex(db, "ix_dgnelement_model_id_code", false, "ts9_DgnElement", {"ModelId","Code"});
-                    }
+        AssertIndex(ecdb, "ix_dgnelement_model_id_code", false, "ts9_DgnElement", {"ModelId","Code"});
+        }
     }
 
 
@@ -7837,56 +7431,50 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, UserDefinedIndexOnMixin)
     {
-    SchemaItem testItem("Index on mixin",
-                        "<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
-                        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                        "    <ECEntityClass typeName='Root' modifier='Abstract'>"
-                        "        <ECCustomAttributes>"
-                        "            <ClassMap xmlns='ECDbMap.02.00'>"
-                        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                        "            </ClassMap>"
-                        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                        "        </ECCustomAttributes>"
-                        "        <ECProperty propertyName='RootProp' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
-                        "        <ECCustomAttributes>"
-                        "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-                        "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
-                        "            </IsMixin>"
-                        "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                        "                 <Indexes>"
-                        "                   <DbIndex>"
-                        "                       <IsUnique>True</IsUnique>"
-                        "                       <Name>uix_interface</Name>"
-                        "                       <Properties>"
-                        "                          <string>InterfaceProp</string>"
-                        "                       </Properties>"
-                        "                   </DbIndex>"
-                        "                 </Indexes>"
-                        "            </DbIndexList>"
-                        "        </ECCustomAttributes>"
-                        "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='Sub'>"
-                        "       <BaseClass>Root</BaseClass>"
-                        "       <BaseClass>Interface</BaseClass>"
-                        "        <ECProperty propertyName='SubProp' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='SubSub'>"
-                        "       <BaseClass>Sub</BaseClass>"
-                        "        <ECProperty propertyName='SubSubProp' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindexonmixin.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Root' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='RootProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
+        "            </IsMixin>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>True</IsUnique>"
+        "                       <Name>uix_interface</Name>"
+        "                       <Properties>"
+        "                          <string>InterfaceProp</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub'>"
+        "       <BaseClass>Root</BaseClass>"
+        "       <BaseClass>Interface</BaseClass>"
+        "        <ECProperty propertyName='SubProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='SubSub'>"
+        "       <BaseClass>Sub</BaseClass>"
+        "        <ECProperty propertyName='SubSubProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Index on mixin";
 
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "userdefinedindexonmixin.ecdb");
-    ASSERT_FALSE(asserted);
-
-    AssertIndex(db, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
+    AssertIndex(m_ecdb, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
     }
 
 
@@ -7895,7 +7483,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexOnMixin)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DbMappingTestFixture, PartialIndex)
     {
-        ECDbCR ecdb = SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
             "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
             "   <ECEntityClass typeName = 'IndexClass' >"
             "       <ECCustomAttributes>"
@@ -7930,13 +7518,10 @@ TEST_F(DbMappingTestFixture, PartialIndex)
             "   <ECProperty propertyName ='PropertyFullIndex' typeName = 'string' />"
             "   <ECProperty propertyName ='PropertyPartialIndex' typeName = 'string' />"
             "   </ECEntityClass>"
-            "</ECSchema>"));
-
-        ASSERT_TRUE(ecdb.IsDbOpen());
-
+            "</ECSchema>")));
         //Verify that one Partial index was created
         BeSQLite::Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ts_IndexClass' AND name=?"));
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ts_IndexClass' AND name=?"));
         ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Partial", Statement::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         Utf8String sqlCmd = stmt.GetValueText(4);
@@ -7962,7 +7547,7 @@ TEST_F(DbMappingTestFixture, PartialIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DbMappingTestFixture, UniqueIndex)
     {
-    ECDbCR ecdb = SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                 "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                                 "<ECEntityClass typeName='IndexClass2' >"
                                                                 "   <ECCustomAttributes>"
@@ -7988,13 +7573,11 @@ TEST_F(DbMappingTestFixture, UniqueIndex)
                                                                 "   <ECProperty propertyName='Property1' typeName='string' />"
                                                                 "   <ECProperty propertyName='Property2' typeName='string' />"
                                                                 "</ECEntityClass>"
-                                                                "</ECSchema>"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
+                                                                "</ECSchema>")));
 
     //Verify that one Unique index was created
     BeSQLite::Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ts_IndexClass2' AND name=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ts_IndexClass2' AND name=?"));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Unique", Statement::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8String sqlCmd = stmt.GetValueText(4);
@@ -8006,8 +7589,6 @@ TEST_F(DbMappingTestFixture, UniqueIndex)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     sqlCmd = stmt.GetValueText(4);
     ASSERT_TRUE(sqlCmd.find("UNIQUE") == std::string::npos);
-
-    stmt.Finalize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8015,8 +7596,7 @@ TEST_F(DbMappingTestFixture, UniqueIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DbMappingTestFixture, IndexErrors)
     {
-    std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                      "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "<ECEntityClass typeName='IndexClass3' >"
                                      "   <ECCustomAttributes>"
@@ -8036,9 +7616,9 @@ TEST_F(DbMappingTestFixture, IndexErrors)
                                      "   <ECProperty propertyName='PropertyInt' typeName='int' />"
                                      "   <ECProperty propertyName='PropertyDouble' typeName='double' />"
                                      "</ECEntityClass>"
-                                     "</ECSchema>", false));
+                                     "</ECSchema>")));
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "<ECEntityClass typeName='IndexClass3' >"
@@ -8059,9 +7639,9 @@ TEST_F(DbMappingTestFixture, IndexErrors)
         "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
         "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
         "</ECEntityClass>"
-        "</ECSchema>", false));
+        "</ECSchema>")));
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
         "<ECEntityClass typeName = 'IndexClass3' >"
@@ -8083,9 +7663,9 @@ TEST_F(DbMappingTestFixture, IndexErrors)
         "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
         "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
         "</ECEntityClass>"
-        "</ECSchema>", false));
+        "</ECSchema>")));
 
-    testSchemas.push_back(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
         "<ECEntityClass typeName = 'IndexClass3' >"
@@ -8106,9 +7686,7 @@ TEST_F(DbMappingTestFixture, IndexErrors)
         "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
         "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
         "</ECEntityClass>"
-        "</ECSchema>", true));
-
-    AssertSchemaImport(testSchemas, "ecdbmapindextest.ecdb");
+        "</ECSchema>")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -8116,61 +7694,58 @@ TEST_F(DbMappingTestFixture, IndexErrors)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, PropertyMapCAOnNavigationProperty)
     {
-    std::vector<SchemaItem> invalidCases {
-        SchemaItem(
-            "<?xml version='1.0' encoding='utf-8'?>"
-            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-            "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-            "    <ECEntityClass typeName='A' modifier='None'>"
-            "        <ECProperty propertyName='MyId' typeName='long' />"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='B' modifier='None'>"
-            "        <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward'>"
-            "           <ECCustomAttributes>"
-            "            <PropertyMap xmlns='ECDbMap.02.00'>"
-            "            </PropertyMap>"
-            "           </ECCustomAttributes>"
-            "        </ECNavigationProperty>"
-            "        <ECProperty propertyName='Name' typeName='string' />"
-            "    </ECEntityClass>"
-            "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-            "    <Source cardinality='(0,1)' polymorphic='True'>"
-            "      <Class class='A'/>"
-            "    </Source>"
-            "    <Target cardinality='(0,N)' polymorphic='True'>"
-            "      <Class class='B' />"
-            "    </Target>"
-            "  </ECRelationshipClass>"
-            "</ECSchema>", false, "PropertyMap CA not allowed on navigation property"),
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None'>"
+        "        <ECProperty propertyName='MyId' typeName='long' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECNavigationProperty>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='A'/>"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='B' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>"))) << "PropertyMap CA not allowed on navigation property";
 
-        SchemaItem(
-            "<?xml version='1.0' encoding='utf-8'?>"
-            "<ECSchema schemaName='TestSchema' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-            "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-            "    <ECEntityClass typeName='A' modifier='None'>"
-            "        <ECProperty propertyName='MyId' typeName='long' />"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='B' modifier='None'>"
-            "        <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward'>"
-            "           <ECCustomAttributes>"
-            "            <PropertyMap xmlns='ECDbMap.02.00'>"
-            "               <IsNullable>false</IsNullable>"
-            "            </PropertyMap>"
-            "           </ECCustomAttributes>"
-            "        </ECNavigationProperty>"
-            "        <ECProperty propertyName='Name' typeName='string' />"
-            "    </ECEntityClass>"
-            "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A'>"
-            "      <Class class='A'/>"
-            "    </Source>"
-            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='B'>"
-            "      <Class class='B' />"
-            "    </Target>"
-            "  </ECRelationshipClass>"
-            "</ECSchema>", false, "PropertyMap CA not allowed on navigation property")};
-
-    AssertSchemaImport(invalidCases, "propertymaponnavproptests.ecdb");
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None'>"
+        "        <ECProperty propertyName='MyId' typeName='long' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <IsNullable>false</IsNullable>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECNavigationProperty>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
+        "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A'>"
+        "      <Class class='A'/>"
+        "    </Source>"
+        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='B'>"
+        "      <Class class='B' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>"))) << "PropertyMap CA not allowed on navigation property";;
     }
 
 
@@ -8179,8 +7754,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAOnNavigationProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
     {
-    std::vector<SchemaItem> invalidSchemas;
-    invalidSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts0" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                                             <ECEntityClass typeName="Foo" modifier="None">
@@ -8192,9 +7766,9 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                                    </ECCustomAttributes>
                                                 </ECProperty>
                                             </ECEntityClass>
-                                        </ECSchema>)xml", false, "ColumnName without MapStrategy Existing Table"));
+                                        </ECSchema>)xml"))) << "ColumnName without MapStrategy Existing Table";
 
-    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                         "<ECSchema schemaName='TestSchema' alias='ts0' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                         "    <ECEntityClass typeName='Base' modifier='None'>"
@@ -8215,9 +7789,9 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                         "           </ECCustomAttributes>"
                                         "        </ECProperty>"
                                         "    </ECEntityClass>"
-                                        "</ECSchema>", false, "ColumnName without MapStrategy Existing Table and on shared column"));
+                                        "</ECSchema>"))) << "ColumnName without MapStrategy Existing Table and on shared column";
 
-    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                         "<ECSchema schemaName='TestSchema' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                         "    <ECEntityClass typeName='Base' modifier='None'>"
@@ -8238,14 +7812,10 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                         "           </ECCustomAttributes>"
                                         "        </ECProperty>"
                                         "    </ECEntityClass>"
-                                        "</ECSchema>", false, "Collation on shared column"));
+                                        "</ECSchema>"))) << "Collation on shared column";
 
-    AssertSchemaImport(invalidSchemas, "propertymapcacolumnnamecollation_invalidcases.ecdb");
 
-    if (GetECDb().IsDbOpen())
-        GetECDb().CloseDb();
-
-    ECDbCR ecdb = SetupECDb("propertymapcacolumnnamecollationtests.ecdb",
+    ASSERT_EQ(SUCCESS, SetupECDb("propertymapcacolumnnamecollationtests.ecdb",
                             SchemaItem(
                                 "<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='TestSchema' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -8318,12 +7888,10 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                 "           </ECCustomAttributes>"
                                 "        </ECProperty>"
                                 "    </ECEntityClass>"
-                                "</ECSchema>"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
+                                "</ECSchema>")));
 
     bvector<Utf8String> actualColNames;
-    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts3_Base"));
+    ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts3_Base"));
     ASSERT_EQ(5, actualColNames.size()) << "ts3_Base";
     ASSERT_STRCASEEQ("Id", actualColNames[0].c_str()) << "ts3_Base";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts3_Base";
@@ -8331,7 +7899,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
     ASSERT_STRCASEEQ("P_Sub1", actualColNames[3].c_str()) << "ts3_Base";
     ASSERT_STRCASEEQ("P_Sub2", actualColNames[4].c_str()) << "ts3_Base";
 
-    Utf8String tsBaseDdl = RetrieveDdl(ecdb, "ts3_Base");
+    Utf8String tsBaseDdl = RetrieveDdl(m_ecdb, "ts3_Base");
     ASSERT_FALSE(tsBaseDdl.empty());
 
     ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Base] INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
@@ -8340,25 +7908,25 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
 
 
     actualColNames.clear();
-    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts3_Sub2Sub"));
+    ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts3_Sub2Sub"));
     ASSERT_EQ(3, actualColNames.size()) << "ts3_Sub2Sub";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts3_Sub2Sub";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts3_Sub2Sub";
     ASSERT_STRCASEEQ("P_Sub2sub", actualColNames[2].c_str()) << "ts3_Sub2Sub";
 
-    Utf8String tsSub2SubDdl = RetrieveDdl(ecdb, "ts3_Sub2Sub");
+    Utf8String tsSub2SubDdl = RetrieveDdl(m_ecdb, "ts3_Sub2Sub");
     ASSERT_FALSE(tsSub2SubDdl.empty());
 
     ASSERT_TRUE(tsSub2SubDdl.ContainsI("[P_Sub2sub] INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2SubDdl.c_str();
 
     actualColNames.clear();
-    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts3_Sub2Sub2"));
+    ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts3_Sub2Sub2"));
     ASSERT_EQ(3, actualColNames.size()) << "ts3_Sub2Sub2";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts3_Sub2Sub2";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts3_Sub2Sub2";
     ASSERT_STRCASEEQ("P_Sub2sub2", actualColNames[2].c_str()) << "ts3_Sub2Sub2";
 
-    Utf8String tsSub2Sub2Ddl = RetrieveDdl(ecdb, "ts3_Sub2Sub2");
+    Utf8String tsSub2Sub2Ddl = RetrieveDdl(m_ecdb, "ts3_Sub2Sub2");
     ASSERT_FALSE(tsSub2Sub2Ddl.empty());
 
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[P_Sub2sub2] INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2Sub2Ddl.c_str();
@@ -8369,7 +7937,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     {
-    ECDbCR ecdb = SetupECDb("propertymapcatests.ecdb",
+    ASSERT_EQ(SUCCESS, SetupECDb("propertymapcatests.ecdb",
                             SchemaItem(
                                 "<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -8472,12 +8040,10 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
                                     "           </ECCustomAttributes>"
                                     "        </ECProperty>"
                                     "    </ECEntityClass>"
-                                "</ECSchema>"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    GetECDb().SaveChanges();
+                                "</ECSchema>")));
 
     bvector<Utf8String> actualColNames;
-    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Base"));
+    ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts_Base"));
     ASSERT_EQ(5, actualColNames.size()) << "ts_Base";
     ASSERT_STRCASEEQ("Id", actualColNames[0].c_str()) << "ts_Base";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Base";
@@ -8486,43 +8052,43 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_STRCASEEQ("P_Sub2", actualColNames[4].c_str()) << "ts_Base";
 
 
-    Utf8String tsBaseDdl = RetrieveDdl(ecdb, "ts_Base");
+    Utf8String tsBaseDdl = RetrieveDdl(m_ecdb, "ts_Base");
     ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Base] INTEGER NOT NULL UNIQUE,")) << tsBaseDdl.c_str();
     ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Sub1] INTEGER UNIQUE,")) << tsBaseDdl.c_str();
     ASSERT_TRUE(tsBaseDdl.ContainsI("[P_Sub2] INTEGER UNIQUE")) << tsBaseDdl.c_str();
 
 
     actualColNames.clear();
-    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub"));
+    ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts_Sub2Sub"));
     ASSERT_EQ(4, actualColNames.size()) << "ts_Sub2Sub";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub";
     ASSERT_STRCASEEQ("P_Sub2sub", actualColNames[2].c_str()) << "ts_Sub2Sub";
     ASSERT_STRCASEEQ("P_Sub2subsub", actualColNames[3].c_str()) << "ts_Sub2Sub";
 
-    Utf8String tsSub2SubDdl = RetrieveDdl(ecdb, "ts_Sub2Sub");
+    Utf8String tsSub2SubDdl = RetrieveDdl(m_ecdb, "ts_Sub2Sub");
     ASSERT_TRUE(tsSub2SubDdl.ContainsI("[P_Sub2sub] INTEGER NOT NULL UNIQUE,")) << tsSub2SubDdl.c_str();
     ASSERT_TRUE(tsSub2SubDdl.ContainsI("[P_Sub2subsub] INTEGER UNIQUE,")) << tsSub2SubDdl.c_str();
 
     actualColNames.clear();
-    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2"));
+    ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts_Sub2Sub2"));
     ASSERT_EQ(4, actualColNames.size()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("js1", actualColNames[2].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("js2", actualColNames[3].c_str()) << "ts_Sub2Sub2";
 
-    Utf8String tsSub2Sub2Ddl = RetrieveDdl(ecdb, "ts_Sub2Sub2");
+    Utf8String tsSub2Sub2Ddl = RetrieveDdl(m_ecdb, "ts_Sub2Sub2");
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[js1] BLOB,")) << tsSub2Sub2Ddl.c_str();
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[js2] BLOB,")) << tsSub2Sub2Ddl.c_str();
 
     actualColNames.clear();
-    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2_Overflow"));
+    ASSERT_TRUE(m_ecdb.GetColumns(actualColNames, "ts_Sub2Sub2_Overflow"));
     ASSERT_EQ(3, actualColNames.size()) << "ts_Sub2Sub2_Overflow";
     ASSERT_STRCASEEQ("BaseId", actualColNames[0].c_str()) << "ts_Sub2Sub2_Overflow";
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts_Sub2Sub2_Overflow";
 
-    Utf8String tsSub2Sub2_OverflowDdl = RetrieveDdl(ecdb, "ts_Sub2Sub2_Overflow");
+    Utf8String tsSub2Sub2_OverflowDdl = RetrieveDdl(m_ecdb, "ts_Sub2Sub2_Overflow");
     ASSERT_TRUE(tsSub2Sub2_OverflowDdl.ContainsI("[os1] BLOB,")) << tsSub2Sub2_OverflowDdl.c_str();
 
 
@@ -8533,127 +8099,106 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableAndIndexWhereClause)
     {
-            {
-            SchemaItem testItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='B' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "               <Indexes>"
-                "                   <DbIndex>"
-                "                       <Name>ix_b_code</Name>"
-                "                       <Properties>"
-                "                           <string>Code</string>"
-                "                       </Properties>"
-                "                       <Where>IndexedColumnsAreNotNull</Where>"
-                "                   </DbIndex>"
-                "               </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='long' >"
-                "           <ECCustomAttributes>"
-                "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                "               <IsNullable>false</IsNullable>"
-                "            </PropertyMap>"
-                "           </ECCustomAttributes>"
-                "        </ECProperty>"
-                "        <ECProperty propertyName='Name' typeName='string' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", true, "");
+    ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest1.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "               <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>ix_b_code</Name>"
+        "                       <Properties>"
+        "                           <string>Code</string>"
+        "                       </Properties>"
+        "                       <Where>IndexedColumnsAreNotNull</Where>"
+        "                   </DbIndex>"
+        "               </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='long' >"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <IsNullable>false</IsNullable>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
+    AssertIndex(m_ecdb, "ix_b_code", false, "ts1_B", {"Code"});
 
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest1.ecdb");
-            ASSERT_FALSE(asserted);
-            AssertIndex(db, "ix_b_code", false, "ts1_B", {"Code"});
-            }
+    ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest2.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "               <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>ix_b_code_name</Name>"
+        "                       <Properties>"
+        "                           <string>Code</string>"
+        "                           <string>Name</string>"
+        "                       </Properties>"
+        "                       <Where>IndexedColumnsAreNotNull</Where>"
+        "                   </DbIndex>"
+        "               </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='long' >"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <IsNullable>false</IsNullable>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
+    AssertIndex(m_ecdb, "ix_b_code_name", false, "ts2_B", {"Code","Name"}, "([Name] IS NOT NULL)");
 
-            {
-            SchemaItem testItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='B' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "               <Indexes>"
-                "                   <DbIndex>"
-                "                       <Name>ix_b_code_name</Name>"
-                "                       <Properties>"
-                "                           <string>Code</string>"
-                "                           <string>Name</string>"
-                "                       </Properties>"
-                "                       <Where>IndexedColumnsAreNotNull</Where>"
-                "                   </DbIndex>"
-                "               </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='long' >"
-                "           <ECCustomAttributes>"
-                "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                "               <IsNullable>false</IsNullable>"
-                "            </PropertyMap>"
-                "           </ECCustomAttributes>"
-                "        </ECProperty>"
-                "        <ECProperty propertyName='Name' typeName='string' />"
-                "    </ECEntityClass>"
-                "</ECSchema>", true, "");
 
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest2.ecdb");
-            ASSERT_FALSE(asserted);
-            AssertIndex(db, "ix_b_code_name", false, "ts2_B", {"Code","Name"}, "([Name] IS NOT NULL)");
-            }
+    ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest3.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "               <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>ix_b_code_name</Name>"
+        "                       <Properties>"
+        "                           <string>Code</string>"
+        "                           <string>Name</string>"
+        "                       </Properties>"
+        "                       <Where>IndexedColumnsAreNotNull</Where>"
+        "                   </DbIndex>"
+        "               </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='long' >"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <IsNullable>false</IsNullable>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='Name' typeName='string'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <IsNullable>false</IsNullable>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
-            {
-            SchemaItem testItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='B' modifier='None'>"
-                "        <ECCustomAttributes>"
-                "            <DbIndexList xmlns='ECDbMap.02.00'>"
-                "               <Indexes>"
-                "                   <DbIndex>"
-                "                       <Name>ix_b_code_name</Name>"
-                "                       <Properties>"
-                "                           <string>Code</string>"
-                "                           <string>Name</string>"
-                "                       </Properties>"
-                "                       <Where>IndexedColumnsAreNotNull</Where>"
-                "                   </DbIndex>"
-                "               </Indexes>"
-                "            </DbIndexList>"
-                "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='Code' typeName='long' >"
-                "           <ECCustomAttributes>"
-                "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                "               <IsNullable>false</IsNullable>"
-                "            </PropertyMap>"
-                "           </ECCustomAttributes>"
-                "        </ECProperty>"
-                "        <ECProperty propertyName='Name' typeName='string'>"
-                "           <ECCustomAttributes>"
-                "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                "               <IsNullable>false</IsNullable>"
-                "            </PropertyMap>"
-                "           </ECCustomAttributes>"
-                "        </ECProperty>"
-                "    </ECEntityClass>"
-                "</ECSchema>", true, "");
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest3.ecdb");
-            ASSERT_FALSE(asserted);
-            AssertIndex(db, "ix_b_code_name", false, "ts3_B", {"Code", "Name"});
-            }
+    AssertIndex(m_ecdb, "ix_b_code_name", false, "ts3_B", {"Code", "Name"});
     }
-
-
 
 
 //--------------------------------------------------------------------------------------
@@ -8661,7 +8206,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableAndIndexWhereClause)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
     {
-    SetupECDb("classhascurrenttimestampCA.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("classhascurrenttimestampCA.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
@@ -8674,18 +8219,17 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
             <ECProperty propertyName="Code" typeName="int" />
             <ECProperty propertyName="LastMod" typeName="dateTime" />
         </ECEntityClass>
-        </ECSchema>)xml"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+        </ECSchema>)xml")));
 
     ECInstanceKey key;
     {
     ECSqlStatement insertStatement;
-    ASSERT_EQ(ECSqlStatus::Success, insertStatement.Prepare(GetECDb(), "INSERT INTO ts.Foo(Code) VALUES(12)"));
+    ASSERT_EQ(ECSqlStatus::Success, insertStatement.Prepare(m_ecdb, "INSERT INTO ts.Foo(Code) VALUES(12)"));
     ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
     }
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT LastMod FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT LastMod FROM ts.Foo WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetInstanceId()));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
@@ -8697,7 +8241,7 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
     {
     BeThreadUtilities::BeSleep(200); // make sure the time is different by more than the resolution of the timestamp
     ECSqlStatement updateStatement;
-    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(GetECDb(), "UPDATE ts.Foo SET Code=23 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(m_ecdb, "UPDATE ts.Foo SET Code=23 WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, updateStatement.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
     }
@@ -8718,7 +8262,7 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
     {
-    AssertSchemaImport(SchemaItem(
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
@@ -8739,10 +8283,8 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
             <BaseClass>IHasLastMod</BaseClass>
             <ECProperty propertyName="Code" typeName="int" />
         </ECEntityClass>
-        </ECSchema>)xml", false, "ClassHasCurrentTimeStampProperty may not be assigned to Mixin"), "classhascurrenttimestampCAonmixin.ecdb");
+        </ECSchema>)xml"))) << "ClassHasCurrentTimeStampProperty may not be assigned to Mixin";
     }
-
-
 
 
 //---------------------------------------------------------------------------------------
@@ -8750,9 +8292,8 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     {
-    SetupECDb("diamond_problem.ecdb",
-              SchemaItem("Diamond Problem",
-                         "<?xml version='1.0' encoding='UTF-8'?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("diamond_problem.ecdb",
+              SchemaItem("<?xml version='1.0' encoding='UTF-8'?>"
                          "<ECSchema schemaName='Foo' alias='Foo' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -8844,12 +8385,8 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
                          "    <BaseClass>IBehaviour3</BaseClass>"
                          "    <ECProperty propertyName='P23' typeName='string' />"
                          "  </ECEntityClass>"
-                         "</ECSchema>"
-              ));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateClassViewsInDb();
-
-
+                         "</ECSchema>" )));
+    m_ecdb.Schemas().CreateClassViewsInDb();
 
     /*
     IBehaviour1(IB1)
@@ -8867,21 +8404,21 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     SubObject22(P0, IB1, P21, IB2, P22)
     SubObject23(P0, IB1, P21, IB2, P22, IB3, P23)
     */
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject1    (P0, IB1, P1)                       VALUES ('P0-1', 'IB1-1', 'P1-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject2    (P0, IB2, P2)                       VALUES ('P0-2', 'IB2-1', 'P2-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject3    (P0, IB3, P3)                       VALUES ('P0-3', 'IB3-1', 'P3-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject123  (P0, IB1, IB2, IB3, P123)           VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject11   (P0, IB1, P11)                      VALUES ('P0-5', 'IB1-3', 'P11-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject12   (P0, IB1, P11, IB2, P12)            VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject13   (P0, IB1, P11, IB2, P12, IB3, P13)  VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject21   (P0, IB1, P21)                      VALUES ('P0-8', 'IB1-6', 'P21-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject22   (P0, IB1, P21, IB2, P22)            VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO Foo.SubObject23   (P0, IB1, P21, IB2, P22, IB3, P23)  VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')"));
-    GetECDb().SaveChanges();
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject1    (P0, IB1, P1)                       VALUES ('P0-1', 'IB1-1', 'P1-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject2    (P0, IB2, P2)                       VALUES ('P0-2', 'IB2-1', 'P2-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject3    (P0, IB3, P3)                       VALUES ('P0-3', 'IB3-1', 'P3-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject123  (P0, IB1, IB2, IB3, P123)           VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject11   (P0, IB1, P11)                      VALUES ('P0-5', 'IB1-3', 'P11-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject12   (P0, IB1, P11, IB2, P12)            VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject13   (P0, IB1, P11, IB2, P12, IB3, P13)  VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject21   (P0, IB1, P21)                      VALUES ('P0-8', 'IB1-6', 'P21-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject22   (P0, IB1, P21, IB2, P22)            VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO Foo.SubObject23   (P0, IB1, P21, IB2, P22, IB3, P23)  VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')"));
+    m_ecdb.SaveChanges();
 
     //====[Foo.Object]====================================================
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0 FROM Foo.Object ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0 FROM Foo.Object ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-1", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-3", stmt.GetValueText(0));
@@ -8896,7 +8433,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.SubObject1]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P1 FROM Foo.SubObject1 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB1, P1 FROM Foo.SubObject1 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("P0-1", stmt.GetValueText(0));
     ASSERT_STREQ("IB1-1", stmt.GetValueText(1));
@@ -8905,7 +8442,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.SubObject2]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB2, P2 FROM Foo.SubObject2 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB2, P2 FROM Foo.SubObject2 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("P0-2", stmt.GetValueText(0));
     ASSERT_STREQ("IB2-1", stmt.GetValueText(1));
@@ -8914,7 +8451,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.SubObject3]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB3, P3 FROM Foo.SubObject3 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB3, P3 FROM Foo.SubObject3 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("P0-3", stmt.GetValueText(0));
     ASSERT_STREQ("IB3-1", stmt.GetValueText(1));
@@ -8923,7 +8460,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.SubObject123]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, IB2, IB3, P123 FROM Foo.SubObject123 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB1, IB2, IB3, P123 FROM Foo.SubObject123 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("P0-4", stmt.GetValueText(0));
     ASSERT_STREQ("IB1-2", stmt.GetValueText(1));
@@ -8934,7 +8471,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.SubObject11]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P11 FROM Foo.SubObject11 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB1, P11 FROM Foo.SubObject11 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-5", stmt.GetValueText(0)); ASSERT_STREQ("IB1-3", stmt.GetValueText(1)); ASSERT_STREQ("P11-1", stmt.GetValueText(2));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-6", stmt.GetValueText(0)); ASSERT_STREQ("IB1-4", stmt.GetValueText(1)); ASSERT_STREQ("P11-2", stmt.GetValueText(2));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-7", stmt.GetValueText(0)); ASSERT_STREQ("IB1-5", stmt.GetValueText(1)); ASSERT_STREQ("P11-3", stmt.GetValueText(2));
@@ -8942,20 +8479,20 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.SubObject12]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P11, IB2, P12 FROM Foo.SubObject12 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB1, P11, IB2, P12 FROM Foo.SubObject12 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-6", stmt.GetValueText(0)); ASSERT_STREQ("IB1-4", stmt.GetValueText(1)); ASSERT_STREQ("P11-2", stmt.GetValueText(2)); ASSERT_STREQ("IB2-3", stmt.GetValueText(3)); ASSERT_STREQ("P12-1", stmt.GetValueText(4));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-7", stmt.GetValueText(0)); ASSERT_STREQ("IB1-5", stmt.GetValueText(1)); ASSERT_STREQ("P11-3", stmt.GetValueText(2)); ASSERT_STREQ("IB2-4", stmt.GetValueText(3)); ASSERT_STREQ("P12-2", stmt.GetValueText(4));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     //====[Foo.SubObject13]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P11, IB2, P12, IB3, P13 FROM Foo.SubObject13 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB1, P11, IB2, P12, IB3, P13 FROM Foo.SubObject13 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-7", stmt.GetValueText(0)); ASSERT_STREQ("IB1-5", stmt.GetValueText(1)); ASSERT_STREQ("P11-3", stmt.GetValueText(2)); ASSERT_STREQ("IB2-4", stmt.GetValueText(3)); ASSERT_STREQ("P12-2", stmt.GetValueText(4)); ASSERT_STREQ("IB3-3", stmt.GetValueText(5)); ASSERT_STREQ("P13-1", stmt.GetValueText(6));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     //====[Foo.SubObject21]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P21 FROM Foo.SubObject21 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB1, P21 FROM Foo.SubObject21 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-8", stmt.GetValueText(0)); ASSERT_STREQ("IB1-6", stmt.GetValueText(1)); ASSERT_STREQ("P21-1", stmt.GetValueText(2));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-9", stmt.GetValueText(0)); ASSERT_STREQ("IB1-7", stmt.GetValueText(1)); ASSERT_STREQ("P21-2", stmt.GetValueText(2));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-0", stmt.GetValueText(0)); ASSERT_STREQ("IB1-0", stmt.GetValueText(1)); ASSERT_STREQ("P21-3", stmt.GetValueText(2));
@@ -8963,20 +8500,20 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.SubObject22]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P21, IB2, P22 FROM Foo.SubObject22 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB1, P21, IB2, P22 FROM Foo.SubObject22 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-9", stmt.GetValueText(0)); ASSERT_STREQ("IB1-7", stmt.GetValueText(1)); ASSERT_STREQ("P21-2", stmt.GetValueText(2)); ASSERT_STREQ("IB2-5", stmt.GetValueText(3)); ASSERT_STREQ("P22-1", stmt.GetValueText(4));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-0", stmt.GetValueText(0)); ASSERT_STREQ("IB1-0", stmt.GetValueText(1)); ASSERT_STREQ("P21-3", stmt.GetValueText(2)); ASSERT_STREQ("IB2-6", stmt.GetValueText(3)); ASSERT_STREQ("P22-2", stmt.GetValueText(4));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     //====[Foo.SubObject23]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P0, IB1, P21, IB2, P22, IB3, P23 FROM Foo.SubObject23 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P0, IB1, P21, IB2, P22, IB3, P23 FROM Foo.SubObject23 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("P0-0", stmt.GetValueText(0)); ASSERT_STREQ("IB1-0", stmt.GetValueText(1)); ASSERT_STREQ("P21-3", stmt.GetValueText(2)); ASSERT_STREQ("IB2-6", stmt.GetValueText(3)); ASSERT_STREQ("P22-2", stmt.GetValueText(4)); ASSERT_STREQ("IB3-4", stmt.GetValueText(5)); ASSERT_STREQ("P23-1", stmt.GetValueText(6));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     //====[Foo.IBehaviour1]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB1 FROM Foo.IBehaviour1 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT IB1 FROM Foo.IBehaviour1 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-1", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-3", stmt.GetValueText(0));
@@ -8989,7 +8526,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.IBehaviour2]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB2 FROM Foo.IBehaviour2 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT IB2 FROM Foo.IBehaviour2 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-1", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-3", stmt.GetValueText(0));
@@ -9000,7 +8537,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     stmt.Finalize();
 
     //====[Foo.IBehaviour3]====================================================
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB3 FROM Foo.IBehaviour3 ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT IB3 FROM Foo.IBehaviour3 ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-1", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-3", stmt.GetValueText(0));
@@ -9014,8 +8551,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, DiamondProblem_Case1)
     {
-    SetupECDb("diamond_problem.ecdb",
-              SchemaItem("Diamond Problem",
+    ASSERT_EQ(SUCCESS, SetupECDb("diamond_problem.ecdb", SchemaItem(
                          "<ECSchema schemaName='TestSchema' alias='ts' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                          "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
@@ -9053,37 +8589,35 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case1)
                          "      <BaseClass>IXFace</BaseClass>"
                          "      <ECProperty propertyName='P5' typeName='long' />"
                          "  </ECEntityClass>"
-                         "</ECSchema>"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().SaveChanges();
+                         "</ECSchema>"))) << "Diamond Problem";
 
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D_A      (P1, P2, P3) VALUES (11, 21, 31)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D_B      (P1, P4    ) VALUES (12, 42    )"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.DB_XFace (P1, P2, P4) VALUES (12, 22, 43)"));
-    GetECDb().Schemas().CreateClassViewsInDb();
-    GetECDb().SaveChanges();
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.D_A      (P1, P2, P3) VALUES (11, 21, 31)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.D_B      (P1, P4    ) VALUES (12, 42    )"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.DB_XFace (P1, P2, P4) VALUES (12, 22, 43)"));
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    m_ecdb.SaveChanges();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P3 FROM ts.D_A WHERE ECInstanceId = 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P1, P2, P3 FROM ts.D_A WHERE ECInstanceId = 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(11, stmt.GetValueInt64(0));
     ASSERT_EQ(21, stmt.GetValueInt64(1));
     ASSERT_EQ(31, stmt.GetValueInt64(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P4 FROM ts.D_B WHERE ECInstanceId = 2"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P1, P4 FROM ts.D_B WHERE ECInstanceId = 2"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(12, stmt.GetValueInt64(0)) << stmt.GetNativeSql();
     ASSERT_EQ(42, stmt.GetValueInt64(1)) << stmt.GetNativeSql();
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P4 FROM ts.DB_XFace WHERE ECInstanceId = 3"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P1, P2, P4 FROM ts.DB_XFace WHERE ECInstanceId = 3"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(12, stmt.GetValueInt64(0)) << stmt.GetNativeSql();
     ASSERT_EQ(22, stmt.GetValueInt64(1)) << stmt.GetNativeSql();
     ASSERT_EQ(43, stmt.GetValueInt64(2)) << stmt.GetNativeSql();
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFace ORDER BY P2 "));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P2 FROM ts.IXFace ORDER BY P2 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(21, stmt.GetValueInt64(0)) << stmt.GetNativeSql();
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -9095,9 +8629,8 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case1)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
     {
-    SetupECDb("diamond_problem.ecdb",
-              SchemaItem("Diamond Problem",
-                         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, SetupECDb("diamond_problem.ecdb",
+              SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                          "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
                          "  <ECEntityClass typeName='BaseClass' modifier='Abstract'>"
@@ -9148,18 +8681,16 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
                          "      <BaseClass>IXFaceA</BaseClass>" //p2
                          "      <ECProperty propertyName='P7' typeName='long' />"
                          "  </ECEntityClass>"
-                         "</ECSchema>"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().SaveChanges();
+                         "</ECSchema>")));
 
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D1_AB (P1, P2, P3, P4, P6) VALUES (11, 21, 31, 41, 61)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D2_AB (P1, P2, P3, P5, P7) VALUES (12, 22, 32, 52, 72)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D3_A  (P1, P2, P4)     VALUES (13, 23, 43)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D4_B  (P1, P3, P5)     VALUES (14, 34, 54)"));
-    GetECDb().Schemas().CreateClassViewsInDb();
-    GetECDb().SaveChanges();
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.D1_AB (P1, P2, P3, P4, P6) VALUES (11, 21, 31, 41, 61)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.D2_AB (P1, P2, P3, P5, P7) VALUES (12, 22, 32, 52, 72)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.D3_A  (P1, P2, P4)     VALUES (13, 23, 43)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.D4_B  (P1, P3, P5)     VALUES (14, 34, 54)"));
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    m_ecdb.SaveChanges();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P3, P4, P6 FROM ts.D1_AB WHERE ECInstanceId = 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P1, P2, P3, P4, P6 FROM ts.D1_AB WHERE ECInstanceId = 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(11, stmt.GetValueInt64(0));
     ASSERT_EQ(21, stmt.GetValueInt64(1));
@@ -9168,7 +8699,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(61, stmt.GetValueInt64(4));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P3, P5, P7 FROM ts.D2_AB WHERE ECInstanceId = 2"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P1, P2, P3, P5, P7 FROM ts.D2_AB WHERE ECInstanceId = 2"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(12, stmt.GetValueInt64(0));
     ASSERT_EQ(22, stmt.GetValueInt64(1));
@@ -9177,21 +8708,21 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(72, stmt.GetValueInt64(4));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P4 FROM ts.D3_A WHERE ECInstanceId = 3"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P1, P2, P4 FROM ts.D3_A WHERE ECInstanceId = 3"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(13, stmt.GetValueInt64(0));
     ASSERT_EQ(23, stmt.GetValueInt64(1));
     ASSERT_EQ(43, stmt.GetValueInt64(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P3, P5 FROM ts.D4_B WHERE ECInstanceId = 4"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P1, P3, P5 FROM ts.D4_B WHERE ECInstanceId = 4"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(14, stmt.GetValueInt64(0));
     ASSERT_EQ(34, stmt.GetValueInt64(1));
     ASSERT_EQ(54, stmt.GetValueInt64(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFaceA ORDER BY P2 "));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P2 FROM ts.IXFaceA ORDER BY P2 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(21, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -9201,7 +8732,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P3 FROM ts.IXFaceB ORDER BY P3 "));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P3 FROM ts.IXFaceB ORDER BY P3 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(31, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -9216,9 +8747,8 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, DiamondProblem_Case3)
     {
-    SetupECDb("diamond_problem3.ecdb",
-              SchemaItem("Diamond Problem",
-                         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, SetupECDb("diamond_problem3.ecdb",
+              SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                          "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
                          "  <ECEntityClass typeName='Base'>"
@@ -9253,24 +8783,23 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case3)
                          "      <BaseClass>IClassB</BaseClass>"
                          "      <ECProperty propertyName='P4' typeName='string' />"
                          "  </ECEntityClass>"
-                         "</ECSchema>"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateClassViewsInDb();
-    GetECDb().SaveChanges();
+                         "</ECSchema>")));
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    m_ecdb.SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Base   (P1                ) VALUES ('P1-Base')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.ClassA (P1, S1, Z1        ) VALUES ('P1-ClassA', 'S1-ClassA', 'Z1-ClassA')"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.ClassC (P1, P3, P4, S1, Z1) VALUES ('P1-ClassC', 'P3-ClassC', 'P4-ClassC', 'S1-ClassC', 'Z1-ClassC')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Base   (P1                ) VALUES ('P1-Base')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.ClassA (P1, S1, Z1        ) VALUES ('P1-ClassA', 'S1-ClassA', 'Z1-ClassA')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.ClassC (P1, P3, P4, S1, Z1) VALUES ('P1-ClassC', 'P3-ClassC', 'P4-ClassC', 'S1-ClassC', 'Z1-ClassC')"));
 
 
-    GetECDb().SaveChanges();
+    m_ecdb.SaveChanges();
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(GetECDb(), "INSERT INTO ts.IClassB(P3,S1,Z1) VALUES ('P3-IClassB', 'S1-IClassB', 'Z1-IClassB')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.IClassB(P3,S1,Z1) VALUES ('P3-IClassB', 'S1-IClassB', 'Z1-IClassB')"));
     }
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1 FROM ts.ClassA ORDER BY P1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT P1 FROM ts.ClassA ORDER BY P1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("P1-ClassA", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -9278,13 +8807,13 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case3)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT S1,Z1 FROM ts.IClassB"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S1,Z1 FROM ts.IClassB"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("S1-ClassC", stmt.GetValueText(0));
     ASSERT_STREQ("Z1-ClassC", stmt.GetValueText(1));
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT S1 FROM ts.ClassC"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S1 FROM ts.ClassC"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("S1-ClassC", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -9298,7 +8827,7 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case3)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
     {
-    SetupECDb("useecinstanceidasfk3.ecdb",
+    ASSERT_EQ(SUCCESS, SetupECDb("useecinstanceidasfk3.ecdb",
               SchemaItem(R"xml(
     <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -9330,11 +8859,9 @@ TEST_F(DbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
                 <Class class="Child"/>
             </Target>
         </ECRelationshipClass>
-    </ECSchema>)xml"));
-
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    </ECSchema>)xml")));
     Statement stmt;
-    stmt.Prepare(GetECDb(), "PRAGMA table_info(ts3_Child)");
+    stmt.Prepare(m_ecdb, "PRAGMA table_info(ts3_Child)");
     int indexOfParentId = -1;
     int indexOfParentRelECClassId = -1;
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -9355,7 +8882,7 @@ TEST_F(DbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, DiamondProblemInMixin)
     {
-    SetupECDb("useecinstanceidasfk3.ecdb",
+    ASSERT_EQ(SUCCESS, SetupECDb("useecinstanceidasfk3.ecdb",
               SchemaItem(R"xml(
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -9412,13 +8939,9 @@ TEST_F(DbMappingTestFixture, DiamondProblemInMixin)
             <BaseClass>MxB</BaseClass>
             <ECProperty propertyName="Child_Prop" typeName="long" />
         </ECEntityClass>
-
-    </ECSchema>)xml"));
-
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-
-    GetECDb().Schemas().CreateClassViewsInDb();
-    GetECDb().SaveChanges();
+    </ECSchema>)xml")));
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    m_ecdb.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -9426,7 +8949,7 @@ TEST_F(DbMappingTestFixture, DiamondProblemInMixin)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, OverflowingStructColumns)
     {
-    ECDbR ecdb = SetupECDb("OverflowPartiallyMapStructToOverFlow.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowPartiallyMapStructToOverFlow.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -9464,10 +8987,7 @@ TEST_F(DbMappingTestFixture, OverflowingStructColumns)
         "        <BaseClass>Element</BaseClass>"
         "        <ECStructProperty propertyName='Mtx4x4' typeName='Matrix4x4'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+        "</ECSchema>")));
 
     Utf8CP codeA = "CodeA";
     Utf8CP codeB = "CodeB";
@@ -9478,16 +8998,16 @@ TEST_F(DbMappingTestFixture, OverflowingStructColumns)
     //INSERT a row was data
     {//===================================================================
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code) VALUES (?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code) VALUES (?)"));
     stmt.BindText(1, codeA, IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
     }//===================================================================
 
      //UPDATE a row was data
     {//===================================================================
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.TestElement SET Mtx4x4 = ? WHERE Code = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.TestElement SET Mtx4x4 = ? WHERE Code = ?"));
     IECSqlBinder& mtx = stmt.GetBinder(1);
     for (size_t i = 0; i < mtx4x4Properties.size(); i++)
         {
@@ -9496,13 +9016,13 @@ TEST_F(DbMappingTestFixture, OverflowingStructColumns)
 
     stmt.BindText(2, codeA, IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
     }//===================================================================
 
      //INSERT a row was data
     {//===================================================================
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, Mtx4x4) VALUES (?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, Mtx4x4) VALUES (?,?)"));
     stmt.BindText(1, codeB, IECSqlBinder::MakeCopy::No);
     IECSqlBinder& mtx = stmt.GetBinder(2);
     for (size_t i = 0; i < mtx4x4Properties.size(); i++)
@@ -9511,13 +9031,13 @@ TEST_F(DbMappingTestFixture, OverflowingStructColumns)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
     }//===================================================================
 
      //Verify Row A
     {//===================================================================
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
     stmt.BindText(1, codeA, IECSqlBinder::MakeCopy::No);
     IECSqlValue const& mtx = stmt.GetValue(0);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -9544,7 +9064,7 @@ TEST_F(DbMappingTestFixture, OverflowingStructColumns)
      //Verify Row B
     {//===================================================================
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
     stmt.BindText(1, codeB, IECSqlBinder::MakeCopy::No);
     IECSqlValue const& mtx = stmt.GetValue(0);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -9575,8 +9095,7 @@ TEST_F(DbMappingTestFixture, OverflowingStructColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     {
-    std::vector<SchemaItem> invalidCombinations;
-    invalidCombinations.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element" modifier="Abstract">
                         <ECCustomAttributes>
@@ -9597,9 +9116,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                        <ECProperty propertyName="GeomStream" typeName="Binary" />
                        <ECProperty propertyName="Type" typeName="int" />
                      </ECEntityClass>
-                   </ECSchema>)xml", false, "Column sharing starts before the joined table split"));
+                   </ECSchema>)xml"))) << "Column sharing starts before the joined table split";
 
-    invalidCombinations.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element" modifier="Abstract">
                         <ECCustomAttributes>
@@ -9626,9 +9145,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                        <BaseClass>GeometricElement</BaseClass>
                        <ECProperty propertyName="Origin" typeName="Point3d" />
                      </ECEntityClass>
-                   </ECSchema>)xml", false, "Column sharing starts before the joined table split"));
+                   </ECSchema>)xml"))) << "Column sharing starts before the joined table split";
 
-    invalidCombinations.push_back(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element" modifier="Abstract">
                         <ECCustomAttributes>
@@ -9655,14 +9174,10 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                        <BaseClass>GeometricElement</BaseClass>
                        <ECProperty propertyName="Origin" typeName="Point3d" />
                      </ECEntityClass>
-                   </ECSchema>)xml", false, "Column sharing starts in base class of class having the joined table CA"));
-
-    AssertSchemaImport(invalidCombinations, "ShareColumnsJoinedTableCACombinations_invalidcombinations.ecdb");
+                   </ECSchema>)xml"))) << "Column sharing starts in base class of class having the joined table CA";
 
     {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowAndJoinedTableCombinations10.ecdb",SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema10" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element" >
@@ -9692,15 +9207,15 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                        <ECProperty propertyName="Prop5" typeName="double" />
                        <ECProperty propertyName="Prop6" typeName="double" />
                      </ECStructClass>
-                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations10.ecdb");
-    ASSERT_FALSE(asserted);
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
-    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element", "Name"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element", "Code"));
-    AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3","js4","js5","js6","js7"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement", "js1"));
-    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+                   </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+    AssertColumnNames(m_ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element", "Name"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element", "Code"));
+    AssertColumnNames(m_ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3","js4","js5","js6","js7"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement", "js1"));
+    ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
                                     ColumnInfo::List({
                                             {"Transform.Prop1","ts_GeometricElement","js2"},
                                             {"Transform.Prop2","ts_GeometricElement","js3"},
@@ -9709,17 +9224,15 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                                             {"Transform.Prop5","ts_GeometricElement","js6"},
                                             {"Transform.Prop6","ts_GeometricElement","js7"}}));
 
-    ASSERT_FALSE(ecdb.TableExists("ts_GeometricElement_Overflow"));
-    ASSERT_FALSE(ecdb.TableExists("ts_Element_Overflow"));
+    ASSERT_FALSE(m_ecdb.TableExists("ts_GeometricElement_Overflow"));
+    ASSERT_FALSE(m_ecdb.TableExists("ts_Element_Overflow"));
     }
 
     {
     //Struct that doesn't fit in joined table comes before primitive prop 
     //->prim prop expected in joined table
     //->struct expected in overflow table
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowAndJoinedTableCombinations11.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema11" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element" >
@@ -9750,18 +9263,17 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                        <ECProperty propertyName="Prop5" typeName="double" />
                        <ECProperty propertyName="Prop6" typeName="double" />
                      </ECStructClass>
-                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations11.ecdb");
-    ASSERT_FALSE(asserted);
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+                   </ECSchema>)xml")));
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
 
-    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element","Code"));
-    AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement","js1"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "GeometricElement", "Type"), ColumnInfo("ts_GeometricElement","js2"));
-    AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
-    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+    AssertColumnNames(m_ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element","Code"));
+    AssertColumnNames(m_ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement","js1"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "GeometricElement", "Type"), ColumnInfo("ts_GeometricElement","js2"));
+    AssertColumnNames(m_ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
+    ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
                            ColumnInfo::List({
                             {"Transform.Prop1","ts_GeometricElement_Overflow","os1"},
                             {"Transform.Prop2","ts_GeometricElement_Overflow","os2"},
@@ -9775,9 +9287,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     //Struct that doesn't fit in joined table comes before primitive prop 
     //->prim prop expected in joined table
     //->struct expected in overflow table
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowAndJoinedTableCombinations11.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema11" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element" >
@@ -9808,21 +9318,20 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                        <ECProperty propertyName="Prop5" typeName="double" />
                        <ECProperty propertyName="Prop6" typeName="double" />
                      </ECStructClass>
-                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations11.ecdb");
-    ASSERT_FALSE(asserted);
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+                   </ECSchema>)xml")));
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
 
-    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element","Code"));
-    AssertColumnNames(ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement","js1"));
-    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "GeometricElement", "Origin"),
+    AssertColumnNames(m_ecdb, "ts_Element", {"Id","ECClassId","Name","Code"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "Code"), ColumnInfo("ts_Element","Code"));
+    AssertColumnNames(m_ecdb, "ts_GeometricElement", {"ElementId","ECClassId","js1","js2","js3"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "GeometricElement", "GeomStream"), ColumnInfo("ts_GeometricElement","js1"));
+    ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("ts", "GeometricElement", "Origin"),
                                     ColumnInfo::List({{"Origin.X","ts_GeometricElement","js2"},
                                                      {"Origin.Y","ts_GeometricElement","js3"}}));
     
-    AssertColumnNames(ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
-    ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
+    AssertColumnNames(m_ecdb, "ts_GeometricElement_Overflow", {"ElementId","ECClassId","os1","os2","os3","os4","os5","os6"});
+    ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("ts", "GeometricElement", "Transform"),
                                 ColumnInfo::List({
                                         {"Transform.Prop1","ts_GeometricElement_Overflow","os1"},
                                         {"Transform.Prop2","ts_GeometricElement_Overflow","os2"},
@@ -9833,9 +9342,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     }
 
     {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowAndJoinedTableCombinations12.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema12" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element" >
@@ -9850,11 +9357,10 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                         </ECCustomAttributes>
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
-                   </ECSchema>)xml"), "OverflowAndJoinedTableCombinations12.ecdb");
-    ASSERT_FALSE(asserted);
-    AssertColumnNames(ecdb, "ts_Element", {"Id","ECClassId","Name"});
-    ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
-    ASSERT_FALSE(ecdb.TableExists("ts_Element_Overflow"));
+                   </ECSchema>)xml")));
+    AssertColumnNames(m_ecdb, "ts_Element", {"Id","ECClassId","Name"});
+    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "Name"), ColumnInfo("ts_Element","Name"));
+    ASSERT_FALSE(m_ecdb.TableExists("ts_Element_Overflow"));
     }
     }
 
@@ -9864,11 +9370,9 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
     {
-        {
-        ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, SchemaItem(
-            R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("DefaultMaxSharedColumnCountBeforeOverflow1.ecdb", SchemaItem(
+                R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="Element" modifier="Abstract">
                     <ECCustomAttributes>
@@ -9898,21 +9402,17 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
                     <ECProperty propertyName="P3" typeName="Point2d" />
                     <ECProperty propertyName="P4" typeName="Point3d" />
                 </ECStructClass>
-                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow1.ecdb");
-        ASSERT_FALSE(asserted);
-        ecdb.SaveChanges();
-        AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 4}});
-        AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1", "os2"});
-        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "Prop7"), ColumnInfo("ts_Element","ps61"));
-        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "Element", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow","os1"));
-        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow","os1"));
-        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToBeInOverflowAsWell"), ColumnInfo("ts_Element_Overflow","os2"));
-        }
+                </ECSchema>)xml")));
+            AssertColumnCount(m_ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 4}});
+            AssertColumnNames(m_ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1", "os2"});
+            ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "Prop7"), ColumnInfo("ts_Element", "ps61"));
+            ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "Element", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow", "os1"));
+            ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow", "os1"));
+            ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToBeInOverflowAsWell"), ColumnInfo("ts_Element_Overflow", "os2"));
+            }
 
         {
-        ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, SchemaItem(
+            ASSERT_EQ(SUCCESS, SetupECDb("DefaultMaxSharedColumnCountBeforeOverflow2.ecdb", SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="Element" >
@@ -9942,25 +9442,21 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
                     <ECProperty propertyName="P3" typeName="Point2d" />
                     <ECProperty propertyName="P4" typeName="Point3d" />
                  </ECStructClass>
-                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow2.ecdb");
-        ASSERT_FALSE(asserted);
-        ecdb.SaveChanges();
-        AssertColumnCount(ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 3}});
-        AssertColumnNames(ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1"});
-        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "BaseProp"), ColumnInfo("ts_Element","BaseProp"));
-        ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "SubElement", "Prop1.P1"), ColumnInfo::List({{"Prop1.P1.X", "ts_Element","ps1"},
+                </ECSchema>)xml")));
+        AssertColumnCount(m_ecdb, {{"ts_Element", 63}, {"ts_Element_Overflow", 3}});
+        AssertColumnNames(m_ecdb, "ts_Element_Overflow", {"ElementId","ECClassId","os1"});
+        ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "SubElement", "BaseProp"), ColumnInfo("ts_Element","BaseProp"));
+        ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("ts", "SubElement", "Prop1.P1"), ColumnInfo::List({{"Prop1.P1.X", "ts_Element","ps1"},
                                                                                            {"Prop1.P1.Y", "ts_Element","ps2"}}));
-        ASSERT_PROPERTYMAPPING_MULTICOL(ecdb, PropertyAccessString("ts", "SubElement", "Prop3.P2"), ColumnInfo::List({{"Prop3.P2.X","ts_Element","ps23"},
+        ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("ts", "SubElement", "Prop3.P2"), ColumnInfo::List({{"Prop3.P2.X","ts_Element","ps23"},
                                                                     {"Prop3.P2.Y", "ts_Element","ps24"},
                                                                     {"Prop3.P2.Z", "ts_Element","ps25"}}));
 
-        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow","os1"));
+        ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_Element_Overflow","os1"));
         }
 
         {
-        ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, SchemaItem(
+        ASSERT_EQ(SUCCESS, SetupECDb("DefaultMaxSharedColumnCountBeforeOverflow3.ecdb", SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="Element" >
@@ -9995,12 +9491,10 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
                     <ECProperty propertyName="P3" typeName="Point2d" />
                     <ECProperty propertyName="P4" typeName="Point3d" />
                 </ECStructClass>
-                </ECSchema>)xml"), "DefaultMaxSharedColumnCountBeforeOverflow3.ecdb");
-        ASSERT_FALSE(asserted);
-        ecdb.SaveChanges();
-        AssertColumnCount(ecdb, {{"ts_Element", 13}, {"ts_SubElement", 63}, {"ts_SubElement_Overflow", 3}});
-        AssertColumnNames(ecdb, "ts_SubElement_Overflow", {"ElementId","ECClassId","os1"});
-        ASSERT_PROPERTYMAPPING(ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_SubElement_Overflow","os1"));
+                </ECSchema>)xml")));
+        AssertColumnCount(m_ecdb, {{"ts_Element", 13}, {"ts_SubElement", 63}, {"ts_SubElement_Overflow", 3}});
+        AssertColumnNames(m_ecdb, "ts_SubElement_Overflow", {"ElementId","ECClassId","os1"});
+        ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "SubElement", "ExpectedToOverflow"), ColumnInfo("ts_SubElement_Overflow","os1"));
         }
     }
 
@@ -10010,7 +9504,7 @@ TEST_F(DbMappingTestFixture, DefaultMaxSharedColumnCountBeforeOverflow)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
     {
-    SetupECDb("propertyOrderTest.ecdb", SchemaItem("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("propertyOrderTest.ecdb", SchemaItem("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
                                                    "<ECSchema schemaName=\"OrderSchema\" alias=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                                                    "  <ECStructClass typeName=\"OrderedStruct\">"
                                                    "   <ECProperty propertyName=\"a\" typeName=\"string\"/>"
@@ -10036,12 +9530,10 @@ TEST_F(DbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
                                                    "     <ECStructProperty propertyName=\"o\" typeName=\"OrderedStruct\"/>"
                                                    "     <ECProperty propertyName=\"z\" typeName=\"long\"/>"
                                                    "  </ECEntityClass>"
-                                                   "</ECSchema>"));
-
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+                                                   "</ECSchema>")));
 
     Statement statement;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "PRAGMA table_info('os_PropertyOrderTest')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(m_ecdb, "PRAGMA table_info('os_PropertyOrderTest')"));
     Utf8String order_PropertyOrderTest;
     while (statement.Step() == BE_SQLITE_ROW)
         {
@@ -10049,7 +9541,7 @@ TEST_F(DbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
         }
 
     ASSERT_STREQ("Id x h i d_X d_Y d_Z u_X u_Y f sarray e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ", order_PropertyOrderTest.c_str());
-    ASSERT_FALSE(GetECDb().TableExists("os_OrderedStruct"));
+    ASSERT_FALSE(m_ecdb.TableExists("os_OrderedStruct"));
     }
 
 //--------------------------------------------------------------------------------------
@@ -10057,8 +9549,7 @@ TEST_F(DbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, LoadECSchemas)
     {
-    ECDbCR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
 
     std::vector<Utf8CP> expectedSchemas;
     expectedSchemas.push_back("Bentley_Standard_CustomAttributes");
@@ -10072,7 +9563,7 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
 
     // Validate the expected ECSchemas in the project
     Statement stmt;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Name FROM ec_Schema ORDER BY Name"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Name FROM ec_Schema ORDER BY Name"));
     int i = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -10089,11 +9580,10 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ImportECSchemaWithSameVersionAndSameContentTwice)
     {
-    ECDbCR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
     ECSchemaReadContextPtr schemaContext = nullptr;
     ECSchemaPtr ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportSchemas(schemaContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(schemaContext->GetCache().GetSchemas()));
     }
 
 
@@ -10125,13 +9615,12 @@ void AssertImportedSchema(ECDbCR ecdb, Utf8CP expectedSchemaName, Utf8CP expecte
 TEST_F(DbMappingTestFixture, SchemaImportWithExistingTables)
     {
         {
-        ECDbR ecdb = SetupECDb("schemaimport_existingtables.ecdb");
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaimport_existingtables.ecdb"));
 
         //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo(Name TEXT)"));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE TABLE t_Foo(Name TEXT)"));
 
-        bool asserted = false;
-        AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Name" typeName="string"/>
                 </ECEntityClass>
@@ -10147,18 +9636,15 @@ TEST_F(DbMappingTestFixture, SchemaImportWithExistingTables)
                         <Class class="Goo"/>
                     </Target>
                     </ECRelationshipClass>
-                </ECSchema>)xml", false));
-        ASSERT_FALSE(asserted);
-        ecdb.AbandonChanges();
-        ecdb.CloseDb();
+                </ECSchema>)xml")));
+        m_ecdb.AbandonChanges();
         }
 
         {
-        ECDbR ecdb = SetupECDb("schemaimport_existingtables.ecdb");
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo(Id INTEGER PRIMARY KEY, Name TEXT)"));
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaimport_existingtables.ecdb"));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE TABLE t_Foo(Id INTEGER PRIMARY KEY, Name TEXT)"));
 
-        bool asserted = false;
-        AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Name" typeName="string"/>
                 </ECEntityClass>
@@ -10174,16 +9660,14 @@ TEST_F(DbMappingTestFixture, SchemaImportWithExistingTables)
                         <Class class="Goo"/>
                     </Target>
                     </ECRelationshipClass>
-                </ECSchema>)xml", false));
-        ASSERT_FALSE(asserted);
+                </ECSchema>)xml")));
         }
 
         {
-        ECDbR ecdb = SetupECDb("schemaimport_existingtables.ecdb");
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Goo (Id INTEGER PRIMARY KEY, Price REAL, FooId INTEGER)"));
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaimport_existingtables.ecdb"));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE TABLE t_Goo (Id INTEGER PRIMARY KEY, Price REAL, FooId INTEGER)"));
 
-        bool asserted = false;
-        AssertSchemaImport(asserted, ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(R"xml(<ECSchema schemaName="test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Foo" >
                        <ECProperty propertyName="Name" typeName="string"/>
                     </ECEntityClass>
@@ -10207,8 +9691,7 @@ TEST_F(DbMappingTestFixture, SchemaImportWithExistingTables)
                             <Class class="Goo"/>
                        </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml", false));
-        ASSERT_FALSE(asserted);
+                   </ECSchema>)xml")));
         }
     }
 
@@ -10328,18 +9811,18 @@ TEST_F(DbMappingTestFixture, ReadCustomAttributesTest)
     //create test db and close it again
     Utf8String dbPath;
     {
-    ECDbR db = SetupECDb("customattributestest.ecdb");
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "Could not import test schema into ECDb file";
-    db.SaveChanges();
-    dbPath = db.GetDbFileName();
-    db.CloseDb();
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("customattributestest.ecdb"));
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "Could not import test schema into ECDb file";
+    m_ecdb.SaveChanges();
+    dbPath = m_ecdb.GetDbFileName();
+    m_ecdb.CloseDb();
     }
 
     //reopen test ECDb file (to make sure that the stored schema is read correctly)
-    DbResult stat = GetECDb().OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly));
+    DbResult stat = m_ecdb.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Could not open test ECDb file";
 
-    ECSchemaCP readSchema = GetECDb().Schemas().GetSchema(testSchema->GetName().c_str());
+    ECSchemaCP readSchema = m_ecdb.Schemas().GetSchema(testSchema->GetName().c_str());
     ASSERT_TRUE(readSchema != nullptr) << "Could not read test schema from reopened ECDb file.";
     //*** assert custom attribute instance with instance id
     ECClassCP domainClass1 = readSchema->GetClassCP("domain1");
@@ -10381,13 +9864,11 @@ TEST_F(DbMappingTestFixture, CheckCustomAttributesXmlFormatTest)
     //assign CA with instance id
     CreateAndAssignRandomCAInstance(testSchema);
 
-    ECDbCR db = SetupECDb("customattributestest.ecdb");
-    auto importStat = db.Schemas().ImportSchemas(testSchemaCache->GetSchemas());
-    ASSERT_EQ(SUCCESS, importStat) << "Could not import test schema into ECDb file";
-
-    //now retrieve the persisted CA XML from ECDb directly
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("customattributestest.ecdb"));
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(testSchemaCache->GetSchemas()));
+   //now retrieve the persisted CA XML from ECDb directly
     Statement stmt;
-    DbResult stat = stmt.Prepare(db, "SELECT Instance from ec_CustomAttribute ca, ec_Class c where ca.ClassId = c.Id AND c.Name = 'MyCA'");
+    DbResult stat = stmt.Prepare(m_ecdb, "SELECT Instance from ec_CustomAttribute ca, ec_Class c where ca.ClassId = c.Id AND c.Name = 'MyCA'");
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Preparing the SQL statement to fetch the persisted CA XML string failed.";
 
     int rowCount = 0;
@@ -10415,7 +9896,7 @@ TEST_F(DbMappingTestFixture, CheckCustomAttributesXmlFormatTest)
 TEST_F(DbMappingTestFixture, ImportSupplementalSchemas)
     {
     Utf8CP dbFileName = "supplementalschematest.ecdb";
-    ECDbR ecdb = SetupECDb(dbFileName);
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb(dbFileName));
 
     ECSchemaPtr ecSchema = nullptr;
     ECSchemaReadContextPtr schemaContext = nullptr;
@@ -10428,18 +9909,18 @@ TEST_F(DbMappingTestFixture, ImportSupplementalSchemas)
     supplementalSchemas.push_back(supple.get());
     SupplementedSchemaBuilder builder;
 
-    BentleyStatus schemaStatus = ecdb.Schemas().ImportSchemas(schemaContext->GetCache().GetSchemas());
+    BentleyStatus schemaStatus = m_ecdb.Schemas().ImportSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
 
-    ecdb.SaveChanges();
-    ecdb.CloseDb();
+    m_ecdb.SaveChanges();
+    m_ecdb.CloseDb();
 
     BeFileName dbPath;
     BeTest::GetHost().GetOutputRoot(dbPath);
     dbPath.AppendToPath(BeFileName(dbFileName));
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::Readonly)));
-    ECSchemaCP startupCompanySchema = ecdb.Schemas().GetSchema("StartupCompany");
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::Readonly)));
+    ECSchemaCP startupCompanySchema = m_ecdb.Schemas().GetSchema("StartupCompany");
     ASSERT_TRUE(startupCompanySchema != nullptr);
     ECClassCP aaa2 = startupCompanySchema->GetClassCP("AAA");
 
@@ -10457,10 +9938,9 @@ TEST_F(DbMappingTestFixture, ImportSupplementalSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ArrayPropertyTest)
     {
-    ECDbCR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
 
-    ECSchemaCP startupCompanySchema = db.Schemas().GetSchema("StartupCompany", true);
+    ECSchemaCP startupCompanySchema = m_ecdb.Schemas().GetSchema("StartupCompany", true);
     ASSERT_TRUE(startupCompanySchema != nullptr);
 
     ECClassCP arrayTestClass = startupCompanySchema->GetClassCP("ArrayTestclass");
@@ -10514,8 +9994,8 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
         return stmt.GetColumnCount();
         };
 
-    ECDbCR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-    ASSERT_TRUE(db.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
+    ECDbCR db = m_ecdb;
     //========================[sc_ClassWithPrimitiveProperties===================================
     Utf8CP tblClassWithPrimitiveProperties = "sc_ClassWithPrimitiveProperties";
     EXPECT_TRUE(db.TableExists(tblClassWithPrimitiveProperties));
@@ -10814,15 +10294,15 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblFoo, "anglesFoo_Beta"));
     EXPECT_TRUE(db.ColumnExists(tblFoo, "anglesFoo_Theta"));
 
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Affan Khan                  04/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelationshipEndPoint)
-{
-    SchemaItem testItem = SchemaItem(
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("concept_station_mixin_issue.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
@@ -10963,21 +10443,19 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
                     <Class class="GeometryDefinitionElement"/>
                 </Target>
             </ECRelationshipClass>
-        </ECSchema>)xml", true);
+        </ECSchema>)xml")));
+    m_ecdb.Schemas().CreateClassViewsInDb();
 
-    ECDb& ecdb = SetupECDb("concept_station_mixin_issue.ecdb");
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, testItem);
     ECSqlStatement stmt;
-    stmt.Prepare(ecdb, "SELECT * FROM diego.ILinearlyLocated");
-    ecdb.Schemas().CreateClassViewsInDb();
-}
+    stmt.Prepare(m_ecdb, "SELECT * FROM diego.ILinearlyLocated");
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Affan Khan                  04/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, NullViewForMixIn)
     {
-    SchemaItem testItem = SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("nullview.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
@@ -11115,23 +10593,18 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                     <Class class="GeometryDefinitionElement"/>
                 </Target>
             </ECRelationshipClass>
-        </ECSchema>)xml", true);
+        </ECSchema>)xml")));
 
-
-    ECDb& ecdb = SetupECDb("nullview.ecdb");
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, testItem);
-    ecdb.Schemas().CreateClassViewsInDb();
-
+    m_ecdb.Schemas().CreateClassViewsInDb();
     }
 
-    //---------------------------------------------------------------------------------------
-    // @bsiMethod                                      Affan Khan                  04/17
-    //+---------------+---------------+---------------+---------------+---------------+------
-    TEST_F(DbMappingTestFixture, OverflowTableTest)
-        {
-        SchemaItem testItem = SchemaItem(
-            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Affan Khan                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, OverflowTableTest)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowTableTest.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
             <!-- Subset of BisCore schema -->
@@ -11199,21 +10672,17 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <ECProperty propertyName="P73" typeName="point3d" />
                 <ECProperty propertyName="P74" typeName="point3d" />
             </ECEntityClass>
-        </ECSchema>)xml", true);
-        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb");
-        bool asserted = false;
-        AssertSchemaImport(asserted, ecdb, testItem);
-        ecdb.Schemas().CreateClassViewsInDb();
+        </ECSchema>)xml")));
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    }
 
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsiMethod                                      Affan Khan                  04/17
-    //+---------------+---------------+---------------+---------------+---------------+------
-    TEST_F(DbMappingTestFixture, OverflowTableJoinedTest)
-        {
-        SchemaItem testItem = SchemaItem(
-            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Affan Khan                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, OverflowTableJoinedTest)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowTableTest.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
             <!-- Subset of BisCore schema -->
@@ -11282,16 +10751,13 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
                 <ECProperty propertyName="P73" typeName="point3d" />
                 <ECProperty propertyName="P74" typeName="point3d" />
             </ECEntityClass>
-        </ECSchema>)xml", true);
-        ECDb& ecdb = SetupECDb("OverflowTableTest.ecdb",testItem,3);
-        /*bool asserted = false;
-        AssertSchemaImport(asserted, ecdb, testItem);
-        */
-        ECSqlStatement b1,b2,b3;
-        b3.Prepare(ecdb, "SELECT * FROM diego.B3");  //Access B1, b2, b2_overflow
-        b1.Prepare(ecdb, "SELECT * FROM diego.B1"); //Acess B1
-        b2.Prepare(ecdb, "SELECT * FROM diego.B2"); //Access B1, B2
+        </ECSchema>)xml")));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
 
-        }
+    ECSqlStatement b1, b2, b3;
+    b3.Prepare(m_ecdb, "SELECT * FROM diego.B3");  //Access B1, b2, b2_overflow
+    b1.Prepare(m_ecdb, "SELECT * FROM diego.B1"); //Access B1
+    b2.Prepare(m_ecdb, "SELECT * FROM diego.B2"); //Access B1, B2
+    }
 END_ECDBUNITTESTS_NAMESPACE
  

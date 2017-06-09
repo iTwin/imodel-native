@@ -83,12 +83,8 @@ TEST_F(JsonReaderTests, ReadInstanceAlongWithRelatedInstances)
                         "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
                         "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
                         "    </ECRelationshipClass>"
-                        "</ECSchema>",
-                        true, "");
-
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "updaterelationshipprop.ecdb");
-    ASSERT_FALSE(asserted);
+                        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, testItem, "updaterelationshipprop.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.A (Aprop) VALUES(?)"));
@@ -128,10 +124,9 @@ TEST_F(JsonReaderTests, ReadInstanceAlongWithRelatedInstances)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, JsonValueStruct)
     {
-    ECDbR ecdb = SetupECDb("insertUsingJsonAPI.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
 
-    ECSchemaCP startupSchema = ecdb.Schemas().GetSchema("StartupCompany");
+    ECSchemaCP startupSchema = m_ecdb.Schemas().GetSchema("StartupCompany");
     ECClassCP anglesStructClass = startupSchema->GetClassCP("AnglesStruct");
     ASSERT_TRUE(anglesStructClass != nullptr);
     ECClassCP fooClass = startupSchema->GetClassCP("Foo");
@@ -161,13 +156,13 @@ TEST_F(JsonReaderTests, JsonValueStruct)
         status = foo->SetValue("arrayOfAnglesStructsFoo", anglesStructValue, ii);
         }
 
-    ECInstanceInserter fooInserter(GetECDb(), *fooClass, nullptr);
+    ECInstanceInserter fooInserter(m_ecdb, *fooClass, nullptr);
     fooInserter.Insert(*foo);
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     /* Retrieve the JSON for the inserted Instance */
     ECSqlStatement statement;
-    ECSqlStatus prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ONLY stco.Foo");
+    ECSqlStatus prepareStatus = statement.Prepare(m_ecdb, "SELECT * FROM ONLY stco.Foo");
     ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
     DbResult stepStatus = statement.Step();
     ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
@@ -205,20 +200,19 @@ TEST_F(JsonReaderTests, JsonValueStruct)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, PartialPoints)
     {
-    ECDbCR ecdb = SetupECDb("jsonreaderpartialpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA");
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
     stmt.Finalize();
 
     ECSqlStatement selStmt;
-    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT P2D,P3D,PStructProp.p2d,PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT P2D,P3D,PStructProp.p2d,PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?"));
     JsonECSqlSelectAdapter adapter(selStmt);
 
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId()));
@@ -233,7 +227,7 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_STREQ("0,3", actualJson["PStructProp"]["p2d"].asCString());
     ASSERT_STREQ("0,0,4", actualJson["PStructProp"]["p3d"].asCString());
 
-    JsonReader reader(ecdb, testClass->GetId());
+    JsonReader reader(m_ecdb, testClass->GetId());
     actualJson = Json::Value();
     ASSERT_EQ(SUCCESS, reader.ReadInstance(actualJson, key.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
 

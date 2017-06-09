@@ -44,17 +44,16 @@ TEST_F(ECCrudWriteTokenTestFixture, Test)
     BeFileName seedFilePath;
     ECInstanceKey blobIoInstanceKey;
     {
-    SetupECDb("eccrudwritetoken_seed.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    seedFilePath.AssignUtf8(GetECDb().GetDbFileName());
+    ASSERT_EQ(SUCCESS, SetupECDb("eccrudwritetoken_seed.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+    seedFilePath.AssignUtf8(m_ecdb.GetDbFileName());
 
     //insert a row with zeroblob which is preprequisite for using blobio
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ecsql.PSA(Bi) VALUES(zeroblob(10))"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(Bi) VALUES(zeroblob(10))"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(blobIoInstanceKey)) << stmt.GetECSql();
     stmt.Finalize();
-    GetECDb().SaveChanges();
-    GetECDb().CloseDb();
+    m_ecdb.SaveChanges();
+    m_ecdb.CloseDb();
     }
 
     ECDb readonlyECDb, permittedECDb;

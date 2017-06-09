@@ -21,8 +21,8 @@ struct PerformanceECInstanceECSqlSelectAdapterTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, Constructor)
     {
-    ECDbCR ecdb = SetupECDb("performanceecinstanceecsqlselectadapter.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10);
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("performanceecinstanceecsqlselectadapter.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 10));
 
     auto assertCtor = [] (ECDbCR ecdb, Utf8CP ecsql, int opCount)
         {
@@ -53,7 +53,7 @@ TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, Constructor)
 
     for (Utf8CP ecsql : testECSqls)
         {
-        assertCtor(ecdb, ecsql, OPCOUNT);
+        assertCtor(m_ecdb, ecsql, OPCOUNT);
         }
     }
 

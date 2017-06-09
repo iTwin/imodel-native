@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlTestFrameworkFixture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFrameworkFixture.h"
@@ -22,53 +22,39 @@ struct ECSqlTestArg : NonCopyableClass
         ECDb& m_aECDb;
         BeConditionVariable m_conditionVariable;
 
- 
+
     public:
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+------
-        ECSqlTestItem const& GetDatasetItem () const
+        ECSqlTestItem const& GetDatasetItem() const {  return m_testItem; }
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Affan.Khan                       01/14
+        //+---------------+---------------+---------------+---------------+---------------+------
+        ECSqlAsserterList const& GetAsserters() const { return m_asserterList; }
+
+        ECDbR GetECDb() { return m_aECDb; }
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Affan.Khan                       01/14
+        //+---------------+---------------+---------------+---------------+---------------+------
+        void Wait()
             {
-            return m_testItem;
+            m_conditionVariable.WaitOnCondition(nullptr, BeConditionVariable::Infinite);
             }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+------
-        ECSqlAsserterList const& GetAsserters () const
-            {
-            return m_asserterList;
-            }
+        ECSqlTestArg(ECSqlTestItem const& aDatasetItem, ECSqlAsserterList const& aAsserterList, ECDbR aECDb)
+            :m_testItem(aDatasetItem), m_asserterList(aAsserterList), m_aECDb(aECDb)
+            {}
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+-----
-        ECDbR GetECDb ()
-            {
-            return m_aECDb;
-            }
+        BeConditionVariable& GetConditionVariable() { return m_conditionVariable; }
 
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                     Affan.Khan                       01/14
-        //+---------------+---------------+---------------+---------------+---------------+------
-        void Wait ()
-            {
-            m_conditionVariable.WaitOnCondition (nullptr, BeConditionVariable::Infinite);
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                     Affan.Khan                       01/14
-        //+---------------+---------------+---------------+---------------+---------------+------
-        ECSqlTestArg (ECSqlTestItem const& aDatasetItem, ECSqlAsserterList const& aAsserterList, ECDbR aECDb)
-            :m_testItem (aDatasetItem), m_asserterList (aAsserterList), m_aECDb (aECDb)
-            {
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                     Affan.Khan                       01/14
-        //+---------------+---------------+---------------+---------------+---------------+-----
-        BeConditionVariable& GetConditionVariable () { return m_conditionVariable; }
- 
     };
 
 
@@ -84,42 +70,42 @@ struct ECSqlTestExecutor
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+-----
-        THREAD_MAIN_DECL RunTest (void* args)
+        THREAD_MAIN_DECL RunTest(void* args)
             {
             ECSqlTestArg* ecsqlArgs = static_cast<ECSqlTestArg*>(args);
-            BeMutexHolder aGuard (ecsqlArgs->GetConditionVariable().GetMutex());
+            BeMutexHolder aGuard(ecsqlArgs->GetConditionVariable().GetMutex());
 
-            const auto rollbackAfterwards = ecsqlArgs->GetDatasetItem ().GetRollbackAfterwards ();
-            Savepoint perTestItemSavepoint (ecsqlArgs->GetECDb (), "AssertTestItem", rollbackAfterwards);
+            const auto rollbackAfterwards = ecsqlArgs->GetDatasetItem().GetRollbackAfterwards();
+            Savepoint perTestItemSavepoint(ecsqlArgs->GetECDb(), "AssertTestItem", rollbackAfterwards);
 
-            for (auto const& asserter : ecsqlArgs->GetAsserters ())
+            for (auto const& asserter : ecsqlArgs->GetAsserters())
                 {
-                asserter->Assert (ecsqlArgs->GetDatasetItem ());
+                asserter->Assert(ecsqlArgs->GetDatasetItem());
                 }
 
             if (rollbackAfterwards)
-                perTestItemSavepoint.Cancel ();
-            
-            ecsqlArgs->GetConditionVariable ().notify_all();
+                perTestItemSavepoint.Cancel();
+
+            ecsqlArgs->GetConditionVariable().notify_all();
             return 0;
             }
     public:
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+------
-        unsigned Execute (ECSqlTestItem const& aDatasetItem, ECSqlAsserterList const& aAsserterList, ECDbR aECDb, bool async)
+        unsigned Execute(ECSqlTestItem const& aDatasetItem, ECSqlAsserterList const& aAsserterList, ECDbR aECDb, bool async)
             {
-            std::unique_ptr<ECSqlTestArg> args = std::unique_ptr<ECSqlTestArg> (new ECSqlTestArg (aDatasetItem, aAsserterList, aECDb));
+            std::unique_ptr<ECSqlTestArg> args = std::unique_ptr<ECSqlTestArg>(new ECSqlTestArg(aDatasetItem, aAsserterList, aECDb));
 
             if (!async)
-                RunTest (args.get ());
+                RunTest(args.get());
             else
                 {
-                BeThreadUtilities::StartNewThread (10000, ECSqlTestExecutor::RunTest, args.get ());
+                BeThreadUtilities::StartNewThread(10000, ECSqlTestExecutor::RunTest, args.get());
                 if (!async)
-                    args->Wait ();
+                    args->Wait();
                 else
-                    m_aECSqlArgs.push_back (move (args));
+                    m_aECSqlArgs.push_back(move(args));
                 }
             return 0;
             }
@@ -127,37 +113,37 @@ struct ECSqlTestExecutor
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+------
-        void WaitForAll ()
+        void WaitForAll()
             {
             for (auto& aECSqlArg : m_aECSqlArgs)
                 {
-                aECSqlArg->Wait ();
+                aECSqlArg->Wait();
                 }
 
-            m_aECSqlArgs.clear ();
+            m_aECSqlArgs.clear();
             }
 
-        ~ECSqlTestExecutor ()
+        ~ECSqlTestExecutor()
             {
-            WaitForAll ();
+            WaitForAll();
             }
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlTestFrameworkFixture::RunTest (ECSqlTestDataset const& dataset, ECSqlAsserterList const& asserters) const
+void ECSqlTestFrameworkFixture::RunTest(ECSqlTestDataset const& dataset, ECSqlAsserterList const& asserters)
     {
-    Savepoint savepoint (GetECDb (), "RunTest", true);
+    Savepoint savepoint(m_ecdb, "RunTest", true);
     ECSqlTestExecutor executor;
 
-    for (auto const& testItem : dataset.GetTestItems ())
+    for (auto const& testItem : dataset.GetTestItems())
         {
-        executor.Execute (testItem, asserters, GetECDb (), false);
+        executor.Execute(testItem, asserters, m_ecdb, false);
         }
-    executor.WaitForAll ();
+    executor.WaitForAll();
     //rollback any changes the tests might have made
-    savepoint.Cancel ();
+    savepoint.Cancel();
     }
 
 //******************** ECSqlSelectTestFrameworkFixture *************************************
@@ -168,7 +154,8 @@ void ECSqlTestFrameworkFixture::RunTest (ECSqlTestDataset const& dataset, ECSqlA
 //virtual
 void ECSqlSelectTestFramework::SetUp()
     {
-    SetupECDb("ecsqlselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), PerClassRowCount);
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, PerClassRowCount));
     }
 
 
@@ -176,10 +163,10 @@ void ECSqlSelectTestFramework::SetUp()
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-void ECSqlSelectTestFramework::RunTest(ECSqlTestDataset const& dataset) const
+void ECSqlSelectTestFramework::RunTest(ECSqlTestDataset const& dataset)
     {
     ECSqlAsserterList asserters;
-    asserters.push_back(unique_ptr<ECSqlAsserter>(new ECSqlSelectAsserter(GetECDb())));
+    asserters.push_back(unique_ptr<ECSqlAsserter>(new ECSqlSelectAsserter(m_ecdb)));
 
     RunTest(dataset, asserters);
     }
@@ -192,17 +179,18 @@ void ECSqlSelectTestFramework::RunTest(ECSqlTestDataset const& dataset) const
 //virtual
 void ECSqlNonSelectTestFrameworkFixture::SetUp()
     {
-    SetupECDb("ecsqlnonselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), PerClassRowCount);
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnonselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, Populate(m_ecdb, PerClassRowCount));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-void ECSqlNonSelectTestFrameworkFixture::RunTest(ECSqlTestDataset const& dataset) const
+void ECSqlNonSelectTestFrameworkFixture::RunTest(ECSqlTestDataset const& dataset)
     {
     ECSqlAsserterList asserters;
-    asserters.push_back(unique_ptr<ECSqlAsserter>(new ECSqlNonSelectAsserter(GetECDb())));
+    asserters.push_back(unique_ptr<ECSqlAsserter>(new ECSqlNonSelectAsserter(m_ecdb)));
 
     RunTest(dataset, asserters);
     }

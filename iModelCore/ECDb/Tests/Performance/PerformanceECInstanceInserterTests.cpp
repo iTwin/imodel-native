@@ -290,8 +290,8 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
         //+---------------+---------------+---------------+---------------+---------------+------
         template<typename TTestInserter>
         void RunPerformanceComparison(bool& hasRun, double& insertTimingSecs, Utf8CP testSchemaName, Utf8CP testClassName, ECDbCR ecdb,
-                                                                                 int numberOfInstancesPerClass,
-                                                                                 TestInserter<TTestInserter>& testInserter, StopWatch& logTimer)
+                                      int numberOfInstancesPerClass,
+                                      TestInserter<TTestInserter>& testInserter, StopWatch& logTimer)
             {
             hasRun = false;
 
@@ -353,8 +353,7 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
             Utf8CP testSchemaName = "Test";
 
             //********** Run performance test with ECInstanceInserter
-            ECDbR eciiTestFile = SetupECDb("ecinstanceinserterperformance.ecdb", SchemaItem(GetTestSchemaXml()));
-            ASSERT_TRUE(eciiTestFile.IsDbOpen());
+            ASSERT_EQ(SUCCESS, SetupECDb("ecinstanceinserterperformance.ecdb", SchemaItem(GetTestSchemaXml())));
 
             StopWatch eciiInsertLogTimer("eciiInsertLogTimer", false);
             bool eciiHasRun = false;
@@ -362,12 +361,11 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
             ECInstanceInserterTestInserter eciiTestInserter;
             Utf8String eciiTestInserterDetails(testClassName);
             Utf8PrintfString eciiInsertNumberOfClasses("%d", numberOfInstancesPerClass);
-            RunPerformanceComparison(eciiHasRun, eciiInsertTiming, testSchemaName, testClassName, eciiTestFile, numberOfInstancesPerClass, eciiTestInserter, eciiInsertLogTimer);
-            eciiTestFile.CloseDb();
+            RunPerformanceComparison(eciiHasRun, eciiInsertTiming, testSchemaName, testClassName, m_ecdb, numberOfInstancesPerClass, eciiTestInserter, eciiInsertLogTimer);
+            m_ecdb.CloseDb();
 
             //********** Run performance test with ECSQL INSERT getting time zero have to take a look
-            ECDbCR ecsqlinsertTestFile = SetupECDb("ecsqlinsertperformance.ecdb", SchemaItem(GetTestSchemaXml()));
-            ASSERT_TRUE(ecsqlinsertTestFile.IsDbOpen());
+            ASSERT_EQ(SUCCESS, SetupECDb("ecsqlinsertperformance.ecdb", SchemaItem(GetTestSchemaXml())));
 
             bool ecsqlHasRun = false;
             double ecsqlinsertInsertTiming = -1.0;
@@ -375,7 +373,7 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
             StopWatch ecsqlTestInserterLogTimer("ecsqlTestInserterLogTimer", false);
             Utf8String ecsqlTestInserterDetails(testClassName);
             Utf8PrintfString ecsqlTestInserterNumberOfClasses("%d", numberOfInstancesPerClass);
-            RunPerformanceComparison(ecsqlHasRun, ecsqlinsertInsertTiming, testSchemaName, testClassName, ecsqlinsertTestFile, numberOfInstancesPerClass, ecsqlTestInserter, ecsqlTestInserterLogTimer);
+            RunPerformanceComparison(ecsqlHasRun, ecsqlinsertInsertTiming, testSchemaName, testClassName, m_ecdb, numberOfInstancesPerClass, ecsqlTestInserter, ecsqlTestInserterLogTimer);
 
             if (eciiHasRun)
                 {
@@ -395,52 +393,52 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
         static Utf8CP GetTestSchemaXml()
             {
             return "<ECSchema schemaName=\"Test\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECEntityClass typeName=\"P\">"
-        "    <ECProperty propertyName=\"bo\" typeName=\"boolean\" />"
-        "    <ECProperty propertyName=\"bi\" typeName=\"binary\" />"
-        "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
-        "    <ECProperty propertyName=\"d\" typeName=\"double\" />"
-        "    <ECProperty propertyName=\"i\" typeName=\"int\" />"
-        "    <ECProperty propertyName=\"l\" typeName=\"long\" />"
-        "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
-        "    <ECProperty propertyName=\"p2d\" typeName=\"Point2D\" />"
-        "    <ECProperty propertyName=\"p3d\" typeName=\"Point3D\" />"
-        "  </ECEntityClass>"
-        "  <ECStructClass typeName=\"PStruct\">"
-        "    <ECProperty propertyName=\"bo\" typeName=\"boolean\" />"
-        "    <ECProperty propertyName=\"bi\" typeName=\"binary\" />"
-        "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
-        "    <ECProperty propertyName=\"d\" typeName=\"double\" />"
-        "    <ECProperty propertyName=\"i\" typeName=\"int\" />"
-        "    <ECProperty propertyName=\"l\" typeName=\"long\" />"
-        "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
-        "    <ECProperty propertyName=\"p2d\" typeName=\"Point2D\" />"
-        "    <ECProperty propertyName=\"p3d\" typeName=\"Point3D\" />"
-        "  </ECStructClass>"
-        "  <ECEntityClass typeName=\"Int\" >"
-        "    <ECProperty propertyName=\"i\" typeName=\"int\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"DateTime\" >"
-        "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"String\" >"
-        "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"S\" >"
-        "    <ECStructProperty propertyName=\"s\" typeName=\"PStruct\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"IntA\" >"
-        "    <ECArrayProperty propertyName=\"a\" typeName=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"DateTimeA\" >"
-        "    <ECArrayProperty propertyName=\"a\" typeName=\"dateTime\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"StringA\" >"
-        "    <ECArrayProperty propertyName=\"a\" typeName=\"string\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"SA\" >"
-        "    <ECStructArrayProperty propertyName=\"a\" typeName=\"PStruct\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
-        "  </ECEntityClass>"
+                "  <ECEntityClass typeName=\"P\">"
+                "    <ECProperty propertyName=\"bo\" typeName=\"boolean\" />"
+                "    <ECProperty propertyName=\"bi\" typeName=\"binary\" />"
+                "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
+                "    <ECProperty propertyName=\"d\" typeName=\"double\" />"
+                "    <ECProperty propertyName=\"i\" typeName=\"int\" />"
+                "    <ECProperty propertyName=\"l\" typeName=\"long\" />"
+                "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
+                "    <ECProperty propertyName=\"p2d\" typeName=\"Point2D\" />"
+                "    <ECProperty propertyName=\"p3d\" typeName=\"Point3D\" />"
+                "  </ECEntityClass>"
+                "  <ECStructClass typeName=\"PStruct\">"
+                "    <ECProperty propertyName=\"bo\" typeName=\"boolean\" />"
+                "    <ECProperty propertyName=\"bi\" typeName=\"binary\" />"
+                "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
+                "    <ECProperty propertyName=\"d\" typeName=\"double\" />"
+                "    <ECProperty propertyName=\"i\" typeName=\"int\" />"
+                "    <ECProperty propertyName=\"l\" typeName=\"long\" />"
+                "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
+                "    <ECProperty propertyName=\"p2d\" typeName=\"Point2D\" />"
+                "    <ECProperty propertyName=\"p3d\" typeName=\"Point3D\" />"
+                "  </ECStructClass>"
+                "  <ECEntityClass typeName=\"Int\" >"
+                "    <ECProperty propertyName=\"i\" typeName=\"int\" />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName=\"DateTime\" >"
+                "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName=\"String\" >"
+                "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName=\"S\" >"
+                "    <ECStructProperty propertyName=\"s\" typeName=\"PStruct\" />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName=\"IntA\" >"
+                "    <ECArrayProperty propertyName=\"a\" typeName=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName=\"DateTimeA\" >"
+                "    <ECArrayProperty propertyName=\"a\" typeName=\"dateTime\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName=\"StringA\" >"
+                "    <ECArrayProperty propertyName=\"a\" typeName=\"string\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName=\"SA\" >"
+                "    <ECStructArrayProperty propertyName=\"a\" typeName=\"PStruct\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
+                "  </ECEntityClass>"
                 "</ECSchema>";
             }
     };
@@ -450,81 +448,81 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, AllPropertyTypes)
-{
+    {
     RunPerformanceComparisonTest(nullptr, 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, PrimitiveProperties)
-{
+    {
     RunPerformanceComparisonTest("P", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, IntProperty)
-{
+    {
     RunPerformanceComparisonTest("Int", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, DateTimeProperty)
-{
+    {
     RunPerformanceComparisonTest("DateTime", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, StringProperty)
-{
+    {
     RunPerformanceComparisonTest("String", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, StructProperties)
-{
+    {
     RunPerformanceComparisonTest("S", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, IntArrayProperty)
-{
+    {
     RunPerformanceComparisonTest("IntA", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, DateTimeArrayProperty)
-{
+    {
     RunPerformanceComparisonTest("DateTimeA", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, StringArrayProperty)
-{
+    {
     RunPerformanceComparisonTest("StringA", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSQLVersusECInstanceInserterTests, StructArrayProperty)
-{
+    {
     RunPerformanceComparisonTest("SA", 1000);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                         09/15
@@ -539,7 +537,7 @@ TEST(Performance_TiggerVsSQL, BulkTest10000)
     ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(":memory:"));
     Db dbv;
     ASSERT_EQ(BE_SQLITE_OK, dbv.CreateNewDb(":memory:"));
-    std::vector<Utf8CP> sqlscripts 
+    std::vector<Utf8CP> sqlscripts
         =
         {
         " DROP TABLE IF EXISTS Foo_P;",
@@ -787,17 +785,17 @@ TEST(Performance_TiggerVsSQL, BulkTest10000)
         }
     v_delete.Stop();
     }
-    
-    auto diff = [] (StopWatch& a1, StopWatch& a2 )
+
+    auto diff = [] (StopWatch& a1, StopWatch& a2)
         {
         auto v1 = a1.GetElapsedSeconds();
         auto v2 = a2.GetElapsedSeconds();
         return ((v1 - v2) / ((v1 + v2) / 2.0)) * 100.0;
         };
 
-    LOG.info ("================================================");
-    LOG.info ("Operation    Trigger         Sql            Diff%");
-    LOG.info ("================================================");
+    LOG.info("================================================");
+    LOG.info("Operation    Trigger         Sql            Diff%");
+    LOG.info("================================================");
     LOG.infov("SELECT       %.4f          %.4f           %.4f", v_select.GetElapsedSeconds(), s_select.GetElapsedSeconds(), diff(v_select, s_select));
     LOG.infov("INSERT       %.4f          %.4f           %.4f", v_insert.GetElapsedSeconds(), s_insert.GetElapsedSeconds(), diff(v_insert, s_insert));
     LOG.infov("UPDATE       %.4f          %.4f           %.4f", v_update.GetElapsedSeconds(), s_update.GetElapsedSeconds(), diff(v_update, s_update));

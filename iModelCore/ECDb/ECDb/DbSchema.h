@@ -322,8 +322,8 @@ public:
         };
 
 private:
-    Utf8String m_triggerName;
     DbTable const& m_table;
+    Utf8String m_triggerName;
     Type m_type;
     Utf8String m_condition;
     Utf8String m_body;
@@ -331,10 +331,10 @@ private:
     explicit DbTrigger(DbTable const& table) : m_table(table) {}
 
 public:
-    DbTrigger(Utf8CP triggerName, DbTable const& table, Type type, Utf8CP condition, Utf8CP body) : m_triggerName(triggerName), m_table(table), m_type(type), m_condition(condition), m_body(body) {}
+    DbTrigger(Utf8CP triggerName, DbTable const& table, Type type, Utf8CP condition, Utf8CP body) : m_table(table), m_triggerName(triggerName), m_type(type), m_condition(condition), m_body(body) {}
 
-    Utf8CP GetName()const { return m_triggerName.c_str(); }
     DbTable const& GetTable()const { return m_table; }
+    Utf8CP GetName()const { return m_triggerName.c_str(); }
     Type GetType()const { return m_type; }
     Utf8CP GetCondition()const { return m_condition.c_str(); }
     Utf8CP GetBody()const { return m_body.c_str(); }
