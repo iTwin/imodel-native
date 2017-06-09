@@ -544,11 +544,16 @@ void IScalableMesh::SetGroupSelectionFromPoint(DPoint3d firstPoint)
     return _SetGroupSelectionFromPoint(firstPoint);
     }
 
-
 void  IScalableMesh::ClearGroupSelection()
     {
     return _ClearGroupSelection();
     }
+
+void  IScalableMesh::RemoveAllDisplayData()
+    {
+    return _RemoveAllDisplayData();
+    }
+
 
 #ifdef SCALABLE_MESH_ATP
     
@@ -1449,9 +1454,13 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
     }
 
 DTMStatusInt ScalableMeshDTM::_GetBoundary(DTMPointArray& result)
-{
-return m_scMesh->GetBoundary(result) == SUCCESS ? DTM_SUCCESS : DTM_ERROR;
-}
+    {
+    DTMPointArray boundary;
+    if (m_scMesh->GetBoundary(boundary) != SUCCESS)
+        return DTM_ERROR;
+    m_transformToUors.Multiply(result, boundary);
+    return DTM_SUCCESS;
+    }
 
 IDTMDrapingP ScalableMeshDTM::_GetDTMDraping()
     {
@@ -2559,6 +2568,17 @@ template <class POINT> void ScalableMesh<POINT>::SaveEditFiles()
     SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DiffSet, (uint64_t)m_scmIndexPtr.GetPtr());
 
     m_scmIndexPtr->GetDataStore()->SaveProjectFiles();
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_RemoveAllDisplayData()
+    {                    
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DisplayMesh, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DisplayTexture, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstanceVideo()->RemoveAllItemsOfType(SMStoreDataType::DisplayMesh, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstanceVideo()->RemoveAllItemsOfType(SMStoreDataType::DisplayTexture, (uint64_t)m_scmIndexPtr.GetPtr());    
+    
+    m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTexture();
+    m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTextureVideo();
     }
 
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
