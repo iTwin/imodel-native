@@ -568,6 +568,9 @@ public:
     //! Free memory allocated by MallocMem.
     static void FreeMem(void* p);
 
+    //! @private
+    BE_SQLITE_EXPORT static void NodeAddonFreeMem(void* p);
+
     BE_SQLITE_EXPORT static int CloseSqlDb(void* p);
 
     BE_SQLITE_EXPORT static void SetDownloadAdmin(struct IDownloadAdmin&);
@@ -1289,6 +1292,34 @@ struct BeDbMutexHolder : NonCopyableClass
     BeDbMutex& m_mutex;
     BeDbMutexHolder(BeDbMutex& mutex) : m_mutex(mutex) {m_mutex.Enter();}
     ~BeDbMutexHolder() {m_mutex.Leave();}
+};
+
+//=======================================================================================
+//! Holds a mutex to synchronize multi-thread access to data.
+// @bsiclass                                                    Keith.Bentley   06/11
+//=======================================================================================
+struct BeSqliteDbMutex : NonCopyableClass
+{
+private:
+    void*  m_mux;
+public:
+    BE_SQLITE_EXPORT BeSqliteDbMutex(Db& db);
+    BE_SQLITE_EXPORT void Enter();      //!< acquire mutex's lock
+    BE_SQLITE_EXPORT void Leave();      //!< release mutex's lock
+#ifndef NDEBUG
+    BE_SQLITE_EXPORT bool IsHeld();
+#endif
+};
+
+//=======================================================================================
+//! A convenience class for acquiring and releasing the Db's mutex.
+// @bsiclass                                                    Sam.Wilson      06/17
+//=======================================================================================
+struct BeSqliteDbMutexHolder : NonCopyableClass
+{
+    BeSqliteDbMutex m_mutex;
+    BeSqliteDbMutexHolder(Db& db) : m_mutex(db) {m_mutex.Enter();}
+    ~BeSqliteDbMutexHolder() {m_mutex.Leave();}
 };
 
 //=======================================================================================

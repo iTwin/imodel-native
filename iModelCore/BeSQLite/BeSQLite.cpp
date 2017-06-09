@@ -3332,6 +3332,21 @@ bool BeDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_mux);}
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSqliteDbMutex::BeSqliteDbMutex(Db& db)
+    {
+    m_mux = sqlite3_db_mutex(db.GetDbFile()->GetSqlDb());
+    }
+
+void BeSqliteDbMutex::Enter() {sqlite3_mutex_enter((sqlite3_mutex*)m_mux);}
+void BeSqliteDbMutex::Leave() {sqlite3_mutex_leave((sqlite3_mutex*)m_mux);}
+
+#ifndef NDEBUG
+bool BeSqliteDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_mux);}
+#endif
+
+/*---------------------------------------------------------------------------------**//**
 * CachedStatements hold a reference to their cache. That is so they can use the cache's mutex for release.
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5279,6 +5294,7 @@ void BeSQLiteLib::Randomness(int numBytes, void* random) {sqlite3_randomness(num
 void* BeSQLiteLib::MallocMem(int sz) {return sqlite3_malloc(sz);}
 void* BeSQLiteLib::ReallocMem(void* p, int sz) {return sqlite3_realloc(p,sz);}
 void BeSQLiteLib::FreeMem(void* p) {sqlite3_free(p);}
+void BeSQLiteLib::NodeAddonFreeMem(void* p) {sqlite3_free(p);}
 
 BeSQLiteLib::ILanguageSupport* s_languageSupport;
 void BeSQLiteLib::SetLanguageSupport(ILanguageSupport* value) {s_languageSupport = value;}
