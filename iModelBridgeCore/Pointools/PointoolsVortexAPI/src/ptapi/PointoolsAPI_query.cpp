@@ -4660,7 +4660,7 @@ struct FrustumQuery : public Query
 		getStreamManager().end();
 
 
-        if (iterationCompleted)
+        if (iterationCompleted && density == PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
         {
             reader.rwPos.lastVoxel = nullptr;
             reader.rwPos.lastPoint = 0;
