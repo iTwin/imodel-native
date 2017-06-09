@@ -140,6 +140,8 @@ public:
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
     bool IsTextured() const { BeAssert(m_resolved); return nullptr != GetTexture(); }
+    bool NeverRegionOutline() const { return FillFlags::Blanking == GetFillFlags() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
+    bool HasRegionOutline() const;
 
     enum class ComparePurpose
     {

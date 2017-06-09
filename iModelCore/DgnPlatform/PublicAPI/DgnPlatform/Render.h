@@ -911,6 +911,7 @@ public:
     double GetShift() const {return m_shift;}
     double GetTint() const {return m_tint;}
     double GetAngle() const {return m_angle;}
+    bool GetIsOutlined() const {return 0 != (m_flags & Outline); }
     void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index]; value = m_values[index];}
     void SetMode(Mode mode) {m_mode = mode;}
     void SetFlags(Flags flags) {m_flags = flags;}

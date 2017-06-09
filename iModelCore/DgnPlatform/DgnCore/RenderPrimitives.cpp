@@ -235,6 +235,17 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayParams::HasRegionOutline() const
+    {
+    if (m_gradient.IsValid())
+        return m_gradient->GetIsOutlined();
+    else
+        return m_fillColor != m_lineColor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayParamsCPtr DisplayParams::Clone() const
@@ -1071,15 +1082,14 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         polyfaceBuilder->Add(*bsplineSurface);
 
     PolyfaceList    polyfaces;
-    bool            isOutlinedRegion = curveVector.IsValid() && FillFlags::None != GetDisplayParams().GetFillFlags() && GetDisplayParams().GetLineColor() != GetDisplayParams().GetFillColor();
 
     polyface = polyfaceBuilder->GetClientMeshPtr();
     if (polyface.IsValid())
         {
         if (!GetTransform().IsIdentity())
             polyface->Transform(GetTransform());
-
-        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface, !isOutlinedRegion));
+                                                                                               // If there is a region outline it will be displayed seperately as a polyline.. 
+        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface, !curveVector.IsValid() || (!GetDisplayParams().HasRegionOutline() && !GetDisplayParams().NeverRegionOutline())));
         }
 
     return polyfaces;
@@ -1096,11 +1106,9 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
     if (!curveVector.IsValid())
         return tileStrokes;
 
-    bool            isOutlinedRegion = curveVector.IsValid() && FillFlags::None != GetDisplayParams().GetFillFlags() && GetDisplayParams().GetLineColor() != GetDisplayParams().GetFillColor();
-
     Strokes::PointLists     strokePoints;
 
-    if (! curveVector->IsAnyRegionType() || isOutlinedRegion)
+    if (! curveVector->IsAnyRegionType() || GetDisplayParams().HasRegionOutline())
         {
         strokePoints.clear();
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
