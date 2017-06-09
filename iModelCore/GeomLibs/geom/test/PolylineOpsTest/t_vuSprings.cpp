@@ -132,6 +132,38 @@ TEST(BCS,SpringModelB)
     Check::ClearGeometry ("BCS.SpringModelB");
     }
 
+TEST(BCS,SpringModelC)
+    {
+    double rA = 2.0;
+    double rB = 1.2;
+    DPoint3d centerA = DPoint3d::From (0,0,0);
+    DPoint3d centerB = DPoint3d::From (0,0,0);
+    double shift = 100.0;
+    for (size_t numA : bvector<size_t> {4, 5,6,8,11})
+        {
+        SaveAndRestoreCheckTransform shifter (0, shift, 0.0);
+        DPoint3dDoubleArrays wall (DEllipse3d::FromCenterRadiusXY (centerA, rA), numA);
+        for (size_t numB : bvector<size_t> {3,4,5,7,9})
+            {
+            SaveAndRestoreCheckTransform shifter (shift, 0, 0.0);
+            DPoint3dDoubleArrays station (DEllipse3d::FromCenterRadiusXY (centerB, rB), numB);
+            station.m_xyz.pop_back ();
+            station.m_f.pop_back ();
+            BCSSpringModel sm;
+            sm.AddWall (wall.m_xyz);
+            for (auto xyz : station.m_xyz)
+                sm.AddStation (xyz, 0.3);
+
+            Check::SaveTransformed (wall.m_xyz);
+            Check::SaveTransformedMarkers (station.m_xyz, 0.01);
+            Check::Shift (30,0,0);
+            sm.SolveSprings (true, false);
+            SaveZones (wall.m_xyz, sm);
+            }
+        }
+
+    Check::ClearGeometry ("BCS.SpringModelC");
+    }
 
 
 

@@ -691,7 +691,7 @@ void InstallPointIndices (VuSetP graph, bvector<DPoint3d> const &points)
             }
         }
     }
-PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, bvector<double> const &radii, int voronoiMetric)
+PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, bvector<double> const &radii, int voronoiMetric, bvector<size_t> &pointIndexToReadIndex)
     {
     PolyfaceHeaderPtr voronoi = PolyfaceHeader::CreateVariableSizeIndexed ();
     InstallPointIndices (graph, points);
@@ -713,10 +713,14 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
     static bool s_interior = false;
     static double s_sign = -1.0;
     size_t errors = 0;
+    for (size_t i = 0; i < points.size (); i++)
+        pointIndexToReadIndex.push_back (SIZE_MAX);
+
     VU_SET_LOOP (vertexSeed, graph)
         {
         if (!visited.IsSetAtNode (vertexSeed))
             {
+            visited.SetAroundVertex (vertexSeed);
             planes.clear ();
             VU_VERTEX_LOOP (outboundEdge, vertexSeed)
                 {
@@ -738,7 +742,11 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
                 }
             END_VU_VERTEX_LOOP (outboundEdge, vertexSeed)
             planes.ConvexPolygonClip (outerBox, clip1, clip2);
+            size_t readIndex = voronoi->Point().size ();
+            ptrdiff_t pointIndex = vertexSeed->GetUserData1 ();
             voronoi->AddPolygon (clip1);
+            if (pointIndex >= 0 && (size_t)pointIndex < points.size ())
+                pointIndexToReadIndex[pointIndex] = readIndex;
             }
         }
     END_VU_SET_LOOP (vertexSeed, graph)
@@ -749,10 +757,11 @@ PolyfaceHeaderPtr CreateVoronoi (VuSetP graph, bvector<DPoint3d> const &points, 
 bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, bvector<double> const &radii, int voronoiMetric, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
     {
     VuSetP graph = CreateDelauney (points);
+    bvector<size_t> pointIndexToReadIndex;
     if (graph != nullptr)
         {
         delauney = vu_toPolyface (graph, VU_EXTERIOR_EDGE);
-        voronoi = CreateVoronoi (graph, points, radii, voronoiMetric);
+        voronoi = CreateVoronoi (graph, points, radii, voronoiMetric, pointIndexToReadIndex);
         vu_freeVuSet (graph);
         return true;
         }

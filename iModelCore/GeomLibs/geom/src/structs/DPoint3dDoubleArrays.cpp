@@ -70,6 +70,45 @@ void DPoint3dDoubleArrays::ReverseXF (bool reverseAs01Fraction)
             f = 1.0 - f;
     }
 
+void DPoint3dDoubleArrays::Stroke(DEllipse3dCR arc, size_t numPoints)
+    {
+    m_xyz.clear ();
+    m_f.clear ();
+    if (numPoints > 0)
+        {
+        double df = numPoints == 1 ? 1.0 : 1.0 / (double)(numPoints - 1);
+        for (uint32_t i = 0; i < numPoints; i++)
+            {
+            double f = i * df;
+            if (i + 1 == numPoints)
+                f = 1.0;
+            m_f.push_back (f);
+            m_xyz.push_back (arc.FractionToPoint (f));
+            }
+        }
+    }
+
+void DPoint3dDoubleArrays::Stroke(DSegment3dCR segment, size_t numPoints)
+    {
+    m_xyz.clear ();
+    m_f.clear ();
+    if (numPoints > 0)
+        {
+        double df = numPoints == 1 ? 1.0 : 1.0 / (double)(numPoints - 1);
+        for (uint32_t i = 0; i < numPoints; i++)
+            {
+            double f = i * df;
+            if (i + 1 == numPoints)
+                f = 1.0;
+            m_f.push_back (f);
+            m_xyz.push_back (DPoint3d::FromInterpolate (segment.point[0], f, segment.point[1]));
+            }
+        }
+    }
+
+DPoint3dDoubleArrays::DPoint3dDoubleArrays(DEllipse3dCR arc, size_t numPoints) {Stroke (arc, numPoints);}
+DPoint3dDoubleArrays::DPoint3dDoubleArrays(DSegment3dCR segment, size_t numPoints) {Stroke (segment, numPoints);}
+
 void DPoint3dDoubleUVArrays::ReverseXFUV (bool reverseAs01Fraction, bool negateVectorU, bool negateVectorV)
     {
     ReverseXF (reverseAs01Fraction);

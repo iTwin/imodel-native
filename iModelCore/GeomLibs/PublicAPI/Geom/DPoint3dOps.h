@@ -1938,12 +1938,14 @@ struct DPoint3dDoubleArrays
 bvector<DPoint3d> m_xyz;
 bvector<double>   m_f;
 
+DPoint3dDoubleArrays (){}
+
 //! Append to each array
-void AppendXF (DPoint3dCR xyz, double f);
+GEOMDLLIMPEXP void AppendXF (DPoint3dCR xyz, double f);
 //! Append xyz to its array, 
 //! If there are prior fractions, add deltaF to the last.
 //! If not, make the begin () fraction 0.0;
-void AppendXdeltaF (DPoint3dCR xyz, double deltaF);
+GEOMDLLIMPEXP void AppendXdeltaF (DPoint3dCR xyz, double deltaF);
 
 //!Search the fraction array for an interval containing f.
 //!<ul>
@@ -1951,17 +1953,26 @@ void AppendXdeltaF (DPoint3dCR xyz, double deltaF);
 //!<li>When f is within the range of the fractions, f0 and f1 are surrounding values.
 //!<li>When f is outside the range of the fractions, f0 and f1 are the appropriate boundary interval.
 //!</ul>
-bool SearchBracketPoints (double f, size_t &i0, double &f0, DPoint3dR xyz0, size_t &i1, double &f1, DPoint3dR xyz1) const;
+GEOMDLLIMPEXP bool SearchBracketPoints (double f, size_t &i0, double &f0, DPoint3dR xyz0, size_t &i1, double &f1, DPoint3dR xyz1) const;
 
 //! Return the range of the points.
-DRange3d GetRange () const;
+GEOMDLLIMPEXP DRange3d GetRange () const;
 
 //! Return the range of the points under a transform.
-DRange3d GetRange (TransformCR transform) const;
+GEOMDLLIMPEXP DRange3d GetRange (TransformCR transform) const;
 //! Reverse the order of the xyz and F arrays.
 //! Optionally change each fraction value (f) to (1-f) so it remains sorted and 0 to 1.
 //! This is virtual so derived classes can reverse additional arrays.
-void ReverseXF (bool reverseFAs01Fraction);
+GEOMDLLIMPEXP void ReverseXF (bool reverseFAs01Fraction);
+//! Fill with xyz and fraction for uniform fraction steps on an arc.
+GEOMDLLIMPEXP void Stroke (DEllipse3dCR arc, size_t numPoints);
+//! Fill with xyz and fraction for uniform fraction steps on an segment.
+GEOMDLLIMPEXP void Stroke (DSegment3dCR segment, size_t numPoints);
+
+//! Single-step construct and stroke
+GEOMDLLIMPEXP DPoint3dDoubleArrays (DEllipse3dCR arc, size_t numPoints);
+//! Single-step construct and stroke
+GEOMDLLIMPEXP DPoint3dDoubleArrays (DSegment3dCR segment, size_t numPoints);
 };
 
 //! DPoint3dDoubleArrays with additional markup:
@@ -1981,7 +1992,8 @@ bvector<DVec3d>   m_vectorV;
 //!<li>Reverse all other arrays, optionally negating vectors
 //!</ul>
 //!
-void ReverseXFUV (bool reverseFAs01Fraction, bool negateVectorU, bool negateVectorV);
+GEOMDLLIMPEXP void ReverseXFUV (bool reverseFAs01Fraction, bool negateVectorU, bool negateVectorV);
+
 
 };
 
@@ -1998,12 +2010,12 @@ bvector<ICurvePrimitive *>  m_curve;
 //!<li>Reverse curves, optionally negating vectors
 //!</ul>
 //!
-void ReverseXFUVC (bool reverseFAs01Fraction, bool negateVectorU, bool negateVectorV);
+GEOMDLLIMPEXP void ReverseXFUVC (bool reverseFAs01Fraction, bool negateVectorU, bool negateVectorV);
 //!<ul>
 //!<li> Reverse in range index0&lt;=index&lt;index1
 //!<li> Any array for which any part of the index range is out of bounds is skipped
 //!</ul>
-void ReverseXFUVC (size_t index0, size_t index1, bool reverseFAs01Fraction, bool negateVectorU, bool negateVectorV);
+GEOMDLLIMPEXP void ReverseXFUVC (size_t index0, size_t index1, bool reverseFAs01Fraction, bool negateVectorU, bool negateVectorV);
 
 
 //! Add data to respective arrays.
@@ -2047,6 +2059,7 @@ bool Insert (size_t i, DPoint3dCR xyz, double f, DVec3dCR vectorU, ICurvePrimiti
         ok = false;
     return ok;
     }
+
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -30,23 +30,43 @@ PolyfaceEdgeChain::PolyfaceEdgeChain (CurveTopologyIdCR id, int32_t index0, int3
     m_vertexIndices.push_back (index1);
     }
 
-void PolyfaceEdgeChain::AddIndex(int32_t index) { m_vertexIndices.push_back (index); }
-void PolyfaceEdgeChain::AddZeroBasedIndex (uint32_t index) { m_vertexIndices.push_back (index + 1); }
+void PolyfaceEdgeChain::AddIndex(int32_t index)
+    {
+    if (m_vertexIndices.empty ()
+        || index != m_vertexIndices.back ())
+        m_vertexIndices.push_back (index);
+    }
+void PolyfaceEdgeChain::AddZeroBasedIndex (uint32_t index)
+    {
+    uint32_t index1 = index + 1;
+    if (m_vertexIndices.empty ()
+        || index1 != m_vertexIndices.back ())
+        m_vertexIndices.push_back (index1);
+    }
 
 void PolyfaceEdgeChain::AddZeroBasedIndices (bvector<size_t> const &indices)
     {
     for (size_t i = 0; i < indices.size (); i++)
-        m_vertexIndices.push_back ((int32_t) (indices[i] + 1));
+        AddZeroBasedIndex ((uint32_t)indices[i]);
     }
 
 bool PolyfaceEdgeChain::GetXYZ (bvector<DPoint3d> &dest, bvector<DPoint3d> const &source) const
     {
     bool ok = true;
     size_t n = source.size ();
+    size_t oldIndex = SIZE_MAX;
+    size_t dups = 0;
     for (auto index1 : m_vertexIndices)
         {
-        if (index1 > 0 && index1 <= n)
+        if (index1 == oldIndex)
+            {
+            dups++;
+            }
+        else if (index1 > 0 && index1 <= n)
+            {
             dest.push_back (source[(size_t)(index1 - 1)]);
+            oldIndex = index1;
+            }
         else
             ok = false;
         }
