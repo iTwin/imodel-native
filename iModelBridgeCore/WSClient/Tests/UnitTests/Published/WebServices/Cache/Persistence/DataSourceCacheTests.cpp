@@ -333,6 +333,8 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching)
     {
     auto cache = GetTestCache();
+
+    // Such schema is not supported by ECDb when caching data with WSCache. UpdateSchemas will adjust it.
     auto schema = ParseSchema(
         R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="A" >  
@@ -357,18 +359,15 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_Change
     auto cachedRelClass = cachedSchema->GetClassCP("AB")->GetRelationshipClassCP();
     ASSERT_TRUE(nullptr != cachedRelClass);
 
-#ifdef WIP_MERGE_Vincas
-    EXPECT_EQ("(0,1)", cachedRelClass->GetSource().GetCardinality().ToString());
-    EXPECT_EQ("(0,1)", cachedRelClass->GetTarget().GetCardinality().ToString());
-#endif
-    
+    EXPECT_EQ("(0..1)", cachedRelClass->GetSource().GetMultiplicity().ToString());
+    EXPECT_EQ("(0..1)", cachedRelClass->GetTarget().GetMultiplicity().ToString());
+
     // Test caching
     StubInstances instances;
     instances.Add({"UpdateSchema.A", "AA"}).AddRelated({"UpdateSchema.AB", "AABB"}, {"UpdateSchema.B", "BB"});
     auto key = StubCachedResponseKey(*cache);
-#ifdef WIP_MERGE_Vincas
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
-#endif
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
     EXPECT_TRUE(VerifyHasRelationship(cache, "UpdateSchema.AB", {"UpdateSchema.A", "AA"}, {"UpdateSchema.B", "BB"}));
     }
 
