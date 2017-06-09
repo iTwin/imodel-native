@@ -34,13 +34,7 @@ WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToReque
 
 #Affan: Following test are failing because endtable relationship used in these test does not have ECDbMap::ForeignKeyConstraint customAttribute on them
 #----->
-ChangeManagerTests.CommitInstanceRevision_ModifiedObjectDeletedAfterRevisionWasReadAndCommittedSecondTime_LeavesAsNoChange
-
-ChangeManagerTests.ModifyObject_InstanceIsRemoved_BackupInstanceIsRemoved
-
 DataSourceCacheTests.CacheResponse_ResultContainsOneToOneRelationshipsViolatingCardinality_Error
-
-DataSourceCacheTests.CacheResponse_ResultNoLongerContainsInstanceThatWasLocallyModified_RemovesModifiedInstance
 #<-----
 
 #Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
