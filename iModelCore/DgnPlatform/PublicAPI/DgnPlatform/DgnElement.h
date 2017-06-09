@@ -81,12 +81,12 @@ public:
     DgnGeometryPartId Add(DgnGeometryPartId sourceId, DgnGeometryPartId targetId) {return m_geomPartId[sourceId] = targetId;}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
-    DgnMaterialId Find(DgnMaterialId sourceId) const {return FindElement<DgnMaterialId>(sourceId);}
-    DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) {return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
+    RenderMaterialId Find(RenderMaterialId sourceId) const {return FindElement<RenderMaterialId>(sourceId);}
+    RenderMaterialId Add(RenderMaterialId sourceId, RenderMaterialId targetId) {return RenderMaterialId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnTextureId Find(DgnTextureId sourceId) const {return FindElement<DgnTextureId>(sourceId);}
-    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
+    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnStyleId Find(DgnStyleId sourceId) const {return FindElement<DgnStyleId>(sourceId);}
-    DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
+    DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnFontId Find(DgnFontId sourceId) const {return Find<DgnFontId>(m_fontId, sourceId);}
     DgnFontId Add(DgnFontId sourceId, DgnFontId targetId) {return m_fontId[sourceId] = targetId;}
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
@@ -152,7 +152,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnCategoryId _RemapCategory(DgnCategoryId sourceId);
     DGNPLATFORM_EXPORT virtual DgnSubCategoryId _RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     DGNPLATFORM_EXPORT virtual DgnClassId _RemapClassId(DgnClassId sourceId);
-    DGNPLATFORM_EXPORT virtual DgnMaterialId _RemapMaterialId(DgnMaterialId sourceId);
+    DGNPLATFORM_EXPORT virtual RenderMaterialId _RemapRenderMaterialId(RenderMaterialId sourceId);
     DGNPLATFORM_EXPORT virtual DgnTextureId _RemapTextureId(DgnTextureId sourceId);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapGeometryStreamIds(GeometryStreamR geom);
     DGNPLATFORM_EXPORT virtual DgnFontId _RemapFont(DgnFontId);
@@ -197,13 +197,13 @@ public:
     DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId) {return _RemapSubCategory(destCategoryId, sourceId);}
     //! Make sure that an ECClass has been imported
     DgnClassId RemapClassId(DgnClassId sourceId) {return _RemapClassId(sourceId);}
-    //! Look up a copy of a Material
-    DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
-    //! Register a copy of a Material
-    DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
-    //! Make sure that a Material has been imported
-    DgnMaterialId RemapMaterialId(DgnMaterialId sourceId) {return _RemapMaterialId(sourceId);}
-    //! Look up a copy of a Material
+    //! Look up a copy of a RenderMaterial
+    RenderMaterialId FindRenderMaterialId(RenderMaterialId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a RenderMaterial
+    RenderMaterialId AddMaterialId(RenderMaterialId sourceId, RenderMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a RenderMaterial has been imported
+    RenderMaterialId RemapRenderMaterialId(RenderMaterialId sourceId) {return _RemapRenderMaterialId(sourceId);}
+    //! Look up a copy of a Texture
     DgnTextureId FindTextureId(DgnTextureId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Texture
     DgnTextureId AddTextureId(DgnTextureId sourceId, DgnTextureId targetId) {return m_remap.Add(sourceId, targetId);}

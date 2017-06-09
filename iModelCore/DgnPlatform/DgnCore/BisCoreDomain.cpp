@@ -162,7 +162,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::TemplateRecipe2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocationType::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Material::GetHandler());
+    RegisterHandler(dgn_ElementHandler::RenderMaterial::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(Lighting::Handlers::LightLoc::GetHandler());
     RegisterHandler(dgn_ElementHandler::LineStyleHandler::GetHandler());

@@ -11,7 +11,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler
 {
-    HANDLER_DEFINE_MEMBERS(Material);
+    HANDLER_DEFINE_MEMBERS(RenderMaterial);
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -19,7 +19,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_OnDelete() const
+DgnDbStatus RenderMaterial::_OnDelete() const
     {
     return DgnDbStatus::DeletionProhibited; // can only purge, not delete
     }
@@ -27,12 +27,12 @@ DgnDbStatus DgnMaterial::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) 
+DgnDbStatus RenderMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) 
     {
     if (parentId.IsValid())
         {
         // parent must be another material
-        auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement) " WHERE ECInstanceId=?");
+        auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_RenderMaterial) " WHERE ECInstanceId=?");
         if (!stmt.IsValid())
             return DgnDbStatus::InvalidParent;
 
@@ -47,12 +47,12 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const
+DgnDbStatus RenderMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const
     {
     DgnDbStatus status = T_Super::_OnChildImport(child, destModel, importer);
     if (DgnDbStatus::Success == status && importer.IsBetweenDbs() && !importer.FindElementId(GetElementId()).IsValid())
         {
-        DgnMaterialId destParentId = DgnMaterial::QueryMaterialId(importer.GetDestinationDb(), GetCode());
+        RenderMaterialId destParentId = RenderMaterial::QueryMaterialId(importer.GetDestinationDb(), GetCode());
         if (!destParentId.IsValid())
             Import(&status, destModel, importer);
         else
@@ -65,9 +65,9 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
+RenderMaterial::Iterator RenderMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,CodeValue,PaletteName,Parent.Id,Description FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,CodeValue,PaletteName,Parent.Id,Description FROM " BIS_SCHEMA(BIS_CLASS_RenderMaterial));
     if (options.m_byPalette)
         ecsql.append(" WHERE PaletteName=?");
 
@@ -94,7 +94,7 @@ DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& op
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterial::Iterator DgnMaterial::MakeIterator(DgnDbR db, Iterator::Options options)
+RenderMaterial::Iterator RenderMaterial::MakeIterator(DgnDbR db, Iterator::Options options)
     {
     return Iterator::Create(db, options);
     }
@@ -102,12 +102,12 @@ DgnMaterial::Iterator DgnMaterial::MakeIterator(DgnDbR db, Iterator::Options opt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImportContext& importer)
+RenderMaterialId RenderMaterial::ImportMaterial(RenderMaterialId srcMaterialId, DgnImportContext& importer)
     {
-    DgnMaterialCPtr srcMaterial = DgnMaterial::Get(importer.GetSourceDb(), srcMaterialId);
+    RenderMaterialCPtr srcMaterial = RenderMaterial::Get(importer.GetSourceDb(), srcMaterialId);
     BeAssert(srcMaterial.IsValid());
     if (!srcMaterial.IsValid())
-        return DgnMaterialId();
+        return RenderMaterialId();
 
     DgnModelId destModelId = importer.FindModelId(srcMaterial->GetModelId());
     if (!destModelId.IsValid())
@@ -115,10 +115,10 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
 
     DefinitionModelPtr destModel = importer.GetDestinationDb().Models().Get<DefinitionModel>(destModelId);
     if (!destModel.IsValid())
-        return DgnMaterialId(); // ERROR: didn't find the destination model
+        return RenderMaterialId(); // ERROR: didn't find the destination model
 
     //  See if we already have a material with the same name in the destination DefinitionModel. If so, we'll map the source material to it.
-    DgnMaterialId destMaterialId = QueryMaterialId(*destModel, srcMaterial->GetMaterialName());
+    RenderMaterialId destMaterialId = QueryMaterialId(*destModel, srcMaterial->GetMaterialName());
     if (destMaterialId.IsValid())
         {
         //  *** TBD: Check if the material definitions match. If not, rename and remap
@@ -130,9 +130,9 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
     //  No such material in the destination DefinitionModel. Ask the source Material to import itself.
     DgnElementCPtr destMaterial = srcMaterial->Import(nullptr, *destModel, importer);
     if (!destMaterial.IsValid())
-        return DgnMaterialId(); // ERROR: Import failed
+        return RenderMaterialId(); // ERROR: Import failed
 
-    destMaterialId = DgnMaterialId(destMaterial->GetElementId().GetValue());
+    destMaterialId = RenderMaterialId(destMaterial->GetElementId().GetValue());
     importer.AddMaterialId(srcMaterialId, destMaterialId);
     return destMaterialId;
     }
@@ -140,7 +140,7 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnMaterial::_RemapIds(DgnImportContext& importer)
+void RenderMaterial::_RemapIds(DgnImportContext& importer)
     {
     T_Super::_RemapIds(importer);
 
@@ -151,11 +151,11 @@ void DgnMaterial::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId DgnImportContext::_RemapMaterialId(DgnMaterialId source)
+RenderMaterialId DgnImportContext::_RemapRenderMaterialId(RenderMaterialId source)
     {
     if (!IsBetweenDbs())
         return source;
 
-    DgnMaterialId dest = FindMaterialId(source);
-    return dest.IsValid() ? dest : DgnMaterial::ImportMaterial(source, *this);
+    RenderMaterialId dest = FindRenderMaterialId(source);
+    return dest.IsValid() ? dest : RenderMaterial::ImportMaterial(source, *this);
     }

@@ -732,7 +732,7 @@ struct JsRenderGeometryParams : RefCountedBaseWithCreate
     VALUE_TYPE_GET_SET(double, FillTransparency)
     VALUE_TYPE_GET_SET(int32_t, DisplayPriority)
     JsDgnObjectIdP GetMaterialId() {if (!m_value.GetMaterialId().IsValid()) return nullptr; return new JsDgnObjectId(m_value.GetMaterialId().GetValue());}
-    void SetMaterialId(JsDgnObjectIdP v) {m_value.SetMaterialId(DgnMaterialId(v->m_id));}
+    void SetMaterialId(JsDgnObjectIdP v) {m_value.SetMaterialId(RenderMaterialId(v->m_id));}
 };
 
 typedef JsRenderGeometryParams* JsRenderGeometryParamsP;

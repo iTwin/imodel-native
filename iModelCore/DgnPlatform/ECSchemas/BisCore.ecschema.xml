@@ -1681,7 +1681,8 @@
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
     
-    <ECEntityClass typeName="MaterialElement" modifier="Sealed" displayLabel="Material">
+    <ECEntityClass typeName="RenderMaterial" modifier="Sealed" displayLabel="Render Material">
+        <!-- Marked as "Sealed" because JsonProperties will be used to persist data. This allows a single instance to "morph" between a DgnV8 render material and a future PBR material. -->
         <BaseClass>DefinitionElement</BaseClass>
         <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
@@ -1690,13 +1691,13 @@
         <ECProperty propertyName="PaletteName" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="RenderMaterialOwnsChildMaterials" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
-            <Class class="MaterialElement"/>
+            <Class class="RenderMaterial"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
-            <Class class="MaterialElement"/>
+            <Class class="RenderMaterial"/>
         </Target>
     </ECRelationshipClass>
 

@@ -31,7 +31,7 @@ struct ImportTest : DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
+static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
     {
     RgbFactor red = {1.0, 0.0, 0.0};
     uint32_t width, height;
@@ -82,11 +82,11 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset.GetValueR(RENDER_MATERIAL_Map) = mapsMap;
 
-    DgnMaterial material(dictionary, "Test Palette", materialName);
+    RenderMaterial material(dictionary, "Test Palette", materialName);
     material.SetRenderingAsset(renderMaterialAsset);
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
-    return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : DgnMaterialId();
+    return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : RenderMaterialId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -277,14 +277,14 @@ static DgnSubCategory::Appearance createAppearance(ColorDef const& colorDef)
     return appearance;
     }
 
-static bool areMaterialsEqual(DgnMaterialId lmatid, DgnDbR ldb, DgnMaterialId rmatid, DgnDbR rdb)
+static bool areMaterialsEqual(RenderMaterialId lmatid, DgnDbR ldb, RenderMaterialId rmatid, DgnDbR rdb)
     {
     if (!lmatid.IsValid() && !rmatid.IsValid())
         return true;
     if (!lmatid.IsValid() || !rmatid.IsValid())
         return false;
-    DgnMaterialCPtr lmat = DgnMaterial::Get(ldb, lmatid);
-    DgnMaterialCPtr rmat = DgnMaterial::Get(rdb, rmatid);
+    RenderMaterialCPtr lmat = RenderMaterial::Get(ldb, lmatid);
+    RenderMaterialCPtr rmat = RenderMaterial::Get(rdb, rmatid);
     if (!lmat.IsValid() || !rmat.IsValid())
         return false;
     // Note that textureids will be different. So, we must compare only values that are not IDs.
@@ -386,7 +386,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
     //  Create a Category for the elements. 
     DgnSubCategory::Appearance sourceAppearanceRequested = createAppearance(ColorDef(1, 2, 3, 0));
-    sourceAppearanceRequested.SetMaterial(createTexturedMaterial(*sourceDb, "Texture1", L"", RenderingAsset::TextureMap::Units::Relative));
+    sourceAppearanceRequested.SetRenderMaterial(createTexturedMaterial(*sourceDb, "Texture1", L"", RenderingAsset::TextureMap::Units::Relative));
 
     DgnCategoryId sourceCategoryId = DgnDbTestUtils::InsertSpatialCategory(*sourceDb, s_catName, sourceAppearanceRequested);
     ASSERT_TRUE( sourceCategoryId.IsValid() );
@@ -395,7 +395,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
     //  Create a custom SubCategory for one of the elements to use
     DgnSubCategory::Appearance sourceAppearance2 = createAppearance(ColorDef(2, 2, 3, 0));
-    sourceAppearance2.SetMaterial(createTexturedMaterial(*sourceDb, "Texture2", L"", RenderingAsset::TextureMap::Units::Relative));
+    sourceAppearance2.SetRenderMaterial(createTexturedMaterial(*sourceDb, "Texture2", L"", RenderingAsset::TextureMap::Units::Relative));
     DgnSubCategoryCPtr sourceSubCategory2;
         {
         DgnSubCategoryPtr s = new DgnSubCategory(DgnSubCategory::CreateParams(*sourceDb, sourceCategoryId, "SubCat2", sourceAppearance2));

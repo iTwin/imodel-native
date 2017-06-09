@@ -14,23 +14,23 @@
 #include "RenderMaterial.h"
 #include "ECSqlStatementIterator.h"
 
-DGNPLATFORM_TYPEDEFS(DgnMaterial);
-DGNPLATFORM_REF_COUNTED_PTR(DgnMaterial);
+DGNPLATFORM_TYPEDEFS(RenderMaterial);
+DGNPLATFORM_REF_COUNTED_PTR(RenderMaterial);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler
 {
-    struct Material;
+    struct RenderMaterial;
 }
 
 //=======================================================================================
 //! @bsistruct                                                  Paul.Connelly   09/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnMaterial : DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE RenderMaterial : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_MaterialElement, DefinitionElement);
-    friend struct dgn_ElementHandler::Material;
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_RenderMaterial, DefinitionElement);
+    friend struct dgn_ElementHandler::RenderMaterial;
 
 public:
     BE_PROP_NAME(PaletteName);
@@ -50,27 +50,27 @@ protected:
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     
-    explicit DgnMaterial(CreateParams const& params) : T_Super(params) {}
+    explicit RenderMaterial(CreateParams const& params) : T_Super(params) {}
 
 public:
     //! @private
-    static DgnMaterialId ImportMaterial(DgnMaterialId source, DgnImportContext& importer);
+    static RenderMaterialId ImportMaterial(RenderMaterialId source, DgnImportContext& importer);
 
-    //! Construct a new DgnMaterial with the specified parameters
+    //! Construct a new RenderMaterial with the specified parameters
     //! Constructs parameters for creating a material.
     //! @param[in] model The DefinitionModel in which the material will reside
     //! @param[in] paletteName The palette name which categorizes this material
     //! @param[in] materialName The name of the material. This becomes the value of the material's DgnCode.
     //! @param[in] parentMaterialId Optional ID of the parent material. If specified, this material inherits and can override the parent's material data.
-    DgnMaterial(DefinitionModelR model, Utf8StringCR paletteName, Utf8StringCR materialName, DgnMaterialId parentMaterialId=DgnMaterialId())
+    RenderMaterial(DefinitionModelR model, Utf8StringCR paletteName, Utf8StringCR materialName, RenderMaterialId parentMaterialId=RenderMaterialId())
         : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, materialName), nullptr, parentMaterialId)) 
         {
         SetPaletteName(paletteName);
         if (parentMaterialId.IsValid())
-            m_parentRelClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_MaterialOwnsChildMaterials);
+            m_parentRelClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_RenderMaterialOwnsChildMaterials);
         }
 
-    DgnMaterialId GetMaterialId() const {return DgnMaterialId(GetElementId().GetValue());} //!< Returns the Id of this material.
+    RenderMaterialId GetMaterialId() const {return RenderMaterialId(GetElementId().GetValue());} //!< Returns the Id of this material.
     Utf8String GetMaterialName() const {return GetCode().GetValue();} //!< Returns the material name
 
     Utf8String GetPaletteName() const {return GetPropertyValueString(prop_PaletteName());} //!< Returns the palette name which categorizes this material
@@ -79,14 +79,14 @@ public:
     Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());} //!< Get the description of this ColorBook
     DgnDbStatus SetDescription(Utf8StringCR description) {return SetPropertyValue(prop_Description(), description.c_str());} //!< Set the description for this ColorBook
 
-    DgnMaterialId GetParentMaterialId() const {return DgnMaterialId(GetParentId().GetValueUnchecked());} //!< Returns the ID of this material's parent material
-    DgnMaterialCPtr GetParentMaterial() const {return GetParentId().IsValid() ? GetDgnDb().Elements().Get<DgnMaterial>(GetParentId()) : nullptr;} //!< Returns this material's parent material, if one exists.
+    RenderMaterialId GetParentMaterialId() const {return RenderMaterialId(GetParentId().GetValueUnchecked());} //!< Returns the ID of this material's parent material
+    RenderMaterialCPtr GetParentMaterial() const {return GetParentId().IsValid() ? GetDgnDb().Elements().Get<RenderMaterial>(GetParentId()) : nullptr;} //!< Returns this material's parent material, if one exists.
 
-    static DgnClassId QueryClassId(DgnDbR db) {return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_MaterialElement);} //!< Returns the class ID used for material elements.
+    static DgnClassId QueryClassId(DgnDbR db) {return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_RenderMaterial);} //!< Returns the class ID used for material elements.
     static ECN::ECClassCP QueryECClass(DgnDbR db) {return db.Schemas().GetClass(QueryClassId(db));} //!< Looks up the ECClass used for material elements.
 
-    DgnMaterialCPtr Insert(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Insert<DgnMaterial>(*this, status);} //!< Inserts this material into the DgnDb and returns the persistent material.
-    DgnMaterialCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DgnMaterial>(*this, status);} //!< Updates this material in the DgnDb and returns the updated persistent material
+    RenderMaterialCPtr Insert(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Insert<RenderMaterial>(*this, status);} //!< Inserts this material into the DgnDb and returns the persistent material.
+    RenderMaterialCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<RenderMaterial>(*this, status);} //!< Updates this material in the DgnDb and returns the updated persistent material
 
     //! Get an asset of the material as a Json value.
     JsonValueCR GetAsset(Utf8CP asset) const {return GetMaterialAssets()[asset];}
@@ -104,28 +104,28 @@ public:
     void SetRenderingAsset(JsonValueCR val) {GetAssetR(json_renderMaterial()) = val;}
 
     //! Creates a DgnCode for a material.
-    static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR materialName) {return CodeSpec::CreateCode(BIS_CODESPEC_MaterialElement, scope, materialName);}
+    static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR materialName) {return CodeSpec::CreateCode(BIS_CODESPEC_RenderMaterial, scope, materialName);}
 
     //! Looks up the ID of the material with the specified code.
-    static DgnMaterialId QueryMaterialId(DgnDbR db, DgnCodeCR code) {return DgnMaterialId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());}
+    static RenderMaterialId QueryMaterialId(DgnDbR db, DgnCodeCR code) {return RenderMaterialId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());}
     //! Looks up the ID of the material with the specified palette + material name.
-    static DgnMaterialId QueryMaterialId(DefinitionModelR model, Utf8StringCR materialName) {return QueryMaterialId(model.GetDgnDb(), CreateCode(model, materialName));}
+    static RenderMaterialId QueryMaterialId(DefinitionModelR model, Utf8StringCR materialName) {return QueryMaterialId(model.GetDgnDb(), CreateCode(model, materialName));}
 
     //! Looks up a material by ID.
-    static DgnMaterialCPtr Get(DgnDbR db, DgnMaterialId materialId) {return db.Elements().Get<DgnMaterial>(materialId);}
+    static RenderMaterialCPtr Get(DgnDbR db, RenderMaterialId materialId) {return db.Elements().Get<RenderMaterial>(materialId);}
 
     //! An entry in a material iterator
     struct Entry : ECSqlStatementEntry
     {
         friend struct ECSqlStatementIterator<Entry>;
-        friend struct DgnMaterial;
+        friend struct RenderMaterial;
     private:
         Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) {}
     public:
-        DgnMaterialId GetId() const {return m_statement->GetValueId<DgnMaterialId>(0);} //!< The material ID
+        RenderMaterialId GetId() const {return m_statement->GetValueId<RenderMaterialId>(0);} //!< The material ID
         Utf8CP GetName() const {return m_statement->GetValueText(1);} //!< The material name
         Utf8CP GetPalette() const {return m_statement->GetValueText(2);} //!< The palette name
-        DgnMaterialId GetParentId() const {return m_statement->GetValueId<DgnMaterialId>(3);} //!< The parent material ID
+        RenderMaterialId GetParentId() const {return m_statement->GetValueId<RenderMaterialId>(3);} //!< The parent material ID
         Utf8CP GetDescription() const {return m_statement->GetValueText(4);} //!< The material description
     };
 
@@ -142,16 +142,16 @@ public:
             bool m_byPalette;
             bool m_byParent;
             Utf8String m_palette;
-            DgnMaterialId m_parent;
+            RenderMaterialId m_parent;
 
-            Options(Utf8StringCP palette, DgnMaterialId const* parent, bool ordered) : m_ordered(ordered),
+            Options(Utf8StringCP palette, RenderMaterialId const* parent, bool ordered) : m_ordered(ordered),
                 m_byPalette(nullptr != palette), m_palette(m_byPalette ? *palette : Utf8String()),
-                m_byParent(nullptr != parent), m_parent(m_byParent ? *parent : DgnMaterialId()) {}
+                m_byParent(nullptr != parent), m_parent(m_byParent ? *parent : RenderMaterialId()) {}
         public:
             //! Default options: Includes all materials , unordered
             Options() : Options(nullptr, nullptr, false) {}
             //! Filter by palette name and parent material, optionally ordered by palette name and then material name
-            Options(Utf8StringCR paletteName, DgnMaterialId parentId, bool ordered=false) : Options(&paletteName, &parentId, ordered) {}
+            Options(Utf8StringCR paletteName, RenderMaterialId parentId, bool ordered=false) : Options(&paletteName, &parentId, ordered) {}
             
             //! Unfiltered, ordered
             static Options Ordered() {return Options(nullptr, nullptr, true);}
@@ -160,15 +160,15 @@ public:
             static Options ByPalette(Utf8StringCR paletteName, bool ordered = false) {return Options(&paletteName, nullptr, ordered);}
 
             //! Filter by a specific parent material, optionally ordered by palette name and then material name
-            static Options ByParentId(DgnMaterialId parentId, bool ordered = false) {return Options(nullptr, &parentId, ordered);}
+            static Options ByParentId(RenderMaterialId parentId, bool ordered = false) {return Options(nullptr, &parentId, ordered);}
         };
 
         static Iterator Create(DgnDbR db, Options const& options); //!< @private
     };
 
     //! Create an iterator over the materials within a DgnDb
-    //! @param[in]      db      The DgnDb in which to query
-    //! @param[in]      options Options controlling which materials to include and in what order
+    //! @param[in] db The DgnDb in which to query
+    //! @param[in] options Options controlling which materials to include and in what order
     //! @return An iterator with the specified options
     DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR db, Iterator::Options options=Iterator::Options());
 };
@@ -179,11 +179,10 @@ namespace dgn_ElementHandler
     //! The handler for material elements.
     //! @bsistruct                                                  Paul.Connelly   09/15
     //=======================================================================================
-    struct Material : Definition
+    struct RenderMaterial : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_MaterialElement, DgnMaterial, Material, Definition, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_RenderMaterial, Dgn::RenderMaterial, RenderMaterial, Definition, DGNPLATFORM_EXPORT);
     };
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
