@@ -155,7 +155,7 @@ struct IScalableMeshCreator::Impl
 
         virtual bool                                IsFileDirty();
 
-        ScalableMeshProgress m_progress;
+        IScalableMeshProgressPtr m_progress;
 
     protected:
         
@@ -205,7 +205,7 @@ struct IScalableMeshCreator::Impl
 
         StatusInt                           Filter                         ();        
 
-        ScalableMeshProgress*            GetProgress();
+        IScalableMeshProgressPtr            GetProgress();
 
         bool                               IsCanceled();
 
