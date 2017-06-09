@@ -93,7 +93,7 @@ BentleyStatus DoGetFromSource()
     dgnToTile.InverseOf(root.GetLocation());
     cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
 
-    while (0 != (nBatchPoints = (size_t) ptGetDetailedQueryPointsf (queryHandle->GetHandle(), s_maxTileBatchCount, &batchPoints.front().x, colorsPresent ? (PTubyte*) batchColors.data() : nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr)))
+    while (0 != (nBatchPoints = (size_t) ptGetQueryPointsf (queryHandle->GetHandle(), s_maxTileBatchCount, &batchPoints.front().x, colorsPresent ? (PTubyte*) batchColors.data() : nullptr, nullptr, nullptr, nullptr)))
         {
         for(size_t i=0; i<nBatchPoints; i++)
             {
@@ -101,9 +101,12 @@ BentleyStatus DoGetFromSource()
 
             cloudToTile.Multiply(tmpPoint);
 
-            points.Add(tmpPoint);
-            if (colorsPresent)
-                colors.push_back(batchColors[i]);
+            if (tileRange.IsContained(tmpPoint))
+                {
+                points.Add(tmpPoint);
+                if (colorsPresent)
+                    colors.push_back(batchColors[i]);
+                }
             }
         }
     m_saveToCache = true;
