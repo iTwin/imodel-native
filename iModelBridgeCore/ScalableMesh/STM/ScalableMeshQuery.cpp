@@ -2830,6 +2830,12 @@ void      IScalableMeshCachedDisplayNode::SetIsInVideoMemory(bool isInVideoMemor
 
 IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_t nodeId, IScalableMesh* smP)
     {
+    if (smP == nullptr)
+        { 
+        IScalableMeshCachedDisplayNodePtr displayNodePtr;
+        return displayNodePtr;
+        }
+
     auto index = ((ScalableMesh<DPoint3d>*)smP)->GetMainIndexP();
     auto node = index->FindLoadedNode(nodeId);
     return ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, smP);

@@ -6,7 +6,7 @@
 |       $Date: 2015/04/20 14:27:27 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,7 @@ struct ScalableMeshVolume : IDTMVolume
         Transform m_transform;
         Transform m_UorsToStorage;
 
-        double _ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr smTile, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, DRange3d meshExtent, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
+        double _ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr smTile, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, DRange3d meshExtent, Transform meshTransform, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
     protected:
 
         virtual DTMStatusInt _ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh) override;

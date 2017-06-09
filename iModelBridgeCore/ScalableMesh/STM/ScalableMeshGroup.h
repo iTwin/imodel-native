@@ -261,6 +261,9 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual void                          _SetGroupSelectionFromPoint(DPoint3d firstPoint) override;
         virtual void                          _ClearGroupSelection() override;
 
+        virtual void                          _RemoveAllDisplayData() override {}
+        
+
      public:
 
          ScalableMeshGroup();

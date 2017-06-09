@@ -138,6 +138,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         BENTLEY_SM_EXPORT void InitScalableMesh(IScalableMeshPtr& scalableMeshPtr);
 
         BENTLEY_SM_EXPORT void ClearOverviews(IScalableMesh* scalableMeshP);
+
+        BENTLEY_SM_EXPORT static void CancelAllQueries();
     };
 
 
