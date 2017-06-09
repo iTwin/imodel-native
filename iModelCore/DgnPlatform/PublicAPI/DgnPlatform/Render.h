@@ -397,7 +397,7 @@ public:
 //=======================================================================================
 struct Image
 {
-    enum class Format {Rgba=0, Rgb=2}; // must match qvision.h values
+    enum class Format {Rgba=0, Rgb=2, Alpha=5}; // must match qvision.h values
     enum class BottomUp : bool {No=0, Yes=1}; //!< whether the rows in the image should be flipped top-to-bottom
 protected:
     uint32_t m_width = 0;
@@ -911,6 +911,7 @@ public:
     double GetShift() const {return m_shift;}
     double GetTint() const {return m_tint;}
     double GetAngle() const {return m_angle;}
+    bool GetIsOutlined() const {return 0 != (m_flags & Outline); }
     void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index]; value = m_values[index];}
     void SetMode(Mode mode) {m_mode = mode;}
     void SetFlags(Flags flags) {m_flags = flags;}
@@ -2546,15 +2547,26 @@ struct ViewletPosition
 //=======================================================================================
 struct MeshEdgeCreationOptions
     {
-    bool        m_generateNoEdges       = false;
-    bool        m_generateAllEdges      = false;
-    bool        m_generateSheetEdges    = true;
-    bool        m_generateCreaseEdges   = true;
+    enum    Options
+        {
+        NoEdges                 = 0x0000,
+        SheetEdges              = 0x0001 << 0, 
+        CreaseEdges             = 0x0001 << 1, 
+        SmoothEdges             = 0x0001 << 2,
+        DefaultEdges            = CreaseEdges | SheetEdges,
+        AllEdges                = CreaseEdges | SheetEdges | SmoothEdges
+        };
+
+    Options     m_options               = DefaultEdges;
     double      m_minCreaseAngle        = 20.0 * msGeomConst_radiansPerDegree;
 
-    MeshEdgeCreationOptions() {}
-    MeshEdgeCreationOptions(bool generateAllEdges, bool generateNoEdges, bool generateSheetEdges, bool generateCreaseEdges, double minCreaseAngle) : 
-        m_generateAllEdges(generateAllEdges), m_generateNoEdges(generateNoEdges), m_generateSheetEdges(generateSheetEdges), m_generateCreaseEdges(generateCreaseEdges), m_minCreaseAngle(minCreaseAngle) { }
+    MeshEdgeCreationOptions(Options options) : m_options(options) {}
+    MeshEdgeCreationOptions(Options options, double minCreaseAngle) :m_options(options) { }
+
+    bool GenerateAllEdges() const    { return m_options == AllEdges; }
+    bool GenerateNoEdges() const     { return m_options == NoEdges;   }
+    bool GenerateSheetEdges() const  { return 0 != (m_options & SheetEdges); }
+    bool GenerateCreaseEdges() const { return 0 != (m_options & CreaseEdges); } 
     };
 
 //=======================================================================================

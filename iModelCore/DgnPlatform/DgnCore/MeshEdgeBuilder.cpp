@@ -158,7 +158,7 @@ MeshEdgesBuilder (TriMeshArgsCR args, DRange3dCR tileRange, MeshEdgeCreationOpti
             MeshEdge        meshEdge(triIndex[j], triIndex[(j+1)%3]);
             EdgeInfo        edgeInfo(true, triangleIndex, meshEdge, dpts[j], dpts[(j+1) %3]);
 
-            if (!m_options.m_generateAllEdges)
+            if (m_options.GenerateAllEdges())
                 meshEdge = MeshEdge(pointMap.GetIndex(args.m_points[meshEdge.m_indices[0]]),            // Remap the edge indices to indices based on the PointMap -- An expensive operation - if "AllOptions" is set We'll skip it and just use
                                     pointMap.GetIndex(args.m_points[meshEdge.m_indices[1]]));           // The raw indices - which is fast but will generate duplicate edges.
 
@@ -182,7 +182,7 @@ MeshEdgesBuilder (TriMeshArgsCR args, DRange3dCR tileRange, MeshEdgeCreationOpti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CalculateEdgeVisibility(DRange3dCR tileRange)
     {
-    if (m_options.m_generateAllEdges)
+    if (m_options.GenerateAllEdges())
         return;
 
     double  minEdgeDot = cos(m_options.m_minCreaseAngle);
@@ -206,7 +206,7 @@ void CalculateEdgeVisibility(DRange3dCR tileRange)
             if (fabs(normal0.DotProduct(normal1)) > minEdgeDot)
                 edge.second.m_visible = false;
             }
-        else if (m_options.m_generateSheetEdges)
+        else if (m_options.GenerateSheetEdges())
             {
             edge.second.m_visible = true;
             }
@@ -263,9 +263,6 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
     {
-    bool                    useExistingEdgeChains = nullptr != builderPolyface && 0 != builderPolyface->m_polyface.GetEdgeChainCount();
-    bvector<PolyfaceEdge>   visibleEdges;
-
     for (auto& edge : m_edgeMap)
         {
         if (edge.second.m_visible)
@@ -300,7 +297,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
         for (auto& vertexIndex : builderPolyface->m_vertexIndexMap)
             inverseVertexIndexMap.Insert(vertexIndex.second, vertexIndex.first);
 
-        if (useExistingEdgeChains)
+        if (0 != builderPolyface->m_polyface.GetEdgeChainCount())
             {
             for (size_t i=0; i<builderPolyface->m_polyface.GetEdgeChainCount(); i++)
                 BuildPolylineFromEdgeChain(edges, *(builderPolyface->m_polyface.GetEdgeChainCP() + i), *builderPolyface, inverseVertexIndexMap);
@@ -320,7 +317,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options) 
     { 
-    m_currentPolyface = options.m_generateNoEdges ? nullptr : new Polyface (polyface, options, m_mesh->Triangles().size()); 
+    m_currentPolyface = (options.GenerateNoEdges()) ? nullptr : new Polyface (polyface, options, m_mesh->Triangles().size()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,10 +326,7 @@ void MeshBuilder::BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOption
 void MeshBuilder::EndPolyface()
     {
     if (!m_currentPolyface.IsValid())
-        {
-        BeAssert (false && "Mismatched Begin/End Polyface");
         return;
-        }
 
     if (!m_mesh->m_edges.IsValid())
         m_mesh->m_edges = new MeshEdges();

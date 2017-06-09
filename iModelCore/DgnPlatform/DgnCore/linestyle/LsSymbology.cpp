@@ -541,7 +541,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnD
 
     SetScale(scaleWithUnits);
 
-    if (LsComponentType::RasterImage != topComponent->GetComponentType())
+    if (!topComponent->_HasRasterImageComponent())
         SetUseStroker(true);
 
     // Get the width of this linestyle to use for "discernable" checks...

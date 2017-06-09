@@ -579,6 +579,35 @@ void            LsCompoundComponent::CalculateSize()
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2017
+//---------------------------------------------------------------------------------------
+bool        LsCompoundComponent::_HasRasterImageComponent () const
+    {
+    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
+        {
+        if (GetComponentCP (compNum)->_HasRasterImageComponent())
+            return true;
+        }
+
+    return false;        
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2017
+//---------------------------------------------------------------------------------------
+LsRasterImageComponentP      LsCompoundComponent::_GetRasterImageComponent ()
+    {
+    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
+        {
+        LsComponentCP comp = GetComponentCP (compNum);
+        if (comp->GetComponentType () == LsComponentType::RasterImage)
+            return (LsRasterImageComponentP)comp;
+        }
+        
+    return nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/

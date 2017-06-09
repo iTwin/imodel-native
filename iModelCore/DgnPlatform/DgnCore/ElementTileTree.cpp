@@ -1607,10 +1607,10 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (doDecimate)
         polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
 
-    bool anyContributed = false;
-    uint32_t fillColor = displayParams.GetFillColor();
+    bool                    anyContributed = false;
+    uint32_t                fillColor = displayParams.GetFillColor();
 
-    builder.BeginPolyface(*polyface, MeshEdgeCreationOptions());
+    builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {
         if (isContained || m_tileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
@@ -1939,6 +1939,7 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
 
     IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(m_tolerance);
 
+    facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false);        // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
     Transform transformFromDgn;
     transformFromDgn.InverseOf(root.GetLocation());
 

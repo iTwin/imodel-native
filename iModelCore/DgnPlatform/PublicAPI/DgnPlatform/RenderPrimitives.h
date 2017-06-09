@@ -140,6 +140,8 @@ public:
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
     bool IsTextured() const { BeAssert(m_resolved); return nullptr != GetTexture(); }
+    bool NeverRegionOutline() const { return FillFlags::Blanking == GetFillFlags() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
+    bool HasRegionOutline() const;
 
     enum class ComparePurpose
     {
@@ -637,11 +639,12 @@ struct Polyface
 {
     DisplayParamsCPtr   m_displayParams;
     PolyfaceHeaderPtr   m_polyface;
+    bool                m_displayEdges = true;
 
-    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface) : m_displayParams(&displayParams), m_polyface(&polyface) { }
+    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges = true) : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges) { }
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
-    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone()); }
+    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges); }
 };
 
 //=======================================================================================
