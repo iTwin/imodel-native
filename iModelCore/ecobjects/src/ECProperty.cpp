@@ -1657,6 +1657,13 @@ bool NavigationECProperty::Verify()
     if (nullptr == m_relationshipClass)
         return false;
 
+    if (m_relationshipClass->HasBaseClasses()) 
+        {
+        LOG.errorv("The referenced relationship '%s' used in NavigationECProperty %s.%s is not the root relationship.",
+            m_relationshipClass->GetFullName(), GetClass().GetFullName(), GetName().c_str());
+        return false;
+        }
+
     ECRelationshipConstraintCP thisConstraint;
     ECRelationshipConstraintCP thatConstraint;
     if (ECRelatedInstanceDirection::Forward == m_direction)
@@ -1670,6 +1677,23 @@ bool NavigationECProperty::Verify()
         thatConstraint = &m_relationshipClass->GetSource();
         }
 
+    bool concreteClass = false;
+    for (auto constraintClass : thisConstraint->GetConstraintClasses())
+        {
+        if (ECClass::ClassesAreEqualByName(&GetClass(), constraintClass))
+            {
+            concreteClass = true;
+            break;
+            }
+        }
+
+    if (!concreteClass)
+        {
+        LOG.errorv("The navigation property '%s.%s' cannot be added to '%s' because the class is not a constraint class in the referenced relationship '%s'",
+            GetClass().GetFullName(), GetName().c_str(), GetClass().GetFullName(), m_relationshipClass->GetFullName());
+        return false;
+        }
+
     bool supportsClass = thisConstraint->SupportsClass(GetClass());
     if (!supportsClass)
         {
@@ -1680,7 +1704,7 @@ bool NavigationECProperty::Verify()
     if (1 == thatConstraint->GetMultiplicity().GetUpperLimit())
         m_valueKind = ValueKind::VALUEKIND_Primitive;
     else
-        m_valueKind = ValueKind::VALUEKIND_Array;
+        return false;
 
     return true;
     }
@@ -1744,17 +1768,15 @@ bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
         return false;
         }
 
-    // Following the example of StructECProperty we will allow override if the current relationship has not het been set.
+    // Following the example of StructECProperty we will allow override if the current relationship has not yet been set.
     if (nullptr == m_relationshipClass)
         return true;
 
     ECRelationshipClassCP baseRelClass = baseNavProperty->GetRelationshipClass();
-    if (!m_relationshipClass->Is(baseRelClass))
+    if (!ECClass::ClassesAreEqualByName(m_relationshipClass, baseRelClass))
         {
-        LOG.errorv("The NavigationECProperty %s:%s cannot be overridden by %s:%s because the relationship %s on property %s:%s is not derived from the relationship %s on property %s:%s.",
-                   baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str(),
-                   m_relationshipClass->GetFullName(), GetClass().GetFullName(), GetName().c_str(),
-                   baseRelClass->GetFullName(), baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str());
+        LOG.errorv("The NavigationECProperty %s:%s cannot be overridden by %s:%s because the relationship was changed. A derived property cannot change the referenced relationship.",
+            baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
 

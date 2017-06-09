@@ -17,7 +17,7 @@ struct NavigationECPropertyTests : ECTestFixture { };
 void CreateNavProp(ECEntityClassP ecClass, Utf8StringCR propName, ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, NavigationECPropertyP& navProp, PrimitiveType type = PRIMITIVETYPE_String)
     {
     ECObjectsStatus status = ecClass->CreateNavigationProperty(navProp, propName, relClass, direction, type);
-    ASSERT_EQ(ECObjectsStatus::Success, status) << "Failed to create navigation property " << propName;
+    ASSERT_EQ(ECObjectsStatus::Success, status) << "Failed to create navigation property '" << ecClass->GetFullName() << "." << propName << "'.";
     ASSERT_NE(nullptr, navProp) << "Navigation property " << propName << " null though success returned";
     ASSERT_EQ(propName, navProp->GetName()) << "Navigation property " << propName << " does not have expected name";
     ASSERT_EQ(relClass.GetName(), navProp->GetRelationshipClass()->GetName()) << "Navigation property " << propName << " does not have expected relationship";
@@ -69,11 +69,13 @@ TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     ECEntityClassP targetClass;
     ECRelationshipClassP relClass;
     ECRelationshipClassP relClass2;
+    ECRelationshipClassP relClass3;
 
     ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     schema->SetAlias("navt");
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateRelationshipClass(relClass2, "RelClass2");
+    schema->CreateRelationshipClass(relClass3, "RelClass3");
     schema->CreateEntityClass(sourceClass, "Source");
     schema->CreateEntityClass(targetClass, "Target");
 
@@ -85,8 +87,12 @@ TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     relClass2->GetSource().AddClass(*sourceClass);
     relClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
     relClass2->GetTarget().AddClass(*targetClass);
-    relClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
+    relClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
+    relClass3->GetSource().AddClass(*sourceClass);
+    relClass3->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass3->GetTarget().AddClass(*targetClass);
+    relClass3->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
 
     NavigationECPropertyP navPropSource;
     CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
@@ -94,15 +100,14 @@ TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     CreateNavProp(targetClass, "MySource", *relClass, ECRelatedInstanceDirection::Backward, navPropTarget);
     NavigationECPropertyP navProp2Source;
     CreateNavProp(sourceClass, "MyTarget2", *relClass2, ECRelatedInstanceDirection::Forward, navProp2Source);
-    NavigationECPropertyP navProp2Target;
-    CreateNavProp(targetClass, "MySource2", *relClass2, ECRelatedInstanceDirection::Backward, navProp2Target);
-
+    NavigationECPropertyP navProp3Target;
+    CreateNavProp(targetClass, "MySource3", *relClass3, ECRelatedInstanceDirection::Backward, navProp3Target);
 
     bvector<NavigationECPropertyCP> expectedNavProps;
     expectedNavProps.push_back(navPropSource);
     expectedNavProps.push_back(navPropTarget);
     expectedNavProps.push_back(navProp2Source);
-    expectedNavProps.push_back(navProp2Target);
+    expectedNavProps.push_back(navProp3Target);
     ValidateRoundTripEC3Serialization(schema, expectedNavProps);
     }
 
@@ -162,6 +167,371 @@ TEST_F(NavigationECPropertyTests, InvalidNavigationProperties)
     NavigationECPropertyP failure;
     ECObjectsStatus status = sourceClass->CreateNavigationProperty(failure, "MyFailure", *relClass, ECRelatedInstanceDirection::Backward);
     ASSERT_NE(ECObjectsStatus::Success, status) << "Expected failure when creating a navigation property with direction wrong";
+    }
+
+TEST_F(NavigationECPropertyTests, InvalidReferencedRelationshipWithBaseClasses)
+    {
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP sourceClass;
+    ECEntityClassP targetClass;
+    ECRelationshipClassP relClass;
+    ECRelationshipClassP derivedRelClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
+    schema->CreateRelationshipClass(relClass, "RelClass");
+    schema->CreateRelationshipClass(derivedRelClass, "DerivedRelClass");
+    schema->CreateEntityClass(sourceClass, "Source");
+    schema->CreateEntityClass(targetClass, "Target");
+
+    relClass->GetSource().AddClass(*sourceClass);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*targetClass);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    derivedRelClass->GetSource().AddClass(*sourceClass);
+    derivedRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    derivedRelClass->GetTarget().AddClass(*targetClass);
+    derivedRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+    derivedRelClass->AddBaseClass(*relClass);
+
+    NavigationECPropertyP navProp;
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, sourceClass->CreateNavigationProperty(navProp, "BadNavProp", *derivedRelClass, ECRelatedInstanceDirection::Forward));
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Source">
+                <NavigationECProperty propertyName="targetValue" relationshipName="DerivedRelClass"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Target"/>
+            <ECRelationshipClass typeName="DerivedRelClass" strength="Referencing" strengthDirection="forward">
+                <BaseClass>RelClass</BaseClass>
+                <Source multiplicity="(0..1)" polymorphic="true" roleLabel="source">
+                    <Class class="Source"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="true" roleLabel="target">
+                    <Class class="Target"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelClass" strength="Referencing" strengthDirection="forward">
+                <Source multiplicity="(0..1)" polymorphic="true" roleLabel="source">
+                    <Class class="Source"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="true" roleLabel="target">
+                    <Class class="Target"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    }
+
+TEST_F(NavigationECPropertyTests, InvalidOverrideWithDifferentRelationshipClass)
+    {
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP sourceClass;
+    ECEntityClassP targetClass;
+    ECEntityClassP derivedSource;
+    ECRelationshipClassP relClass;
+    ECRelationshipClassP relClass2;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
+    schema->CreateRelationshipClass(relClass, "RelClass");
+    schema->CreateRelationshipClass(relClass2, "RelClass2");
+    
+    schema->CreateEntityClass(sourceClass, "Source");
+    schema->CreateEntityClass(targetClass, "Target");
+
+    schema->CreateEntityClass(derivedSource, "DerivedSource");
+    derivedSource->AddBaseClass(*sourceClass);
+
+    relClass->GetSource().AddClass(*sourceClass);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*targetClass);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    relClass2->GetSource().AddClass(*derivedSource);
+    relClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass2->GetTarget().AddClass(*targetClass);
+    relClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    NavigationECPropertyP navProp;
+    CreateNavProp(sourceClass, "NavProp", *relClass, ECRelatedInstanceDirection::Forward, navProp);
+    
+    NavigationECPropertyP derivedNavProp;
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, derivedSource->CreateNavigationProperty(derivedNavProp, "NavProp", *relClass2, ECRelatedInstanceDirection::Forward))
+        << "The navigation property should fail to be created because the overriding navigation property has a different relationship than the overridden property.";
+    }
+
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP baseClass;
+
+    ECEntityClassP sourceClass;
+    ECEntityClassP derivedSource;
+    ECEntityClassP targetClass;
+    ECRelationshipClassP relClass;
+    ECRelationshipClassP relClass2;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
+    schema->CreateRelationshipClass(relClass, "RelClass");
+    schema->CreateRelationshipClass(relClass2, "RelClass2");
+    schema->CreateEntityClass(baseClass, "BaseClass");
+    schema->CreateEntityClass(targetClass, "Target");
+
+    schema->CreateEntityClass(sourceClass, "Source");
+    sourceClass->AddBaseClass(*baseClass);
+    schema->CreateEntityClass(derivedSource, "DerivedSource");
+    derivedSource->AddBaseClass(*baseClass);
+    
+    relClass->GetSource().SetAbstractConstraint(*baseClass);
+    relClass->GetSource().AddClass(*sourceClass);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*targetClass);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    relClass2->GetSource().AddClass(*derivedSource);
+    relClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass2->GetTarget().AddClass(*targetClass);
+    relClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    NavigationECPropertyP navProp;
+    CreateNavProp(sourceClass, "NavProp", *relClass, ECRelatedInstanceDirection::Forward, navProp);
+
+    NavigationECPropertyP derivedNavProp;
+    CreateNavProp(derivedSource, "NavProp", *relClass2, ECRelatedInstanceDirection::Forward, derivedNavProp);
+
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, derivedSource->AddBaseClass(*sourceClass)) << "The base class should fail to be added because the derived class is changing the relationship.";
+    }
+
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP sourceClass;
+    ECEntityClassP targetClass;
+    ECEntityClassP derivedSource;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
+    schema->CreateRelationshipClass(relClass, "RelClass");
+    schema->CreateEntityClass(sourceClass, "Source");
+    schema->CreateEntityClass(targetClass, "Target");
+    schema->CreateEntityClass(derivedSource, "DerivedSource");
+    derivedSource->AddBaseClass(*sourceClass);
+
+    relClass->GetSource().SetAbstractConstraint(*sourceClass);
+    relClass->GetSource().AddClass(*sourceClass);
+    relClass->GetSource().AddClass(*derivedSource);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*targetClass);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    NavigationECPropertyP navProp;
+    CreateNavProp(sourceClass, "NavProp", *relClass, ECRelatedInstanceDirection::Forward, navProp);
+    
+    NavigationECPropertyP derivedNavProp;
+    EXPECT_EQ(ECObjectsStatus::Success, derivedSource->CreateNavigationProperty(derivedNavProp, "NavProp", *relClass, ECRelatedInstanceDirection::Forward)) 
+        << "The navigation property should be successfully created because the overriding navigation property has the same relationship as the overridden property.";
+    }
+    
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="SourceClass" >
+                <ECNavigationProperty propertyName="NavProp" relationshipName="RelClass" direction="forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="DerivedSource">
+                <BaseClass>SourceClass</BaseClass>
+                <ECNavigationProperty propertyName="NavProp" relationshipName="DerivedRelClass" direction="forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TargetClass" />
+            <ECRelationshipClass typeName="RelClass" strength="Referencing" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="source" polymorphic="true">
+                    <Class class="SourceClass"/>
+                </Source>
+                <Target multiplicity="(1..1)" roleLabel="target" polymorphic="true">
+                    <Class class="TargetClass"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelClass2" strength="Referencing" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="source" polymorphic="true">
+                    <Class class="SourceClass"/>
+                </Source>
+                <Target multiplicity="(1..1)" roleLabel="target" polymorphic="true">
+                    <Class class="TargetClass"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context))
+        << "The schema should fail to deserialize because the overriding navigation property has a different relationship than the overridden property.";
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="SourceClass" >
+                <ECNavigationProperty propertyName="NavProp" relationshipName="RelClass" direction="forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="DerivedSource">
+                <BaseClass>SourceClass</BaseClass>
+                <ECNavigationProperty propertyName="NavProp" relationshipName="RelClass" direction="forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TargetClass" />
+            <ECRelationshipClass typeName="RelClass" strength="Referencing" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="source" polymorphic="true" abstractConstraint="SourceClass">
+                    <Class class="SourceClass"/>
+                    <Class class="DerivedSource"/>
+                </Source>
+                <Target multiplicity="(1..1)" roleLabel="target" polymorphic="true">
+                    <Class class="TargetClass"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context)) << "The schema should successfully deserialize because the overriding navigation property has the same relationship as the overridden property.";
+    }
+    }
+
+TEST_F(NavigationECPropertyTests, MustPointToSingularEndpoint)
+    {
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP source;
+    ECEntityClassP target;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 0);
+    schema->CreateEntityClass(source, "Source");
+    schema->CreateEntityClass(target, "Target");
+    schema->CreateRelationshipClass(relClass, "TestRelationship");
+
+    relClass->GetSource().AddClass(*source);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*target);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
+
+    NavigationECPropertyP navProp;
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, source->CreateNavigationProperty(navProp, "BadNavProp", *relClass, ECRelatedInstanceDirection::Forward));
+    }
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP source;
+    ECEntityClassP target;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 1);
+    schema->CreateEntityClass(source, "Source");
+    schema->CreateEntityClass(target, "Target");
+    schema->CreateRelationshipClass(relClass, "TestRelationship");
+
+    relClass->GetSource().AddClass(*source);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
+    relClass->GetTarget().AddClass(*target);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    NavigationECPropertyP navProp;
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, target->CreateNavigationProperty(navProp, "BadNavProp", *relClass, ECRelatedInstanceDirection::Backward));
+    }
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP source;
+    ECEntityClassP target;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 2);
+    schema->CreateEntityClass(source, "Source");
+    schema->CreateEntityClass(target, "Target");
+    schema->CreateRelationshipClass(relClass, "TestRelationship");
+
+    relClass->GetSource().AddClass(*source);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
+    relClass->GetTarget().AddClass(*target);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    NavigationECPropertyP navProp;
+    EXPECT_EQ(ECObjectsStatus::Success, source->CreateNavigationProperty(navProp, "GoodNavProp", *relClass, ECRelatedInstanceDirection::Forward));
+    }
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP source;
+    ECEntityClassP target;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 3);
+    schema->CreateEntityClass(source, "Source");
+    schema->CreateEntityClass(target, "Target");
+    schema->CreateRelationshipClass(relClass, "TestRelationship");
+
+    relClass->GetSource().AddClass(*source);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*target);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
+
+    NavigationECPropertyP navProp;
+    EXPECT_EQ(ECObjectsStatus::Success, target->CreateNavigationProperty(navProp, "GoodNavProp", *relClass, ECRelatedInstanceDirection::Backward));
+    }
+    }
+
+TEST_F(NavigationECPropertyTests, MustBeAddedToConcreteConstraintClass)
+    {
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP source;
+    ECEntityClassP derivedFromSource;
+    ECEntityClassP target;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 0);
+    schema->CreateEntityClass(source, "Source");
+    schema->CreateEntityClass(derivedFromSource, "DerivedFromSource");
+    schema->CreateEntityClass(target, "Target");
+    schema->CreateRelationshipClass(relClass, "TestRelationship");
+
+    derivedFromSource->AddBaseClass(*source);
+    
+    relClass->GetSource().AddClass(*source);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*target);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    NavigationECPropertyP navProp;
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, derivedFromSource->CreateNavigationProperty(navProp, "BadNavProp", *relClass, ECRelatedInstanceDirection::Forward));
+    }
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP source;
+    ECEntityClassP derivedFromSource;
+    ECEntityClassP target;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 0);
+    schema->CreateEntityClass(source, "Source");
+    schema->CreateEntityClass(derivedFromSource, "DerivedFromSource");
+    schema->CreateEntityClass(target, "Target");
+    schema->CreateRelationshipClass(relClass, "TestRelationship");
+
+    derivedFromSource->AddBaseClass(*source);
+    
+    relClass->GetSource().SetAbstractConstraint(*source);
+    relClass->GetSource().AddClass(*source);
+    relClass->GetSource().AddClass(*derivedFromSource);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*target);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    NavigationECPropertyP navProp;
+    EXPECT_EQ(ECObjectsStatus::Success, derivedFromSource->CreateNavigationProperty(navProp, "BadNavProp", *relClass, ECRelatedInstanceDirection::Forward));
+    }
     }
 
 TEST_F(NavigationECPropertyTests, InvalidXml)
@@ -230,7 +600,7 @@ TEST_F(NavigationECPropertyTests, RoundtripToEC2Xml)
     relClass->GetSource().AddClass(*sourceClass);
     relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relClass->GetTarget().AddClass(*targetClass);
-    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
     NavigationECPropertyP navPropSource;
     CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
