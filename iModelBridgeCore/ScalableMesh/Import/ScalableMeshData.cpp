@@ -34,6 +34,9 @@ struct ScalableMeshData::Impl : public ShareableObjectTypeTrait<Impl>::type
           m_polygonFeatureType(DTMFeatureType::Breakline),
           m_isGridData(false)
         {
+        //NEEDS_WORK_SM : Classes are currently not saved in the 3SM file (bug). Once that is fixed the code below could be removed.
+        if (m_classesToImport.size() == 0)
+            m_classesToImport.push_back(2); //Import only ground points if the POD is classified
         }      
 
     static void                   UpdateForEdit   (ImplPtr& instancePtr)
@@ -180,6 +183,8 @@ void ScalableMeshData::GetClassificationToImport(bvector<uint32_t>& classesToImp
 
 void ScalableMeshData::SetClassificationToImport(const bvector<uint32_t>& classesToImport)
     {
+    //NEEDS_WORK_SM : Classes are currently not saved in the 3SM file (bug). Once that is fixed the assert below could be removed.
+    assert(!"Not working - Classes are currently not saved in the 3SM file (bug).");
     m_implP->m_classesToImport = classesToImport;
     }
 
