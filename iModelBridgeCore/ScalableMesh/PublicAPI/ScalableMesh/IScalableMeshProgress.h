@@ -32,7 +32,8 @@ enum ScalableMeshStep
     STEP_GENERATE_3DTILES_HEADERS,
     STEP_DETECT_GROUND,
     STEP_GENERATE_TEXTURE,
-    STEP_QTY
+    STEP_QTY,
+    STEP_CREATE_FROM_3MX
     };
 
 enum ScalableMeshStepProcess
@@ -41,7 +42,8 @@ enum ScalableMeshStepProcess
     PROCESS_GENERATION,
     PROCESS_TEXTURING,
     PROCESS_DETECT_GROUND,
-    PROCESS_CONVERT_3DTILES
+    PROCESS_CONVERT_3DTILES,
+    PROCESS_CREATION_FROM_3MX
     };
 
 enum ScalableMeshProcessType
