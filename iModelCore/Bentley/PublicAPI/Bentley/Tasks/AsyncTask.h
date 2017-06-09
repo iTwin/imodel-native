@@ -15,7 +15,7 @@
 
 #if defined (THREADING_DEBUG)
     #include <MobileDgn/Utils/BeDbgHelp.h>
-
+    
     #define ASYNC_TASK_ADD_DEBUG_INFO(task, callerFrame) { task->SetStackInfo(BeDbgHelp::GetStackInfoAt(callerFrame)); }
 
 #else
