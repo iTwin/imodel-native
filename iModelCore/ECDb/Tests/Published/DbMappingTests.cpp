@@ -1337,7 +1337,7 @@ TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
     ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='A'"
+        "    <ECEntityClass typeName='A'>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='B'>"
@@ -1674,7 +1674,7 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                           "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                           "    <ECEntityClass typeName='Parent' modifier='None'>"
@@ -6291,7 +6291,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTabl
 TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
     {
     bvector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem("TPH, no joined table, no shared columns",
+    testSchemas.push_back(SchemaItem(
                                      "<?xml version = '1.0' encoding = 'utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                      "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
@@ -6327,7 +6327,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
                                      "  </ECEntityClass>"
                                      "</ECSchema>"));
 
-    testSchemas.push_back(SchemaItem("TPH, joined table, no shared columns",
+    testSchemas.push_back(SchemaItem(
                                      "<?xml version = '1.0' encoding = 'utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                      "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
@@ -6364,7 +6364,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
                                      "  </ECEntityClass>"
                                      "</ECSchema>"));
 
-    testSchemas.push_back(SchemaItem("TPH, joined table, shared columns",
+    testSchemas.push_back(SchemaItem(
                                      "<?xml version = '1.0' encoding = 'utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                      "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
@@ -6407,30 +6407,21 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
 
     for (SchemaItem const& testSchema : testSchemas)
         {
-        Utf8CP scenarioName = testSchema.m_name.c_str();
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "multinheritance_diamond.ecdb")) << scenarioName;
+        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "multinheritance_diamond.ecdb"));
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Base_Prop1,Sub1_Prop1,IMixin_Prop1,Sub12_Prop1,MyClass_Prop1) "
-                                                     "VALUES('base','sub1', 'imixin', 'sub12', 'myclass')")) << scenarioName;
+                                                     "VALUES('base','sub1', 'imixin', 'sub12', 'myclass')"));
         ECInstanceKey key;
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << scenarioName << " " << stmt.GetECSql();
-
-        //stmt.Finalize();
-
-        //ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.MyClass WHERE ECInstanceId=?")) << scenarioName;
-        //ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << scenarioName << " " << stmt.GetECSql();
-        //ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << scenarioName << " " << stmt.GetECSql();
-        //ASSERT_FALSE(stmt.IsValueNull(0)) << scenarioName << " " << stmt.GetECSql();
-        //ASSERT_STREQ("imixin", stmt.GetValueText(0)) << scenarioName << " " << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
 
         stmt.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.IMixin WHERE ECInstanceId=?")) << scenarioName;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << scenarioName << " " << stmt.GetECSql();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << scenarioName << " " << stmt.GetECSql();
-        ASSERT_FALSE(stmt.IsValueNull(0)) << scenarioName << " " << stmt.GetECSql();
-        ASSERT_STREQ("imixin", stmt.GetValueText(0)) << scenarioName << " " << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.IMixin WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_FALSE(stmt.IsValueNull(0)) << stmt.GetECSql();
+        ASSERT_STREQ("imixin", stmt.GetValueText(0)) << stmt.GetECSql();
         }
     }
 
@@ -7665,7 +7656,7 @@ TEST_F(DbMappingTestFixture, IndexErrors)
         "</ECEntityClass>"
         "</ECSchema>")));
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
         "<ECEntityClass typeName = 'IndexClass3' >"

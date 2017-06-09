@@ -450,16 +450,6 @@ TEST_F(ECInstanceInserterTests, InsertReadonlyProperty)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     05/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void ExecuteECSqlCommand(ECSqlStatement& stmt, ECDbCR db, Utf8CP ecsql)
-    {
-    ASSERT_EQ(stmt.Prepare(db, ecsql), ECSqlStatus::Success);
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    stmt.Finalize();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
 void AssertCurrentTimeStamp(ECDbR ecdb, ECInstanceId id, bool expectedIsNull, Utf8CP assertMessage)
@@ -541,68 +531,6 @@ TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     AssertCurrentTimeStamp(m_ecdb, key.GetInstanceId(), false, "ECInstanceInserter INSERT");
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("TestECDbGroupByClauseWithFunctions.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='ClassA' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
-        "        <ECProperty propertyName='Code' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassAB' >"
-        "        <BaseClass>ClassA</BaseClass>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassAC' >"
-        "        <BaseClass>ClassA</BaseClass>"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO rc.ClassA VALUES(1000, 1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO rc.ClassA VALUES(1000, 1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO rc.ClassA VALUES(1500, 1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO rc.ClassAB VALUES(2000, 2)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO rc.ClassAB VALUES(2500, 2)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO rc.ClassAC VALUES(3000, 3)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(m_ecdb, "INSERT INTO rc.ClassAC VALUES(3500, 3)"));
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY Code"));
-    int count = 0;
-    Utf8String expectedAvgValues = "21250.022250.023250.0";
-    Utf8String actualAvgValues;
-    while (stmt.Step() != BE_SQLITE_DONE)
-        {
-        actualAvgValues.append(stmt.GetValueText(1));
-        actualAvgValues.append(stmt.GetValueText(0));
-        count++;
-        }
-    ASSERT_EQ(count, 3);
-    ASSERT_EQ(expectedAvgValues, actualAvgValues);
-    stmt.Finalize();
-
-    count = 0;
-    actualAvgValues = "";
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY ECClassId"));
-    while (stmt.Step() != BE_SQLITE_DONE)
-        {
-        actualAvgValues.append(stmt.GetValueText(1));
-        actualAvgValues.append(stmt.GetValueText(0));
-        count++;
-        }
-    ASSERT_EQ(count, 3);
-    ASSERT_EQ(expectedAvgValues, actualAvgValues);
-    stmt.Finalize();
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15

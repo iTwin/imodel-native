@@ -20,7 +20,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct JoinedTableTestFixture : DbMappingTestFixture
     {
     protected:
-        void AssertTableLayouts(ECDbCR, bmap<Utf8String, Utf8String> const& tableLayouts, Utf8CP scenario) const;
+        void AssertTableLayouts(ECDbCR, bmap<Utf8String, Utf8String> const& tableLayouts) const;
         ECInstanceId InsertTestInstance(ECDbCR ecdb, Utf8CP ecsql);
         Utf8String ToInsertECSql(ECDbCR ecdb, Utf8CP className);
         Utf8String ToSelectECSql(ECDbCR ecdb, Utf8CP className);
@@ -44,8 +44,7 @@ TEST_F(JoinedTableTestFixture, TableLayout)
 
     std::vector<TestItem> testItems;
     //JoinedTablePerDirectSubclass tests
-    TestItem testItem(SchemaItem("JoinedTablePerDirectSubclass_on_c0",
-                                 "<?xml version='1.0' encoding='utf-8'?>"
+    TestItem testItem(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                  "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
                                  "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                  "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -85,8 +84,7 @@ TEST_F(JoinedTableTestFixture, TableLayout)
     testItem.AddTableLayout("ts_C2", "e f i j");
     testItems.push_back(testItem);
 
-    testItem = TestItem(SchemaItem("JoinedTablePerDirectSubclass_on_c1",
-                                   "<?xml version='1.0' encoding='utf-8'?>"
+    testItem = TestItem(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
                                    "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -139,8 +137,7 @@ TEST_F(JoinedTableTestFixture, TableLayout)
     testItem.AddTableLayout("ts_C12", "c12_a c12_b");
     testItems.push_back(testItem);
 
-    testItem = TestItem(SchemaItem("JoinedTablePerDirectSubclass_on_c1_and_c2",
-                                   "<?xml version='1.0' encoding='utf-8'?>"
+    testItem = TestItem(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
                                    "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -188,11 +185,9 @@ TEST_F(JoinedTableTestFixture, TableLayout)
 
     for (TestItem const& testItem : testItems)
         {
-        Utf8String ecdbName;
-        ecdbName.Sprintf("joinedtablemapstrategy_%s.ecdb", testItem.m_testSchema.m_name.c_str());
-        ASSERT_EQ(SUCCESS, SetupECDb(ecdbName.c_str(), testItem.m_testSchema));
+        ASSERT_EQ(SUCCESS, SetupECDb("joinedtablemapstrategy.ecdb", testItem.m_testSchema));
 
-        AssertTableLayouts(m_ecdb, testItem.m_expectedTableLayout, testItem.m_testSchema.m_name.c_str());
+        AssertTableLayouts(m_ecdb, testItem.m_expectedTableLayout);
         m_ecdb.CloseDb();
         }
     }
@@ -204,7 +199,6 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(
-        "JoinedTablePerDirectSubclass on Root",
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
         "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
@@ -240,7 +234,6 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "</ECSchema>"));
 
     testSchemas.push_back(SchemaItem(
-        "JoinedTablePerDirectSubclass on Root and SharedColumnsForSubclasses",
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
         "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
@@ -279,7 +272,6 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "</ECSchema>"));
 
     testSchemas.push_back(SchemaItem(
-        "JoinedTablePerDirectSubclass on single direct subclass",
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
         "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
@@ -317,7 +309,6 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "</ECSchema>"));
 
     testSchemas.push_back(SchemaItem(
-        "JoinedTablePerDirectSubclass on both subclasses",
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
         "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
@@ -358,7 +349,6 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "</ECSchema>"));
 
     testSchemas.push_back(SchemaItem(
-        "JoinedTablePerDirectSubclass and ShareColumns on both subclasses",
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
         "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -401,28 +391,28 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         "    </ECEntityClass>"
         "</ECSchema>"));
 
-    auto assertNonSelectECSql = [] (ECDbCR ecdb, Utf8CP testName, Utf8CP ecsql)
+    auto assertNonSelectECSql = [] (ECDbCR ecdb,Utf8CP ecsql)
         {
         ECSqlStatement stmt;
         LOG.infov("Executing : %s", ecsql);
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << testName << " ECSQL: " << ecsql;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << " ECSQL: " << ecsql;
         LOG.infov("NativeSQL : %s", stmt.GetNativeSql());
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << testName << " ECSQL: " << ecsql;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << " ECSQL: " << ecsql;
         };
 
-    auto assertSelectECSql = [] (ECDbCR ecdb, Utf8CP testName, Utf8CP ecsql, int columnCountExpected, int rowCountExpected)
+    auto assertSelectECSql = [] (ECDbCR ecdb, Utf8CP ecsql, int columnCountExpected, int rowCountExpected)
         {
         ECSqlStatement stmt;
         LOG.infov("Executing : %s", ecsql);
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << testName << " ECSQL: " << ecsql;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << " ECSQL: " << ecsql;
         LOG.infov("NativeSQL : %s", stmt.GetNativeSql());
-        ASSERT_EQ(columnCountExpected, stmt.GetColumnCount()) << testName << " ECSQL: " << ecsql;
+        ASSERT_EQ(columnCountExpected, stmt.GetColumnCount()) << " ECSQL: " << ecsql;
 
         int actualRowCount = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
             actualRowCount++;
 
-        ASSERT_EQ(rowCountExpected, actualRowCount) << testName << " ECSQL: " << ecsql;
+        ASSERT_EQ(rowCountExpected, actualRowCount) << " ECSQL: " << ecsql;
         };
 
     std::vector<Utf8String> nonSelectECSqls {"UPDATE dgn.Goo SET A = ?, B = 'bb1', C = :c1, D = 'dd1' WHERE  A = ? AND B = :b1;",
@@ -462,35 +452,35 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         ASSERT_EQ(SUCCESS, SetupECDb(fileName.c_str(), testSchema));
         for (Utf8StringCR nonSelectECSql : nonSelectECSqls)
             {
-            assertNonSelectECSql(m_ecdb, testSchema.m_name.c_str(), nonSelectECSql.c_str());
+            assertNonSelectECSql(m_ecdb, nonSelectECSql.c_str());
             }
 
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Foo", 3, 16);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo", 3, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Foo WHERE A = 102 AND B = 'b2'", 3, 1);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo WHERE A = 102 AND B = 'b2'", 3, 0);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo  WHERE A = 104 AND B = 'b17'", 3, 1);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B FROM dgn.Foo", 3, 16);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo", 3, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B FROM dgn.Foo WHERE A = 102 AND B = 'b2'", 3, 1);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo WHERE A = 102 AND B = 'b2'", 3, 0);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B FROM ONLY dgn.Foo  WHERE A = 104 AND B = 'b17'", 3, 1);
 
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM dgn.Goo", 5, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Goo", 3, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, C, D FROM dgn.Goo", 3, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo", 5, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", 5, 1);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", 5, 1);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, C, D FROM dgn.Goo", 5, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B FROM dgn.Goo", 3, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, C, D FROM dgn.Goo", 3, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo", 5, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, C, D FROM dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", 5, 1);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", 5, 1);
 
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM dgn.Boo", 5, 8);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Boo", 3, 8);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, E, F FROM dgn.Boo", 3, 8);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo", 5, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", 5, 1);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", 5, 1);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, E, F FROM dgn.Boo", 5, 8);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B FROM dgn.Boo", 3, 8);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, E, F FROM dgn.Boo", 3, 8);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo", 5, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, E, F FROM dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", 5, 1);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", 5, 1);
 
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM dgn.Roo", 5, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B FROM dgn.Roo", 3, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, G, H FROM dgn.Roo", 3, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo", 5, 4);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", 5, 1);
-        assertSelectECSql(m_ecdb, testSchema.m_name.c_str(), "SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", 5, 1);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, G, H FROM dgn.Roo", 5, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B FROM dgn.Roo", 3, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, G, H FROM dgn.Roo", 3, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo", 5, 4);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, G, H FROM dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", 5, 1);
+        assertSelectECSql(m_ecdb, "SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", 5, 1);
 
         m_ecdb.CloseDb();
         }
@@ -977,7 +967,7 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
     expectedTableLayouts["rs_Base"] = "p0";
     expectedTableLayouts["rs_Sub1"] = "p1 p11";
     expectedTableLayouts["ts_Sub2"] = "p2";
-    AssertTableLayouts(ecdb, expectedTableLayouts, "JoinedTablePerDirectSubclass in base schema imported in separate session");
+    AssertTableLayouts(ecdb, expectedTableLayouts);
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
     std::map<ECClassId, MapStrategyInfo> expectedResults {
@@ -1423,7 +1413,7 @@ TEST_F(JoinedTableTestFixture, AbstractBaseAndEmptyChildClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                      11/15
 //---------------+---------------+---------------+---------------+---------------+-------
-void JoinedTableTestFixture::AssertTableLayouts(ECDbCR ecdb, bmap<Utf8String, Utf8String> const& tableLayouts, Utf8CP scenario) const
+void JoinedTableTestFixture::AssertTableLayouts(ECDbCR ecdb, bmap<Utf8String, Utf8String> const& tableLayouts) const
     {
     for (bpair<Utf8String, Utf8String> const& kvPair : tableLayouts)
         {
@@ -1434,7 +1424,7 @@ void JoinedTableTestFixture::AssertTableLayouts(ECDbCR ecdb, bmap<Utf8String, Ut
         sql.Sprintf("SELECT * FROM %s LIMIT 0", tableName);
 
         Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, sql.c_str())) << "Scenario: " << scenario << ". Expected table " << tableName << " does not exist. Error: " << ecdb.GetLastError().c_str();
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, sql.c_str())) << "Expected table " << tableName << " does not exist. Error: " << ecdb.GetLastError().c_str();
 
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         const int actualColCount = stmt.GetColumnCount();
@@ -1461,7 +1451,7 @@ void JoinedTableTestFixture::AssertTableLayouts(ECDbCR ecdb, bmap<Utf8String, Ut
             isFirstItem = false;
             }
 
-        ASSERT_STREQ(expectedColNames, actualColNames.c_str()) << "Scenario: " << scenario << ". Unexpected layout of table " << tableName;
+        ASSERT_STREQ(expectedColNames, actualColNames.c_str()) << "Unexpected layout of table " << tableName;
         }
     }
 

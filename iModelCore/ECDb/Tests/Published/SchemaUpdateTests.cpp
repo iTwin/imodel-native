@@ -371,8 +371,8 @@ TEST_F(SchemaUpdateTestFixture, UpdatingECDbMapCAIsNotSupported)
         "        </ECCustomAttributes>"
         "       </ECProperty>"
         "   </ECEntityClass>"
-        "</ECSchema>", false);
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+        "</ECSchema>");
+    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem));
     }
 
 //---------------------------------------------------------------------------------------

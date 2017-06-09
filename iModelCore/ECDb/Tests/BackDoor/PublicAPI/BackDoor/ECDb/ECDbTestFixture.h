@@ -21,18 +21,13 @@ public:
     //+---------------+---------------+---------------+---------------+---------------+------
     struct SchemaItem
         {
-        Utf8String m_name;
         std::vector<Utf8String> m_schemaXmlList;
 
-        explicit SchemaItem(Utf8CP schemaXml) : SchemaItem("", schemaXml) {}
-        SchemaItem(Utf8CP name, Utf8CP schemaXml) : m_name(name) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
+        explicit SchemaItem(Utf8CP schemaXml) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
         explicit SchemaItem(std::vector<Utf8String> const& schemaXmlList) : m_schemaXmlList(schemaXmlList) {}
 
         Utf8String ToString() const
             {
-            if (!m_name.empty())
-                return m_name;
-
             Utf8String schemaXmlList;
             for (Utf8StringCR schemaXml : m_schemaXmlList)
                 {

@@ -1033,8 +1033,7 @@ TEST_F(RelationshipMappingTestFixture, MultipleConstraintClasses)
 TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationship)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("LogicalForeignKeyRelationship.ecdb",
-              SchemaItem("Diamond Problem",
-                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+              SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                          "  <ECCustomAttributeClass typeName='Interface' appliesTo='EntityClass' modifier='Sealed' />"
                          "  <ECEntityClass typeName='PrimaryClassA'>"
@@ -1217,7 +1216,7 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
 TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToSharedColumn)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("logicalfk_sharedcol.ecdb",
-              SchemaItem("Diamond Problem",
+              SchemaItem(
                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                          "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
@@ -1322,7 +1321,7 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
 TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToUnsharedColumn)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("logicalfk_unsharedcol.ecdb",
-              SchemaItem("Diamond Problem",
+              SchemaItem(
                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                          "  <ECEntityClass typeName='Model' modifier='None'>"
@@ -1363,7 +1362,7 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToUnsh
 TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("diamond_problem3.ecdb",
-              SchemaItem("Diamond Problem",
+              SchemaItem(
                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                          "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
@@ -1451,7 +1450,7 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
 TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd2)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("diamond_problem3.ecdb",
-              SchemaItem("Diamond Problem",
+              SchemaItem(
                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                          "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
@@ -1545,7 +1544,7 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd2)
 TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd3)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("diamond_problem3.ecdb",
-              SchemaItem("Diamond Problem",
+              SchemaItem(
                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                          "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
@@ -2064,35 +2063,35 @@ TEST_F(RelationshipMappingTestFixture, FKConstraintsOnLinkTables)
 TEST_F(RelationshipMappingTestFixture, AmbigousRelationshipProperty)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ambigousRelationshipProperty.ecdb",
-              SchemaItem("N:N and holding",
-                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                         "  <ECEntityClass typeName='Geometry' >"
-                         "        <ECCustomAttributes>"
-                         "            <ClassMap xmlns='ECDbMap.02.00'>"
-                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                         "            </ClassMap>"
-                         "        </ECCustomAttributes>"
-                         "    <ECProperty propertyName='P1' typeName='string' />"
-                         "  </ECEntityClass>"
-                         "  <ECEntityClass typeName='GeometryPart' >"
-                         "        <ECCustomAttributes>"
-                         "            <ClassMap xmlns='ECDbMap.02.00'>"
-                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                         "            </ClassMap>"
-                         "        </ECCustomAttributes>"
-                         "    <ECProperty propertyName='P1' typeName='string' />"
-                         "  </ECEntityClass>"
-                         "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='referencing' strengthDirection='Forward' modifier='Sealed'>"
-                         "     <Source cardinality='(0,N)' polymorphic='True'>"
-                         "         <Class class='Geometry' />"
-                         "     </Source>"
-                         "    <Target cardinality='(0,N)' polymorphic='True'>"
-                         "        <Class class='GeometryPart' />"
-                         "     </Target>"
-                         "    <ECProperty propertyName='P1' typeName='string' />"
-                         "  </ECRelationshipClass>"
-                         "</ECSchema>")));
+                                 SchemaItem(
+                                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                     "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                     "  <ECEntityClass typeName='Geometry' >"
+                                     "        <ECCustomAttributes>"
+                                     "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                     "            </ClassMap>"
+                                     "        </ECCustomAttributes>"
+                                     "    <ECProperty propertyName='P1' typeName='string' />"
+                                     "  </ECEntityClass>"
+                                     "  <ECEntityClass typeName='GeometryPart' >"
+                                     "        <ECCustomAttributes>"
+                                     "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                     "            </ClassMap>"
+                                     "        </ECCustomAttributes>"
+                                     "    <ECProperty propertyName='P1' typeName='string' />"
+                                     "  </ECEntityClass>"
+                                     "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='referencing' strengthDirection='Forward' modifier='Sealed'>"
+                                     "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                     "         <Class class='Geometry' />"
+                                     "     </Source>"
+                                     "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                     "        <Class class='GeometryPart' />"
+                                     "     </Target>"
+                                     "    <ECProperty propertyName='P1' typeName='string' />"
+                                     "  </ECRelationshipClass>"
+                                     "</ECSchema>"))) << "N:N and holding";
     ECInstanceKey geometryKey, geometryPartKey;
     {//INSERT Geometry
     ECSqlStatement stmt;
@@ -2722,7 +2721,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
 TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
     {
     std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem("embedding relationships", "<?xml version='1.0' encoding='utf-8'?>"
+    testSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
@@ -2837,7 +2836,7 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "  </ECRelationshipClass>"
                                      "</ECSchema>"));
 
-    testSchemas.push_back(SchemaItem("holding relationships", "<?xml version='1.0' encoding='utf-8'?>"
+    testSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
@@ -2952,7 +2951,7 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
                                      "  </ECRelationshipClass>"
                                      "</ECSchema>"));
 
-    testSchemas.push_back(SchemaItem("referencing relationships", "<?xml version='1.0' encoding='utf-8'?>"
+    testSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
@@ -3356,18 +3355,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClassAn
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
     {
-    auto getGeometrySourceHasGeometryRowCount = [] (ECDbCR ecdb)
-        {
-        ECSqlStatement selectStmt;
-        if (ECSqlStatus::Success != selectStmt.Prepare(ecdb, "SELECT count(*) FROM ts.GeometrySourceHasGeometry"))
-            return -1;
-
-        if (BE_SQLITE_ROW != selectStmt.Step())
-            return -1;
-
-        return selectStmt.GetValueInt(0);
-        };
-
+    
     ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3406,9 +3394,20 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
         "  </ECRelationshipClass>"
         "</ECSchema>"))) << "Multiple Tables on either end of the relationship are not supported";
 
-    {
+    auto getGeometrySourceHasGeometryRowCount = [] (ECDbCR ecdb)
+        {
+        ECSqlStatement selectStmt;
+        if (ECSqlStatus::Success != selectStmt.Prepare(ecdb, "SELECT count(*) FROM ts.GeometrySourceHasGeometry"))
+            return -1;
+
+        if (BE_SQLITE_ROW != selectStmt.Step())
+            return -1;
+
+        return selectStmt.GetValueInt(0);
+        };
+
     std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem("GeometrySource is abstract and has concrete subclasses pointing to a single table",
+    testSchemas.push_back(SchemaItem(
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -3446,8 +3445,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
                                      "  </ECRelationshipClass>"
                                      "</ECSchema>"));
 
-    testSchemas.push_back(SchemaItem("GeometrySource is abstract and subClass of Element and Element has JoinedTable CA",
-                                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    testSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "  <ECEntityClass typeName='Element' modifier='Abstract'>"
                                      "    <ECCustomAttributes>"
@@ -3517,7 +3515,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
         ecdb.SaveChanges();
 
         //now do actual tests with relationship
-        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb)) << "Before inserting one relationship [Scenario: " << testSchema.m_name << "]";
+        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb)) << "Before inserting one relationship";
 
         ECSqlStatement insertStmt;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
@@ -3531,7 +3529,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
         insertStmt.Reset();
         insertStmt.ClearBindings();
 
-        ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(ecdb)) << "After inserting one relationship [Scenario: " << testSchema.m_name << "]";
+        ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(ecdb)) << "After inserting one relationship";
 
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, elem1Key.GetInstanceId()));
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, elem1Key.GetClassId()));
@@ -3541,7 +3539,6 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
         insertStmt.Reset();
         insertStmt.ClearBindings();
         }
-    }
     }
 
 //---------------------------------------------------------------------------------------

@@ -139,14 +139,13 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
     if (!seedFilePath.DoesPathExist())
         {
         ECDb seedDb;
-        EXPECT_EQ(BE_SQLITE_OK, seedDb.CreateNewDb(seedFilePath)) << seedFilePath.GetNameUtf8().c_str();
         const DbResult stat = seedDb.CreateNewDb(seedFilePath);
-        EXPECT_EQ(BE_SQLITE_OK, stat) << "Could not create file " << seedFilePath.GetNameUtf8().c_str();
+        EXPECT_EQ(BE_SQLITE_OK, stat) << "Could not create file " << seedFilePath.GetNameUtf8().c_str() << ": " << seedDb.GetLastError().c_str();
         if (BE_SQLITE_OK != stat)
             return stat;
         }
 
-    return CloneECDb(ecdb, ecdbFileName, seedFilePath, Db::OpenParams(Db::OpenMode::ReadWrite));
+    return CloneECDb(ecdb, effectiveFileName.c_str(), seedFilePath, Db::OpenParams(Db::OpenMode::ReadWrite));
     }
 
 
@@ -428,8 +427,10 @@ ECSchemaPtr ECDbTestFixture::ReadECSchemaFromDisk(ECSchemaReadContextPtr& contex
 
     context->AddSchemaPath(ecSchemaPath.GetName());
 
+    BeTest::SetFailOnAssert(false);
     ECSchemaPtr schema = nullptr;
     ECSchema::ReadFromXmlFile(schema, ecSchemaFile.GetName(), *context);
+    BeTest::SetFailOnAssert(true);
     return schema;
     }
 
@@ -447,16 +448,18 @@ BentleyStatus ECDbTestFixture::ReadECSchemaFromString(ECSchemaReadContextPtr& co
         context->AddSchemaLocater(ecdb.GetSchemaLocater());
         }
 
-
+    BeTest::SetFailOnAssert(false);
     for (Utf8StringCR schemaXml : schemaItem.m_schemaXmlList)
         {
         ECSchemaPtr schema = nullptr;
         if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context))
             {
             context = nullptr;
+            BeTest::SetFailOnAssert(true);
             return ERROR;
             }
         }
+    BeTest::SetFailOnAssert(true);
 
     return SUCCESS;
     }
