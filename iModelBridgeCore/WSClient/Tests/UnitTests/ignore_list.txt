@@ -19,7 +19,6 @@ DataSourceCacheUpgradeTests.Open_V20*
 
 # Tests that fail for know reasons and require larger fixes
 *_KnownIssue*
-UpdateSchemas_SchemasWithDeletedPropertyPassed_SuccessAndSchemasAccessable
 UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching
 
 # Following tests were disabled and are added to ignore list instead
