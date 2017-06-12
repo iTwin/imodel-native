@@ -1864,6 +1864,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     if (status == SUCCESS)
         {
         meshPtr = nullptr;
+		ScalableMeshMesh* meshP;
 		if (!m_clip.empty())
 		{
 
@@ -1874,7 +1875,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 			extVector[1] = DPoint3d::From(node->m_nodeHeader.m_nodeExtent.low.x, node->m_nodeHeader.m_nodeExtent.high.y, node->m_nodeHeader.m_nodeExtent.low.z);
 			extVector[2] = node->m_nodeHeader.m_nodeExtent.high;
 			extVector[3] = DPoint3d::From(node->m_nodeHeader.m_nodeExtent.high.x, node->m_nodeHeader.m_nodeExtent.low.y, node->m_nodeHeader.m_nodeExtent.low.z);
-			
+
 			HFCPtr<HVE2DShape> newShape = CreateShapeFromPoints(&extVector[0], extVector.size(), clipShape->GetCoordSys());
 			clipShape = clipShape->IntersectShape(*newShape);
 
@@ -1890,7 +1891,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 				vec[idx].z = 0;
 			}
 
-			
+
 
 			DTMUserTag    userTag = 0;
 			DTMFeatureId* textureRegionIdsP = 0;
@@ -1905,27 +1906,31 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 				(DPoint3d*)&vec[0],
 				(long)vec.size(),
 				nullptr);
-		}
 
-        //bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), 10000000, 2, 1, &draw, false, DTMFenceType::None, DTMFenceOption::None, 0, 0, &meshPtr);
-		BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
-		en->SetMaxTriangles((*dtmObjP).numPoints);
 
-		if(!m_clip.empty())
+			//bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), 10000000, 2, 1, &draw, false, DTMFenceType::None, DTMFenceOption::None, 0, 0, &meshPtr);
+			BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+			en->SetMaxTriangles((*dtmObjP).numPoints);
+
 			en->SetFilterRegionByUserTag(0);
-        ScalableMeshMesh* meshP((ScalableMeshMesh*)meshPtr.get());
+			meshP = ((ScalableMeshMesh*)meshPtr.get());
 
-		for (PolyfaceQueryP pf : *en)
-		{
-			if(meshP == nullptr)
+			for (PolyfaceQueryP pf : *en)
 			{
-				meshPtr = IScalableMeshMesh::Create(pf->GetPointCount(), const_cast<DPoint3d*>(pf->GetPointCP()), pf->GetPointIndexCount(), pf->GetPointIndexCP(), 0, 0, 0, 0, 0, 0);
-				meshP = (ScalableMeshMesh*)meshPtr.get();
+				if (meshP == nullptr)
+				{
+					meshPtr = IScalableMeshMesh::Create(pf->GetPointCount(), const_cast<DPoint3d*>(pf->GetPointCP()), pf->GetPointIndexCount(), pf->GetPointIndexCP(), 0, 0, 0, 0, 0, 0);
+					meshP = (ScalableMeshMesh*)meshPtr.get();
+				}
+				else
+					meshP->AppendMesh(pf->GetPointCount(), const_cast<DPoint3d*>(pf->GetPointCP()), pf->GetPointIndexCount(), pf->GetPointIndexCP(), 0, 0, 0, 0, 0, 0);
 			}
-			else
-			    meshP->AppendMesh(pf->GetPointCount(),const_cast<DPoint3d*>( pf->GetPointCP()), pf->GetPointIndexCount(), pf->GetPointIndexCP(), 0, 0, 0, 0, 0, 0);
 		}
-
+		else
+		{
+			bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), 10000000, 2, 1, &draw, false, DTMFenceType::None, DTMFenceOption::None, 0, 0, &meshPtr);
+			meshP = ((ScalableMeshMesh*)meshPtr.get());
+		}
         if (meshP == 0) return false;
         assert(meshP != 0);
 
