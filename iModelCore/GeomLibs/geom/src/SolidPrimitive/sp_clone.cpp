@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_clone.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -172,6 +172,10 @@ bool DgnRotationalSweepDetail::TransformInPlace (TransformCR transform)
     {
     transform.Multiply (m_axisOfRotation, m_axisOfRotation);
     m_baseCurve->TransformInPlace (transform);
+    
+    if (transform.Determinant() < 0.0)
+        m_sweepAngle = -m_sweepAngle;
+
     return true;    
     }
 
