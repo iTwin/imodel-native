@@ -97,7 +97,7 @@ private:
 public:
     enum Type : uint8_t
         {
-        Maximum = 0,  //!< Get maximum available code mathing given pattern
+        Maximum = 0,  //!< Get maximum available code matching given pattern
         NextAvailable = 1,  //!< Get next available code value given pattern, starting index and increment by
         };
 
