@@ -1361,7 +1361,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(SchemaPersistenceHelper::Gene
             if (ImportClass(ca->GetClass()) != SUCCESS)
                 return ERROR;
 
-            if (InsertCAEntry(ca.get(), ca->GetClass().GetId(), containerId, containerType, ++customAttributeIndex) != SUCCESS)
+            if (InsertCAEntry(*ca, ca->GetClass().GetId(), containerId, containerType, ++customAttributeIndex) != SUCCESS)
                 return ERROR;
             }
         else if (change.GetState() == ChangeState::Deleted)
@@ -1388,7 +1388,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(SchemaPersistenceHelper::Gene
             if (ImportClass(ca->GetClass()) != SUCCESS)
                 return ERROR;
 
-            if (ReplaceCAEntry(ca.get(), ca->GetClass().GetId(), containerId, containerType, 0) != SUCCESS)
+            if (ReplaceCAEntry(*ca, ca->GetClass().GetId(), containerId, containerType, 0) != SUCCESS)
                 return ERROR;
             }
 
