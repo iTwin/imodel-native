@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="iModelJs" BentleyBuildMakeFile="iModelJs.mke" ApiNumber="B02">
+        <RequiredRepository>Thirdparty-nodejs</RequiredRepository>
+        <RequiredRepository>Thirdparty-typescript</RequiredRepository>
+        <RequiredRepository>Libsrc-websocketpp</RequiredRepository>
+
+        <SubPart PartName="nodejs" PartFile="nodejs" Repository="Thirdparty-nodejs" />
+        <SubPart PartName="typescript" PartFile="typescript" Repository="Thirdparty-typescript" />
+        <SubPart PartName="websocketpp" PartFile="websocketpp" Repository="Libsrc-websocketpp" />
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+
+        <Bindings>
+            <PublicAPI Domain="iModelJs" />
+            
+            <Libs>Delivery/$(libprefix)iModelJs$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iModelJs$(ApiNumber)$(shlibext)</Assemblies>
+
+            <Directory SourceName="Delivery/NpmPackage" SubPartDirectory="node_modules/imodel"  />
+        </Bindings>
+    </Part>
+
+</BuildContext>

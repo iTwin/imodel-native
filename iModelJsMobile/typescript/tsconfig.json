@@ -1,0 +1,11 @@
+﻿{
+    "compileOnSave": false,
+
+    "compilerOptions": {
+        "target": "es2015",
+        "module": "commonjs",
+        "stripInternal": true,
+        "declaration": true,
+        "removeComments": true
+    }
+}

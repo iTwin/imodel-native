@@ -1,0 +1,87 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelJs.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+nameToDefine = __IMODELJS_BUILD__
+%include cdefapnd.mki
+
+TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(BuildContext)SubParts/TypeScript/tsc.js
+
+baseDir = $(_MakeFilePath)
+tsSourceDir = $(baseDir)typescript/
+publicApiSourceDr = $(baseDir)PublicAPI/iModelJs/
+appName = iModelJs
+
+o = $(OutputRootDir)build/$(appName)/
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+
+    %return
+%endif
+
+$(BuildContext)PublicAPI/iModelJs : $(baseDir)PublicAPI/iModelJs
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#--------------------------------------------------------------------------------------
+#   JavaScript
+#--------------------------------------------------------------------------------------
+always:
+    $(TypeScriptCompile) --project $(tsSourceDir)tsconfig.json \
+                         %if !defined(NDEBUG)
+                         --inlineSourceMap \
+                         %endif
+                         --outDir $(o)npmPackage
+
+#--------------------------------------------------------------------------------------
+#   NPM package
+#--------------------------------------------------------------------------------------
+$(o)npmPackage/package.json : $(baseDir)npmPackage.json
+    $(LinkFirstDepToFirstTarget)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec) $(publicApiSourceDr)iModelJs.h $(baseDir)iModelJsInternal.h $(baseDir)App/iModelJsAppInternal.h
+
+%include MultiCppCompileRule.mki
+
+$(o)Host$(oext) : $(baseDir)App/Host.cpp ${MultiCompileDepends}
+
+$(o)WebSocketTransport$(oext) : $(baseDir)App/WebSocketTransport.cpp ${MultiCompileDepends}
+
+$(o)WindowsDesktopAppHost$(oext) : $(baseDir)App/WindowsDesktopAppHost.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+iModelJsObjs =% $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME = $(appName)
+DLM_OBJECT_FILES            = $(iModelJsObjs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include $(sharedMki)linkLibrary.mki
+
+#--------------------------------------------------------------------------------------
+#   Delivery
+#--------------------------------------------------------------------------------------
+$(BuildContext)Delivery/NpmPackage : $(o)npmPackage
+    $(LinkFirstDepToFirstTargetAsDirectory)
