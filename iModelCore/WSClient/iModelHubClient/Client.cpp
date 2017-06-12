@@ -740,17 +740,42 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterOpenBriefcaseForMerge);
 #endif
     ChangeSets changeSets = pullTask->GetResult().GetValue();
-    RevisionStatus mergeStatus = RevisionStatus::Success;
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets.");
-    if (!changeSets.empty())
+    RevisionStatus mergeStatus = ValidateChangeSets(changeSets, *db);
+
+    if (mergeStatus == RevisionStatus::MergeSchemaChangesOnOpen)
         {
-        for (auto changeSet : changeSets)
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets with DgnDb reopen.");
+
+        // Reload DB with upgrade options
+        bvector<DgnRevisionCP> changeSetsToMerge;
+        ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
+        db->CloseDb();
+
+        db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(changeSetsToMerge)));
+        if (BeSQLite::DbResult::BE_SQLITE_OK != status)
             {
-            mergeStatus = db->Revisions().MergeRevision(*changeSet);
-            if (mergeStatus != RevisionStatus::Success)
-                break; // TODO: Use the information on the changeSet that actually failed. 
+            StatusResult result = StatusResult::Error(Error(*db, status));
+            if (!result.IsSuccess())
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return result;
+            }
+
+        mergeStatus = RevisionStatus::Success;
+        }
+    else
+        {
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets.");
+        if (!changeSets.empty())
+            {
+            for (auto changeSet : changeSets)
+                {
+                mergeStatus = db->Revisions().MergeRevision(*changeSet);
+                if (mergeStatus != RevisionStatus::Success)
+                    break; // TODO: Use the information on the changeSet that actually failed. 
+                }
             }
         }
+    
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterMergeChangeSets);
 #endif
