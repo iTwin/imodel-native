@@ -89,7 +89,8 @@ void restartUser(UserManager* manager)
     User* user = s_inactiveUsers.front();
     s_inactiveUsers.pop();
 
-    user->DoNext(manager);
+    if(user->DoNext(manager))
+        s_inactiveUsers.push(user);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -281,7 +282,9 @@ void Stats::PrintStats()
 
     std::cout << Utf8PrintfString("Sleep bias (ms): %6d", s_sleepBiasMilliseconds) << std::endl;
 
-    std::cout << "active users: " << m_activeUsers << std::endl << std::endl;
+    std::cout << "active users: " << m_activeUsers << std::endl;
+    
+    std::wcout << "inactive users: " << getInnactiveUserSize() << std::endl << std::endl;
 
     std::cout << "Press any key to quit testing" << std::endl;
     }
@@ -340,11 +343,11 @@ User::User(int id, Stats* stats) :
     m_fileName(BeFileName(Utf8PrintfString("%d", m_userId))), m_stats(stats)
     {}
 
-void User::DoNext(UserManager* owner)
+bool User::DoNext(UserManager* owner)
     {
     if(!s_keepRunning)
         return WrapUp(owner);
-    DoNextBody(owner);
+    return DoNextBody(owner);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -380,7 +383,12 @@ void UserManager::Perform()
 
     for (int i = 0; i < std::min(m_userCount, (int)users.size()); ++i)
         {
-        users[i]->DoNext(this);
+        if(users[i]->DoNext(this))
+            {
+            std::lock_guard<std::mutex> lock(inactiveUserMutex);
+
+            s_inactiveUsers.push(users[i]);
+            }
         }
 
     int still_running; /* keep number of running handles */
@@ -408,7 +416,12 @@ void UserManager::Perform()
         if (!numfds)
             {
             repeats++; /* count number of repeated zero numfds */
-            if (repeats > 1)
+            if(repeats > 25) //something went wrong, don't play infinitely
+                {
+                s_keepRunning = false;
+                break;
+                }
+            else if (repeats > 1)
                 std::this_thread::sleep_for(waitTimer); /* sleep 100 milliseconds */
             }
         else
@@ -465,8 +478,9 @@ void UserManager::Repopulate()
     while (s_inactiveUsers.size() > 0)
         {
         user = s_inactiveUsers.front();
-        user->DoNext(this);
         s_inactiveUsers.pop();
+        if (user->DoNext(this))
+            s_inactiveUsers.push(user);
         }
     }
 

@@ -589,7 +589,7 @@ TEST_F(WSGServerFixture, WSGServerPlugins)
 			}
 		
 			)";
-		EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v99.99.99/Plugins");
+		EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v99.99.99/Plugins/");
 		}));
 
 	auto rawResponse = RawServerResponse();
@@ -668,7 +668,7 @@ TEST_F(WSGServerFixture, WSGServerRepositories)
 			}
 		
 			)";
-		EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v99.99.99/Repositories");
+		EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v99.99.99/Repositories/");
 		}));
 
 	auto rawResponse = RawServerResponse();
@@ -751,7 +751,7 @@ TEST_F(WSGServerFixture, WSGServerSchemaNames)
 			}
 		
 			)";
-		EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v99.99.99/Repositories/MyRepoName/MetaSchema/ECSchemaDef");
+		EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v99.99.99/Repositories/MyRepoName/MetaSchema/ECSchemaDef/");
 		}));
 
 	auto rawResponse = RawServerResponse();
@@ -780,7 +780,7 @@ TEST_F(WSGServerFixture, WSGServerSchemaNamesBadJson)
 			}
 		
 			)";
-		EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v99.99.99/Repositories/MyRepoName/MetaSchema/ECSchemaDef");
+		EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v99.99.99/Repositories/MyRepoName/MetaSchema/ECSchemaDef/");
 		}));
 
 	auto rawResponse = RawServerResponse();
