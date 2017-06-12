@@ -133,7 +133,8 @@ std::ostream& operator << (std::ostream &o, DateTimeCR date)
 
 std::ostream& operator << (std::ostream &o, ECClassCR value)
     {
-    o << Utf8String(&value == nullptr ? "<NULL>" : value.GetFullName());
+    ECClassCP valueCP = &value;
+    o << Utf8String(valueCP == nullptr ? "<NULL>" : value.GetFullName());
     return o;
     }
     
