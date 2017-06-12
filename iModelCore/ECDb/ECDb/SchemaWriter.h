@@ -39,8 +39,8 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus InsertBaseClassEntry(ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
         BentleyStatus InsertRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
         BentleyStatus InsertSchemaReferenceEntries(ECN::ECSchemaCR);
-        BentleyStatus InsertCAEntry(ECN::IECInstanceP customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
-        BentleyStatus ReplaceCAEntry(ECN::IECInstanceP customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
+        BentleyStatus InsertCAEntry(ECN::IECInstanceR customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
+        BentleyStatus ReplaceCAEntry(ECN::IECInstanceR customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
         BentleyStatus DeleteCAEntry(int& ordinal, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
         BentleyStatus UpdateRelationshipConstraint(ECContainerId, ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);

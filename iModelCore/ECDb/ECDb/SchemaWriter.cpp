@@ -765,42 +765,28 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType)
     {
-    bmap<ECClassCP, bvector<IECInstanceP> > customAttributeMap;
-    //import CA classes first
+    int ordinal = 0;
     for (IECInstancePtr ca : sourceContainer.GetCustomAttributes(false))
         {
+        //import CA classes first
         ECClassCR caClass = ca->GetClass();
         if (SUCCESS != ImportClass(caClass))
             return ERROR;
 
-        customAttributeMap[&caClass].push_back(ca.get());
-        }
-
-    int index = 0; // Its useless if we enumerate map since it doesn't ensure order in which we added it
-    bmap<ECClassCP, bvector<IECInstanceP> >::const_iterator itor = customAttributeMap.begin();
-
-    //Here we consider consolidated attribute a primary. This is lossy operation some overridden primary custom attributes would be lost
-    for (; itor != customAttributeMap.end(); ++itor)
-        {
-        bvector<IECInstanceP> const& customAttributes = itor->second;
-        IECInstanceP ca = customAttributes.size() == 1 ? customAttributes[0] : customAttributes[1];
-        ECClassCP caClass = itor->first;
-        BeAssert(caClass->HasId());
-        if (SUCCESS != InsertCAEntry(ca, caClass->GetId(), sourceContainerId, containerType, index++))
+        if (SUCCESS != InsertCAEntry(*ca, caClass.GetId(), sourceContainerId, containerType, ordinal))
             return ERROR;
+
+        ordinal++;
         }
 
     return SUCCESS;
     }
-
-
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR ecSchema)
     {
-    
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
         return ERROR;
@@ -916,7 +902,7 @@ BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int pa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
+BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceR customAttribute, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_CustomAttribute(Id,ContainerId,ContainerType,ClassId,Ordinal,Instance) VALUES(?,?,?,?,?,?)"))
@@ -942,7 +928,7 @@ BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECClassI
         return ERROR;
 
     Utf8String caXml;
-    if (InstanceWriteStatus::Success != customAttribute->WriteToXmlString(caXml, false, //don't write XML description header as we only store an XML fragment
+    if (InstanceWriteStatus::Success != customAttribute.WriteToXmlString(caXml, false, //don't write XML description header as we only store an XML fragment
                                                                           true)) //store instance id for the rare cases where the client specified one.
         return ERROR;
 
@@ -998,7 +984,7 @@ BentleyStatus SchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::ReplaceCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
+BentleyStatus SchemaWriter::ReplaceCAEntry(IECInstanceR customAttribute, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
     {
     if (DeleteCAEntry(ordinal, ecClassId, containerId, containerType) != SUCCESS)
         return ERROR;
