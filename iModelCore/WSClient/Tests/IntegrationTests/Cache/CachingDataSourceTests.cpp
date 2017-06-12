@@ -211,7 +211,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--c4d60664-1226-4d4f-8beb-7d0e372ccc06";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
