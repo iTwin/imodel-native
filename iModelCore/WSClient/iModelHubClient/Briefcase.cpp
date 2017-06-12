@@ -112,8 +112,14 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets) const
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::TrackingNotEnabled));
         }
     CheckCreatingChangeSet();
-    RevisionStatus mergeStatus = RevisionStatus::Success;
 
+    RevisionStatus mergeStatus = ValidateChangeSets(changeSets, *m_db);
+    if (RevisionStatus::Success != mergeStatus)
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Validate changeSets failed.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(mergeStatus));
+        }
+    
     if (!changeSets.empty())
         {
         for (auto changeSet : changeSets)

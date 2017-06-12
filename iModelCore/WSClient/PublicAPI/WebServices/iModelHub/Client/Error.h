@@ -102,6 +102,7 @@ public:
         //Revision Manager Errors
         MergeError = 500,
         RevisionManagerError,
+        MergeSchemaChangesOnOpen,
 
         AzureError,
         DgnDbError
