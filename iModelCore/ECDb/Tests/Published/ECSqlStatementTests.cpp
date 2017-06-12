@@ -1750,7 +1750,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
 TEST_F(ECSqlStatementTestFixture, InsertStructArray)
     {
     const int perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlTests.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, perClassRowCount));
     Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
     ECSqlStatement statement;
