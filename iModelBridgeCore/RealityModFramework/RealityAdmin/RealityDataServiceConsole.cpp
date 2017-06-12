@@ -14,6 +14,7 @@
 #include <RealityPlatform/RealityDataService.h>
 #include <RealityPlatform/WSGServices.h>
 #include <RealityAdmin/RealityDataServiceConsole.h>
+#include <CCApi/CCPublic.h>
 
 #include <stdio.h>
 #include <conio.h>
@@ -397,25 +398,103 @@ void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> resu
         }
     }
 
+Utf8String RealityDataConsole::MakeBuddiCall(int region)
+    {
+    CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+    CallStatus status = APIERR_SUCCESS;
+
+    bool installed;
+    status = CCApi_IsInstalled(api, &installed);
+    if (!installed)
+        {
+        DisplayInfo("Connection client does not seem to be installed\n", DisplayOption::Error);
+        return "";
+        }
+    bool running = false;
+    status = CCApi_IsRunning(api, &running);
+    if (status != APIERR_SUCCESS || !running)
+        {
+        DisplayInfo("Connection client does not seem to be running\n", DisplayOption::Error);
+        return "";
+        }
+    bool loggedIn = false;
+    status = CCApi_IsLoggedIn(api, &loggedIn);
+    if (status != APIERR_SUCCESS || !loggedIn)
+        {
+        DisplayInfo("Connection client does not seem to be logged in\n", DisplayOption::Error);
+        return "";
+        }
+    bool acceptedEula = false;
+    status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
+    if (status != APIERR_SUCCESS || !acceptedEula)
+        {
+        DisplayInfo("Connection client user does not seem to have accepted EULA\n", DisplayOption::Error);
+        return "";
+        }
+    bool sessionActive = false;
+    status = CCApi_IsUserSessionActive(api, &sessionActive);
+    if (status != APIERR_SUCCESS || !sessionActive)
+        {
+        DisplayInfo("Connection client does not seem to have an active session\n", DisplayOption::Error);
+        return "";
+        }
+
+    wchar_t* buddiUrl;
+    UINT32 strlen = 0;
+
+    if(region > 100)
+        {
+        CCApi_GetBuddiRegionUrl(api, L"RealityDataServices", region, NULL, &strlen);
+        strlen += 1;
+        buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
+        CCApi_GetBuddiRegionUrl(api, L"RealityDataServices", region, buddiUrl, &strlen);
+        }
+    else
+        {
+        CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &strlen);
+        strlen += 1;
+        buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
+        CCApi_GetBuddiUrl(api, L"RealityDataServices", buddiUrl, &strlen);
+        }
+
+    char* charServer = new char[strlen];
+    wcstombs(charServer, buddiUrl, strlen);
+    
+    CCApi_FreeApi(api);
+
+    return Utf8String(charServer);
+    }
+
 void RealityDataConsole::ConfigureServer()
     {
-    DisplayInfo("Welcome to the RealityDataService Navigator. Please enter your server name\n", DisplayOption::Question);
-    DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net,\n", DisplayOption::Question);
-    DisplayInfo("                   qa-connect-realitydataservices.bentley.com\n  ?", DisplayOption::Question);
-    Utf8String server;
+    DisplayInfo("Welcome to the RealityDataService Navigator.\n", DisplayOption::Tip);
+    DisplayInfo("If you want to specifically contact dev or qa, enter dev or qa. For a custom server url, type \"custom\".\n"
+        "Otherwise, enter blank and we will connect you to the proper server for you ConnectionClient configuration\n", DisplayOption::Question);
+    Utf8String server, serverChoice;
     std::string input;
     std::getline(*s_inputSource, input);
-    server = Utf8String(input.c_str()).Trim();
-    if (server.length() == 0 || server.EqualsI("dev"))
-        server = "dev-realitydataservices-eus.cloudapp.net";
-    else if (server.EqualsI("qa"))
-        server = "qa-connect-realitydataservices.bentley.com";
-    else if (server.EqualsI("ll"))
-        server = "prod-realitydataservices-eus.cloudapp.net";
-    else if (server.EqualsI("perf"))
-        server = "perf-realitydataservices-eus.cloudapp.net";
-    else if (server.EqualsI("prod"))
-        server = "connect-realitydataservices.bentley.com";
+    serverChoice = Utf8String(input.c_str()).Trim();
+    
+    if (serverChoice.EqualsI("dev"))
+        server = MakeBuddiCall(103);
+    else if (serverChoice.EqualsI("qa"))
+        server = MakeBuddiCall(102);
+    else if (serverChoice.EqualsI("custom"))
+        {
+        DisplayInfo("Enter server url\n", DisplayOption::Question);
+        std::getline(*s_inputSource, input);
+        server = Utf8String(input.c_str()).Trim();
+        }
+    else
+        server = MakeBuddiCall();
+
+    if(server.empty())
+        {
+        DisplayInfo("ConnectionClient required for console functionality. Cannot Proceed\n", DisplayOption::Error);
+        return;
+        }
+    else
+        DisplayInfo(Utf8PrintfString("Connecting to %s\n", server), DisplayOption::Tip);
 
     bool verifyCertificate = false;
     Utf8String certificatePath = "";
@@ -577,6 +656,10 @@ void RealityDataConsole::ConfigureServer()
         std::string input;
         std::getline(*s_inputSource, input);
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(input.c_str()).Trim());
+        }
+    else if (str.length() == 36) //they input the project id right away
+        {
+        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(str.c_str()).Trim());
         }
     else if (verifyCertificate)
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);

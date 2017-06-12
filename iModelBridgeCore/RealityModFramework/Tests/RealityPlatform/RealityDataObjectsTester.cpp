@@ -179,6 +179,12 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
 
     mySpatialEntity->SetOcclusion(23.45);
     EXPECT_NEAR(mySpatialEntity->GetOcclusion(), 23.45, 0.00001);
+
+    mySpatialEntity->SetResolution("15.225");
+    EXPECT_NEAR(mySpatialEntity->GetResolutionValue(), 15.225, 0.00001);
+
+    mySpatialEntity->SetResolution("");
+    EXPECT_NEAR(mySpatialEntity->GetResolutionValue(), 0.0, 0.00001);
     }
 
 //-------------------------------------------------------------------------------------

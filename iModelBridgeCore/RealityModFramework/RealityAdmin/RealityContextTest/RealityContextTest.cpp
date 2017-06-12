@@ -329,7 +329,7 @@ void User::SelectExtents()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-User::User(Utf8StringP token, std::default_random_engine* generator, std::uniform_real_distribution<double>* distribution, RealityPlatform::ServerType serverType):
+User::User(Utf8StringP token, std::default_random_engine* generator, std::uniform_real_distribution<double>* distribution, RealityPlatform::CONNECTServerType serverType):
     m_token(token), m_currentOperation(OperationType::SPATIAL), m_packageFile(nullptr), m_retryCounter(0),
     m_generator(generator), m_distribution(distribution), m_serverType(serverType)
     {
@@ -684,7 +684,7 @@ int main(int argc, char* argv[])
     char* substringPosition;
     int userCount = 0;
     bool trickle = false;
-    RealityPlatform::ServerType serverType = RealityPlatform::ServerType::QA;
+    RealityPlatform::CONNECTServerType serverType = RealityPlatform::CONNECTServerType::QA;
     Utf8String path = "";
 
     //parse command line arguments
@@ -707,11 +707,11 @@ int main(int argc, char* argv[])
         else if (strstr(argv[i], "-s:") || strstr(argv[i], "--serverType:"))
             {
             if(strstr(argv[i], "qa"))
-                serverType = RealityPlatform::ServerType::QA;
+                serverType = RealityPlatform::CONNECTServerType::QA;
             else if (strstr(argv[i], "prod"))
-                serverType = RealityPlatform::ServerType::PROD;
+                serverType = RealityPlatform::CONNECTServerType::PROD;
             else
-                serverType = RealityPlatform::ServerType::DEV;
+                serverType = RealityPlatform::CONNECTServerType::DEV;
             }
         else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--trickle") == 0)
             {

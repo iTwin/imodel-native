@@ -105,6 +105,7 @@ private:
     void Link();
     void Unlink();
     void MassUnlink();
+    Utf8String MakeBuddiCall(int region = 0);
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 

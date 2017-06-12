@@ -31,8 +31,7 @@
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
-        <!--<SubPart PartName="WebServicesCache"           PartFile="WSClient"                  Repository="WSClient" />
-        <SubPart PartName="WebServicesClient"          PartFile="WSClient"                  Repository="WSClient"/>-->
+        <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>

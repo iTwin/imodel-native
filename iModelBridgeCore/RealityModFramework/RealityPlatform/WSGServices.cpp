@@ -172,6 +172,7 @@ void CurlConstructor::RefreshToken()
     
     delete lpwstrToken;
     delete charToken;
+    CCApi_FreeApi(api);
     }
 
 //-------------------------------------------------------------------------------------
@@ -350,9 +351,14 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
     {
     m_validRequestString = false;
     //https://localhost/ws/v2.1/
-    m_httpRequestString = "https://";
+    m_httpRequestString = "";
+    if(!m_serverName.StartsWith("https://"))
+        m_httpRequestString = "https://";
     m_httpRequestString.append(m_serverName);
-    
+
+    if (!m_httpRequestString.EndsWith("/") && !m_httpRequestString.EndsWith("]"))
+        m_httpRequestString.append("/");
+
     m_requestHeader.clear();
 
     EncodeId();
@@ -522,7 +528,10 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
     BeStringUtilities::Split(nodePath.c_str(), "~", lines);
     Utf8String rootNode = lines[0];
 
-    Utf8String rootId = rootNode.substr(rootNode.length() - 36, rootNode.length()); // 36 = size of GUID
+    Utf8String guidString = rootNode;
+    guidString.ReplaceAll("--","-");
+
+    Utf8String rootId = guidString.substr(guidString.length() - 36, rootNode.length()); // 36 = size of GUID
 
     bvector<NavNode> returnVector;
     RawServerResponse versionResponse = RawServerResponse();
@@ -564,7 +573,7 @@ WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8
 void WSGNavRootRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -590,7 +599,7 @@ WSGNavNodeRequest::WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8
 void WSGNavNodeRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -620,7 +629,7 @@ WSGObjectRequest::WSGObjectRequest(Utf8String server, Utf8String version, Utf8St
 void WSGObjectRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -653,7 +662,7 @@ WSGObjectContentRequest::WSGObjectContentRequest(Utf8String server, Utf8String v
 void WSGObjectContentRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -688,7 +697,7 @@ WSGObjectListPagedRequest::WSGObjectListPagedRequest(Utf8String server, Utf8Stri
 void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(m_version);
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(m_repoId);
@@ -709,7 +718,9 @@ bvector<Utf8String> WSGServer::GetPlugins(RawServerResponse& responseObject) con
     {
     bvector<Utf8String> returnVec;
     Utf8String serverName = m_serverName;
-    serverName.append("/v");
+    if (!serverName.EndsWith("/"))
+        serverName.append("/");
+    serverName.append("v");
     RawServerResponse versionResponse = RawServerResponse();
     serverName.append(GetVersion(versionResponse));
     if (versionResponse.responseCode > 399)
@@ -745,7 +756,9 @@ Utf8String WSGServer::GetVersion(RawServerResponse& responseObject) const
         return m_version;
 
     Utf8String serverName = m_serverName;
-    serverName.append("/v2.4/Plugins");
+    if (!serverName.EndsWith("/"))
+        serverName.append("/");
+    serverName.append("v2.5/Plugins");
     WSGURL wsgurl = WSGURL(serverName, false);
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
@@ -774,7 +787,9 @@ bvector<Utf8String> WSGServer::GetRepositories(RawServerResponse& responseObject
     {
     bvector<Utf8String> returnVec;
     Utf8String serverName = m_serverName;
-    serverName.append("/v");
+    if (!serverName.EndsWith("/"))
+        serverName.append("/");
+    serverName.append("v");
     RawServerResponse versionResponse = RawServerResponse();
     serverName.append(GetVersion(versionResponse));
     if (versionResponse.responseCode > 399)
@@ -808,7 +823,9 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName, RawServerResp
     {
     bvector<Utf8String> returnVec;
     Utf8String serverName = m_serverName;
-    serverName.append("/v");
+    if (!serverName.EndsWith("/"))
+        serverName.append("/");
+    serverName.append("v");
     RawServerResponse versionResponse = RawServerResponse();
     serverName.append(GetVersion(versionResponse));
     if (versionResponse.responseCode > 399)
@@ -845,7 +862,9 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
     {
     bvector<Utf8String> returnVec;
     Utf8String serverName = m_serverName;
-    serverName.append("/v");
+    if (!serverName.EndsWith("/"))
+        serverName.append("/");
+    serverName.append("v");
     RawServerResponse versionResponse = RawServerResponse();
     serverName.append(GetVersion(versionResponse));
     if (versionResponse.responseCode > 399)
@@ -883,7 +902,9 @@ Utf8String WSGServer::GetJSONClassDefinition(Utf8String repoName, Utf8String sch
     {
     Utf8String returnString = "";
     Utf8String serverName = m_serverName;
-    serverName.append("/v");
+    if (!serverName.EndsWith("/"))
+        serverName.append("/");
+    serverName.append("v");
     RawServerResponse versionResponse = RawServerResponse();
     serverName.append(GetVersion(versionResponse));
     if (versionResponse.responseCode > 399)

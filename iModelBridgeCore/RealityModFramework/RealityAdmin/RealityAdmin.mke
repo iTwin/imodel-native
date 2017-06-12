@@ -97,6 +97,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPackage$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
+                       $(ContextSubpartsLibs)CCApi$(libext) \
                        odbc32$(libext)
                        #$(ContextSubpartsLibs)WebServicesClient$(libext) \
 

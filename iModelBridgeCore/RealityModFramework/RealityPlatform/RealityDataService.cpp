@@ -22,6 +22,8 @@
 #include <iostream>
 #include <Bentley/Base64Utilities.h>
 
+#include "RealityDataServiceInternal.h"
+
 #define MAX_NB_CONNECTIONS          10
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -296,7 +298,7 @@ void RealityDataUrl::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s", RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName()));
+    m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/%s/%s", RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName()));
     }
 
 //=====================================================================================
@@ -623,7 +625,7 @@ void RealityDataPagedRequest::_PrepareBaseRequestString() const
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
+    m_httpRequestString.append("v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -653,91 +655,58 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
         m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
     }
 
+static bmap<RealityDataField, Utf8String> CreatePropertyMap()
+    {
+    bmap<RealityDataField, Utf8String> m = bmap<RealityDataField, Utf8String>();
+    m.Insert(RealityDataField::Id, "Id");
+    m.Insert(RealityDataField::OrganizationId, "OrganizationId");
+    m.Insert(RealityDataField::ContainerName, "ContainerName");
+    m.Insert(RealityDataField::Name, "Name");
+    m.Insert(RealityDataField::Dataset, "Dataset");
+    m.Insert(RealityDataField::Description, "Description");
+    m.Insert(RealityDataField::RootDocument, "RootDocument");
+    m.Insert(RealityDataField::Size, "Size");
+    m.Insert(RealityDataField::Classification, "Classification");
+    m.Insert(RealityDataField::Type, "Type");
+    m.Insert(RealityDataField::Streamed, "Streamed");
+    m.Insert(RealityDataField::Footprint, "Footprint");
+    m.Insert(RealityDataField::ThumbnailDocument, "ThumbnailDocument");
+    m.Insert(RealityDataField::MetadataUrl, "MetadataUrl");
+    m.Insert(RealityDataField::Copyright, "Copyright");
+    m.Insert(RealityDataField::TermsOfUse, "TermsOfUse");
+    m.Insert(RealityDataField::ResolutionInMeters, "ResolutionInMeters");
+    m.Insert(RealityDataField::AccuracyInMeters, "AccuracyInMeters");
+    m.Insert(RealityDataField::Visibility, "Visibility");
+    m.Insert(RealityDataField::Listable, "Listable");
+    m.Insert(RealityDataField::CreatedTimestamp, "CreatedTimestamp");
+    m.Insert(RealityDataField::ModifiedTimestamp, "ModifiedTimestamp");
+    m.Insert(RealityDataField::OwnedBy, "OwnedBy");
+    m.Insert(RealityDataField::Group, "Group");
+
+    return m;
+    }
+
+static bmap<RealityDataField, Utf8String> s_propertyMap = CreatePropertyMap();
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     {
-    Utf8String order = "$orderby=";
-    switch(field)
+    auto searchField = s_propertyMap.find(field);
+    if(searchField != s_propertyMap.end())
         {
-    case RealityDataField::Id:
-        order.append("Id");
-        break;
-    case RealityDataField::OrganizationId:
-        order.append("OrganizationId");
-        break;
-    case RealityDataField::ContainerName:
-        order.append("ContainerName");
-        break;
-    case RealityDataField::Name:
-        order.append("Name");
-        break;
-    case RealityDataField::Dataset:
-        order.append("Dataset");
-        break;
-    case RealityDataField::Description:
-        order.append("Description");
-        break;
-    case RealityDataField::RootDocument:
-        order.append("RootDocument");
-        break;
-    case RealityDataField::Size:
-        order.append("Size");
-        break;
-    case RealityDataField::Classification:
-        order.append("Classification");
-        break;
-    case RealityDataField::Type:
-        order.append("Type");
-        break;
-    case RealityDataField::Streamed:
-        order.append("Streamed");
-        break;
-    case RealityDataField::Footprint:
-        order.append("Footprint");
-        break;
-    case RealityDataField::ThumbnailDocument:
-        order.append("ThumbnailDocument");
-        break;
-    case RealityDataField::MetadataUrl:
-        order.append("MetadataUrl");
-        break;
-    case RealityDataField::Copyright:
-        order.append("Copyright");
-        break;
-    case RealityDataField::TermsOfUse:
-        order.append("TermsOfUse");
-        break;
-    case RealityDataField::ResolutionInMeters:
-        order.append("ResolutionInMeters");
-        break;
-    case RealityDataField::AccuracyInMeters:
-        order.append("AccuracyInMeters");
-        break;
-    case RealityDataField::Visibility:
-        order.append("Visibility");
-        break;
-    case RealityDataField::Listable:
-        order.append("Listable");
-        break;
-    case RealityDataField::ModifiedTimestamp:
-        order.append("ModifiedTimestamp");
-        break;
-    case RealityDataField::CreatedTimestamp:
-        order.append("CreatedTimestamp");
-        break;
-    case RealityDataField::OwnedBy:
-        order.append("OwnedBy");
-        break;
+        Utf8String order = "$orderby=";
+
+        order.append(searchField->second);
+
+        if(ascending)
+            order.append("+asc");
+        else
+            order.append("+desc");
+
+        m_order = order;
         }
-
-    if(ascending)
-        order.append("+asc");
-    else
-        order.append("+desc");
-
-    m_order = order;
     }
 
 //=====================================================================================
@@ -822,7 +791,7 @@ void RealityDataListByOrganizationPagedRequest::_PrepareHttpRequestStringAndPayl
 void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RelatedId+eq+'%s'", m_encodedId));
 
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
@@ -844,7 +813,7 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
 void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RealityDataId+eq+'%s'", m_id));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RealityDataId+eq+'%s'", m_id));
 
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
@@ -1265,39 +1234,6 @@ void TransferReport::ToXml(Utf8StringR report) const
     writer->ToString(report);
     }
 
-static bmap<RealityDataField, Utf8String> CreatePropertyMap()
-    {
-    bmap<RealityDataField, Utf8String> m = bmap<RealityDataField, Utf8String>();
-    m.Insert(RealityDataField::Id, "Id");
-    m.Insert(RealityDataField::OrganizationId, "OrganizationId");
-    m.Insert(RealityDataField::ContainerName, "ContainerName");
-    m.Insert(RealityDataField::Name, "Name");
-    m.Insert(RealityDataField::Dataset, "Dataset");
-    m.Insert(RealityDataField::Description, "Description");
-    m.Insert(RealityDataField::RootDocument, "RootDocument");
-    m.Insert(RealityDataField::Size, "Size");
-    m.Insert(RealityDataField::Classification, "Classification");
-    m.Insert(RealityDataField::Type, "Type");
-    m.Insert(RealityDataField::Streamed, "Streamed");
-    m.Insert(RealityDataField::Footprint, "Footprint");
-    m.Insert(RealityDataField::ThumbnailDocument, "ThumbnailDocument");
-    m.Insert(RealityDataField::MetadataUrl, "MetadataUrl");
-    m.Insert(RealityDataField::Copyright, "Copyright");
-    m.Insert(RealityDataField::TermsOfUse, "TermsOfUse");
-    m.Insert(RealityDataField::ResolutionInMeters, "ResolutionInMeters");
-    m.Insert(RealityDataField::AccuracyInMeters, "AccuracyInMeters");
-    m.Insert(RealityDataField::Visibility, "Visibility");
-    m.Insert(RealityDataField::Listable, "Listable");
-    m.Insert(RealityDataField::CreatedTimestamp, "CreatedTimestamp");
-    m.Insert(RealityDataField::ModifiedTimestamp, "ModifiedTimestamp");
-    m.Insert(RealityDataField::OwnedBy, "OwnedBy");
-    m.Insert(RealityDataField::Group, "Group");
-
-    return m;
-    }
-
-static bmap<RealityDataField, Utf8String> s_propertyMap = CreatePropertyMap();
-
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
@@ -1673,7 +1609,7 @@ void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int Erro
     {
     RealityDataFileTransfer* pEntry = (RealityDataFileTransfer*)pClient;
 
-    if(!m_onlyReportErrors && ErrorCode != static_cast<int>(CURLE_OK))
+    if(!m_onlyReportErrors || ErrorCode != static_cast<int>(CURLE_OK))
         {
         if (m_pStatusFunc)
             m_pStatusFunc(index, pClient, ErrorCode, pMsg);
@@ -2155,6 +2091,7 @@ void RealityDataService::Request(const RealityDataDelete& request, RawServerResp
     if (!RealityDataService::AreParametersSet())
         {
         rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return;
         }
 
     rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request), "changedInstance");
@@ -2475,4 +2412,18 @@ RawServerResponse RealityDataService::BasicRequest(const RealityDataUrl* request
         response.status = RequestStatus::OK;
     
     return response;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau            06/2017
+//=====================================================================================
+void RealityDataServiceHelper::ResetServerComponents()
+    {
+    s_initializedParams = false;
+    s_realityDataServer = "dev-realitydataservices-eus.cloudapp.net";
+    s_realityDataWSGProtocol = "2.4";
+    s_realityDataRepoName = "S3MXECPlugin--Server";
+    s_realityDataRepoNameWProjectId = "";
+    s_realityDataSchemaName = "S3MX";
+    s_projectId = "";
     }
