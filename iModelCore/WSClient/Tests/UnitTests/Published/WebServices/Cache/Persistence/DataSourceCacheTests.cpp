@@ -3190,7 +3190,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     StubInstances instances;
     auto instance = instances.Add({"TestSchema.TestClassA", "A"});
     instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
-    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"});
+    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"}); // Second related instance should not be allowed
 
     BeTest::SetFailOnAssert(false);
     EXPECT_EQ(CacheStatus::Error, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
