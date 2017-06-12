@@ -199,6 +199,9 @@ void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCo
 bool GetCodeSequenceFromServerJson(RapidJsonValueCR serverJson, CodeSequence& codeSequence);
 rapidjson::Document ToRapidJson(JsonValueCR source);
 
+RevisionStatus ValidateChangeSets(ChangeSets const& changeSets, DgnDbR db);
+void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector);
+
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             10/2016
 // This class is created for tasks retry if unknown error occured.

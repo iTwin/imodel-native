@@ -50,6 +50,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     //ChangeSet errors
     L10N_STRING(MESSAGE_MergeError)                        // =="ChangeSet merge error has occured."==
     L10N_STRING(MESSAGE_RevisionManagerError)              // =="Revision manager error has occured."==
+    L10N_STRING(MESSAGE_MergeSchemaChangesOnOpen)          // =="Briefcase needs to be reopened in order to merge changes from the server."==
     L10N_STRING(MESSAGE_ChangeSetDoesNotExist)             // =="ChangeSet could not be found."==
 
     //Code template errors
