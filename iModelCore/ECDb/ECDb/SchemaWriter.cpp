@@ -562,13 +562,11 @@ BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(ECRelationshipCons
     if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
         return ERROR;
 
-    if (relationshipConstraint.IsRoleLabelDefinedLocally())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(7, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::No))
-            return ERROR;
-        }
+    
+    if (BE_SQLITE_OK != stmt->BindText(7, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::No))
+        return ERROR;
 
-    if (relationshipConstraint.IsAbstractConstraintDefinedLocally())
+    if (relationshipConstraint.IsAbstractConstraintDefined())
         {
         ECClassCR abstractConstraintClass = *relationshipConstraint.GetAbstractConstraint();
         if (SUCCESS != ImportClass(abstractConstraintClass))
