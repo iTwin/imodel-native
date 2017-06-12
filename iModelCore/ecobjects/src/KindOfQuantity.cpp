@@ -260,6 +260,21 @@ Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) cons
         return &m_persistenceFUS;
     };
 
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                David.Fox-Rabinovitz      06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String KindOfQuantity::GetPresentationFUSDescriptor(size_t indx, bool useAlias) const
+    {
+    Formatting::FormatUnitSetCP fusP;
+    if (m_presentationFUS.size() > 0)
+        {
+        fusP = (indx < m_presentationFUS.size()) ? &m_presentationFUS[indx] : m_presentationFUS.begin();
+        }
+    else
+        fusP = &m_persistenceFUS;
+    return fusP->ToText(useAlias);
+    };
+
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod                                David.Fox-Rabinovitz      05/2016
@@ -285,6 +300,27 @@ Json::Value KindOfQuantity::PresentationJson(BEU::QuantityCR qty, size_t indx, b
     Formatting::FormatUnitSetCP fusCP = GetPresentationFUS(indx);
     Json::Value jval = fusCP->FormatQuantityJson(qty, useAlias);
     return jval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  06/2017
+//---------------------------------------------------------------------------------------
+Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
+    {
+    Json::Value arrayObj(Json::arrayValue);
+
+    bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
+    if (presentationUnits.size() > 0)
+        {
+        for (Formatting::FormatUnitSetCR fus : presentationUnits)
+            {
+            if (fus.HasProblem())
+                continue;
+
+            arrayObj.append(fus.ToText(useAlias));
+            }
+        }
+    return arrayObj;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

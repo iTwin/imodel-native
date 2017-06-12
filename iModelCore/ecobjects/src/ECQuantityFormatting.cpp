@@ -11,18 +11,17 @@
 #include <ECObjects/ECQuantityFormatting.h>
 
 namespace BEU = BentleyApi::Units;
-namespace BEF = BentleyApi::Formatting;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-Utf8String ECQuantityFormatting::StdFormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat)
+Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat)
     {
     Utf8String str;
     ECQuantityFormattingStatus locStat = ECQuantityFormattingStatus::Success;
     if (nullptr == formatStatus) formatStatus = &locStat;
     if (nullptr == defFormat) defFormat = BEF::NumericFormatSpec::DefaultFormat();
     *formatStatus = ECQuantityFormattingStatus::Success;
-    BEF:Formatting::FormatUnitSetCP fusP = (nullptr == koq) ? nullptr : koq->GetPresentationFUS(indx);
+    Formatting::FormatUnitSetCP fusP = (nullptr == koq) ? nullptr : koq->GetPresentationFUS(indx);
 
     if (nullptr == fusP) // KOQ does not yeild FUS - will be using default NumericFormatSpec: BEF::NumericFormatSpecCP defFormat
         {
@@ -31,7 +30,7 @@ Utf8String ECQuantityFormatting::StdFormatQuantity(BEU::QuantityCR qty, KindOfQu
     else
         {
         // check compatibility of Quantity and KOQ
-        if (BEF::Utils::AreUnitsComparable(qty.GetUnit(), fusP->GetUnit()))
+        if (Formatting::Utils::AreUnitsComparable(qty.GetUnit(), fusP->GetUnit()))
             {
             str = fusP->FormatQuantity(qty, nullptr);
             }
@@ -43,9 +42,18 @@ Utf8String ECQuantityFormatting::StdFormatQuantity(BEU::QuantityCR qty, KindOfQu
         }
     return str;
     }
+
+Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantityCP koq, size_t indx, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat)
+    {
+    Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
+    BEU::UnitCP unit = persistFUS.GetUnit();
+    BEU::Quantity q = BEU::Quantity(dval, *unit);
+    return FormatQuantity(q, koq, indx, status, defFormat);
+    }
+
 Json::Value ECQuantityFormatting::FormatQuantityJson(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, bool useAlias )
     {
-     BEF:Formatting::FormatUnitSet fus = (nullptr == koq)? BEF::StdFormatSet::DefaultFUS(qty) : koq->GetPresentationFUS(indx);
+     Formatting::FormatUnitSet fus = (nullptr == koq)? BEF::StdFormatSet::DefaultFUS(qty) : koq->GetPresentationFUS(indx);
      return fus.FormatQuantityJson(qty, useAlias);
     }
 

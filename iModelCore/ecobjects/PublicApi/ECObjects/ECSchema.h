@@ -1870,6 +1870,7 @@ struct KindOfQuantity : NonCopyableClass
         //! Gets the default presentation Unit of this KindOfQuantity.
         Formatting::FormatUnitSet GetDefaultPresentationUnit() const { return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS; };
         ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
+        ECOBJECTS_EXPORT Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const;
         //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
         bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const { return m_presentationFUS; }
         //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
@@ -1883,6 +1884,9 @@ struct KindOfQuantity : NonCopyableClass
         void                SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; };
         bool                HasId() const { return m_kindOfQuantityId.IsValid(); };
         ECOBJECTS_EXPORT Json::Value PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias = true) const;
+
+        //! Return Json array of allowable presentation units.
+        ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
     };
 
 //struct KindOfQuantityFormatting
