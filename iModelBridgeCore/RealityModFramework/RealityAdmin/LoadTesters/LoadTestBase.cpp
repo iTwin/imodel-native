@@ -558,6 +558,9 @@ bool LoadTester::Main(int argc, char* argv[])
             }
         }
 
+    if (s_targetRequestsPerHour == 0)
+        s_startLogging = true;
+
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_ultimateStartTime);
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_statStartTime);
 
