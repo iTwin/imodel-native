@@ -298,25 +298,18 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource)
     {
-    // Do not set role label if the role label is already defined.
-    if (!constraint.GetRelationshipClass().HasBaseClasses() || (constraint.IsRoleLabelDefinedLocally() && 0 != constraint.GetConstraintClasses().size()))
+    if (!constraint.GetRelationshipClass().HasBaseClasses() || 0 != constraint.GetConstraintClasses().size())
         return;
-
+    
     ECRelationshipClassCP baseRelClass = constraint.GetRelationshipClass().GetBaseClasses()[0]->GetRelationshipClassCP();
     ECRelationshipConstraintR baseConstraint = isSource ? baseRelClass->GetSource() : baseRelClass->GetTarget();
 
-    if (!constraint.IsRoleLabelDefinedLocally())
-        constraint.SetRoleLabel(baseConstraint.GetInvariantRoleLabel().c_str());
+    // Need to set the abstract constraint, if one is needed, before adding constraint classes.
+    if (1 < baseConstraint.GetConstraintClasses().size())
+        constraint.SetAbstractConstraint(*baseConstraint.GetAbstractConstraint());
 
-    if (0 == constraint.GetConstraintClasses().size())
-        {
-        // Need to set the abstract constraint, if one is needed, before adding constraint classes.
-        if (1 < baseConstraint.GetConstraintClasses().size())
-            constraint.SetAbstractConstraint(*baseConstraint.GetAbstractConstraint());
-
-        for (ECEntityClassCP baseConstraintClass : baseConstraint.GetConstraintClasses())
-            constraint.AddClass(*baseConstraintClass);
-        }
+    for (ECEntityClassCP baseConstraintClass : baseConstraint.GetConstraintClasses())
+        constraint.AddClass(*baseConstraintClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -332,8 +325,11 @@ void ECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
             ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
             ECRelationshipConstraintR source = relClass->GetSource();
             ProcessCustomAttributeInstance(source.GetCustomAttributes(false), source, "ECRelationshipConstraint:" + source.GetRoleLabel());
+            ProcessRelationshipConstraint(source, true);
+
             ECRelationshipConstraintR target = relClass->GetTarget();
             ProcessCustomAttributeInstance(target.GetCustomAttributes(false), target, "ECRelationshipConstraint:" + target.GetRoleLabel());
+            ProcessRelationshipConstraint(target, false);
             }        
         }
     }
