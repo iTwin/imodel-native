@@ -182,7 +182,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCac
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_FailsAsECDbRequiresSharedColumnsCA_KnownIssue)
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithoutMajorVersionChangeWithDeletedPropertyPassed_Error)
     {
     auto cache = GetTestCache();
 
@@ -195,7 +195,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_Fail
         </ECSchema>)xml");
 
     auto schema2 = ParseSchema(
-        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass" >
                 <ECProperty propertyName="A" typeName="string" />
             </ECClass>
@@ -203,8 +203,79 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_Fail
 
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
-
     EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    }
+
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithMajorVersionChangeButNoSharedColumnsWithDeletedPropertyPassed_Error)
+    {
+    auto cache = GetTestCache();
+
+    auto schema1 = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" >
+                <ECProperty propertyName="A" typeName="string" />
+                <ECProperty propertyName="B" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    auto schema2 = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" >
+                <ECProperty propertyName="A" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    }
+
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithMajorVersionChangeAndRequiredCAsWithDeletedPropertyPassed_SuccessAndPropertyDeleted)
+    {
+    auto cache = GetTestCache();
+
+    // ShareColumns & TablePerHierarchy is needed for BIM0200 property deletion to work
+    auto schema1 = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+            <ECClass typeName="TestClass" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00" />
+                </ECCustomAttributes>
+                <ECProperty propertyName="A" typeName="string" />
+                <ECProperty propertyName="B" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    auto schema2 = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+            <ECClass typeName="TestClass" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00" />
+                </ECCustomAttributes>
+                <ECProperty propertyName="A" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+
+    EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    auto ecSchema = cache->GetAdapter().GetECSchema("UpdateSchema");
+    EXPECT_EQ(2, ecSchema->GetVersionRead());
+    EXPECT_EQ(0, ecSchema->GetVersionWrite());
+    EXPECT_EQ(0, ecSchema->GetVersionMinor());
+    auto ecClass = ecSchema->GetClassCP("TestClass");
+    EXPECT_TRUE(nullptr != ecClass->GetPropertyP("A"));
+    EXPECT_TRUE(nullptr == ecClass->GetPropertyP("B"));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
@@ -244,16 +315,26 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
 
+    // Do some operations to cache statements
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, {"UpdateSchema.TestClass", "Foo"}));
     ASSERT_TRUE(cache->FindInstance({"UpdateSchema.TestClass", "Foo"}).IsValid());
 
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
-    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    auto ecSchema = cache->GetAdapter().GetECSchema("UpdateSchema");
+    EXPECT_EQ(2, ecSchema->GetVersionRead());
+    EXPECT_EQ(0, ecSchema->GetVersionWrite());
+    EXPECT_EQ(0, ecSchema->GetVersionMinor());
+    auto ecClass = ecSchema->GetClassCP("TestClass");
+    EXPECT_TRUE(nullptr != ecClass->GetPropertyP("A"));
+    EXPECT_TRUE(nullptr == ecClass->GetPropertyP("B"));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching)
     {
     auto cache = GetTestCache();
+
+    // Such schema is not supported by ECDb when caching data with WSCache. UpdateSchemas will adjust it.
     auto schema = ParseSchema(
         R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="A" >  
@@ -278,18 +359,15 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_Change
     auto cachedRelClass = cachedSchema->GetClassCP("AB")->GetRelationshipClassCP();
     ASSERT_TRUE(nullptr != cachedRelClass);
 
-#ifdef WIP_MERGE_Vincas
-    EXPECT_EQ("(0,1)", cachedRelClass->GetSource().GetCardinality().ToString());
-    EXPECT_EQ("(0,1)", cachedRelClass->GetTarget().GetCardinality().ToString());
-#endif
-    
+    EXPECT_EQ("(0..1)", cachedRelClass->GetSource().GetMultiplicity().ToString());
+    EXPECT_EQ("(0..1)", cachedRelClass->GetTarget().GetMultiplicity().ToString());
+
     // Test caching
     StubInstances instances;
     instances.Add({"UpdateSchema.A", "AA"}).AddRelated({"UpdateSchema.AB", "AABB"}, {"UpdateSchema.B", "BB"});
     auto key = StubCachedResponseKey(*cache);
-#ifdef WIP_MERGE_Vincas
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
-#endif
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
     EXPECT_TRUE(VerifyHasRelationship(cache, "UpdateSchema.AB", {"UpdateSchema.A", "AA"}, {"UpdateSchema.B", "BB"}));
     }
 
@@ -3112,14 +3190,14 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     StubInstances instances;
     auto instance = instances.Add({"TestSchema.TestClassA", "A"});
     instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
-    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"});
+    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"}); // Second related instance should not be allowed
 
     BeTest::SetFailOnAssert(false);
     EXPECT_EQ(CacheStatus::Error, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
     BeTest::SetFailOnAssert(true);
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors_KnownIssue)
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
     {
     // Arrange
     auto cache = GetTestCache();
