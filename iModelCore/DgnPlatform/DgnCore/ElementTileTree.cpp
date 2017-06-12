@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/ElementTileTree.h>
+#include <DgnPlatform/TileIO.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 
@@ -35,6 +36,8 @@ typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     Thread
 
 
 class   ParasolidException {};
+
+#define REALITY_CACHE_SUPPORT
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      10/2015
@@ -860,6 +863,83 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
     return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { return me->DoGetFromSource(); });
     }
 
+
+
+#ifdef REALITY_CACHE_SUPPORT
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Loader::_LoadTile() 
+    { 
+    TileR   tile = static_cast<TileR> (*m_tile);
+    RootR   root = tile.GetElementRoot();
+
+    Render::Primitives::GeometryCollection geometry;
+
+    if (SUCCESS != TileTree::TileIO::ReadTile (geometry, m_tileBytes, *root.GetModel()))
+        return ERROR;
+
+    // No point subdividing empty nodes - improves performance if we don't
+    // Also not much point subdividing nodes containing no curved geometry
+    // NB: We cannot detect either of the above if any elements or geometry were skipped during tile generation.
+    if (geometry.IsComplete())
+        {
+        if (geometry.IsEmpty() || !geometry.ContainsCurves())
+            tile.SetIsLeaf();
+        }
+
+    auto  system = GetRenderSystem();
+    if (nullptr == system)
+        {
+        // This is checked in _CreateTileTree()...
+        BeAssert(false && "ElementTileTree requires a Render::System");
+        return ERROR;
+        }
+
+    GetMeshGraphicsArgs             args;
+    bvector<Render::GraphicPtr>     graphics;
+
+    for (auto const& mesh : geometry.Meshes())
+        mesh->GetGraphics (graphics, *system, args, root.GetDgnDb());
+
+    tile.SetIsReady();
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Loader::DoGetFromSource()
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
+    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+#endif
+
+    auto& tile = static_cast<TileR>(*m_tile);
+    RootR root = tile.GetElementRoot();
+
+    auto  system = GetRenderSystem();
+    if (nullptr == system)
+        {
+        // This is checked in _CreateTileTree()...
+        BeAssert(false && "ElementTileTree requires a Render::System");
+        return ERROR;
+        }
+
+    LoadContext loadContext(this);
+    auto geometry = tile.GenerateGeometry(loadContext);
+
+    if (loadContext.WasAborted())
+        return ERROR;
+        
+    return TileTree::TileIO::WriteTile (m_tileBytes, geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
+    }
+
+
+#else
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -934,6 +1014,8 @@ BentleyStatus Loader::_LoadTile()
     tile.SetIsReady();
     return SUCCESS;
     }
+#endif
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
