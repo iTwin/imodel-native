@@ -1493,7 +1493,7 @@ TEST_F(ECInstancesCompatibility, InstancesCompatibilitySeed)
 
 //---------------------------------------------------------------------------------------------
 // @bsimethod                                      Maha Nasir                  04/17
-// WIP: Reads the Instances from the preserved Bim and perform CRUD oerations on it.
+// Reads and verifies the Instances from the preserved Bim
 //+---------------+---------------+---------------+---------------+---------------+------------
 TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
     {
@@ -1517,4 +1517,40 @@ TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
              ASSERT_TRUE(element.GetElementId().IsValid());
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------------
+// @bsimethod                                      Maha Nasir                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------------
+TEST_F(ECInstancesCompatibility, UpdateInstances)
+    {
+    SetUpDbFromBaselineCopy("2-0-1-46", TEST_NAME, BE_SQLITE_OK);
+
+    DgnDbR db = GetDgnDb();
+
+    bvector<DgnElementId> idList;
+    {
+    Utf8PrintfString fullClassName("%s.%s", BIS_ECSCHEMA_NAME, "Element");
+    ElementIterator iter = db.Elements().MakeIterator(fullClassName.c_str());
+    idList = iter.BuildIdList<DgnElementId>();
+    }
+
+    int i = 0;
+    for (auto elementId : idList)
+        {
+        if (elementId.GetValue() != 1099511627800 && elementId.GetValue() != 1099511627818)
+            {
+            ASSERT_TRUE(db.IsDbOpen());
+            ASSERT_TRUE(elementId.IsValid());
+
+            DgnElementPtr ele = db.Elements().GetForEdit<DgnElement>(elementId);
+            ASSERT_TRUE(ele.IsValid());
+            ele->SetUserLabel("Updated");
+
+            ASSERT_TRUE(ele->Update().IsValid());
+            ASSERT_STREQ("Updated", ele->GetUserLabel());
+            i++;
+            }
+        }
+    ASSERT_EQ(50, i);
     }
