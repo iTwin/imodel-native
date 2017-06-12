@@ -430,7 +430,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     double componentScaleFactor = lineStyleSymb.GetScale();
 
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
-    BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
+    BeAssert(!m_lsComp->_HasRasterImageComponent());
 
     //  A component may cache information used from running texture generation for another component.
     //  If so, reset it now.  _StartTextureGeneration also traverses the children.
@@ -515,8 +515,8 @@ StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR co
         if (m_texturesNotSupported)
             return BSIERROR;
 
-        ParamsToTexture_t::iterator tDescrIter = m_textures.find(params);
-        if (tDescrIter != m_textures.end())
+        ParamsToTexture_t::iterator tDescrIter = m_geometryTextures.find(params);
+        if (tDescrIter != m_geometryTextures.end())
             {
             tDescr = tDescrIter->second;
             return BSISUCCESS;
@@ -526,9 +526,41 @@ StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR co
     if (LsDefinition::GenerateTexture(tDescr, context, lsSymb, geomParams) != BSISUCCESS)
         return BSIERROR;
 
-    m_textures[params] = tDescr;
+    m_geometryTextures[params] = tDescr;
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags, LsComponentCP component)
+    {
+    LsCompoundComponentCP  compoundComponent;
+
+    if (nullptr != (compoundComponent = dynamic_cast <LsCompoundComponentCP> (component)))
+        for (size_t compNum = 0; compNum < compoundComponent->GetNumComponents(); compNum++)
+            if (SUCCESS == compoundComponent->GetComponentCP(compNum)->_GetRasterTexture (image, imageSize, flags))
+                return SUCCESS;
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getRasterTextureWidth (double& rasterWidth, LsComponentCP component)
+    {
+    LsCompoundComponentCP  compoundComponent;
+
+    if (nullptr != (compoundComponent = dynamic_cast <LsCompoundComponentCP> (component)))
+        {
+        for (size_t compNum = 0; compNum < compoundComponent->GetNumComponents(); compNum++)
+            if (SUCCESS == compoundComponent->GetComponentCP(compNum)->_GetTextureWidth (rasterWidth))
+                return SUCCESS;
+        }
+
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -539,65 +571,53 @@ Texture* LsDefinition::GetRasterTexture(double& textureWidth, ViewContextR conte
     if (!m_lsComp.IsValid())
         return nullptr;
 
-    if (LsComponentType::RasterImage != m_lsComp->GetComponentType())
-        return nullptr;
-
-    LineStyleInfoCP lsInfo = geomParams.GetLineStyle();
-
-    if (nullptr == lsInfo)
-        return nullptr;
-
-    LineStyleSymb lsSymb = lsInfo->GetLineStyleSymb();
-    textureWidth = 0.0;
-    if (SUCCESS == m_lsComp->_GetTextureWidth(textureWidth) && lsSymb.IsScaled())
-        textureWidth *= lsSymb.GetScale();
-
-    TextureParams params(0, 0, 0.0, 0.0);
-
-    if (m_firstTextureInitialized)
+    if (!m_firstTextureInitialized)
         {
-        ParamsToTexture_t::iterator tDescrIter = m_textures.find(params);
+        m_firstTextureInitialized = true;
 
-        if (tDescrIter == m_textures.end())
-            return nullptr;
+        uint8_t const* imageDef = nullptr;
+        Point2d     imageSize;
+        uint32_t    flags = 0;
 
-        TextureDescr tDescr = tDescrIter->second;
+        if (SUCCESS == getRasterTexture (imageDef, imageSize, flags, m_lsComp.get()))
+            {
+            DgnViewportP vp = context.GetViewport();
+            if (vp == nullptr)
+                {
+                BeAssert(vp);
+                m_firstTextureInitialized = false;
+                return nullptr;
+                }
 
-        return tDescr.m_texture.get();
+            if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
+                {
+                uint32_t        imageBytes = imageSize.x * imageSize.y, inIndex = (flags & LsRasterImageComponent::FlagMask_AlphaChannel);
+                bool            invert     = 0 != (flags & LsRasterImageComponent::FlagMask_AlphaInvert);
+
+                bvector<uint8_t>   alpha (imageBytes);
+
+                for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
+                    alpha[outIndex] = invert ? (255 - imageDef[inIndex]) : imageDef[inIndex];
+
+                Image imageObj(imageSize.x, imageSize.y, ByteStream(&alpha.front(), imageBytes), Image::Format::Alpha);
+                m_rasterTexture = vp->GetRenderTarget()->CreateTexture(imageObj);
+                }
+            else
+                {
+                Image imageObj(imageSize.x, imageSize.y, ByteStream(imageDef, imageSize.x*imageSize.y*4), Image::Format::Rgba);
+                m_rasterTexture = vp->GetRenderTarget()->CreateTexture(imageObj);
+                }
+            }
         }
+    
 
-    m_firstTextureInitialized = true;
+    double          rasterWidth;
 
-    uint8_t const* image;
-    Point2d        imageSize;
-    uint32_t       flags = 0;
-
-    if (SUCCESS != m_lsComp->_GetRasterTexture(image, imageSize, flags))
-        return nullptr;
-
-    TextureDescr tDescr;
-
-    if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))
-        {
-        size_t           imageBytes = imageSize.x * imageSize.y, inIndex = (flags & LsRasterImageComponent::FlagMask_AlphaChannel);
-        bool             invert = 0 != (flags & LsRasterImageComponent::FlagMask_AlphaInvert);
-        bvector<uint8_t> alpha(imageBytes);
-
-        for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
-            alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
-#endif
-        }
-    else
-        {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
-#endif
-        }
-
-    return tDescr.m_texture.get();
+    if (m_rasterTexture.IsValid() && 
+        SUCCESS == getRasterTextureWidth(rasterWidth, m_lsComp.get()))
+        textureWidth = rasterWidth;
+    
+    return m_rasterTexture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -608,7 +628,7 @@ Texture* LsDefinition::GetGeometryTexture(double& textureWidth, ViewContextR con
     if (!m_lsComp.IsValid())
         return nullptr;
 
-    if (LsComponentType::RasterImage == m_lsComp->GetComponentType())
+    if (m_lsComp->_HasRasterImageComponent())
         return nullptr; // Shouldn't be calling this method... 
 
     switch (context.GetDrawPurpose())

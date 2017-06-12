@@ -663,7 +663,7 @@ BentleyStatus RegionGraphicsContext::VisitBooleanCandidate(GeometrySourceCR elem
                 if (!geom.IsValid())
                     return ERROR;
 
-                if (!geom->GetAsCurveVector()->IsAnyRegionType() && !geom->GetAsCurveVector()->IsPhysicallyClosedPath())
+                if (!geom->GetAsCurveVector()->IsAnyRegionType() && (!geom->GetAsCurveVector()->IsPhysicallyClosedPath() || geom->GetAsCurveVector()->FastLength() < DoubleOps::SmallCoordinateRelTol()))
                     return ERROR;
 
                 curves = geom->GetAsCurveVector()->Clone();
@@ -1194,16 +1194,15 @@ BentleyStatus RegionGraphicsContext::BooleanWithHoles(DgnElementCPtrVec const& i
     return data.CollectBooleanFaces(getRGBoolSelect(operation), 1, highestOperand);
     }
 
-#if defined (NOT_NOW)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RegionGraphicsContext::SetAbortFunction(RGC_AbortFunction abort)
+void RegionGraphicsContext::SetAbortFunction(RegionGraphicsContext_AbortFunction abort)
     {
-//    m_output->SetAbortFunction(abort);
-    jmdlRG_setAbortFunction(m_pRG, abort);
+    RegionData& data = static_cast<RegionData&> (*m_regionData);
+
+    jmdlRG_setAbortFunction(data.m_pRG, (RGC_AbortFunction) abort);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09

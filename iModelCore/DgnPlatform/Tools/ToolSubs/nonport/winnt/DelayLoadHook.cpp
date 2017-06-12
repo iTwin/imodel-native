@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/DelayLoadHook.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,7 +27,21 @@
 #include <delayimp.h>
 
 #ifdef SHOW_DELAY_LOAD_CALLERS
+
+// ...\DbgHelp.h(1544): error C2220: warning treated as error - no 'object' file generated
+// ...\DbgHelp.h(1544): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+// ...\DbgHelp.h(3190): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+#if defined (_MSC_VER)
+    #pragma warning(push)
+    #pragma warning(disable:4091)
+#endif
+
 #include <dbghelp.h>
+
+#if defined (_MSC_VER)
+    #pragma warning(pop)
+#endif
+
 #include <malloc.h>
 #include <stdio.h>
 #endif // SHOW_DELAY_LOAD_CALLERS

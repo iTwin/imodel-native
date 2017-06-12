@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/pagalloc.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------
@@ -100,7 +100,21 @@ Here are the environment variables that affect PAGALLOC memory debugging:
 #define STRICT
 #include <windows.h>
 #include <winnt.h>
+
+// ...\DbgHelp.h(1544): error C2220: warning treated as error - no 'object' file generated
+// ...\DbgHelp.h(1544): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+// ...\DbgHelp.h(3190): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+#if defined (_MSC_VER)
+    #pragma warning(push)
+    #pragma warning(disable:4091)
+#endif
+
 #include <dbghelp.h>
+
+#if defined (_MSC_VER)
+    #pragma warning(pop)
+#endif
+
 #include <objbase.h>
 #include <math.h>
 #include <stdio.h>
