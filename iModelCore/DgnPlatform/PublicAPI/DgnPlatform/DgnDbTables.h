@@ -79,6 +79,7 @@
 #define BIS_CLASS_Model                     "Model"
 #define BIS_CLASS_ModelSelector             "ModelSelector"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
+#define BIS_CLASS_PhysicalMaterial          "PhysicalMaterial"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
 #define BIS_CLASS_PhysicalPartition         "PhysicalPartition"
 #define BIS_CLASS_PhysicalType              "PhysicalType"

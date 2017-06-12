@@ -14,17 +14,44 @@
 #include "RenderMaterial.h"
 #include "ECSqlStatementIterator.h"
 
+DGNPLATFORM_TYPEDEFS(PhysicalMaterial);
 DGNPLATFORM_TYPEDEFS(RenderMaterial);
+DGNPLATFORM_REF_COUNTED_PTR(PhysicalMaterial);
 DGNPLATFORM_REF_COUNTED_PTR(RenderMaterial);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler
-{
-    struct RenderMaterial;
-}
+namespace dgn_ElementHandler {struct PhysicalMaterial; struct RenderMaterial;}
 
 //=======================================================================================
+//! Base class for defining the physical properties of materials for analysis.
+//! @note Differences in physical properties may not be relevant for rendering, so there are separate PhysicalMaterial and RenderMaterial classes.
+//! @see RenderMaterial
+//! @bsiclass                                                   Shaun.Sewall    06/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalMaterial : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalMaterial, DefinitionElement);
+    friend struct dgn_ElementHandler::PhysicalMaterial;
+
+protected:
+    DgnCode _GenerateDefaultCode() const override {return DgnCode();}
+    bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
+    
+    explicit PhysicalMaterial(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Creates a DgnCode for a PhysicalMaterial.
+    static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR materialName) {return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalMaterial, scope, materialName);}
+
+    //! Construct a PhysicalMaterial with the specified parameters
+    PhysicalMaterial(DefinitionModelR model, DgnClassId materialClassId, Utf8StringCR materialName)
+        : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), materialClassId, CreateCode(model, materialName))) {}
+};
+
+//=======================================================================================
+//! Class for defining the rendering properties of materials for display.
+//! @see PhysicalMaterial
 //! @bsistruct                                                  Paul.Connelly   09/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RenderMaterial : DefinitionElement
@@ -56,7 +83,7 @@ public:
     //! @private
     static RenderMaterialId ImportMaterial(RenderMaterialId source, DgnImportContext& importer);
 
-    //! Construct a new RenderMaterial with the specified parameters
+    //! Construct a RenderMaterial with the specified parameters
     //! Constructs parameters for creating a material.
     //! @param[in] model The DefinitionModel in which the material will reside
     //! @param[in] paletteName The palette name which categorizes this material
@@ -93,7 +120,7 @@ public:
     JsonValueR GetAssetR(Utf8CP asset) {return GetMaterialAssetsR()[asset];}
 
     //! Set an asset of material from a Json value.
-    //! @param[in] name asset name -- "RenderMaterial", "Physical" etc.
+    //! @param[in] name asset name
     //! @param[in] value The Json value for the asset.
     void SetAsset(Utf8CP name, JsonValueCR value) {GetMaterialAssetsR()[name] = value;}
 
@@ -103,7 +130,7 @@ public:
 
     void SetRenderingAsset(JsonValueCR val) {GetAssetR(json_renderMaterial()) = val;}
 
-    //! Creates a DgnCode for a material.
+    //! Creates a DgnCode for a RenderMaterial.
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR materialName) {return CodeSpec::CreateCode(BIS_CODESPEC_RenderMaterial, scope, materialName);}
 
     //! Looks up the ID of the material with the specified code.
@@ -175,10 +202,11 @@ public:
 
 namespace dgn_ElementHandler
 {
-    //=======================================================================================
-    //! The handler for material elements.
-    //! @bsistruct                                                  Paul.Connelly   09/15
-    //=======================================================================================
+    struct PhysicalMaterial : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalMaterial, Dgn::PhysicalMaterial, PhysicalMaterial, Definition, DGNPLATFORM_EXPORT);
+    };
+
     struct RenderMaterial : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_RenderMaterial, Dgn::RenderMaterial, RenderMaterial, Definition, DGNPLATFORM_EXPORT);

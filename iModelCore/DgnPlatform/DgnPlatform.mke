@@ -347,6 +347,8 @@ $(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.c
 
 $(CoreObjs)FunctionalDomain$(oext) :                $(DgnCoreDir)FunctionalDomain.cpp $(DgnPlatformAPISrc)FunctionalDomain.h ${MultiCompileDepends}
 
+$(CoreObjs)PhysicalMaterialDomain$(oext) :          $(DgnCoreDir)PhysicalMaterialDomain.cpp $(DgnPlatformAPISrc)PhysicalMaterialDomain.h ${MultiCompileDepends}
+
 $(CoreObjs)SpatialViewController$(oext) :           $(DgnCoreDir)SpatialViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
