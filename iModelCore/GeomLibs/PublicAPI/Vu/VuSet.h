@@ -230,6 +230,8 @@ VuMask Mask (){return m_mask;}
 bool IsSetAtNode (VuP node) { return node->HasMask (m_mask);}
 void SetAtNode (VuP node){node->SetMask (m_mask);}
 void ClearAtNode (VuP node){node->ClearMask (m_mask);}
+void SetAroundVertex (VuP node){node->SetMaskAroundVertex (m_mask);}
+void SetAroundFace (VuP node){node->SetMaskAroundFace (m_mask);}
 };
 
 };

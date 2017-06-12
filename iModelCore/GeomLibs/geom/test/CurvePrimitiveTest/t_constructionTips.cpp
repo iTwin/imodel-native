@@ -55,6 +55,8 @@ void SaveHints (bvector<CurveConstraint> &constraints)
                     DPoint3d::From (0,1),
                     DPoint3d::From (0,1.1),
                     DPoint3d::From (0,0),
+                    DPoint3d::From (0,0,1),
+                    DPoint3d::From (0,0),
                     DPoint3d::From (1.5,0)
                     };
                 transform.Multiply (box, box);

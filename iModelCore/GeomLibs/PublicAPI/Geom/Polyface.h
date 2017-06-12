@@ -558,8 +558,10 @@ GEOMDLLIMPEXP                   PolyfaceEdgeChain ();
 GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id);
 //! construct a chain with two initial indices.
 GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id, int32_t index0, int32_t index1);
-//! add an index.
+//! add an index, caller responsible for 1-based shift
 GEOMDLLIMPEXP void              AddIndex (int32_t index);
+//! add an index.
+GEOMDLLIMPEXP void              AddZeroBasedIndex (uint32_t index);
 //! add indices
 GEOMDLLIMPEXP void              AddZeroBasedIndices (bvector<size_t> const &indices);
 //! query the CurveTopologyId
@@ -568,6 +570,9 @@ GEOMDLLIMPEXP CurveTopologyIdCR GetId () const;
 GEOMDLLIMPEXP int32_t const*      GetIndexCP() const;
 //! Query the number of indices.
 GEOMDLLIMPEXP size_t            GetIndexCount () const;
+//! extract coordinates from points.
+//! @return false if any indices out of bounds.
+GEOMDLLIMPEXP bool GetXYZ (bvector<DPoint3d> &dest, bvector<DPoint3d> const &source) const;
 
 };
 
@@ -1912,6 +1917,17 @@ PolyfaceHeaderPtr &voronoi          //!< [out] voronoi regions around the points
 //!<li>2 is ratio of radii.
 //!<li>3 is the power method (https://en.wikipedia.org/wiki/Power_diagram).  This produces the best intersection points !!!
 //!</ul>
+//!
+//!Detailed cellData contains (for each cell)
+//!<ul>
+//!<li>siteIndex = original point and radius index
+//!<li>auxIndex = readIndex of facet
+//!<li>For each Neighbor:
+//!<ul>
+//!<li>siteIndex = original point and radius index
+//!<li>neighborIndex = index of the neighbor in the cellData bvector.  (And cellData[neighborIndex].GetSiteIndex () == siteIndex)
+//!</ul>
+//!</ul>
 //! @return true if meshes created.
 GEOMDLLIMPEXP static bool CreateDelauneyTriangulationAndVoronoiRegionsXY
 (
@@ -1919,7 +1935,8 @@ bvector<DPoint3d> const &points, //!< [in] points to triangulate
 bvector<double> const &radii,    //!< [in] point radii, for use in metric function
 int voronoiMetric,               //!< [in] 0 for euclidean distance, 1 for effectiveDistance = euclideanDistance - radius.
 PolyfaceHeaderPtr &delauney,    //!< [out] delauney triangulation of the points.
-PolyfaceHeaderPtr &voronoi      //!< [out] voronoi regions around the points.
+PolyfaceHeaderPtr &voronoi,      //!< [out] voronoi regions around the points.
+bvector<NeighborIndices> *cellData = nullptr  //!< [out] optional array giving detailed neighbor data
 );
 //! Create a triangulation of regions as viewed in xy
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateConstrainedTriangulation

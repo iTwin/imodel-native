@@ -132,6 +132,38 @@ TEST(BCS,SpringModelB)
     Check::ClearGeometry ("BCS.SpringModelB");
     }
 
+TEST(BCS,SpringModelC)
+    {
+    double rA = 2.0;
+    double rB = 1.2;
+    DPoint3d centerA = DPoint3d::From (0,0,0);
+    DPoint3d centerB = DPoint3d::From (0,0,0);
+    double shift = 100.0;
+    for (size_t numA : bvector<size_t> {4, 5,6,8,11})
+        {
+        SaveAndRestoreCheckTransform shifter (0, shift, 0.0);
+        DPoint3dDoubleArrays wall (DEllipse3d::FromCenterRadiusXY (centerA, rA), numA);
+        for (size_t numB : bvector<size_t> {3,4,5,7,9})
+            {
+            SaveAndRestoreCheckTransform shifter (shift, 0, 0.0);
+            DPoint3dDoubleArrays station (DEllipse3d::FromCenterRadiusXY (centerB, rB), numB);
+            station.m_xyz.pop_back ();
+            station.m_f.pop_back ();
+            BCSSpringModel sm;
+            sm.AddWall (wall.m_xyz);
+            for (auto xyz : station.m_xyz)
+                sm.AddStation (xyz, 0.3);
+
+            Check::SaveTransformed (wall.m_xyz);
+            Check::SaveTransformedMarkers (station.m_xyz, 0.01);
+            Check::Shift (30,0,0);
+            sm.SolveSprings (true, false);
+            SaveZones (wall.m_xyz, sm);
+            }
+        }
+
+    Check::ClearGeometry ("BCS.SpringModelC");
+    }
 
 
 
@@ -909,20 +941,20 @@ double AssignRadiusByRow (double a0, double a1, size_t i, size_t j, size_t numI,
     }
 TEST(Vu,CreateDelauneySkew)
     {
-
     // unused - double dy = 80.0;
     double a = 1.0;
     double r0 = 0.2 * a, r1 = 0.7 * a;
     size_t numX = 7;
     size_t numY = 5;
     static size_t s_period = 11;
-    for (int distanceSelect = 0; distanceSelect < 4; distanceSelect++)
+    for (int distanceSelect = 3; distanceSelect < 4; distanceSelect++)
         {
         double yMax = 10.0;
         SaveAndRestoreCheckTransform shifter0 (0.0, yMax, 0.0);
 
-        for (double degrees : bvector<double> {60.0, 90.0, 80.0, 50.0, 40.0, 30.0, 100.0, 130.0})
+        for (double radiusFactor : bvector<double> {1.0, 1.2})// : bvector<double> {90.0})//60.0, 90.0, 80.0, 50.0, 40.0, 30.0, 100.0, 130.0})
             {
+            double degrees = 80.0;
             Angle theta = Angle::FromDegrees (degrees);
             bvector<double> radii;
             DPoint3dDVec3dDVec3d frame (0,0,0, a,0,0,  a * theta.Cos (), a * theta.Sin (), 0);
@@ -931,13 +963,14 @@ TEST(Vu,CreateDelauneySkew)
                 for (size_t i = 0; i <= numX; i++)
                     {
                     points.push_back (frame.Evaluate ((double) i, (double) j));
-                    radii.push_back (AssignRadiusByRow (r0, r1, i, j, numX, numY, s_period));
+                    radii.push_back (AssignRadiusByRow (r0 * radiusFactor, r1 * radiusFactor, i, j, numX, numY, s_period));
                     }
 
             SaveAndRestoreCheckTransform shifter (points.back ().x + 50.0 * a,0,0);
             yMax = DoubleOps::Max (yMax, points.back ().y);
             PolyfaceHeaderPtr delauney, voronoi;
-            if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, distanceSelect, delauney, voronoi)))
+            bvector<NeighborIndices> cellData;
+            if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, distanceSelect, delauney, voronoi, &cellData)))
                 {
                 Check::SaveTransformed (*delauney);
                 Check::SaveTransformed (*voronoi);
@@ -948,7 +981,49 @@ TEST(Vu,CreateDelauneySkew)
                         Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (points[i], radii[i]));
                         }
                     }
+                //Check::ValidIndex (SIZE_MAX, cellData, "Verify ValidIndex logic");
+                if (Check::Size (points.size (), cellData.size ()))
+                    {
+                    auto visitor = PolyfaceVisitor::Attach (*voronoi);
+                    visitor->SetNumWrap (1);
+                    for (size_t i = 0; i < cellData.size (); i++)
+                        {
+                        size_t readIndex = cellData[i].GetAuxIndex ();
+                        size_t pointIndex = cellData[i].GetSiteIndex ();
+                        // verify that the siteIndex in the neighbor arrays agree with the site index in the neighbor entry
+                        for (auto &neighborEntry : cellData[i].Neighbors ())
+                            {
+                            size_t neighborSite = neighborEntry.siteIndex;
+                            size_t k = neighborEntry.neighborIndex;
+                            if (Check::ValidIndex (k, cellData, "cellData neighborIndex"))
+                                Check::Size (neighborSite, cellData[k].GetSiteIndex (), "siteIndex match");
+                            }
+                        if (   Check::True (pointIndex < points.size (), "each voronoi cell must have a point index")
+                            && Check::True (readIndex != SIZE_MAX, "Each point must have a voronoi region")
+                            && Check::True (visitor->MoveToFacetByReadIndex (readIndex), "Indexed facet access")
+                            )
+                            {
+                            int q = bsiGeom_XYPolygonParity
+                                    (
+                                    &points[pointIndex],
+                                    &visitor->Point ()[0],
+                                    (int)visitor->Point ().size (),
+                                    DoubleOps::SmallMetricDistance ()
+                                    );
+                            if (q != 1)
+                                {
+                                auto v = Check::SetMaxVolume (1000);
+                                Check::PrintIndent (0);
+                                Check::Print (points[i], "seed");
+                                Check::Print (q, "INOUT");
+                                Check::Print (visitor->Point (), "Voronoi");
+                                Check::Int (1, q, "Voronoi region contains its seed point");
+                                Check::SetMaxVolume (v);
+                                }
 
+                            }
+                        }
+                    }
 
 
                 }

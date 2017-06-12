@@ -2157,37 +2157,42 @@ int  orientationSelect
         }
     EndFace_internal ();
 
-    if (capped)
+    DPoint3d trigPoint;
+    trigPoint = phi[0];
+    // parameterize as (r cos, r sin)
+    if (fabs (trigPoint.x) > s_poleTolerance)
         {
-        DPoint3d trigPoint;
-        trigPoint = phi[0];
-        // parameterize as (r cos, r sin)
-        if (fabs (trigPoint.x) > s_poleTolerance)
+        if (capped)
             {
             CreateTrianglesInCircle (*this, true,  // base is from below, needs reverse
-                    DPoint3d::From (0,0, radiusPole * trigPoint.y),
-                    cap0PointIndex,
-                    DVec3d::From (0,0,-1),
-                    trigPoint.x,
-                    theta,
-                    pointIndex
-                    );
+                DPoint3d::From (0,0, radiusPole * trigPoint.y),
+                cap0PointIndex,
+                DVec3d::From (0,0,-1),
+                trigPoint.x,
+                theta,
+                pointIndex
+                );
             EndFace_internal ();
             }
+        AddEdgeChainZeroBased (CurveTopologyId::Type::SweepProfile, 0, cap0PointIndex);
+        }
         
-        trigPoint = phi[numNorthSouthEdge];
-        if (fabs (trigPoint.x) > s_poleTolerance)
+    trigPoint = phi[numNorthSouthEdge];
+    if (fabs (trigPoint.x) > s_poleTolerance)
+        {
+        if (capped)
             {
             CreateTrianglesInCircle (*this, false,  // top is from above, no reverse
-                    DPoint3d::From (0,0, radiusPole * trigPoint.y),
-                    cap1PointIndex,
-                    DVec3d::From (0,0,1),
-                    trigPoint.x,
-                    theta,
-                    pointIndex
-                    );
+                DPoint3d::From (0,0, radiusPole * trigPoint.y),
+                cap1PointIndex,
+                DVec3d::From (0,0,1),
+                trigPoint.x,
+                theta,
+                pointIndex
+                );
             EndFace_internal ();
             }
+        AddEdgeChainZeroBased (CurveTopologyId::Type::SweepProfile, 1, cap1PointIndex);
         }
     }
 
@@ -2937,18 +2942,31 @@ void IPolyfaceConstruction::AddTriStrip (DPoint3dCP points, DVec3dCP normals, DP
 
 // Add triangulations of two supplied point strings.  In nonreversed case, pointA is "as is", pointB is reversed.
 // In reversed case, pointA is reversed, pointB is "as is".
-void IPolyfaceConstruction::AddTriangulationPair (bvector <DPoint3d> &pointA, bool reverseA, bvector <DPoint3d> &pointB, bool reverseB)
+void IPolyfaceConstruction::AddTriangulationPair (bvector <DPoint3d> &pointA, bool reverseA, bvector <DPoint3d> &pointB, bool reverseB,
+bool enableTriangulation,
+bool edgeChainsPermitted,
+CurveTopologyId::Type chainType
+)
     {
-    if (reverseA)
-        ToggleIndexOrderAndNormalReversal ();
-    AddTriangulation (pointA);
-    if (reverseA)
-        ToggleIndexOrderAndNormalReversal ();
-    if (reverseB)
-        ToggleIndexOrderAndNormalReversal ();
-    AddTriangulation (pointB);
-    if (reverseB)
-        ToggleIndexOrderAndNormalReversal ();
+    if (enableTriangulation)
+        {
+        if (reverseA)
+            ToggleIndexOrderAndNormalReversal ();
+        AddTriangulation (pointA);
+        if (reverseA)
+            ToggleIndexOrderAndNormalReversal ();
+        if (reverseB)
+            ToggleIndexOrderAndNormalReversal ();
+        AddTriangulation (pointB);
+        if (reverseB)
+            ToggleIndexOrderAndNormalReversal ();
+        }
+
+    if (edgeChainsPermitted && GetFacetOptionsR ().GetEdgeChainsRequired ())
+        {
+        AddEdgeChains (chainType, 0, pointA);
+        AddEdgeChains (chainType, 1, pointB);
+        }
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -3080,9 +3098,8 @@ bool capped
     if (dir == 1)
         ToggleIndexOrderAndNormalReversal ();
 
-    if (capped)
-        AddTriangulationPair (pointA, dir == 1, pointB, dir != 1);
-
+    AddTriangulationPair (pointA, dir == 1, pointB, dir != 1, capped, false);
+    // ?? Edge Chains ?? Maybe they only happen within SolidPrimitive?
 
 
     }
@@ -3327,6 +3344,15 @@ bvector<DPoint3d> *endCapPointAccumulator
     double paramYStep = angleStep * aMax;
     bool needNormals = NeedNormals ();
     bool needParams = NeedParams ();
+    bool needEdgeChains = GetFacetOptionsR().GetEdgeChainsRequired ();
+    bvector<PolyfaceEdgeChain> &chains = GetClientMeshR().EdgeChain ();
+    bvector<size_t> edgeChainIndex;
+    if (needEdgeChains)
+        {
+        for (size_t j = 0; j < n; j++)
+            edgeChainIndex.push_back (SIZE_MAX);
+        }
+
     if (reverse)
         ToggleIndexOrderAndNormalReversal ();
     for (size_t step = 0; step <= numStep; step++)
@@ -3375,6 +3401,39 @@ bvector<DPoint3d> *endCapPointAccumulator
                         AddNormalIndexQuad (normalIndexA[j0], normalIndexB[j0], normalIndexB[j1], normalIndexA[j1]);
                     if (needParams)
                         AddParamIndexQuad (paramIndexA[j0], paramIndexB[j0], paramIndexB[j1], paramIndexA[j1]);
+                    }
+                }
+            if (needEdgeChains)
+                {
+                uint32_t numLateral = (uint32_t)n;
+                if (pointIndexA.front () == pointIndexA.back ()
+                    && pointIndexB.front () == pointIndexB.back ())
+                        {
+                        numLateral--;
+                        edgeChainIndex.back () = SIZE_MAX;
+                        }
+                for (uint32_t j = 0; j < numLateral; j++)
+                    {
+                    size_t chainIndex = edgeChainIndex[j];
+                    if (baseCurveBreak[j])
+                        {
+                        if (chainIndex == SIZE_MAX)
+                            {
+                            // This lateral does not have an active edge chain.
+                            /// Create a new one, record its index, and put the pointA index in ...
+                            chainIndex = chains.size ();
+                            chains.push_back (PolyfaceEdgeChain (CurveTopologyId (CurveTopologyId::Type::SweepLateral, j)));
+                            chains.back ().AddZeroBasedIndex ((int32_t)pointIndexA[j]);
+                            edgeChainIndex[j] = chainIndex;
+                            }
+                        // Add the pointB index to the evolving chain . . 
+                        chains[chainIndex].AddZeroBasedIndex((int32_t)pointIndexB[j]);
+                        }
+                    else
+                        {
+                        // there's nothing here for subsequent layers to connect to.
+                        edgeChainIndex[j] = SIZE_MAX;
+                        }
                     }
                 }
             }
@@ -3540,6 +3599,8 @@ bvector<double> &curveLengths
                 StrokeByUniformFractions <DEllipse3d>(ellipse,
                     options.EllipseStrokeCount (ellipse),
                     points.back (), tangents.back ());
+                if (ellipse.IsFullEllipse () && !points.back ().empty ())    // enforce bitwise closure
+                    points.back ().back () = points.back ().front ();
                 double a;
                 primitive->Length (a);
                 curveLengths.back () += a;
@@ -3758,8 +3819,10 @@ bool     capped
     bvector<DPoint3d> capA, capB;
     bool reverse = ComputeRotationalSweepLoopSense (points, origin, axis, totalSweepRadians);
     AddRotationalSweepLoop (points, tangents, origin, axis, totalSweepRadians, reverse, curveLength, &capA, &capB);
-    //if (capped)
-      AddTriangulationPair (capA, !reverse, capB, reverse);
+
+    AddTriangulationPair (capA, !reverse, capB, reverse,
+            capped,
+            !Angle::IsFullCircle (totalSweepRadians), CurveTopologyId::Type::SweepProfile);
     }
 
 
@@ -3791,8 +3854,11 @@ bool     capped
             DPoint3dOps::AppendDisconnect (&startCapPoints);
             DPoint3dOps::AppendDisconnect (&endCapPoints);
             }
-        if (capped)
-            builder.AddTriangulationPair(startCapPoints, reverse, endCapPoints, !reverse);
+
+        builder.AddTriangulationPair(startCapPoints, reverse, endCapPoints, !reverse,
+            capped,
+            !Angle::IsFullCircle (totalSweepRadians), CurveTopologyId::Type::SweepProfile);
+
         }
     }
 /*--------------------------------------------------------------------------------**//**
