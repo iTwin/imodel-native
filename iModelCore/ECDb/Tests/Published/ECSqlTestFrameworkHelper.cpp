@@ -12,14 +12,14 @@ BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlTestFrameworkHelper::AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
     {
-    ECSqlTestItem testItem (ecsql);
+    ECSqlTestItem testItem(ecsql);
 
-    testItem.AddExpectedResult (PrepareECSqlExpectedResult::Create (nullptr));
-    testItem.AddExpectedResult (ResultCountECSqlExpectedResult::Create (expectedResultColumnCount, expectedResultRowCount));
+    testItem.AddExpectedResult(PrepareECSqlExpectedResult::Create(nullptr));
+    testItem.AddExpectedResult(ResultCountECSqlExpectedResult::Create(expectedResultColumnCount, expectedResultRowCount));
 
-    return dataset.AddTestItem (testItem);
+    return dataset.AddTestItem(testItem);
     }
 
 
@@ -27,14 +27,14 @@ ECSqlTestItem& ECSqlTestFrameworkHelper::AddSelect (ECSqlTestDataset& dataset, U
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlTestFrameworkHelper::AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category IECSqlBinder, Utf8CP description, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category IECSqlBinder, Utf8CP description, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
     {
-    ECSqlTestItem testItem (ecsql);
+    ECSqlTestItem testItem(ecsql);
 
-    testItem.AddExpectedResult (PrepareECSqlExpectedResult::Create (nullptr, IECSqlBinder, description));
-    testItem.AddExpectedResult (ResultCountECSqlExpectedResult::Create (IECSqlBinder, description, expectedResultColumnCount, expectedResultRowCount));
+    testItem.AddExpectedResult(PrepareECSqlExpectedResult::Create(nullptr, IECSqlBinder, description));
+    testItem.AddExpectedResult(ResultCountECSqlExpectedResult::Create(IECSqlBinder, description, expectedResultColumnCount, expectedResultRowCount));
 
-    return dataset.AddTestItem (testItem);
+    return dataset.AddTestItem(testItem);
     }
 
 
@@ -58,12 +58,12 @@ ECSqlTestItem& ECSqlTestFrameworkHelper::AddNonSelect(ECSqlTestDataset& dataset,
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlTestFrameworkHelper::AddPrepareFailing (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddPrepareFailing(ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/)
     {
-    ECSqlTestItem testItem (ecsql);
-    testItem.AddExpectedResult (PrepareECSqlExpectedResult::CreateFailing (nullptr, failureCategory, description));
+    ECSqlTestItem testItem(ecsql);
+    testItem.AddExpectedResult(PrepareECSqlExpectedResult::CreateFailing(nullptr, failureCategory, description));
 
-    return dataset.AddTestItem (testItem);
+    return dataset.AddTestItem(testItem);
     }
 
 //---------------------------------------------------------------------------------------
@@ -84,25 +84,25 @@ ECSqlTestItem& ECSqlTestFrameworkHelper::AddStepFailing(ECSqlTestDataset& datase
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECInstanceId ECSqlTestFrameworkHelper::InsertTestInstance (ECDbCR ecdb, Utf8CP ecsql)
+ECInstanceId ECSqlTestFrameworkHelper::InsertTestInstance(ECDbCR ecdb, Utf8CP ecsql)
     {
     ECSqlStatement stmt;
-    auto stat = stmt.Prepare (ecdb, ecsql);
+    auto stat = stmt.Prepare(ecdb, ecsql);
     if (stat != ECSqlStatus::Success)
         {
         EXPECT_EQ(ECSqlStatus::Success, stat) << "Inserting test instance with '" << ecsql << "' failed. Preparation failed";
-        return ECInstanceId ();
+        return ECInstanceId();
         }
 
     ECInstanceKey newECInstanceKey;
-    DbResult stepStat = stmt.Step (newECInstanceKey);
+    DbResult stepStat = stmt.Step(newECInstanceKey);
     if (stepStat != BE_SQLITE_DONE)
         {
-        EXPECT_EQ (BE_SQLITE_DONE, stepStat) << "Inserting test instance with '" << ecsql << "' failed. Step failed";
-        return ECInstanceId ();
+        EXPECT_EQ(BE_SQLITE_DONE, stepStat) << "Inserting test instance with '" << ecsql << "' failed. Step failed";
+        return ECInstanceId();
         }
     else
-        return newECInstanceKey.GetInstanceId ();
+        return newECInstanceKey.GetInstanceId();
     }
 
 END_ECSQLTESTFRAMEWORK_NAMESPACE

@@ -1036,7 +1036,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
     {
         {
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Base" modifier="Abstract">
                     <ECProperty propertyName="BaseProp1" typeName="string" />
@@ -1070,7 +1070,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 
         {
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                         <ECEntityClass typeName="Base" modifier="Abstract">
@@ -1116,7 +1116,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 
         {
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Base" modifier="Abstract">
                     <ECProperty propertyName="BaseProp1" typeName="string" />
@@ -1150,7 +1150,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 
         {
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Base" modifier="Abstract">
                     <ECProperty propertyName="BaseProp1" typeName="string" />
@@ -1674,7 +1674,7 @@ TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                           "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                           "    <ECEntityClass typeName='Parent' modifier='None'>"
@@ -2085,7 +2085,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2228,7 +2228,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                   "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                   "    <ECEntityClass typeName='Base' modifier='None'>"
@@ -2296,7 +2296,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                   "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                   "    <ECEntityClass typeName='Base' modifier='Abstract'>"
@@ -2328,7 +2328,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "    <ECEntityClass typeName='A' modifier='None'>"
@@ -2741,7 +2741,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(R"xml(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Foo">
@@ -2760,7 +2760,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(R"xml(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Base">
@@ -2783,7 +2783,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(R"xml(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
@@ -2814,7 +2814,7 @@ TEST_F(DbMappingTestFixture, IdNameCollisions)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(R"xml(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(R"xml(
                               <ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
@@ -4849,7 +4849,7 @@ TEST_F(DbMappingTestFixture, TablePrefix)
     {
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb,
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb,
                                                          SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                                     "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                                     "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4875,7 +4875,7 @@ TEST_F(DbMappingTestFixture, TablePrefix)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb,
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb,
                                                          SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5011,7 +5011,7 @@ TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     {
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                 "  <ECStructClass typeName='ElementCode' modifier='None'>"
                                 "    <ECProperty propertyName='Name' typeName='string' />"
                                 "  </ECStructClass>"
@@ -5034,7 +5034,7 @@ TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
             {
             //now flip order of struct prop and prim prop
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                 "  <ECStructClass typeName='ElementCode' modifier='None'>"
                                 "    <ECProperty propertyName='Name' typeName='string' />"
                                 "  </ECStructClass>"
@@ -5362,7 +5362,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
             //NotNull constraint on FK Relationship for OwnTable
             {
             ECDb db;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(db, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -5396,7 +5396,7 @@ TEST_F(DbMappingTestFixture, NotNullConstraint)
             //NotNull constraint on FK Relationship for SharedTable CA 
             {
             ECDb db;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(db, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -5474,7 +5474,7 @@ TEST_F(DbMappingTestFixture, ConstraintCheckOnProperties)
     {
             {
             ECDb db;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(db, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -5552,7 +5552,7 @@ TEST_F(DbMappingTestFixture, ConstraintCheckOnProperties)
             //Verification of IsUnique/IsNullable properties on Shared Columns
             {
             ECDb db;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(db, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -6258,7 +6258,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTabl
         "        <ECProperty propertyName='MyProp' typeName='string' />"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     ECClassId myClassId = m_ecdb.Schemas().GetClassId("ts1", "MyClass", SchemaLookupMode::ByAlias);
     ASSERT_TRUE(myClassId.IsValid());
@@ -6408,7 +6408,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
     for (SchemaItem const& testSchema : testSchemas)
         {
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "multinheritance_diamond.ecdb"));
+        ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "multinheritance_diamond.ecdb"));
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Base_Prop1,Sub1_Prop1,IMixin_Prop1,Sub12_Prop1,MyClass_Prop1) "
@@ -6820,7 +6820,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -6858,7 +6858,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -6907,7 +6907,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -6950,7 +6950,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -7035,7 +7035,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -7082,7 +7082,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -7137,7 +7137,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -7174,7 +7174,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -7374,7 +7374,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
         {
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' alias='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -10743,7 +10743,7 @@ TEST_F(DbMappingTestFixture, OverflowTableJoinedTest)
                 <ECProperty propertyName="P74" typeName="point3d" />
             </ECEntityClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     ECSqlStatement b1, b2, b3;
     b3.Prepare(m_ecdb, "SELECT * FROM diego.B3");  //Access B1, b2, b2_overflow

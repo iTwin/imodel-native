@@ -147,7 +147,7 @@ struct ToBoolStrSqlFunction : ScalarFunction
 TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     PowSqlFunction func;
     ASSERT_EQ(0, m_ecdb.AddFunction(func));
@@ -165,7 +165,7 @@ TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
 TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     Utf8CP ecsql = "SELECT I,POW(I,2) FROM ecsql.P";
 
@@ -186,7 +186,7 @@ TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
     {
     const int perClassRowCount = 3;
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, perClassRowCount));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, perClassRowCount));
 
     //insert one more test row which has a NULL column
         {
@@ -272,7 +272,7 @@ TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
 TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     ToBoolStrSqlFunction func;
     ASSERT_EQ(0, m_ecdb.AddFunction(func));
@@ -295,7 +295,7 @@ TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
 TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     //insert one more test row which has a NULL column
         {
@@ -355,7 +355,7 @@ TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
  TEST_F (ECSqlStatementTestFixture, AggregateFunction)
      {
      ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-     ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+     ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
      SumOfSquares func;
      ECSqlStatement stmt;

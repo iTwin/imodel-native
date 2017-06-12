@@ -749,7 +749,7 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
 TEST_F(ECSqlAdapterTestFixture, FindECInstancesFromSelectWithMultipleClasses)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     bvector<IECInstancePtr> instances;
     ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Company"));
@@ -815,7 +815,7 @@ TEST_F(ECSqlAdapterTestFixture, FindECInstancesFromSelectWithMultipleClasses)
 TEST_F(ECSqlAdapterTestFixture, FindECInstances)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
     IECInstancePtr resultInstance = nullptr;
     ECValue v;
     int rows = 0;

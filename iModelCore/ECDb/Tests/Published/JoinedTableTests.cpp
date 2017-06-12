@@ -954,7 +954,7 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
     Utf8String ecdbFilePath;
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, baseTestSchema, "JoinedTablePerDirectSubclass.ecdb")) << "Mapstrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to succeed";
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, baseTestSchema, "JoinedTablePerDirectSubclass.ecdb")) << "Mapstrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to succeed";
     ecdbFilePath = ecdb.GetDbFileName();
     ecdb.CloseDb();
     }

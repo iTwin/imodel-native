@@ -1508,7 +1508,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
                          "      </Target>"
                          "   </ECRelationshipClass>"
                          "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, rowCount));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, rowCount));
     m_ecdb.SaveChanges();
 
     ECClassId parentHasChildrenRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ParentHasChildren");
@@ -1699,7 +1699,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
                                       "   </ECRelationshipClass>"
                                       "</ECSchema>")));
 
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, rowCount));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, rowCount));
 
     ECClassCP relClassGen = m_ecdb.Schemas().GetClass("np", "ParentHasChildren");
     ASSERT_TRUE(relClassGen != nullptr && relClassGen->IsRelationshipClass());
@@ -1816,7 +1816,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
                                         "      </Target>"
                                         "   </ECRelationshipClass>"
                                         "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, rowCount));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, rowCount));
 
     ECInstanceKey modelKey;
     {

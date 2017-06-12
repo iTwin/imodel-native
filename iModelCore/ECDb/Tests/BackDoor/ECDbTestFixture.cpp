@@ -77,7 +77,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
     BeFileName ecdbPath;
     {
     ECDb ecdb;
-    if (SUCCESS != CreateECDbAndImportSchema(ecdb, schema, ecdbFileName))
+    if (SUCCESS != CreateECDb(ecdb, schema, ecdbFileName))
         {
         EXPECT_TRUE(false) << "Importing schema failed: " << schema.ToString().c_str();
         return ERROR;
@@ -169,7 +169,7 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbTestFixture::CreateECDbAndImportSchema(ECDbR ecdb, SchemaItem const& schema, Utf8CP fileName)
+BentleyStatus ECDbTestFixture::CreateECDb(ECDbR ecdb, SchemaItem const& schema, Utf8CP fileName)
     {
     if (BE_SQLITE_OK != CreateECDb(ecdb, fileName))
         return ERROR;
@@ -257,8 +257,27 @@ bool ECDbTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
 // @bsimethod                                     Krischan.Eberle  11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, int instanceCountPerClass)
+BentleyStatus ECDbTestFixture::PopulateECDb(ECDbR ecdb, int instanceCountPerClass)
     {
+    if (!ecdb.IsDbOpen())
+        {
+        EXPECT_FALSE(true) << "ECDb is expected to be open when calling ECDbTestFixture::PopulateECDb";
+        return ERROR;
+        }
+
+    const bool isReadonly = ecdb.IsReadonly();
+    BeFileName filePath(ecdb.GetDbFileName());
+    if (isReadonly)
+        {
+        ecdb.CloseDb();
+
+        if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)))
+            {
+            EXPECT_FALSE(true) << "Could not re-open test file in readwrite mode for populating it";
+            return ERROR;
+            }
+        }
+
     if (instanceCountPerClass > 0)
         {
         bvector<ECN::ECSchemaCP> schemas = ecdb.Schemas().GetSchemas(true);
@@ -267,7 +286,26 @@ BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, int instanceCountPerClass)
             if (schema->IsStandardSchema() || schema->IsSystemSchema() || schema->GetName().EqualsIAscii("ECDbFileInfo") || schema->GetName().EqualsIAscii("ECDbSystem"))
                 continue;
 
-            Populate(ecdb, *schema, instanceCountPerClass);
+            if (SUCCESS != PopulateECDb(ecdb, *schema, instanceCountPerClass))
+                return ERROR;
+            }
+
+        }
+
+    if (BE_SQLITE_OK != ecdb.SaveChanges())
+        {
+        EXPECT_FALSE(true) << "Could not save changes after populating";
+        return ERROR;
+        }
+
+    if (isReadonly)
+        {
+        ecdb.CloseDb();
+
+        if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)))
+            {
+            EXPECT_FALSE(true) << "Could not re-open test file in read-only mode after having populated it";
+            return ERROR;
             }
         }
 
@@ -278,7 +316,7 @@ BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, int instanceCountPerClass)
 // @bsimethod                                     Krischan.Eberle  11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, ECSchemaCR schema, int instanceCountPerClass)
+BentleyStatus ECDbTestFixture::PopulateECDb(ECDbR ecdb, ECSchemaCR schema, int instanceCountPerClass)
     {
     for (ECClassCP ecClass : schema.GetClasses())
         {

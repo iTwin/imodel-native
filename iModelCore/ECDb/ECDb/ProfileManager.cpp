@@ -110,9 +110,6 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
     {
     if (!ecdb.GetDefaultTransaction()->IsActive())
         {
-        //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
-        //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
-        //except that in that case, it is not active).
         BeAssert(false && "Programmer Error. ECDb expects that BeSqlite::OpenBeSQliteDb keeps the default transaction active when it is called to upgrade its profile.");
         return BE_SQLITE_ERROR_NoTxnActive;
         }

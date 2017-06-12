@@ -110,7 +110,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     ECInstanceKey targetKey;
 
     {
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(db, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                             "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                             "    <ECEntityClass typeName='A' >"
                                                             "        <ECProperty propertyName='P1' typeName='int' />"
@@ -289,7 +289,7 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
                                                                   "   <ECProperty propertyName='Location' typeName='Bentley.Geometry.Common.IGeometry'/>"
                                                                   "   </ECEntityClass>"
                                                                   "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     ECClassCP spatialClass = m_ecdb.Schemas().GetClass("Test", "SpatialLocation");
     ASSERT_TRUE(nullptr != spatialClass);

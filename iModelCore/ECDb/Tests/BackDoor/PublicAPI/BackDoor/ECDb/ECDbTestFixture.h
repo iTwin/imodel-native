@@ -51,25 +51,28 @@ protected:
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult ReopenECDb();
 
+    static BentleyStatus CreateECDb(ECDbR, SchemaItem const&, Utf8CP fileName = nullptr);
+
     static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
 
 
-    static BentleyStatus CreateECDbAndImportSchema(SchemaItem const& schema, Utf8CP fileName = nullptr) { ECDb ecdb;  return CreateECDbAndImportSchema(ecdb, schema, fileName); }
-    static BentleyStatus CreateECDbAndImportSchema(ECDbR, SchemaItem const&, Utf8CP fileName = nullptr);
+    static BentleyStatus CreateECDbAndImportSchema(SchemaItem const& schema, Utf8CP fileName = nullptr) { ECDb ecdb;  return CreateECDb(ecdb, schema, fileName); }
     static BentleyStatus ImportSchema(ECDbCR, SchemaItem const&);
     static BentleyStatus ImportSchema(ECDbCR, BeFileNameCR schemaXmlFilePath);
 
-    static BentleyStatus Populate(ECDbCR, ECN::ECSchemaCR, int instanceCountPerClass);
-    static BentleyStatus Populate(ECDbCR, int instanceCountPerClass);
+    static BentleyStatus PopulateECDb(ECDbR, ECN::ECSchemaCR, int instanceCountPerClass);
+    static BentleyStatus PopulateECDb(ECDbR, int instanceCountPerClass);
 
     //!logs the issues if there are any
     static bool HasDataCorruptingMappingIssues(ECDbCR);
 
-    BentleyStatus GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
+    BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
 
     static Utf8String RetrieveDdl(ECDbCR ecdb, Utf8CP entityName, Utf8CP entityType = "table");
 
+    static BentleyStatus ReadECSchemaFromString(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
     ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr& ctx, BeFileNameCR schemaFileName) const { return ReadECSchemaFromDisk(ctx, m_ecdb, schemaFileName); }
+    static ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr&, ECDbCR, BeFileNameCR schemaFileName);
 
     static DbResult ExecuteNonSelectECSql(ECDbCR, Utf8CP ecsql);
     static DbResult ExecuteInsertECSql(ECInstanceKey&, ECDbCR, Utf8CP ecsql);
@@ -87,8 +90,6 @@ public:
 
     static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
     static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName = nullptr);
-    static ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr&, ECDbCR, BeFileNameCR schemaFileName);
-    static BentleyStatus ReadECSchemaFromString(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

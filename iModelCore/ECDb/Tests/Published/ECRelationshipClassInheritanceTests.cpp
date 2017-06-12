@@ -341,7 +341,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
     {
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                                               "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                               "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                                               "  <ECEntityClass typeName='Model' >"
@@ -411,7 +411,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                           "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                           "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                           "  <ECEntityClass typeName='Model' >"
@@ -824,7 +824,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
 
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false);
     assertRelECClassId(ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false);
@@ -872,7 +872,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
 
 
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false);
@@ -939,7 +939,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
 
 
     Utf8CP tableName = SCHEMAALIAS "_B";
@@ -989,7 +989,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
 
 
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false);
@@ -1048,7 +1048,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
 
 
     assertRelECClassId(ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, true);
@@ -1085,7 +1085,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
 
 
     ASSERT_TRUE(ecdb.TableExists(SCHEMAALIAS "_AHasB"));
@@ -1129,7 +1129,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "relecclassid" SCHEMAALIAS ".ecdb"));
 
 
     ASSERT_TRUE(ecdb.TableExists(SCHEMAALIAS "_AHasB"));
@@ -1145,7 +1145,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                   "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1253,7 +1253,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbstractRelBaseClass)
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                     "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                     "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1361,7 +1361,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbst
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                   "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1523,7 +1523,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
                "    </Target>"
                "  </ECRelationshipClass>"
                "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     ECInstanceKey a, b;
     {

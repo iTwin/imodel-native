@@ -1127,6 +1127,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewEntityClass)
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts_modified.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
         statement.Finalize();
+        m_ecdb.CloseDb();
         }
     }
 
@@ -1735,6 +1736,7 @@ TEST_F(SchemaUpdateTestFixture, AppendNewCA)
         ECValue val;
         ASSERT_EQ(ECObjectsStatus::Success, bsca->GetValue(val, "PropertyName"));
         ASSERT_STRCASEEQ("LastMod", val.GetUtf8CP());
+        m_ecdb.CloseDb();
         }
     }
 
@@ -1818,6 +1820,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewCA)
         ECValue val;
         ASSERT_EQ(ECObjectsStatus::Success, bsca->GetValue(val, "PropertyName"));
         ASSERT_STRCASEEQ("LastMod", val.GetUtf8CP());
+        m_ecdb.CloseDb();
         }
     }
 
@@ -1876,6 +1879,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewECProperty)
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
         statement.Finalize();
+        m_ecdb.CloseDb();
         }
     }
 

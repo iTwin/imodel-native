@@ -213,7 +213,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
     {
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -292,7 +292,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -336,7 +336,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -376,7 +376,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -417,7 +417,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts50" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -468,7 +468,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -519,7 +519,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -571,7 +571,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -626,7 +626,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts8" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -700,7 +700,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
             {
             //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is applied to subclasses
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts9\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts9\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                 "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                                 "  <ECEntityClass typeName='A' modifier='None'>"
                                 "    <ECProperty propertyName='Name' typeName='string' />"
@@ -2137,7 +2137,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
     {
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                                     "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                                     "    <ECEntityClass typeName='A'>"
@@ -2219,7 +2219,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                                 "<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                 "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2295,7 +2295,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                 "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                 "    <ECEntityClass typeName='A'>"
@@ -2336,7 +2336,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                 "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                 "    <ECEntityClass typeName='A'>"
@@ -2376,7 +2376,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
 
             {
             ECDb ecdb;
-            ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+            ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                 "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                 "    <ECEntityClass typeName='A'>"
@@ -2447,7 +2447,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                         "    <ECEntityClass typeName='Parent'>"
@@ -2498,7 +2498,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                             "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                             "    <ECEntityClass typeName='Parent'>"
@@ -2548,7 +2548,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                         "    <ECEntityClass typeName='Parent'>"
@@ -2614,7 +2614,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                         "    <ECEntityClass typeName='Parent'>"
@@ -2663,7 +2663,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                         "    <ECEntityClass typeName='Parent'>"
@@ -3069,7 +3069,7 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
     for (SchemaItem const& testSchema : testSchemas)
         {
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "onetoonerelationshipmappings.ecdb"));
+        ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "onetoonerelationshipmappings.ecdb"));
 
         AssertForeignKey(true, ecdb, "ts_b", "A1Id");
         AssertForeignKey(true, ecdb, "ts_b", "A2Id");
@@ -3486,7 +3486,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
     for (SchemaItem const& testSchema : testSchemas)
         {
         ECDb ecdb;
-        ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "RelationshipWithAbstractBaseClass.ecdb"));
+        ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "RelationshipWithAbstractBaseClass.ecdb"));
 
         ECInstanceKey elem1Key, elem2Key, geomElem1Key, geomElem2Key, geom1Key, geom2Key;
         ECSqlStatement stmt;

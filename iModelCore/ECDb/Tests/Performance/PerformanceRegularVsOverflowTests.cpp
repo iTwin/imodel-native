@@ -863,7 +863,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpTestDb(Utf8String seedDbName,
     if (!seedFilePath.DoesPathExist())
         {
         SetupECDb(seedDbName.c_str(), SchemaItem(schemaXml));
-        ASSERT_EQ(SUCCESS, Populate(m_ecdb, s_initialInstanceCount));
+        ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, s_initialInstanceCount));
         m_ecdb.SaveChanges();
         m_ecdb.CloseDb();
         }

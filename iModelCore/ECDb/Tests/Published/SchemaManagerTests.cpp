@@ -975,7 +975,7 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
                                      </ECSchema>)xml"));
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchemas[0], "getkindofquantity.ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchemas[0], "getkindofquantity.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchema(ecdb, testSchemas[1]));
 
     ecdbPath.assign(ecdb.GetDbFileName());
@@ -1598,7 +1598,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
             "    <ECProperty propertyName='PropC' typeName='Boolean' />"
             "  </ECEntityClass>"
             "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
 
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     bmap<Utf8String, bset<Utf8String>> classViewInfo;

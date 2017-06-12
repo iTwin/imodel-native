@@ -84,7 +84,7 @@ TEST_F(JsonReaderTests, ReadInstanceAlongWithRelatedInstances)
                         "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
                         "    </ECRelationshipClass>"
                         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(db, testItem, "updaterelationshipprop.ecdb"));
+    ASSERT_EQ(SUCCESS, CreateECDb(db, testItem, "updaterelationshipprop.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.A (Aprop) VALUES(?)"));

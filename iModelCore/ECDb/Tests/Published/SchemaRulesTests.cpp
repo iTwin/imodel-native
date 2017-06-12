@@ -117,7 +117,7 @@ TEST_F(SchemaRulesTestFixture, SchemaAlias)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                  "  <ECEntityClass typeName='TestClass1' >"
                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                  "  </ECEntityClass>"
@@ -2350,7 +2350,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                   "  <ECEntityClass typeName='Parent' >"
                                                                   "    <ECProperty propertyName='ParentProp' typeName='long' />"
                                                                   "  </ECEntityClass>"
@@ -2374,7 +2374,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
                           "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                           "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='Parent' >"
@@ -2459,7 +2459,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
         "</ECSchema>");
 
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "ecdbrelationshipmappingrules_parenthierarchyinsharedtable.ecdb")) << "Parent hierarchy in TPH";
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "ecdbrelationshipmappingrules_parenthierarchyinsharedtable.ecdb")) << "Parent hierarchy in TPH";
 
     ECInstanceKey parentKey;
     {
@@ -2513,7 +2513,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
     ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(ecdb, testSchema, "ecdbrelationshipmappingrules_childreninseparatejoinedtables_fknotinjoinedtable.ecdb")) << "Children in different joined tables, but FK in primary table";
+    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "ecdbrelationshipmappingrules_childreninseparatejoinedtables_fknotinjoinedtable.ecdb")) << "Children in different joined tables, but FK in primary table";
 
     ECInstanceKey parentKey;
     {
