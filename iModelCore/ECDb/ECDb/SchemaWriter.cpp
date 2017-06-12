@@ -563,8 +563,11 @@ BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(ECRelationshipCons
         return ERROR;
 
     
-    if (BE_SQLITE_OK != stmt->BindText(7, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::No))
-        return ERROR;
+    if (!relationshipConstraint.GetRoleLabel().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(7, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
 
     if (relationshipConstraint.IsAbstractConstraintDefined())
         {
