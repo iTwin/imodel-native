@@ -94,6 +94,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
 
         if (endTangents)
             {
+            // edl june 2017 this use of null arg and pointer assignment as parameter setup defeats gema remap
             // leave pTan NULL if tan is zero vector; o.w., set it to normalized tan
             if (!bsiDPoint3d_pointEqualTolerance (&endTangents[0], NULL, fc_nearZero))
                 bsiDPoint3d_normalizeInPlace (pStartTan = &endTangents[0]);
