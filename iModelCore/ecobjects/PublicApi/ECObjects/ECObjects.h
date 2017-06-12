@@ -103,9 +103,9 @@ EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
 
 #ifndef DOCUMENTATION_GENERATOR
-EC_TYPEDEFS (AdhocPropertyMetadata);
-EC_TYPEDEFS (AdhocPropertyQuery);
-EC_TYPEDEFS (AdhocPropertyEdit);
+EC_TYPEDEFS (AdHocPropertyMetadata);
+EC_TYPEDEFS (AdHocPropertyQuery);
+EC_TYPEDEFS (AdHocPropertyEdit);
 #endif
 
 struct IStream;
