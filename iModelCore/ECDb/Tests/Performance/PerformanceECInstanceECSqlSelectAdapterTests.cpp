@@ -22,7 +22,7 @@ struct PerformanceECInstanceECSqlSelectAdapterTests : public ECDbTestFixture
 TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, Constructor)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("performanceecinstanceecsqlselectadapter.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, Populate(m_ecdb, 10));
+    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 10));
 
     auto assertCtor = [] (ECDbCR ecdb, Utf8CP ecsql, int opCount)
         {
