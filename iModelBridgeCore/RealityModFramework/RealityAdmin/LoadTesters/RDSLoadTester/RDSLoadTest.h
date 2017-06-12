@@ -50,7 +50,7 @@ public:
     RDSUser();
     RDSUser(int id, Stats* stats);
     
-    void DoNextBody(UserManager* owner) override;
+    bool DoNextBody(UserManager* owner) override;
     
     void ValidatePrevious(int activeUsers) override;
 
@@ -75,7 +75,7 @@ public:
     CURL* DeleteRealityData();
     void ValidateDeleteRealityData(int activeUsers);
 
-    void WrapUp(UserManager* owner) override;
+    bool WrapUp(UserManager* owner) override;
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
