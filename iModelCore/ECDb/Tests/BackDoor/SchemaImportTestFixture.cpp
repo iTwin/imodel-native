@@ -83,7 +83,7 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
     if (!Utf8String::IsNullOrEmpty (whereClause))
         expectedDdl.append(" WHERE ").append(whereClause);
     
-    Utf8String actualDdl = RetrieveDdl(ecdb, indexName, "index");
+    Utf8String actualDdl = TestHelper::RetrieveDdl(ecdb, indexName, "index");
     ASSERT_STRCASEEQ(expectedDdl.c_str(), actualDdl.c_str());
     }
 
@@ -121,7 +121,7 @@ std::vector<SchemaImportTestFixture::IndexInfo> SchemaImportTestFixture::Retriev
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName)
     {
-    Utf8String ddl = RetrieveDdl(ecdb, tableName);
+    Utf8String ddl = TestHelper::RetrieveDdl(ecdb, tableName);
     ASSERT_FALSE(ddl.empty());
 
     Utf8String fkSearchString;
@@ -138,7 +138,7 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyDdl)
     {
-    Utf8String ddl = RetrieveDdl(ecdb, tableName);
+    Utf8String ddl = TestHelper::RetrieveDdl(ecdb, tableName);
     ASSERT_FALSE(ddl.empty());
     ASSERT_TRUE(ddl.find(foreignKeyDdl) != ddl.npos) << "Table: " << tableName << " Expected FK DDL: " << foreignKeyDdl << " Actual complete DDL: " << ddl.c_str();
     }

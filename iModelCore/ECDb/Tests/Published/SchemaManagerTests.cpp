@@ -953,8 +953,6 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
         ASSERT_STREQ("IN(real)", actualPresentationUnits[1].ToText(true).c_str());
         };
 
-    Utf8String ecdbPath;
-    {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                      <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -974,30 +972,25 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
                                        </ECEntityClass>
                                      </ECSchema>)xml"));
 
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchemas[0], "getkindofquantity.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(ecdb, testSchemas[1]));
-
-    ecdbPath.assign(ecdb.GetDbFileName());
-    }
+    ASSERT_EQ(SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, testSchemas[1]));
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    KindOfQuantityCP koq = ecdb.Schemas().GetKindOfQuantity("Schema1", "MyKindOfQuantity");
+
+    KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("Schema1", "MyKindOfQuantity");
     ASSERT_TRUE(koq != nullptr);
     assertKoq(*koq);
     }
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    ECSchemaCP schema = ecdb.Schemas().GetSchema("Schema1", false);
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetKindOfQuantityCount());
-    ECClassCP classWithKoq = ecdb.Schemas().GetClass("Schema2", "Foo");
+    ECClassCP classWithKoq = m_ecdb.Schemas().GetClass("Schema2", "Foo");
     ASSERT_TRUE(classWithKoq != nullptr);
     ASSERT_EQ(1, schema->GetKindOfQuantityCount());
     KindOfQuantityCP koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
@@ -1014,10 +1007,9 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
     }
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    ECSchemaCP schema = ecdb.Schemas().GetSchema("Schema1", true);
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1", true);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(1, schema->GetKindOfQuantityCount());
     }

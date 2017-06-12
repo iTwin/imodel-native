@@ -18,7 +18,7 @@ struct SchemaRulesTestFixture : DbMappingTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, Casing)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                       <ECEntityClass typeName="TestClass" >
                         <ECProperty propertyName="TestProperty" typeName="string" />
                       </ECEntityClass>
@@ -27,14 +27,14 @@ TEST_F(SchemaRulesTestFixture, Casing)
                    </ECEntityClass>
                  </ECSchema>)xml"))) << "Classes with names differing only by case.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                  <ECEntityClass typeName="TestClass" >
                      <ECProperty propertyName="TestProperty" typeName="string" />
                      <ECProperty propertyName="TESTPROPERTY" typeName="string" />
                    </ECEntityClass>
                  </ECSchema>)xml"))) << "Properties only differing by case within a class.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                  <ECEntityClass typeName="TestClass" >
                      <ECProperty propertyName="TestProperty" typeName="string" />
                    </ECEntityClass>
@@ -44,7 +44,7 @@ TEST_F(SchemaRulesTestFixture, Casing)
                    </ECEntityClass>"
                  </ECSchema>)xml"))) << "Properties only differing by case in a sub and base class.";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                  <ECEntityClass typeName="TestClass" >
                      <ECProperty propertyName="TestProperty" typeName="string" />
                    </ECEntityClass>
@@ -53,7 +53,7 @@ TEST_F(SchemaRulesTestFixture, Casing)
                    </ECEntityClass>
                  </ECSchema>)xml"))) << "Properties differing only by case in two unrelated classes.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                  <ECEntityClass typeName="TestClass" >
                      <ECProperty propertyName="TestProperty" typeName="string" />
                    </ECEntityClass>
@@ -85,25 +85,25 @@ TEST_F(SchemaRulesTestFixture, Casing)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, SchemaAlias)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem ("<ECSchema schemaName='TestSchema' alias='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem ("<ECSchema schemaName='TestSchema' alias='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"
                       "</ECSchema>"))) << "Alias has to be an ECName.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"
                       "</ECSchema>"))) << "Alias must not be unset.";
     
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"
                       "</ECSchema>"))) << "Alias must not be empty";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem({"<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem({"<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                  "  <ECEntityClass typeName='TestClass1' >"
                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                  "  </ECEntityClass>"
@@ -116,18 +116,17 @@ TEST_F(SchemaRulesTestFixture, SchemaAlias)
 
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                 "  <ECEntityClass typeName='TestClass1' >"
-                                 "    <ECProperty propertyName='TestProperty' typeName='string' />"
-                                 "  </ECEntityClass>"
-                                 "</ECSchema>"), "ecdbschemarules_duplicateschemaaliases.ecdb"));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_duplicateschemaaliases.ecdb", SchemaItem("<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                           "  <ECEntityClass typeName='TestClass1' >"
+                                                                                           "    <ECProperty propertyName='TestProperty' typeName='string' />"
+                                                                                           "  </ECEntityClass>"
+                                                                                           "</ECSchema>")));
 
-    ASSERT_EQ(ERROR, ImportSchema(ecdb, SchemaItem("<ECSchema schemaName='Schema2' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                  "  <ECEntityClass typeName='TestClass2' >"
-                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
-                                  "  </ECEntityClass>"
-                                  "</ECSchema>"))) << "Two schemas with same aliases is not supported.";
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(m_ecdb, SchemaItem("<ECSchema schemaName='Schema2' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                 "  <ECEntityClass typeName='TestClass2' >"
+                                                                 "    <ECProperty propertyName='TestProperty' typeName='string' />"
+                                                                 "  </ECEntityClass>"
+                                                                 "</ECSchema>"))) << "Two schemas with same aliases is not supported.";
     }
     }
 
@@ -136,7 +135,7 @@ TEST_F(SchemaRulesTestFixture, SchemaAlias)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, BaseClasses)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECEntityClass typeName="Base1" modifier="Abstract">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -151,7 +150,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                      </ECEntityClass>
                </ECSchema>)xml"))) << "Multi-inheritance for abstract entity classes is not supported";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                    <ECEntityClass typeName="Base" modifier="Abstract">
@@ -181,7 +180,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                      </ECEntityClass>
                </ECSchema>)xml"))) << "Implementing multiple mixins is supported";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECStructClass typeName="Base1" modifier="Abstract">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -196,7 +195,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                     </ECStructClass>
                </ECSchema>)xml"))) << "Multi-inheritance for abstract struct classes is not supported";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECCustomAttributeClass typeName="Base1" modifier="Abstract" appliesTo="Schema">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -211,7 +210,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                     </ECCustomAttributeClass>
                </ECSchema>)xml"))) << "Multi-inheritance for abstract custom attribute classes is not supported";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECEntityClass typeName="Base1" modifier="Abstract">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -226,7 +225,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                      </ECEntityClass>
                </ECSchema>)xml"))) << "Multi-inheritance for non-abstract entity classes is not supported";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECStructClass typeName="Base1" modifier="Abstract">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -241,7 +240,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                     </ECStructClass>
                </ECSchema>)xml"))) << "Multi-inheritance for non-abstract struct classes is not supported";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECCustomAttributeClass typeName="Base1" modifier="Abstract" appliesTo="Schema">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -256,7 +255,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                     </ECCustomAttributeClass>
                </ECSchema>)xml"))) << "Multi-inheritance for non-abstract custom attribute classes is not supported";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECEntityClass typeName="Base" modifier="None">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -267,7 +266,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                     </ECEntityClass>
                </ECSchema>)xml"))) << "Abstract entity class may not inherit concrete entity class";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECStructClass typeName="Base" modifier="None">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -278,7 +277,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                     </ECStructClass>
                </ECSchema>)xml"))) << "Abstract struct class may not inherit concrete struct class";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                    <ECCustomAttributeClass typeName="Base" modifier="None" appliesTo="Schema">
                         <ECProperty propertyName="Prop1" typeName="string" />
@@ -295,7 +294,7 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract"/>
@@ -312,7 +311,7 @@ TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
                     </ECEntityClass>
                </ECSchema>)xml"))) << "Mixin may not have ClassMap CA";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract"/>
@@ -329,7 +328,7 @@ TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
                     </ECEntityClass>
                </ECSchema>)xml"))) << "Mixin may not have ClassMap CA";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract"/>
@@ -355,7 +354,7 @@ TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
                </ECSchema>)xml"))) << "Mixin may have DbIndexList CA";
 
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract"/>
@@ -447,7 +446,7 @@ TEST_F(SchemaRulesTestFixture, KindOfQuantities)
         }
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <KindOfQuantity typeName="MyKoq" relativeError="0.1" persistenceUnit="FT" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string"/>
@@ -466,14 +465,14 @@ TEST_F(SchemaRulesTestFixture, KindOfQuantities)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "KOQ cannot be applied to a nav prop.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <KindOfQuantity typeName="MyKoq" relativeError="0.1" persistenceUnit="Bla" />
                     <ECEntityClass typeName="Foo" >
                        <ECProperty propertyName="Code" typeName="string" kindOfQuantity="MyKoq"/>
                     </ECEntityClass>
                    </ECSchema>)xml"))) << "Invalid KOQ persistence unit";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <KindOfQuantity typeName="MyKoq" relativeError="0.1" persistenceUnit="FT"
                     presentationUnits="FT(real);Bla(real);M(real)" />
                     <ECEntityClass typeName="Foo" >
@@ -487,13 +486,13 @@ TEST_F(SchemaRulesTestFixture, KindOfQuantities)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                                                            "  <ECStructClass typeName=\"TestClass\" >"
                                                            "    <ECStructProperty propertyName=\"Prop1\" typeName=\"TestClass\" />"
                                                            "  </ECStructClass>"
                                                            "</ECSchema>"))) << "Property is of same type as class.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                                                           "  <ECStructClass typeName=\"Base\" >"
                                                           "    <ECStructProperty propertyName=\"Prop1\" typeName=\"Sub\" />"
                                                           "  </ECStructClass>"
@@ -503,13 +502,13 @@ TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
                                                           "  </ECStructClass>"
                                                           "</ECSchema>"))) << "Property is of subtype of class.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                                                           "  <ECStructClass typeName=\"TestClass\" >"
                                                           "    <ECStructArrayProperty propertyName=\"Prop1\" typeName=\"TestClass\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                                                           "  </ECStructClass>"
                                                           "</ECSchema>"))) << "Property is array of class.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                                                           "  <ECStructClass typeName=\"Base\" >"
                                                           "    <ECStructArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                                                           "  </ECStructClass>"
@@ -519,7 +518,7 @@ TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
                                                           "  </ECStructClass>"
                                                           "</ECSchema>"))) << "Property is of array of subclass of class.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                                                           "  <ECStructClass typeName=\"Base\" >"
                                                           "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                                                           "  </ECStructClass>"
@@ -539,7 +538,7 @@ TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, NavigationProperties)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -557,7 +556,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A nav prop cannot be applied for a link table rel";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -579,7 +578,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A nav prop cannot be applied for a link table rel";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -597,7 +596,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A nav prop must not point to a relationship end with multiplicity greater than 1";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -616,7 +615,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A class cannot have two navigation properties for the same relationship";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -645,7 +644,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A class cannot have two navigation properties for the same relationship (even if one is inherited from a base class)";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema6" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema6" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Foo" modifier="Abstract" >
                         <ECCustomAttributes>
@@ -671,7 +670,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A class can have two navigation properties for the same relationship (if one is inherited from a base class) if the direction is different";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema7" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema7" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -699,7 +698,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A class cannot have two navigation properties to the same relationship hierarchy";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema8" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema8" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -737,7 +736,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A class cannot have two navigation properties to the same relationship hierarchy";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema9" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema9" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -776,7 +775,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                    </ECSchema>)xml"))) << "A class cannot have two navigation properties to the same relationship hierarchy";
 
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema10" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema10" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -805,7 +804,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Navigation property must not the abstract constraint class";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema11" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema11" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -833,7 +832,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Navigation property is on the constraint class (not on the abstract constraint class)";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema12" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema12" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -866,7 +865,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Navigation property must not be on the abstract constraint class";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema13" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema13" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -900,7 +899,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Navigation properties on all constraint classes, having the same name";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema14" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema14" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -933,7 +932,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Navigation properties must be on all constraint classes.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema15" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema15" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -973,7 +972,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, Relationship)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
@@ -992,7 +991,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "AnyClass is not supported by ECDb";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
@@ -1010,7 +1009,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "AnyClass is not supported by ECDb";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
@@ -1029,7 +1028,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "AnyClass is not supported by ECDb";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1055,7 +1054,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "RelationshipClass constraint must not specify a relationship class.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1082,7 +1081,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "RelationshipClass constraint must not specify a relationship class.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema6' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema6' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1110,7 +1109,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "RelationshipClass constraint must not specify a relationship class.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1127,7 +1126,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Sealed RelationshipClass must at least specify one constraint class each.";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1142,7 +1141,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "RelationshipClass constraint must not be left out.";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "  <ECEntityClass typeName='A'>"
                                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                                             "  </ECEntityClass>"
@@ -1160,7 +1159,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                             "  </ECRelationshipClass>"
                                                             "</ECSchema>"))) << "Abstract relationship class must have fully defined constraints";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1174,7 +1173,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Abstract relationship class must have fully defined constraints";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1188,7 +1187,7 @@ TEST_F(SchemaRulesTestFixture, Relationship)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Abstract relationship class must have fully defined constraints";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema12' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema12' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='A'>"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1564,7 +1563,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Foo' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1589,7 +1588,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Multi-constraint class rel which implicitly maps to link table because of missing nav prop";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Foo' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1614,7 +1613,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Multiple constraint classes which map to more than one table on referenced side is not supported";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Base' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1636,7 +1635,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Multiple constraint classes without specifying abstract constraint base class";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "  <ECEntityClass typeName='Base' >"
                                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                                             "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
@@ -1660,7 +1659,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                             "  </ECRelationshipClass>"
                                                             "</ECSchema>"))) << "Nav prop overriding in class hierarchy is fine";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Base' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
@@ -1684,7 +1683,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Duplicate nav props in class hierarchy";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema5' alias='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "  <ECEntityClass typeName='Base' >"
                                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                                             "  </ECEntityClass>"
@@ -1712,7 +1711,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                             "  </ECRelationshipClass>"
                                                             "</ECSchema>"))) << "Every constraint class has a nav prop with same name";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema6' alias='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema6' alias='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Base' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
@@ -1741,7 +1740,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Abstract constraint class must not have a nav prop";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Base' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "    <ECNavigationProperty propertyName='Hoo' relationshipName='Rel' direction='Backward'/>"
@@ -1768,7 +1767,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Abstract constraint class must not have a nav prop, constraint classes must have them";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Base' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1795,7 +1794,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Not all constraint classes have a nav prop";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Base' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1822,7 +1821,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Not all constraint classes have a nav prop";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts10' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts10' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Base' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                           "  </ECEntityClass>"
@@ -1850,7 +1849,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "all constraint classes must have a nav prop with the same name";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts11' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts11' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "  <ECEntityClass typeName='Base' >"
                                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                                             "  </ECEntityClass>"
@@ -1929,7 +1928,7 @@ TEST_F(SchemaRulesTestFixture, LinkTableRelationshipMapStrategy)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, RelationshipInheritance)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                           "<ECSchema schemaName='Test1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Model' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
@@ -1960,7 +1959,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipInheritance)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Partially defined abstract relationship";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                           "<ECSchema schemaName='Test2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                           "  <ECEntityClass typeName='Model' >"
                                                           "    <ECProperty propertyName='Name' typeName='string' />"
@@ -2002,7 +2001,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipInheritance)
                                                           "  </ECRelationshipClass>"
                                                           "</ECSchema>"))) << "Relationship multi inheritance";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                             "<ECSchema schemaName='Test3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "  <ECEntityClass typeName='Model' >"
                                                             "    <ECProperty propertyName='Name' typeName='string' />"
@@ -2034,7 +2033,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipInheritance)
                                                             "  </ECRelationshipClass>"
                                                             "</ECSchema>"), "relinheritance3.ecdb")) << "Inheriting relationship class with modifier None";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                             "<ECSchema schemaName='Test4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                             "  <ECEntityClass typeName='Model' >"
@@ -2072,7 +2071,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipInheritance)
                                                             "  </ECRelationshipClass>"
                                                             "</ECSchema>"), "relinheritance4.ecdb")) << "Additional properties on root rel class";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                             "<ECSchema schemaName='Test5' alias='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                             "  <ECEntityClass typeName='Model' >"
@@ -2118,7 +2117,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipInheritance)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema7' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -2144,7 +2143,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>"))) << "Referenced end maps to more than one table";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema8' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent1' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -2166,7 +2165,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>"))) << "Referenced end maps to more than one table";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema9' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -2192,7 +2191,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>"))) << "Referenced end maps to more than one table";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema10' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -2217,7 +2216,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>"))) << "Target end of link table maps to more than one table";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema11' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -2294,7 +2293,7 @@ void AssertRelationship(ECDbCR ecdb, Utf8CP schemaName, Utf8CP relationshipClass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     {
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECEntityClass typeName='Geometry' >"
         "    <ECProperty propertyName='Type' typeName='string' />"
@@ -2313,24 +2312,24 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
         "  </ECRelationshipClass>"
         "</ECSchema>"))) << "1:N and holding";
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                                            "  <ECEntityClass typeName='Parent' >"
-                                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
-                                                            "  </ECEntityClass>"
-                                                            "  <ECEntityClass typeName='Child' >"
-                                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
-                                                            "  </ECEntityClass>"
-                                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                                            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children'>"
-                                                            "        <Class class='Parent' />"
-                                                            "     </Source>"
-                                                            "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                                                            "         <Class class='Child' />"
-                                                            "     </Target>"
-                                                            "  </ECRelationshipClass>"
-                                                            "</ECSchema>")));
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                           "  <ECEntityClass typeName='Parent' >"
+                                                           "    <ECProperty propertyName='ParentProp' typeName='long' />"
+                                                           "  </ECEntityClass>"
+                                                           "  <ECEntityClass typeName='Child' >"
+                                                           "    <ECProperty propertyName='ChildProp' typeName='long' />"
+                                                           "  </ECEntityClass>"
+                                                           "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
+                                                           "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children'>"
+                                                           "        <Class class='Parent' />"
+                                                           "     </Source>"
+                                                           "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
+                                                           "         <Class class='Child' />"
+                                                           "     </Target>"
+                                                           "  </ECRelationshipClass>"
+                                                           "</ECSchema>")));
 
-    ASSERT_EQ(SUCCESS, CreateECDbAndImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECEntityClass typeName='Geometry' >"
         "    <ECProperty propertyName='Type' typeName='string' />"
@@ -2349,83 +2348,82 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
         "</ECSchema>"))) << "N:N and holding";
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                                                  "  <ECEntityClass typeName='Parent' >"
-                                                                  "    <ECProperty propertyName='ParentProp' typeName='long' />"
-                                                                  "  </ECEntityClass>"
-                                                                  "  <ECEntityClass typeName='Child' >"
-                                                                  "    <ECProperty propertyName='ChildProp' typeName='long' />"
-                                                                  "  </ECEntityClass>"
-                                                                  "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                                                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
-                                                                  "        <Class class='Parent' />"
-                                                                  "     </Source>"
-                                                                  "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                                                                  "         <Class class='Child' />"
-                                                                  "     </Target>"
-                                                                  "  </ECRelationshipClass>"
-                                                                  "</ECSchema>"), "ecdbrelationshipmappingrules_relwithoutnavprop.ecdb")) << "Rel w/o nav prop";
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_relwithoutnavprop.ecdb", SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                                   "  <ECEntityClass typeName='Parent' >"
+                                                                                                   "    <ECProperty propertyName='ParentProp' typeName='long' />"
+                                                                                                   "  </ECEntityClass>"
+                                                                                                   "  <ECEntityClass typeName='Child' >"
+                                                                                                   "    <ECProperty propertyName='ChildProp' typeName='long' />"
+                                                                                                   "  </ECEntityClass>"
+                                                                                                   "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
+                                                                                                   "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
+                                                                                                   "        <Class class='Parent' />"
+                                                                                                   "     </Source>"
+                                                                                                   "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
+                                                                                                   "         <Class class='Child' />"
+                                                                                                   "     </Target>"
+                                                                                                   "  </ECRelationshipClass>"
+                                                                                                   "</ECSchema>"))) << "Rel w/o nav prop";
 
-    AssertColumnNames(ecdb, "ts_Parent", {"Id", "ParentProp"}, "rel w/o nav prop");
-    AssertColumnNames(ecdb, "ts_Child", {"Id", "ChildProp"}, "rel w/o nav prop");
-    AssertColumnNames(ecdb, "ts_ParentHasChildren", {"Id", "SourceId", "TargetId"}, "rel w/o nav prop");
+    AssertColumnNames(m_ecdb, "ts_Parent", {"Id", "ParentProp"}, "rel w/o nav prop");
+    AssertColumnNames(m_ecdb, "ts_Child", {"Id", "ChildProp"}, "rel w/o nav prop");
+    AssertColumnNames(m_ecdb, "ts_ParentHasChildren", {"Id", "SourceId", "TargetId"}, "rel w/o nav prop");
     }
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, SchemaItem(
-                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='Parent' >"
-                          "    <ECProperty propertyName='ParentProp' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='Child' >"
-                          "     <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                          "         </ClassMap>"
-                          "     </ECCustomAttributes>"
-                          "    <ECProperty propertyName='ChildProp' typeName='int' />"
-                          "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward'/>"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='ChildA' >"
-                          "     <BaseClass>Child</BaseClass>"
-                          "    <ECProperty propertyName='ChildAProp' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='ChildB' >"
-                          "     <BaseClass>Child</BaseClass>"
-                          "    <ECProperty propertyName='ChildBProp' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                          "     <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
-                          "         <Class class='Parent' />"
-                          "     </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                          "        <Class class='Child' />"
-                          "     </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>"), "ecdbrelationshipmappingrules_childhierarchyinsharedtable.ecdb")) << "Child hierarchy in TPH";
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childhierarchyinsharedtable.ecdb", SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='Parent' >"
+        "    <ECProperty propertyName='ParentProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Child' >"
+        "     <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "     </ECCustomAttributes>"
+        "    <ECProperty propertyName='ChildProp' typeName='int' />"
+        "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward'/>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ChildA' >"
+        "     <BaseClass>Child</BaseClass>"
+        "    <ECProperty propertyName='ChildAProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ChildB' >"
+        "     <BaseClass>Child</BaseClass>"
+        "    <ECProperty propertyName='ChildBProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
+        "     <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
+        "         <Class class='Parent' />"
+        "     </Source>"
+        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
+        "        <Class class='Child' />"
+        "     </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>"))) << "Child hierarchy in TPH";
 
     ECInstanceKey parentKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent(ParentProp) VALUES(1)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Parent(ParentProp) VALUES(1)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
     }
 
     ECInstanceKey childKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ChildA(ChildAProp,ChildProp) VALUES(2,2)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ChildA(ChildAProp,ChildProp) VALUES(2,2)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
-    ecdb.SaveChanges();
-    AssertRelationship(ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "Child hierarchy in TPH");
+    m_ecdb.SaveChanges();
+    AssertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "Child hierarchy in TPH");
     }
 
+
     {
-    SchemaItem testSchema(
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_parenthierarchyinsharedtable.ecdb", SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName='Parent' >"
@@ -2456,82 +2454,77 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
         "        <Class class='Child' />"
         "     </Target>"
         "  </ECRelationshipClass>"
-        "</ECSchema>");
-
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "ecdbrelationshipmappingrules_parenthierarchyinsharedtable.ecdb")) << "Parent hierarchy in TPH";
+        "</ECSchema>"))) << "Parent hierarchy in TPH";
 
     ECInstanceKey parentKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ParentA(ParentAProp,ParentProp) VALUES(1,1)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ParentA(ParentAProp,ParentProp) VALUES(1,1)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
     }
 
     ECInstanceKey childKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Child(ChildProp) VALUES(2)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Child(ChildProp) VALUES(2)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
 
-    AssertRelationship(ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "");
+    AssertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "");
     }
 
 
     {
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='Parent' >"
-                          "    <ECProperty propertyName='ParentProp' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='Child' >"
-                          "     <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                          "         </ClassMap>"
-                          "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                          "     </ECCustomAttributes>"
-                          "    <ECProperty propertyName='ChildProp' typeName='int' />"
-                          "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward'/>"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='ChildA' >"
-                          "     <BaseClass>Child</BaseClass>"
-                          "    <ECProperty propertyName='ChildAProp' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='ChildB' >"
-                          "     <BaseClass>Child</BaseClass>"
-                          "    <ECProperty propertyName='ChildBProp' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                          "     <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
-                          "         <Class class='Parent' />"
-                          "     </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                          "        <Class class='Child' />"
-                          "     </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, testSchema, "ecdbrelationshipmappingrules_childreninseparatejoinedtables_fknotinjoinedtable.ecdb")) << "Children in different joined tables, but FK in primary table";
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childreninseparatejoinedtables_fknotinjoinedtable.ecdb",
+                                 SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                            "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                            "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='ParentProp' typeName='int' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "     <ECCustomAttributes>"
+                                            "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                            "         </ClassMap>"
+                                            "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                            "     </ECCustomAttributes>"
+                                            "    <ECProperty propertyName='ChildProp' typeName='int' />"
+                                            "    <ECNavigationProperty propertyName='Parent' relationshipName='ParentHasChildren' direction='Backward'/>"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ChildA' >"
+                                            "     <BaseClass>Child</BaseClass>"
+                                            "    <ECProperty propertyName='ChildAProp' typeName='int' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ChildB' >"
+                                            "     <BaseClass>Child</BaseClass>"
+                                            "    <ECProperty propertyName='ChildBProp' typeName='int' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
+                                            "     <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
+                                            "         <Class class='Parent' />"
+                                            "     </Source>"
+                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
+                                            "        <Class class='Child' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>")));
 
     ECInstanceKey parentKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent(ParentProp) VALUES(1)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Parent(ParentProp) VALUES(1)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
     }
 
     ECInstanceKey childKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ChildA(ChildAProp) VALUES(2)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ChildA(ChildAProp) VALUES(2)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
 
-    AssertRelationship(ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "");
+    AssertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "");
     }
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -2565,7 +2558,6 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
         "     </Target>"
         "  </ECRelationshipClass>"
         "</ECSchema>"))) << "Children in different tables";
-
 
     {
     ECSqlStatement stmt;

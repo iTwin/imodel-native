@@ -229,7 +229,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, Overriding)
     {
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="Sealed">
                    <ECProperty propertyName="Name" typeName="string" />
@@ -262,7 +262,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Overriding)
              </ECRelationshipClass>
             </ECSchema>)xml"))) << "Overriding nav prop adds ForeignKeyConstraint CA causes duplicate nav prop error";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="Sealed">
                    <ECProperty propertyName="Name" typeName="string" />
@@ -300,7 +300,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Overriding)
              </ECRelationshipClass>
             </ECSchema>)xml"))) << "Overriding nav prop changes relationship which is not supported";
 
-    ASSERT_EQ(ERROR, CreateECDbAndImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Element" modifier="Abstract">
                  <ECCustomAttributes>

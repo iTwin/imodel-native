@@ -917,6 +917,8 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
     {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JoinedTablePerDirectSubclass.ecdb"));
+
     SchemaItem baseTestSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -951,30 +953,26 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    Utf8String ecdbFilePath;
-    {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, CreateECDb(ecdb, baseTestSchema, "JoinedTablePerDirectSubclass.ecdb")) << "Mapstrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to succeed";
-    ecdbFilePath = ecdb.GetDbFileName();
-    ecdb.CloseDb();
-    }
+    BeFileName filePath(m_ecdb.GetDbFileName());
 
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
-    ASSERT_EQ(SUCCESS, ImportSchema(ecdb, secondTestItem)) << "Mapstrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to be honored from base Class of Refered schema";
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, baseTestSchema)) << "MapStrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to succeed";
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, secondTestItem)) << "MapStrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to be honored from base Class of Referred schema";
 
     bmap<Utf8String, Utf8String> expectedTableLayouts;
     expectedTableLayouts["rs_Base"] = "p0";
     expectedTableLayouts["rs_Sub1"] = "p1 p11";
     expectedTableLayouts["ts_Sub2"] = "p2";
-    AssertTableLayouts(ecdb, expectedTableLayouts);
+    AssertTableLayouts(m_ecdb, expectedTableLayouts);
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
     std::map<ECClassId, MapStrategyInfo> expectedResults {
-            {ecdb.Schemas().GetClassId("ReferredSchema","Base"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::ParentOfJoinedTable)},
-            {ecdb.Schemas().GetClassId("ReferredSchema","Sub1"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)},
-            {ecdb.Schemas().GetClassId("TestSchema","Sub2"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)},
-            {ecdb.Schemas().GetClassId("TestSchema","Sub11"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)}
+            {m_ecdb.Schemas().GetClassId("ReferredSchema","Base"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::ParentOfJoinedTable)},
+            {m_ecdb.Schemas().GetClassId("ReferredSchema","Sub1"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)},
+            {m_ecdb.Schemas().GetClassId("TestSchema","Sub2"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)},
+            {m_ecdb.Schemas().GetClassId("TestSchema","Sub11"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)}
         };
 
     for (std::pair<ECClassId, MapStrategyInfo> const& kvPair : expectedResults)
@@ -983,7 +981,7 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
         MapStrategyInfo const& expectedMapStrategy = kvPair.second;
         MapStrategyInfo actualMapStrategy;
 
-        ASSERT_TRUE(TryGetMapStrategyInfo(actualMapStrategy, ecdb, classId));
+        ASSERT_TRUE(TryGetMapStrategyInfo(actualMapStrategy, m_ecdb, classId));
         ASSERT_EQ(expectedMapStrategy.m_strategy, actualMapStrategy.m_strategy);
         ASSERT_EQ(expectedMapStrategy.m_tphInfo, actualMapStrategy.m_tphInfo);
         }

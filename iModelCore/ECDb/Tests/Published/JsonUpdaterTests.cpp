@@ -96,21 +96,11 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   10/15
+// @bsimethod                                   Muhammad Hassan                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     {
-    ECDb db;
-
-    ECInstanceId sourceInstanceId;
-    ECInstanceId targetInstanceId;
-    ECInstanceId relInstanceId;
-
-    ECInstanceKey sourceKey;
-    ECInstanceKey targetKey;
-
-    {
-    ASSERT_EQ(SUCCESS, CreateECDb(db, SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("updaterelationshipprop.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                             "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                             "    <ECEntityClass typeName='A' >"
                                                             "        <ECProperty propertyName='P1' typeName='int' />"
@@ -120,46 +110,47 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
                                                             "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
                                                             "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
                                                             "    </ECRelationshipClass>"
-                                                            "</ECSchema>"), "updaterelationshipprop.ecdb"));
+                                                            "</ECSchema>")));
 
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.A (P1) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (P1) VALUES(?)"));
 
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 111));
+    ECInstanceKey sourceKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(sourceKey));
-    sourceInstanceId = sourceKey.GetInstanceId();
+    ECInstanceId sourceInstanceId = sourceKey.GetInstanceId();
 
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 222));
+    ECInstanceKey targetKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(targetKey));
-    targetInstanceId = targetKey.GetInstanceId();
+    ECInstanceId targetInstanceId = targetKey.GetInstanceId();
 
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.AHasA (SourceECInstanceId, TargetECInstanceId, Name) VALUES(?,?,'good morning')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.AHasA (SourceECInstanceId, TargetECInstanceId, Name) VALUES(?,?,'good morning')"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceInstanceId));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, targetInstanceId));
 
     ECInstanceKey relKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(relKey));
-    relInstanceId = relKey.GetInstanceId();
-    }
+    ECInstanceId relInstanceId = relKey.GetInstanceId();
 
-    ECClassCP relClass = db.Schemas().GetClass("test", "AHasA");
+    ECClassCP relClass = m_ecdb.Schemas().GetClass("test", "AHasA");
     ASSERT_TRUE(relClass != nullptr);
-    JsonReader reader(db, relClass->GetId());
+    JsonReader reader(m_ecdb, relClass->GetId());
     Json::Value relationshipJson;
     ASSERT_EQ(SUCCESS, reader.ReadInstance(relationshipJson, relInstanceId, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
     ASSERT_STREQ("good morning", relationshipJson["Name"].asCString());
     //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
 
     // Update relationship properties
-    JsonUpdater updater(db, *relClass, nullptr);
+    JsonUpdater updater(m_ecdb, *relClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
     /*
@@ -171,7 +162,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(relInstanceId, relationshipJson, sourceKey, targetKey));
 
     ECSqlStatement checkStmt;
-    ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(db, "SELECT NULL FROM ts.AHasA WHERE ECInstanceId=? AND Name=?"));
+    ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(m_ecdb, "SELECT NULL FROM ts.AHasA WHERE ECInstanceId=? AND Name=?"));
 
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, relInstanceId));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindText(2, expectedVal, IECSqlBinder::MakeCopy::No));

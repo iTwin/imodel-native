@@ -41,78 +41,69 @@ struct JsonReaderTests : public SchemaImportTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, ReadInstanceAlongWithRelatedInstances)
     {
-    ECDb db;
+    ASSERT_EQ(SUCCESS, SetupECDb("updaterelationshipprop.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                "<ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' />"
+                                "        <ECCustomAttributes>"
+                                "            <RelatedItemsDisplaySpecifications xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+                                "                <Specifications>"
+                                "                   <RelatedItemsDisplaySpecification>"
+                                "                   <ParentClass>ts:A1</ParentClass>"
+                                "                   <RelationshipPath>ts:AHasA</RelationshipPath>"
+                                "                   <DerivedClasses>"
+                                "                   <string>ts:A2</string>"
+                                "                   </DerivedClasses>"
+                                "                   </RelatedItemsDisplaySpecification>"
+                                "                </Specifications>"
+                                "            </RelatedItemsDisplaySpecifications>"
+                                "        </ECCustomAttributes>"
+                                "    <ECEntityClass typeName='A' >"
+                                "        <ECProperty propertyName='Aprop' typeName='int' />"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='A1' >"
+                                "        <BaseClass>A</BaseClass>"
+                                "        <ECProperty propertyName='A1prop' typeName='int' />"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='A2' >"
+                                "        <BaseClass>A</BaseClass>"
+                                "        <ECProperty propertyName='A2prop' typeName='int' />"
+                                "    </ECEntityClass>"
+                                "    <ECRelationshipClass typeName='AHasA' strength='referencing' modifier='Sealed'>"
+                                "        <ECProperty propertyName='Name' typeName='string' />"
+                                "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
+                                "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
+                                "    </ECRelationshipClass>"
+                                "</ECSchema>")));
 
-    ECInstanceId sourceInstanceId;
-    ECInstanceId targetInstanceId;
-    ECInstanceId relInstanceId;
-
-    ECInstanceKey sourceKey;
-    ECInstanceKey targetKey;
-
-    {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "<ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' />"
-                        "        <ECCustomAttributes>"
-                        "            <RelatedItemsDisplaySpecifications xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-                        "                <Specifications>"
-                        "                   <RelatedItemsDisplaySpecification>"
-                        "                   <ParentClass>ts:A1</ParentClass>"
-                        "                   <RelationshipPath>ts:AHasA</RelationshipPath>"
-                        "                   <DerivedClasses>"
-                        "                   <string>ts:A2</string>"
-                        "                   </DerivedClasses>"
-                        "                   </RelatedItemsDisplaySpecification>"
-                        "                </Specifications>"
-                        "            </RelatedItemsDisplaySpecifications>"
-                        "        </ECCustomAttributes>"
-                        "    <ECEntityClass typeName='A' >"
-                        "        <ECProperty propertyName='Aprop' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='A1' >"
-                        "        <BaseClass>A</BaseClass>"
-                        "        <ECProperty propertyName='A1prop' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='A2' >"
-                        "        <BaseClass>A</BaseClass>"
-                        "        <ECProperty propertyName='A2prop' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "    <ECRelationshipClass typeName='AHasA' strength='referencing' modifier='Sealed'>"
-                        "        <ECProperty propertyName='Name' typeName='string' />"
-                        "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
-                        "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
-                        "    </ECRelationshipClass>"
-                        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, CreateECDb(db, testItem, "updaterelationshipprop.ecdb"));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.A (Aprop) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (Aprop) VALUES(?)"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 111));
+    ECInstanceKey sourceKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(sourceKey));
-    sourceInstanceId = sourceKey.GetInstanceId();
+    ECInstanceId sourceInstanceId = sourceKey.GetInstanceId();
 
     stmt.Reset();
     stmt.ClearBindings();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 222));
+    ECInstanceKey targetKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(targetKey));
-    targetInstanceId = targetKey.GetInstanceId();
+    ECInstanceId targetInstanceId = targetKey.GetInstanceId();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.AHasA (SourceECInstanceId, TargetECInstanceId, Name) VALUES(?,?,'good morning')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.AHasA (SourceECInstanceId, TargetECInstanceId, Name) VALUES(?,?,'good morning')"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceInstanceId));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, targetInstanceId));
 
     ECInstanceKey relKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(relKey));
-    relInstanceId = relKey.GetInstanceId();
-    }
+    ECInstanceId relInstanceId = relKey.GetInstanceId();
 
-    ECClassCP entityClass = db.Schemas().GetClass("TestSchema", "A");
+    ECClassCP entityClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
     ASSERT_TRUE(entityClass != nullptr);
-    JsonReader reader(db, entityClass->GetId());
+    JsonReader reader(m_ecdb, entityClass->GetId());
     Json::Value classJsonWithRelatedInstances;
     Json::Value jsonDisplayInfo;
     ASSERT_EQ(SUCCESS, reader.Read(classJsonWithRelatedInstances, jsonDisplayInfo, sourceInstanceId, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
