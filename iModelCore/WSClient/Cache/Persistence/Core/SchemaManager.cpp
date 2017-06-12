@@ -253,19 +253,17 @@ BentleyStatus SchemaManager::FixLegacySchemaRelationshipCardinalities(ECSchema& 
         if (!ecRelClass)
             continue;
 
-#ifdef WIP_MERGE_Vincas
-        if (0 == RelationshipCardinality::Compare(ecRelClass->GetSource().GetCardinality(), RelationshipCardinality::OneOne()))
+        if (0 == RelationshipMultiplicity::Compare(ecRelClass->GetSource().GetMultiplicity(), RelationshipMultiplicity::OneOne()))
             {
-            ecRelClass->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
+            ecRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
             modifiedClasses.insert(ecRelClass);
             }
 
-        if (0 == RelationshipCardinality::Compare(ecRelClass->GetTarget().GetCardinality(), RelationshipCardinality::OneOne()))
+        if (0 == RelationshipMultiplicity::Compare(ecRelClass->GetTarget().GetMultiplicity(), RelationshipMultiplicity::OneOne()))
             {
-            ecRelClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+            ecRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
             modifiedClasses.insert(ecRelClass);
             }
-#endif
         }
         
     if (!modifiedClasses.empty())
