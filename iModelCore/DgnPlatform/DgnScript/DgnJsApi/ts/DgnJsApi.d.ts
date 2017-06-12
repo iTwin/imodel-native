@@ -1333,11 +1333,11 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     /**
     * Provides read-only access to ad-hoc properties defined on an IECInstance.
-    * Adhoc properties are name-value pairs stored on an ECInstance.
+    * AdHoc properties are name-value pairs stored on an ECInstance.
     */
-    class AdhocPropertyQuery implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    class AdHocPropertyQuery implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
-        /*** NATIVE_TYPE_NAME = JsAdhocPropertyQuery ***/
+        /*** NATIVE_TYPE_NAME = JsAdHocPropertyQuery ***/
         constructor(instance: ECInstanceP, accessString: Bentley_Utf8String);
         Host: ECInstanceP;
 
