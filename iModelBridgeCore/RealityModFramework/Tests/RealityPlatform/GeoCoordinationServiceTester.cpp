@@ -11,6 +11,7 @@
 #include <ostream>
 #include <Bentley/BeTextFile.h>
 #include <Bentley/BeFileName.h>
+#include "../Common/RealityModFrameworkTestsCommon.h"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -88,33 +89,6 @@ struct WSGRequest_response_state
 };
 
 //=====================================================================================
-//! @bsiclass                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-struct MockWSGRequest : WSGRequest
-{
-    MockWSGRequest() : WSGRequest()
-    {}
-
-    MOCK_CONST_METHOD5(PerformAzureRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
-    MOCK_CONST_METHOD4(PrepareRequest, CURL*(const WSGURL& wsgRequest, RawServerResponse& responseString, bool verifyPeer, BeFile* file));
-    MOCK_CONST_METHOD5(_PerformRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
-    MOCK_CONST_METHOD5(PerformRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
-};
-
-//=====================================================================================
-//! @bsiclass                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-struct ErrorClass
-{
-    MOCK_CONST_METHOD2(errorCallBack, void(Utf8String basicMessage, const RawServerResponse& rawResponse));
-
-    ErrorClass()
-    {
-
-    }
-};
-
-//=====================================================================================
 //! @bsimethod                                 Remi.Charbonneau              05/2017
 //=====================================================================================
 TEST(GeoCoordinationService, SetServerComponentsCorrectly)
@@ -129,69 +103,35 @@ TEST(GeoCoordinationService, SetServerComponentsCorrectly)
 
 //=====================================================================================
 //! @bsiclass                                   Remi.Charbonneau              05/2017
-//! GeoCoordinationServiceRequestFixture
+//! bb
 //! Fixture class for most of the GeoCoordinationService request.
 //! It hold a Mock WSGRequest so that all call to WSGRequest::GetInstance() can be intercepted
 //=====================================================================================
-class GeoCoordinationServiceRequestFixture : public testing::Test
+class GeoCoordinationServiceRequestFixture : public MockGeoCoordinationServiceFixture
 {
 public:
-    static GeoCoordinationService* s_geoCoordinateServiceUnderTest;
-    static ErrorClass* s_errorClass;
-    static NiceMock<MockWSGRequest>* s_mockWSGInstance;
-
-    static void SetUpTestCase()
+    //
+    WCharCP GetDirectory()
     {
-        s_geoCoordinateServiceUnderTest = new GeoCoordinationService();
-        s_errorClass = new ErrorClass();
-        s_geoCoordinateServiceUnderTest->SetErrorCallback(GeoCoordinationServiceRequestFixture::mockErrorCallBack);
-        s_mockWSGInstance = new NiceMock<MockWSGRequest>();
+        WChar exePath[MAX_PATH];
+        GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+        WString exeDir = exePath;
+        size_t pos = exeDir.find_last_of(L"/\\");
+        exeDir = exeDir.substr(0, pos + 1);
+
+        BeFileName testPath(exeDir);
+        testPath.AppendToPath(L"GeoCoordinationServiceTester");
+        return testPath;
     }
 
-    static void TearDownTestCase()
+    void InitTestDirectory(WCharCP directoryname)
     {
-        delete s_geoCoordinateServiceUnderTest;
-        delete s_errorClass;
-        delete s_mockWSGInstance;
-        s_geoCoordinateServiceUnderTest = nullptr;
-        s_errorClass = nullptr;
-        s_mockWSGInstance = nullptr;
+        if (BeFileName::DoesPathExist(directoryname))
+            BeFileName::EmptyAndRemoveDirectory(directoryname);
+        BeFileName::CreateNewDirectory(directoryname);
     }
-
-    static void mockErrorCallBack(Utf8String basicMessage, const RawServerResponse& rawResponse)
-    {
-        if (s_errorClass != nullptr)
-        {
-            s_errorClass->errorCallBack(basicMessage, rawResponse);
-        }
-    }
-
-	//
-	WCharCP GetDirectory()
-	{
-		WChar exePath[MAX_PATH];
-		GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-		WString exeDir = exePath;
-		size_t pos = exeDir.find_last_of(L"/\\");
-		exeDir = exeDir.substr(0, pos + 1);
-
-		BeFileName testPath(exeDir);
-		testPath.AppendToPath(L"GeoCoordinationServiceTester");
-		return testPath;
-	}
-
-	void InitTestDirectory(WCharCP directoryname)
-	{
-		if (BeFileName::DoesPathExist(directoryname))
-			BeFileName::EmptyAndRemoveDirectory(directoryname);
-		BeFileName::CreateNewDirectory(directoryname);
-	}
 };
-
-ErrorClass* GeoCoordinationServiceRequestFixture::s_errorClass = nullptr;
-GeoCoordinationService* GeoCoordinationServiceRequestFixture::s_geoCoordinateServiceUnderTest = nullptr;
-NiceMock<MockWSGRequest>* GeoCoordinationServiceRequestFixture::s_mockWSGInstance = nullptr;
 
 //=====================================================================================
 //! @bsiclass                                   Remi.Charbonneau              05/2017
@@ -295,7 +235,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, DownloadRequestFileNotfoundCallback
 
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("DownloadReport File not found"), _));
 
-    s_geoCoordinateServiceUnderTest->SetErrorCallback(GeoCoordinationServiceRequestFixture::mockErrorCallBack);
+    s_geoCoordinateService->SetErrorCallback(GeoCoordinationServiceRequestFixture::mockErrorCallBack);
     auto rawResponse = RawServerResponse();
     GeoCoordinationService::Request(request, rawResponse);
 }
@@ -305,24 +245,24 @@ TEST_F(GeoCoordinationServiceRequestFixture, DownloadRequestFileNotfoundCallback
 //=====================================================================================
 TEST_F(GeoCoordinationServiceRequestFixture, DownloadReportBadRequest)
 {
-	WString directory(GetDirectory());
-	InitTestDirectory(directory.c_str());
-	WString fileName(directory);
-	fileName.append(L"xmlTestfile.xml");
-	BeFileStatus status;
-	BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
-	tempFile->Close();
+    WString directory(GetDirectory());
+    InitTestDirectory(directory.c_str());
+    WString fileName(directory);
+    fileName.append(L"xmlTestfile.xml");
+    BeFileStatus status;
+    BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
+    tempFile->Close();
 
     auto request = DownloadReportUploadRequest("randomguid", "myidentifier", BeFileName(fileName));
 
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error Uploading DownloadReport"), _));
 
-    s_geoCoordinateServiceUnderTest->SetErrorCallback(GeoCoordinationServiceRequestFixture::mockErrorCallBack);
+    s_geoCoordinateService->SetErrorCallback(GeoCoordinationServiceRequestFixture::mockErrorCallBack);
     auto rawResponse = RawServerResponse();
     GeoCoordinationService::Request(request, rawResponse);
     EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
 
-	BeFileName::EmptyAndRemoveDirectory(directory.c_str());
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
 }
 
 //=====================================================================================
@@ -353,13 +293,13 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestBad)
         response.curlCode = CURLE_FILE_COULDNT_READ_FILE;
     }));
 
-	WString directory(GetDirectory());
-	InitTestDirectory(directory.c_str());
-	WString fileName(directory);
-	fileName.append(L"tempFile.tmp");
-	BeFileStatus status;
-	BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
-	tempFile->Close();
+    WString directory(GetDirectory());
+    InitTestDirectory(directory.c_str());
+    WString fileName(directory);
+    fileName.append(L"tempFile.tmp");
+    BeFileStatus status;
+    BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
+    tempFile->Close();
 
 
     auto request = PreparedPackageRequest("myidentifier");
@@ -369,7 +309,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestBad)
 
     EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
 
-	BeFileName::EmptyAndRemoveDirectory(directory.c_str());
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
 }
 
 
@@ -385,13 +325,13 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestGood)
         response.curlCode = CURLE_OK;
     }));
 
-	WString directory(GetDirectory());
-	InitTestDirectory(directory.c_str());
-	WString fileName(directory);
-	fileName.append(L"tempFile.tmp");
-	BeFileStatus status;
-	BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
-	tempFile->Close();
+    WString directory(GetDirectory());
+    InitTestDirectory(directory.c_str());
+    WString fileName(directory);
+    fileName.append(L"tempFile.tmp");
+    BeFileStatus status;
+    BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
+    tempFile->Close();
 
     auto request = PreparedPackageRequest("myidentifier");
     auto rawResponse = RawServerResponse();
@@ -400,7 +340,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestGood)
 
     EXPECT_EQ(rawResponse.status, RequestStatus::OK);
 
-	BeFileName::EmptyAndRemoveDirectory(directory.c_str());
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
 }
 
 
@@ -798,11 +738,11 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityDataSourceByIdRequestB
 //! @bsimethod                                 Remi.Charbonneau              05/2017
 //=====================================================================================
 TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsByIdRequestGood)
-    {
+{
 
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-        {
+    {
         response.curlCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
@@ -818,7 +758,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsByIdRequest
                     }
                 ]
             })";
-        }));
+    }));
 
     auto request = SpatialEntityWithDetailsByIdRequest("MyIdentifier");
     auto rawResponse = RawServerResponse();
@@ -828,25 +768,25 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsByIdRequest
     EXPECT_EQ(rawResponse.status, RequestStatus::OK);
     EXPECT_STREQ(spatialEntity->GetIdentifier().c_str(), "MyIdentifier");
     EXPECT_STREQ(spatialEntity->GetName().c_str(), "MyName1");
-    }
+}
 
 //=====================================================================================
 //! @bsimethod                                 Remi.Charbonneau              05/2017
 //=====================================================================================
 TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsByIdRequestBad)
-    {
+{
 
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("SpatialEntityRequest failed with response"), _)).Times(1);
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error message in the JSON"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-        {
+    {
         response.curlCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
             {
             "errorMessage" : "Myerror"
             })";
-        }));
+    }));
 
     auto request = SpatialEntityWithDetailsByIdRequest("MyIdentifier");
     auto rawResponse = RawServerResponse();
@@ -854,24 +794,24 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsByIdRequest
     auto spatialEntity = GeoCoordinationService::Request(request, rawResponse);
 
     EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
-    }
+}
 
 //=====================================================================================
 //! @bsimethod                                 Remi.Charbonneau              05/2017
 //=====================================================================================
 TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityByIdRequestRequestBad)
-    {
+{
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("SpatialEntityRequest failed with response"), _)).Times(1);
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error message in the JSON"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-        {
+    {
         response.curlCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
             {
             "errorMessage" : "Myerror"
             })";
-        }));
+    }));
 
     auto request = SpatialEntityByIdRequest("MyIdentifier");
     auto rawResponse = RawServerResponse();
@@ -879,16 +819,16 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityByIdRequestRequestBad)
     auto spatialEntity = GeoCoordinationService::Request(request, rawResponse);
 
     EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
-    }
+}
 
 //=====================================================================================
 //! @bsimethod                                 Remi.Charbonneau              05/2017
 //=====================================================================================
 TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityByIdRequestRequestGood)
-    {
+{
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-        {
+    {
         response.curlCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
@@ -904,7 +844,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityByIdRequestRequestGood
                     }
                 ]
             })";
-        }));
+    }));
 
     auto request = SpatialEntityByIdRequest("MyIdentifier");
     auto rawResponse = RawServerResponse();
@@ -914,4 +854,4 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityByIdRequestRequestGood
     EXPECT_EQ(rawResponse.status, RequestStatus::OK);
     EXPECT_STREQ(spatialEntity->GetIdentifier().c_str(), "MyIdentifier");
     EXPECT_STREQ(spatialEntity->GetName().c_str(), "MyName1");
-    }
+}

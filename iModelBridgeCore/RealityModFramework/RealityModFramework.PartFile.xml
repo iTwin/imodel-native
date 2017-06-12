@@ -732,7 +732,7 @@
 
 	<Part Name="RealityFrameworkTestsData" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
-            <Files SubPartDirectory="TestData/RealityPlatform" ProductDirectoryName="RealityFrameworkTestDataRealityPlatform">Delivery/TestData/RealityPlatform/*xml</Files>
+            <Files SubPartDirectory="TestData/RealityPlatform" ProductDirectoryName="RealityFrameworkTestDataRealityPlatform">Delivery/TestData/RealityPlatform/*</Files>
         </Bindings>
     </Part>
 	
