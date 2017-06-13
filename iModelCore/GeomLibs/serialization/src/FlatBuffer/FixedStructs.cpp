@@ -260,12 +260,13 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
                 numPoints > 0 ? (double const*)&sourcePoints->front ().x : nullptr,
                 3 * numPoints);
 
+        auto fbTag = WriteVariantGeometryTag (parent.GetId ());
         BGFB::LineStringBuilder builder (m_fbb);
         builder.add_points (fbPoints);
 
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_LineString,
-                builder.Finish ().Union (), WriteVariantGeometryTag (parent.GetId ()));
+                builder.Finish ().Union (), fbTag);
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString)
         {
@@ -283,11 +284,12 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
         auto fbPoints = m_fbb.CreateVector ((double const*)&sourcePoints->front ().x,
                 3 * sourcePoints->size ());
 
+        auto fbTag = WriteVariantGeometryTag (parent.GetId ());
         BGFB::PointStringBuilder builder (m_fbb);
         builder.add_points (fbPoints);
         return CreateVariantGeometry (m_fbb,
                 BGFB::VariantGeometryUnion_PointString,
-                builder.Finish ().Union (), WriteVariantGeometryTag (parent.GetId ()));
+                builder.Finish ().Union (), fbTag);
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector)
         {
