@@ -112,6 +112,7 @@ struct ECRelationshipTests : ECTestFixture
         }
     };
 
+struct ECRelationshipDeserializationTests : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
@@ -789,6 +790,113 @@ TEST_F(ECRelationshipTests, TestRelationshipSerialization)
     ECSchemaPtr roundTripSchema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(roundTripSchema, serializedSchemaXml.c_str(), *context)) << "Schema should fail deserialization because it is an invalid 3.1 schema.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void TestRelationshipStrengthDirectionConstraint(Utf8CP baseDirection, Utf8CP derivedDirection, bool expectSuccess = true)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Parent"/>
+            <ECEntityClass typeName="Child"/>
+            <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="Referencing" strengthDirection="%s">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                    <Class class="Parent"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                    <Class class="Child"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelSub" modifier="None" strength="Referencing" strengthDirection="%s">
+                <BaseClass>RelBase</BaseClass>
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                    <Class class="Parent"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                    <Class class="Child"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>
+        )xml";
+
+    Utf8String formattedSchemaXml;
+    formattedSchemaXml.Sprintf(schemaXml, baseDirection, derivedDirection);
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    SchemaReadStatus expectedOutcome = expectSuccess ? SchemaReadStatus::Success : SchemaReadStatus::InvalidECSchemaXml;
+    ASSERT_EQ(expectedOutcome, ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *context)) <<
+        "The schema has a base relationship with strength direction " << baseDirection << " and the derived relationship with strength direction " << derivedDirection << " which should " << (expectSuccess ? "successfully" : "fail") << " to deserialize.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipDeserializationTests, TestRelationshipStrengthDirection)
+    {
+    TestRelationshipStrengthDirectionConstraint("Forward", "Forward");
+    TestRelationshipStrengthDirectionConstraint("Forward", "Backward", false);
+    TestRelationshipStrengthDirectionConstraint("Backward", "Forward", false);
+    TestRelationshipStrengthDirectionConstraint("Backward", "Backward");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void TestRelationshipStrengthConstraint(Utf8CP baseStrength, Utf8CP derivedStrength, bool expectSuccess = true)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Parent"/>
+            <ECEntityClass typeName="Child"/>
+            <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="%s" strengthDirection="Forward">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                    <Class class="Parent"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                    <Class class="Child"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelSub" modifier="None" strength="%s" strengthDirection="Forward">
+                <BaseClass>RelBase</BaseClass>
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                    <Class class="Parent"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                    <Class class="Child"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>
+        )xml";
+
+    Utf8String formattedSchemaXml;
+    formattedSchemaXml.Sprintf(schemaXml, baseStrength, derivedStrength);
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    SchemaReadStatus expectedOutcome = expectSuccess ? SchemaReadStatus::Success : SchemaReadStatus::InvalidECSchemaXml;
+    ASSERT_EQ(expectedOutcome, ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *context)) <<
+        "The schema has a base relationship with strength " << baseStrength << " and the derived relationship with strength " << derivedStrength << " which should " << (expectSuccess ? "successfully" : "fail") << " to deserialize.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipDeserializationTests, TestRelationshipStrength)
+    {
+    TestRelationshipStrengthConstraint("Referencing", "Referencing");
+    TestRelationshipStrengthConstraint("Referencing", "Holding", false);
+    TestRelationshipStrengthConstraint("Referencing", "Embedding", false);
+    TestRelationshipStrengthConstraint("Holding", "Referencing", false);
+    TestRelationshipStrengthConstraint("Holding", "Holding");
+    TestRelationshipStrengthConstraint("Holding", "Embedding", false);
+    TestRelationshipStrengthConstraint("Embedding", "Referencing", false);
+    TestRelationshipStrengthConstraint("Embedding", "Holding", false);
+    TestRelationshipStrengthConstraint("Embedding", "Embedding");
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

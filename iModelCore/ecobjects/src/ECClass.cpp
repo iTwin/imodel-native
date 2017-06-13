@@ -3821,6 +3821,12 @@ bool ECRelationshipClass::Verify (bool resolveIssues) const
     {
     bool isValid = true;
 
+    if (!ValidateStrengthConstraint(m_strength))
+        isValid = false;
+
+    if (!ValidateStrengthDirectionConstraint(m_strengthDirection))
+        isValid = false;
+
     ECRelationshipConstraintP source = &GetSource();
     if (!source->IsValid(resolveIssues))
         isValid = false;
