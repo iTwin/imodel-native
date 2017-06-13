@@ -32,11 +32,20 @@ public:
 //=====================================================================================
 struct ErrorClass
     {
+    static ErrorClass* s_error;
     MOCK_CONST_METHOD2(errorCallBack, void(Utf8String basicMessage, const RawServerResponse& rawResponse));
+
+    static void callBack(Utf8String basicMessage, const RealityPlatform::RawServerResponse& rawResponse)
+    {
+        s_error->errorCallBack(basicMessage, rawResponse);
+    }
 
     ErrorClass()
     {
-
+        if(s_error == nullptr)
+        {
+            s_error = this;
+        }
     }
     };
 

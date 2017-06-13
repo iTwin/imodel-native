@@ -347,7 +347,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootId)
     requestUT.SetMarker("SomeMarker");
 
     EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z&restype=container&comp=list&marker=SomeMarker");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -384,7 +384,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdFilter)
     requestUT.GetAzureRedirectionRequestUrl();
 
 	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z&restype=container&comp=list&prefix=SomeStuffs/OtherStuffs");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -551,7 +551,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDeleteBadRequest)
 
 	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -571,7 +571,7 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestBadRequest)
     RealityDataEnterpriseStat stat {};
 	s_realityDataService->Request(requestUT, stat, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -590,7 +590,7 @@ TEST_F(RealityDataServiceFixture, RealityDataByIdRequestBadRequest)
 
 	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -609,7 +609,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestBadRequest)
 
 	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -628,7 +628,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestBadReques
 
 	s_realityDataService->Request(requestUT,new BeFile() ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -647,7 +647,7 @@ TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestBadRequest)
 
 	s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -667,7 +667,7 @@ TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestBadRe
 	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
     EXPECT_TRUE(realityDataVector.empty());
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -687,7 +687,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdReque
 	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
     EXPECT_TRUE(realityDataVector.empty());
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -707,7 +707,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdPaged
 	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
     EXPECT_TRUE(realityDataVector.empty());
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -726,7 +726,7 @@ TEST_F(RealityDataServiceFixture, RealityDataChangeRequestBadRequest)
 
 	s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -745,7 +745,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipCreateRequestBadRequest
 
 	s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -764,7 +764,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteBadRequest)
 
 	s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -783,7 +783,7 @@ TEST_F(RealityDataServiceFixture, RealityDataCreateRequestBadRequest)
 
 	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -802,7 +802,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestBadRequest)
 
 	auto resultVector = s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -825,7 +825,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestLastPage)
 	auto resultVector = s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, RequestStatus::LASTPAGE);
     EXPECT_EQ(resultVector.size(), 2);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -872,7 +872,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestNotLastPage)
 	EXPECT_EQ(rawResponse.status, RequestStatus::OK);
     EXPECT_EQ(resultVector.size(), 1);
     EXPECT_EQ(resultVector[0]->GetName(), "Helsinki2");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -897,7 +897,7 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestGoodRequest)
 	s_realityDataService->Request(requestUT, stats, rawResponse);
 	EXPECT_EQ(rawResponse.status, RequestStatus::OK);
     EXPECT_EQ(stats.GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -965,7 +965,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdGoodRequest)
     EXPECT_EQ(vector[2].second, 5000);
     EXPECT_EQ(vector[3].first, L"json4.json");
     EXPECT_EQ(vector[3].second, 9000);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -988,7 +988,7 @@ TEST_F(RealityDataServiceFixture, RealityDataByIdRequestGoodRequest)
 
 	auto realityData = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(realityData->GetName(), "Helsinki");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1012,7 +1012,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestGoodRequest)
 
 	auto realityDatadocument = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(realityDatadocument->GetName(), "Production_Helsinki_3MX_ok.3mx");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1036,7 +1036,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodReque
     requestUT.SetAzureRedirectionPossible(false);
     
 	s_realityDataService->Request(requestUT, &file , rawResponse);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1097,7 +1097,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodReque
     // This request will call PerformRequest once to get the azure token
     // and will call PerformAzureRequest once with the information it got from the first result.
 	s_realityDataService->Request(requestUT, &file , rawResponse);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 
@@ -1121,7 +1121,7 @@ TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestGoodRequest)
    
 	auto realityDatafolder = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(realityDatafolder->GetName(), "Scene123");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 
@@ -1145,7 +1145,7 @@ TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestGoodR
 	auto vector = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(vector.size(), 2);
     EXPECT_EQ(rawResponse.status, ::LASTPAGE);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1169,7 +1169,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdR
 	auto vector = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(vector.size(), 2);
     EXPECT_EQ(vector[0]->GetRealityDataId(), "f4425509-55c4-4e03-932a-d67b87ace30f");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1202,7 +1202,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdP
     EXPECT_EQ(vector.size(), 1);
     EXPECT_EQ(vector[0]->GetRealityDataId(), "f4425509-55c4-4e03-932a-d67b87ace30f");
     EXPECT_EQ(rawResponse.status, ::OK);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1223,7 +1223,7 @@ TEST_F(RealityDataServiceFixture, RealityDataChangeRequestGoodRequest)
 	RawServerResponse rawResponse{};
    
 	s_realityDataService->Request(requestUT, rawResponse);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1245,7 +1245,7 @@ TEST_F(RealityDataServiceFixture, RealityDataCreateRequestGoodRequest)
    
 	auto response = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(response, R"({"changedInstance": "blabla"})");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1267,7 +1267,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipCreateRequestGoodReques
    
 	auto response = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(response, R"({"changedInstance": "blabla"})");
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1288,7 +1288,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteGoodRequest)
 	RawServerResponse rawResponse{};
    
 	s_realityDataService->Request(requestUT, rawResponse);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+    
 	}
 
 //=====================================================================================
@@ -1296,7 +1296,9 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteGoodRequest)
 //=====================================================================================
 TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdBadAzureToken)
 	{
-    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(5);
+    ErrorClass test{};
+    s_realityDataService->SetErrorCallback(ErrorClass::callBack);
+    EXPECT_CALL(test, errorCallBack(_, _)).Times(5);
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
 		response.status = ::OK;
@@ -1312,8 +1314,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdBadAzureToken)
 
 	auto vector = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(vector.size(), 0);
-	EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
-    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);    
 	}
 
 //=====================================================================================

@@ -14,6 +14,7 @@
 
 WString RealityModFrameworkTestsUtils::s_exePath = L"";
 
+ErrorClass* ErrorClass::s_error = nullptr;
 
 MockWSGRequest* MockWSGRequestFixture::s_mockWSGInstance = nullptr;
 
