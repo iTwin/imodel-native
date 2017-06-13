@@ -615,7 +615,8 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
 
     ForeignKeyConstraintCustomAttribute const& foreignKeyConstraintCA = ctx.GetFkConstraintCAFromCache(relClass.GetId());
 
-    if (relClass.HasBaseClasses())
+    const bool isRootClass = !relClass.HasBaseClasses();
+    if (!isRootClass)
         {
         BeAssert(!foreignKeyConstraintCA.IsValid() && "Should have been caught before because a nav prop cannot point to a rel subclass");
         if (linkTableRelationshipMapCA.IsValid())
@@ -624,8 +625,6 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
                                                           relClass.GetFullName());
             return ERROR;
             }
-
-        return SUCCESS;
         }
 
     if (linkTableRelationshipMapCA.IsValid() || (relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1 && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1) ||
@@ -665,6 +664,13 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
     Utf8String expectedNavPropName;
     while (BE_SQLITE_ROW == stmt->Step())
         {
+        if (!isRootClass)
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. A navigation property is defined on its %s constraint although it has a base class. Navigation properties may only be defined for root relationship classes.",
+                                                          relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+            return ERROR;
+            }
+
         ECClassId constraintClassId = stmt->GetValueId<ECClassId>(0);
         if (!actualConstraintClassIds.empty() && actualConstraintClassIds.back() == constraintClassId)
             {
@@ -830,6 +836,7 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
     ClassMap const* firstBaseClassMap = nullptr;
     if (hasBaseClasses)
         {
+        BeAssert(m_ecClass.GetBaseClasses().size() == 1 && "Only 1 base class allowed for rels. This should have been caught before");
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
@@ -870,12 +877,28 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
 
         if (firstBaseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
-            if (SUCCESS != EvaluateForeignKeyStrategy(ctx, *caCache, firstBaseClassMap))
+            if (m_mappingType->GetType() == RelationshipMappingType::Type::LinkTable)
+                {
+                Issues().Report("Failed to map ECRelationshipClass %s. It would be mapped as link table, but its base class %s is mapped as foreign key relationship. The mapping type must not change within an ECRelationshipClass hierarchy.",
+                                m_ecClass.GetFullName(), firstBaseClassMap->GetClass().GetFullName());
+
+                return ClassMappingStatus::Error;
+                }
+
+            if (SUCCESS != EvaluateForeignKeyStrategy(ctx, *caCache))
                 return ClassMappingStatus::Error;
             }
         else
             {
             BeAssert(firstBaseClassMap->GetType() == ClassMap::Type::RelationshipLinkTable);
+            if (m_mappingType->GetType() != RelationshipMappingType::Type::LinkTable)
+                {
+                Issues().Report("Failed to map ECRelationshipClass %s. It would be mapped as foreign key relationship, but its base class %s is mapped as link table relationship. The mapping type must not change within an ECRelationshipClass hierarchy.",
+                                m_ecClass.GetFullName(), firstBaseClassMap->GetClass().GetFullName());
+
+                return ClassMappingStatus::Error;
+                }
+
             if (SUCCESS != EvaluateLinkTableStrategy(ctx, *caCache, firstBaseClassMap))
                 return ClassMappingStatus::Error;
             }
@@ -909,7 +932,7 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
 
         }
 
-    return EvaluateForeignKeyStrategy(ctx, *caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
+    return EvaluateForeignKeyStrategy(ctx, *caCache) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
     }
 
 
@@ -922,8 +945,6 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(SchemaImportCon
 
     if (baseClassMap != nullptr)
         {
-        BeAssert(m_mappingType == nullptr);
-
         BeAssert(baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
         return EvaluateTablePerHierarchyMapStrategy(ctx, *baseClassMap, caCache);
         }
@@ -975,7 +996,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(SchemaImportCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                05 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportContext& ctx, ClassMappingCACache const& caCache, ClassMap const* baseClassMap)
+BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportContext& ctx, ClassMappingCACache const& caCache)
     {
     if (caCache.GetClassMap().IsValid())
         {
@@ -984,17 +1005,8 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportCo
         return ERROR;
         }
 
-    if (baseClassMap != nullptr)
-        {
-        BeAssert(m_mappingType == nullptr);
-        m_mapStrategyExtInfo = baseClassMap->GetMapStrategy();
-        return SUCCESS;
-        }
-
-    //root class
-    BeAssert(m_isRootClass && m_mappingType != nullptr);
-    const MapStrategy resolvedStrategy = m_mappingType->GetAs<ForeignKeyMappingType>().GetFkEnd() == ECRelationshipEnd_Source ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
-    m_mapStrategyExtInfo = MapStrategyExtendedInfo(resolvedStrategy);
+    const MapStrategy strategy = m_mappingType->GetAs<ForeignKeyMappingType>().GetFkEnd() == ECRelationshipEnd_Source ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
+    m_mapStrategyExtInfo = MapStrategyExtendedInfo(strategy);
     return SUCCESS;
     }
 

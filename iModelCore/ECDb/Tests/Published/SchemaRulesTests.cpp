@@ -64,13 +64,13 @@ TEST_F(SchemaRulesTestFixture, Casing)
                    <ECEntityClass typeName="TESTCLASS" >
                      <ECProperty propertyName="Property" typeName="string" />
                    </ECEntityClass>
-                   <ECEntityClass typeName=\"TESTClass\" >
+                   <ECEntityClass typeName="TESTClass" >
                      <ECProperty propertyName="Property" typeName="string" />
                    </ECEntityClass>
-                   <ECEntityClass typeName=\"Foo\" >
+                   <ECEntityClass typeName="Foo" >
                      <ECProperty propertyName="Property" typeName="string" />
                    </ECEntityClass>
-                   <ECEntityClass typeName=\"FOO\" >
+                   <ECEntityClass typeName="FOO" >
                      <ECProperty propertyName="Property" typeName="string" />
                      <ECProperty propertyName="PROPerty" typeName="string" />
                      <ECProperty propertyName="PROPERTY" typeName="string" />
@@ -287,6 +287,41 @@ TEST_F(SchemaRulesTestFixture, BaseClasses)
                       <ECProperty propertyName="SubProp1" typeName="string" />
                     </ECCustomAttributeClass>
                </ECSchema>)xml"))) << "Abstract CA class may not inherit concrete CA class";
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="RelBase1" modifier="Abstract">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="roleLabel">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="roleLabel">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>            
+                    <ECRelationshipClass typeName="RelBase2" modifier="Abstract">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="roleLabel">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="roleLabel">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>            
+                    <ECRelationshipClass typeName="Rel" modifier="Abstract">
+                        <BaseClass>RelBase1</BaseClass>
+                        <BaseClass>RelBase2</BaseClass>
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="roleLabel">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="roleLabel">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>            
+                </ECSchema>)xml"))) << "Multi-inheritance for relationships is not supported";
     }
 
 //---------------------------------------------------------------------------------------

@@ -126,6 +126,7 @@ END_ECDBUNITTESTS_NAMESPACE
 
 BEGIN_BENTLEY_NAMESPACE
 
+void PrintTo(BentleyStatus, std::ostream*);
 void PrintTo(BeInt64Id, std::ostream*);
 void PrintTo(DateTime const&, std::ostream*);
 
@@ -136,6 +137,12 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 void PrintTo(ECClassId, std::ostream*);
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+BEGIN_BENTLEY_SQLITE_NAMESPACE
+
+void PrintTo(DbResult, std::ostream*);
+
+END_BENTLEY_SQLITE_NAMESPACE
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

@@ -91,6 +91,7 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
         if (schema == nullptr)
             {
             BeAssert(false && "Failed to reload a schema");
+            LOG.errorv("Schema import failed. Failed to read imported schema %s from ECDb.", name.c_str());
             return ERROR;
             }
 
@@ -103,6 +104,7 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
         if (schema == nullptr)
             {
             BeAssert(false && "Failed to reload a schema");
+            LOG.errorv("Schema import failed. Failed to read imported schema %s from ECDb.", name.c_str());
             return ERROR;
             }
 
