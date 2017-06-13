@@ -92,6 +92,7 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 //-----------------------------------------------------------------------------------------
 #define BLR_REL_GeometricElementDrivesReferent                      "GeometricElementDrivesReferent"
 #define BLR_REL_ILinearlyLocatedAlongILinearElement                 "ILinearlyLocatedAlongILinearElement"
+#define BLR_REL_ILinearElementSourceProvidesILinearElements         "ILinearElementSourceProvidesILinearElements"
 
 
 //-----------------------------------------------------------------------------------------
