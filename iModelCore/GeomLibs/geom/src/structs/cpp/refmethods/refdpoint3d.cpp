@@ -2885,7 +2885,6 @@ bool DPoint2d::AlmostEqual (DPoint2d const & dataB) const
 bool DVec2d::AlmostEqual (DVec2d const & dataB) const
     {return almostEqual (x, y, dataB.x, dataB.y);}
 
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      01/2015
 +--------------------------------------------------------------------------------------*/
@@ -2907,6 +2906,7 @@ bool DPoint3d::AlmostEqual (bvector<DPoint3d> const &left, bvector<DPoint3d> con
             if (!left[i].AlmostEqual (right[i], tolerance))
                 return false;
         }
+    
     return true;
     }
 
@@ -2916,21 +2916,22 @@ bool DPoint3d::AlmostEqual (bvector<DPoint3d> const &left, bvector<DPoint3d> con
 bool DPoint3d::AlmostEqualXY (bvector<DPoint3d> const &left, bvector<DPoint3d> const &right, double tolerance)
     {
     size_t n = left.size ();
-    if (n == right.size ())
+    if (n != right.size ())
+        return false;
+
+    if (tolerance <= 0.0)
         {
-        if (tolerance <= 0.0)
-            {
-            for (size_t i = 0; i < n; i++)
-                if (!left[i].AlmostEqualXY (right[i]))
-                    return false;
-            }
-        else
-            {
-            for (size_t i = 0; i < n; i++)
-                if (!left[i].AlmostEqualXY (right[i], tolerance))
-                    return false;
-            }
+        for (size_t i = 0; i < n; i++)
+            if (!left[i].AlmostEqualXY (right[i]))
+                return false;
         }
+    else
+        {
+        for (size_t i = 0; i < n; i++)
+            if (!left[i].AlmostEqualXY (right[i], tolerance))
+                return false;
+        }
+    
     return true;
     }
 
