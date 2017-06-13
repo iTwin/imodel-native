@@ -116,6 +116,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, HelpTest)
 
     Utf8String commandString = "dev\n"
                         "n\n"
+                        "1\n"
                         "8\n"
                         "n\n"
                         "help\n"
@@ -163,6 +164,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, StatTest)
 
     Utf8String commandString = "dev\n"
         "n\n"
+        "1\n"
         "8\n"
         "n\n"
         "stat\n"
@@ -266,6 +268,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
 
     Utf8String commandString = "dev\n"
                                 "n\n"
+                                "1\n"
                                 "8\n"
                                 "y\n"
                                 "72524420-7d48-4f4e-8b0f-144e5fa0aa22\n"

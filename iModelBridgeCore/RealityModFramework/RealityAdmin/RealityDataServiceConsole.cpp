@@ -661,10 +661,14 @@ void RealityDataConsole::ConfigureServer()
         {
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(str.c_str()).Trim());
         }
-    else if (verifyCertificate)
-        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
-    else
-        RealityDataService::SetServerComponents(server, version, repo, schema);
+    else 
+        {
+        DisplayInfo("ProjectId not set\n", DisplayOption::Tip);
+        if (verifyCertificate)
+            RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
+        else
+            RealityDataService::SetServerComponents(server, version, repo, schema);
+        }
 
     DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     }
@@ -1274,7 +1278,9 @@ void RealityDataConsole::MassUnlink()
             WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
             }
         }
-
+    else
+        DisplayInfo("No ProjectId set; or ProjectId set incorrectly. Operation may not work correctly.\n", DisplayOption::Error);
+     
     DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
     }
 

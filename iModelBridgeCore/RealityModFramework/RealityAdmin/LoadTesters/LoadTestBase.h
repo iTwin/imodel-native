@@ -90,6 +90,7 @@ public:
     FullInfo                    m_correspondance;
     BeFile                      m_file;
     BeFileName                  m_fileName;
+    bool                        m_wrappedUp;
 
     int                         m_userId;
     Stats*                      m_stats;
@@ -97,10 +98,10 @@ public:
     REALITYDATAPLATFORM_EXPORT User();
     REALITYDATAPLATFORM_EXPORT User(int id, Stats* stats);
 
-    REALITYDATAPLATFORM_EXPORT virtual void DoNext(UserManager* owner);
-    REALITYDATAPLATFORM_EXPORT virtual void DoNextBody(UserManager* owner) = 0;
+    REALITYDATAPLATFORM_EXPORT virtual bool DoNext(UserManager* owner);
+    REALITYDATAPLATFORM_EXPORT virtual bool DoNextBody(UserManager* owner) = 0;
     REALITYDATAPLATFORM_EXPORT virtual void ValidatePrevious(int activeUsers) = 0;
-    REALITYDATAPLATFORM_EXPORT virtual void WrapUp(UserManager* owner) = 0;
+    REALITYDATAPLATFORM_EXPORT virtual bool WrapUp(UserManager* owner) = 0;
     };
 
 struct UserManager

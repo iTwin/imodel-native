@@ -182,7 +182,7 @@ RDSUser::RDSUser(int id, Stats* stats) : User(id, stats), m_handshake(AzureHands
 //* prepares next request, based on most recent action
 //* can be called blindly from outside
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void RDSUser::DoNextBody(UserManager* owner)
+bool RDSUser::DoNextBody(UserManager* owner)
     {
     m_currentOperation = static_cast<int>(rand() % OperationType::last);
 
@@ -287,7 +287,11 @@ void RDSUser::DoNextBody(UserManager* owner)
 
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_start);
     if(curl != nullptr)
+        {
         owner->SetupCurl(curl, this);
+        return false;
+        }
+    return true;
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -295,10 +299,13 @@ void RDSUser::DoNextBody(UserManager* owner)
 //* prepares next request, based on most recent action
 //* can be called blindly from outside
 //+---------------+---------------+---------------+---------------+---------------+------*/
-void RDSUser::WrapUp(UserManager* owner)
+bool RDSUser::WrapUp(UserManager* owner)
     {
     if (m_id.empty())
-        return;
+        {
+        m_wrappedUp = true;
+        return false;
+        }
 
     if (m_linked)
         {
@@ -307,18 +314,20 @@ void RDSUser::WrapUp(UserManager* owner)
         DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_start);
         if (curl1 != nullptr)
             owner->SetupCurl(curl1, this);
-        DoNextBody(owner);
+        else
+            return true;
+        return false;
         }
     
-
-
-
     m_currentOperation = OperationType::DELETE_REALITYDATA;
     CURL* curl2 = DeleteRealityData();
     
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_start);
     if (curl2 != nullptr)
         owner->SetupCurl(curl2, this);
+    else
+        return true;
+    return false;
     }
 
 CURL* RDSUser::ListRealityData()
