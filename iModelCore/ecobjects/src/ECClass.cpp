@@ -3858,7 +3858,7 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
                 {
                 LOG.errorv("Strength Constraint Violation: ECRelationshipClass '%s' has different Strength, %s, than its base class '%s', %s.",
-                            GetName().c_str(), ECXml::StrengthToString(value), relationshipBaseClass->GetName().c_str(), ECXml::StrengthToString(relationshipBaseClass->GetStrength()));
+                            GetFullName(), ECXml::StrengthToString(value), relationshipBaseClass->GetFullName(), ECXml::StrengthToString(relationshipBaseClass->GetStrength()));
                 return false;
                 }
             }
@@ -3880,7 +3880,7 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthDirectionConstraint(value))
                 {
                 LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different Strength Direction, %s, than it's base class '%s', %s.",
-                            GetName().c_str(), ECXml::DirectionToString(value), relationshipBaseClass->GetName().c_str(), ECXml::DirectionToString(relationshipBaseClass->GetStrengthDirection()));
+                            GetFullName(), ECXml::DirectionToString(value), relationshipBaseClass->GetFullName(), ECXml::DirectionToString(relationshipBaseClass->GetStrengthDirection()));
                 return false;
                 }
             }
