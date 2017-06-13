@@ -47,7 +47,7 @@ bool IScalableMeshProgress::AddListener(const IScalableMeshProgressListener& lis
 * @description
 * @bsimethod                                                  Richard.Bois   06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IScalableMeshProgress::UpdateListeners() const
+void IScalableMeshProgress::UpdateListeners()
     {
     return _UpdateListeners();
     }
@@ -60,6 +60,15 @@ IScalableMeshProgressPtr IScalableMeshProgress::Create(const ScalableMeshProcess
     {
     return new ScalableMeshProgress(processType, smPtr);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Jean-Philippe.Pons   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+IScalableMeshProgressPtr IScalableMeshProgress::Create()
+{
+    return new ScalableMeshProgress();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -230,7 +239,7 @@ bool ScalableMeshProgress::_AddListener(const IScalableMeshProgressListener& lis
 * @description
 * @bsimethod                                                  Richard.Bois   06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ScalableMeshProgress::_UpdateListeners() const
+void ScalableMeshProgress::_UpdateListeners()
     {
     m_listener->CheckContinueOnProgress(this);
     }

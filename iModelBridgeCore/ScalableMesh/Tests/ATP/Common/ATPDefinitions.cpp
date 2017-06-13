@@ -4761,15 +4761,15 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
             {
             struct ProgressListener : IScalableMeshProgressListener
                 {
-                virtual void CheckContinueOnProgress(const IScalableMeshProgress* progress) const override
+                virtual void CheckContinueOnProgress(IScalableMeshProgress* progress) const override
                     {
                     auto stepString = progress->GetProgressStep() == ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS ? "Saving index... " : "Saving data... ";
                     std::cout << std::setw(100) << "\r [" << std::this_thread::get_id()<< "] " << stepString << progress->GetProgress();
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-                    //if (progress->GetProgressStep() == ScalableMeshStep::STEP_CONVERT_3DTILES_DATA && progress->GetProgress() > 0.01)
+                    //if (progress->GetProgressStep() == ScalableMeshStep::STEP_CONVERT_3DTILES_DATA && progress->GetProgress() > 0.2)
                     //    {
                     //    progress->Cancel();
-                    //    std::cout << "\nCanceled [" << (ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS ? "STEP_GENERATE_3DTILES_HEADERS" : "STEP_CONVERT_3DTILES_DATA") << "]" << std::endl;
+                    //    std::cout << "\nCanceled [" << (progress->GetProgressStep() == ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS ? "STEP_GENERATE_3DTILES_HEADERS" : "STEP_CONVERT_3DTILES_DATA") << "]" << std::endl;
                     //    }
                     };
                 };

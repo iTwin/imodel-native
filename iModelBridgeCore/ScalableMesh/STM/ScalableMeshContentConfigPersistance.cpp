@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 22:19:31 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -160,25 +160,25 @@ bool ContentConfigSerializer::Deserialize(SourceDataSQLite&      sourceData,
     config.SetScalableMeshConfig(ScalableMeshConfig(sourceData.GetScalableMeshData()));
     WString gcsWKT = sourceData.GetGCS();
 
-    ISMStore::WktFlavor fileWktFlavor = ISMStore::WktFlavor::WktFlavor_Oracle9;
     if (!gcsWKT.empty())
+        {         
+        ISMStore::WktFlavor fileWktFlavor = ISMStore::WktFlavor::WktFlavor_Oracle9;    
         fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
 
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
-
-    if (!gcsWKT.empty())
-        {
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
+    
         bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
-        assert(result == true);
+        assert(result == true);        
+
+        GCS gcs(GCS::GetNull());
+        SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
+        gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
+
+        if (SMStatus::S_SUCCESS != gcsFromWKTStatus)
+            return false;
+        config.SetGCSConfig(GCSConfig(gcs, sourceData.GetFlags()));
         }
 
-    GCS gcs(GCS::GetNull());
-    SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
-    if (!gcsWKT.empty()) gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
-
-    if (SMStatus::S_SUCCESS != gcsFromWKTStatus)
-        return false;
-    config.SetGCSConfig(GCSConfig(gcs, sourceData.GetFlags()));
 
     const DataType& type = GetType(sourceData);
     config.SetTypeConfig(TypeConfig(type));

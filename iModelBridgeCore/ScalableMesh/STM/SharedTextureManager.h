@@ -89,6 +89,18 @@ struct SharedTextureManager
         std::lock_guard<std::mutex> lock(m_texMutex);
         m_texVideoMap.erase(texID);
         }
+
+    void RemoveAllPoolIdForTexture()
+        {
+        std::lock_guard<std::mutex> lock(m_texMutex);
+        m_texMap.clear();
+        }
+
+    void RemoveAllPoolIdForTextureVideo()
+        {
+        std::lock_guard<std::mutex> lock(m_texMutex);        
+        m_texVideoMap.clear();
+        }
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

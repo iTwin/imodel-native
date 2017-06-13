@@ -32,7 +32,8 @@ enum ScalableMeshStep
     STEP_GENERATE_3DTILES_HEADERS,
     STEP_DETECT_GROUND,
     STEP_GENERATE_TEXTURE,
-    STEP_QTY
+    STEP_QTY,
+    STEP_CREATE_FROM_3MX
     };
 
 enum ScalableMeshStepProcess
@@ -41,7 +42,8 @@ enum ScalableMeshStepProcess
     PROCESS_GENERATION,
     PROCESS_TEXTURING,
     PROCESS_DETECT_GROUND,
-    PROCESS_CONVERT_3DTILES
+    PROCESS_CONVERT_3DTILES,
+    PROCESS_CREATION_FROM_3MX
     };
 
 enum ScalableMeshProcessType
@@ -55,7 +57,7 @@ typedef RefCountedPtr<IScalableMeshProgress>            IScalableMeshProgressPtr
 struct IScalableMeshProgressListener
     {
     public:
-        virtual void CheckContinueOnProgress(const IScalableMeshProgress* progress) const {};
+        virtual void CheckContinueOnProgress(IScalableMeshProgress* progress) const {};
     };
 
 struct IScalableMeshProgress : public RefCountedBase
@@ -67,7 +69,7 @@ struct IScalableMeshProgress : public RefCountedBase
         virtual void _Cancel() = 0;
 
         virtual bool _AddListener(const IScalableMeshProgressListener& listener) = 0;
-        virtual void _UpdateListeners() const = 0;
+        virtual void _UpdateListeners() = 0;
         virtual std::atomic<ScalableMeshStep> const& _GetProgressStep() const = 0;
         virtual std::atomic<ScalableMeshStepProcess> const& _GetProgressStepProcess() const = 0;
         virtual int _GetTotalNumberOfSteps() const = 0;
@@ -89,10 +91,11 @@ struct IScalableMeshProgress : public RefCountedBase
     BENTLEY_SM_EXPORT void Cancel();
 
     BENTLEY_SM_EXPORT static IScalableMeshProgressPtr Create(const ScalableMeshProcessType& processType, IScalableMeshPtr smPtr);
+    BENTLEY_SM_EXPORT static IScalableMeshProgressPtr Create();
 
     BENTLEY_SM_EXPORT bool AddListener(const IScalableMeshProgressListener& listener);
 
-    BENTLEY_SM_EXPORT void UpdateListeners() const;
+    BENTLEY_SM_EXPORT void UpdateListeners();
 
     BENTLEY_SM_EXPORT std::atomic<ScalableMeshStep> const& GetProgressStep() const;
     BENTLEY_SM_EXPORT std::atomic<ScalableMeshStepProcess> const& GetProgressStepProcess() const;

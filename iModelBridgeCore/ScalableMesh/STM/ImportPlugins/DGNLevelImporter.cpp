@@ -877,9 +877,17 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
         {
-            SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+        DTMFeatureType linearType = DTMFeatureType::Breakline;
+
+        SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+                
+        if (sourceImportConf != nullptr)
+            { 
             ScalableMeshData data = sourceImportConf->GetReplacementSMData();
-        return new DGNLevelLinearExtractor(sourceBase, data.GetLinearFeatureType());
+            linearType = data.GetLinearFeatureType();
+            }
+        
+        return new DGNLevelLinearExtractor(sourceBase, linearType);
         }
     };
 
