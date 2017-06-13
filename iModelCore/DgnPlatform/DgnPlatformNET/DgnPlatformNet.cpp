@@ -4433,7 +4433,7 @@ public ref struct AdHocPropertyQuery
 {
 private:
     ECInstance^                 m_instance;
-    ECN::AdhocPropertyQuery*    m_query;
+    ECN::AdHocPropertyQuery*    m_query;
 
 public:
     AdHocPropertyQuery (ECInstance^ instance, System::String^ containerAccessString)

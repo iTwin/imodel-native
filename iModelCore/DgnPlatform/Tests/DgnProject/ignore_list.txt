@@ -8,6 +8,11 @@ IndirectLocksTest.*
 
 BackwardsCompatibilityTests.OpenDgndbInCurrent # only ran by testing team after build for Compatibility Testing.
 
+#Ignored only on Holdouts branch as it has breaking changes. 
+CompatibilityTests.ModifyBaseline
+ECInstancesCompatibility.ModifyPreservedBim
+ECInstancesCompatibility.UpdateInstances
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------

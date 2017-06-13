@@ -1303,7 +1303,7 @@ struct JsECInstance : RefCountedBaseWithCreate
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != m_instance->GetValueOrAdhoc(v, propertyName.c_str()))
+        if (ECN::ECObjectsStatus::Success != m_instance->GetValueOrAdHoc(v, propertyName.c_str()))
             return nullptr;
         return new JsECValue(v);
         }
@@ -1311,7 +1311,7 @@ struct JsECInstance : RefCountedBaseWithCreate
     void SetValue(Utf8StringCR propertyName, JsECValueP value) 
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && value);
-        m_instance->SetValueOrAdhoc(propertyName.c_str(), value->m_value);
+        m_instance->SetValueOrAdHoc(propertyName.c_str(), value->m_value);
         }
 
     STUB_OUT_SET_METHOD(Class,JsECClassP)
@@ -1322,12 +1322,12 @@ typedef JsECInstance* JsECInstanceP;
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsAdhocPropertyQuery : RefCountedBaseWithCreate
+struct JsAdHocPropertyQuery : RefCountedBaseWithCreate
     {
     JsECInstanceP m_host;
-    ECN::AdhocPropertyQuery m_query;
+    ECN::AdHocPropertyQuery m_query;
     
-    JsAdhocPropertyQuery(JsECInstanceP host, Utf8StringCR containerAccessString) : m_host(host), m_query(*host->m_instance, containerAccessString.empty()? "Parameters": containerAccessString.c_str()) {;}
+    JsAdHocPropertyQuery(JsECInstanceP host, Utf8StringCR containerAccessString) : m_host(host), m_query(*host->m_instance, containerAccessString.empty()? "Parameters": containerAccessString.c_str()) {;}
 
     JsECInstanceP      GetHost() const { return m_host; }
 

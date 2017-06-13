@@ -1701,6 +1701,13 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="PhysicalMaterial" modifier="Abstract" displayLabel="Physical Material">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="AnnotationTextStyle" modifier="Sealed" displayLabel="Annotation Text Style">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>

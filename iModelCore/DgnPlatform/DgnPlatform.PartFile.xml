@@ -28,6 +28,7 @@
             </Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Functional.ecschema.xml
+                ECSchemas/PhysicalMaterial.ecschema.xml
             </Files>
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
