@@ -178,6 +178,9 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
 DgnDbStatus Alignment::GenerateAprox3dGeom()
     {
     auto horizAlignmentCPtr = HorizontalAlignment::Get(GetDgnDb(), GetHorizontalId());
+    if (horizAlignmentCPtr.IsNull())
+        return DgnDbStatus::MissingId;
+
     auto& horizGeometryCR = horizAlignmentCPtr->GetGeometry();
     DPoint3d origin = { 0, 0, 0 };
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
