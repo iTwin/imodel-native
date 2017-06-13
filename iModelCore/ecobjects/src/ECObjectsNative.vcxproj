@@ -50,7 +50,6 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AdHocJsonContainer.cpp" />
     <ClCompile Include="CalculatedProperty.cpp" />
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
@@ -135,7 +134,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
-    <ClInclude Include="..\PublicApi\ECObjects\SchemaDiff.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaResourceKeyHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />

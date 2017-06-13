@@ -11,11 +11,10 @@
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
-using namespace BentleyApi::ECN;
+
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-
-using namespace std;
 
 Utf8Char s_schemaXml[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"

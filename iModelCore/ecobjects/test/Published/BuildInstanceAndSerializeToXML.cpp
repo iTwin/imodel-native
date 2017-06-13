@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/BuildInstanceAndSerializeToXML.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -14,10 +14,9 @@
 #include <ECObjects/ECValue.h>
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
-BEGIN_BENTLEY_ECN_TEST_NAMESPACE
+USING_NAMESPACE_BENTLEY_EC
 
-using namespace std;
-using namespace BentleyApi::ECN;
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct BasicTest : ECTestFixture {};
 

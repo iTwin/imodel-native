@@ -63,9 +63,6 @@
     <ClCompile Include="Published\CustomAttributeConversionsTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SchemaVersionConverstionTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ExtendedTypeTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -94,6 +91,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Published\MixinTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\KindOfQuantityTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaVersionConversionTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

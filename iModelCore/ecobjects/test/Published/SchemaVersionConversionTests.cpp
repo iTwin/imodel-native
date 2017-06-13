@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/Published/SchemaVersionConverstionTests.cpp $
+|     $Source: test/Published/SchemaVersionConversionTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include <Units/Units.h>
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-using namespace BentleyApi::ECN;
 
 struct SchemaVersionConversionTests : ECTestFixture { };
 

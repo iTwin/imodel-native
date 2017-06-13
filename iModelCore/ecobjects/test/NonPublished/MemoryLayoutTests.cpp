@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -16,10 +16,10 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 #include <Bentley/BeTimeUtilities.h>
-BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-using namespace BentleyApi::ECN;
-using namespace std;
+USING_NAMESPACE_BENTLEY_EC
+
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct NonPublishedMemoryLayoutTests : ECTestFixture
     {

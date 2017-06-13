@@ -67,6 +67,7 @@
     <ClCompile Include="Published\InstanceLabelTests.cpp" />
     <ClCompile Include="Published\InstanceSerializationTests.cpp" />
     <ClCompile Include="Published\InstanceTests.cpp" />
+    <ClCompile Include="Published\KindOfQuantityTests.cpp" />
     <ClCompile Include="Published\MacroTests.cpp" />
     <ClCompile Include="Published\MemoryLayoutTests.cpp" />
     <ClCompile Include="Published\MixinTests.cpp" />
@@ -75,7 +76,7 @@
     <ClCompile Include="Published\SchemaDeserializationTests.cpp" />
     <ClCompile Include="Published\SchemaElementIdTests.cpp" />
     <ClCompile Include="Published\SchemaValidationTests.cpp" />
-    <ClCompile Include="Published\SchemaVersionConverstionTests.cpp" />
+    <ClCompile Include="Published\SchemaVersionConversionTests.cpp" />
     <ClCompile Include="Published\StrictSchemaTests.cpp" />
     <ClCompile Include="Published\ValueValidationTests.cpp" />
     <ClCompile Include="Published\SchemaTests.cpp" />

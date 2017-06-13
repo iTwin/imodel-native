@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/NonPublishedSchemaTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -13,10 +13,9 @@
 #include <ECObjects/ECValue.h>
 #include <ECObjects/ECSchema.h>
 
-BEGIN_BENTLEY_ECN_TEST_NAMESPACE
+USING_NAMESPACE_BENTLEY_EC
 
-using namespace std;
-using namespace BentleyApi::ECN;
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct NonPublishedSchemaTest : ECTestFixture {};
 TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)

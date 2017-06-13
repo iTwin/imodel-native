@@ -12,7 +12,7 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 
-using namespace BentleyApi::ECN;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
