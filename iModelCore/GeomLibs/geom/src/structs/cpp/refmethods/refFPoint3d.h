@@ -2424,20 +2424,19 @@ bool FPoint3d::AlmostEqual (bvector<FPoint3d> const &left, bvector<FPoint3d> con
 bool FPoint3d::AlmostEqualXY (bvector<FPoint3d> const &left, bvector<FPoint3d> const &right, double tolerance)
     {
     size_t n = left.size ();
-    if (n == right.size ())
+    if (n != right.size ())
+        return false;
+    if (tolerance <= 0.0)
         {
-        if (tolerance <= 0.0)
-            {
-            for (size_t i = 0; i < n; i++)
-                if (!left[i].AlmostEqualXY (right[i]))
-                    return false;
-            }
-        else
-            {
-            for (size_t i = 0; i < n; i++)
-                if (!left[i].AlmostEqualXY (right[i], tolerance))
-                    return false;
-            }
+        for (size_t i = 0; i < n; i++)
+            if (!left[i].AlmostEqualXY (right[i]))
+                return false;
+        }
+    else
+        {
+        for (size_t i = 0; i < n; i++)
+            if (!left[i].AlmostEqualXY (right[i], tolerance))
+                return false;
         }
     return true;
     }
