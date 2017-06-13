@@ -1181,10 +1181,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             IDTMSourceCollection sources;
             DocumentEnv sourceEnv(L"");
 
-            SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
-            m_smSQLitePtr->LoadSources(*sourcesData);
+            SourcesDataSQLite sourcesData;
+            m_smSQLitePtr->LoadSources(sourcesData);
 
-            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, *sourcesData, sourceEnv);
+            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
             assert(success == true);
 
 
@@ -2725,8 +2725,14 @@ template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     {
-    //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
-    return false;
+    if (!m_smSQLitePtr.IsValid())
+        return false; 
+
+    SourcesDataSQLite sourcesData;
+    m_smSQLitePtr->LoadSources(sourcesData);
+
+    const bool InSync = sourcesData.GetLastModifiedTime() < sourcesData.GetLastSyncTime();
+    return InSync;
     }
 
 /*----------------------------------------------------------------------------+
@@ -2759,7 +2765,15 @@ template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d&
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_LastSynchronizationCheck(time_t& lastCheckTime) const
     {
+    if (!m_smSQLitePtr.IsValid())
         return false;
+
+    SourcesDataSQLite sourcesData;
+    m_smSQLitePtr->LoadSources(sourcesData);
+
+    lastCheckTime = sourcesData.GetLastModifiedCheckTime();
+
+    return true;
     }
 
 /*----------------------------------------------------------------------------+

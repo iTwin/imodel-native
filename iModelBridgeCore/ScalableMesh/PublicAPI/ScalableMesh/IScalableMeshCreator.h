@@ -77,7 +77,7 @@ public:
 
         //BENTLEY_SM_EXPORT bool                    AreAllSourcesReachable     () const;
 
-        BENTLEY_SM_EXPORT StatusInt               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false);
+        BENTLEY_SM_EXPORT StatusInt               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false, bool doPartialUpdate = false);
 
         BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP);
         BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider);

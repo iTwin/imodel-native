@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 11:02:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -91,7 +91,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
         virtual StatusInt                   Save() override;
         virtual StatusInt                   Load() override;
-        void                                SetupFileForCreation();// override;
+        void                                SetupFileForCreation(bool doPartialUpdate);// override;
         StatusInt                           SyncWithSources(bool restrictLevelForPropagation);
         StatusInt                           SaveSources(SMSQLiteFilePtr& smSQLiteFile);
 
@@ -106,7 +106,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
         StatusInt                           LoadSources(SMSQLiteFilePtr& smSQLiteFile);
 
-        virtual StatusInt                   CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation) override;
+        virtual StatusInt                   CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate) override;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

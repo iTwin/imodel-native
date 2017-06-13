@@ -1342,6 +1342,14 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
     BeAssert(m_database->IsTransactionActive());
     Savepoint s(*m_database, "sources");
     s.Begin();
+
+    CachedStatementPtr stmtClear;
+    //Savepoint insertTransaction(*m_database, "replace");
+    m_database->GetCachedStatement(stmtClear, "DELETE FROM SMSources");
+
+    DbResult statusClear = stmtClear->Step();
+    assert(statusClear == BE_SQLITE_DONE);
+
     std::vector<SourceDataSQLite> vecSourceDataSQLite = sourcesData.GetSourceDataSQLite();
 
     for (SourceDataSQLite& sourceData : vecSourceDataSQLite)
@@ -1474,10 +1482,10 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
 
     }
     
-    stmt->BindInt64(1, id);
-    stmt->BindInt64(2, sourcesData.GetLastModifiedCheckTime());
-    stmt->BindInt64(3, sourcesData.GetLastModifiedTime());
-    stmt->BindInt64(4, sourcesData.GetLastSyncTime());
+    stmt->BindInt64(1, id);    
+    stmt->BindInt64(2, sourcesData.GetLastModifiedTime());
+    stmt->BindInt64(3, sourcesData.GetLastSyncTime());
+    stmt->BindInt64(4, sourcesData.GetLastModifiedCheckTime());
 
     if (nRows != 0)
         stmt->BindInt64(5, id);
@@ -1588,14 +1596,16 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
 
     CachedStatementPtr stmt2;
     m_database->GetCachedStatement(stmt2, "SELECT LastModifiedTime, LastSyncTime, CheckTime"
-        " FROM SMMasterHeader WHERE MasterHEaderId=?");
+        " FROM SMMasterHeader WHERE MasterHeaderId=?");
     size_t id = 0;
     stmt2->BindInt64(1, id);
-    stmt2->Step();
-
-    sourcesData.SetLastModifiedCheckTime(stmt->GetValueInt64(0));
-    sourcesData.SetLastModifiedTime(stmt->GetValueInt64(1));
-    sourcesData.SetLastSyncTime(stmt->GetValueInt64(2));
+    DbResult result = stmt2->Step();
+    
+    assert(result == BE_SQLITE_ROW);
+        
+    sourcesData.SetLastModifiedTime(stmt2->GetValueInt64(0));
+    sourcesData.SetLastSyncTime(stmt2->GetValueInt64(1));
+    sourcesData.SetLastModifiedCheckTime(stmt2->GetValueInt64(2));
 
     return true;
 }

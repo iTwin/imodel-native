@@ -201,9 +201,9 @@ IScalableMeshCreator::~IScalableMeshCreator ()
     }
   
 
-StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation)
+StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
-    return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation);
+    return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation, doPartialUpdate);
     }
 
 const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& IScalableMeshCreator::GetBaseGCS () const
@@ -558,7 +558,7 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
     }
 
 
-int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
+int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {    
     int status = BSIERROR;
     return status;
