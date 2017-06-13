@@ -474,8 +474,6 @@ void UserManager::Repopulate()
 
     User* user;
 
-    s_wrapUp = false;
-
     while (s_inactiveUsers.size() > 0)
         {
         user = s_inactiveUsers.front();
@@ -483,8 +481,16 @@ void UserManager::Repopulate()
         
         if (user->DoNext(this))
             s_inactiveUsers.push(user);
-        if (!user->m_wrappedUp)
+        }
+    
+    s_wrapUp = false;
+    for (User* rdsUser : users)
+        {
+        if (!rdsUser->m_wrappedUp)
+            {
             s_wrapUp = true;
+            break;
+            }
         }
     }
 
