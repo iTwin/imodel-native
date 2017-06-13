@@ -580,3 +580,7 @@ SchemaVersionTestFixture.IncompatibleUpgrade
     # 2017-06-05 14:25:52,429 ERROR [0x0000ccb8] DgnCore - Missing Handler [AnotherTestElement]
     # 
     # [  FAILED  ] SchemaVersionTestFixture.IncompatibleUpgrade (5968 ms)
+
+# !!!! Only ignore on bim0200holdouts !!!!
+# Shaun: This test starts with a baseline copy from a previous version and then tries to update it.  Compatibility tests like this are not expected to pass on “holdouts”…
+ECInstancesCompatibility.UpdateInstances
