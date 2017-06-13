@@ -894,14 +894,6 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
         else
             {
             BeAssert(firstBaseClassMap->GetType() == ClassMap::Type::RelationshipLinkTable);
-            if (m_mappingType->GetType() != RelationshipMappingType::Type::LinkTable)
-                {
-                Issues().Report("Failed to map ECRelationshipClass %s. It would be mapped as foreign key relationship, but its base class %s is mapped as link table relationship. The mapping type must not change within an ECRelationshipClass hierarchy.",
-                                m_ecClass.GetFullName(), firstBaseClassMap->GetClass().GetFullName());
-
-                return ClassMappingStatus::Error;
-                }
-
             if (SUCCESS != EvaluateLinkTableStrategy(ctx, *caCache, firstBaseClassMap))
                 return ClassMappingStatus::Error;
             }
