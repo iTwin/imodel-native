@@ -126,7 +126,7 @@
             <Class class="PathwayElement"/>
         </Source>
         <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N elements">
-            <Class class="bis:Element"/>
+            <Class class="bis:PhysicalElement"/>
         </Target>
     </ECRelationshipClass>
     <!-- END TravelwaySegmentElement Class Hierarchy -->
