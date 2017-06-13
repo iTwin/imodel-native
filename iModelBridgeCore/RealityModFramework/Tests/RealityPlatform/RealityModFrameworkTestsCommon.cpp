@@ -15,7 +15,7 @@
 WString RealityModFrameworkTestsUtils::s_exePath = L"";
 
 
-testing::NiceMock<MockWSGRequest>* MockWSGRequestFixture::s_mockWSGInstance = nullptr;
+MockWSGRequest* MockWSGRequestFixture::s_mockWSGInstance = nullptr;
 
 ErrorClass* MockRealityDataServiceFixture::s_errorClass = nullptr;
 RealityDataService* MockRealityDataServiceFixture::s_realityDataService = nullptr;

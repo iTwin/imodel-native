@@ -62,11 +62,11 @@ struct MockWSGRequest : WSGRequest
 class MockWSGRequestFixture : public testing::Test
     {
 public:
-    static testing::NiceMock<MockWSGRequest>* s_mockWSGInstance;
+    static MockWSGRequest* s_mockWSGInstance;
 
     static void SetUpTestCase()
         {
-        s_mockWSGInstance = new testing::NiceMock<MockWSGRequest>();
+        s_mockWSGInstance = new MockWSGRequest();
         }
     static void TearDownTestCase()
         {
@@ -87,7 +87,7 @@ public:
 
     static void SetUpTestCase()
         {
-        s_mockWSGInstance = new testing::NiceMock<MockWSGRequest>();
+        s_mockWSGInstance = new MockWSGRequest();
         s_realityDataService = new RealityDataService();
         s_realityDataService->SetServerComponents("myserver.com", "9.9", "myRepo", "mySchema", "zz:\\mycertificate.pfx", "myProjectID");
         s_errorClass = new ErrorClass();
@@ -125,7 +125,7 @@ public:
 
     static void SetUpTestCase()
         {
-        s_mockWSGInstance = new testing::NiceMock<MockWSGRequest>();
+        s_mockWSGInstance = new MockWSGRequest();
         s_geoCoordinateService = new GeoCoordinationService();
         s_geoCoordinateService->SetServerComponents("example.com", "99", "Dummy-Server", "VirtualModeling");
         s_errorClass = new ErrorClass();

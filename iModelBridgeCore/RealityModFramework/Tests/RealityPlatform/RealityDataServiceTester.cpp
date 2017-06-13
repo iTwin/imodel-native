@@ -21,6 +21,7 @@ using ::testing::Invoke;
 using ::testing::StrEq;
 using ::testing::HasSubstr;
 using ::testing::Matcher;
+using ::testing::Mock;
 
 //=====================================================================================
 //! @bsiclass                                   Remi.Charbonneau              05/2017
@@ -66,55 +67,10 @@ TEST_F(RealityDataServiceFixture, RealityDataUrl)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              05/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequest)
-	{
-	RealityDataEnterpriseStatRequest dataRequest("myUltimateID");
-	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/EnterpriseStat/myUltimateID");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataByIdRequest)
-	{
-	RealityDataByIdRequest dataRequest("myIdentifierID");
-	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/myIdentifierID");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              05/2017
-//=====================================================================================
 TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdRequest)
 	{
 	RealityDataProjectRelationshipByProjectIdRequest dataRequest("myIdentifierID");
 	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=ProjectId+eq+'myIdentifierID'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdRequest)
-	{
-	RealityDataProjectRelationshipByRealityDataIdRequest dataRequest("myIdentifierID");
-	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RealityDataId+eq+'myIdentifierID'");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequest)
-	{
-	RealityDataFolderByIdRequest dataRequest("myIdentifierID");
-	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Folder/myIdentifierID");
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequest)
-	{
-	RealityDataDocumentByIdRequest dataRequest("myIdentifierID");
-	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/myIdentifierID");
 	}
 
 //=====================================================================================
@@ -214,56 +170,6 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestBasic)
 	EXPECT_FALSE(documentUT.IsAzureRedirectionPossible());
 
 	EXPECT_FALSE(documentUT.IsAzureBlobRedirected());
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestHttpRequestWithoutRedirect)
-	{
-	auto documentUT = RealityDataDocumentContentByIdRequest("MyIdentifier");
-	auto requestString = documentUT.GetHttpRequestString();
-
-	EXPECT_STREQ(requestString.c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/MyIdentifier/$file");
-
-	}
-
-//=====================================================================================
-//! @bsimethod                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestHttpRequestWithRedirect)
-	{
-
-	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-		{
-		response.status = ::OK;
-		response.curlCode = CURLE_OK;
-		response.responseCode = 200;
-		response.body = R"(
-			{
-			"instances": 
-				[
-					{
-						"properties": 
-							{
-								"Name": "myName",
-								"Url": "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z"
-							}
-					}
-				]
-			}
-	
-			)";
-		}));
-
-
-	auto documentUT = RealityDataDocumentContentByIdRequest("MyIdentifier/RootDocument.s3mx");
-	documentUT.GetAzureRedirectionRequestUrl();
-	auto requestString = documentUT.GetHttpRequestString();
-
-
-	EXPECT_TRUE(documentUT.IsAzureBlobRedirected());
-	EXPECT_STREQ(requestString.c_str(), "https://redirected.server.com//MyIdentifier/RootDocument.s3mx?myToken&se=2013-03-01T16%3A20%3A00Z");
 	}
 
 //=====================================================================================
@@ -441,6 +347,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootId)
     requestUT.SetMarker("SomeMarker");
 
     EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z&restype=container&comp=list&marker=SomeMarker");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -477,6 +384,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdFilter)
     requestUT.GetAzureRedirectionRequestUrl();
 
 	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z&restype=container&comp=list&prefix=SomeStuffs/OtherStuffs");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -595,29 +503,30 @@ TEST_F(RealityDataServiceFixture, RealityDataDelete)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteGoodRequest)
+TEST_F(RealityDataServiceFixture, RealityDataDeleteGoodRequest)
 	{
-		ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-		{
-		response.status = ::OK;
-		response.curlCode = CURLE_OK;
-		response.responseCode = 200;
-		response.body = R"(
-			{
-			"changedInstance": 
-				[
-					{
-						"properties": 
-							{
-								"Name": "myName",
-								"Url": "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z"
-							}
-					}
-				]
-			}
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(1).RetiresOnSaturation();
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+	    {
+	    response.status = ::OK;
+	    response.curlCode = CURLE_OK;
+	    response.responseCode = 200;
+	    response.body = R"(
+		    {
+		    "changedInstance": 
+			    [
+				    {
+					    "properties": 
+						    {
+							    "Name": "myName",
+							    "Url": "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z"
+						    }
+				    }
+			    ]
+		    }
 	
-			)";
-		}));
+		    )";
+	    }));
 
 	RealityDataDelete requestUT("RealityDataID");
 	RawServerResponse rawResponse{};
@@ -642,6 +551,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDeleteBadRequest)
 
 	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -661,6 +571,7 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestBadRequest)
     RealityDataEnterpriseStat stat {};
 	s_realityDataService->Request(requestUT, stat, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -679,6 +590,7 @@ TEST_F(RealityDataServiceFixture, RealityDataByIdRequestBadRequest)
 
 	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -697,6 +609,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestBadRequest)
 
 	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -715,6 +628,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestBadReques
 
 	s_realityDataService->Request(requestUT,new BeFile() ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -733,6 +647,7 @@ TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestBadRequest)
 
 	s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -752,6 +667,7 @@ TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestBadRe
 	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
     EXPECT_TRUE(realityDataVector.empty());
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -771,6 +687,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdReque
 	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
     EXPECT_TRUE(realityDataVector.empty());
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -790,6 +707,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByProjectIdPaged
 	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
     EXPECT_TRUE(realityDataVector.empty());
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -808,6 +726,7 @@ TEST_F(RealityDataServiceFixture, RealityDataChangeRequestBadRequest)
 
 	s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -826,6 +745,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipCreateRequestBadRequest
 
 	s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -844,6 +764,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteBadRequest)
 
 	s_realityDataService->Request(requestUT ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -862,6 +783,7 @@ TEST_F(RealityDataServiceFixture, RealityDataCreateRequestBadRequest)
 
 	s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -880,6 +802,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestBadRequest)
 
 	auto resultVector = s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -902,6 +825,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestLastPage)
 	auto resultVector = s_realityDataService->Request(requestUT, rawResponse);
 	EXPECT_EQ(rawResponse.status, RequestStatus::LASTPAGE);
     EXPECT_EQ(resultVector.size(), 2);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -948,7 +872,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestNotLastPage)
 	EXPECT_EQ(rawResponse.status, RequestStatus::OK);
     EXPECT_EQ(resultVector.size(), 1);
     EXPECT_EQ(resultVector[0]->GetName(), "Helsinki2");
-    
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -959,6 +883,7 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestGoodRequest)
 	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataEnterpriseStatRequest failed with response"), _)).Times(0);
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/EnterpriseStat/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
@@ -971,23 +896,15 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestGoodRequest)
 
 	s_realityDataService->Request(requestUT, stats, rawResponse);
 	EXPECT_EQ(rawResponse.status, RequestStatus::OK);
-    EXPECT_EQ(stats.GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    EXPECT_EQ(stats.GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
-
-void AzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-    {
-    response.status = ::OK;
-    response.responseCode = 200;
-    response.curlCode = CURLE_OK;
-    response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\RealityDataPackageSample.xml");
-    }
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
 TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdGoodRequest)
 	{
-	    testing::Mock::VerifyAndClearExpectations(s_mockWSGInstance);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
 		response.status = ::OK;
@@ -1015,24 +932,388 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdGoodRequest)
 	
 			    )";
             }
-        else
-            {
-            // second request is for the data we need
-            response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\RealityDataPackageSample.xml");
-            }  
 		}));
 
-    ON_CALL(*s_mockWSGInstance, PerformAzureRequest(Matcher<const WSGURL&>(_),
-                                                    Matcher<RawServerResponse&>(_),
-                                                    Matcher<bool>(_),
-                                                    Matcher<BeFile*>(_),
-                                                    Matcher<bool>(_))).WillByDefault(Invoke(AzureRequest));
+    ON_CALL(*s_mockWSGInstance, PerformAzureRequest(_,_,_,_,_)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        auto requestString = wsgRequest.GetHttpRequestString();
+        if(requestString.Contains("marker=Page2"))
+            {
+            response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\ListAllServerResponseSecondPage.xml");    
+            }
+        else
+            {
+            response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\ListAllServerResponseFirstPage.xml");        
+            }
+        
+        }));
 
 	AllRealityDataByRootId requestUT("RootID");
 	RawServerResponse rawResponse{};
 
 	auto vector = s_realityDataService->Request(requestUT, rawResponse);
+    ASSERT_EQ(vector.size(), 4);
 	EXPECT_EQ(rawResponse.status, RequestStatus::OK);
+    EXPECT_EQ(vector[0].first, L"Folder1/File1.txt");
+    EXPECT_EQ(vector[0].second, 0);
+    EXPECT_EQ(vector[1].first, L"json.json");
+    EXPECT_EQ(vector[1].second, 1024);
+    EXPECT_EQ(vector[2].first, L"Folder1/File3.txt");
+    EXPECT_EQ(vector[2].second, 5000);
+    EXPECT_EQ(vector[3].first, L"json4.json");
+    EXPECT_EQ(vector[3].second, 9000);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataByIdRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a5");
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+		response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");  
+		}));
+
+	RealityDataByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a5");
+	RawServerResponse rawResponse{};
+
+	auto realityData = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(realityData->GetName(), "Helsinki");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        
+        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\RealityDataDocument.json");  
+		}));
+
+	RealityDataDocumentByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a7");
+	RawServerResponse rawResponse{};
+
+	auto realityDatadocument = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(realityDatadocument->GetName(), "Production_Helsinki_3MX_ok.3mx");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodRequestWithoutRedirect)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a8/$file");
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+		}));
+
+	RealityDataDocumentContentByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a8");
+	RawServerResponse rawResponse{};
+
+    BeFile file {};
+    requestUT.SetAzureRedirectionPossible(false);
+    
+	s_realityDataService->Request(requestUT, &file , rawResponse);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodRequestWithRedirect)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = R"(
+			{
+			"instances": 
+				[
+				{
+				"properties": 
+					{
+					"Name": "myName",
+					"Url": "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z"
+					}
+				}
+				]
+			}
+	
+			)";
+		}));
+
+    EXPECT_CALL(*s_mockWSGInstance, PerformAzureRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://redirected.server.com//72adad30-c07c-465d-a1fe-2f2dfac950a9/RootDocument.s3mx?myToken&se=2013-03-01T16%3A20%3A00Z");
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = R"(
+			{
+			"instances": 
+				[
+				{
+				"properties": 
+					{
+					"Name": "myName",
+					"Url": "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z"
+					}
+				}
+				]
+			}	
+			)";
+		}));
+
+	RealityDataDocumentContentByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a9/RootDocument.s3mx");
+	RawServerResponse rawResponse{};
+
+    BeFile file {};
+   
+    // This request will call PerformRequest once to get the azure token
+    // and will call PerformAzureRequest once with the information it got from the first result.
+	s_realityDataService->Request(requestUT, &file , rawResponse);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Folder/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\RealityDataFolder.json");  
+		}));
+
+	RealityDataFolderByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a7");
+	RawServerResponse rawResponse{};
+   
+	auto realityDatafolder = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(realityDatafolder->GetName(), "Scene123");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\MultipleRealityData.json");  
+		}));
+
+	RealityDataListByOrganizationPagedRequest requestUT("RootID");
+	RawServerResponse rawResponse{};
+   
+	auto vector = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(vector.size(), 2);
+    EXPECT_EQ(rawResponse.status, ::LASTPAGE);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RealityDataId+eq+'72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a6'");
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\RealityDataRelationship.json");  
+		}));
+
+	RealityDataProjectRelationshipByRealityDataIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a6");
+	RawServerResponse rawResponse{};
+   
+	auto vector = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(vector.size(), 2);
+    EXPECT_EQ(vector[0]->GetRealityDataId(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdPagedRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(2).WillRepeatedly(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\SingleRealityDataRelationship.json");  
+		}));
+
+	RealityDataProjectRelationshipByRealityDataIdPagedRequest requestUT("RootID");
+	RawServerResponse rawResponse{};
+   
+	auto vector = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(vector.size(), 1);
+    EXPECT_EQ(vector[0]->GetRealityDataId(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    EXPECT_EQ(rawResponse.status, ::LASTPAGE);
+    
+    requestUT.SetPageSize(1);
+    requestUT.SetStartIndex(0);
+
+    vector.clear();
+    vector = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(vector.size(), 1);
+    EXPECT_EQ(vector[0]->GetRealityDataId(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    EXPECT_EQ(rawResponse.status, ::OK);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataChangeRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = R"({"changedInstance": "blabla"})";  
+		}));
+
+	RealityDataChangeRequest requestUT("RootID","SomeProperties");
+	RawServerResponse rawResponse{};
+   
+	s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataCreateRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = R"({"changedInstance": "blabla"})";  
+		}));
+
+	RealityDataCreateRequest requestUT("RootID","MoreProperties");
+	RawServerResponse rawResponse{};
+   
+	auto response = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(response, R"({"changedInstance": "blabla"})");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataRelationshipCreateRequestGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = R"({"changedInstance": "blabla"})";  
+		}));
+
+	RealityDataRelationshipCreateRequest requestUT("RootID","MoreProperties");
+	RawServerResponse rawResponse{};
+   
+	auto response = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(response, R"({"changedInstance": "blabla"})");
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteGoodRequest)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataRelationshipDelete failed with response"), _)).Times(0);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = R"({"changedInstance": "blabla"})";  
+		}));
+
+	RealityDataRelationshipDelete requestUT("RootID","ProjectID");
+	RawServerResponse rawResponse{};
+   
+	s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdBadAzureToken)
+	{
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(5);
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        
+        auto requestString = wsgRequest.GetHttpRequestString();
+		response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\ListAllServerResponseSecondPage.xml");  
+		}));
+
+	AllRealityDataByRootId requestUT("RootID");
+	RawServerResponse rawResponse{};
+
+	auto vector = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(vector.size(), 0);
+	EXPECT_EQ(rawResponse.status, RequestStatus::BADREQ);
+    EXPECT_TRUE(Mock::VerifyAndClearExpectations(s_mockWSGInstance));
 	}
 
 //=====================================================================================
@@ -1338,6 +1619,18 @@ TEST_F(RealityDataServiceBadComponentsFixture, RealityDataCreateRequestBadCompon
 TEST_F(RealityDataServiceBadComponentsFixture, RealityDataPagedRequestBadComponents)
 	{
 	RealityDataPagedRequest requestUT{};
+	RawServerResponse rawResponse{};
+
+	s_realityDataService->Request(requestUT ,rawResponse);
+	EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+	}
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, AllRealityDataByRootIdBadComponents)
+	{
+	AllRealityDataByRootId requestUT("MyIdentifier");
 	RawServerResponse rawResponse{};
 
 	s_realityDataService->Request(requestUT ,rawResponse);
