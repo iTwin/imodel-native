@@ -21,7 +21,8 @@ FT_Library DgnPlatformLib::Host::FontAdmin::_GetFreeTypeLibrary()
     if (!lock.IsSet())
         {
         FT_Error loadStatus = FT_Init_FreeType(&m_ftLibrary);
-        BeAssert(nullptr != m_ftLibrary && FT_Err_Ok == loadStatus);
+        if (nullptr == m_ftLibrary || FT_Err_Ok != loadStatus)
+            { BeAssert(false); }
         }
 
     return m_ftLibrary;

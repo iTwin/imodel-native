@@ -2656,9 +2656,6 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
     if (m_surfacesOnly)
         return true;
 
-    static BeMutex s_tempFontMutex;
-    BeMutexHolder lock(s_tempFontMutex);        // Temporary - until we resolve the font threading issues.
-
     TextStringPtr   clone = textString.Clone();
     Transform       localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
     DRange2d        range2d   = clone->GetRange();
