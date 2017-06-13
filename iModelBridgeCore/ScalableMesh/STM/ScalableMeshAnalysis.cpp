@@ -229,12 +229,14 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     if (numProcs <= 0)
         numProcs = 1;
 
-    const double progressStep = 1.0 / m_xSize;
+    const double progressStep = 1.0 / (m_xSize+1);
     double progress = 0.0; // progress value between 0 and 1
     bool userAborted(false);
 
     const int nSeconds = 0.5; // check progress every nSeconds
     clock_t timer = clock();
+
+    std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
 
 #pragma omp parallel num_threads(numProcs)
     {
@@ -242,8 +244,9 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 #pragma omp for
     for (int i = 0; i < m_xSize; i++)
         {
-        bool master = (omp_get_thread_num() == 0);
-        if (master)
+        std::thread::id t_id = std::this_thread::get_id(); // Get the id of the current Thread
+
+        if (main_id == t_id)
             {
             float secs = ((float)(clock() - timer)) / CLOCKS_PER_SEC;
             if (secs > nSeconds)
@@ -259,9 +262,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
-
-#pragma omp critical
-        progress += progressStep;
 
         for (int j = 0; j < m_ySize; j++)
             {
@@ -318,6 +318,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                     }
                 }
             }
+#pragma omp critical
+        progress += progressStep;
         }
     }
 
@@ -371,6 +373,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         return DTMStatusInt::DTM_ERROR; // invalid region
     if (diffMesh == nullptr)
         return DTMStatusInt::DTM_ERROR; // invalid mesh
+    if (diffMesh== m_scmPtr)
+        return DTMStatusInt::DTM_ERROR; // same meshes
 
    SMProgressReport report(pProgressListener);
     if (!report.CheckContinueOnProgress())
@@ -427,6 +431,9 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     bool *intersected = new bool[m_xSize*m_ySize];
     memset(intersected, 0, sizeof(bool)*m_xSize*m_ySize);
 
+    DPoint2d *interPoints = new DPoint2d[m_xSize*m_ySize]; // store 
+    memset(interPoints, 0, sizeof(DPoint2d)*m_xSize*m_ySize);
+
     double tolerance = std::numeric_limits<double>::min(); // intersection tolerance - SNU TODO
     double zsource = range.low.z - tolerance; // be sure to start under the range
     double m_xStep = grid.m_resolution;
@@ -439,18 +446,21 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         numProcs = 1;
 
     double progress = 0.0;
-    double progressStep = 1.0 / m_xSize;
+    double progressStep = 1.0 / (m_xSize+1);
     bool userAborted(false);
     const int nSeconds = 0.5; // check progress every nSeconds
     clock_t timer = clock();
+
+    std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
 
 #pragma omp parallel num_threads(numProcs) 
     {
 #pragma omp parallel for
     for (int i = 0; i < m_xSize; i++)
         {
-        bool master = (omp_get_thread_num() == 0);
-        if (master)
+        std::thread::id t_id = std::this_thread::get_id(); // Get the id of the current Thread
+
+        if (main_id == t_id)
             {
             float secs = ((float)(clock() - timer)) / CLOCKS_PER_SEC;
             if (secs > nSeconds)
@@ -466,9 +476,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
         double x = range.low.x + m_xStep * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
-
-#pragma omp critical
-        progress += progressStep;
 
         for (int j = 0; j < m_ySize; j++)
             {
@@ -490,20 +497,37 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                     bret = draping2->IntersectRay(interP2, grid.m_direction, sourceW); // second SM is supposed to be in same GCS
                     if (bret)
                         {
-                        // Add one segment only for the diff case
-                        grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interP1.z);
-                        grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interP2.z);
+                        interPoints[i*m_ySize + j] = DPoint2d::From(interP1.z, interP2.z);
                         intersected[i*m_ySize + j] = true;
                         }
                     }
                 }
             }
+#pragma omp critical
+            {
+            progress += progressStep;
+            }
         }
     }
+
+    // Fill the grid values - non parallel
+    for (int i = 0; i < m_xSize; i++)
+        {
+        for (int j = 0; j < m_ySize; j++)
+            {
+            if (intersected[i*m_ySize + j])
+                {
+                grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interPoints[i*m_ySize + j].x);
+                grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interPoints[i*m_ySize + j].y);
+                }
+            }
+        }
+
 
     if (userAborted)
         {
         delete[] intersected;
+        delete[] interPoints;
         return DTMStatusInt::DTM_ERROR; //User abort
         }
 
@@ -539,6 +563,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
 
     delete[] intersected;
+    delete[] interPoints;
 
     if (!userAborted) // update only if not aborted
         report.m_workDone = 1.0;
