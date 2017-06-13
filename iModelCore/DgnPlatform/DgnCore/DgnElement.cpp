@@ -439,7 +439,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP de
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnElementId parentId = parentSubject.GetElementId();
-    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
+    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsSubjects);
 
     if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || name.empty())
         return nullptr;

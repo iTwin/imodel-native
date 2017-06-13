@@ -135,8 +135,8 @@
 #define BIS_REL_PhysicalElementAssemblesElements    "PhysicalElementAssemblesElements"
 #define BIS_REL_PhysicalElementIsOfType             "PhysicalElementIsOfType"
 #define BIS_REL_PhysicalTypeHasTemplateRecipe       "PhysicalTypeHasTemplateRecipe"
-#define BIS_REL_RenderMaterialOwnsChildMaterials    "RenderMaterialOwnsChildMaterials"
-#define BIS_REL_SubjectOwnsChildSubjects            "SubjectOwnsChildSubjects"
+#define BIS_REL_RenderMaterialOwnsRenderMaterials   "RenderMaterialOwnsRenderMaterials"
+#define BIS_REL_SubjectOwnsSubjects                 "SubjectOwnsSubjects"
 #define BIS_REL_SubjectOwnsPartitionElements        "SubjectOwnsPartitionElements"
 
 //-----------------------------------------------------------------------------------------

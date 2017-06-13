@@ -622,7 +622,7 @@
             <Class class="InformationPartitionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SubjectOwnsChildSubjects" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="SubjectOwnsSubjects" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
             <Class class="Subject"/>
@@ -1691,7 +1691,7 @@
         <ECProperty propertyName="PaletteName" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RenderMaterialOwnsChildMaterials" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="RenderMaterialOwnsRenderMaterials" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
             <Class class="RenderMaterial"/>
