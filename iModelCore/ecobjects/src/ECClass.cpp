@@ -2334,6 +2334,10 @@ bool ECEntityClass::Verify() const
         return true;
     
     bool thisIsMixin = IsMixin();
+
+    if (thisIsMixin && GetBaseClasses().size() > 1)
+        return false;
+
     for(ECClassCP baseClass : GetBaseClasses())
         {
         ECEntityClassCP baseAsEntity = baseClass->GetEntityClassCP();
@@ -2347,8 +2351,11 @@ bool ECEntityClass::Verify() const
 
 ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
-    //if (validate)
-    //    {
+    if (validate)
+        {
+        if (IsMixin() && GetBaseClasses().size() == 1)
+            return ECObjectsStatus::BaseClassUnacceptable;
+
     //    ECEntityClassCP baseAsEntity = baseClass.GetEntityClassCP();
     //    if (nullptr != baseAsEntity)
     //        {
@@ -2356,7 +2363,7 @@ ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtB
     //        if (!VerifyMixinHierarchy(thisIsMixin, baseAsEntity))
     //            return ECObjectsStatus::BaseClassUnacceptable;
     //        }
-    //    }
+        }
 
     return T_Super::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
     }

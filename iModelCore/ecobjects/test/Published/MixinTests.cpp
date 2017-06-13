@@ -42,6 +42,67 @@ TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_AddBaseClass)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP entity0;
+    ECEntityClassP mixin0;
+    ECEntityClassP mixin1;
+    ECEntityClassP mixin2;
+
+    ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1);
+    schema->CreateEntityClass(entity0, "Entity0");
+    schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
+    schema->CreateMixinClass(mixin1, "Mixin1", *entity0);
+    schema->CreateMixinClass(mixin2, "Mixin2", *entity0);
+
+    ASSERT_EQ(ECObjectsStatus::Success, mixin0->AddBaseClass(*mixin1)) << "Should succeed when adding a mixin class as a base class for a mixin";
+    ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, mixin0->AddBaseClass(*mixin2)) << "Should not be able to add mixin as a base class because the mixin already has a base class.";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_XmlDeserialization)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
+            <ECEntityClass typeName="Mixin0" modifier="Abstract">
+                <BaseClass>Mixin1</BaseClass>
+                <BaseClass>Mixin2</BaseClass>
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                    <AppliesToEntityClass>ts:Entity0</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Mixin1" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                    <AppliesToEntityClass>ts:Entity0</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Mixin2" modifier="Abstract">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                    <AppliesToEntityClass>ts:Entity0</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Entity0" />
+        </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Colin.Kerr                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass)

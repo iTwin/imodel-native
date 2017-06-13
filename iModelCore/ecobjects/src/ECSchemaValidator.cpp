@@ -182,13 +182,7 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
-    {
-    if (mixin.GetBaseClasses().size() > 1)
-        {
-        LOG.errorv("Mixin %s has more than 1 base class", mixin.GetFullName());
-        return ECObjectsStatus::Error;
-        }
- 
+    { 
     for (ECPropertyP prop : mixin.GetProperties(false)) // Check local properties
         {
         if (prop->GetBaseProperty() != nullptr)

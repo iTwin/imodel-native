@@ -177,32 +177,6 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     }
     }
 
-TEST_F(SchemaValidatorTests, MixinClassMayOnlyHaveOneBaseClass)
-    {
-    // Test mixin base class validation
-    ECSchemaPtr schema;
-    ECEntityClassP entity0;
-    ECEntityClassP mixin0;
-    ECEntityClassP mixin1;
-    ECEntityClassP mixin2;
-    ECEntityClassP mixin3;
-
-    ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1);
-    schema->CreateEntityClass(entity0, "Entity0");
-    schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
-    schema->CreateMixinClass(mixin1, "Mixin1", *entity0);
-    schema->CreateMixinClass(mixin2, "Mixin2", *entity0);
-    schema->CreateMixinClass(mixin3, "Mixin3", *entity0);
-
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin has no base classes. Should succeed validation";
-    mixin0->AddBaseClass(*mixin1);
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin has one base class. Should succeed validation";
-    mixin0->AddBaseClass(*mixin2);
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin has two base classes. Should fail validation";
-    mixin0->AddBaseClass(*mixin3);
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin has multiple base classes. Should fail validation";
-    }
-
 TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     {
     // Test that a mixin class may not override an inherited property
