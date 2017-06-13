@@ -777,9 +777,10 @@ MSBsplineCurve  *curve
     }
 
 /*---------------------------------------------------------------------------------**//**
+// Create a gap curve between the end of curve0 and start of curve1
 * @bsimethod                                                    Lu.Han          11/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int     bsprcurv_cuspHandler
+static int     bsprcurv_constructCuspCurve
 (
 MSBsplineCurve  *guspCurve,
 MSBsplineCurve  *curve0,
@@ -809,7 +810,7 @@ int             cuspType
 
     switch (cuspType)
         {
-        case OFFSET_CHAMFER_CUSP:
+        case OFFSET_CHAMFER_CUSP:   // straight line connection
             guspCurve->params.order = guspCurve->params.numPoles = 2;
             guspCurve->knots[0] = guspCurve->knots[1] = 0.0;
             guspCurve->knots[2] = guspCurve->knots[3] = 1.0;
@@ -821,7 +822,7 @@ int             cuspType
             status = SUCCESS;
             break;
 
-        case OFFSET_POINT_CUSP:
+        case OFFSET_POINT_CUSP:     // straight lines from from the endponits to the closest approach of the tangents
             guspCurve->params.order = 2;
             guspCurve->params.numPoles = 3;
             guspCurve->knots[0] = guspCurve->knots[1] = 0.0;
@@ -842,7 +843,7 @@ int             cuspType
 
             break;
 
-        case OFFSET_PARABOLA_CUSP:
+        case OFFSET_PARABOLA_CUSP:  // parabola with start, closest approach of tangents, end as poles
             guspCurve->params.order = guspCurve->params.numPoles = 3;
             guspCurve->knots[0] = guspCurve->knots[1] = guspCurve->knots[2] = 0.0;
             guspCurve->knots[3] = guspCurve->knots[4] = guspCurve->knots[5] = 1.0;
@@ -861,7 +862,7 @@ int             cuspType
 
             break;
 
-        case OFFSET_ARC_CUSP:
+        case OFFSET_ARC_CUSP:   // weighted bspline with the closest approach point as shoulder.
             guspCurve->rational = true;
             guspCurve->params.order = guspCurve->params.numPoles = 3;
             guspCurve->knots[0] = guspCurve->knots[1] = guspCurve->knots[2] = 0.0;
@@ -890,9 +891,13 @@ int             cuspType
     }
 
 /*---------------------------------------------------------------------------------**//**
+// announce a new fragment of the offset curve.
+// i.e.
+//    append gap curve.
+//    append new fragment.
 * @bsimethod                                                    Brian.Peters    02/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int     bsprcurv_nextOffsetSegment
+static int     bsprcurv_appendOffsetSegment
 (
 MSBsplineCurve  *offset,
 MSBsplineCurve  *segment,
@@ -912,7 +917,7 @@ BezierInfo      *infoP
         gap.weights = wts;
         gap.knots   = knots;
 
-        status = bsprcurv_cuspHandler (&gap, offset, segment, infoP->off.cuspTreatment);
+        status = bsprcurv_constructCuspCurve (&gap, offset, segment, infoP->off.cuspTreatment);
 
         if (status == SUCCESS)
             bspcurv_appendCurves (offset, offset, &gap, true, true);
@@ -937,7 +942,7 @@ int              numberOfSegments
     int             status;
 
     if (infoP->off.curve.params.numPoles)
-        status = bsprcurv_nextOffsetSegment (&infoP->off.curve, &segP->off.curve, infoP);
+        status = bsprcurv_appendOffsetSegment (&infoP->off.curve, &segP->off.curve, infoP);
     else
         status = bspcurv_copyCurve (&infoP->off.curve, &segP->off.curve);
 
@@ -1053,7 +1058,7 @@ RotMatrix       *rotMatrix
             {
             if (inCurve->params.order ==2)
                 {
-                if (SUCCESS == bsprcurv_cuspHandler (&gap, &offset, &offset, cuspTreatment))
+                if (SUCCESS == bsprcurv_constructCuspCurve (&gap, &offset, &offset, cuspTreatment))
                     bspcurv_appendCurves (&offset, &offset, &gap, true, true);
                 }
 
