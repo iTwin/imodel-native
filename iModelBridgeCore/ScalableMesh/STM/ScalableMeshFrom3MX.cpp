@@ -89,14 +89,6 @@ protected:
 };
 
 
-// Default progress handler which does nothing
-class ScalableMeshFrom3MXDefaultProgressHandler : public IScalableMeshFrom3MXProgressHandler
-{
-public:
-    virtual bool _Progress(float progress) { return true; }
-};
-
-
 // Class handling conversion of a single 3MXB file. It implements the BaseMeshNode interface used by ThreeMXReader
 #ifndef VANCOUVER_API
 class Convert3MXBFile : public ThreeMxSchema::BaseMeshNode
@@ -504,13 +496,18 @@ private:
     IScalableMeshNodeEditPtr m_scRootNode;
     DPoint3d m_pOrigin;
     IScalableMeshFrom3MXGCSHandler& m_gcsHandler;
-    IScalableMeshFrom3MXProgressHandler& m_progressHandler;
+    IScalableMeshProgressPtr m_progressHandler;
 
     SMFrom3MXStatus ConvertRecursive(BeFileName filename, IScalableMeshNodeEditPtr scParentNode, DRange3d& contentExtent, float& dataResolution, float beginProgress, float endProgress)
     {
         // Report progress
-        if (!m_progressHandler._Progress(beginProgress))
-            return SMFrom3MXStatus::Canceled;
+        if (m_progressHandler != nullptr)
+        {
+            m_progressHandler->Progress() = beginProgress;
+            m_progressHandler->UpdateListeners();
+            if (m_progressHandler->IsCanceled())
+                return SMFrom3MXStatus::Canceled;
+        }
 
         // Count the number of children files, just to correctly track progress
         size_t nChildrenFiles = 0;
@@ -642,13 +639,21 @@ private:
 
 public:
     // Constructor
-    Convert3MXModel(IScalableMeshFrom3MXGCSHandler& gcsHandler, IScalableMeshFrom3MXProgressHandler& progressHandler) : m_gcsHandler(gcsHandler), m_progressHandler(progressHandler) {}
+    Convert3MXModel(IScalableMeshFrom3MXGCSHandler& gcsHandler, IScalableMeshProgressPtr progressHandler) : m_gcsHandler(gcsHandler), m_progressHandler(progressHandler) {}
 
     // Run conversion
     SMFrom3MXStatus Convert(BeFileNameCR input3MXPath, BeFileNameCR output3SMPath)
     {
-        if (!m_progressHandler._Progress(0.f))
-            return SMFrom3MXStatus::Canceled;
+        if (m_progressHandler != nullptr)
+        {
+            m_progressHandler->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_CREATION_FROM_3MX;
+            m_progressHandler->ProgressStep() = ScalableMeshStep::STEP_CREATE_FROM_3MX;
+            m_progressHandler->ProgressStepIndex() = 0;
+            m_progressHandler->Progress() = 0.f;
+            m_progressHandler->UpdateListeners();
+            if (m_progressHandler->IsCanceled())
+                return SMFrom3MXStatus::Canceled;
+        }
 
         // Read scene file
 
@@ -716,8 +721,13 @@ public:
         if (convertStatus != SMFrom3MXStatus::Success)
             return convertStatus;
 
-        if (!m_progressHandler._Progress(1.f))
-            return SMFrom3MXStatus::Canceled;
+        if (m_progressHandler != nullptr)
+        {
+            m_progressHandler->Progress() = 1.f;
+            m_progressHandler->UpdateListeners();
+            if (m_progressHandler->IsCanceled())
+                return SMFrom3MXStatus::Canceled;
+        }
 
         return SMFrom3MXStatus::Success;
     }
@@ -729,7 +739,7 @@ SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,
     BeFileNameCR output3SMPath,
     IScalableMeshFrom3MXGCSHandler& gcsHandler,
-    IScalableMeshFrom3MXProgressHandler& progressHandler
+    IScalableMeshProgressPtr progressHandler
 )
 {
     Convert3MXModel  converter(gcsHandler, progressHandler);
@@ -742,35 +752,10 @@ SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,
     BeFileNameCR output3SMPath,
     GeoCoordinates::BaseGCSPtr outputGCS,
-    IScalableMeshFrom3MXProgressHandler& progressHandler
+    IScalableMeshProgressPtr progressHandler
 )
 {
     ScalableMeshFrom3MXDefaultGCSHandler gcsHandler(outputGCS);
-    return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler);
-}
-
-
-SMFrom3MXStatus createScalableMeshFrom3MX
-(
-    BeFileNameCR input3MXPath,
-    BeFileNameCR output3SMPath,
-    IScalableMeshFrom3MXGCSHandler& gcsHandler
-)
-{
-    ScalableMeshFrom3MXDefaultProgressHandler progressHandler;
-    return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler);
-}
-
-
-SMFrom3MXStatus createScalableMeshFrom3MX
-(
-    BeFileNameCR input3MXPath,
-    BeFileNameCR output3SMPath,
-    GeoCoordinates::BaseGCSPtr outputGCS
-)
-{
-    ScalableMeshFrom3MXDefaultGCSHandler gcsHandler(outputGCS);
-    ScalableMeshFrom3MXDefaultProgressHandler progressHandler;
     return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler);
 }
 

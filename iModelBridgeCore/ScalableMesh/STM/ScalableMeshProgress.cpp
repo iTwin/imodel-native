@@ -63,6 +63,15 @@ IScalableMeshProgressPtr IScalableMeshProgress::Create(const ScalableMeshProcess
 
 /*---------------------------------------------------------------------------------**//**
 * @description
+* @bsimethod                                                  Jean-Philippe.Pons   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+IScalableMeshProgressPtr IScalableMeshProgress::Create()
+{
+    return new ScalableMeshProgress();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @description
 * @bsimethod                                                  Richard.Bois   06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::atomic<ScalableMeshStep> const& IScalableMeshProgress::GetProgressStep() const
