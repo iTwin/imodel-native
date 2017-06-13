@@ -11,6 +11,37 @@ HANDLER_DEFINE_MEMBERS(GeometricElementAsReferentHandler)
 HANDLER_DEFINE_MEMBERS(LinearlyLocatedReferentHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ILinearElement::SetILinearElementSource(ILinearElementSourceCP linearElementSource)
+    {
+    if (linearElementSource)
+        ToElementR().SetPropertyValue("ILinearElementSource", linearElementSource->ToElement().GetElementId(),
+            ToElement().GetDgnDb().Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_REL_ILinearElementSourceProvidesILinearElements));
+    else
+        ToElementR().SetPropertyValue("ILinearElementSource", DgnElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<DgnElementId> ILinearElementSource::QueryLinearElements() const
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(ToElement().GetDgnDb(), "SELECT TargetECInstanceId FROM " BLR_SCHEMA(BLR_REL_ILinearElementSourceProvidesILinearElements) 
+        " WHERE SourceECInstanceId = ?");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, ToElement().GetElementId());
+
+    bset<DgnElementId> retVal;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        retVal.insert(stmt.GetValueId<DgnElementId>(0));
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ILinearElementSource::_PrepareCascadeChanges(ICascadeLinearLocationChangesAlgorithmR algorithm) const
