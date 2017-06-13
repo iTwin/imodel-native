@@ -984,10 +984,6 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     PSolidKernelManager::StartSession();
 #endif
 
-    // Prepare for multi-threaded access to this stuff when generating geometry...
-    T_HOST.GetFontAdmin().EnsureInitialized();
-    model.GetDgnDb().Fonts().Update();
-
     RootPtr root = new Root(model, transform, system);
     Transform rangeTransform;
 

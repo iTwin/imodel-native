@@ -203,10 +203,9 @@ void IDgnShxFontData::LoadGlyphFPosCacheAndMetrics()
     {
     // Because we have to load and O(n) iterate the header to even know what glyphs are in the file, do it once up-front instead of repeatedly for each glyph.
     // The glyphs will still load their glyph geometry data on-demand.
-    if (m_hasLoadedGlyphFPosCacheAndMetrics)
+    DgnFonts::FlagHolder flagLock(m_hasLoadedGlyphFPosCacheAndMetrics);
+    if (flagLock.IsSet())
         return;
-
-    m_hasLoadedGlyphFPosCacheAndMetrics = true;
 
     // Allow this to be used in the middle of other read operations.
     AutoRestoreFPos restoreFPos(*this); 

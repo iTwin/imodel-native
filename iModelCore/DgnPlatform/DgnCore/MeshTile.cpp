@@ -1711,9 +1711,6 @@ TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnM
 
     // unused - auto nCompletedModels = 0;
 
-    T_HOST.GetFontAdmin().EnsureInitialized();
-    GetDgnDb().Fonts().Update();
-
 #if defined (BENTLEYCONFIG_PARASOLID) 
     PSolidPartitionMark     partitionMark;
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
