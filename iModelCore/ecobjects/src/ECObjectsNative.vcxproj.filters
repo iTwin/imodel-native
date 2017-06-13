@@ -213,9 +213,6 @@
     <ClCompile Include="ECJsonUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ecprovider.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ECRelationshipPath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

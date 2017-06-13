@@ -64,7 +64,6 @@
     <ClCompile Include="ECJsonUtilities.cpp" />
     <ClCompile Include="ECObjectsPch.cpp" />
     <ClCompile Include="ECProperty.cpp" />
-    <ClCompile Include="ecprovider.cpp" />
     <ClCompile Include="ECRelationshipPath.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />

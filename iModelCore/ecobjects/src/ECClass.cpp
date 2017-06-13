@@ -3850,8 +3850,8 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
                 {
-                LOG.errorv("Strength Constraint: ECRelationshipClass '%s' has different Strength (%d) than its Base Class '%s' (%d).",
-                            GetName().c_str(), value, relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetStrength());
+                LOG.errorv("Strength Constraint Violation: ECRelationshipClass '%s' has different Strength, %s, than its base class '%s', %s.",
+                            GetName().c_str(), ECXml::StrengthToString(value), relationshipBaseClass->GetName().c_str(), ECXml::StrengthToString(relationshipBaseClass->GetStrength()));
                 return false;
                 }
             }
@@ -3872,8 +3872,8 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthDirectionConstraint(value))
                 {
-                LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different Strength Direction (%d) than it's Base Class '%s' (%d).",
-                            GetName().c_str(), value, relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetStrengthDirection());
+                LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different Strength Direction, %s, than it's base class '%s', %s.",
+                            GetName().c_str(), ECXml::DirectionToString(value), relationshipBaseClass->GetName().c_str(), ECXml::DirectionToString(relationshipBaseClass->GetStrengthDirection()));
                 return false;
                 }
             }
