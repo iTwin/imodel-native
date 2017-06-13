@@ -343,6 +343,19 @@ static bool Int (int a, int b, char const*pName = NULL);
 static bool False (bool a, char const*pName = NULL);
 //! Check for true.
 static bool True (bool b, char const*pName = NULL);
+template <typename T>
+static bool ValidIndex (size_t index, bvector<T> const &data, char const*pString = nullptr)
+    {
+    if (index < data.size ())
+        return true;
+    int printableIndex = (index == SIZE_MAX) ? (-1) : (int)index;
+    char message[1024];
+    sprintf (message, "(index out of bounds (%s) %d %d)\n", pString ? pString : "", printableIndex, (int)data.size ());
+    Check::PrintScope ();
+    Check::Fail (message);
+    return false;
+    }
+
 static bool LessThanOrEqual (double a, double b, char const*pString = nullptr);
 
 // test if distances increase

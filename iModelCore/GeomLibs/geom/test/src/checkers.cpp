@@ -243,6 +243,7 @@ bool Check::True (bool a, char const*pString)
     return false;
     }
 
+
 bool Check::ValidateDistances
 (
 bvector<PathLocationDetailPair> const &data,
