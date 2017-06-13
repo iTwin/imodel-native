@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnFont.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -35,31 +35,23 @@ BeFileName DgnPlatformLib::Host::FontAdmin::_GetLastResortFontDbPath()
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureLastResortFontDb()
     {
-    if (m_isInitialized)
-        return ((nullptr != m_dbFonts) ? SUCCESS : ERROR);
-
-    m_isInitialized = true;
+    BeAssert(nullptr == m_dbFonts);
     
     BeFileName path = _GetLastResortFontDbPath();
-    if (path.empty())
+    if (!path.empty())
         {
-        BeAssert(false);
-        return ERROR;
-        }
-    
-    unique_ptr<Db> lastResortDb(new Db());
-    DbResult openResult = lastResortDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::Readonly));
-    if (BE_SQLITE_OK != openResult)
-        {
-        BeAssert(false);
-        return ERROR;
+        unique_ptr<Db> lastResortDb(new Db());
+        DbResult openResult = lastResortDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::Readonly));
+        if (BE_SQLITE_OK == openResult)
+            {
+            m_lastResortFontDb = lastResortDb.release();
+            m_dbFonts = new DgnFonts(*m_lastResortFontDb, "lastresortfont");
+            }
         }
 
-    m_lastResortFontDb = lastResortDb.release();
+    BeAssert(nullptr != m_dbFonts);
 
-    m_dbFonts = new DgnFonts(*m_lastResortFontDb, "lastresortfont");
-
-    return SUCCESS;
+    return nullptr != m_dbFonts ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -67,9 +59,6 @@ BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureLastResortFontDb()
 //---------------------------------------------------------------------------------------
 DgnFontPtr DgnPlatformLib::Host::FontAdmin::_CreateLastResortFont(DgnFontType type)
     {
-    if (SUCCESS != _EnsureLastResortFontDb())
-        return nullptr;
-    
     Utf8String name;
     switch (type)
         {
@@ -122,10 +111,9 @@ DgnFontCR DgnPlatformLib::Host::FontAdmin::_ResolveFont(DgnFontCP font)
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::FontAdmin::Suspend()
     {
-    if (!m_isInitialized)
-        return;
-
-    m_lastResortFontDb->CloseDb();
+    DgnFonts::FlagHolder lock(m_suspended);
+    if (!lock.IsSet())
+        m_lastResortFontDb->CloseDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -133,45 +121,50 @@ void DgnPlatformLib::Host::FontAdmin::Suspend()
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::FontAdmin::Resume()
     {
-    if (!m_isInitialized)
-        return;
+    if (m_suspended)
+        {
+        DgnFonts::FlagHolder lock(m_suspended);
+        if (m_suspended)
+            {
+            BeFileName path = _GetLastResortFontDbPath();
+            if (!path.empty())
+                {
+                DbResult openResult = m_lastResortFontDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::Readonly));
+                if (BE_SQLITE_OK == openResult)
+                    {
+                    m_suspended = false;
+                    return;
+                    }
+                }
 
-    BeFileName path = _GetLastResortFontDbPath();
-    if (path.empty())
-        return;
-    
-    DbResult openResult = m_lastResortFontDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::Readonly));
-    if (BE_SQLITE_OK != openResult)
-        return;
+            BeAssert(false && "Failed to resume font admin");
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This method exists for multi-threaded code which wants to adopt the host. Because
-* The FontAdmin lazily-initializes various data members, it cannot be safely used
-* on multiple threads until all of those data members are initialized.
-* So code that is otherwise very confident in its thread-safety can invoke this method
-* before spawning new threads in order to ensure they will not encounter race conditions
-* when accessing the FontAdmin.
+* Ensures that the FontAdmin is initialized to a state ready for thread-safe access.
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::FontAdmin::EnsureInitialized()
+void DgnPlatformLib::Host::FontAdmin::Initialize()
     {
-    GetLastResortTrueTypeFont();
-    GetLastResortRscFont();
-    GetLastResortShxFont();
-    GetAnyLastResortFont();
-    GetDecoratorFont();
-    GetFreeTypeLibrary();
+    _EnsureLastResortFontDb();
+    _GetLastResortTrueTypeFont();
+    _GetLastResortRscFont();
+    _GetLastResortShxFont();
+    _GetAnyLastResortFont();
+    _GetDecoratorFont();
+    _GetFreeTypeLibrary();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-DgnFontCR DgnFontManager::GetLastResortTrueTypeFont() { return T_HOST.GetFontAdmin()._GetLastResortTrueTypeFont(); }
-DgnFontCR DgnFontManager::GetLastResortRscFont() { return T_HOST.GetFontAdmin()._GetLastResortRscFont(); }
-DgnFontCR DgnFontManager::GetLastResortShxFont() { return T_HOST.GetFontAdmin()._GetLastResortShxFont(); }
-DgnFontCR DgnFontManager::GetAnyLastResortFont() { return T_HOST.GetFontAdmin()._GetAnyLastResortFont(); }
-DgnFontCR DgnFontManager::GetDecoratorFont() { return T_HOST.GetFontAdmin()._GetDecoratorFont(); }
+DgnFontCR DgnFontManager::GetLastResortTrueTypeFont() { return T_HOST.GetFontAdmin().GetLastResortTrueTypeFont(); }
+DgnFontCR DgnFontManager::GetLastResortRscFont() { return T_HOST.GetFontAdmin().GetLastResortRscFont(); }
+DgnFontCR DgnFontManager::GetLastResortShxFont() { return T_HOST.GetFontAdmin().GetLastResortShxFont(); }
+DgnFontCR DgnFontManager::GetAnyLastResortFont() { return T_HOST.GetFontAdmin().GetAnyLastResortFont(); }
+DgnFontCR DgnFontManager::GetDecoratorFont() { return T_HOST.GetFontAdmin().GetDecoratorFont(); }
 DgnFontCR DgnFontManager::ResolveFont(DgnFontCP font) { return T_HOST.GetFontAdmin()._ResolveFont(font); }
 
 //---------------------------------------------------------------------------------------
@@ -734,15 +727,28 @@ BentleyStatus DgnFonts::DbFaceDataDirect::Delete(FaceKeyCR key)
     return ERROR;
     }
 
+BEGIN_UNNAMED_NAMESPACE
+// NB: This is static, rather than being a member of DgnFonts, because DgnFont, DgnFontDataSession, IDgnFontData, et al have no backpointer to the DgnFonts or DgnDb to which they belong.
+// It is assumed that acquirers of this mutex will not need to acquire additional mutexes, or will order their locks appropriately.
+static BeMutex s_fontsMutex;
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeMutex& DgnFonts::GetMutex()
+    {
+    return s_fontsMutex;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
 void DgnFonts::Update()
     {
-    if (m_isFontMapLoaded)
+    DgnFonts::FlagHolder lock(m_isFontMapLoaded);
+    if (lock.IsSet())
         return;
-    
-    m_isFontMapLoaded = true;
 
     for (DbFontMapDirect::Iterator::Entry const& entry : DbFontMap().MakeIterator())
         {
@@ -804,7 +810,9 @@ DgnFontId DgnFonts::FindId(DgnFontCR font) const
 //---------------------------------------------------------------------------------------
 DgnFontId DgnFonts::AcquireId(DgnFontCR font)
     {
-    // This calls Update for us.
+    // This calls Update for us. Nevertheless we need the mutex in case we or another thread is accessing or mutating the map
+    BeMutexHolder lock(GetMutex());
+
     DgnFontId existingId = FindId(font);
     if (existingId.IsValid())
         return existingId;
@@ -853,9 +861,9 @@ void DgnFont::ScaleAndOffsetGlyphRange(DRange2dR range, DPoint2dCR scale, DPoint
 //---------------------------------------------------------------------------------------
 bool DgnFontDataSession::Start()
     {
-    if (!m_hasStarted)
+    DgnFonts::FlagHolder lock(m_hasStarted);
+    if (!lock.IsSet())
         {
-        m_hasStarted = true;
         m_isValid = ((nullptr != m_data) && (SUCCESS == m_data->_AddDataRef()));
         }
     
@@ -867,6 +875,8 @@ bool DgnFontDataSession::Start()
 //---------------------------------------------------------------------------------------
 void DgnFontDataSession::Stop()
     {
+    BeMutexHolder lock(DgnFonts::GetMutex());
+
     if (m_isValid)
         m_data->_ReleaseDataRef();
     
