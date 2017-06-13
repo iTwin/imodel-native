@@ -211,7 +211,7 @@ RoadDesignSpeedPtr RoadDesignSpeed::Create(RoadwayCR roadway, RoadDesignSpeedDef
 
     CreateParams params(roadway.GetDgnDb(), roadway.GetModelId(), QueryClassId(roadway.GetDgnDb()));
     params.SetParentId(roadway.GetElementId(),
-        DgnClassId(roadway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadwayHasDesignSpeeds)));
+        DgnClassId(roadway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadwayOwnsDesignSpeeds)));
 
     auto retVal = new RoadDesignSpeed(params, designSpeedDef, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElement(alignmentId);

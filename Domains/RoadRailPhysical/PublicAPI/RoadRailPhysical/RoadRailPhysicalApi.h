@@ -116,8 +116,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_REL_RoadClassRefersToDefinition                        "RoadClassRefersToDefinition"
 #define BRRP_REL_RoadDesignSpeedRefersToDefinition                  "RoadDesignSpeedRefersToDefinition"
 #define BRRP_REL_RoadSegmentRefersToCrossSection                    "RoadSegmentRefersToCrossSection"
-#define BRRP_REL_RoadwayHasDesignSpeeds                             "RoadwayHasDesignSpeeds"
-#define BRRP_REL_RoadwayHasRoadClasses                              "RoadwayHasRoadClasses"
+#define BRRP_REL_RoadwayOwnsDesignSpeeds                            "RoadwayOwnsDesignSpeeds"
+#define BRRP_REL_RoadwayOwnsRoadClasses                             "RoadwayOwnsRoadClasses"
 
 
 // Properties

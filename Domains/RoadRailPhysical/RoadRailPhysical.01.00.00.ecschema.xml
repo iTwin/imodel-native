@@ -468,9 +468,8 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="RoadDesignSpeedDefinition" relationshipName="RoadDesignSpeedRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RoadwayHasDesignSpeeds" strength="embedding" modifier="Sealed">
+    <ECRelationshipClass typeName="RoadwayOwnsDesignSpeeds" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <!--BaseClass>lr:ILinearElementSourceOwnsILinearlyLocatedAttributions</BaseClass-->
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 Roadway">
             <Class class="Roadway"/>
         </Source>
@@ -532,9 +531,8 @@
             <Class class="RoadClassDefinition"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="RoadwayHasRoadClasses" strength="embedding" modifier="Sealed">
+    <ECRelationshipClass typeName="RoadwayOwnsRoadClasses" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <!--BaseClass>lr:ILinearEntityHasILinearlyLocatedProperties</BaseClass-->
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 Roadway">
             <Class class="Roadway"/>
         </Source>
