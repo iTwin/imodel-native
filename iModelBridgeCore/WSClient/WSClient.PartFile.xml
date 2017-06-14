@@ -449,7 +449,7 @@
     <Part Name="WSClientTestAssets" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/AssetsDelivery.mke" />
 
     <!-- Tests need translatable strings, so sqlang file has to be build -->
-    <Part
+    <Part
         Name="WSClientTestsL10N"
         BentleyBuildMakeFile="../bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/WSClient/UnitTests/sqlang/WSClient_test.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
@@ -520,11 +520,11 @@
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
         </Bindings>
     </Part>
-	
-	<!-- Memory leak testing of WSClient tests. Only called on demand -->
-	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest" OnlyPlatforms="x64">
-		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
-		<SubProduct ProductName="WSClient-Gtest" />
+    
+    <!-- Memory leak testing of WSClient tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="WSClient-Gtest" />
     </Part>
 
 
