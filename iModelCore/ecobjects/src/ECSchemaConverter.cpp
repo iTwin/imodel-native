@@ -299,13 +299,24 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
 void ECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource)
     {
     // Do not set role label if the role label is already defined.
-    if (constraint.IsRoleLabelDefinedLocally() || !constraint.GetRelationshipClass().HasBaseClasses())
+    if (!constraint.GetRelationshipClass().HasBaseClasses() || (constraint.IsRoleLabelDefinedLocally() && 0 != constraint.GetConstraintClasses().size()))
         return;
 
-    // Set the role label from the (root) base class's role label
-    ECRelationshipClassP baseRelationshipClass = constraint.GetRelationshipClass().GetBaseClasses()[0]->GetRelationshipClassP();
-    Utf8CP baseLabel = isSource ? baseRelationshipClass->GetSource().GetInvariantRoleLabel().c_str() : baseRelationshipClass->GetTarget().GetInvariantRoleLabel().c_str();
-    constraint.SetRoleLabel(baseLabel);
+    ECRelationshipClassCP baseRelClass = constraint.GetRelationshipClass().GetBaseClasses()[0]->GetRelationshipClassCP();
+    ECRelationshipConstraintR baseConstraint = isSource ? baseRelClass->GetSource() : baseRelClass->GetTarget();
+
+    if (!constraint.IsRoleLabelDefinedLocally())
+        constraint.SetRoleLabel(baseConstraint.GetInvariantRoleLabel().c_str());
+
+    if (0 == constraint.GetConstraintClasses().size())
+        {
+        // Need to set the abstract constraint, if one is needed, before adding constraint classes.
+        if (1 < baseConstraint.GetConstraintClasses().size())
+            constraint.SetAbstractConstraint(*baseConstraint.GetAbstractConstraint());
+
+        for (ECEntityClassCP baseConstraintClass : baseConstraint.GetConstraintClasses())
+            constraint.AddClass(*baseConstraintClass);
+        }
     }
 
 //---------------------------------------------------------------------------------------
