@@ -349,9 +349,254 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     mixin1->CreatePrimitiveProperty(prop, "P1");
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited property so validation should fail";
     }
+
+TEST_F(SchemaValidatorTests, BisCoreElementAspectRelationshipTest)
+    {
+    // Multi
+    Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract" description="ElementMultiAspect Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="MultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementMultiAspect</BaseClass>
+        </ECEntityClass>      
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml1, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "There is no relationship, so validation should fail";
+   
+    Utf8CP badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementAspect</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="TestMultiAspect" modifier="Abstract" displayLabel="Test Element Multi-Aspect" description="An Element Multi-Aspect Test Description">
+            <BaseClass>ElementMultiAspect</BaseClass>
+        </ECEntityClass>
+        
+        <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="ElementMultiAspect"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECRelationshipClass typeName="TestRelationship" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="TestMultiAspect"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml2, *context2);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
+
+    Utf8CP goodSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="Schema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract" description="ElementMultiAspect Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="MultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementMultiAspect</BaseClass>
+        </ECEntityClass>      
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml1, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "This not a bis schema, so validation should succeed as this rule does not apply";
+
+    Utf8CP goodSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementAspect</BaseClass>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="ElementAspect"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="ElementMultiAspect"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+    ECSchemaReadContextPtr context3 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml2, *context3);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "The relationship does not DERIVE from 'ElementOwnsMultiAspects', it IS 'ElementOwnsMultiAspects'. Validation should succeed.";
+    
+    Utf8CP goodSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementAspect</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="TestMultiAspect" modifier="Abstract" displayLabel="Test Element Multi-Aspect" description="An Element Multi-Aspect Test Description">
+            <BaseClass>ElementMultiAspect</BaseClass>
+        </ECEntityClass>
+        
+        <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="ElementMultiAspect"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECRelationshipClass typeName="TestRelationship" strength="embedding" modifier="None">
+            <BaseClass>ElementOwnsMultiAspects</BaseClass>
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="TestMultiAspect"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+    ECSchemaReadContextPtr context4 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml3, *context4);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "BisCore example of a valid multi aspect relationship. Validation should succeed";
+
+    // Unique
+    badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" description="ElementMultiAspect Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="MultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementUniqueAspect</BaseClass>
+        </ECEntityClass>      
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr context5 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml1, *context5);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "There is no relationship, so validation should fail";
+
+    badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementAspect</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="TestUniqueAspect" modifier="Abstract" displayLabel="Test Element Multi-Aspect" description="An Element Multi-Aspect Test Description">
+            <BaseClass>ElementUniqueAspect</BaseClass>
+        </ECEntityClass>
+        
+        <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="ElementUniqueAspect"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECRelationshipClass typeName="TestRelationship" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="TestUniqueAspect"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+    ECSchemaReadContextPtr context6 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml3, *context6);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
+
+    goodSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="Schema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" description="ElementUniqueAspect Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="MultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementUniqueAspect</BaseClass>
+        </ECEntityClass>      
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml1, *context6);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "This not a bis schema, so validation should succeed as this rule does not apply";
+
+    goodSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" displayLabel="Element Unique-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementAspect</BaseClass>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="ElementAspect"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="ElementUniqueAspect"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+    ECSchemaReadContextPtr context7 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml2, *context7);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "The relationship does not DERIVE from 'ElementUniqueAspect', it IS 'ElementUniqueAspect'. Validation should succeed.";
+
+    goodSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description"/>
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description"/>
+        <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
+            <BaseClass>ElementAspect</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="TestUniqueAspect" modifier="Abstract" displayLabel="Test Element Multi-Aspect" description="An Element Multi-Aspect Test Description">
+            <BaseClass>ElementUniqueAspect</BaseClass>
+        </ECEntityClass>
+        
+        <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="ElementUniqueAspect"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECRelationshipClass typeName="TestRelationship" strength="embedding" modifier="None">
+            <BaseClass>ElementOwnsUniqueAspect</BaseClass>
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="TestUniqueAspect"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+    ECSchemaReadContextPtr context8 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml3, *context8);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "BisCore example of a valid unique aspect relationship. Validation should succeed";
+    }
+
 TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     {
-    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECEntityClass typeName="TestClassBad">
         <ECProperty propertyName="PropNameId" typeName="long">
@@ -361,9 +606,29 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
 
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(schema, badSchemaXml, *context);
+    ECSchema::ReadFromXmlString(schema, badSchemaXml1, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
+
+    Utf8CP badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="SourceClass"/>
+    <ECEntityClass typeName="TargetClass"/>
+    <ECRelationshipClass typeName="TestRelationshipBad" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="SourceClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="TargetClass"/>
+        </Target>
+        <ECProperty propertyName="PropNameId" typeName="long"/>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml2, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
+
 
     Utf8CP goodSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -388,6 +653,44 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     ECSchema::ReadFromXmlString(schema, goodSchemaXml2, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'Id' but is not type 'long'";
+
+    Utf8CP goodSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="SourceClass"/>
+    <ECEntityClass typeName="TargetClass"/>
+    <ECRelationshipClass typeName="TestRelationshipGood" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="SourceClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="TargetClass"/>
+        </Target>
+        <ECProperty propertyName="PropNameId" typeName="double"/>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml3, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'Id' but is not type 'long'";
+
+    Utf8CP goodSchemaXml4 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="SourceClass"/>
+    <ECEntityClass typeName="TargetClass"/>
+    <ECRelationshipClass typeName="TestRelationshipGood" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="SourceClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="TargetClass"/>
+        </Target>
+        <ECProperty propertyName="PropertyNameiD" typeName="long"/>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml4, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'iD' not 'Id'";
     }
 
 TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleBaseClasses)

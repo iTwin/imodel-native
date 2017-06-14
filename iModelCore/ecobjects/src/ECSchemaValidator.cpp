@@ -204,6 +204,55 @@ ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
     return ECObjectsStatus::Success;
     }
 
+ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8CP derivedRelationshipClassName, bool &entityDerivesFromSpecifiedClass)
+    {
+    if (entity.GetName().Equals(derivedClassName) || !entity.Is("BisCore", derivedClassName))
+        return ECObjectsStatus::Success;
+       
+    bool foundRelationshipConstraint = false;
+    
+    // There must be a relationship that derives from derivedClassName with this class as its constraint
+    for (ECClassCP classInCurrentSchema : entity.GetSchema().GetClasses())
+        {
+        ECRelationshipClassCP relClass = classInCurrentSchema->GetRelationshipClassCP();
+        if (nullptr == relClass)
+            continue;
+
+        if (ECClass::ClassesAreEqualByName(&entity, relClass->GetTarget().GetConstraintClasses()[0]) &&
+            !relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is("BisCore", derivedRelationshipClassName))
+            {
+            foundRelationshipConstraint = true;
+            break;
+            }
+        }
+
+    entityDerivesFromSpecifiedClass = true;
+    if (!foundRelationshipConstraint)
+        {
+        LOG.errorv("Entity class '%s' derives from '%s' so it must be in a relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
+        return ECObjectsStatus::Error;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus CheckPropertiesForLongAndId(ECClassCR ecClass)
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    for (ECPropertyP prop : ecClass.GetProperties(false))
+        {
+        if (prop->GetTypeName() == "long" && prop->GetName().EndsWith("Id"))
+            {
+            LOG.errorv("Warning treated as error in class '%s:%s' as it is of type 'long' and has a name ending with 'Id'", ecClass.GetFullName(), prop->GetName().c_str());
+            status = ECObjectsStatus::Error;
+            }
+        }
+    return status;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -211,15 +260,20 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     int numBaseClasses;
+    bool entityDerivesFromSpecifiedClass = false;
     
+    // Bis specific rule
+    status = CheckBisAspects(entity, "ElementMultiAspect", "ElementOwnsMultiAspects", entityDerivesFromSpecifiedClass);
+    if (!entityDerivesFromSpecifiedClass)
+        status = CheckBisAspects(entity, "ElementUniqueAspect", "ElementOwnsUniqueAspect", entityDerivesFromSpecifiedClass);
+    
+    // Validate relationship properties of type long and ending in Id
+    if (status == ECObjectsStatus::Success)
+        status = CheckPropertiesForLongAndId(entity);
+
     for (ECPropertyP prop : entity.GetProperties(false))
         {
         numBaseClasses = 0;
-        if (prop->GetTypeName() == "long" && prop->GetName().EndsWith("Id"))
-            {
-            LOG.errorv("Warning treated as error in class '%s:%s' as it is of type 'long' and has a name ending with 'Id'", entity.GetFullName(), prop->GetName().c_str());
-            status = ECObjectsStatus::Error;
-            }
         if (prop->GetBaseProperty() == nullptr)
             continue;
         for (ECClassP baseClass : entity.GetBaseClasses())
@@ -289,6 +343,10 @@ ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
     // Validate relationship strength
     status = CheckStrength(relClass);
 
+    // Validate relationship properties of type long and ending in Id
+    if (status == ECObjectsStatus::Success)
+        status = CheckPropertiesForLongAndId(ecClass);
+
     ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
     ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
     
@@ -301,7 +359,6 @@ ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
     
     return status;
     }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
