@@ -16,7 +16,7 @@
 
 // Define this if you want to generate a root tile containing geometry.
 // By default the root tile is empty.
-#define POPULATE_ROOT_TILE
+// #define POPULATE_ROOT_TILE
 
 USING_NAMESPACE_ELEMENT_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
