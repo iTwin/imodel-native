@@ -1884,6 +1884,7 @@ struct QPoint2d
 
     DPoint2dCR GetOrigin() const { return origin; }
     DPoint2dCR GetScale() const { return scale; }
+    DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);

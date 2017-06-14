@@ -37,7 +37,7 @@ typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     Thread
 
 class   ParasolidException {};
 
-#define REALITY_CACHE_SUPPORT
+//#define REALITY_CACHE_SUPPORT
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      10/2015

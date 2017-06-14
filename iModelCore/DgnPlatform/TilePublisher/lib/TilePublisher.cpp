@@ -1823,7 +1823,8 @@ void MeshMaterial::AddTechniqueParameters(Json::Value& technique, Json::Value& p
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    TilePublisher::AddMaterialColor(Json::Value& matJson, TileMaterial& mat, PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix)
     {
-    auto dim = mat.GetColorIndexDimension();
+    auto dim = TileColorIndex::CalcDimension(mesh.GetColorTable().GetNumIndices());
+
     if (TilePublish::ColorIndex::Dimension::Zero != dim)
         {
         TilePublish::ColorIndex colorIndex(mesh, mat);
