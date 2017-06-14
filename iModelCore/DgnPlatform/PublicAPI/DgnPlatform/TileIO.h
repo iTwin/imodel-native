@@ -19,9 +19,18 @@ BEGIN_TILETREE_NAMESPACE
 //=======================================================================================
 struct TileIO
 {
+    enum class ReadStatus
+        {
+        Success = 0,
+        InvalidHeader,    
+        ReadError,
+        BatchTableParseError,
+        SceneParseError,
+        SceneDataError,
+        };
 
     static BentleyStatus WriteTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
-    static BentleyStatus ReadTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model);
+    static ReadStatus ReadTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model);
 };  
 
 

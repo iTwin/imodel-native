@@ -102,6 +102,7 @@ struct StreamBuffer : ByteStream
     void SetPos(uint32_t pos) {m_currPos=pos;}
     uint32_t GetPos() const {return m_currPos;}
     DGNPLATFORM_EXPORT bool ReadBytes(void* buf, uint32_t size);
+    template<typename T> bool Read (T& buf) { return ReadBytes(&buf, sizeof(buf)); }
 
     StreamBuffer() {}
     StreamBuffer(ByteStream const& other) : ByteStream(other) {}

@@ -37,7 +37,7 @@ typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     Thread
 
 class   ParasolidException {};
 
-//#define REALITY_CACHE_SUPPORT
+#define REALITY_CACHE_SUPPORT
 
 
 
@@ -880,7 +880,7 @@ BentleyStatus Loader::_LoadTile()
 
     Render::Primitives::GeometryCollection geometry;
 
-    if (SUCCESS != TileTree::TileIO::ReadTile (geometry, m_tileBytes, *root.GetModel()))
+    if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadTile (geometry, m_tileBytes, *root.GetModel()))
         return ERROR;
 
     // No point subdividing empty nodes - improves performance if we don't

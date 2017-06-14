@@ -17,9 +17,14 @@ USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
        
 
+#define BEGIN_TILEWRITER_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace TileWriter {
+#define END_TILEWRITER_NAMESPACE      } END_BENTLEY_DGN_NAMESPACE
+
+BEGIN_TILEWRITER_NAMESPACE
+
+
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileTexture)
 DEFINE_REF_COUNTED_PTR(TileTexture)
-
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1971,7 +1976,7 @@ BentleyStatus WriteGltf(Render::Primitives::GeometryCollectionCR geometry, DPoin
     uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size()), zero = 0;
 
     long    startPosition =  m_buffer.GetSize();
-    m_buffer.Append((const uint8_t*) &s_gltfMagic, sizeof(s_gltfMagic));
+    m_buffer.Append((const uint8_t*) s_gltfMagic, sizeof(s_gltfMagic));
     m_buffer.Append((const uint8_t*) &s_gltfVersion, sizeof(s_gltfVersion));
     long    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((const uint8_t*) &zero, sizeof(zero));        // Filled in below.
@@ -1984,10 +1989,9 @@ BentleyStatus WriteGltf(Render::Primitives::GeometryCollectionCR geometry, DPoin
     uint32_t    dataSize = static_cast<uint32_t> (m_buffer.GetSize() - startPosition);
     memcpy(m_buffer.GetDataP() + lengthDataPosition, &dataSize, sizeof(uint32_t));
 
-#define DEBUG_TO_GLTF
-
-#ifdef DEBUG_TO_GLTF
-    std::FILE* outputFile = fopen("d:\\tmp\\test.gltf","wb");
+#define DEBUG_TO_GLB
+#ifdef DEBUG_TO_GLB
+    std::FILE* outputFile = fopen("d:\\tmp\\test.glb","wb");
     fwrite(m_buffer.GetDataP() + startPosition, 1, m_buffer.GetSize() - startPosition, outputFile);
     fclose(outputFile);
 #endif
@@ -2044,11 +2048,14 @@ BentleyStatus WriteBatchedModel(Render::Primitives::GeometryCollectionCR geometr
 };  // BatchedModelWriter
 
 
+END_TILEWRITER_NAMESPACE
    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileIO::WriteTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid)
     {
-    return BatchedModelWriter(streamBuffer, model).WriteBatchedModel(geometry, centroid);
+    return TileWriter::BatchedModelWriter(streamBuffer, model).WriteBatchedModel(geometry, centroid);
     }
+
+
