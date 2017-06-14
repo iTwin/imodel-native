@@ -464,7 +464,7 @@ bool Mesh::HasNonPlanarNormals() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, GetMeshGraphicsArgs& args, DgnDbR db)
+void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, GetMeshGraphicsArgs& args, DgnDbR db) const
     {
     bool haveMesh = !Triangles().empty();
     bool havePolyline = !haveMesh && !Polylines().empty();

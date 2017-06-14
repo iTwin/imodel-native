@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*------------------------------------------------------------------------]--------------+
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
@@ -1804,6 +1804,8 @@ struct QPoint3d
 
         DPoint3dCR GetOrigin() const { return origin; }
         DPoint3dCR GetScale() const { return scale; }
+        DRange3d GetRange() const { return DRange3d::From (origin.x, origin.y, origin.z, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y, origin.z + Quantization::RangeScale() * scale.z); }
+
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
@@ -1884,6 +1886,7 @@ struct QPoint2d
 
     DPoint2dCR GetOrigin() const { return origin; }
     DPoint2dCR GetScale() const { return scale; }
+    DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);

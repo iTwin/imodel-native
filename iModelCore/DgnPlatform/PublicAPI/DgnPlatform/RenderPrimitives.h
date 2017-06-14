@@ -261,6 +261,8 @@ struct MeshList : bvector<MeshPtr>
     FeatureTable    m_features;
 
     explicit MeshList(uint32_t maxFeatures=2048*1024) : m_features(maxFeatures) { }
+
+    FeatureTableCR  FeatureTable() const { return m_features; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -510,7 +512,7 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
     void AddPolyline(PolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
     uint32_t AddVertex(QVertex3dCR vertex, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
-    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db);
+    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db) const;
 };
 
 /*=================================================================================**//**
@@ -807,12 +809,14 @@ private:
     bool                m_curved = false;
 public:
     MeshList& Meshes()              { return m_meshes; }
+    MeshList const& Meshes() const  { return m_meshes; }
     MeshPartList& Parts()           { return m_parts; }
     bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
     bool IsComplete() const         { return m_isComplete; }
     bool ContainsCurves() const     { return m_curved; }
     void MarkIncomplete()           { m_isComplete = false; }
     void MarkCurved()               { m_curved = true; }
+
 };
 
 //=======================================================================================
