@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SolidKernel.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -742,6 +742,15 @@ struct Modify
     //! @param[in] angle The sweep angle. (value in range of -2pi to 2pi)
     //! @return SUCCESS if faces could be spun.
     DGNPLATFORM_EXPORT static BentleyStatus SpinFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, DRay3dCR axis, double angle);
+
+    //! Modify the target solid or sheet body by tapering selected faces.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] faces The array of faces to taper.
+    //! @param[in] edges The array of references edges (one for each face entry) that should retain their geometry after the taper has been applied.
+    //! @param[in] direction The taper direction.
+    //! @param[in] angles The taper angle(s). Either a single taper angle or a taper angle for each face entry. (value in range of -2pi to 2pi)
+    //! @return SUCCESS if faces could be tapered.
+    DGNPLATFORM_EXPORT static BentleyStatus TaperFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& edges, DVec3dCR direction, bvector<double>& angles);
 
     //! Modify the target solid or sheet body by removing selected faces and healing.
     //! @param[in,out] target The target body to modify.

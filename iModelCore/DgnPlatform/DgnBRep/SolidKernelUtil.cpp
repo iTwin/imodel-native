@@ -3160,6 +3160,92 @@ BentleyStatus BRepUtil::Modify::SpinFaces(IBRepEntityR targetEntity, bvector<ISu
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& edges, DVec3dCR direction, bvector<double>& angles)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (faces.empty())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    bvector<PK_FACE_t> faceTags;
+
+    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+        {
+        if (ISubEntity::SubEntityType::Face != faces[iFace]->GetSubEntityType())
+            continue;
+
+        faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*faces[iFace]));
+        }
+
+    bvector<PK_FACE_t> edgeTags;
+
+    for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
+        {
+        if (ISubEntity::SubEntityType::Edge != edges[iEdge]->GetSubEntityType())
+            continue;
+
+        edgeTags.push_back(PSolidSubEntity::GetSubEntityTag(*edges[iEdge]));
+        }
+
+    if (faceTags.size() != edgeTags.size())
+        return ERROR;
+
+    if (angles.size() > 1 && angles.size() != faceTags.size())
+        return ERROR;
+
+    PK_VECTOR1_t taperVec;
+    Transform    invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+    invTargetTransform.MultiplyMatrixOnly((DVec3dR) taperVec, direction);
+
+    PK_FACE_taper_o_t options;
+
+    PK_FACE_taper_o_m(options);
+
+    options.taper_smooth_step = PK_taper_smooth_step_yes_c;
+    options.taper_step_face = PK_taper_preserve_smooth_c;
+
+    if (angles.size() > 1)
+        {
+        options.n_faces = (int) angles.size();
+        options.taper_faces = &faceTags.front();
+        options.angles = &angles.front();
+        }
+
+    PK_TOPOL_track_r_t tracking;
+    PK_TOPOL_local_r_t results;
+
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+
+    BentleyStatus   status = (SUCCESS == PK_FACE_taper((int) faceTags.size(), &faceTags.front(), &edgeTags.front(), taperVec, angles.front(), 1.0e-5, &options, &tracking, &results) && PK_local_status_ok_c == results.status) ? SUCCESS : ERROR;
+
+    PK_TOPOL_local_r_f(&results);
+    PK_TOPOL_track_r_f(&tracking);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bool isBlendFaces)
