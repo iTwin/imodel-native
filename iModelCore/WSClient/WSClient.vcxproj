@@ -477,9 +477,10 @@
     <None Include="ClientPrewire.mke" />
     <None Include="CacheSchemasDelivery.mke" />
     <None Include="CWSClientCLib.mke" />
+    <None Include="CWSClientCLibOptions.mki" />
     <None Include="CWSClientCPrewire.mke" />
-    <None Include="DgnDbServerClientLib.mke" />
-    <None Include="DgnDbServerClientPrewire.mke" />
+    <None Include="iModelHubClientLib.mke" />
+    <None Include="iModelHubClientPrewire.mke" />
     <None Include="iModelHubClient\DgnDbServerClient.mki" />
     <None Include="Ims\Ims.mki" />
     <None Include="l10n-WSClient.mke" />
