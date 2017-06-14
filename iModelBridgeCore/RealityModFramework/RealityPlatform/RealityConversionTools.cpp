@@ -59,6 +59,13 @@ StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, RealityDataE
     if (properties.isMember("UltimateSite") && !properties["UltimateSite"].isNull())
         statObject.SetUltimateSite(properties["UltimateSite"].asString().c_str());
 
+    if (properties.isMember("Date") && !properties["Date"].isNull())
+        {
+        DateTime dt = DateTime();
+        DateTime::FromString(dt, properties["Date"].asString().c_str());
+        statObject.SetDate(dt);
+        }
+
     return SUCCESS;
     }
 
