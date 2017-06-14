@@ -703,8 +703,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have FK on other end as base class";
 
-    //WIP Remove disabling assertions once ECObjects has fixed the issue that strength direction is not validated at deserialization time
-    BeTest::SetFailOnAssert(false);
     ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
@@ -741,10 +739,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                         </Target>
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have FK on other end as base class (here implied from strength direction)";
-    BeTest::SetFailOnAssert(true);
 
-    //WIP Remove disabling assertions once ECObjects has fixed the issue that strength direction is not validated at deserialization time
-    BeTest::SetFailOnAssert(false);
     ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
@@ -781,7 +776,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                         </Target>
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have another strength as base class";
-    BeTest::SetFailOnAssert(true);
 
     ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
