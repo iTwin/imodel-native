@@ -178,6 +178,8 @@ public:
     bool GetCachedGeometry(Render::Primitives::GeometryList& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;
     void AddCachedGeometry(Render::Primitives::GeometryList&& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;
     bool WantCacheGeometry(double rangeDiagonalSquared) const;
+
+    DGNPLATFORM_EXPORT static void ToggleDebugBoundingVolumes();
 };
 
 ENUM_IS_FLAGS(Root::DebugOptions);

@@ -1268,6 +1268,17 @@ Root::DebugOptions Root::GetDebugOptions() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::ToggleDebugBoundingVolumes()
+    {
+    if (DebugOptions::None == s_globalDebugOptions)
+        s_globalDebugOptions = DebugOptions::ShowBoundingVolume;
+    else
+        s_globalDebugOptions = DebugOptions::None;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
