@@ -28,6 +28,8 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert(NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin();
     BeAssert(NULL == m_codeAdmin);             m_codeAdmin             = &_SupplyCodeAdmin();
     BeAssert(NULL == m_sessionSettingsAdmin);  m_sessionSettingsAdmin  = &_SupplySessionSettingsAdmin();
+
+    m_fontAdmin->Initialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
