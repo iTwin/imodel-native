@@ -15,21 +15,6 @@ USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_SQLITE
 
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     12/2016
-//=======================================================================================
-struct  PublishTileData
-{
-    Json::Value         m_json;
-    ByteStream          m_binaryData;
-
-    size_t BinaryDataSize() const { return m_binaryData.size(); }
-    void const* BinaryData() const { return m_binaryData.data(); }
-    void AddBinaryData(void const* data, size_t size);
-    void PadBinaryDataToBoundary(size_t boundarySize);
-    template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
-};
-
 
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,
@@ -1066,7 +1051,7 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     AddExtensions(tileData);
     AddDefaultScene(tileData);
     AddMeshes(tileData, meshes);
-                         
+
     FeatureAttributesMapCR attributes = m_tile.GetAttributes();
     Utf8String batchTableStr;
     if (validIdsPresent)
@@ -1823,8 +1808,7 @@ void MeshMaterial::AddTechniqueParameters(Json::Value& technique, Json::Value& p
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    TilePublisher::AddMaterialColor(Json::Value& matJson, TileMaterial& mat, PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix)
     {
-    auto dim = TileColorIndex::CalcDimension(mesh.GetColorTable().GetNumIndices());
-
+    auto dim = mat.GetColorIndexDimension();
     if (TilePublish::ColorIndex::Dimension::Zero != dim)
         {
         TilePublish::ColorIndex colorIndex(mesh, mat);
