@@ -39,6 +39,8 @@ class   ParasolidException {};
 
 //#define REALITY_CACHE_SUPPORT
 
+
+
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      10/2015
 *  Called from the main thread to register Thread Local Storage used by
@@ -866,6 +868,8 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 
 
 #ifdef REALITY_CACHE_SUPPORT
+
+#define POPULATE_ROOT_TILE      // Fow now - easier to debug..
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
