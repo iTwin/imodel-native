@@ -997,14 +997,9 @@ public:
 //---------------------------------------------------------------------------------------
 void DgnShxGlyph::EnsureMetrics() const
     {
-    if (m_areMetricsValid)
+    DgnFonts::FlagHolder lock(m_areMetricsValid);
+    if (lock.IsSet())
         return;
-
-    BeMutexHolder lock(DgnFonts::GetMutex());
-    if (m_areMetricsValid)
-        return;
-
-    m_areMetricsValid = true;
 
     memset(&m_range, 0, sizeof(m_range));
     memset(&m_exactRange, 0, sizeof(m_exactRange));

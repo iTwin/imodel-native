@@ -17,12 +17,11 @@
 //---------------------------------------------------------------------------------------
 FT_Library DgnPlatformLib::Host::FontAdmin::_GetFreeTypeLibrary()
     {
-    if (!m_triedToLoadFTLibrary)
+    DgnFonts::FlagHolder lock(m_triedToLoadFTLibrary);
+    if (!lock.IsSet())
         {
-        m_triedToLoadFTLibrary = true;
-
         FT_Error loadStatus = FT_Init_FreeType(&m_ftLibrary);
-        if ((nullptr == m_ftLibrary) || (FT_Err_Ok != loadStatus))
+        if (nullptr == m_ftLibrary || FT_Err_Ok != loadStatus)
             { BeAssert(false); }
         }
 
@@ -77,10 +76,9 @@ public:
 //---------------------------------------------------------------------------------------
 DRange2d DgnTrueTypeGlyph::_GetRange() const
     {
-    if (!m_isRangeValid)
+    DgnFonts::FlagHolder flagLock(m_isRangeValid);
+    if (!flagLock.IsSet())
         {
-        m_isRangeValid = true;
-
         if (FT_Err_Ok != FT_Load_Glyph(m_face, m_glyphIndex, FT_LOAD_DEFAULT))
             {
             m_range.low.Zero();
@@ -103,10 +101,9 @@ DRange2d DgnTrueTypeGlyph::_GetRange() const
 //---------------------------------------------------------------------------------------
 DRange2d DgnTrueTypeGlyph::_GetExactRange() const
     {
-    if (!m_isExactRangeValid)
+    DgnFonts::FlagHolder flagLock(m_isExactRangeValid);
+    if (!flagLock.IsSet())
         {
-        m_isExactRangeValid = true;
-
         if (FT_Err_Ok != FT_Load_Glyph(m_face, m_glyphIndex, FT_LOAD_DEFAULT))
             {
             m_exactRange.low.Zero();

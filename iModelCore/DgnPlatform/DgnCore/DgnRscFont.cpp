@@ -269,14 +269,9 @@ void DgnRscFont::LoadGlyphs() const
     {
     // Because we have to load and O(n) iterate the glyph header blob to even know what glyphs are in the file, do it once up-front instead of repeatedly for each glyph.
     // The glyphs will still load their glyph geometry data on-demand.
-    if (m_hasLoadedGlyphs)
+    DgnFonts::FlagHolder lock(m_hasLoadedGlyphs);
+    if (lock.IsSet())
         return;
-
-    BeMutexHolder lock(DgnFonts::GetMutex());
-    if (m_hasLoadedGlyphs)
-        return;
-
-    m_hasLoadedGlyphs = true;
 
     if (!IsResolved())
         return;
@@ -315,7 +310,8 @@ void DgnRscFont::LoadGlyphs() const
         m_glyphCache[glyphHeaders[iGlyph].code] = new DgnRscGlyph(glyphHeaders[iGlyph].code, fontHeader.ascender, fontHeader.filledFlag, glyphHeaders[iGlyph], glyphOffsets[iGlyph], *data);
     
     //.............................................................................................
-    m_defaultGlyph = FindGlyphCP(fontHeader.defaultChar);
+    auto foundDefaultGlyph = m_glyphCache.find(fontHeader.defaultChar);
+    m_defaultGlyph = foundDefaultGlyph != m_glyphCache.end() ? foundDefaultGlyph->second : nullptr;
     if (nullptr == m_defaultGlyph)
         {
         m_defaultGlyph = DgnRscGlyph::CreateUnitSpaceGlyph();
@@ -343,10 +339,9 @@ DgnGlyphCP DgnRscFont::FindGlyphCP(DgnGlyph::T_Id id) const
 DgnGlyph::T_Id DgnRscFont::FindFractionGlyphCode(uint8_t numerator, uint8_t denominator) const
     {
     // Read all of the fractions up-front to avoid the repeated data lookups later; should be cheap enough to be up-front vs. on-demand.
-    if (!m_hasLoadedFractions)
+    DgnFonts::FlagHolder flagHolder(m_hasLoadedFractions);
+    if (!flagHolder.IsSet())
         {
-        m_hasLoadedFractions = true;
-
         IDgnRscFontData* data = (IDgnRscFontData*)m_data;
         if (nullptr == data)
             return 0;

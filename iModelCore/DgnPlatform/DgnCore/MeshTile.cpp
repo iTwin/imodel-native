@@ -1711,9 +1711,6 @@ TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnM
 
     // unused - auto nCompletedModels = 0;
 
-    T_HOST.GetFontAdmin().EnsureInitialized();
-    GetDgnDb().Fonts().Update();
-
 #if defined (BENTLEYCONFIG_PARASOLID) 
     PSolidPartitionMark     partitionMark;
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
@@ -2662,9 +2659,6 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
     {
     if (m_surfacesOnly)
         return true;
-
-    static BeMutex s_tempFontMutex;
-    BeMutexHolder lock(s_tempFontMutex);        // Temporary - until we resolve the font threading issues.
 
     TextStringPtr   clone = textString.Clone();
     Transform       localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());

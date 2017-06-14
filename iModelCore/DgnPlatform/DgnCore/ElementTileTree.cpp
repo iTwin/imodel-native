@@ -1066,10 +1066,6 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     PSolidKernelManager::StartSession();
 #endif
 
-    // Prepare for multi-threaded access to this stuff when generating geometry...
-    T_HOST.GetFontAdmin().EnsureInitialized();
-    model.GetDgnDb().Fonts().Update();
-
     RootPtr root = new Root(model, transform, system);
     Transform rangeTransform;
 
@@ -1351,6 +1347,17 @@ bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, dou
 Root::DebugOptions Root::GetDebugOptions() const
     {
     return m_debugOptions | s_globalDebugOptions;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::ToggleDebugBoundingVolumes()
+    {
+    if (DebugOptions::None == s_globalDebugOptions)
+        s_globalDebugOptions = DebugOptions::ShowBoundingVolume;
+    else
+        s_globalDebugOptions = DebugOptions::None;
     }
 
 /*---------------------------------------------------------------------------------**//**
