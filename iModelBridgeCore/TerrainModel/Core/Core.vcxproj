@@ -229,7 +229,7 @@
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__;DEBUG;__BENTLEYTMDRAINAGE_BUILD__</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>

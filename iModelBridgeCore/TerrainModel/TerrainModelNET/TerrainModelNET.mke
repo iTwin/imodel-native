@@ -112,6 +112,8 @@ $(o)DTMSideSlopeInputPoint$(oext)       : $(basedir)DTMSideSlopeInputPoint.cpp $
 
 $(o)DTMPond$(oext)      : $(basedir)DTMPond.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
+$(o)WaterAnalysis$(oext)      : $(basedir)WaterAnalysis.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 #....................................................................................................................................................

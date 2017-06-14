@@ -49,6 +49,7 @@
     <ClCompile Include="DTMSideSlopeInput.cpp" />
     <ClCompile Include="DTMSideSlopeInputPoint.cpp" />
     <ClCompile Include="DTMTinEditor.cpp" />
+    <ClCompile Include="WaterAnalysis.cpp" />
     <ClCompile Include="Stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
