@@ -1483,52 +1483,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ElementExternalKey" displayLabel="Element External Key">
-        <!-- The aspect that holds an identifier from an external system -->
-        <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <DbIndexList xmlns="ECDbMap.2.0">
-                <Indexes>
-                    <DbIndex>
-                        <Name>ix_bis_ElementExternalKey_ElementId_CodeSpecId</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <!-- Only one ExternalKey per CodeSpec per Element -->
-                            <string>Element.Id</string>
-                            <string>CodeSpecId</string>
-                        </Properties>
-                    </DbIndex>
-                    <DbIndex>
-                        <!-- Index for looking up Element by ExternalKey -->
-                        <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
-                        <Name>ix_bis_ElementExternalKey_CodeSpecId_ExternalKey</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CodeSpecId</string>
-                            <string>ExternalKey</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </DbIndexList>
-        </ECCustomAttributes>
-        <ECProperty propertyName="CodeSpecId" typeName="long">
-            <!-- WIP: Foreign key relationship to CodeSpec that controls the ExternalKey -->
-            <!-- IsNullable = False -->
-        </ECProperty>
-        <ECProperty propertyName="ExternalKey" typeName="string">
-            <!-- IsNullable = False -->
-        </ECProperty>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsExternalKeys" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
-            <Class class="Element"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
-            <Class class="ElementExternalKey"/>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
         <!-- Creates bis_ElementRefersToElements link table -->
         <ECCustomAttributes>
