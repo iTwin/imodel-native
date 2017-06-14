@@ -21,6 +21,12 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     {
     BeAssert(exp.IsComplete());
 
+    if (exp.GetClassNameExp()->GetInfo().GetMap().GetType() == ClassMap::Type::RelationshipEndTable)
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Updating RelationshipClassEndTableMap map is not supported.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
     NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
 

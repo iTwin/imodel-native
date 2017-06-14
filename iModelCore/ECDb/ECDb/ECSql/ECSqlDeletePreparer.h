@@ -40,7 +40,7 @@ private:
     static ECSqlStatus PrepareForEndTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets&, RelationshipClassEndTableMap const&);
 
     static void BuildNativeSqlDeleteStatement (NativeSqlBuilder& deleteBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets);
-    static void BuildNativeSqlUpdateStatement (NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets, NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets);
+
 
 public:
     static ECSqlStatus Prepare (ECSqlPrepareContext&, DeleteStatementExp const&);

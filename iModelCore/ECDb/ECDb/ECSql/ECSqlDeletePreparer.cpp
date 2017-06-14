@@ -51,43 +51,8 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForClass(ECSqlPrepareContext& ctx, Nativ
 //static
 ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassEndTableMap const& classMap)
     {
-    ConstraintECInstanceIdPropertyMap const* referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
-    //this is wrong. Fixing it causes some other issues though. Affan to look at this.
-    ConstraintECInstanceIdPropertyMap const* referencedEndECClassIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
-    //ConstraintECClassIdPropertyMap const* referencedEndECClassIdPropMap = classMap.GetReferencedEndECClassIdPropMap();
-    if (referencedEndECClassIdPropMap->GetTables().size() > 1)
-        {
-        BeAssert(false && "Older code presume this is always a single table");
-        return ECSqlStatus::Error;
-        }
-    DbTable const* contextTable = referencedEndECClassIdPropMap->GetTables().front();
-    ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp, nullptr);
-
-    NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
-    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data | PropertyMap::Type::ConstraintECInstanceId | PropertyMap::Type::ConstraintECClassId);
-    classMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
-    for (PropertyMap const* propMap : typeVisitor.Results())
-        {
-        if (!propMap->IsSystem() || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap)
-            {
-            propMap->AcceptVisitor(sqlVisitor);           
-            ToSqlPropertyMapVisitor::Result const* r = sqlVisitor.Find(propMap->GetAccessString().c_str());;
-            if (r == nullptr)
-                {
-                BeAssert(false);
-                return ECSqlStatus::Error;
-                }
-
-            if (r->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
-                continue;
-
-            propertyNamesToUnsetSqlSnippets.push_back(r->GetSqlBuilder());
-            }
-
-        }
-
-    BuildNativeSqlUpdateStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, propertyNamesToUnsetSqlSnippets);
-    return ECSqlStatus::Success;
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Delete from RelationshipClassEndTableMap map is not supported.");
+    return ECSqlStatus::InvalidECSql;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -221,46 +186,6 @@ void ECSqlDeletePreparer::BuildNativeSqlDeleteStatement(NativeSqlBuilder& delete
         }
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-void ECSqlDeletePreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets, NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets)
-    {
-    updateBuilder.Append("UPDATE ").Append(deleteNativeSqlSnippets.m_classNameNativeSqlSnippet);
-
-    //Columns of properties of the relationship need to be nulled out when "deleting" the relationship
-    BeAssert(!propNamesToUnsetNativeSqlSnippets.empty());
-    updateBuilder.Append(" SET ");
-
-    bool isFirstItem = true;
-    for (auto const& sqlSnippet : propNamesToUnsetNativeSqlSnippets)
-        {
-        if (!isFirstItem)
-            updateBuilder.AppendComma();
-
-        updateBuilder.Append(sqlSnippet).Append("=NULL");
-        isFirstItem = false;
-        }
-
-
-    bool whereAlreadyAppended = false;
-    if (!deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet.IsEmpty())
-        {
-        updateBuilder.AppendSpace().Append(deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet);
-        whereAlreadyAppended = true;
-        }
-
-    if (!deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet.IsEmpty())
-        {
-        if (whereAlreadyAppended)
-            updateBuilder.Append(" AND ");
-        else
-            updateBuilder.Append(" WHERE ");
-
-        updateBuilder.Append(deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
-        }
-    }
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

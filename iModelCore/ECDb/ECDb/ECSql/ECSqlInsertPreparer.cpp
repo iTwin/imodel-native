@@ -93,56 +93,8 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassEndTableMap const& relationshipClassMap)
     {
-    const ECRelationshipEnd foreignEnd = relationshipClassMap.GetForeignEnd();
-
-    SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
-
-    std::vector<size_t> expIndexSkipList;
-    //if ECInstanceId was specified, put it in skip list as it will always be ignored for end table mappings
-    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemPropertyInfo::ECInstanceId());
-    if (ecinstanceIdExpIndex >= 0)
-        expIndexSkipList.push_back((size_t) ecinstanceIdExpIndex);
-
-    //This end's ecinstanceid is ecinstanceid of relationship instance (by nature of end table mapping)
-    int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId());
-    int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId());
-    int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId());
-    
-    if (foreignEndECInstanceIdIndex >= 0)
-        {
-        //ECSQL contains Source/TargetECInstanceId for foreign end
-        const size_t foreignEndECInstanceIdIndexUnsigned = (size_t) foreignEndECInstanceIdIndex;
-        NativeSqlBuilder::List const& ecinstanceIdPropNameSnippets = nativeSqlSnippets.m_propertyNamesNativeSqlSnippets[foreignEndECInstanceIdIndexUnsigned];
-        nativeSqlSnippets.m_pkColumnNamesNativeSqlSnippets.insert(nativeSqlSnippets.m_pkColumnNamesNativeSqlSnippets.end(), ecinstanceIdPropNameSnippets.begin(), ecinstanceIdPropNameSnippets.end());
-
-        NativeSqlBuilder::List const& ecinstanceIdValueSnippets = nativeSqlSnippets.m_valuesNativeSqlSnippets[foreignEndECInstanceIdIndexUnsigned];
-        if (ecinstanceIdValueSnippets.size() != 1)
-            {
-            BeAssert(!ecinstanceIdValueSnippets.empty() && "Should have been caught before");
-
-            //WIP Shouldn't this be caught much earlier??
-            if (ecinstanceIdValueSnippets.size() > 1)
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Multi-value ECInstanceIds not supported.");
-
-            return ECSqlStatus::InvalidECSql;
-            }
-
-        nativeSqlSnippets.m_pkValuesNativeSqlSnippets.insert(nativeSqlSnippets.m_pkValuesNativeSqlSnippets.end(), ecinstanceIdValueSnippets.begin(), ecinstanceIdValueSnippets.end());
-        expIndexSkipList.push_back(foreignEndECInstanceIdIndexUnsigned);
-        }
-
-    //if SourceECClassId or TargetECClassId was specified, put it in skip list as it will be treated separately
-    if (foreignEndECClassIdIndex >= 0)
-        expIndexSkipList.push_back((size_t) foreignEndECClassIdIndex);
-
-    if (referencedEndECClassIdIndex >= 0)
-        expIndexSkipList.push_back((size_t) referencedEndECClassIdIndex);
-
-    std::sort(expIndexSkipList.begin(), expIndexSkipList.end());
-    //now build SQLite SQL
-    //Inserting into a relationship with end table mapping translates to an UPDATE statement in SQLite
-    BuildNativeSqlUpdateStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, expIndexSkipList, relationshipClassMap);
-    return ECSqlStatus::Success;
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Insert into RelationshipClassEndTableMap map is not supported.");
+    return ECSqlStatus::InvalidECSql;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -239,51 +191,6 @@ void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insert
     insertBuilder.AppendParenRight();
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& insertSqlSnippets, std::vector<size_t> const& expIndexSkipList, RelationshipClassEndTableMap const& classMap)
-    {
-    ECClassIdPropertyMap const* ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
-    if (!ecClassIdPropertyMap->IsMappedToSingleTable() || !classMap.IsMappedToSingleTable())
-        {
-        BeAssert(false && "We should not be able to insert into endtable that mapped top multiple tables");
-        return;
-        }
 
-    DbTable const& contextTable = classMap.GetPrimaryTable();
-
-    //For each expression in the property name / value list, a NativeSqlBuilder::List is created. For simple primitive
-    //properties, the list will only contain one snippet, but for multi-dimensional properties (points, structs)
-    //the list will contain more than one snippet. Consequently the list of ECSQL expressions is translated
-    //into a list of list of native sql snippets. At this point we don't need that jaggedness anymore and flatten it out
-    //before building the final SQLite sql string.
-    NativeSqlBuilder::List propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_propertyNamesNativeSqlSnippets, expIndexSkipList);
-    NativeSqlBuilder::List valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_valuesNativeSqlSnippets, expIndexSkipList);
-
-    updateBuilder.Append("UPDATE ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet).Append(" SET ");
-    updateBuilder.Append(propertyNamesNativeSqlSnippets, "=", valuesNativeSqlSnippets);
-
-    SystemPropertyMap::PerTableIdPropertyMap const* perTableClassIdPropMap = ecClassIdPropertyMap->FindDataPropertyMap(contextTable);
-    BeAssert(perTableClassIdPropMap != nullptr && perTableClassIdPropMap->GetType() == PropertyMap::Type::SystemPerTableClassId);
-    DbColumn const& classIdCol = perTableClassIdPropMap->GetColumn();
-    if (classIdCol.GetPersistenceType() == PersistenceType::Physical)
-        {
-        //class id is persisted so append the class id literal to the SQL
-        updateBuilder.AppendComma().Append(classIdCol.GetName().c_str()).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(classMap.GetClass().GetId());
-        }
-
-    //add WHERE clause so that the right row in the end table is updated
-    updateBuilder.Append(" WHERE ").Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, "=", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
-    //add expression to WHERE clause that only updates the row if the other end id is NULL. If it wasn't NULL, it would mean
-    //a cardinality constraint violation, as by definition the other end's cardinality in an end table mapping is 0 or 1.
-    ToSqlPropertyMapVisitor sqlVisitor(contextTable, ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp, nullptr);
-    classMap.GetReferencedEndECInstanceIdPropMap()->AcceptVisitor(sqlVisitor);
-    for (ToSqlPropertyMapVisitor::Result const& referencedEndECInstanceIdColSnippet : sqlVisitor.GetResultSet())
-        {
-        updateBuilder.Append(" AND ").Append(referencedEndECInstanceIdColSnippet.GetSql()).Append(" IS NULL");
-        }
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
