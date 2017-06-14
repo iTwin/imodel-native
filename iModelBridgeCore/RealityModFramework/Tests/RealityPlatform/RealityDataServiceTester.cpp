@@ -505,7 +505,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDelete)
 //=====================================================================================
 TEST_F(RealityDataServiceFixture, RealityDataDeleteGoodRequest)
 	{
-    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 	    {
 	    response.status = ::OK;
@@ -913,7 +913,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdGoodRequest)
         
         auto requestString = wsgRequest.GetHttpRequestString();
 
-        if(requestString.Contains("RealityData/RootID"))
+        if(requestString.Contains("RealityData/RootID/FileAccess.FileAccessKey?"))
             {
             // First request is from GetAzureRedirectionRequestUrl() so we send a redirection URL
 		    response.body = R"(
@@ -934,7 +934,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdGoodRequest)
             }
 		}));
 
-    ON_CALL(*s_mockWSGInstance, PerformAzureRequest(_,_,_,_,_)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+    EXPECT_CALL(*s_mockWSGInstance, PerformAzureRequest(_,_,_,_,_)).Times(2).WillRepeatedly(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
         response.status = ::OK;
         response.responseCode = 200;
@@ -1287,8 +1287,8 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteGoodRequest)
 	RealityDataRelationshipDelete requestUT("RootID","ProjectID");
 	RawServerResponse rawResponse{};
    
-	s_realityDataService->Request(requestUT, rawResponse);
-    
+	auto response = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(response, R"({"changedInstance": "blabla"})");
 	}
 
 //=====================================================================================
@@ -1296,9 +1296,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteGoodRequest)
 //=====================================================================================
 TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdBadAzureToken)
 	{
-    ErrorClass test{};
-    s_realityDataService->SetErrorCallback(ErrorClass::callBack);
-    EXPECT_CALL(test, errorCallBack(_, _)).Times(5);
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
 		response.status = ::OK;
@@ -1429,6 +1427,7 @@ TEST_F(RealityDataServiceTransferFixture, EmptyFileToTransfer)
 	}
 
 #endif
+
 //=====================================================================================
 //! @bsiclass                                   Remi.Charbonneau              05/2017
 //! RealityDataServiceBadComponentsFixture

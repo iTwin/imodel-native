@@ -94,21 +94,32 @@ public:
     static RealityDataService* s_realityDataService;
     static ErrorClass* s_errorClass;
 
+    // We need to setup a new error class and destroy it for each test that run under the fixture
+    //    that way it will ensure that unfill expectation will make the test fail
+    virtual void SetUp()
+        {
+        s_errorClass = new ErrorClass();
+        s_realityDataService->SetErrorCallback(mockErrorCallBack);
+        }
+
+    virtual void TearDown()
+        {
+        delete s_errorClass;
+        s_errorClass = nullptr;
+        }
     static void SetUpTestCase()
         {
         s_mockWSGInstance = new MockWSGRequest();
         s_realityDataService = new RealityDataService();
         s_realityDataService->SetServerComponents("myserver.com", "9.9", "myRepo", "mySchema", "zz:\\mycertificate.pfx", "myProjectID");
-        s_errorClass = new ErrorClass();
-        s_realityDataService->SetErrorCallback(mockErrorCallBack);
+
         }
 
     static void TearDownTestCase()
         {
+
         delete s_realityDataService;
-        s_realityDataService = nullptr;
-        delete s_errorClass;
-        s_errorClass = nullptr;
+        s_realityDataService = nullptr;        
         delete s_mockWSGInstance;
         s_mockWSGInstance = nullptr;
         }
@@ -149,10 +160,10 @@ public:
 
     static void TearDownTestCase()
         {
-        delete s_geoCoordinateService;
-        s_geoCoordinateService = nullptr;
         delete s_errorClass;
         s_errorClass = nullptr;
+        delete s_geoCoordinateService;
+        s_geoCoordinateService = nullptr;        
         delete s_mockWSGInstance;
         s_mockWSGInstance = nullptr;
         }
