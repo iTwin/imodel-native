@@ -275,16 +275,16 @@
             <Class class="Model"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
-            <Class class="Element" />
+            <Class class="ISubModeledElement" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalElement" strength="embedding" strengthDirection="Backward" modifier="None">
+    <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalPortion" strength="embedding" strengthDirection="Backward" modifier="None">
         <BaseClass>ModelModelsElement</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="breaks down" polymorphic="true">
             <Class class="PhysicalModel"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is broken down by" polymorphic="true">
-            <Class class="PhysicalElement" />
+            <Class class="PhysicalPortion" />
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="DrawingModelBreaksDownDrawing" strength="embedding" strengthDirection="Backward" modifier="None">
