@@ -3165,7 +3165,7 @@ BentleyStatus BRepUtil::Modify::SpinFaces(IBRepEntityR targetEntity, bvector<ISu
 BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& edges, DVec3dCR direction, bvector<double>& angles)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    if (faces.empty())
+    if (faces.empty() || edges.empty() || angles.empty())
         return ERROR;
 
     PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
