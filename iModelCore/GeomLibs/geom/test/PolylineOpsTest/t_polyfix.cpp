@@ -3,8 +3,7 @@
 
 struct Stick
 {
-size_t m_splitIndex;
-size_t m_loopIndex;
+size_t m_bandIndex;
 size_t m_masterEdge;
 DPoint3d m_xyz0;
 DPoint3d m_xyz1;
@@ -17,8 +16,7 @@ size_t masterEdge,
 DPoint3dCR xyz0,
 DPoint3dCR xyz1
 )
-    : m_splitIndex (splitIndex),
-      m_loopIndex (loopIndex),
+    : m_bandIndex (splitIndex),
       m_masterEdge (masterEdge),
       m_xyz0 (xyz0),
       m_xyz1 (xyz1)
@@ -28,9 +26,9 @@ DPoint3dCR xyz1
 // Comparator for sorting to trapezoid regions
 static bool cb_less_splitIndex_x01 (Stick const &dataA, Stick const &dataB)
     {
-    if (dataA.m_splitIndex < dataB.m_splitIndex)
+    if (dataA.m_bandIndex < dataB.m_bandIndex)
         return true;
-    if (dataA.m_splitIndex > dataB.m_splitIndex)
+    if (dataA.m_bandIndex > dataB.m_bandIndex)
         return false;
     if (dataA.m_xyz0.x < dataB.m_xyz0.x)
         return true;
@@ -171,7 +169,7 @@ void FixupLoops (bvector<bvector<DPoint3d>> const &loops, bvector<bvector<DPoint
     for (size_t i0 = 0, n = sticks.size (); i0 < n; i0 += 2)   // sticks should appear in pairs at same break index
         {
         size_t i1 = i0 + 1;
-        if (i1 < n && sticks[i0].m_splitIndex == sticks[i1].m_splitIndex)
+        if (i1 < n && sticks[i0].m_bandIndex == sticks[i1].m_bandIndex)
             {
             tiles.push_back
                 (
@@ -180,7 +178,7 @@ void FixupLoops (bvector<bvector<DPoint3d>> const &loops, bvector<bvector<DPoint
                     i0, i1,
                     sticks[i0].m_masterEdge,
                     sticks[i1].m_masterEdge,
-                    sticks[i0].m_splitIndex
+                    sticks[i0].m_bandIndex
                     )
                 );
             }
