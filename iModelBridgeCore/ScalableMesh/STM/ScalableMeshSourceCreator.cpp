@@ -925,7 +925,15 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType
     if (BSISUCCESS != status) return BSIERROR;
     if (pMosaic == nullptr) return BSISUCCESS;
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(pMosaic.GetPtr());
-    pIndex->TextureFromRaster(mosaicPtr);
+    
+    //Image++ is always in meters, so ensure 3SM data are transformed to meter
+    Transform unitTransform;
+
+    unitTransform.InitFromRowValues(m_gcs.GetUnit().GetRatioToBase(), 0 ,0, 0,
+                                    0, m_gcs.GetUnit().GetRatioToBase(), 0, 0,
+                                    0, 0, m_gcs.GetUnit().GetRatioToBase(), 0);
+            
+    pIndex->TextureFromRaster(mosaicPtr, unitTransform);
     return BSISUCCESS;
     }
 
