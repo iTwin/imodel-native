@@ -46,4 +46,5 @@
         <ECProperty propertyName="CreateForeignKeyConstraints" typeName="boolean" description="Default: true. If set to false, no foreign key constraints are created on the link table. In that case, deleting instance does not delete its relationships in the link table."/>
         <ECProperty propertyName="AllowDuplicateRelationships" typeName="boolean" description="Default: false. If set to true duplicate relationships are allowed."/>
     </ECCustomAttributeClass>
+
 </ECSchema>

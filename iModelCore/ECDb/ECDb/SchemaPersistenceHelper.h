@@ -53,6 +53,7 @@ private:
 
 public:
     static ECN::ECSchemaId GetSchemaId(ECDbCR, Utf8CP schemaName);
+    static Utf8String GetSchemaName(ECDbCR, ECN::ECSchemaId);
     static ECN::ECClassId GetClassId(ECDbCR, ECN::ECSchemaId, Utf8CP className);
     static ECN::ECClassId GetClassId(ECDbCR, Utf8CP schemaNameOrAlias, Utf8CP className, SchemaLookupMode);
     static ECN::ECEnumerationId GetEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);

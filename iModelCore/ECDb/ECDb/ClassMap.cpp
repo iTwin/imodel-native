@@ -319,7 +319,16 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             {
             //WIP_RELMAP_REFACTOR extract ForeignKeyConstraint on nav prop for later use during mapping the relationship
             //WIP this can be changed once relationship mapping is refactored
-            ctx.GetImportCtx().CacheFkConstraintCA(*property->GetAsNavigationProperty());
+            if (ctx.GetImportCtx().CacheFkConstraintCA(*property->GetAsNavigationProperty()))
+                {
+                SchemaPolicy const* noAdditionalForeignKeyConstraintsPolicy = nullptr;
+                if (ctx.GetImportCtx().GetSchemaPolicies().IsOptedIn(noAdditionalForeignKeyConstraintsPolicy, SchemaPolicy::Type::NoAdditionalForeignKeyConstraints))
+                    {
+                    if (SUCCESS != noAdditionalForeignKeyConstraintsPolicy->GetAs<NoAdditionalForeignKeyConstraintsPolicy>().Evaluate(m_ecdb, *property->GetAsNavigationProperty()))
+                        return ClassMappingStatus::Error;
+                    }
+
+                }
             }
 
         if (&property->GetClass() == &m_ecClass ||

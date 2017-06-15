@@ -9480,6 +9480,7 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
     expectedSchemas.push_back("ECDbFileInfo");
     expectedSchemas.push_back("ECDbMap");
     expectedSchemas.push_back("ECDbMeta");
+    expectedSchemas.push_back("ECDbSchemaPolicies");
     expectedSchemas.push_back("ECDbSystem");
     expectedSchemas.push_back("EditorCustomAttributes");
     expectedSchemas.push_back("StartupCompany");

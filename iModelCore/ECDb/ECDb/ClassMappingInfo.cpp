@@ -98,6 +98,13 @@ ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy(SchemaImportContext& c
         return ClassMappingStatus::Success;
         }
 
+    SchemaPolicy const* noAdditionalRootEntityClassPolicy = nullptr;
+    if (ctx.GetSchemaPolicies().IsOptedIn(noAdditionalRootEntityClassPolicy, SchemaPolicy::Type::NoAdditionalRootEntityClasses))
+        {
+        if (SUCCESS != noAdditionalRootEntityClassPolicy->GetAs<NoAdditionalRootEntityClassesPolicy>().Evaluate(m_ecdb, m_ecClass))
+            return ClassMappingStatus::Error;
+        }
+
     ClassMap const* baseClassMap = nullptr;
     ClassMappingStatus stat = TryGetBaseClassMap(baseClassMap);
     if (stat != ClassMappingStatus::Success)
@@ -840,6 +847,7 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
     if (hasBaseClasses)
         {
         BeAssert(m_ecClass.GetBaseClasses().size() == 1 && "Only 1 base class allowed for rels. This should have been caught before");
+
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
@@ -901,7 +909,7 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
         if (baseStrategy != m_mapStrategyExtInfo.GetStrategy())
             {
             Issues().Report("Failed to map ECRelationshipClass %s. Its mapping type (%s) differs from the mapping type of its base relationship class %s (%s). The mapping type must not change within an ECRelationshipClass hierarchy.",
-                            m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_mapStrategyExtInfo.GetStrategy()), 
+                            m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_mapStrategyExtInfo.GetStrategy()),
                             firstBaseClassMap->GetClass().GetFullName(), MapStrategyExtendedInfo::ToString(baseStrategy));
             return ClassMappingStatus::Error;
             }
@@ -911,6 +919,16 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
 
     //no base class
     BeAssert(m_mappingType != nullptr);
+
+    if (m_mappingType->IsLinkTable())
+        {
+        SchemaPolicy const* noAdditionalLinkTablesPolicy = nullptr;
+        if (ctx.GetSchemaPolicies().IsOptedIn(noAdditionalLinkTablesPolicy, SchemaPolicy::Type::NoAdditionalLinkTables))
+            {
+            if (SUCCESS != noAdditionalLinkTablesPolicy->GetAs<NoAdditionalLinkTablesPolicy>().Evaluate(m_ecdb, *m_ecClass.GetRelationshipClassCP()))
+                return ClassMappingStatus::Error;
+            }
+        }
 
     if (caCache->HasMapStrategy() && caCache->GetStrategy() == MapStrategy::NotMapped)
         {

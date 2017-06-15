@@ -753,5 +753,8 @@
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
+    <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

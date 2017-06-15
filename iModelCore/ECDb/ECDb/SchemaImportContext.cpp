@@ -51,17 +51,18 @@ void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::uniqu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2017
 //---------------------------------------------------------------------------------------
-void SchemaImportContext::CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp)
+bool SchemaImportContext::CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp)
     {
     ForeignKeyConstraintCustomAttribute ca;
     if (!ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ca, navProp))
-        return;
+        return false;
 
     BeAssert(navProp.GetRelationshipClass() != nullptr);
     ECClassId relClassId = navProp.GetRelationshipClass()->GetId();
     BeAssert(relClassId.IsValid() && "Navigation property's relationship class is expected to have been persisted already by this time");
     BeAssert(m_fkConstraintCACache.find(relClassId) == m_fkConstraintCACache.end());
     m_fkConstraintCACache[relClassId] = ca;
+    return true;
     }
 
 //****************************************************************************************** 
@@ -198,6 +199,175 @@ ECSchemaCP SchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
         }
 
     return nullptr;
+    }
+
+//*********************************************************************************
+// SchemaPolicies
+//*********************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaPolicies::ReadPolicies(ECDbCR ecdb, ECN::ECSchemaCR schema)
+    {
+    if (SUCCESS != ReadPolicy(ecdb, schema, SchemaPolicy::Type::NoAdditionalForeignKeyConstraints))
+        return ERROR;
+
+    if (SUCCESS != ReadPolicy(ecdb, schema, SchemaPolicy::Type::NoAdditionalLinkTables))
+        return ERROR;
+
+    return ReadPolicy(ecdb, schema, SchemaPolicy::Type::NoAdditionalRootEntityClasses);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaPolicies::ReadPolicy(ECDbCR ecdb, ECN::ECSchemaCR schema, SchemaPolicy::Type policyType)
+    {
+    IECInstancePtr policyCA = schema.GetCustomAttributeLocal("ECDbSchemaPolicies", SchemaPolicy::TypeToString(policyType));
+    if (policyCA == nullptr)
+        return SUCCESS;
+
+    auto it = m_optedInPolicies.find(policyType);
+    if (it != m_optedInPolicies.end())
+        {
+        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import schemas. Schema '%s' opts in policy '%s' although it is already opted in by schema '%s'. A schema policy can only be opted in by one schema.",
+                                                      schema.GetName().c_str(), SchemaPolicy::TypeToString(policyType), SchemaPersistenceHelper::GetSchemaName(ecdb, it->second->GetOptingInSchemaId()).c_str());
+        return ERROR;
+        }
+
+
+    std::unique_ptr<SchemaPolicy> policy = SchemaPolicy::Create(policyType, schema.GetId());
+
+    ECValue exceptionsVal;
+    if (ECObjectsStatus::Success != policyCA->GetValue(exceptionsVal, "Exceptions"))
+        return ERROR;
+
+    //insert exceptions directly into the policy to avoid copying of set<Utf8String>s
+    if (!exceptionsVal.IsNull())
+        {
+        const uint32_t arraySize = exceptionsVal.GetArrayInfo().GetCount();
+        for (uint32_t i = 0; i < arraySize; i++)
+            {
+            ECValue exceptionVal;
+            if (ECObjectsStatus::Success != policyCA->GetValue(exceptionVal, "Exceptions", i))
+                return ERROR;
+
+            if (exceptionVal.IsNull() || Utf8String::IsNullOrEmpty(exceptionVal.GetUtf8CP()))
+                continue;
+
+            policy->m_exceptions.insert(Utf8String(exceptionVal.GetUtf8CP()));
+            }
+        }
+
+    m_optedInPolicies[policyType] = std::move(policy);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+bool SchemaPolicies::IsOptedIn(SchemaPolicy const*& policy, SchemaPolicy::Type policyType) const
+    {
+    auto it = m_optedInPolicies.find(policyType);
+    if (it == m_optedInPolicies.end())
+        return false;
+
+    policy = it->second.get();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+//static
+std::unique_ptr<SchemaPolicy> SchemaPolicy::Create(Type type, ECN::ECSchemaId optingInSchemaId)
+    {
+    switch (type)
+        {
+            case Type::NoAdditionalForeignKeyConstraints:
+                return std::make_unique<NoAdditionalForeignKeyConstraintsPolicy>(optingInSchemaId);
+
+            case Type::NoAdditionalLinkTables:
+                return std::make_unique<NoAdditionalLinkTablesPolicy>(optingInSchemaId);
+
+            case Type::NoAdditionalRootEntityClasses:
+                return std::make_unique<NoAdditionalRootEntityClassesPolicy>(optingInSchemaId);
+
+            default:
+                BeAssert(false && "New SchemaPolicy type. Adjust this method");
+                return nullptr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+//static
+Utf8CP SchemaPolicy::TypeToString(Type type)
+    {
+    switch (type)
+        {
+            case Type::NoAdditionalForeignKeyConstraints:
+                return "NoAdditionalForeignKeyConstraints";
+            case Type::NoAdditionalLinkTables:
+                return "NoAdditionalLinkTables";
+            case Type::NoAdditionalRootEntityClasses:
+                return "NoAdditionalRootEntityClasses";
+
+            default:
+                BeAssert(false && "SchemaPolicy::Type enum has a new value. This method needs to be adjusted");
+                return "";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus NoAdditionalRootEntityClassesPolicy::Evaluate(ECDbCR ecdb, ECN::ECClassCR ecClass) const
+    {
+    if (ecClass.GetSchema().GetId() == GetOptingInSchemaId() || 
+        ecClass.HasBaseClasses() || !ecClass.IsEntityClass() || !ecClass.GetEntityClassCP()->IsMixin() ||
+        IsException(ecClass))
+        return SUCCESS;
+
+    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECClass '%s'. It violates against the policy that all entity classes must subclass from classes defined in the ECSchema %s",
+                                                  ecClass.GetFullName(), SchemaPersistenceHelper::GetSchemaName(ecdb, GetOptingInSchemaId()).c_str());
+
+    return ERROR;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus NoAdditionalLinkTablesPolicy::Evaluate(ECDbCR ecdb, ECN::ECRelationshipClassCR relClass) const
+    {
+    if (relClass.GetSchema().GetId() == GetOptingInSchemaId() ||
+        relClass.HasBaseClasses() || IsException(relClass))
+        return SUCCESS;
+
+    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECRelationshipClass '%s'. It violates against the policy that relationship classes with 'Link table' mapping must subclass from relationship classes defined in the ECSchema %s",
+                    relClass.GetFullName(), SchemaPersistenceHelper::GetSchemaName(ecdb, GetOptingInSchemaId()).c_str());
+
+    return ERROR;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::Evaluate(ECDbCR ecdb, ECN::NavigationECPropertyCR navPropWithFkConstraintCA) const
+    {
+    ECClassCR ecClass = navPropWithFkConstraintCA.GetClass();
+    if (ecClass.GetSchema().GetId() == GetOptingInSchemaId() ||
+         IsException(navPropWithFkConstraintCA))
+        return SUCCESS;
+
+    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECClass '%s'. Its navigation property '%s' violates against the policy that navigation properties may not define the 'ForeignKeyConstraint' custom attribute other than in the ECSchema %s",
+                                        navPropWithFkConstraintCA.GetClass().GetFullName(), navPropWithFkConstraintCA.GetName().c_str(), SchemaPersistenceHelper::GetSchemaName(ecdb, GetOptingInSchemaId()).c_str());
+
+    return ERROR;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
