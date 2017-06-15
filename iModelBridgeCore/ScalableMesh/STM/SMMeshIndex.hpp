@@ -2496,6 +2496,12 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitMeshForChildNodes()
         if (childIndices.size() == 0) continue;
         
         DRange3d childContentRange;
+		if (contentRange.low.z == contentRange.high.z)
+		{
+			contentRange.low.z = nodeRange.low.z;
+			contentRange.high.z = nodeRange.high.z;
+		}
+
         childContentRange.IntersectionOf(contentRange, nodeRange);
         nodeP->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::Create(childContentRange.low.x, childContentRange.low.y, childContentRange.low.z, childContentRange.high.x, childContentRange.high.y, childContentRange.high.z);
         nodeP->m_nodeHeader.m_contentExtentDefined = true;
