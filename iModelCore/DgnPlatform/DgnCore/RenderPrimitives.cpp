@@ -338,6 +338,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         {
         TEST_LESS_THAN(HasFillTransparency());
         TEST_LESS_THAN(HasLineTransparency());
+        return false;
         }
 
     TEST_LESS_THAN(GetFillColor());
@@ -379,6 +380,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
         {
         TEST_EQUAL(HasFillTransparency());
         TEST_EQUAL(HasLineTransparency());
+        return true;
         }
 
     TEST_EQUAL(GetFillColor());
