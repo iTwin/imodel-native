@@ -15,23 +15,107 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct KindOfQuantityTest : ECTestFixture {};
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityTest, TestEmptyOrMissingName)
+    {
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="CM" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="CM" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityTest, TestEmptyOrMissingRelativeError)
+    {
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="TestKOQ" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="CM"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="CM" relativeError=""/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityTest, TestEmptyOrMissingPersistenceUnit)
+    {
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all times" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Basanta.Kharel   12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(KindOfQuantityTest, KindOfQuantityTest)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", "koq", 5, 0, 6);
-    ASSERT_TRUE(schema.IsValid());
-
     ECEntityClassP entityClass;
-    schema->CreateEntityClass(entityClass, "Class");
-    ASSERT_NE(entityClass, nullptr);
-
     PrimitiveECPropertyP prop;
-    entityClass->CreatePrimitiveProperty(prop, "Property");
-    ASSERT_NE(prop, nullptr);
-
     KindOfQuantityP koq;
+
+    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", "koq", 5, 0, 6);
+
+    schema->CreateEntityClass(entityClass, "Class");
+    entityClass->CreatePrimitiveProperty(prop, "Property");
+
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
     koq->SetPersistenceUnit("FT(real)");
     prop->SetKindOfQuantity(koq);
@@ -99,23 +183,23 @@ TEST_F(KindOfQuantityTest, ExpectSuccessWhenKindOfQuantityIsAppliedToStructAndSt
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityTest, ExpectSuccessWhenKindOfQuantityInherited)
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'>"
-        "       <ECProperty propertyName='KindOfQuantityProperty' typeName='double' kindOfQuantity='MyKindOfQuantity' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='B' modifer='abstract'>"
-        "       <BaseClass>A</BaseClass>"
-        "       <ECProperty propertyName='KindOfQuantityProperty' typeName='double' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='C' modifer='sealed'>"
-        "       <BaseClass>B</BaseClass>"
-        "       <ECProperty propertyName='KindOfQuantityProperty' typeName='double' />"
-        "   </ECEntityClass>"
-        "   <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here' "
-        "       displayLabel='best quantity of all times' persistenceUnit='CM' relativeError='10e-3' "
-        "       presentationUnits='FT;IN;MILLIINCH'/>"
-        "</ECSchema>";
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECEntityClass typeName='A' modifier='abstract'>
+                <ECProperty propertyName='KindOfQuantityProperty' typeName='double' kindOfQuantity='MyKindOfQuantity' />
+            </ECEntityClass>
+            <ECEntityClass typeName='B' modifer='abstract'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='KindOfQuantityProperty' typeName='double' />
+            </ECEntityClass>
+            <ECEntityClass typeName='C' modifer='sealed'>
+                <BaseClass>B</BaseClass>
+                <ECProperty propertyName='KindOfQuantityProperty' typeName='double' />
+            </ECEntityClass>
+            <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here'
+                displayLabel='best quantity of all times' persistenceUnit='CM' relativeError='10e-3'
+                presentationUnits='FT;IN;MILLIINCH'/>
+        </ECSchema>)xml";
 
     ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();

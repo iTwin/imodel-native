@@ -50,7 +50,8 @@ typedef bvector<ECEnumeratorP>                  EnumeratorList;
 typedef bmap<Utf8CP, KindOfQuantityP, less_str> KindOfQuantityMap;
 
 /*---------------------------------------------------------------------------------**//**
-* Used to hold property name and display label forECProperty, ECClass, and ECSchema.
+* Used to hold property name and display label for ECSchema, ECClass, ECProperty, 
+* ECEnumeration, and KindOfQuantity
 * Property name supports only a limited set of characters; unsupported characters must
 * be escaped as "__x####__" where "####" is a UTF-16 character code.
 * If no explicit display label is provided, the property name is used as the display
@@ -76,10 +77,10 @@ public:
     };
 
 //=======================================================================================
-//! Handles validation, encoding, and decoding of names for ECSchemas, ECClasses, and
-//! ECProperties.
-//! The names of ECSchemas, ECClasses, and ECProperties must conform to the following
-//! rules:
+//! Handles validation, encoding, and decoding of names for ECSchemas, ECClasses, 
+//! ECProperties, ECEnumerations, and KindOfQuantities.
+//! The names of ECSchemas, ECClasses, ECProperties, ECEnumerations, and KindOfQuantities
+//! must conform to the following rules:
 //!     -Contains only alphanumeric characters in the ranges ['A'..'Z'], ['a'..'z'], ['0'..'9'], and ['_']
 //!     -Contains at least one character
 //!     -Does not begin with a digit
@@ -1801,7 +1802,7 @@ struct KindOfQuantity : NonCopyableClass
         ~KindOfQuantity() {};
 
         // schemas index KindOfQuantity by name so publicly name can not be reset
-        void SetName(Utf8CP name);
+        ECObjectsStatus SetName(Utf8CP name);
         bool Verify() const;
 
         SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
@@ -1831,7 +1832,7 @@ struct KindOfQuantity : NonCopyableClass
         
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
-        ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
+        ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8CP value);
 
         //! Gets the invariant display label of this KindOfQuantity. If no display label has been set explicitly, it will return the name of the KindOfQuantity.
         Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();}
@@ -1841,7 +1842,7 @@ struct KindOfQuantity : NonCopyableClass
 
         //! Sets the description of this KindOfQuantity
         //! @param[in]  value  The new value to apply
-        void SetDescription(Utf8CP value) {m_description = value;}
+        ECObjectsStatus SetDescription(Utf8CP value) {m_description = value; return ECObjectsStatus::Success;}
 
         //! Gets the invariant description of this KindOfQuantity.
         Utf8StringCR GetInvariantDescription() const {return m_description;}
