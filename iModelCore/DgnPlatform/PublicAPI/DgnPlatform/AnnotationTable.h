@@ -478,6 +478,7 @@ protected:
     void BindInt     (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableIntValue const&);
     void BindUInt    (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableUIntValue const&);
     void BindInt64   (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableUInt64Value const&);
+    void BindNavProp (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableUInt64Value const&);
     void BindBool    (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableBoolValue const&);
     void BindDouble  (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableDoubleValue const&);
 

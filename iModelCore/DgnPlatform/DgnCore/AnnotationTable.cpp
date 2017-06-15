@@ -509,6 +509,15 @@ void AnnotationTableAspect::BindInt64 (ECSqlStatement& statement, Utf8CP paramNa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableAspect::BindNavProp(ECSqlStatement& statement, Utf8CP paramName, TableUInt64Value const& value)
+    {
+    if (!BindIfNull(statement, paramName, value.IsNull()))
+        statement.BindNavigationValue(statement.GetParameterIndex(paramName), DgnElementId(value.GetValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AnnotationTableAspect::BindBool (ECSqlStatement& statement, Utf8CP paramName, TableBoolValue const& value)
@@ -3897,7 +3906,7 @@ void    SymbologyEntry::_BindProperties(ECSqlStatement& statement)
     BindBool    (statement, SYMBOLOGYENTRY_PARAM_Visible,        m_visible);
     BindUInt    (statement, SYMBOLOGYENTRY_PARAM_Color,          m_color);
     BindUInt    (statement, SYMBOLOGYENTRY_PARAM_Weight,         m_weight);
-    BindInt64   (statement, SYMBOLOGYENTRY_PARAM_LineStyle,      m_lineStyleId);
+    BindNavProp (statement, SYMBOLOGYENTRY_PARAM_LineStyle,      m_lineStyleId);
     BindDouble  (statement, SYMBOLOGYENTRY_PARAM_LineStyleScale, m_lineStyleScale);
     BindUInt    (statement, SYMBOLOGYENTRY_PARAM_FillColor,      m_fillColor);
     }
@@ -3914,7 +3923,7 @@ void  SymbologyEntry::_AssignValue (int index, IECSqlValue const& value)
         case PropIndex::Visible:        m_visible.SetValue          (value.GetBoolean());   break;
         case PropIndex::Color:          m_color.SetValue            (value.GetInt());       break;
         case PropIndex::Weight:         m_weight.SetValue           (value.GetInt());       break;
-        case PropIndex::LineStyle:      m_lineStyleId.SetValue      (value.GetInt64());     break;
+        case PropIndex::LineStyle:      m_lineStyleId.SetValue      (value.GetNavigation(nullptr).GetValue()); break;
         case PropIndex::LineStyleScale: m_lineStyleScale.SetValue   (value.GetDouble());    break;
         case PropIndex::FillColor:      m_fillColor.SetValue        (value.GetInt());       break;
         default:                        BeAssert (false);
@@ -5226,7 +5235,7 @@ void  TableHeaderAspect::_AssignValue (int index, IECSqlValue const& value)
         {
         case    PropIndex::RowCount:                    m_rowCount.SetValue (value.GetInt());               break;
         case    PropIndex::ColumnCount:                 m_columnCount.SetValue (value.GetInt());            break;
-        case    PropIndex::TextStyle:                   m_textStyleId.SetValue (value.GetInt64());          break;
+        case    PropIndex::TextStyle:                   m_textStyleId.SetValue(value.GetNavigation(nullptr).GetValue()); break;
         case    PropIndex::TitleRowCount:               m_titleRowCount           = value.GetInt();     break;
         case    PropIndex::HeaderRowCount:              m_headerRowCount          = value.GetInt();     break;
         case    PropIndex::FooterRowCount:              m_footerRowCount          = value.GetInt();     break;
@@ -5248,11 +5257,11 @@ void  TableHeaderAspect::_AssignValue (int index, IECSqlValue const& value)
         case    PropIndex::DefaultCellOrientation:      m_defaultCellOrientation = value.GetInt();      break;
         case    PropIndex::FillSymbologyKeyOddRow:      m_fillSymbologyKeyOddRow = value.GetInt();      break;
         case    PropIndex::FillSymbologyKeyEvenRow:     m_fillSymbologyKeyEvenRow = value.GetInt();     break;
-        case    PropIndex::TitleRowTextStyle:           m_titleRowTextStyle.SetValue (value.GetInt64());    break;
-        case    PropIndex::HeaderRowTextStyle:          m_headerRowTextStyle.SetValue (value.GetInt64());   break;
-        case    PropIndex::FooterRowTextStyle:          m_footerRowTextStyle.SetValue (value.GetInt64());   break;
-        case    PropIndex::HeaderColumnTextStyle:       m_headerColumnTextStyle.SetValue (value.GetInt64());break;
-        case    PropIndex::FooterColumnTextStyle:       m_footerColumnTextStyle.SetValue (value.GetInt64());break;
+        case    PropIndex::TitleRowTextStyle:           m_titleRowTextStyle.SetValue(value.GetNavigation(nullptr).GetValue()); break;
+        case    PropIndex::HeaderRowTextStyle:          m_headerRowTextStyle.SetValue(value.GetNavigation(nullptr).GetValue()); break;
+        case    PropIndex::FooterRowTextStyle:          m_footerRowTextStyle.SetValue(value.GetNavigation(nullptr).GetValue()); break;
+        case    PropIndex::HeaderColumnTextStyle:       m_headerColumnTextStyle.SetValue(value.GetNavigation(nullptr).GetValue()); break;
+        case    PropIndex::FooterColumnTextStyle:       m_footerColumnTextStyle.SetValue(value.GetNavigation(nullptr).GetValue()); break;
         case    PropIndex::BackupTextHeight:            m_backupTextHeight        = value.GetInt();     break;
         case    PropIndex::BodyTextHeight:              m_bodyTextHeight.SetValue (value.GetDouble());           break;
         case    PropIndex::TitleRowTextHeight:          m_titleRowTextHeight.SetValue (value.GetDouble());       break;
@@ -5366,7 +5375,7 @@ void    TableHeaderAspect::_BindProperties(ECSqlStatement& statement)
     {
     BindUInt    (statement, HEADER_PARAM_RowCount,                  m_rowCount);
     BindUInt    (statement, HEADER_PARAM_ColumnCount,               m_columnCount);
-    BindInt64   (statement, HEADER_PARAM_TextStyle,                 m_textStyleId);
+    BindNavProp (statement, HEADER_PARAM_TextStyle,                 m_textStyleId);
     BindUInt    (statement, HEADER_PARAM_TitleRowCount,             m_titleRowCount);
     BindUInt    (statement, HEADER_PARAM_HeaderRowCount,            m_headerRowCount);
     BindUInt    (statement, HEADER_PARAM_FooterRowCount,            m_footerRowCount);
@@ -5388,11 +5397,11 @@ void    TableHeaderAspect::_BindProperties(ECSqlStatement& statement)
     BindUInt    (statement, HEADER_PARAM_DefaultCellOrientation,    m_defaultCellOrientation);
     BindUInt    (statement, HEADER_PARAM_FillSymbologyKeyOddRow,    m_fillSymbologyKeyOddRow);
     BindUInt    (statement, HEADER_PARAM_FillSymbologyKeyEvenRow,   m_fillSymbologyKeyEvenRow);
-    BindInt64   (statement, HEADER_PARAM_TitleRowTextStyle,         m_titleRowTextStyle);
-    BindInt64   (statement, HEADER_PARAM_HeaderRowTextStyle,        m_headerRowTextStyle);
-    BindInt64   (statement, HEADER_PARAM_FooterRowTextStyle,        m_footerRowTextStyle);
-    BindInt64   (statement, HEADER_PARAM_HeaderColumnTextStyle,     m_headerColumnTextStyle);
-    BindInt64   (statement, HEADER_PARAM_FooterColumnTextStyle,     m_footerColumnTextStyle);
+    BindNavProp (statement, HEADER_PARAM_TitleRowTextStyle,         m_titleRowTextStyle);
+    BindNavProp (statement, HEADER_PARAM_HeaderRowTextStyle,        m_headerRowTextStyle);
+    BindNavProp (statement, HEADER_PARAM_FooterRowTextStyle,        m_footerRowTextStyle);
+    BindNavProp (statement, HEADER_PARAM_HeaderColumnTextStyle,     m_headerColumnTextStyle);
+    BindNavProp (statement, HEADER_PARAM_FooterColumnTextStyle,     m_footerColumnTextStyle);
     statement.BindDouble    (statement.GetParameterIndex(HEADER_PARAM_BackupTextHeight),           m_backupTextHeight);
     BindDouble  (statement, HEADER_PARAM_BodyTextHeight,             m_bodyTextHeight);
     BindDouble  (statement, HEADER_PARAM_TitleRowTextHeight,         m_titleRowTextHeight);
