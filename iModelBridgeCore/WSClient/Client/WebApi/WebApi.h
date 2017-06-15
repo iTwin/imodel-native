@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApi.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -111,6 +111,15 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithRel
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;

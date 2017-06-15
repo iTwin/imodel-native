@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -177,6 +177,15 @@ struct WebApiV1 : public WebApi
 
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+        
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithRel
+            (
+            ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,

@@ -156,6 +156,22 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! Create an object with a relation. With optional file attachment
+        //! @param relatedObjectId - relation target object (e. g. document for checkin)
+        //! @param objectCreationJson - Parameter objectCreationJson must follow WSG 2.0 format for creating objects.
+        //! @param filePath - file path to upload
+        //! @param uploadProgressCallback - file upload progress
+        //! @param ct
+        //! @return JSON representing created object and new file ETag if available
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithRel
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
         //! Update specified object and optionally a file with one operation
         //! @param objectId - object identifier
         //! @param propertiesJson - object properties that need to be updated
@@ -318,6 +334,15 @@ struct WSRepositoryClient : public IWSRepositoryClient
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithRel
+            (
+            ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
