@@ -32,11 +32,6 @@ WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToReque
 # BREAKAGES caused by recent changes in dependencies
 #--------------------------------------------------------------------------------
 
-# Affan: Following test are failing because endtable relationship used in these test does not have ECDbMap::ForeignKeyConstraint customAttribute on them
-#----->
-DataSourceCacheTests.CacheResponse_ResultContainsOneToOneRelationshipsViolatingCardinality_Error
-#<-----
-
 # Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
 # However, this will make MetaSchema.02.00 fail upon import as it has some invalid classes. Using MetaSchema from WSG 2.x servers will not work.
 # Importing MetaSchema.03.00 will make old servers not compatible immediately. Review after WSG 2.6 or WSG 3.0 with EC3.0 compatibility is released.
