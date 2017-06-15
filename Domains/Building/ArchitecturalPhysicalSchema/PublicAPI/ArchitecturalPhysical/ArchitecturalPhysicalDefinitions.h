@@ -16,7 +16,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnModel.h>
 
-#ifdef __ARCHITECTURAL_PHYSICAL_BUILD__
+#ifdef __BUILDING_DOMAIN_BUILD__
     #define ARCHITECTURAL_PHYSICAL_EXPORT EXPORT_ATTRIBUTE
 #else
     #define ARCHITECTURAL_PHYSICAL_EXPORT IMPORT_ATTRIBUTE
@@ -35,6 +35,7 @@
 
 #define PRIMARY_BASELINE_LABEL "__Primary"
 
+//namespace ARCHPHY = BentleyApi::ArchitecturalPhysical;
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
 //-----------------------------------------------------------------------------------------

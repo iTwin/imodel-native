@@ -172,13 +172,100 @@ Dgn::DgnDbPtr ArchPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
         return nullptr;
 
     // After all domain schemas have been imported, it is valid to create ECClassViews (for debugging and review workflows)
-    db->Schemas().CreateClassViewsInDb();
+//    db->Schemas().ImportSchemas
+	
 
     return db;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::DgnDbPtr ArchPhysCreator::OpenDgnDb(BeFileNameCR outputFileName)
+	{
+	// Initialize parameters needed to create a DgnDb
+	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, Dgn::SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly );
+
+	// Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
+	BeSQLite::DbResult openStatus;
+
+	Dgn::DgnDbPtr db =  Dgn::DgnDb::OpenDgnDb(&openStatus, outputFileName, openParams);
+
+	if (!db.IsValid())
+		return nullptr;
+
+	return db;
+	}
+
+
 
 template<class T, class U> RefCountedCPtr<T> const_pointer_cast(RefCountedCPtr<U> const & p) { return dynamic_cast<T const *>(p.get()); }
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+BentleyStatus ArchPhysCreator::DoUpdateSchema()
+	{
+
+	Dgn::DgnDomains::RegisterDomain(BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+
+	Dgn::DgnDbPtr db = OpenDgnDb(GetOutputFileName());
+	if (!db.IsValid())
+		return BentleyStatus::ERROR;
+
+
+	ECN::ECSchemaCP mySchema = db->Schemas().GetSchema("MyRevitSchema");
+	auto context = ECN::ECSchemaReadContext::CreateContext(false);
+
+	ECN::SchemaKey k(mySchema->GetSchemaKey());
+
+	ECN::ECSchemaPtr schema = db->GetSchemaLocater().LocateSchema (k, ECN::SchemaMatchType::Exact, *context);
+
+	ECN::ECSchemaCP archSchema = db->Schemas().GetSchema(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME);
+
+	ECN::ECClassCP baseClass = archSchema->GetClassCP(AP_CLASS_ArchitecturalBaseElement);
+
+	ECN::ECSchemaPtr a;
+		
+	schema->CopySchema(a);
+
+	ECN::ECEntityClassP newClass;
+
+	a->CreateEntityClass(newClass, "MyRvtClass3");
+
+	ECN::PrimitiveECPropertyP myProp;
+
+	newClass->CreatePrimitiveProperty(myProp, "MyStringProp");
+
+	newClass->AddBaseClass(*baseClass);
+
+	a->SetVersionMinor(schema->GetVersionMinor() + 1);
+
+//	BeSQLite::Savepoint sp(*db /*const_cast<ECDbR>(*db)*/, "ECSchema Import");
+
+	//ECN::ECSchemaReadContextPtr context1 = ECN::ECSchemaReadContext::CreateContext();
+	//context1->AddSchemaLocater(db->GetSchemaLocater());
+
+	bvector<ECN::ECSchemaCP> schemas;
+
+	ECN::ECSchemaCP b = &(*a);
+
+	schemas.push_back(b);
+
+
+	Dgn::SchemaStatus schemaImportStatus = db->ImportSchemas (schemas);
+
+	if (schemaImportStatus != Dgn::SchemaStatus::Success)
+		return BentleyStatus::ERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -384,16 +471,73 @@ BentleyStatus ArchPhysCreator::PopulateElementProperties(Dgn::PhysicalElementPtr
 BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysicalModelR physicalModel, BuildingPhysical::BuildingTypeDefinitionModelR typeModel)
     {
 
-    ECN::ECClassCP baseClass = physicalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME, AP_CLASS_ArchitecturalBaseElement);
 
-    ECN::ECDerivedClassesList classList =  baseClass->GetDerivedClasses();
+	ECN::ECSchemaPtr mySchema;
 
-    int i = 0;
+//	ECN::ECClassCP baseClass = physicalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME, AP_CLASS_ArchitecturalBaseElement);
+
+	ECN::ECSchemaCP archSchema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME);
+
+	ECN::ECClassCP baseClass = archSchema->GetClassCP(AP_CLASS_ArchitecturalBaseElement);
+
+	if (ECN::ECObjectsStatus::Success == ECN::ECSchema::CreateSchema(mySchema, "MyRevitSchema", "MyRvt", 1, 1, 0))
+		{
+	//	auto context = ECN::ECSchemaReadContext::CreateContext(false);
+
+	//	ECN::SchemaKeyCR key = baseClass->GetSchema().GetSchemaKey();
+
+	//	ECN::SchemaKey k(key);
+
+		ECN::ECSchemaCR baseSchema = baseClass->GetSchema();// context->LocateSchema(k, ECN::SchemaMatchType::Identical);
+
+//		 physicalModel.GetDgnDb().Schemas().LocateSchema( k,ECN::SchemaMatchType::Latest, *context);
+		
+		mySchema->AddReferencedSchema ((ECN::ECSchemaR)baseSchema);
+
+		ECN::ECEntityClassP newClass;
+
+		mySchema->CreateEntityClass(newClass, "MyRvtClass");
+
+		ECN::PrimitiveECPropertyP myProp;
+
+		newClass->CreatePrimitiveProperty(myProp, "MyStringProp");
+
+		newClass->AddBaseClass(*baseClass);
+
+		bvector<ECN::ECSchemaCP> schemas;
+		
+		ECN::ECSchemaCP a = &(*mySchema);
+
+		schemas.push_back(a);
+
+		//BeSQLite::EC::SchemaImportToken const* token = physicalModel.GetDgnDb().GetSchemaImportToken();
+		
+		physicalModel.GetDgnDb().ImportSchemas(schemas);
+		physicalModel.GetDgnDb().SaveChanges();
+		}
+
+
+	archSchema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME);
+
+	baseClass = archSchema->GetClassCP(AP_CLASS_ArchitecturalBaseElement);
+
+//	baseClass = archSchema->GetClassCP(AP_CLASS_ArchitecturalBaseElement);
+	ECN::ECDerivedClassesList classList = baseClass->GetDerivedClasses();
+
+	int i = 0;
+
+	for each (ECN::ECClassP var in baseClass->GetDerivedClasses())
+		{
+		}
+
 
     for each (ECN::ECClassP var in classList)
         {
 
-        ArchitecturalPhysical::ArchitecturalBaseElementPtr buildingElement = ArchitecturalPhysical::ArchitecturalBaseElement::Create(var->GetName(), physicalModel);
+		if (ECN::ECClassModifier::Abstract == var->GetClassModifier())
+			continue;
+
+        ArchitecturalPhysical::ArchitecturalBaseElementPtr buildingElement = ArchitecturalPhysical::ArchitecturalBaseElement::Create(var->GetSchema().GetName(),  var->GetName(), physicalModel);
         Dgn::Placement3d placement;
 
         placement.GetOriginR() = DPoint3d::From(5.0 * i, 8.0, 8.0);
@@ -432,6 +576,42 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
 
         }
 
+
+
+	ArchitecturalPhysical::ArchitecturalBaseElementPtr buildingElement = ArchitecturalPhysical::ArchitecturalBaseElement::Create("MyRevitSchema", "MyRvtClass", physicalModel);
+	Dgn::Placement3d placement;
+
+	placement.GetOriginR() = DPoint3d::From(5.0 * i, 8.0, 8.0);
+
+	Dgn::DgnDbStatus status = buildingElement->SetPlacement(placement);
+
+	GeometricTools::CreateGeometry(buildingElement, physicalModel);
+
+	ECN::IECInstancePtr instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Classification");
+	PopulateInstanceProperties(instance);
+	instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Manufacturer");
+	PopulateInstanceProperties(instance);
+	instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Phases");
+	PopulateInstanceProperties(instance);
+	instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "IdentityData");
+	PopulateInstanceProperties(instance);
+	instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "FireResistance");
+	PopulateInstanceProperties(instance);
+	instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AnalyticalProperties");
+	PopulateInstanceProperties(instance);
+	instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AcousticalProperties");
+	PopulateInstanceProperties(instance);
+	instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIFCOerrides");
+	PopulateInstanceProperties(instance);
+	instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIdentification");
+	PopulateInstanceProperties(instance);
+
+	PopulateElementProperties(buildingElement);
+
+	buildingElement->Insert(&status);
+
+	if (Dgn::DgnDbStatus::Success != status)
+		return BentleyStatus::ERROR;
 
 //    for (int i = 0; i < 100; i++)
 //        {
@@ -559,7 +739,9 @@ int wmain(int argc, WCharP argv[])
 
     app.ParseCommandLine(argc, argv);
 
-    return app.DoCreate();
+//    return app.DoCreate();
+
+	return app.DoUpdateSchema();
 
     }
 

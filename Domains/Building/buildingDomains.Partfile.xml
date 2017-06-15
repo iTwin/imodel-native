@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <Part Name="BuildingDomains" >
-        <SubProduct ProductName="ArchitecturalPhysicalTests"/>
+        <SubProduct ProductName="BuildingDomainTests"/>
     </Part>
 
     
@@ -14,6 +14,71 @@
         <SubPart PartName="BuildingDomains"/>
     </Part>
     
+
+    <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
+        <SubPart PartName="BuildingPhysicalPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingDomain$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+
+    <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="Building.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="BuildingDomain"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
+                ECSchemas/Domain/BuildingPhysical.ecschema.xml
+                ECSchemas/Domain/BuildingCommon.ecschema.xml
+            </Files>
+          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+        </Bindings>
+    </Part>
+
+
+    <Part Name="BuildingDomainTestsExe" DeferType="BuildingDomainTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
+        <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
+        <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
+        <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <SubPart PartName="BuildingDomain"/>
+        <Bindings>
+              <Assemblies>Delivery/$(shlibprefix)BuildingDomainTests.exe</Assemblies>
+              <Files ProductDirectoryName="Assets">Delivery/BuildingDomainTests.logging.config.xml</Files>
+              <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/BuildingDomainTests_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="Tests">
+        <ProductDirectory Name="VendorNotices"                  Path="VendorNotices"/>
+        <ProductDirectory Name="Assemblies"                     Path="Assemblies"/>
+        <ProductDirectory Name="Assets"                         Path="Assemblies/Assets"/>
+        <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
+        <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
+        <ProductDirectory Name="UnitTests-Assets"               Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
+    </ProductDirectoryList>
+    
+    <Product Name="BuildingDomainTests" OnlyPlatforms="x64">
+        <SubPart PartName="BuildingDomainTestsExe"/>
+        <Directories DirectoryListName="Tests"/>
+    </Product>
+
+    
+    <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BuildingDomainTests/BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="BuildingDomainTests" />
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingDomainTests.log</Files>
+        </Bindings>
+    </Part>
+    
+
+<!--
     
     <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
         <SubPart PartName="ArchPhysPublicAPI"/>
@@ -33,8 +98,6 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
             </Files>
-          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
-            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
     </Part>
 
@@ -54,8 +117,6 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/BuildingCommon.ecschema.xml
             </Files>
-          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
-            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
     </Part>
 
@@ -75,8 +136,6 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/BuildingPhysical.ecschema.xml
             </Files>
-          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
-            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
     </Part>
     
@@ -107,7 +166,6 @@
     
     <Product Name="ArchitecturalPhysicalTests" OnlyPlatforms="x64">
         <SubPart PartName="ArchitecturalPhysicalTestsExe"/>
-<!--        <Directories DirectoryListName="RevitBridgeDirectories" /> -->
         <Directories DirectoryListName="Tests"/>
     </Product>
 
@@ -119,7 +177,7 @@
         </Bindings>
     </Part>
     
-    
+-->    
     <!-- NOT YET
     
     BentleyBuildMakeFile="Building.mke" ApiNumber="B02"

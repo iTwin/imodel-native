@@ -42,6 +42,7 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
         BentleyStatus CreateBuilding( BuildingPhysical::BuildingPhysicalModelR, BuildingPhysical::BuildingTypeDefinitionModelR);
         BentleyStatus PopulateInstanceProperties(ECN::IECInstancePtr instance);
         BentleyStatus PopulateElementProperties(Dgn::PhysicalElementPtr element);
+		Dgn::DgnDbPtr OpenDgnDb(BeFileNameCR outputFileName);
 
 
 
@@ -53,4 +54,5 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
         //  BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel(Dgn::DgnDbR db);
         Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
         BentleyStatus DoCreate();
-    };
+		BentleyStatus DoUpdateSchema();
+	};

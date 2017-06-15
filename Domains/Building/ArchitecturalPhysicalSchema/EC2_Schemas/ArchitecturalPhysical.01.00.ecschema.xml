@@ -114,9 +114,6 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="BuildingElementPart" description="(From IFC) Class : IfcBuildingElementPart" displayLabel="Building Element Part" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECClass>
     <ECClass typeName="BuildingElementProxy" description="(From IFC) Class : IfcBuildingElementProxy" displayLabel="Building Element Proxy" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
         <ECProperty propertyName="CompositionType" typeName="int" description="(From IFC) Enumeration : IfcElementCompositionEnum .OPTIONAL.">
@@ -160,12 +157,6 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="BuildingPhysicalModel" displayLabel="Building Physical Model" isDomainClass="True">
-        <BaseClass>bis:PhysicalModel</BaseClass>
-    </ECClass>
-    <ECClass typeName="BuildingTypeDefinitionModel" displayLabel="Building Type Definition Model" isDomainClass="True">
-        <BaseClass>bis:DefinitionModel</BaseClass>
-    </ECClass>
     <ECClass typeName="Casework" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
     </ECClass>
@@ -186,57 +177,6 @@
                         </ValueMap>
                         <ValueMap>
                             <Value>2</Value>
-                            <DisplayString>NOTDEFINED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECClass typeName="Covering" description="(From IFC) Class : IfcCovering" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="int" description="(From IFC) Enumeration : IfcCoveringTypeEnum .OPTIONAL." displayLabel="Predefined Type">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>CEILING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>FLOORING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>2</Value>
-                            <DisplayString>CLADDING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>3</Value>
-                            <DisplayString>ROOFING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>4</Value>
-                            <DisplayString>INSULATION</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>5</Value>
-                            <DisplayString>MEMBRANE</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>6</Value>
-                            <DisplayString>SLEEVING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>7</Value>
-                            <DisplayString>WRAPPING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>8</Value>
-                            <DisplayString>USERDEFINED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>9</Value>
                             <DisplayString>NOTDEFINED</DisplayString>
                         </ValueMap>
                     </ValueMap>
@@ -910,52 +850,6 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="Ramp" description="(From IFC) Class : IfcRamp" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="ShapeType" typeName="int" description="(From IFC) Enumeration : IfcRampTypeEnum">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>STRAIGHT_RUN_RAMP</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>TWO_STRAIGHT_RUN_RAMP</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>2</Value>
-                            <DisplayString>QUARTER_TURN_RAMP</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>3</Value>
-                            <DisplayString>TWO_QUARTER_TURN_RAMP</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>4</Value>
-                            <DisplayString>HALF_TURN_RAMP</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>5</Value>
-                            <DisplayString>SPIRAL_RAMP</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>6</Value>
-                            <DisplayString>USERDEFINED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>7</Value>
-                            <DisplayString>NOTDEFINED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECClass typeName="RampFlight" description="(From IFC) Class : IfcRampFlight" displayLabel="Ramp Flight" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECClass>
     <ECClass typeName="RampFlightType" description="(From IFC) Class : IfcRampFlightType" displayLabel="Ramp Flight Type" isDomainClass="True">
         <BaseClass>BuildingElementType</BaseClass>
         <ECProperty propertyName="PredefinedType" typeName="int" description="(From IFC) Enumeration : IfcRampFlightTypeEnum" displayLabel="Predefined Type">
@@ -981,219 +875,6 @@
                         </ValueMap>
                     </ValueMap>
                 </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECClass typeName="ReinforcingElement" description="(From IFC) Class : IfcReinforcingElement" displayLabel="Reinforcing Element" isDomainClass="False">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="SteelGrade" typeName="string" description="(From IFC) IfcLabel .OPTIONAL." displayLabel="Steel Grade" />
-    </ECClass>
-    <ECClass typeName="ReinforcingBar" description="(From IFC) Class : IfcReinforcingBar" displayLabel="Reinforcing Bar" isDomainClass="True">
-        <BaseClass>ReinforcingElement</BaseClass>
-        <ECProperty propertyName="NominalDiameter" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Nominal Diameter">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>DIAMETER</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CrossSectionArea" typeName="double" description="(From IFC) IfcAreaMeasure" displayLabel="Cross Section Area">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>AREA</KindOfQuantityName>
-                    <DimensionName>L2</DimensionName>
-                    <UnitName>MILLIMETRE_SQUARED</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>9</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="BarLength" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL.">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="BarRole" typeName="int" description="(From IFC) Enumeration : IfcReinforcingBarRoleEnum">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>MAIN</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>SHEAR</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>2</Value>
-                            <DisplayString>LIGATURE</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>3</Value>
-                            <DisplayString>STUD</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>4</Value>
-                            <DisplayString>PUNCHING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>5</Value>
-                            <DisplayString>EDGE</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>6</Value>
-                            <DisplayString>RING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>7</Value>
-                            <DisplayString>USERDEFINED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>8</Value>
-                            <DisplayString>NOTDEFINED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="BarSurface" typeName="int" description="(From IFC) Enumeration : IfcReinforcingBarSurfaceEnum .OPTIONAL.">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>PLAIN</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>TEXTURED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECClass typeName="ReinforcingMesh" description="(From IFC) Class : IfcReinforcingMesh" displayLabel="Reinforcing Mesh" isDomainClass="True">
-        <BaseClass>ReinforcingElement</BaseClass>
-        <ECProperty propertyName="MeshLength" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Mesh Length">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="MeshWidth" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Mesh Width">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LongitudinalBarNominalDiameter" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Longitudinal Bar Nominal Diameter">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>DIAMETER</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TransverseBarNominalDiameter" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Transverse Bar Nominal Diameter">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>DIAMETER</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LongitudinalBarCrossSectionArea" typeName="double" description="(From IFC) IfcAreaMeasure" displayLabel="Longitudinal Bar Cross Section Area">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>AREA</KindOfQuantityName>
-                    <DimensionName>L2</DimensionName>
-                    <UnitName>MILLIMETRE_SQUARED</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>9</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TransverseBarCrossSectionArea" typeName="double" description="(From IFC) IfcAreaMeasure" displayLabel="Transverse Bar Cross Section Area">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>AREA</KindOfQuantityName>
-                    <DimensionName>L2</DimensionName>
-                    <UnitName>MILLIMETRE_SQUARED</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>9</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LongitudinalBarSpacing" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Longitudinal Bar Spacing">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TransverseBarSpacing" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Transverse Bar Spacing">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
@@ -1257,41 +938,6 @@
                         </ValueMap>
                         <ValueMap>
                             <Value>13</Value>
-                            <DisplayString>NOTDEFINED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECClass typeName="Slab" description="(From IFC) Class : IfcSlab" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="int" description="(From IFC) Enumeration : IfcSlabTypeEnum .OPTIONAL." displayLabel="Predefined Type">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>FLOOR</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>ROOF</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>2</Value>
-                            <DisplayString>LANDING</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>3</Value>
-                            <DisplayString>BASESLAB</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>4</Value>
-                            <DisplayString>USERDEFINED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>5</Value>
                             <DisplayString>NOTDEFINED</DisplayString>
                         </ValueMap>
                     </ValueMap>
@@ -1410,37 +1056,6 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="StairFlight" description="(From IFC) Class : IfcStairFlight" displayLabel="Stair Flight" isDomainClass="True">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="NumberOfRiser" typeName="int" description=" .OPTIONAL." displayLabel="Number Of Riser" />
-        <ECProperty propertyName="NumberOfTreads" typeName="int" description=" .OPTIONAL." displayLabel="Number Of Treads" />
-        <ECProperty propertyName="RiserHeight" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Riser Height">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TreadLength" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Tread Length">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
     <ECClass typeName="StairFlightType" description="(From IFC) Class : IfcStairFlightType" displayLabel="Stair Flight Type" isDomainClass="True">
         <BaseClass>BuildingElementType</BaseClass>
         <ECProperty propertyName="PredefinedType" typeName="int" description="(From IFC) Enumeration : IfcStairFlightTypeEnum" displayLabel="Predefined Type">
@@ -1480,117 +1095,6 @@
                 </StandardValues>
             </ECCustomAttributes>
         </ECProperty>
-    </ECClass>
-    <ECClass typeName="Tendon" description="(From IFC) Class : IfcTendon" isDomainClass="True">
-        <BaseClass>ReinforcingElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="int" description="(From IFC) Enumeration : IfcTendonTypeEnum" displayLabel="Predefined Type">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>0</Value>
-                            <DisplayString>STRAND</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>1</Value>
-                            <DisplayString>WIRE</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>2</Value>
-                            <DisplayString>BAR</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>3</Value>
-                            <DisplayString>COATED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>4</Value>
-                            <DisplayString>USERDEFINED</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>5</Value>
-                            <DisplayString>NOTDEFINED</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="NominalDiameter" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Nominal Diameter">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>DIAMETER</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CrossSectionArea" typeName="double" description="(From IFC) IfcAreaMeasure" displayLabel="Cross Section Area">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>AREA</KindOfQuantityName>
-                    <DimensionName>L2</DimensionName>
-                    <UnitName>MILLIMETRE_SQUARED</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>9</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TensionForce" typeName="double" description="(From IFC) IfcForceMeasure .OPTIONAL." displayLabel="Tension Force">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>FORCE</KindOfQuantityName>
-                    <DimensionName>M_L_PER_T2</DimensionName>
-                    <UnitName>NEWTON</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="PreStress" typeName="double" description="(From IFC) IfcPressureMeasure .OPTIONAL." displayLabel="Pre Stress">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>PRESSURE</KindOfQuantityName>
-                    <DimensionName>M_PER_L_T2</DimensionName>
-                    <UnitName>PASCAL</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrictionCoefficient" typeName="double" description="(From IFC) IfcNormalisedRatioMeasure .OPTIONAL." displayLabel="Friction Coefficient" />
-        <ECProperty propertyName="AnchorageSlip" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL.">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="MinCurvatureRadius" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Min Curvature Radius">
-            <ECCustomAttributes>
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>DIAMETER</KindOfQuantityName>
-                    <DimensionName>L</DimensionName>
-                    <UnitName>MILLIMETRE</UnitName>
-                    <AllowableUnits />
-                </UnitSpecification>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECClass typeName="TendonAnchor" description="(From IFC) Class : IfcTendonAnchor" displayLabel="Tendon Anchor" isDomainClass="True">
-        <BaseClass>ReinforcingElement</BaseClass>
     </ECClass>
     <ECClass typeName="Wall" description="Wall" isDomainClass="True">
         <BaseClass>ArchitecturalBaseElement</BaseClass>
@@ -1739,9 +1243,6 @@
         <ECProperty propertyName="StructuralFunction" typeName="string" displayLabel="Structural Function" />
         <ECProperty propertyName="HeatTransferCoefficient" typeName="double" displayLabel="Heat Transfer Coefficient (U)" />
         <ECProperty propertyName="ThermalResistance" typeName="double" displayLabel="Thermal Resistance (R)" />
-    </ECClass>
-    <ECClass typeName="WallStandardCase" description="(From IFC) Class : IfcWallStandardCase" displayLabel="Standard Wall" isDomainClass="True">
-        <BaseClass>Wall</BaseClass>
     </ECClass>
     <ECClass typeName="WallType" description="(From IFC) Class : IfcWallType" displayLabel="Wall Type" isDomainClass="True">
         <BaseClass>BuildingElementType</BaseClass>

@@ -5,120 +5,98 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "BuildingCommonSchemaInternal.h"
+#include "BuildingDomainInternal.h"
 
 
-BEGIN_BENTLEY_BUILDING_COMMON_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
-DOMAIN_DEFINE_MEMBERS(BuildingCommonDomain)
+namespace BuildingCommon
+	{
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Marc.Bedard                     10/2016
- +---------------+---------------+---------------+---------------+---------------+------*/
-BuildingCommonDomain::BuildingCommonDomain() : DgnDomain(BENTLEY_BUILDING_COMMON_SCHEMA_NAME, "Bentley Building Common Domain", 1)
-    {
-    /*RegisterHandler(RadialDistortionHandler::GetHandler());
-    RegisterHandler(TangentialDistortionHandler::GetHandler());
-    RegisterHandler(CameraDeviceHandler::GetHandler());
-    RegisterHandler(CameraDeviceModelHandler::GetHandler());
-    RegisterHandler(ShotHandler::GetHandler());
-    RegisterHandler(PoseHandler::GetHandler()); */
-    }
+	DOMAIN_DEFINE_MEMBERS(BuildingCommonDomain)
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Marc.Bedard                     10/2016
- +---------------+---------------+---------------+---------------+---------------+------*/
-void BuildingCommonDomain::_OnSchemaImported(DgnDbR dgndb) const
-    {
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	BuildingCommonDomain::BuildingCommonDomain() : DgnDomain(BENTLEY_BUILDING_COMMON_SCHEMA_NAME, "Bentley Building Common Domain", 1)
+		{
+		//RegisterHandler(RadialDistortionHandler::GetHandler());
+		}
 
-    DgnSubCategory::Appearance defaultApperance;
-    defaultApperance.SetInvisible(false);
-    /*
-    DgnCategory cameraDeviceCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_CameraDevice, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    cameraDeviceCategory.Insert(defaultApperance);
-    BeAssert(cameraDeviceCategory.GetCategoryId().IsValid());
-    DgnCategory shotCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Shot, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    shotCategory.Insert(defaultApperance);
-    BeAssert(shotCategory.GetCategoryId().IsValid());
-    DgnCategory PoseCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Pose, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    PoseCategory.Insert(defaultApperance);
-    BeAssert(PoseCategory.GetCategoryId().IsValid());
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	void BuildingCommonDomain::_OnSchemaImported(Dgn::DgnDbR dgndb) const
+		{
+		Dgn::DgnSubCategory::Appearance defaultApperance;
+		defaultApperance.SetInvisible(false);
+		}
 
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	Dgn::CodeSpecId  BuildingCommonDomain::QueryBuildingCommonCodeSpecId(Dgn::DgnDbCR dgndb)
+		{
+		Dgn::CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BENTLEY_BUILDING_COMMON_AUTHORITY);
+		BeAssert(codeSpecId.IsValid());
+		return codeSpecId;
+		}
 
-    auto authority = NamespaceAuthority::CreateNamespaceAuthority(BDCP_AUTHORITY_DataCapture, dgndb);
-    BeAssert(authority.IsValid());
-    if (authority.IsValid())
-    {
-    authority->Insert();
-    BeAssert(authority->GetAuthorityId().IsValid());
-    } */
-    }
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	Dgn::DgnCode BuildingCommonDomain::CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value)
+		{
+		return Dgn::CodeSpec::CreateCode(dgndb, BENTLEY_BUILDING_COMMON_AUTHORITY, value);
+		}
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Marc.Bedard                     12/2016
- +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::CodeSpecId  BuildingCommonDomain::QueryBuildingCommonCodeSpecId(DgnDbCR dgndb)
-    {
-    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BENTLEY_BUILDING_COMMON_AUTHORITY);
-    BeAssert(codeSpecId.IsValid());
-    return codeSpecId;
-    }
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	void BuildingCommonDomain::_OnDgnDbOpened(Dgn::DgnDbR db) const
+		{
+		}
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Marc.Bedard                     12/2016
- +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode BuildingCommonDomain::CreateCode(DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value)
-    {
-    return CodeSpec::CreateCode(dgndb, BENTLEY_BUILDING_COMMON_AUTHORITY, value);
-    }
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	ECN::IECInstancePtr BuildingCommonDomain::AddAspect(Dgn::PhysicalModelR model, Dgn::PhysicalElementPtr element, Utf8StringCR className)
+		{
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      07/16
-//---------------------------------------------------------------------------------------
-void BuildingCommonDomain::_OnDgnDbOpened(DgnDbR db) const
-    {
-    }
+		// Find the class
 
+		ECN::ECClassCP aspectClassP = model.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_BUILDING_COMMON_SCHEMA_NAME, className.c_str());
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-ECN::IECInstancePtr BuildingCommonDomain::AddAspect(Dgn::PhysicalModelR model, Dgn::PhysicalElementPtr element, Utf8StringCR className)
-    {
+		if (nullptr == aspectClassP)
+			return nullptr;
 
-    // Find the class
+		// If the element is already persisted and has the Aspect class, you can't add another
 
-    ECN::ECClassCP aspectClassP = model.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_BUILDING_COMMON_SCHEMA_NAME, className.c_str());
+		if (element->GetElementId().IsValid())
+			{
+			ECN::IECInstanceCP instance = Dgn::DgnElement::GenericUniqueAspect::GetAspect(*element, *aspectClassP);
 
-    if (nullptr == aspectClassP)
-        return nullptr;
+			if (nullptr != instance)
+				return nullptr;
+			}
 
-    // If the element is already persisted and has the Aspect class, you can't add another
+		ECN::StandaloneECEnablerPtr enabler = aspectClassP->GetDefaultStandaloneEnabler();
 
-    if (element->GetElementId().IsValid())
-        {
-        ECN::IECInstanceCP instance = DgnElement::GenericUniqueAspect::GetAspect(*element, *aspectClassP);
+		if (!enabler.IsValid())
+			return nullptr;
 
-        if (nullptr != instance)
-            return nullptr;
-        }
+		ECN::IECInstancePtr instance = enabler->CreateInstance().get();
+		if (!instance.IsValid())
+			return nullptr;
 
-    ECN::StandaloneECEnablerPtr enabler = aspectClassP->GetDefaultStandaloneEnabler();
+		Dgn::DgnDbStatus status = Dgn::DgnElement::GenericUniqueAspect::SetAspect(*element, *instance);
 
-    if (!enabler.IsValid())
-        return nullptr;
+		if (Dgn::DgnDbStatus::Success != status)
+			return nullptr;
 
-    ECN::IECInstancePtr instance = enabler->CreateInstance().get();
-    if (!instance.IsValid())
-        return nullptr;
+		return instance;
+		}
 
-    Dgn::DgnDbStatus status = DgnElement::GenericUniqueAspect::SetAspect(*element, *instance);
+	} // End BuildingCommon namespace
 
-    if (Dgn::DgnDbStatus::Success != status)
-        return nullptr;
-
-    return instance;
-    }
-
-
-END_BENTLEY_BUILDING_COMMON_NAMESPACE
+END_BENTLEY_NAMESPACE

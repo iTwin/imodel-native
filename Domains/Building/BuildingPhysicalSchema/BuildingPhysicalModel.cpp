@@ -5,80 +5,84 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "BuildingPhysicalSchemaInternal.h"
+#include "BuildingDomainInternal.h"
 
 
-BEGIN_BENTLEY_BUILDING_PHYSICAL_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(BuildingTypeDefinitionModelHandler)
-HANDLER_DEFINE_MEMBERS(BuildingPhysicalModelHandler)
+namespace BuildingPhysical
+	{
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-BuildingPhysicalModelPtr BuildingPhysicalModel::Create(PhysicalPartitionCR partition)
-    {
-    DgnDbR db = partition.GetDgnDb();
-    DgnElementId modeledElementId = partition.GetElementId();
-    DgnClassId classId = db.Domains().GetClassId(BuildingPhysicalModelHandler::GetHandler());
-
-    DgnModelPtr model = BuildingPhysicalModelHandler::GetHandler().Create(DgnModel::CreateParams(db, classId, modeledElementId));
-    if (!model.IsValid())
-        return nullptr;
-
-    // Insert the new model into the DgnDb
-    if (DgnDbStatus::Success != model->Insert())
-        return nullptr;
+	HANDLER_DEFINE_MEMBERS(BuildingTypeDefinitionModelHandler)
+	HANDLER_DEFINE_MEMBERS(BuildingPhysicalModelHandler)
 
 
-    return dynamic_cast<BuildingPhysicalModelP>(model.get());
-    }
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	BuildingPhysicalModelPtr BuildingPhysicalModel::Create(Dgn::PhysicalPartitionCR partition)
+		{
+		Dgn::DgnDbR db = partition.GetDgnDb();
+		Dgn::DgnElementId modeledElementId = partition.GetElementId();
+		Dgn::DgnClassId classId = db.Domains().GetClassId(BuildingPhysicalModelHandler::GetHandler());
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-DgnDbStatus BuildingPhysicalModel::_OnInsertElement(DgnElementR element)
-    {
-  //  if (nullptr == dynamic_cast<ArchitecturalBaseElementCP>(&element))
-  //      return DgnDbStatus::WrongElement;
+		Dgn::DgnModelPtr model = BuildingPhysicalModelHandler::GetHandler().Create(Dgn::DgnModel::CreateParams(db, classId, modeledElementId));
+		if (!model.IsValid())
+			return nullptr;
 
-    return T_Super::_OnInsertElement(element);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-BuildingTypeDefinitionModelPtr  BuildingTypeDefinitionModel::Create(DefinitionPartitionCR partition)
-    {
-    DgnDbR db = partition.GetDgnDb();
-    DgnElementId modeledElementId = partition.GetElementId();
-    DgnClassId classId = db.Domains().GetClassId(BuildingTypeDefinitionModelHandler::GetHandler());
-
-    DgnModelPtr model = BuildingTypeDefinitionModelHandler::GetHandler().Create(DgnModel::CreateParams(db, classId, modeledElementId));
-    if (!model.IsValid())
-        return nullptr;
-
-    // Insert the new model into the DgnDb
-    if (DgnDbStatus::Success != model->Insert())
-        return nullptr;
-
-    return dynamic_cast<BuildingTypeDefinitionModelP>(model.get());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-DgnDbStatus BuildingTypeDefinitionModel::_OnInsertElement(DgnElementR element)
-    {
-  //  if (nullptr == dynamic_cast<DoorTypeCP>(&element))
-  //      return DgnDbStatus::WrongElement;
-
-    return T_Super::_OnInsertElement(element);
-    }
+		// Insert the new model into the DgnDb
+		if (Dgn::DgnDbStatus::Success != model->Insert())
+			return nullptr;
 
 
-END_BENTLEY_BUILDING_PHYSICAL_NAMESPACE
+		return dynamic_cast<BuildingPhysicalModelP>(model.get());
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	Dgn::DgnDbStatus BuildingPhysicalModel::_OnInsertElement(Dgn::DgnElementR element)
+		{
+	  //  if (nullptr == dynamic_cast<ArchitecturalBaseElementCP>(&element))
+	  //      return DgnDbStatus::WrongElement;
+
+		return T_Super::_OnInsertElement(element);
+		}
+
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	BuildingTypeDefinitionModelPtr  BuildingTypeDefinitionModel::Create(Dgn::DefinitionPartitionCR partition)
+		{
+		Dgn::DgnDbR db = partition.GetDgnDb();
+		Dgn::DgnElementId modeledElementId = partition.GetElementId();
+		Dgn::DgnClassId classId = db.Domains().GetClassId(BuildingTypeDefinitionModelHandler::GetHandler());
+
+		Dgn::DgnModelPtr model = BuildingTypeDefinitionModelHandler::GetHandler().Create(Dgn::DgnModel::CreateParams(db, classId, modeledElementId));
+		if (!model.IsValid())
+			return nullptr;
+
+		// Insert the new model into the DgnDb
+		if (Dgn::DgnDbStatus::Success != model->Insert())
+			return nullptr;
+
+		return dynamic_cast<BuildingTypeDefinitionModelP>(model.get());
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	Dgn::DgnDbStatus BuildingTypeDefinitionModel::_OnInsertElement(Dgn::DgnElementR element)
+		{
+	    //  if (nullptr == dynamic_cast<DoorTypeCP>(&element))
+	    //      return DgnDbStatus::WrongElement;
+
+		return T_Super::_OnInsertElement(element);
+		}
+
+	} // End BuildingPhysical namespace
+
+END_BENTLEY_NAMESPACE
 
 

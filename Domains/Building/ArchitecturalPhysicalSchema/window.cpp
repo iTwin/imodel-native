@@ -5,45 +5,49 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ArchitecturalPhysicalSchemaInternal.h"
-#include <BuildingPhysical/BuildingPhysicalApi.h>
+#include "BuildingDomainInternal.h"
 
 
-BEGIN_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(WindowHandler)
-HANDLER_DEFINE_MEMBERS(WindowTypeHandler)
+namespace ArchitecturalPhysical
+	{
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-WindowPtr Window::Create(BuildingPhysical::BuildingPhysicalModelR model)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnModelId modelId = model.GetModelId();
-    DgnCategoryId categoryId = ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(db);
-    DgnClassId classId = db.Domains().GetClassId(WindowHandler::GetHandler());
+	HANDLER_DEFINE_MEMBERS(WindowHandler)
+	HANDLER_DEFINE_MEMBERS(WindowTypeHandler)
 
-    WindowPtr window = new Window(CreateParams(db, modelId, classId, categoryId));
-    return window;
-    }
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	WindowPtr Window::Create(Dgn::PhysicalModelR model)
+		{
+		Dgn::DgnDbR db = model.GetDgnDb();
+		Dgn::DgnModelId modelId = model.GetModelId();
+		Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(db);
+		Dgn::DgnClassId classId = db.Domains().GetClassId(WindowHandler::GetHandler());
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-WindowTypePtr WindowType::Create(BuildingPhysical::BuildingTypeDefinitionModelR model)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnModelId modelId = model.GetModelId();
-    //DgnCategoryId categoryId = ToyTileCategory::QueryToyTileCategoryId(db);
-    DgnClassId classId = db.Domains().GetClassId(WindowTypeHandler::GetHandler());
+		WindowPtr window = new Window(CreateParams(db, modelId, classId, categoryId));
+		return window;
+		}
 
-    WindowTypePtr element = new WindowType(CreateParams(db, modelId, classId));
-    if (!element.IsValid())
-        return nullptr;
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	WindowTypePtr WindowType::Create(Dgn::DefinitionModelR model)
+		{
+		Dgn::DgnDbR db = model.GetDgnDb();
+		Dgn::DgnModelId modelId = model.GetModelId();
+		//DgnCategoryId categoryId = ToyTileCategory::QueryToyTileCategoryId(db);
+		Dgn::DgnClassId classId = db.Domains().GetClassId(ArchitecturalPhysical::WindowTypeHandler::GetHandler());
 
-    return element;
-    }
+		WindowTypePtr element = new WindowType(CreateParams(db, modelId, classId));
+		if (!element.IsValid())
+			return nullptr;
 
-END_BENTLEY_ARCHITECTURAL_PHYSICAL_NAMESPACE
+		return element;
+		}
+
+	} // End ArchitecturalPhysical namespace
+
+END_BENTLEY_NAMESPACE
 
