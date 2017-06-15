@@ -883,14 +883,16 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestGoodRequest)
 	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataEnterpriseStatRequest failed with response"), _)).Times(0);
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/EnterpriseStat/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/EnterpriseStat/2017-6-6~2F72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
         response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\EnterpriseStat.json");
 		}));
 
-	RealityDataEnterpriseStatRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    DateTime dt = DateTime::GetCurrentTimeUtc();
+    DateTime::FromString(dt, "2017-06-06");
+	RealityDataEnterpriseStatRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a4", dt);
 	RawServerResponse rawResponse{};
     RealityDataEnterpriseStat stats;
 

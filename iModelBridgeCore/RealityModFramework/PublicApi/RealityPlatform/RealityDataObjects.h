@@ -524,12 +524,16 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateSite() const;
     REALITYDATAPLATFORM_EXPORT void SetUltimateSite(Utf8CP ultimateSite);
 
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetDate() const;
+    REALITYDATAPLATFORM_EXPORT void SetDate(DateTimeCR date);
+
 protected:
-    uint64_t m_nbRealityData;
-    uint64_t m_totalSizeKB;
+    uint64_t   m_nbRealityData;
+    uint64_t   m_totalSizeKB;
     Utf8String m_organizationId;
     Utf8String m_ultimateId;
     Utf8String m_ultimateSite;
+    DateTime   m_date;
     };
    
 
