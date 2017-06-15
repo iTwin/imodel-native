@@ -45,6 +45,7 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         IScalableMeshGroundPreviewerPtr  m_groundPreviewer;
         double            m_smGcsRatioToMeter; 
         ScalableMeshProgress m_createProgress;
+        BaseGCSPtr           m_destinationGcs;
         
         
         void AddXYZFilePointsAsSeedPoints(TerrainModel::GroundDetection::GroundDetectionParametersPtr& params, const BeFileName& coverageTempDataFolder);
@@ -56,6 +57,8 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
     protected:                   
 
         virtual StatusInt                   _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) override;     
+
+        virtual StatusInt                   _SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs) override;
 
         virtual StatusInt                   _SetExtractionArea(const bvector<DPoint3d>& area) override;
 

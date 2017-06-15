@@ -471,9 +471,9 @@ BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageDat
     return _CreateCoverage(coverageData, id, coverageName);
     }
 
-BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
+BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSPtr destinationGcs)
     {
-    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer);
+    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
@@ -2863,7 +2863,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     return m_scmIndexPtr->Publish3DTiles(path, this->_GetGCS().GetGeoRef().GetBasePtr());
     }
 
-template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
+template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSPtr& destinationGcs)
     {    
     BeFileName terrainAbsName;
 
@@ -2889,9 +2889,10 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         */
         IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(terrainAbsName, scalableMeshPtr));
 
+        smGroundExtractor->SetDestinationGcs(destinationGcs);
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
-
+                
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
         assert(status == SUCCESS);

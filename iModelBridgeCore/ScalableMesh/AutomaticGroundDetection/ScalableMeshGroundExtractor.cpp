@@ -90,6 +90,11 @@ StatusInt IScalableMeshGroundExtractor::ExtractAndEmbed(const BeFileName& covera
     return _ExtractAndEmbed(coverageTempDataFolder);
     }        
 
+StatusInt IScalableMeshGroundExtractor::SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs)
+    {
+    return _SetDestinationGcs(destinationGcs);
+    }
+
 StatusInt IScalableMeshGroundExtractor::SetExtractionArea(const bvector<DPoint3d>& area)
     {
     return _SetExtractionArea(area);
@@ -108,6 +113,8 @@ void IScalableMeshGroundExtractor::GetTempDataLocation(BeFileName& textureSubFol
     extraLinearFeatureFileName.append(L".dat");        
     }        
 
+
+
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundExtractor Method Definition Section - End
 +----------------------------------------------------------------------------*/
@@ -120,6 +127,38 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
         IScalableMeshGroundPreviewerPtr m_groundPreviewer;
         Transform                       m_previewTransform;
 
+        GeoCoordInterpretation m_geocoordInterpretation;
+        BaseGCSPtr             m_sourceGcs;
+        BaseGCSPtr             m_destinationGcs;
+
+        inline void Reproject(DPoint3d& ptOut,const DPoint3d& ptIn)
+            {
+            if (m_destinationGcs.IsValid())
+                {
+                assert(m_sourceGcs.IsValid());
+                GeoPoint srcLatLong;
+                GeoPoint dstLatLong;                
+                
+                if (m_geocoordInterpretation == GeoCoordInterpretation::Cartesian)
+                    {
+                    m_sourceGcs->LatLongFromCartesian(srcLatLong, ptIn);
+                    }
+                else
+                    {
+                    m_sourceGcs->LatLongFromXYZ(srcLatLong, ptIn);
+                    }
+
+                m_sourceGcs->LatLongFromLatLong(dstLatLong, srcLatLong, *m_destinationGcs);
+
+                m_destinationGcs->CartesianFromLatLong(ptOut, dstLatLong);
+                }
+            else
+                {
+                ptOut = ptIn;
+                }
+            }
+        
+
     protected : 
 
         virtual void _AddPoints(const bvector<DPoint3d>& points) override
@@ -128,11 +167,14 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
 
             for (auto& point : points)
                 {
+                DPoint3d reprojPoint;
+                Reproject(reprojPoint, point);
+                
                 int nbChars = sprintf(buffer, 
                                      "%.20f,%.20f,%.20f\r\n", 
-                                     point.x, 
-                                     point.y,
-                                     point.z); 
+                                     reprojPoint.x,
+                                     reprojPoint.y,
+                                     reprojPoint.z);
 
                 fwrite(buffer, nbChars, 1, m_xyzFile);
                 }
@@ -177,6 +219,13 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             fclose(m_xyzFile);
             }
 
+        void SetReprojGCS(GeoCoordinates::GeoCoordInterpretation geocoordInterpretation, BaseGCSPtr& sourceGcs, BaseGCSPtr& destinationGcs)
+            {
+            m_geocoordInterpretation = geocoordInterpretation;
+            m_sourceGcs = sourceGcs;
+            m_destinationGcs = destinationGcs;
+            }
+        
         void Close()
             {
             fclose(m_xyzFile);
@@ -340,8 +389,13 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(&m_createProgress);
-        
-    if (m_scalableMesh->GetBaseGCS().IsValid())
+
+    if (m_destinationGcs.IsValid())
+        {
+        status = terrainCreator->SetBaseGCS(m_destinationGcs);
+        }
+    else  //NEEDS_WORK_SM : Cesium 3D tile is creating ECEF LL84 GCS, which cannot be represented at the file level currently.
+    if (m_scalableMesh->GetBaseGCS().IsValid() && !m_scalableMesh->IsCesium3DTiles())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
 
     assert(status == SUCCESS);
@@ -563,6 +617,15 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
 
     IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator(m_groundPreviewer, m_scalableMesh->GetReprojectionTransform()));
 
+    if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid())
+        {                 
+        auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
+
+        BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
+        
+        ((ScalableMeshPointsAccumulator*)accumPtr.get())->SetReprojGCS(coordInterp, sourceGcs, m_destinationGcs);
+        }
+
     params->SetGroundPointsAccumulator(accumPtr);
 
     /*
@@ -610,6 +673,13 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     } 
 
 static bool s_fixTest = false;
+
+
+StatusInt ScalableMeshGroundExtractor::_SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs)
+    {
+    m_destinationGcs = destinationGcs;
+    return SUCCESS;
+    }
 
 StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area) 
     {
