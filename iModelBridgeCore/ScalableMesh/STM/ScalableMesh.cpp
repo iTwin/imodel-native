@@ -2113,7 +2113,6 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
     {
     bvector<bvector<DPoint3d>> coverageData;
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
-    m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
 
     const DPoint3d* targetPts;
     bvector<DPoint3d> reprojectedPts(ptsSize);
@@ -2221,6 +2220,11 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
     else targetPts = pts;
 
     DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
+
+	bvector<DPoint3d> clipData;
+	m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
+	if(!clipData.empty())
+		extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
 
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);

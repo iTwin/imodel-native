@@ -1357,7 +1357,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 #endif
 
 //		LOG_SET_PATH("c:\\work\\2017q2\\tmp\\")
-//		LOG_SET_PATH_W("c:\\work\\2017q2\\tmp\\")
+// 	LOG_SET_PATH_W("c:\\work\\2017q2\\tmp\\")
 
     if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
     //bool hasPtsToTrack = false;
@@ -1785,29 +1785,6 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             }
         }
 
-
-        if (!m_clip.empty())
-            {
-            HFCPtr<HVE2DShape> clipShape = CreateShapeFromPoints(&m_clip[0], m_clip.size(), new HGF2DCoordSys());
-            bvector<DPoint3d> extVector(5);
-            extVector[0] = extVector[4] = node->m_nodeHeader.m_nodeExtent.low;
-            extVector[1] = DPoint3d::From(node->m_nodeHeader.m_nodeExtent.low.x, node->m_nodeHeader.m_nodeExtent.high.y, node->m_nodeHeader.m_nodeExtent.low.z);
-            extVector[2] = node->m_nodeHeader.m_nodeExtent.high;
-            extVector[3] = DPoint3d::From(node->m_nodeHeader.m_nodeExtent.high.x, node->m_nodeHeader.m_nodeExtent.low.y, node->m_nodeHeader.m_nodeExtent.low.z);
-            bvector<bvector<DPoint3d>> extents;
-            extents.push_back(extVector);
-
-            status = AddPolygonsToDTMObject(extents, DTMFeatureType::DrapeVoid, dtmObjP);
-            for (auto& poly : postFeatureBoundary)
-                {
-                HFCPtr<HVE2DShape> newShape = CreateShapeFromPoints(&poly[0], poly.size(), clipShape->GetCoordSys());
-                clipShape = clipShape->DifferentiateShape(*newShape);
-                }
-            HFCPtr<HVE2DShape> newShape = CreateShapeFromPoints(&extVector[0], extVector.size(), clipShape->GetCoordSys());
-            clipShape = clipShape->IntersectShape(*newShape);
-            AddClipToDTM(dtmPtr, *clipShape);
-            }
-		else
 		{
 			status = bcdtmObject_triangulateDtmObject(dtmObjP);
 			bvector<DPoint3d> tmBoundary;
@@ -1870,7 +1847,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         }
 #endif
 
-/*		WString dtmFileName(L"c:\\work\\2017q2\\tmp\\meshtile_");
+		/*WString dtmFileName(L"c:\\work\\2017q2\\tmp\\meshtile_");
 		dtmFileName.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
 		dtmFileName.append(L"_");
 		dtmFileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
@@ -1887,15 +1864,78 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     if (status == SUCCESS)
         {
         meshPtr = nullptr;
+		ScalableMeshMesh* meshP;
+		if (!m_clip.empty())
+		{
 
-        bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), 10000000, 2, 1, &draw, false, DTMFenceType::None, DTMFenceOption::None, 0, 0, &meshPtr);
+			HFCPtr<HVE2DShape> clipShape = CreateShapeFromPoints(&m_clip[0], m_clip.size(), new HGF2DCoordSys());
+			bvector<DPoint3d> extVector(5);
 
-        ScalableMeshMesh* meshP((ScalableMeshMesh*)meshPtr.get());
+			extVector[0] = extVector[4] = node->m_nodeHeader.m_nodeExtent.low;
+			extVector[1] = DPoint3d::From(node->m_nodeHeader.m_nodeExtent.low.x, node->m_nodeHeader.m_nodeExtent.high.y, node->m_nodeHeader.m_nodeExtent.low.z);
+			extVector[2] = node->m_nodeHeader.m_nodeExtent.high;
+			extVector[3] = DPoint3d::From(node->m_nodeHeader.m_nodeExtent.high.x, node->m_nodeHeader.m_nodeExtent.low.y, node->m_nodeHeader.m_nodeExtent.low.z);
+
+			HFCPtr<HVE2DShape> newShape = CreateShapeFromPoints(&extVector[0], extVector.size(), clipShape->GetCoordSys());
+			clipShape = clipShape->IntersectShape(*newShape);
+
+			HGF2DLocationCollection thePoints;
+			clipShape->Drop(&thePoints, clipShape->GetTolerance());
+
+			bvector<DPoint3d> vec(thePoints.size());
+
+			for (size_t idx = 0; idx < thePoints.size(); idx++)
+			{
+				vec[idx].x = thePoints[idx].GetX();
+				vec[idx].y = thePoints[idx].GetY();
+				vec[idx].z = 0;
+			}
+
+
+
+			DTMUserTag    userTag = 0;
+			DTMFeatureId* textureRegionIdsP = 0;
+			long          numRegionTextureIds = 0;
+			bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
+				DTMFeatureType::Region,
+				1,
+				2,
+				userTag,
+				&textureRegionIdsP,
+				&numRegionTextureIds,
+				(DPoint3d*)&vec[0],
+				(long)vec.size(),
+				nullptr);
+
+
+			//bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), 10000000, 2, 1, &draw, false, DTMFenceType::None, DTMFenceOption::None, 0, 0, &meshPtr);
+			BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+			en->SetMaxTriangles((*dtmObjP).numPoints);
+
+			en->SetFilterRegionByUserTag(0);
+			meshP = ((ScalableMeshMesh*)meshPtr.get());
+
+			for (PolyfaceQueryP pf : *en)
+			{
+				if (meshP == nullptr)
+				{
+					meshPtr = IScalableMeshMesh::Create(pf->GetPointCount(), const_cast<DPoint3d*>(pf->GetPointCP()), pf->GetPointIndexCount(), pf->GetPointIndexCP(), 0, 0, 0, 0, 0, 0);
+					meshP = (ScalableMeshMesh*)meshPtr.get();
+				}
+				else
+					meshP->AppendMesh(pf->GetPointCount(), const_cast<DPoint3d*>(pf->GetPointCP()), pf->GetPointIndexCount(), pf->GetPointIndexCP(), 0, 0, 0, 0, 0, 0);
+			}
+		}
+		else
+		{
+			bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), 10000000, 2, 1, &draw, false, DTMFenceType::None, DTMFenceOption::None, 0, 0, &meshPtr);
+			meshP = ((ScalableMeshMesh*)meshPtr.get());
+		}
         if (meshP == 0) return false;
         assert(meshP != 0);
 
 #if SM_OUTPUT_MESHES_STITCHING
-        if (node->m_nodeHeader.m_level <= 6)
+   //     if (node->m_nodeHeader.m_level <= 6)
         {
         WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_new_";
         LOGSTRING_NODE_INFO_W(node, nameStitched)
@@ -1913,7 +1953,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             pts[1].resize(meshP->GetNbPoints());
 
 #if SM_OUTPUT_MESHES_STITCHING
-            if (node->m_nodeHeader.m_level <= 6)
+           // if (node->m_nodeHeader.m_level <= 6)
                 {
                 WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_old_";
                 LOGSTRING_NODE_INFO_W(node, nameStitched)
