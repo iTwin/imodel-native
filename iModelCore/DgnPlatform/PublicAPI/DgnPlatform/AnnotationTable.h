@@ -670,7 +670,7 @@ private:
         Visible         = 1,
         Color           = 2,
         Weight          = 3,
-        LineStyleId     = 4,
+        LineStyle       = 4,
         LineStyleScale  = 5,
         FillColor       = 6,
         };
@@ -1368,7 +1368,6 @@ private:
     TableUInt64Value        m_headerColumnTextStyle;
     TableUInt64Value        m_footerColumnTextStyle;
     double                  m_backupTextHeight;
-    int                     m_dataSourceProviderId;
     TableDoubleValue        m_bodyTextHeight;
     TableDoubleValue        m_titleRowTextHeight;
     TableDoubleValue        m_headerRowTextHeight;
@@ -1382,7 +1381,7 @@ private:
         {
         RowCount                = 0,        // no gaps allowed
         ColumnCount             = 1, 
-        TextStyleId             = 2,
+        TextStyle               = 2,
         TitleRowCount           = 3,
         HeaderRowCount          = 4,
         FooterRowCount          = 5,
@@ -1410,14 +1409,13 @@ private:
         HeaderColumnTextStyle   = 27,
         FooterColumnTextStyle   = 28,
         BackupTextHeight        = 29,
-        DataSourceProviderId    = 30,
-        BodyTextHeight          = 31,
-        TitleRowTextHeight      = 32,
-        HeaderRowTextHeight     = 33,
-        FooterRowTextHeight     = 34,
-        HeaderColumnTextHeight  = 35,
-        FooterColumnTextHeight  = 36,
-        DefaultTextSymbKey      = 37,
+        BodyTextHeight          = 30,
+        TitleRowTextHeight      = 31,
+        HeaderRowTextHeight     = 32,
+        FooterRowTextHeight     = 33,
+        HeaderColumnTextHeight  = 34,
+        FooterColumnTextHeight  = 35,
+        DefaultTextSymbKey      = 36,
         };
 
     TableHeaderAspect (AnnotationTableR);

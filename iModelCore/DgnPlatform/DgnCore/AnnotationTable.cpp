@@ -18,7 +18,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define HEADER_PARAM_RowCount                   "RowCount"
 #define HEADER_PARAM_ColumnCount                "ColumnCount"
-#define HEADER_PARAM_TextStyleId                "TextStyleId"
+#define HEADER_PARAM_TextStyle                  "TextStyle"
 #define HEADER_PARAM_TitleRowCount              "TitleRowCount"
 #define HEADER_PARAM_HeaderRowCount             "HeaderRowCount"
 #define HEADER_PARAM_FooterRowCount             "FooterRowCount"
@@ -46,7 +46,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define HEADER_PARAM_HeaderColumnTextStyle      "HeaderColumnTextStyle"
 #define HEADER_PARAM_FooterColumnTextStyle      "FooterColumnTextStyle"
 #define HEADER_PARAM_BackupTextHeight           "BackupTextHeight"
-#define HEADER_PARAM_DataSourceProviderId       "DataSourceProviderId"
 #define HEADER_PARAM_BodyTextHeight             "BodyTextHeight"
 #define HEADER_PARAM_TitleRowTextHeight         "TitleRowTextHeight"
 #define HEADER_PARAM_HeaderRowTextHeight        "HeaderRowTextHeight"
@@ -84,7 +83,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define SYMBOLOGYENTRY_PARAM_Visible            "Visible"
 #define SYMBOLOGYENTRY_PARAM_Color              "Color"
 #define SYMBOLOGYENTRY_PARAM_Weight             "Weight"
-#define SYMBOLOGYENTRY_PARAM_LineStyleId        "LineStyleId"
+#define SYMBOLOGYENTRY_PARAM_LineStyle          "LineStyle"
 #define SYMBOLOGYENTRY_PARAM_LineStyleScale     "LineStyleScale"
 #define SYMBOLOGYENTRY_PARAM_FillColor          "FillColor"
 
@@ -3862,7 +3861,7 @@ PropertyNames   SymbologyEntry::GetPropertyNames()
         { (int) PropIndex::Visible,         SYMBOLOGYENTRY_PARAM_Visible        },
         { (int) PropIndex::Color,           SYMBOLOGYENTRY_PARAM_Color          },
         { (int) PropIndex::Weight,          SYMBOLOGYENTRY_PARAM_Weight         },
-        { (int) PropIndex::LineStyleId,     SYMBOLOGYENTRY_PARAM_LineStyleId    },
+        { (int) PropIndex::LineStyle,       SYMBOLOGYENTRY_PARAM_LineStyle      },
         { (int) PropIndex::LineStyleScale,  SYMBOLOGYENTRY_PARAM_LineStyleScale },
         { (int) PropIndex::FillColor,       SYMBOLOGYENTRY_PARAM_FillColor      },
         };
@@ -3898,7 +3897,7 @@ void    SymbologyEntry::_BindProperties(ECSqlStatement& statement)
     BindBool    (statement, SYMBOLOGYENTRY_PARAM_Visible,        m_visible);
     BindUInt    (statement, SYMBOLOGYENTRY_PARAM_Color,          m_color);
     BindUInt    (statement, SYMBOLOGYENTRY_PARAM_Weight,         m_weight);
-    BindInt64   (statement, SYMBOLOGYENTRY_PARAM_LineStyleId,    m_lineStyleId);
+    BindInt64   (statement, SYMBOLOGYENTRY_PARAM_LineStyle,      m_lineStyleId);
     BindDouble  (statement, SYMBOLOGYENTRY_PARAM_LineStyleScale, m_lineStyleScale);
     BindUInt    (statement, SYMBOLOGYENTRY_PARAM_FillColor,      m_fillColor);
     }
@@ -3915,7 +3914,7 @@ void  SymbologyEntry::_AssignValue (int index, IECSqlValue const& value)
         case PropIndex::Visible:        m_visible.SetValue          (value.GetBoolean());   break;
         case PropIndex::Color:          m_color.SetValue            (value.GetInt());       break;
         case PropIndex::Weight:         m_weight.SetValue           (value.GetInt());       break;
-        case PropIndex::LineStyleId:    m_lineStyleId.SetValue      (value.GetInt64());     break;
+        case PropIndex::LineStyle:      m_lineStyleId.SetValue      (value.GetInt64());     break;
         case PropIndex::LineStyleScale: m_lineStyleScale.SetValue   (value.GetDouble());    break;
         case PropIndex::FillColor:      m_fillColor.SetValue        (value.GetInt());       break;
         default:                        BeAssert (false);
@@ -5176,7 +5175,7 @@ PropertyNames   TableHeaderAspect::GetPropertyNames()
         {
         { (int) PropIndex::RowCount,                HEADER_PARAM_RowCount                  },
         { (int) PropIndex::ColumnCount,             HEADER_PARAM_ColumnCount               },
-        { (int) PropIndex::TextStyleId,             HEADER_PARAM_TextStyleId               },
+        { (int) PropIndex::TextStyle,               HEADER_PARAM_TextStyle                 },
         { (int) PropIndex::TitleRowCount,           HEADER_PARAM_TitleRowCount             }, 
         { (int) PropIndex::HeaderRowCount,          HEADER_PARAM_HeaderRowCount            }, 
         { (int) PropIndex::FooterRowCount,          HEADER_PARAM_FooterRowCount            }, 
@@ -5204,7 +5203,6 @@ PropertyNames   TableHeaderAspect::GetPropertyNames()
         { (int) PropIndex::HeaderColumnTextStyle,   HEADER_PARAM_HeaderColumnTextStyle     }, 
         { (int) PropIndex::FooterColumnTextStyle,   HEADER_PARAM_FooterColumnTextStyle     }, 
         { (int) PropIndex::BackupTextHeight,        HEADER_PARAM_BackupTextHeight          }, 
-        { (int) PropIndex::DataSourceProviderId,    HEADER_PARAM_DataSourceProviderId      }, 
         { (int) PropIndex::BodyTextHeight,          HEADER_PARAM_BodyTextHeight            }, 
         { (int) PropIndex::TitleRowTextHeight,      HEADER_PARAM_TitleRowTextHeight        }, 
         { (int) PropIndex::HeaderRowTextHeight,     HEADER_PARAM_HeaderRowTextHeight       }, 
@@ -5228,7 +5226,7 @@ void  TableHeaderAspect::_AssignValue (int index, IECSqlValue const& value)
         {
         case    PropIndex::RowCount:                    m_rowCount.SetValue (value.GetInt());               break;
         case    PropIndex::ColumnCount:                 m_columnCount.SetValue (value.GetInt());            break;
-        case    PropIndex::TextStyleId:                 m_textStyleId.SetValue (value.GetInt64());          break;
+        case    PropIndex::TextStyle:                   m_textStyleId.SetValue (value.GetInt64());          break;
         case    PropIndex::TitleRowCount:               m_titleRowCount           = value.GetInt();     break;
         case    PropIndex::HeaderRowCount:              m_headerRowCount          = value.GetInt();     break;
         case    PropIndex::FooterRowCount:              m_footerRowCount          = value.GetInt();     break;
@@ -5256,7 +5254,6 @@ void  TableHeaderAspect::_AssignValue (int index, IECSqlValue const& value)
         case    PropIndex::HeaderColumnTextStyle:       m_headerColumnTextStyle.SetValue (value.GetInt64());break;
         case    PropIndex::FooterColumnTextStyle:       m_footerColumnTextStyle.SetValue (value.GetInt64());break;
         case    PropIndex::BackupTextHeight:            m_backupTextHeight        = value.GetInt();     break;
-        case    PropIndex::DataSourceProviderId:        m_dataSourceProviderId    = value.GetInt();     break;
         case    PropIndex::BodyTextHeight:              m_bodyTextHeight.SetValue (value.GetDouble());           break;
         case    PropIndex::TitleRowTextHeight:          m_titleRowTextHeight.SetValue (value.GetDouble());       break;
         case    PropIndex::HeaderRowTextHeight:         m_headerRowTextHeight.SetValue (value.GetDouble());      break;
@@ -5310,7 +5307,6 @@ void    TableHeaderAspect::Invalidate()
     m_headerColumnTextStyle.Clear();
     m_footerColumnTextStyle.Clear();
     m_backupTextHeight          = 0.0;
-    m_dataSourceProviderId      = 0;
     m_bodyTextHeight.Clear();
     m_titleRowTextHeight.Clear();
     m_headerRowTextHeight.Clear();
@@ -5354,7 +5350,6 @@ void    TableHeaderAspect::CopyDataFrom (TableHeaderAspect const& rhs)
     m_headerColumnTextStyle     = rhs.m_headerColumnTextStyle;
     m_footerColumnTextStyle     = rhs.m_footerColumnTextStyle;
     m_backupTextHeight          = 0.0;
-    m_dataSourceProviderId      = 0;
     m_bodyTextHeight            = rhs.m_bodyTextHeight;
     m_titleRowTextHeight        = rhs.m_titleRowTextHeight;
     m_headerRowTextHeight       = rhs.m_headerRowTextHeight;
@@ -5371,7 +5366,7 @@ void    TableHeaderAspect::_BindProperties(ECSqlStatement& statement)
     {
     BindUInt    (statement, HEADER_PARAM_RowCount,                  m_rowCount);
     BindUInt    (statement, HEADER_PARAM_ColumnCount,               m_columnCount);
-    BindInt64   (statement, HEADER_PARAM_TextStyleId,               m_textStyleId);
+    BindInt64   (statement, HEADER_PARAM_TextStyle,                 m_textStyleId);
     BindUInt    (statement, HEADER_PARAM_TitleRowCount,             m_titleRowCount);
     BindUInt    (statement, HEADER_PARAM_HeaderRowCount,            m_headerRowCount);
     BindUInt    (statement, HEADER_PARAM_FooterRowCount,            m_footerRowCount);
@@ -5399,7 +5394,6 @@ void    TableHeaderAspect::_BindProperties(ECSqlStatement& statement)
     BindInt64   (statement, HEADER_PARAM_HeaderColumnTextStyle,     m_headerColumnTextStyle);
     BindInt64   (statement, HEADER_PARAM_FooterColumnTextStyle,     m_footerColumnTextStyle);
     statement.BindDouble    (statement.GetParameterIndex(HEADER_PARAM_BackupTextHeight),           m_backupTextHeight);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_DataSourceProviderId),       m_dataSourceProviderId);
     BindDouble  (statement, HEADER_PARAM_BodyTextHeight,             m_bodyTextHeight);
     BindDouble  (statement, HEADER_PARAM_TitleRowTextHeight,         m_titleRowTextHeight);
     BindDouble  (statement, HEADER_PARAM_HeaderRowTextHeight,        m_headerRowTextHeight);
@@ -5482,7 +5476,7 @@ TableUInt64Value const*    TableHeaderAspect::GetUInt64Value (PropIndex propInde
     {
     switch (propIndex)
         {
-        case PropIndex::TextStyleId:                { return &m_textStyleId;           }
+        case PropIndex::TextStyle:                  { return &m_textStyleId;           }
         case PropIndex::TitleRowTextStyle:          { return &m_titleRowTextStyle;     }
         case PropIndex::HeaderRowTextStyle:         { return &m_headerRowTextStyle;    }
         case PropIndex::FooterRowTextStyle:         { return &m_footerRowTextStyle;    }
@@ -5966,7 +5960,7 @@ DgnElementId  AnnotationTable::GetTextStyleId (AnnotationTableRegion region) con
     switch (region)
         {
         default:
-        case AnnotationTableRegion::Body:           return m_tableHeader.GetStyleId (TableHeaderAspect::PropIndex::TextStyleId);
+        case AnnotationTableRegion::Body:           return m_tableHeader.GetStyleId (TableHeaderAspect::PropIndex::TextStyle);
         case AnnotationTableRegion::TitleRow:       return m_tableHeader.GetStyleId (TableHeaderAspect::PropIndex::TitleRowTextStyle);
         case AnnotationTableRegion::HeaderRow:      return m_tableHeader.GetStyleId (TableHeaderAspect::PropIndex::HeaderRowTextStyle);
         case AnnotationTableRegion::FooterRow:      return m_tableHeader.GetStyleId (TableHeaderAspect::PropIndex::FooterRowTextStyle);
@@ -6357,7 +6351,7 @@ void            AnnotationTable::SetTextStyleIdDirect (DgnElementId val, Annotat
     switch (region)
         {
         default:
-        case AnnotationTableRegion::Body:           m_tableHeader.SetStyleId (val, TableHeaderAspect::PropIndex::TextStyleId);              break;
+        case AnnotationTableRegion::Body:           m_tableHeader.SetStyleId (val, TableHeaderAspect::PropIndex::TextStyle);                break;
         case AnnotationTableRegion::TitleRow:       m_tableHeader.SetStyleId (val, TableHeaderAspect::PropIndex::TitleRowTextStyle);        break;
         case AnnotationTableRegion::HeaderRow:      m_tableHeader.SetStyleId (val, TableHeaderAspect::PropIndex::HeaderRowTextStyle);       break;
         case AnnotationTableRegion::FooterRow:      m_tableHeader.SetStyleId (val, TableHeaderAspect::PropIndex::FooterRowTextStyle);       break;

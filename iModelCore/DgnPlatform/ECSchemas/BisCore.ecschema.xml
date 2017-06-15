@@ -1141,44 +1141,43 @@
     <ECEntityClass typeName="AnnotationTableHeader" displayLabel="Annotation Table Header">
         <!-- The aspect that holds the header properties for an AnnotationTable -->
         <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECProperty propertyName="RowCount" typeName="int"/>
-        <ECProperty propertyName="ColumnCount" typeName="int"/>
-        <ECProperty propertyName="TextStyleId" typeName="long"/>
-        <ECProperty propertyName="TitleRowCount" typeName="int"/>
-        <ECProperty propertyName="HeaderRowCount" typeName="int"/>
-        <ECProperty propertyName="FooterRowCount" typeName="int"/>
-        <ECProperty propertyName="HeaderColumnCount" typeName="int"/>
-        <ECProperty propertyName="FooterColumnCount" typeName="int"/>
-        <ECProperty propertyName="BreakType" typeName="int"/>
-        <ECProperty propertyName="BreakPosition" typeName="int"/>
-        <ECProperty propertyName="BreakLength" typeName="double"/>
-        <ECProperty propertyName="BreakGap" typeName="double"/>
-        <ECProperty propertyName="RepeatHeaders" typeName="boolean"/>
-        <ECProperty propertyName="RepeatFooters" typeName="boolean"/>
-        <ECProperty propertyName="DefaultColumnWidth" typeName="double"/>
-        <ECProperty propertyName="DefaultRowHeight" typeName="double"/>
-        <ECProperty propertyName="DefaultMarginTop" typeName="double"/>
-        <ECProperty propertyName="DefaultMarginBottom" typeName="double"/>
-        <ECProperty propertyName="DefaultMarginLeft" typeName="double"/>
-        <ECProperty propertyName="DefaultMarginRight" typeName="double"/>
-        <ECProperty propertyName="DefaultCellAlignment" typeName="int"/>
-        <ECProperty propertyName="DefaultCellOrientation" typeName="int"/>
-        <ECProperty propertyName="FillSymbologyKeyOddRow" typeName="int"/>
-        <ECProperty propertyName="FillSymbologyKeyEvenRow" typeName="int"/>
-        <ECProperty propertyName="TitleRowTextStyle" typeName="long"/>
-        <ECProperty propertyName="HeaderRowTextStyle" typeName="long"/>
-        <ECProperty propertyName="FooterRowTextStyle" typeName="long"/>
-        <ECProperty propertyName="HeaderColumnTextStyle" typeName="long"/>
-        <ECProperty propertyName="FooterColumnTextStyle" typeName="long"/>
-        <ECProperty propertyName="BackupTextHeight" typeName="double"/>
-        <ECProperty propertyName="DataSourceProviderId" typeName="long"/>
-        <ECProperty propertyName="BodyTextHeight" typeName="double"/>
-        <ECProperty propertyName="TitleRowTextHeight" typeName="double"/>
-        <ECProperty propertyName="HeaderRowTextHeight" typeName="double"/>
-        <ECProperty propertyName="FooterRowTextHeight" typeName="double"/>
-        <ECProperty propertyName="HeaderColumnTextHeight" typeName="double"/>
-        <ECProperty propertyName="FooterColumnTextHeight" typeName="double"/>
-        <ECProperty propertyName="TextSymbKey" typeName="int"/>
+        <ECProperty propertyName="RowCount" typeName="int" displayLabel="Row Count"/>
+        <ECProperty propertyName="ColumnCount" typeName="int" displayLabel="Column Count"/>
+        <ECNavigationProperty propertyName="TextStyle" relationshipName="AnnotationTableHeaderUsesTextStyle" direction="Forward" displayLabel="Text Style"/>
+        <ECProperty propertyName="TitleRowCount" typeName="int" displayLabel="Title Row Count"/>
+        <ECProperty propertyName="HeaderRowCount" typeName="int" displayLabel="Header Row Count"/>
+        <ECProperty propertyName="FooterRowCount" typeName="int" displayLabel="Footer Row Count"/>
+        <ECProperty propertyName="HeaderColumnCount" typeName="int" displayLabel="Header Column Count"/>
+        <ECProperty propertyName="FooterColumnCount" typeName="int" displayLabel="Footer Column Count"/>
+        <ECProperty propertyName="BreakType" typeName="int" displayLabel="Break Type"/>
+        <ECProperty propertyName="BreakPosition" typeName="int" displayLabel="Break Position"/>
+        <ECProperty propertyName="BreakLength" typeName="double" displayLabel="Break Length"/>
+        <ECProperty propertyName="BreakGap" typeName="double" displayLabel="Break Gap"/>
+        <ECProperty propertyName="RepeatHeaders" typeName="boolean" displayLabel="Repeat Headers"/>
+        <ECProperty propertyName="RepeatFooters" typeName="boolean" displayLabel="Repeat Footers"/>
+        <ECProperty propertyName="DefaultColumnWidth" typeName="double" displayLabel="Default Column Width"/>
+        <ECProperty propertyName="DefaultRowHeight" typeName="double" displayLabel="Default Row Height"/>
+        <ECProperty propertyName="DefaultMarginTop" typeName="double" displayLabel="Default Margin Top"/>
+        <ECProperty propertyName="DefaultMarginBottom" typeName="double" displayLabel="Default Margin Bottom"/>
+        <ECProperty propertyName="DefaultMarginLeft" typeName="double" displayLabel="Default Margin Left"/>
+        <ECProperty propertyName="DefaultMarginRight" typeName="double" displayLabel="Default Margin Right"/>
+        <ECProperty propertyName="DefaultCellAlignment" typeName="int" displayLabel="Default Cell Alignment"/>
+        <ECProperty propertyName="DefaultCellOrientation" typeName="int" displayLabel="Default Cell Orientation"/>
+        <ECProperty propertyName="FillSymbologyKeyOddRow" typeName="int" displayLabel="Fill Symbology Key Odd Row"/>
+        <ECProperty propertyName="FillSymbologyKeyEvenRow" typeName="int" displayLabel="Fill Symbology Key Even Row"/>
+        <ECNavigationProperty propertyName="TitleRowTextStyle" relationshipName="AnnotationTableHeaderUsesTitleRowTextStyle" direction="Forward" displayLabel="Title Row Text Style"/>
+        <ECNavigationProperty propertyName="HeaderRowTextStyle" relationshipName="AnnotationTableHeaderUsesHeaderRowTextStyle" direction="Forward" displayLabel="Header Row Text Style"/>
+        <ECNavigationProperty propertyName="FooterRowTextStyle" relationshipName="AnnotationTableHeaderUsesFooterRowTextStyle" direction="Forward" displayLabel="Footer Row Text Style"/>
+        <ECNavigationProperty propertyName="HeaderColumnTextStyle" relationshipName="AnnotationTableHeaderUsesHeaderColumnTextStyle" direction="Forward" displayLabel="Header Column Text Style"/>
+        <ECNavigationProperty propertyName="FooterColumnTextStyle" relationshipName="AnnotationTableHeaderUsesFooterColumnTextStyle" direction="Forward" displayLabel="Footer Column Text Style"/>
+        <ECProperty propertyName="BackupTextHeight" typeName="double" displayLabel="Backup Text Height"/>
+        <ECProperty propertyName="BodyTextHeight" typeName="double" displayLabel="Body Text Height"/>
+        <ECProperty propertyName="TitleRowTextHeight" typeName="double" displayLabel="Title Row Text Height"/>
+        <ECProperty propertyName="HeaderRowTextHeight" typeName="double" displayLabel="Header Row Text Height"/>
+        <ECProperty propertyName="FooterRowTextHeight" typeName="double" displayLabel="Footer Row Text Height"/>
+        <ECProperty propertyName="HeaderColumnTextHeight" typeName="double" displayLabel="Header Column Text Height"/>
+        <ECProperty propertyName="FooterColumnTextHeight" typeName="double" displayLabel="Footer Column Text Height"/>
+        <ECProperty propertyName="TextSymbKey" typeName="int" displayLabel="Text Symbology Key"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
@@ -1189,12 +1188,66 @@
             <Class class="AnnotationTableHeader"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="AnnotationTableHeaderUsesTextStyle" strength="referencing" modifier="Sealed">
+        <!-- @see AnnotationTableHeader.TextStyle ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="false">
+            <Class class="AnnotationTableHeader"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
+            <Class class="AnnotationTextStyle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="AnnotationTableHeaderUsesTitleRowTextStyle" strength="referencing" modifier="Sealed">
+        <!-- @see AnnotationTableHeader.TitleRowTextStyle ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="false">
+            <Class class="AnnotationTableHeader"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
+            <Class class="AnnotationTextStyle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="AnnotationTableHeaderUsesHeaderRowTextStyle" strength="referencing" modifier="Sealed">
+        <!-- @see AnnotationTableHeader.HeaderRowTextStyle ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="false">
+            <Class class="AnnotationTableHeader"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
+            <Class class="AnnotationTextStyle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="AnnotationTableHeaderUsesFooterRowTextStyle" strength="referencing" modifier="Sealed">
+        <!-- @see AnnotationTableHeader.FooterRowTextStyle ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="false">
+            <Class class="AnnotationTableHeader"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
+            <Class class="AnnotationTextStyle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="AnnotationTableHeaderUsesHeaderColumnTextStyle" strength="referencing" modifier="Sealed">
+        <!-- @see AnnotationTableHeader.HeaderColumnTextStyle ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="false">
+            <Class class="AnnotationTableHeader"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
+            <Class class="AnnotationTextStyle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="AnnotationTableHeaderUsesFooterColumnTextStyle" strength="referencing" modifier="Sealed">
+        <!-- @see AnnotationTableHeader.FooterColumnTextStyle ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="false">
+            <Class class="AnnotationTableHeader"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
+            <Class class="AnnotationTextStyle"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableRow" displayLabel="Annotation Table Row">
         <!-- The aspect that holds properties of a row of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="RowIndex" typeName="int"/>
-        <ECProperty propertyName="HeightLock" typeName="boolean"/>
+        <ECProperty propertyName="RowIndex" typeName="int" displayLabel="Row Index"/>
+        <ECProperty propertyName="HeightLock" typeName="boolean" displayLabel="Height Lock"/>
         <ECProperty propertyName="Height" typeName="double"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsRows" strength="embedding" modifier="None">
@@ -1210,8 +1263,8 @@
     <ECEntityClass typeName="AnnotationTableColumn" displayLabel="Annotation Table Column">
         <!-- The aspect that holds properties of a column of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="ColumnIndex" typeName="int"/>
-        <ECProperty propertyName="WidthLock" typeName="boolean"/>
+        <ECProperty propertyName="ColumnIndex" typeName="int" displayLabel="Column Index"/>
+        <ECProperty propertyName="WidthLock" typeName="boolean" displayLabel="Width Lock"/>
         <ECProperty propertyName="Width" typeName="double"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsColumns" strength="embedding" modifier="None">
@@ -1225,26 +1278,26 @@
     </ECRelationshipClass>
 
     <ECStructClass typeName="AnnotationTableCellIndex" displayLabel="Annotation Table Cell Index">
-        <ECProperty propertyName="RowIndex" typeName="int"/>
-        <ECProperty propertyName="ColumnIndex" typeName="int"/>
+        <ECProperty propertyName="RowIndex" typeName="int" displayLabel="Row Index"/>
+        <ECProperty propertyName="ColumnIndex" typeName="int" displayLabel="Column Index"/>
     </ECStructClass>
 
     <ECEntityClass typeName="AnnotationTableCell" displayLabel="Annotation Table Cell">
         <!-- The aspect that holds properties of a cell of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex"/>
-        <ECProperty propertyName="TextBlock" typeName="binary">
+        <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex" displayLabel="Cell Index"/>
+        <ECProperty propertyName="TextBlock" typeName="binary" displayLabel="Text Block">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.1.3" />
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="FillKey" typeName="int"/>
+        <ECProperty propertyName="FillKey" typeName="int" displayLabel="Fill Key"/>
         <ECProperty propertyName="Alignment" typeName="int"/>
         <ECProperty propertyName="Orientation" typeName="int"/>
-        <ECProperty propertyName="MarginTop" typeName="double"/>
-        <ECProperty propertyName="MarginBottom" typeName="double"/>
-        <ECProperty propertyName="MarginLeft" typeName="double"/>
-        <ECProperty propertyName="MarginRight" typeName="double"/>
+        <ECProperty propertyName="MarginTop" typeName="double" displayLabel="Margin Top"/>
+        <ECProperty propertyName="MarginBottom" typeName="double" displayLabel="Margin Bottom"/>
+        <ECProperty propertyName="MarginLeft" typeName="double" displayLabel="Margin Left"/>
+        <ECProperty propertyName="MarginRight" typeName="double" displayLabel="Margin Right"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsCells" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
@@ -1259,9 +1312,9 @@
     <ECEntityClass typeName="AnnotationTableMerge" displayLabel="Annotation Table Merge">
         <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECStructProperty propertyName="RootCell" typeName="AnnotationTableCellIndex"/>
-        <ECProperty propertyName="RowSpan" typeName="int"/>
-        <ECProperty propertyName="ColumnSpan" typeName="int"/>
+        <ECStructProperty propertyName="RootCell" typeName="AnnotationTableCellIndex" displayLabel="Root Cell"/>
+        <ECProperty propertyName="RowSpan" typeName="int" displayLabel="Row Span"/>
+        <ECProperty propertyName="ColumnSpan" typeName="int" displayLabel="Column Span"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsMerges" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
@@ -1276,13 +1329,13 @@
     <ECEntityClass typeName="AnnotationTableSymbology" displayLabel="Annotation Table Symbology">
         <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="SymbologyKey" typeName="int"/>
+        <ECProperty propertyName="SymbologyKey" typeName="int" displayLabel="Symbology Key"/>
         <ECProperty propertyName="Visible" typeName="boolean"/>
         <ECProperty propertyName="Color" typeName="int"/>
         <ECProperty propertyName="Weight" typeName="int"/>
-        <ECProperty propertyName="LineStyleId" typeName="long"/>
-        <ECProperty propertyName="LineStyleScale" typeName="double"/>
-        <ECProperty propertyName="FillColor" typeName="int"/>
+        <ECNavigationProperty propertyName="LineStyle" relationshipName="AnnotationTableSymbologyUsesLineStyle" direction="Forward" displayLabel="Line Style"/>
+        <ECProperty propertyName="LineStyleScale" typeName="double" displayLabel="Line Style Scale"/>
+        <ECProperty propertyName="FillColor" typeName="int" displayLabel="Fill Color"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsSymbologies" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
@@ -1293,15 +1346,24 @@
             <Class class="AnnotationTableSymbology"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="AnnotationTableSymbologyUsesLineStyle" strength="referencing" modifier="Sealed">
+        <!-- @see AnnotationTableSymbology.LineStyle ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="false">
+            <Class class="AnnotationTableSymbology"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
+            <Class class="LineStyle"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableEdgeRun" displayLabel="Annotation Table Edge Run">
         <!-- The aspect that holds properties describing edges in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="HostType" typeName="int"/>
+        <ECProperty propertyName="HostType" typeName="int" displayLabel="Host Type"/>
         <ECProperty propertyName="Host" typeName="int"/>
         <ECProperty propertyName="Start" typeName="int"/>
         <ECProperty propertyName="Span" typeName="int"/>
-        <ECProperty propertyName="SymbologyKey" typeName="int"/>
+        <ECProperty propertyName="SymbologyKey" typeName="int" displayLabel="Symbology Key"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRuns" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
@@ -1319,7 +1381,7 @@
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="TextStyleId" typeName="long">
+        <ECProperty propertyName="TextStyle" typeName="long"> WIP: Should be ECNavigationProperty
           <ECCustomAttributes>
             <CustomHandledProperty/>
           </ECCustomAttributes>
@@ -1330,7 +1392,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="StyleId" typeName="long">
+        <ECProperty propertyName="Style" typeName="long"> WIP: Should be ECNavigationProperty
           <ECCustomAttributes>
             <CustomHandledProperty/>
           </ECCustomAttributes>
