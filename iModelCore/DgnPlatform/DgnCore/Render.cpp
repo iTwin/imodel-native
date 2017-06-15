@@ -630,6 +630,7 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
             }
         }
 
+    m_defaultOverrides.SetWeight(10);
     view.AddFeatureOverrides(*this);
     }
 
