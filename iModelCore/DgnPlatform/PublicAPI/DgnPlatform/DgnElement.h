@@ -1040,33 +1040,6 @@ public:
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
         };
 
-    //! Allows a business key (unique identifier string) from an external system (identified by CodeSpecId) to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
-    {
-    private:
-        CodeSpecId m_codeSpecId;
-        Utf8String m_externalKey;
-
-        ExternalKeyAspect(CodeSpecId codeSpecId, Utf8CP externalKey)
-            {
-            m_codeSpecId = codeSpecId;
-            m_externalKey = externalKey;
-            }
-
-    protected:
-        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR) override;
-
-    public:
-        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKeyAspect> Create(CodeSpecId codeSpecId, Utf8CP externalKey);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR, DgnElementCR, CodeSpecId);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, CodeSpecId);
-        CodeSpecId GetCodeSpecId() const {return m_codeSpecId;}
-        Utf8CP GetExternalKey() const {return m_externalKey.c_str();}
-    };
-
-    typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
-
 private:
     template<class T> void CallAppData(T const& caller) const;
     Utf8String ToJsonPropString() const;
