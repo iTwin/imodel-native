@@ -1284,6 +1284,37 @@ void RealityDataConsole::MassUnlink()
     DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
     }
 
+void RealityDataConsole::ForceMassUnlink()
+    {
+    DisplayInfo(Utf8PrintfString("Attempting to unlink all %d entries from all their relationships. Please be extra patient...\n", m_serverNodes.size()), DisplayOption::Tip);
+    
+    RawServerResponse projectResponse = RawServerResponse();
+
+    RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest("");
+    bvector<RealityDataProjectRelationshipPtr> entities;
+
+    Utf8String id;
+    RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete("", "");//dummy
+    RawServerResponse relationResponse = RawServerResponse();
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+
+    for (int i = 0; i < m_serverNodes.size(); ++i)
+        {
+        idReq = RealityDataProjectRelationshipByRealityDataIdRequest(m_serverNodes[i].GetInstanceId());
+        entities = RealityDataService::Request(idReq, projectResponse);
+
+        for(RealityDataProjectRelationshipPtr entity : entities)
+            {
+            relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), entity->GetRelatedId());
+            WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
+            if (relationResponse.body.ContainsI("errorMessage"))
+                DisplayInfo(Utf8PrintfString("unlink RD %s from project %s failed with error:\n%s\n", m_serverNodes[i].GetInstanceId(), entity->GetRelatedId(), relationResponse.body), DisplayOption::Error);
+            }
+        }
+    
+    DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
+    }
+
 void RealityDataConsole::MassDelete()
     {
     std::string str, str2;
@@ -1309,10 +1340,12 @@ void RealityDataConsole::MassDelete()
         m_lastCommand = Command::Quit;
         return;
         }
-    else if (str != str2)
+    else if (str != str2 && str != "force")
         return;
-
-    MassUnlink();
+    else if (str == "force")
+        ForceMassUnlink();
+    else
+        MassUnlink();
 
     DisplayInfo(Utf8PrintfString("Deleting all %d entries. Please be patient...\n", m_serverNodes.size()), DisplayOption::Tip);
 
