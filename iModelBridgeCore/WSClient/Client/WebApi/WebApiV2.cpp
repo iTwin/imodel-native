@@ -263,7 +263,7 @@ WSUploadResponse WebApiV2::ResolveUploadResponse(HttpResponse& response) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, const ObjectId* objectId) const
+WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, bool requestHadSkipToken, const ObjectId* objectId) const
     {
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
@@ -273,7 +273,10 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, const O
 
         auto body = response.GetContent()->GetBody();
         auto eTag = response.GetHeaders().GetETag();
-        auto skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
+
+        Utf8String skipToken;
+        if (requestHadSkipToken)
+             skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
 
         return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag, skipToken));
         }
@@ -321,7 +324,7 @@ ICancellationTokenPtr ct
 
     return request.PerformAsync()->Then<WSObjectsResult>([this, objectId] (HttpResponse& httpResponse)
         {
-        return ResolveObjectsResponse(httpResponse, &objectId);
+        return ResolveObjectsResponse(httpResponse, false, &objectId);
         });
     }
 
@@ -476,9 +479,11 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (HttpResponse& httpResponse)
+    bool requestHasSkipToken = !skipToken.empty();
+
+    return request.PerformAsync()->Then<WSObjectsResult>([this, requestHasSkipToken] (HttpResponse& httpResponse)
         {
-        return ResolveObjectsResponse(httpResponse);
+        return ResolveObjectsResponse(httpResponse, requestHasSkipToken);
         });
     }
 
