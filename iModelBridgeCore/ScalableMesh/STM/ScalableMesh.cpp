@@ -471,9 +471,9 @@ BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageDat
     return _CreateCoverage(coverageData, id, coverageName);
     }
 
-BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
+BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSPtr destinationGcs)
     {
-    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer);
+    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
@@ -1181,10 +1181,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             IDTMSourceCollection sources;
             DocumentEnv sourceEnv(L"");
 
-            SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
-            m_smSQLitePtr->LoadSources(*sourcesData);
+            SourcesDataSQLite sourcesData;
+            m_smSQLitePtr->LoadSources(sourcesData);
 
-            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, *sourcesData, sourceEnv);
+            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
             assert(success == true);
 
 
@@ -2725,8 +2725,14 @@ template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     {
-    //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
-    return false;
+    if (!m_smSQLitePtr.IsValid())
+        return false; 
+
+    SourcesDataSQLite sourcesData;
+    m_smSQLitePtr->LoadSources(sourcesData);
+
+    const bool InSync = sourcesData.GetLastModifiedTime() < sourcesData.GetLastSyncTime();
+    return InSync;
     }
 
 /*----------------------------------------------------------------------------+
@@ -2759,7 +2765,15 @@ template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d&
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_LastSynchronizationCheck(time_t& lastCheckTime) const
     {
+    if (!m_smSQLitePtr.IsValid())
         return false;
+
+    SourcesDataSQLite sourcesData;
+    m_smSQLitePtr->LoadSources(sourcesData);
+
+    lastCheckTime = sourcesData.GetLastModifiedCheckTime();
+
+    return true;
     }
 
 /*----------------------------------------------------------------------------+
@@ -2849,7 +2863,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     return m_scmIndexPtr->Publish3DTiles(path, this->_GetGCS().GetGeoRef().GetBasePtr());
     }
 
-template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
+template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSPtr& destinationGcs)
     {    
     BeFileName terrainAbsName;
 
@@ -2875,9 +2889,10 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         */
         IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(terrainAbsName, scalableMeshPtr));
 
+        smGroundExtractor->SetDestinationGcs(destinationGcs);
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
-
+                
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
         assert(status == SUCCESS);

@@ -514,11 +514,11 @@ Transform                          ScalableMeshGroup::_GetReprojectionTransform(
     return m_members.front()->GetReprojectionTransform();
     }
 
-BentleyStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
+BentleyStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSPtr& destinationGcs)
     {
     for (auto& member : m_members)
         {
-        if (!member->IsTerrain()) return member->DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer);
+        if (!member->IsTerrain()) return member->DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs);
         }
 
     return SUCCESS;

@@ -197,7 +197,7 @@ struct IScalableMeshCreator::Impl
         StatusInt                           LoadFromFile                   ();
         StatusInt                           SaveToFile                     ();  
 
-        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation);  
+        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate);
 
         StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
         StatusInt  SetTextureProvider(ITextureProviderPtr provider);
