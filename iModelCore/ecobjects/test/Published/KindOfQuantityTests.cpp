@@ -104,7 +104,7 @@ TEST_F(KindOfQuantityTest, TestEmptyOrMissingPersistenceUnit)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Basanta.Kharel   12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(KindOfQuantityTest, KindOfQuantityTest)
+TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
     {
     ECSchemaPtr schema;
     ECEntityClassP entityClass;
