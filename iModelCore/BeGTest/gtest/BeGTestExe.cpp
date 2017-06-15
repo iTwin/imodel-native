@@ -513,7 +513,5 @@ int main(int argc, char **argv)
 
         }
 #endif
-    //  Run the tests
     return errors;
-
     }
