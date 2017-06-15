@@ -942,6 +942,21 @@ ICancellationTokenPtr ct
     {
     return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
     }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequestWithRel
+(
+ObjectIdCR relatedObjectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    BeAssert(false && "Operations are supported in WebApi v2.5 and above");
+    return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014

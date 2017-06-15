@@ -553,6 +553,59 @@ ICancellationTokenPtr ct
         });
     }
 
+
+// /RelSchema/RelClass/RelId/ObjectCreationSchema.ObjectCreationClass
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequestWithRel
+(
+ObjectIdCR relatedObjectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    Utf8String schemaName = relatedObjectId.schemaName; // objectCreationJson["instance"]["schemaName"].asString();
+    Utf8String className = relatedObjectId.className; // ["instance"]["className"].asString();
+    Utf8String instanceId = relatedObjectId.remoteId;// objectCreationJson["instance"]["instanceId"].asString();
+
+    Utf8String url = GetUrl(CreateClassSubPath(schemaName, className));
+    if (!instanceId.empty())
+        {
+        url += "/" + instanceId;
+        }
+
+    auto createdClassName = objectCreationJson["instance"]["className"];
+    BeAssert(!createdClassName.empty());
+
+    auto createdClassSchema = objectCreationJson["instance"]["schemaName"];
+
+    url += "/";
+
+    if (schemaName.compare(createdClassSchema.asCString()) != 0)
+        url += createdClassSchema.asString() + ".";
+
+    url += createdClassName.asString();
+        
+
+    ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
+
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");
+    if (!filePath.empty())
+        {
+        request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
+        }
+    request.SetCancellationToken(ct);
+    request.SetUploadProgressCallback(uploadProgressCallback);
+
+    return request.PerformAsync()->Then<WSCreateObjectResult>([this] (HttpResponse& httpResponse)
+        {
+        return ResolveCreateObjectResponse(httpResponse);
+        });
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/

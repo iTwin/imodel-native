@@ -147,6 +147,15 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             HttpRequest::ProgressCallbackCR uploadProgressCallback,
             ICancellationTokenPtr ct
             ));
+
+        MOCK_CONST_METHOD5(SendCreateObjectRequestWithRel, AsyncTaskPtr<WSCreateObjectResult>
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath,
+            HttpRequest::ProgressCallbackCR uploadProgressCallback,
+            ICancellationTokenPtr ct
+            ));
     };
 #endif
 
