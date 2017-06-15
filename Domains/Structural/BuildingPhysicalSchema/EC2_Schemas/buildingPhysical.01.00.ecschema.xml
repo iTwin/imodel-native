@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+ $RCSfile: BuildingPhysical.01.00.ecschema.xml,v $
+ $Revision: 1.15 $
+ $Date: 2014/09/01 12:40:45 $
+ $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+
+ Warning!!! Auto Generated!.
+-->
+<ECSchema schemaName="BuildingPhysical" nameSpacePrefix="BldgPhys" version="1.0" description="Building Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECCustomAttributes>
+        <UnitSpecifications xmlns="Unit_Attributes.01.00">
+            <UnitSpecificationList>
+                <UnitSpecification>
+                    <KindOfQuantityName>AREA</KindOfQuantityName>
+                    <DimensionName>L2</DimensionName>
+                    <UnitName>MILLIMETRE_SQUARED</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                    <DimensionName>L</DimensionName>
+                    <UnitName>MILLIMETRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>PLANE_ANGLE</KindOfQuantityName>
+                    <DimensionName>PA</DimensionName>
+                    <UnitName>RADIAN</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>VOLUME</KindOfQuantityName>
+                    <DimensionName>L3</DimensionName>
+                    <UnitName>METRE_CUBED</UnitName>
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>DIAMETER</KindOfQuantityName>
+                    <DimensionName>L</DimensionName>
+                    <UnitName>MILLIMETRE</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>PRESSURE</KindOfQuantityName>
+                    <DimensionName>M_PER_L_T2</DimensionName>
+                    <UnitName>PASCAL</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+                <UnitSpecification>
+                    <KindOfQuantityName>FORCE</KindOfQuantityName>
+                    <DimensionName>M_L_PER_T2</DimensionName>
+                    <UnitName>NEWTON</UnitName>
+                    <AllowableUnits />
+                </UnitSpecification>
+            </UnitSpecificationList>
+        </UnitSpecifications>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="BuildingPhysicalModel" displayLabel="Building Physical Model" isDomainClass="True">
+        <BaseClass>bis:PhysicalModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BuildingTypeDefinitionModel" displayLabel="Building Type Definition Model" isDomainClass="True">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions />
+            </ClassHasHandler>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>

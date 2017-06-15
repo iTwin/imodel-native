@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{51022BD0-0741-4B55-B967-D2FD61CDD214}</ProjectGuid>
-    <RootNamespace>StructuralMaterialsSchema</RootNamespace>
+    <ProjectGuid>{51022BD0-0741-4B55-B967-D2FD61CDD324}</ProjectGuid>
+    <RootNamespace>BuildingPhysicalSchema</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -84,7 +84,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions),__STRUCTURAL_MATERIAL_BUILD__;BENTLEY_WIN32;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions),__BUILDING_PHYSICAL_BUILD__;BENTLEY_WIN32;</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,11 +114,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="StructuralMaterialsDomain.cpp" />
-    <ClCompile Include="StructuralMaterialsSchemaInternal.cpp" />
+    <ClCompile Include="BuildingPhysicalDomain.cpp" />
+    <ClCompile Include="BuildingPhysicalModel.cpp" />
+    <ClCompile Include="BuildingPhysicalSchemaInternal.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="StructuralMaterialsSchemaInternal.h" />
+    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\StructuralDomains\PublicAPI\BuildingPhysical\BuildingPhysicalApi.h" />
+    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\StructuralDomains\PublicAPI\BuildingPhysical\BuildingPhysicalDefinitions.h" />
+    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\StructuralDomains\PublicAPI\BuildingPhysical\BuildingPhysicalDomain.h" />
+    <ClInclude Include="BuildingPhysicalSchemaInternal.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

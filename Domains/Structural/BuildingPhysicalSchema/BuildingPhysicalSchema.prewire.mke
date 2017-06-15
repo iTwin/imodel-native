@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: BuildingPhysicalSchema/BuildingPhysicalSchema.prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/BuildingPhysical : $(_MakeFilePath)PublicAPI/BuildingPhysical
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Domain/BuildingPhysical.ecschema.xml : $(_MakeFilePath)EC3_Schemas\BuildingPhysical.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

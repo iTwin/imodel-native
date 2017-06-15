@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{51022BD0-0741-4B55-B967-D2FD61CDD214}</ProjectGuid>
-    <RootNamespace>StructuralMaterialsSchema</RootNamespace>
+    <RootNamespace>ArchitecturalPhysicalSchema</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -84,7 +84,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions),__STRUCTURAL_MATERIAL_BUILD__;BENTLEY_WIN32;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions),__ARCHITECTURAL_PHYSICAL_BUILD__;BENTLEY_WIN32;</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,11 +114,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="StructuralMaterialsDomain.cpp" />
-    <ClCompile Include="StructuralMaterialsSchemaInternal.cpp" />
+    <ClCompile Include="ArchitecturalPhysicalDomain.cpp" />
+    <ClCompile Include="ArchitecturalPhysicalSchemaInternal.cpp" />
+    <ClCompile Include="Door.cpp" />
+    <ClCompile Include="wall.cpp" />
+    <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="StructuralMaterialsSchemaInternal.h" />
+    <ClInclude Include="ArchitecturalPhysicalSchemaInternal.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

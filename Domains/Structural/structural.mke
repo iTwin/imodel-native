@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-CompileOptionsMki   = $(SrcRoot)DgnDomains/Building/BuildingCompileOptions.mki
+CompileOptionsMki   = $(SrcRoot)DgnDomains/Structural/StructuralCompileOptions.mki
 %include $(CompileOptionsMki)
 
 
