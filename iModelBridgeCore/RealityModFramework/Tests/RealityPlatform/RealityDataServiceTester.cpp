@@ -129,8 +129,10 @@ TEST_F(RealityDataServiceFixture, RealityDataUrl)
 //=====================================================================================
 TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequest)
 	{
-	RealityDataEnterpriseStatRequest dataRequest("myUltimateID");
-	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/EnterpriseStat/myUltimateID");
+    DateTime dt = DateTime::GetCurrentTimeUtc();
+    DateTime::FromString(dt, "2017-06-06");
+	RealityDataEnterpriseStatRequest dataRequest("myUltimateID", dt);
+	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/EnterpriseStat/2017-6-6~2FmyUltimateID");
 	}
 
 //=====================================================================================

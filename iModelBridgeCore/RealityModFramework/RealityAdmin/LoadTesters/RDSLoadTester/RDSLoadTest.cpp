@@ -302,7 +302,10 @@ bool RDSUser::DoNextBody(UserManager* owner)
 bool RDSUser::WrapUp(UserManager* owner)
     {
     if (m_id.empty())
+        {
+        m_wrappedUp = true;
         return false;
+        }
 
     if (m_linked)
         {

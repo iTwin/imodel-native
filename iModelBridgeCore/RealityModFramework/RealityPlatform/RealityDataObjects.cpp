@@ -788,3 +788,6 @@ void RealityDataEnterpriseStat::SetUltimateId(Utf8CP ultimateId) { m_ultimateId 
 
 Utf8StringCR RealityDataEnterpriseStat::GetUltimateSite() const { return m_ultimateSite; }
 void RealityDataEnterpriseStat::SetUltimateSite(Utf8CP ultimateSite) { m_ultimateSite = ultimateSite; }
+
+DateTimeCR RealityDataEnterpriseStat::GetDate() const { return m_date; }
+void RealityDataEnterpriseStat::SetDate(DateTimeCR date) { m_date = date; }

@@ -24,6 +24,7 @@ static std::queue<User*> s_inactiveUsers = std::queue<User*>();
 static RPS* s_rps;
 static bool s_keepRunning = true;
 static bool s_startLogging = false;
+static bool s_wrapUp = true;
 static Stats* s_stats;
 
 static int64_t s_statStartTime;
@@ -38,7 +39,7 @@ static int s_sleepBiasMilliseconds = 0;
 //+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String FullInfo::LogError() const
     {
-    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s", id, req.url, req.headers, req.payload, response.responseCode, response.curlCode, response.body);
+    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s\n+----------------------------------------------------------------+\n", id, req.url, req.headers, req.payload, response.responseCode, response.curlCode, response.body);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -107,7 +108,7 @@ void Dispatch(UserManager* manager, int requestBuffer)
     int refreshTimer = 0;
     std::chrono::milliseconds emptyTimer(1000);
 
-    while (s_keepRunning)
+    while (s_keepRunning || s_wrapUp)
         {
         float inactiveUsers = (float)getInnactiveUserSize();
         if (inactiveUsers == 0)
@@ -157,7 +158,7 @@ void Dispatch(UserManager* manager, int requestBuffer)
                     s_sleepBiasMilliseconds -= (int)(stepSeed * deviationFactor);  // Too slow ... decrease sleep bias
                 }
 
-            refreshTimer += s_sleepBiasMilliseconds;
+            refreshTimer += 100;
             std::chrono::milliseconds ms(s_sleepBiasMilliseconds);
             std::this_thread::sleep_for(ms);
 
@@ -284,7 +285,7 @@ void Stats::PrintStats()
 
     std::cout << "active users: " << m_activeUsers << std::endl;
     
-    std::wcout << "inactive users: " << getInnactiveUserSize() << std::endl << std::endl;
+    std::wcout << "inactive users: " << getInnactiveUserSize() << " (not synched, total may be incorrect)"<< std::endl << std::endl;
 
     std::cout << "Press any key to quit testing" << std::endl;
     }
@@ -335,11 +336,11 @@ void ShowUsage(int argc, char* argv[])
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
 User::User() :
-    m_currentOperation(0), m_linked(false)
+    m_currentOperation(0), m_linked(false), m_wrappedUp(false)
     {}
 
 User::User(int id, Stats* stats) :
-    m_currentOperation(0), m_userId(id), m_linked(false),
+    m_currentOperation(0), m_userId(id), m_linked(false), m_wrappedUp(false),
     m_fileName(BeFileName(Utf8PrintfString("%d", m_userId))), m_stats(stats)
     {}
 
@@ -393,7 +394,6 @@ void UserManager::Perform()
 
     int still_running; /* keep number of running handles */
     int repeats = 0;
-    bool wrapUp = true;
 
     std::cout << "launching requests, it may take a few seconds to receive responses and display results" << std::endl;
 
@@ -416,7 +416,7 @@ void UserManager::Perform()
         if (!numfds)
             {
             repeats++; /* count number of repeated zero numfds */
-            if(repeats > 25) //something went wrong, don't play infinitely
+            if(repeats > 300) //something went wrong, after 30 seconds, exit
                 {
                 s_keepRunning = false;
                 break;
@@ -455,14 +455,13 @@ void UserManager::Perform()
             curl_easy_cleanup(msg->easy_handle);
             }
 
-        if (wrapUp && !s_keepRunning)
+        if (s_wrapUp && !s_keepRunning)
             {
-            wrapUp = false;
             Repopulate();
             }
 
         curl_multi_perform(m_pCurlHandle, &still_running);
-        } while (wrapUp || still_running > 0);
+        } while (s_wrapUp || still_running > 0);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -479,8 +478,19 @@ void UserManager::Repopulate()
         {
         user = s_inactiveUsers.front();
         s_inactiveUsers.pop();
+        
         if (user->DoNext(this))
             s_inactiveUsers.push(user);
+        }
+    
+    s_wrapUp = false;
+    for (User* rdsUser : users)
+        {
+        if (!rdsUser->m_wrappedUp)
+            {
+            s_wrapUp = true;
+            break;
+            }
         }
     }
 

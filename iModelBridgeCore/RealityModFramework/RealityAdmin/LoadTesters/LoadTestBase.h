@@ -90,6 +90,7 @@ public:
     FullInfo                    m_correspondance;
     BeFile                      m_file;
     BeFileName                  m_fileName;
+    bool                        m_wrappedUp;
 
     int                         m_userId;
     Stats*                      m_stats;
