@@ -5,6 +5,13 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.12" alias="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="1.3" alias="beca" />
     <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
+    <ECSchemaReference name="ECDbSchemaPolicies" version="1.0" alias="ecdbpol"/>
+
+    <ECCustomAttributes>
+        <NoAdditionalRootEntityClasses xmlns="ECDbSchemaPolicies.1.0"/>
+        <NoAdditionalForeignKeyConstraints xmlns="ECDbSchemaPolicies.1.0"/>
+        <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.1.0"/>
+    </ECCustomAttributes>
 
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
