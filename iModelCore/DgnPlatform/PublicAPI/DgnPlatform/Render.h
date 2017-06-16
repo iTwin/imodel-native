@@ -1806,7 +1806,7 @@ struct QPoint3d
 
         DPoint3dCR GetOrigin() const { return origin; }
         DPoint3dCR GetScale() const { return scale; }
-        DRange3d GetRange() const { return DRange3d::From (origin, QPoint3d(Quantization::RangeScale(), Quantization::RangeScale(), Quantization::RangeScale()).Unquantize(*this)); }
+        DRange3d GetRange() const { return DRange3d::From (origin, QPoint3d((uint16_t) Quantization::RangeScale(), (uint16_t)Quantization::RangeScale(), (uint16_t)Quantization::RangeScale()).Unquantize(*this)); }
 
     };
 
