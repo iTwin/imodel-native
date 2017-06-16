@@ -14,7 +14,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
-    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
+    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
 
     // Create Horizontal 
