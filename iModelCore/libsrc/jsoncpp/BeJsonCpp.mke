@@ -2,7 +2,7 @@
 #
 #     $Source: BeJsonCpp.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # Export/make visible all functions in JsonCpp
@@ -29,19 +29,16 @@ always:
 # The JsonCpp API is defined in the json/* headers
 #--------------------------------------------------------------------------------------
 always:
-    ~linkdir "$(BuildContext)VendorAPI/json=$(baseDir)include/json"
+    ~linkdir "$(BuildContext)PublicAPI/json=$(baseDir)include/json"
     ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"
 
 #--------------------------------------------------------------------------------------
 #   Compile source
 #--------------------------------------------------------------------------------------
 JsonCppDepends              = $(_MakeFileSpec)            \
-                              $(JsonCppInclude)autolink.h \
                               $(JsonCppInclude)config.h   \
-                              $(JsonCppInclude)features.h \
                               $(JsonCppInclude)forwards.h \
                               $(JsonCppInclude)json.h     \
-                              $(JsonCppInclude)reader.h   \
                               $(JsonCppInclude)value.h    \
                               $(JsonCppInclude)writer.h   \
                               $(JsonCppSrc)json_tool.h

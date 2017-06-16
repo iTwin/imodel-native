@@ -13,10 +13,7 @@
 // recognized in your jurisdiction.
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
-#if !defined (JSON_IS_AMALGAMATION)
-# include "forwards.h"
-#endif // if !defined (JSON_IS_AMALGAMATION)
-
+#include "forwards.h"
 #include <Bentley/WString.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>

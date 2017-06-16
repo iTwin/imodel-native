@@ -3,24 +3,12 @@
 // recognized in your jurisdiction.
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 #pragma once
-#ifndef JSON_WRITER_H_INCLUDED
-# define JSON_WRITER_H_INCLUDED
+//__PUBLISH_SECTION_START__
 
-#if !defined(JSON_IS_AMALGAMATION)
 # include "value.h"
-#endif // if !defined(JSON_IS_AMALGAMATION)
-
-#if defined (BEJSONCPP_USE_STDSTRING)
-# include <string>
-# include <vector>
-# define Utf8StringAlias std::string
-# define bmap std::map
-# define bvector std::vector
-#else
 # include <Bentley/WString.h>
 # include <Bentley/bmap.h>
 # include <Bentley/bvector.h>
-#endif
 
 BEGIN_BENTLEY_NAMESPACE
 namespace Json 
@@ -87,4 +75,3 @@ namespace Json
 
 END_BENTLEY_NAMESPACE
 
-#endif // JSON_WRITER_H_INCLUDED

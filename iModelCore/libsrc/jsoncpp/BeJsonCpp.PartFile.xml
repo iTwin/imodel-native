@@ -6,11 +6,10 @@
         <SubPart PartName="BeJsonCppStaticLib" />
     </Part>
 
-    <!-- Bind my own PublicAPI and VendorAPI into BuildContext. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
         <Bindings>
             <PublicAPI Domain="BeJsonCpp" />
-            <VendorAPI Domain="json" />
+            <PublicAPI Domain="json" />
         </Bindings>
     </Part>
 
@@ -19,8 +18,6 @@
         <!-- Now in plain Bentley namespace to be shared with Vancouver <SubPart PartName="BENTLEY_NAMESPACE_NAME" PartFile="BENTLEY_NAMESPACE_NAME" Repository="BENTLEY_NAMESPACE_NAME" /> -->
         <SubPart PartName="PublicAPI" />
         <Bindings>
-            <PublicAPI Domain="BeJsonCpp" />
-            <VendorAPI Domain="json" />
             <Libs>Delivery/$(libprefix)BeJsonCpp$(stlibext)</Libs>
             <Libs>Delivery/$(libprefix)BeJsonCpp$(stlibdebugext)</Libs>
             <VendorNotices>Delivery/jsoncpp-license.txt</VendorNotices>

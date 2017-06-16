@@ -2,7 +2,7 @@
 #
 #     $Source: prewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -15,5 +15,5 @@ BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
 # The JsonCpp API is defined in the json/* headers
 #--------------------------------------------------------------------------------------
 always:
-    ~linkdir "$(BuildContext)VendorAPI/json=${JsonCppInclude}"
+    ~linkdir "$(BuildContext)PublicAPI/json=${JsonCppInclude}"
     ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"

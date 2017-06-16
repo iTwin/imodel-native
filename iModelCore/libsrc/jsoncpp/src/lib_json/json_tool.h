@@ -2,9 +2,8 @@
 // Distributed under MIT license, or public domain if desired and
 // recognized in your jurisdiction.
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
-
-#ifndef LIB_JSONCPP_JSON_TOOL_H_INCLUDED
-# define LIB_JSONCPP_JSON_TOOL_H_INCLUDED
+#pragma once
+//__PUBLISH_SECTION_START__
 
 /* This header provides common string manipulation support, such as UTF-8,
  * portable conversion from/to string...
@@ -94,5 +93,3 @@ uintToString( LargestUInt value,
 } // namespace Json {
 END_BENTLEY_NAMESPACE
 
-
-#endif // LIB_JSONCPP_JSON_TOOL_H_INCLUDED
