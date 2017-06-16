@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: RealityAdmin/3CSLoadTester/3CSLoadTest.mke $
+#     $Source: RealityAdmin/LoadTesters/3CSLoadTester/3CSLoadTest.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -44,6 +44,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)RealityAdmin$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)LoadTestBase$(libext) \
                        $(ContextSubpartsLibs)CCApi$(libext) \
                        odbc32$(libext)
 
