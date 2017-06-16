@@ -6,6 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#define BISCORE_CLASS_IParentElement        "BisCore:IParentElement"
+#define BISCORE_CLASS_ISubModeledElement    "BisCore:ISubModeledElement"
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 Utf8CP oldStandardSchemaNames[] =
@@ -268,9 +271,26 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
         status = CheckBisAspects(entity, "ElementUniqueAspect", "ElementOwnsUniqueAspect", entityDerivesFromSpecifiedClass);
     
     // Validate relationship properties of type long and ending in Id
+    ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(entity);
     if (status == ECObjectsStatus::Success)
-        status = CheckPropertiesForLongAndId(entity);
+        status = propertyLongAndIdStatus;
 
+    // Class may not implement both bis:IParentElement and bis:ISubModeledElement
+    bool foundIParentElement = false;
+    bool foundISubModelElement = false;
+    for (ECClassCP baseClass : entity.GetBaseClasses())
+        {
+        if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_IParentElement) == 0)
+            foundIParentElement = true;
+        if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_ISubModeledElement) == 0)
+            foundISubModelElement = true;
+        }
+    if (foundIParentElement && foundISubModelElement)
+        {
+        LOG.errorv("Entity class '%s' implements both bis:IParentElement and bis:ISubModeledElement", entity.GetFullName());
+        status = ECObjectsStatus::Error;
+        }
+        
     for (ECPropertyP prop : entity.GetProperties(false))
         {
         numBaseClasses = 0;
@@ -311,22 +331,27 @@ ECObjectsStatus CheckStrength(ECRelationshipClassCP relClass)
         returnStatus = ECObjectsStatus::Error;
         }
 
-    if (relClass->GetStrength() == StrengthType::Embedding && relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward
-        && relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1)
+    if (relClass->GetStrength() == StrengthType::Embedding)
         {
-        LOG.errorv("Relationship class '%s' has an 'embedding' strength with a forward direction so the source constraint may not have a multiplicity upper bound greater than 1",
-                   relClass->GetFullName());
-        returnStatus = ECObjectsStatus::Error;
+        if (relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward && relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1)
+            {
+            LOG.errorv("Relationship class '%s' has an 'embedding' strength with a forward direction so the source constraint may not have a multiplicity upper bound greater than 1",
+                       relClass->GetFullName());
+            returnStatus = ECObjectsStatus::Error;
+            }
+        if (relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward && relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
+            {
+            LOG.errorv("Relationship class '%s' has an 'embedding' strength with a backward direction so the target constraint may not have a multiplicity upper bound greater than 1",
+                       relClass->GetFullName());
+            returnStatus = ECObjectsStatus::Error;
+            }
+        if (relClass->GetName().Contains("Has"))
+            {
+            LOG.errorv("Relationship class '%s' has an 'embedding' strength and contains 'Has' in its name. Consider renaming this class.",
+                       relClass->GetFullName());
+            returnStatus = ECObjectsStatus::Error;
+            }
         }
-
-    if (relClass->GetStrength() == StrengthType::Embedding && relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward
-        && relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
-        {
-        LOG.errorv("Relationship class '%s' has an 'embedding' strength with a backward direction so the target constraint may not have a multiplicity upper bound greater than 1",
-                   relClass->GetFullName());
-        returnStatus = ECObjectsStatus::Error;
-        }
-
     return returnStatus;
     }
 
@@ -344,8 +369,9 @@ ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
     status = CheckStrength(relClass);
 
     // Validate relationship properties of type long and ending in Id
+    ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(ecClass);     
     if (status == ECObjectsStatus::Success)
-        status = CheckPropertiesForLongAndId(ecClass);
+        status = propertyLongAndIdStatus;
 
     ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
     ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
@@ -378,10 +404,18 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
         {
         if (constraint.AreConstraintClassesDefinedLocally())
             LOG.errorv("Relationship class '%s' has more than one constraint class but does not have an abstract constraint in %s. An abstract constraint is required when there are more than one constraint classes defined.",
-                className.c_str(), constraint.GetAbstractConstraint()->GetFullName(), constraintType.c_str());
+                className.c_str(), constraint.GetAbstractConstraint()->GetFullName());
         else
             LOG.errorv("Relationship class '%s' must define one constraint class locally in %s, or if multiple constraint classes are desired, then an abstract constraint is required.",
                className.c_str(), constraintType.c_str());
+
+        status = ECObjectsStatus::Error;
+        }
+
+    if (constraint.IsAbstractConstraintDefinedLocally() && constraint.GetConstraintClasses().size() == 1)
+        {
+        LOG.errorv("Relationship class '%s' has an abstract constraint, '%s', and only one concrete constraint set in '%s'",
+                   className.c_str(), constraint.GetAbstractConstraint()->GetFullName(), constraintType.c_str());
 
         status = ECObjectsStatus::Error;
         }
