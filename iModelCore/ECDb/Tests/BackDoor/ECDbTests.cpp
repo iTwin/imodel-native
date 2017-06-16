@@ -915,6 +915,27 @@ END_ECDBUNITTESTS_NAMESPACE
 
 BEGIN_BENTLEY_NAMESPACE
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(BentleyStatus stat, std::ostream* os)
+    {
+    switch (stat)
+        {
+            case SUCCESS:
+                *os << "SUCCESS";
+                break;
+
+            case ERROR:
+                *os << "ERROR";
+                break;
+
+            default:
+                *os << "Unhandled BentleyStatus. Adjust the PrintTo method";
+                break;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  05/17
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(BeInt64Id id, std::ostream* os) {  *os << id.GetValueUnchecked();  }
@@ -934,6 +955,18 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 void PrintTo(ECClassId id, std::ostream* os) { PrintTo((BeInt64Id) id, os); }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+BEGIN_BENTLEY_SQLITE_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(DbResult r, std::ostream* os)
+    {
+    *os << Db::InterpretDbResult(r);
+    }
+
+END_BENTLEY_SQLITE_NAMESPACE
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

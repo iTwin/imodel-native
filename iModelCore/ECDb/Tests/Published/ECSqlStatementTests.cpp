@@ -3218,6 +3218,8 @@ TEST_F(ECSqlStatementTestFixture, ReadonlyPropertiesAreUpdatable)
     ASSERT_EQ(20, stmt.GetValueInt(1));
     }
 
+
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------

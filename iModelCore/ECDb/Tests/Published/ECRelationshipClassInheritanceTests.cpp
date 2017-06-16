@@ -507,7 +507,275 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
-    "</ECSchema>"))) << "Subclass must not imply link table if base class has FK mapping";
+    "</ECSchema>"))) << "Subclass must not imply link table if base class has logical FK mapping";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+        "    <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "        </ClassMap>"
+        "    </ECCustomAttributes>"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' >"
+        "       <ECCustomAttributes>"
+        "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "    </ECNavigationProperty>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='PhysicalElement'>"
+        "    <BaseClass>Element</BaseClass>"
+        "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
+        "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
+        "   <BaseClass>ModelHasElements</BaseClass>"
+        "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+        "      <Class class='PhysicalElement' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>"))) << "Subclass must not imply link table if base class has physical FK mapping";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="RelBase" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="None" strength="Referencing">
+                        <BaseClass>RelBase</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                       <ECProperty propertyName="MyRelProp" typeName="double" />
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Subclass must not imply link table (because of additional ECProperty) if base class has logical FK mapping";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="RelBase" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="None" strength="Referencing">
+                        <ECCustomAttributes>
+                            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <BaseClass>RelBase</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Subclass must not have LinkTableRelationshipMap CA if base class has logical FK mapping";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="RelSub" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="None" strength="Referencing">
+                        <BaseClass>RelBase</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Subclass must not have navigation property if base class maps to link table";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="RelBase" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="None" strength="Referencing">
+                        <BaseClass>RelBase</BaseClass>
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Subclass must not have FK on other end as base class";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="RelBase" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="Referencing" strengthDirection="Forward">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="None" strength="Referencing" strengthDirection="Backward">
+                        <BaseClass>RelBase</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Subclass must not have FK on other end as base class (here implied from strength direction)";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="RelBase" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="None" strength="Embedding">
+                        <BaseClass>RelBase</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Subclass must not have another strength as base class";
 
     ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -521,7 +789,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "        </ClassMap>"
     "    </ECCustomAttributes>"
     "    <ECProperty propertyName='Code' typeName='string' />"
-    "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
     "  </ECEntityClass>"
     "  <ECEntityClass typeName='PhysicalElement'>"
     "    <BaseClass>Element</BaseClass>"
@@ -543,54 +810,55 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "    <Source multiplicity='(1..*)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
     "      <Class class='Model' />"
     "    </Source>"
-               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
     "</ECSchema>"))) << "Subclasses must not have LinkTableRelationshipMap even if it doesn't violate the base class mapping";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-    "  <ECEntityClass typeName='Model' >"
-    "    <ECProperty propertyName='Name' typeName='string' />"
-    "  </ECEntityClass>"
-    "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-    "    <ECCustomAttributes>"
-               "         <ClassMap xmlns='ECDbMap.02.00'>"
-               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-               "        </ClassMap>"
-    "    </ECCustomAttributes>"
-    "    <ECProperty propertyName='Code' typeName='string' />"
-    "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
-    "  </ECEntityClass>"
-    "  <ECEntityClass typeName='PhysicalElement'>"
-    "    <BaseClass>Element</BaseClass>"
-    "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-    "  </ECEntityClass>"
-    "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-    "      <Class class='Model' />"
-    "    </Source>"
-    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-    "      <Class class='Element' />"
-    "    </Target>"
-    "  </ECRelationshipClass>"
-    "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
-    "    <ECCustomAttributes>"
-               "         <ClassMap xmlns='ECDbMap.02.00'>"
-               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-               "        </ClassMap>"
-    "    </ECCustomAttributes>"
-    "   <BaseClass>ModelHasElements</BaseClass>"
-    "   <ECProperty propertyName='Prop1' typeName='string' />"
-    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-    "      <Class class='Model' />"
-    "    </Source>"
-    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-    "      <Class class='PhysicalElement' />"
-    "    </Target>"
-    "  </ECRelationshipClass>"
-    "</ECSchema>"))) << "Subclass must not add ECProperties if base class has FK mapping";
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="RelBase" direction="Backward" >
+                           <ECCustomAttributes>
+                             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                           </ECCustomAttributes>
+                       </ECNavigationProperty>
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="None" strength="Referencing">
+                        <ECCustomAttributes>
+                            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <BaseClass>RelBase</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Subclass must not have LinkTableRelationshipMap CA if base class has physical FK mapping";
     
     ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"

@@ -484,10 +484,15 @@ ECSchemaPtr ECDbTestFixture::ReadECSchemaFromDisk(ECSchemaReadContextPtr& contex
 
     context->AddSchemaPath(ecSchemaPath.GetName());
 
-    BeTest::SetFailOnAssert(false);
+    const bool wasFailOnAssert = BeTest::GetFailOnAssert();
+    if (wasFailOnAssert)
+        BeTest::SetFailOnAssert(false);
+
     ECSchemaPtr schema = nullptr;
     ECSchema::ReadFromXmlFile(schema, ecSchemaFile.GetName(), *context);
-    BeTest::SetFailOnAssert(true);
+    if (wasFailOnAssert)
+        BeTest::SetFailOnAssert(true);
+    
     return schema;
     }
 
@@ -503,18 +508,26 @@ BentleyStatus ECDbTestFixture::ReadECSchemaFromString(ECSchemaReadContextPtr& co
         context->AddSchemaLocater(ecdb.GetSchemaLocater());
         }
 
-    BeTest::SetFailOnAssert(false);
+    const bool wasFailOnAssert = BeTest::GetFailOnAssert();
+    if (wasFailOnAssert)
+        BeTest::SetFailOnAssert(false);
+
     for (Utf8StringCR schemaXml : schemaItem.m_schemaXmlList)
         {
         ECSchemaPtr schema = nullptr;
         if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context))
             {
             context = nullptr;
-            BeTest::SetFailOnAssert(true);
+
+            if (wasFailOnAssert)
+                BeTest::SetFailOnAssert(true);
+
             return ERROR;
             }
         }
-    BeTest::SetFailOnAssert(true);
+
+    if (wasFailOnAssert)
+        BeTest::SetFailOnAssert(true);
 
     return SUCCESS;
     }

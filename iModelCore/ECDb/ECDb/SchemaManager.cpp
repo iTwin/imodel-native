@@ -202,6 +202,9 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     if (schemasToMap.empty())
         return SUCCESS;
 
+    if (SUCCESS != ctx.GetSchemaPoliciesR().ReadPolicies(m_ecdb))
+        return ERROR;
+
     if (SUCCESS != ViewGenerator::DropECClassViews(GetECDb()))
         return ERROR;
 
@@ -313,7 +316,6 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
 
     SchemaWriter schemaWriter(m_ecdb, context);
     return schemaWriter.ImportSchemas(schemasToMap, primarySchemasOrderedByDependencies);
-
     }
 
 /*---------------------------------------------------------------------------------------

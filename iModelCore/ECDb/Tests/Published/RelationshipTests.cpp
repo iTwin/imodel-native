@@ -1415,16 +1415,16 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(ECInstanceId(UINT64_C(1)), stmt.GetValueId<ECInstanceId>(0));
-    ASSERT_EQ(ECClassId(UINT64_C(49)), stmt.GetValueId<ECClassId>(1));
+    ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema","Car"), stmt.GetValueId<ECClassId>(1));
 
     ASSERT_EQ(ECInstanceId(UINT64_C(2)), stmt.GetValueId<ECInstanceId>(2));
-    ASSERT_EQ(ECClassId(UINT64_C(52)), stmt.GetValueId<ECClassId>(3));
+    ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "Engine"), stmt.GetValueId<ECClassId>(3));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ASSERT_EQ(ECInstanceId(UINT64_C(1)), stmt.GetValueId<ECInstanceId>(0));
-    ASSERT_EQ(ECClassId(UINT64_C(49)), stmt.GetValueId<ECClassId>(1));
+    ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "Car"), stmt.GetValueId<ECClassId>(1));
     ASSERT_EQ(ECInstanceId(UINT64_C(3)), stmt.GetValueId<ECInstanceId>(2));
-    ASSERT_EQ(ECClassId(UINT64_C(54)), stmt.GetValueId<ECClassId>(3));
+    ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "Sterring"), stmt.GetValueId<ECClassId>(3));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 

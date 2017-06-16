@@ -31,6 +31,23 @@ ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, Utf8CP schemaName)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+Utf8String SchemaPersistenceHelper::GetSchemaName(ECDbCR ecdb, ECN::ECSchemaId schemaId)
+    {
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name FROM ec_Schema WHERE Id=?");
+    if (stmt == nullptr)
+        return Utf8String();
+
+    stmt->BindId(1, schemaId);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return Utf8String();
+
+    return Utf8String(stmt->GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    04/2016
 //---------------------------------------------------------------------------------------
 bool SchemaPersistenceHelper::TryGetSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)

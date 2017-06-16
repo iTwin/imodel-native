@@ -218,7 +218,7 @@ private:
     ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&) override;
 
     BentleyStatus EvaluateLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
-    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&);
 
     BentleyStatus FailIfConstraintClassIsNotMapped() const;
 
