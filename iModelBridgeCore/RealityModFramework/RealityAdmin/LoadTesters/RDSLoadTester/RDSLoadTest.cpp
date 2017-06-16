@@ -653,6 +653,8 @@ int main(int argc, char* argv[])
     if (tester.Main(argc, argv))
         return 0;
 
+    SetConsoleTitle("RDS Load Test");
+
     char* substringPosition;
     for (int i = 0; i < argc; ++i)
         {

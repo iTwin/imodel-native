@@ -953,7 +953,7 @@ void RealityDataConsole::Download()
         return;
         }
 
-    RealityDataServiceDownload download = RealityDataServiceDownload(fileName, m_currentNode->node.GetInstanceId());
+    RealityDataServiceDownload download = RealityDataServiceDownload(fileName, m_currentNode->node.GetInstanceId(), statusFunc);
     if (download.IsValidTransfer())
         {
         download.SetProgressCallBack(downloadProgressFunc);
@@ -965,6 +965,8 @@ void RealityDataConsole::Download()
         DisplayInfo("If any files failed to download, they will be listed here: \n");
         DisplayInfo(Utf8PrintfString("%s\n", report));
         }
+    else
+        DisplayInfo("Download could not be completed. Please verify you have access to this RealityData and that it has files to download\n", DisplayOption::Error);
     }
 
 void RealityDataConsole::Upload()
@@ -1276,6 +1278,8 @@ void RealityDataConsole::MassUnlink()
             {
             relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), projectId);
             WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
+            if (relationResponse.body.ContainsI("errorMessage"))
+                DisplayInfo(Utf8PrintfString("unlink RD %s from project %s failed with error:\n%s\n", m_serverNodes[i].GetInstanceId(), projectId, relationResponse.body), DisplayOption::Error);
             }
         }
     else
@@ -1563,7 +1567,7 @@ void RealityDataConsole::CreateRD()
     Choice(m_visibilityOptions, option);
     properties.Insert(RealityDataField::Visibility, option);
 
-    DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
+    DisplayInfo("Please input value for RootDocument (relative path)\n  ?", DisplayOption::Question);
     std::getline(*s_inputSource, input);
     Utf8String rootDoc = Utf8String(input.c_str()).Trim();
     if (rootDoc.EqualsI("Quit"))
@@ -1571,7 +1575,8 @@ void RealityDataConsole::CreateRD()
         m_lastCommand = Command::Quit;
         return;
         }
-    properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
+    rootDoc.ReplaceAll("\\","/");
+    properties.Insert(RealityDataField::RootDocument, rootDoc);
 
     RealityDataCreateRequest createRequest = RealityDataCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
 

@@ -508,8 +508,6 @@ bool LoadTester::Main(int argc, char* argv[])
     // Deactivate target requests per hour (run to max)
     s_targetRequestsPerHour = 0;
 
-    SetConsoleTitle("RDS Load Test");
-
     if (argc < 2)
         {
         ShowUsage(argc, argv);

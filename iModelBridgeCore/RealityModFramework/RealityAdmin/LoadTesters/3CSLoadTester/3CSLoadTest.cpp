@@ -18,10 +18,9 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 std::mutex guidMutex;
-static std::queue<Utf8String> s_availableGuids = std::queue<Utf8String>();
 
 static Utf8String s_server("https://qa-connect-contextcapture.bentley.com/");
-static bvector<Utf8String> s_guidparts = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U" };
+static bvector<Utf8String> s_guidparts = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"};
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Francis Boily                   09/2015
@@ -227,6 +226,18 @@ ThreeCSUser::ThreeCSUser(int id, Utf8String token, Utf8String rdGuid, Stats* sta
     m_token(token), m_RDGuid(rdGuid)
     {}
 
+Utf8String rc()
+    {
+    return s_guidparts[rand() % s_guidparts.size()];
+    }
+
+Utf8String generateGuid()
+    {
+    return Utf8PrintfString("%s%s%s%s%s%s%s%s-%s%s%s%s-%s%s%s%s-%s%s%s%s-%s%s%s%s%s%s%s%s%s%s%s%s",
+        rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), 
+        rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc(), rc());
+    }
+
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //* prepares next request, based on most recent action
@@ -324,15 +335,9 @@ bool ThreeCSUser::DoNextBody(UserManager* owner)
             m_currentOperation = OperationType::DELETE_JOB;
             curl = DeleteJob();
             }
-        else if (s_availableGuids.size() == 0)
-            {
-            m_currentOperation = OperationType::DELETE_PROJECT;
-            curl = DeleteProject();
-            }
         else
             {
-            curl = CreateJob(s_availableGuids.front());
-            s_availableGuids.pop();
+            curl = CreateJob(generateGuid());
             }
         }
     
@@ -415,7 +420,7 @@ CURL* ThreeCSUser::AddProject()
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append("api/v1/projects");
     m_correspondance.req.payload = Utf8PrintfString("{\"region\": \"eus\", \"connectProjectId\":\"%s\", \"name\":\"something\"}", m_RDGuid);
-
+    
     return PrepareRequest();
     }
 
@@ -424,8 +429,6 @@ CURL* ThreeCSUser::DeleteProject()
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append(Utf8PrintfString("api/v1/projects/%s", m_id));
-
-    s_availableGuids.push(m_id);
 
     m_id.clear();
 
@@ -504,6 +507,8 @@ CURL* ThreeCSUser::CreateJob(Utf8String outputGuid)
                         "}";
     
     m_correspondance.req.payload = Utf8PrintfString(body.c_str(), m_id, m_RDGuid, outputGuid);
+
+    m_submitted = false;
     
     return PrepareRequest();
     }
@@ -514,8 +519,6 @@ CURL* ThreeCSUser::SubmitJob()
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append(Utf8PrintfString("api/v1/jobs/%s/submit", m_jobId));
     
-    m_submitted = true;
-
     return PrepareRequest();
     }
 
@@ -580,6 +583,8 @@ void ThreeCSUser::ValidatePrevious(int activeUsers)
             return ValidateAddProject(activeUsers);
         case OperationType::CREATE_JOB:
             return ValidateCreateJob(activeUsers);
+        case OperationType::SUBMIT_JOB:
+            return ValidateSubmitJob(activeUsers);
         case OperationType::CANCEL_JOB:
             return ValidateCancelJob(activeUsers);
         default:
@@ -625,6 +630,23 @@ void ThreeCSUser::ValidateCreateJob(int activeUsers)
 
     m_stats->InsertStats(this, success, activeUsers);
     }
+
+void ThreeCSUser::ValidateSubmitJob(int activeUsers)
+{
+    Json::Value instances(Json::objectValue);
+
+    bool success = false;
+    if(m_correspondance.response.body.ContainsI("InstanceId already used"))
+        return;
+
+    if (m_correspondance.response.curlCode == CURLE_OK && m_correspondance.response.responseCode < 399)
+        {
+        success = true;
+        m_submitted = true;
+        }
+
+    m_stats->InsertStats(this, success, activeUsers);
+}
 
 void ThreeCSUser::ValidateCancelJob(int activeUsers)
     {
