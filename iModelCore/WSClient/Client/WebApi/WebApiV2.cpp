@@ -527,34 +527,9 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
-    Utf8String className = objectCreationJson["instance"]["className"].asString();
-    Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
-
-    Utf8String url = GetUrl(CreateClassSubPath(schemaName, className));
-    if (!instanceId.empty())
-        {
-        url += "/" + instanceId;
-        }
-
-    ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
-
-    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");
-    if (!filePath.empty())
-        {
-        request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
-        }
-    request.SetCancellationToken(ct);
-    request.SetUploadProgressCallback(uploadProgressCallback);
-
-    return request.PerformAsync()->Then<WSCreateObjectResult>([this] (HttpResponse& httpResponse)
-        {
-        return ResolveCreateObjectResponse(httpResponse);
-        });
+    return SendCreateObjectRequest(ObjectId(), objectCreationJson, filePath, uploadProgressCallback, ct);
     }
 
-
-// /RelSchema/RelClass/RelId/ObjectCreationSchema.ObjectCreationClass
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -567,29 +542,44 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String schemaName = relatedObjectId.schemaName; // objectCreationJson["instance"]["schemaName"].asString();
-    Utf8String className = relatedObjectId.className; // ["instance"]["className"].asString();
-    Utf8String instanceId = relatedObjectId.remoteId;// objectCreationJson["instance"]["instanceId"].asString();
-
-    Utf8String url = GetUrl(CreateClassSubPath(schemaName, className));
-    if (!instanceId.empty())
+    Utf8String url;
+    if (relatedObjectId.IsValid())
         {
-        url += "/" + instanceId;
+        Utf8String schemaName = relatedObjectId.schemaName;
+        Utf8String className = relatedObjectId.className;
+        Utf8String instanceId = relatedObjectId.remoteId;
+
+        url = GetUrl(CreateClassSubPath(schemaName, className));
+        if (!instanceId.empty())
+            url += "/" + instanceId;
+
+        auto createdClassName = objectCreationJson["instance"]["className"];
+
+        auto createdClassSchema = objectCreationJson["instance"]["schemaName"];
+
+        if (createdClassName.empty() || createdClassSchema.empty())
+            {
+            BeAssert(false && "Invalid object creation JSON: no class name or schema name defined");
+            return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+            }
+
+        url += "/";
+
+        if (schemaName.compare(createdClassSchema.asCString()) != 0 )
+            url += createdClassSchema.asString() + ".";
+
+        url += createdClassName.asString();
         }
+    else
+        {
+        Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
+        Utf8String className = objectCreationJson["instance"]["className"].asString();
+        Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
 
-    auto createdClassName = objectCreationJson["instance"]["className"];
-    BeAssert(!createdClassName.empty());
-
-    auto createdClassSchema = objectCreationJson["instance"]["schemaName"];
-
-    url += "/";
-
-    if (schemaName.compare(createdClassSchema.asCString()) != 0)
-        url += createdClassSchema.asString() + ".";
-
-    url += createdClassName.asString();
-        
-
+        url = GetUrl(CreateClassSubPath(schemaName, className));
+        if (!instanceId.empty())
+            url += "/" + instanceId;
+        }
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
     request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");

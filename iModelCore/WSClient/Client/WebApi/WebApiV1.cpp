@@ -954,7 +954,6 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    BeAssert(false && "Operations are supported in WebApi v2.5 and above");
     return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
     }
 
