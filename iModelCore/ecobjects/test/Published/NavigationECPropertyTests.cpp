@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/NavigationECPropertyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -516,10 +516,10 @@ void InstanceWithNavProp(PrimitiveType navPropType)
     DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString, navPropType);
 
     // WIP
-    /*Json::Value jsonValue;
+    Json::Value jsonValue;
     StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true);
     ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
-    DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue, navPropType);*/
+    //DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue, navPropType);
 
     //if (PrimitiveType::PRIMITIVETYPE_Long == navPropType)
     //    ASSERT_NE(0, xmlString.ReplaceAll("long", "string")) << "Failed to replace 'long' with 'string' in the serialzied xml";

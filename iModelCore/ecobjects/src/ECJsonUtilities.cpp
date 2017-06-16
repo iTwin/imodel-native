@@ -1279,8 +1279,8 @@ StatusInt     JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(Json
 //---------------------------------------------------------------------------------------
 StatusInt     JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR structProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
     {
-
-    return BSIERROR;
+    // TODO: Temporarily skipping NavigationProperty deserialization...
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
