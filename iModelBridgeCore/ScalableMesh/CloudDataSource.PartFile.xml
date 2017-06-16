@@ -27,6 +27,7 @@
     </Part>
 
     <Part Name="CloudDataSource_Vancouver" BMakeFile="CloudDataSource_Vancouver.mke">
+        <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
         <SubPart PartName="AzureSDK" />
         <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>		
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>

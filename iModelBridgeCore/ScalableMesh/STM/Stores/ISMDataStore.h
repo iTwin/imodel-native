@@ -254,6 +254,16 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual void CancelPreloadData() = 0;
 
         /**----------------------------------------------------------------------------
+        Register a scalable mesh to the store (useful for streaming type store).
+        -----------------------------------------------------------------------------*/
+        virtual void Register(const uint64_t& smID) {};
+
+        /**----------------------------------------------------------------------------
+        Unregister a scalable mesh from the store (useful for streaming type store).
+        -----------------------------------------------------------------------------*/
+        virtual void Unregister(const uint64_t& smID) {};
+
+        /**----------------------------------------------------------------------------
          Get the next node ID available.
         -----------------------------------------------------------------------------*/
         virtual uint64_t GetNextID() const = 0;

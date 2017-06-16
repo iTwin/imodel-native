@@ -337,7 +337,9 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     m_createProgress.ProgressStep() = ScalableMeshStep::STEP_GENERATE_TEXTURE;
     m_createProgress.ProgressStepIndex() = 1;
     m_createProgress.Progress() = 0.0f;
-    m_groundPreviewer->UpdateProgress(&m_createProgress);
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
         
     if (m_scalableMesh->GetBaseGCS().IsValid())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
@@ -375,17 +377,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         textureGenerator->SetTextureTempDir(currentTextureDir);
         textureGenerator->SetTransform(m_scalableMesh->GetReprojectionTransform());
 
-        DRange3d covExt = DRange3d::From(m_extractionArea);
-       
-        bvector<bvector<DPoint3d>> polys;
-        m_scalableMesh->GetAllCoverages(polys);
-
-        for (auto& poly : polys)
-            {
-            DRange3d newRange = DRange3d::From(poly);
-            covExt.Extend(newRange);
-            }
-    
+        DRange3d covExt = DRange3d::From(m_extractionArea);               
         covExt.ScaleAboutCenter(covExt, 1.1);
 
         bvector<DPoint3d> closedPolygonPoints;
@@ -402,7 +394,13 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         bool       isDir;            
         while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
             {        
-            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+#ifndef VANCOUVER_API
+            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg") || 
+                0 == currentTextureName.GetExtension().CompareToI(L"itiff64"))
+#else
+            if (0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"jpg") || 
+                0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"itiff64"))
+#endif
                 {
                 IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
                 terrainCreator->EditSources().Add(textureSource);                       
@@ -414,24 +412,34 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
 
     m_createProgress.Progress() = 1.0f;
-    m_groundPreviewer->UpdateProgress(&m_createProgress);
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
 
     if (m_createProgress.IsCanceled()) return status;
 
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());    
-    
+
+#ifndef VANCOUVER_API    
     if (coverageBreaklineFile.DoesPathExist())
+#else
+    if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
+#endif     
         {        
         IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
         terrainCreator->EditSources().Add(coverageBreaklineSource);                               
         }
 
-    m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
+    
     status = terrainCreator->Create(true, true);
     terrainCreator->SaveToFile();
-    m_groundPreviewer->UpdateProgress(nullptr);
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(nullptr);
     terrainCreator = nullptr;
 
 
@@ -485,7 +493,11 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
     coverageBreaklineFile.AppendString(L"\\");
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());
 
+#ifndef VANCOUVER_API    
     if (coverageBreaklineFile.DoesPathExist())
+#else
+    if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
+#endif
         {
         BcDTMPtr dtmPtr(BcDTM::CreateFromGeopakDatFile(coverageBreaklineFile.c_str()));
 
@@ -526,7 +538,10 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     m_createProgress.ProgressStep() = ScalableMeshStep::STEP_DETECT_GROUND;
     m_createProgress.ProgressStepIndex() = 0;
     m_createProgress.Progress() = 0.0f;
-    m_groundPreviewer->UpdateProgress(&m_createProgress);
+
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
+
     if (m_createProgress.IsCanceled()) return SUCCESS;
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
@@ -559,7 +574,10 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     
     StatusInt status = serviceP->_DoGroundDetection(*params.get());
     m_createProgress.Progress() = 1.0f;
-    m_groundPreviewer->UpdateProgress(&m_createProgress);
+
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
+
     if (m_createProgress.IsCanceled()) return status;
     assert(status == SUCCESS);
 

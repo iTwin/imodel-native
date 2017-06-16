@@ -443,8 +443,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		for (auto& polyline : polylines)
 		{
 			if (polyline.empty()) continue;
-			DRange3d extent = DRange3d::From(polyline);
-			pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
+			DRange3d extent2 = DRange3d::From(polyline);
+			pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent2);
 		}
     if (pParentMeshNode->m_nodeHeader.m_arePoints3d)
         {

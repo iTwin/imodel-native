@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -251,6 +251,8 @@ public:
 
     GEOCOORDS_DLLE const Unit&              GetHorizontalUnit                  () const;
     GEOCOORDS_DLLE const Unit&              GetVerticalUnit                    () const;
+
+    GEOCOORDS_DLLE void                     SetVerticalUnit                    (const Unit& unit);
 
     GEOCOORDS_DLLE bool                     HasLocalTransform                  () const;
     GEOCOORDS_DLLE const LocalTransform&    GetLocalTransform                  () const;

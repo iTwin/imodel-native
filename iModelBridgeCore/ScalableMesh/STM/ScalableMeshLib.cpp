@@ -52,6 +52,14 @@ WsgTokenAdmin& ScalableMeshLib::Host::_SupplyWsgTokenAdmin()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+SASTokenAdmin& ScalableMeshLib::Host::_SupplySASTokenAdmin()
+    {
+    return *new SASTokenAdmin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 SSLCertificateAdmin& ScalableMeshLib::Host::_SupplySSLCertificateAdmin()
     {
     return *new SSLCertificateAdmin();
@@ -68,6 +76,7 @@ void ScalableMeshLib::Host::Initialize()
     SMMemoryPool::GetInstance();
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
+    m_sasTokenAdmin = &_SupplySASTokenAdmin();
     m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
     m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
@@ -193,11 +202,7 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileName tempDir;
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
-#ifdef VANCOUVER_API
-    BeSQLiteLib::Initialize(tempDir.GetNameUtf8().c_str());
-#else
     BeSQLiteLib::Initialize(tempDir);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

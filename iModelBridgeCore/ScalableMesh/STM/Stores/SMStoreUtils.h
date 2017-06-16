@@ -10,6 +10,7 @@
 #define HRFRASTERFILE ImagePP::HRFRasterFile
 #define HRARASTER ImagePP::HRARaster
 #else
+#define HRFRASTERFILE HRFRasterFile
 #define HRARASTER HRARaster
 #endif
 #endif
@@ -17,7 +18,7 @@
 #ifndef VANCOUVER_API
 #define BEFILENAME(function, filename) filename.function()
 #else
-#define BEFILENAME(function, filename) BeFileName::function(filename.c_str());
+#define BEFILENAME(function, filename) BeFileName::function(filename.c_str())
 #endif
 
 template <class POINT> struct PointOp

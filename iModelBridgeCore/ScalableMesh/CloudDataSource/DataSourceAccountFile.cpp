@@ -5,12 +5,12 @@
 
 DataSourceAccountFile::DataSourceAccountFile(const ServiceName &service, const AccountName &account) : DataSourceAccount(service, account)
     {
-    getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
+    getTransferScheduler()->initializeTransferTasks(getDefaultNumTransferTasks());
     }
 
 DataSourceAccountFile::DataSourceAccountFile(const ServiceName &service, const AccountName & account, const AccountIdentifier identifier, const AccountKey key) : DataSourceAccount(service, account, identifier, key)
     {
-    getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
+    getTransferScheduler()->initializeTransferTasks(getDefaultNumTransferTasks());
     }
 
 unsigned int DataSourceAccountFile::getDefaultNumTransferTasks(void)

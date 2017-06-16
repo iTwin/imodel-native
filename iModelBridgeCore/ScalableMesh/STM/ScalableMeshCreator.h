@@ -32,6 +32,7 @@
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
+#include "ScalableMeshProgress.h"
 
 /*----------------------------------------------------------------------+
 | CLASS definitions                                                     |
@@ -101,56 +102,6 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename);
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
-* @bsiclass                                               Elenie.Godzaridis   01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ScalableMeshProgress : public IScalableMeshProgress
-    {
-
-    private:
-        std::atomic<bool> m_canceled;
-        std::atomic<ScalableMeshStep> m_currentStep;
-
-        std::atomic<float> m_progressInStep;
-        std::atomic<int> m_progressStepIndex;
-        std::atomic<ScalableMeshStepProcess> m_progressStepProcess;
-        int m_totalNSteps;
-
-    protected:
-    virtual bool _IsCanceled() const override;
-    virtual void _Cancel() override;
-
-    virtual std::atomic<ScalableMeshStep> const& _GetProgressStep() const override;
-    virtual int _GetTotalNumberOfSteps() const override { return m_totalNSteps; }
-
-    virtual std::atomic<ScalableMeshStepProcess> const& _GetProgressStepProcess() const override;
-
-    virtual std::atomic<float> const& _GetProgress() const override; //Progress of current step ([0..1])
-
-    virtual std::atomic<float>& _Progress() override;
-    virtual std::atomic<ScalableMeshStep>& _ProgressStep() override;
-
-
-    virtual std::atomic<int> const& _GetProgressStepIndex() const override;
-
-    virtual void _SetTotalNumberOfSteps(int step) override;
-
-    virtual std::atomic<ScalableMeshStepProcess>& _ProgressStepProcess() override;
-    virtual std::atomic<int>& _ProgressStepIndex() override;
-
-    public:
-        ScalableMeshProgress()
-            {
-            m_canceled = false;
-            m_progressStepIndex = 0;
-            m_currentStep = ScalableMeshStep::STEP_NOT_STARTED;
-            m_progressInStep = 0;
-            m_totalNSteps = 0;
-            m_progressStepProcess = ScalableMeshStepProcess::PROCESS_INACTIVE;
-            }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IScalableMeshCreator::Impl 
@@ -204,7 +155,7 @@ struct IScalableMeshCreator::Impl
 
         virtual bool                                IsFileDirty();
 
-        ScalableMeshProgress m_progress;
+        IScalableMeshProgressPtr m_progress;
 
     protected:
         
@@ -246,7 +197,7 @@ struct IScalableMeshCreator::Impl
         StatusInt                           LoadFromFile                   ();
         StatusInt                           SaveToFile                     ();  
 
-        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation);  
+        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate);
 
         StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
         StatusInt  SetTextureProvider(ITextureProviderPtr provider);
@@ -254,7 +205,7 @@ struct IScalableMeshCreator::Impl
 
         StatusInt                           Filter                         ();        
 
-        ScalableMeshProgress*            GetProgress();
+        IScalableMeshProgressPtr            GetProgress();
 
         bool                               IsCanceled();
 

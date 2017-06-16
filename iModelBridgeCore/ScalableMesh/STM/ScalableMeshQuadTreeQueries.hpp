@@ -486,11 +486,19 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
         isVisible = m_extent3d->PointInside(center, tolerance);
         }
 
-    if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
+    double resNode = node->GetMinResolution();
+
+    if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel) && (node->GetParentNode() == nullptr || node->GetParentNode()->GetMinResolution() >= m_pixelTolerance))
         {
+        if (!m_includeUnbalancedLeafs && node->IsLeaf() && node->GetLevel() < m_requestedLevel)
+            {
+            // Could not reach requested level because the index is not balanced; do not add node in the results
+            return false;
+            }
+
         // If this is the appropriate level or it is a higher level and progressive is set.
         if (
-            m_useAllRes || m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
+            m_useAllRes || m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf() || (m_pixelTolerance != 0.0 && resNode != 0.0 && resNode <= m_pixelTolerance)) /*||
                                                  (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {         
             if (node->m_nodeHeader.m_nbFaceIndexes > 0 || m_ignoreFaceIndexes)
@@ -524,43 +532,45 @@ int AddVisibleMesh(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
     return ERROR;
     }
 
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                                                                                HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                                                                                size_t numSubNodes,
-                                                                                                BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh)
-    {         
+template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+    size_t numSubNodes,
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh)
+{
     assert(node->GetFilter()->IsProgressiveFilter() == false);
 
     // Before we make sure requested level is appropriate
     if (m_requestedLevel < 0)
         m_requestedLevel = 0;
-           
+
     // Check if extent overlap         
     EXTENT visibleExtent;
     EXTENT nodeExtent;
 
     if (node->IsEmpty())
-        {
+    {
         nodeExtent = node->GetNodeExtent();
         //NEEDS_WORK_SM : Don't think this is necessary with an octree
         ExtentOp<EXTENT>::SetZMin(nodeExtent, ExtentOp<EXTENT>::GetZMin(m_extent));
-        ExtentOp<EXTENT>::SetZMax(nodeExtent, ExtentOp<EXTENT>::GetZMax(m_extent));                                
-        }
+        ExtentOp<EXTENT>::SetZMax(nodeExtent, ExtentOp<EXTENT>::GetZMax(m_extent));
+    }
     else
-        {            
-        nodeExtent = node->GetContentExtent();                         
-        }
-    
+    {
+        nodeExtent = node->GetContentExtent();
+    }
+
 
     bool isVisible = GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox);
 
     //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
     static bool s_clipMesh = false;
 
-    if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
+    double resNode = node->GetMinResolution();
+
+    if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel) && (node->GetParentNode() == nullptr || node->GetParentNode()->GetMinResolution() >= m_pixelTolerance))
         {            
         // If this is the appropriate level or it is a higher level and progressive is set.
-        if ( m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) )
+        if ( m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) || (m_pixelTolerance != 0.0 && resNode != 0.0 && resNode <= m_pixelTolerance))
             {
             // Copy content            
             if (node->m_nodeHeader.m_nbFaceIndexes > 0)
@@ -1095,7 +1105,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         {                                       
         assert(node->GetFilter()->IsProgressiveFilter() == false);
                     
-        if (node->m_nodeHeader.m_nbFaceIndexes > 0)
+        if (!node->IsEmpty()/*node->m_nodeHeader.m_nodeCount > 0*/)
             {         
             //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
             static bool s_clipMesh = true;                                
@@ -1513,7 +1523,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     #endif                     
         } 
     else
-    if (node->m_nodeHeader.m_totalCount > 0)
+    if ((node->m_nodeHeader.m_totalCountDefined && node->m_nodeHeader.m_totalCount > 0) || !node->IsEmpty()) // The total count is not available in Cesium 3D tiles datasets...
         {            
         IsCorrect = true;
         }

@@ -10,6 +10,11 @@ void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, const Transform&
     return _Publish(node, transform, outData);
     }
 
+void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData)
+    {
+    return _Publish(node, sourceGCS, destinationGCS, outData);
+    }
+
 IScalableMeshPublisherPtr IScalableMeshPublisher::Create(const SMPublishType& type)
     {
     switch (type)

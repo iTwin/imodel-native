@@ -61,7 +61,8 @@ struct ScalableMeshGroupDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainM
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
 
         virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
-
+        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
+        
         //volume calls
 
         virtual DTMStatusInt _ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh) override;
@@ -122,10 +123,13 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual __int64          _GetPointCount() override;
 
+        virtual uint64_t          _GetNodeCount() override;
+
         virtual bool          _IsTerrain() override;
 
         virtual bool          _IsTextured() override;
 
+        virtual bool          _IsCesium3DTiles() override{ return false; }
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
@@ -160,6 +164,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override { return nullptr; }
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override { return nullptr; }
+        virtual IScalableMeshAnalysisPtr    _GetMeshAnalysisInterface() override { return nullptr; }
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override { return ERROR; }
@@ -190,11 +195,14 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
-        virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override { return ERROR; }
+        virtual int                                _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const override { return ERROR; }
         virtual void                               _ImportTerrainSM(WString terrainPath) override {  }
         virtual IScalableMeshPtr                    _GetTerrainSM() override { return nullptr; }
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
+#ifdef VANCOUVER_API
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override;
+#endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;

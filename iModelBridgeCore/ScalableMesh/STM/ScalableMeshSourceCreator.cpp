@@ -210,7 +210,7 @@ DocumentEnv IScalableMeshSourceCreator::Impl::CreateSourceEnvFrom(const WChar* f
     }
 
 
-int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
+int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
     int status = BSISUCCESS;
 
@@ -226,7 +226,11 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
             }
 
 
-        SetupFileForCreation();
+        SetupFileForCreation(doPartialUpdate);
+
+        if (!m_smSQLitePtr.IsValid() || !m_smSQLitePtr->IsOpen())
+            return BSIERROR;
+
 
         // Sync only when there are sources with which to sync
         // TR #325614: This special condition provides us with a way of efficiently detecting if STM is empty
@@ -257,30 +261,64 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
     return status;
     }
 
-void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
+void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate)
 {
     using namespace ISMStore;
 
     //File::Ptr filePtr;
-    bool bAllRemoved = true;
-    bool bAllAdded = true;
-    for (IDTMSourceCollection::const_iterator it = m_sources.Begin(); it != m_sources.End(); it++)
-    {
-        SourceImportConfig conf = it->GetConfig();
-        ScalableMeshData data = conf.GetReplacementSMData();
-        if (data.GetUpToDateState() != UpToDateState::REMOVE)
-            bAllRemoved = false;
-        if (data.GetUpToDateState() != UpToDateState::ADD)
-            bAllAdded = false;
-    }
 
-    if (bAllRemoved)
-    {
-        _wremove(m_scmFileName.c_str());
-        // Remove sources.
-        m_sources.Clear();
-        return;
-    }
+    if (doPartialUpdate)
+        {
+        bool bAllRemoved = true;
+        bool bAllAdded = true;
+        for (IDTMSourceCollection::const_iterator it = m_sources.Begin(); it != m_sources.End(); it++)
+            {
+            SourceImportConfig conf = it->GetConfig();
+            ScalableMeshData data = conf.GetReplacementSMData();
+            if (data.GetUpToDateState() != UpToDateState::REMOVE)
+                bAllRemoved = false;
+            if (data.GetUpToDateState() != UpToDateState::ADD)
+                bAllAdded = false;
+            }
+
+        if (bAllRemoved)
+            {
+            _wremove(m_scmFileName.c_str());
+            // Remove sources.
+            m_sources.Clear();
+            return;
+            }
+        }
+    else
+        {
+        m_scmPtr = nullptr;
+        m_smSQLitePtr = nullptr;
+
+        if (FileExist() && 0 != _wremove(m_scmFileName.c_str()))
+            return ;        
+
+        m_smSQLitePtr = IScalableMeshCreator::Impl::GetFile(false);
+
+        if (!m_smSQLitePtr.IsValid() || !m_smSQLitePtr->IsOpen())
+            return;
+
+        for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.EndEdit(); it++)
+            {
+            SourceImportConfig conf = it->GetConfig();
+            ScalableMeshData data = conf.GetReplacementSMData();
+            if (data.GetUpToDateState() == UpToDateState::REMOVE)
+                {
+                it = m_sources.Remove(it);
+                }                
+            else 
+            if (data.GetUpToDateState() == UpToDateState::MODIFY || data.GetUpToDateState() == UpToDateState::PARTIAL_ADD || data.GetUpToDateState() == UpToDateState::UP_TO_DATE)
+                {
+                data.SetUpToDateState(UpToDateState::ADD);
+                conf.SetReplacementSMData(data);
+                }
+            }
+        }
+
 
     // Ensure GCS and sources are save to the file.
     m_gcsDirty = true;
@@ -1204,12 +1242,14 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(dataSource, m_scmFileName));
 
+#ifndef VANCOUVER_API    
         if (dynamic_cast<DGNLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr || dynamic_cast<DGNReferenceLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr)
             {
             importConfig->SetClipShape(clipShapePtr);
             importer.AddSDKSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
             }
         else
+#endif
             {
             importer.AddSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
             }

@@ -10,6 +10,10 @@
 #include <queue>
 #include <thread>
 
+#ifdef VANCOUVER_API
+#include <ImagePP\h\hstdcpp.h>
+#endif
+
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
 
@@ -34,12 +38,17 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+#include <ScalableMesh/IScalableMeshProgress.h>
 
 #include <TerrainModel/Core/DTMDefs.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
+
+#ifndef VANCOUVER_API   
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+#endif
+
 #include <Bentley/BeTimeUtilities.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include <Vu/VuApi.h>
@@ -66,6 +75,9 @@ using namespace std;
 #include <CloudDataSource/DataSourceManager.h>
 #include <CloudDataSource/DataSourceAccount.h>
 #include <CloudDataSource/DataSourceBuffered.h>
+
+
+#pragma warning( disable : 4456 ) 
 
 //#define ABORT(ERROR + 1)
 
@@ -327,7 +339,8 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : cannot open 3SM file\r\n");
         return;
         }
-                                
+                         
+#ifndef VANCOUVER_API          
     clock_t t = clock();     
     WString terrainPath =    smFileName+L"Terrain.3sm";    
     IScalableMeshGroundExtractorPtr groundExtractorPtr(IScalableMeshGroundExtractor::Create(terrainPath,scalableMeshPtr));        
@@ -337,9 +350,11 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (statusGround != SUCCESS)
         return;
-    
-    
+
     t = clock() - t;
+#endif    
+    
+    
     /*
     double delay = (double)t / CLOCKS_PER_SEC;
     double minutes = delay / 60.0;
@@ -1682,7 +1697,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("mode attribute not found : default \"normal\" mode will be used\r\n");
         }
 
-    BeFileName baseFiles(outputDir);
+    BeFileName baseFiles(outputDir.c_str());
     baseFiles.PopDir(); // remove //g
     baseFiles.PopDir(); // remove //headers
     Utf8String baseFilesDir(baseFiles.GetName());
@@ -1831,10 +1846,19 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", 0);
 
     BeFile file;
+
+#ifndef VANCOUVER_API  
     if (BeFileStatus::Success != file.Open(linesFileName.c_str(), BeFileAccess::Read))
         {
         return;
         }
+#else 
+    if (BeFileStatus::Success != file.Open(linesFileName.c_str(), BeFileAccess::Read, BeFileSharing::None))
+        {
+        return;
+        }    
+#endif
+
     char* linesFileBuffer = nullptr;
     size_t fileSize;
     file.GetSize(fileSize);
@@ -2463,10 +2487,19 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
 
     BeFile file;
+
+#ifndef VANCOUVER_API  
     if (BeFileStatus::Success != file.Open(importFileName.c_str(), BeFileAccess::Read))
         {
         return;
         }
+#else
+    if (BeFileStatus::Success != file.Open(importFileName.c_str(), BeFileAccess::Read, BeFileSharing::None))
+        {
+        return;
+        }
+#endif
+
     char* meshFileBuffer = nullptr;
     size_t fileSize;
     file.GetSize(fileSize);
@@ -4705,28 +4738,53 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         changeGeometricError = true;
         }
 
-    // remove trailing slashes if any
+    // ensure trailing slashes
     size_t position;
-    if ((position = cloudContainer.find_last_of(L"\\")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
-    if ((position = cloudContainer.find_last_of(L"/")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
+    if (((position = cloudContainer.find_last_of(L"\\")) != cloudContainer.size()-1) && position != WString::npos) cloudContainer.append(L"\\");
+    if (((position = cloudContainer.find_last_of(L"/")) != cloudContainer.size()-1) && position != WString::npos) cloudContainer.append(L"\\");
 
     bool allTestPass = true;
     double t = 0;
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status);
+    IScalableMeshPtr smPtr = IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status);
 
-    if (smFile != 0 && status == SUCCESS)
+    if (smPtr != 0 && status == SUCCESS)
         {
         t = clock();
         if (changeGeometricError)
             {
-            status = smFile->ChangeGeometricError(cloudContainer, cloudName, server, geometricError);
+            status = smPtr->ChangeGeometricError(cloudContainer, cloudName, server, geometricError);
             }
         else
             {
-            status = smFile->ConvertToCloud(cloudContainer, cloudName, server);
+            struct ProgressListener : IScalableMeshProgressListener
+                {
+                virtual void CheckContinueOnProgress(IScalableMeshProgress* progress) const override
+                    {
+                    auto stepString = progress->GetProgressStep() == ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS ? "Saving index... " : "Saving data... ";
+                    std::cout << std::setw(100) << "\r [" << std::this_thread::get_id()<< "] " << stepString << progress->GetProgress();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                    //if (progress->GetProgressStep() == ScalableMeshStep::STEP_CONVERT_3DTILES_DATA && progress->GetProgress() > 0.2)
+                    //    {
+                    //    progress->Cancel();
+                    //    std::cout << "\nCanceled [" << (progress->GetProgressStep() == ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS ? "STEP_GENERATE_3DTILES_HEADERS" : "STEP_CONVERT_3DTILES_DATA") << "]" << std::endl;
+                    //    }
+                    };
+                };
+            ProgressListener progressListener;
+            auto progress = IScalableMeshProgress::Create(ScalableMeshProcessType::CONVERT_3DTILES, smPtr);
+            if (progress->AddListener(progressListener))
+                {
+                status = smPtr->Generate3DTiles(cloudContainer, cloudName, server, progress);
+                }
+            else
+                {
+                status = ERROR;
+                result = L"FAILURE -> could not add listener in the ScalableMesh progress";
+                allTestPass = false;
+                }
             }
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
@@ -4738,10 +4796,11 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
 
     printf("Time to convert: %0.5f\n", (double)t / CLOCKS_PER_SEC);
-    fwprintf(pResultFile, L"%s,%s,%s,%0.5f\n",
+    fwprintf(pResultFile, L"%s,%s,%s,%s,%0.5f\n",
              smFileName.c_str(),
              cloudContainer.c_str(),
              allTestPass ? L"true" : L"false",
+             result.c_str(),
              (double)t / CLOCKS_PER_SEC
              );
 

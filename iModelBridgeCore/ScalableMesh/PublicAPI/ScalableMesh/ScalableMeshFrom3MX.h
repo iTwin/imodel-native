@@ -1,6 +1,7 @@
 #include <Bentley/BeFileName.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
+#include <ScalableMesh/IScalableMeshProgress.h>
 
 
 // Convert a 3MX model to a Scalable Mesh in 3SM format
@@ -18,7 +19,8 @@ enum class SMFrom3MXStatus
     GCSError,				// Error related to GCS
     ScalableMeshSDKError,	// Error related to ScalableMeshSDK
     ReprojectionError,		// Error encountered in reprojection (most likely due to a 3D point out of bounds)
-    UnsupportedCase			// Special case not handled by the converter
+    SeveralLayersError,		// Special case not handled by the converter: 3MX with several layers
+    SeveralGeometriesError  // Special case not handled by the converter: node with several geometries
 };
 
 
@@ -31,22 +33,13 @@ public:
     virtual GeoCoordinates::BaseGCSPtr _GetOutputGCS() const = 0; // Called to retrieve the GCS of the output Scalable Mesh
 };
 
-
-// Interface for the progress handler used during conversion
-class EXPORT_VTABLE_ATTRIBUTE IScalableMeshFrom3MXProgressHandler
-{
-public:
-    virtual bool _Progress(float progress) = 0; // Called to indicate the progress in the conversion, between 0.f and 1.f. If false is returned, the conversion is interrupted asap
-};
-
-
 // Conversion function. It has different variants to offer control on the GCS operations and the handling of progress
 BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
 (
     BeFileNameCR input3MXPath,									// Path to the master 3MX file of the 3MX model
     BeFileNameCR output3SMPath,									// Path to the output 3SM file
     IScalableMeshFrom3MXGCSHandler& gcsHandler,					// Object handling the GCS operations
-    IScalableMeshFrom3MXProgressHandler& progressHandler		// Object handling the progress
+    IScalableMeshProgressPtr progressHandler                    // Object handling the progress. If nullptr, no progress handling
 );
 
 // Reprojection to specified GCS; No progress handling
@@ -55,23 +48,7 @@ BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,									// Path to the master 3MX file of the 3MX model
     BeFileNameCR output3SMPath,									// Path to the output 3SM file
     GeoCoordinates::BaseGCSPtr outputGCS,						// Output GCS for reprojection. If nullptr, no reprojection
-    IScalableMeshFrom3MXProgressHandler& progressHandler		// Object handling the progress
-);
-
-// No progress handling
-BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
-(
-    BeFileNameCR input3MXPath,									// Path to the master 3MX file of the 3MX model
-    BeFileNameCR output3SMPath,									// Path to the output 3SM file
-    IScalableMeshFrom3MXGCSHandler& gcsHandler					// Object handling the GCS operations
-);
-
-// Reprojection to specified GCS; No progress handling
-BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
-(
-    BeFileNameCR input3MXPath,									// Path to the master 3MX file of the 3MX model
-    BeFileNameCR output3SMPath,									// Path to the output 3SM file
-    GeoCoordinates::BaseGCSPtr outputGCS						// Output GCS for reprojection. If nullptr, no reprojection
+    IScalableMeshProgressPtr progressHandler                    // Object handling the progress. If nullptr, no progress handling
 );
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

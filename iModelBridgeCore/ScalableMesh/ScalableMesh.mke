@@ -212,6 +212,8 @@ $(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends) 
 
 $(o)ScalableMeshCreator$(oext) : $(stmDir)ScalableMeshCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)ScalableMeshProgress$(oext) : $(stmDir)ScalableMeshProgress.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
 $(o)ScalableMeshSourceCreator$(oext) : $(stmDir)ScalableMeshSourceCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshNodeCreator$(oext) : $(stmDir)ScalableMeshNodeCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -301,6 +303,8 @@ $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompil
 $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
 
 $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h ${MultiCompileDepends}
+
+$(o)ScalableMeshAnalysis$(oext) : $(stmDir)ScalableMeshAnalysis.cpp $(stmDir)ScalableMeshAnalysis.h ${MultiCompileDepends}
 
 $(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 

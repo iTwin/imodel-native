@@ -5,6 +5,8 @@
 #include <cpprest/rawptrstream.h>
 #include <cpprest/producerconsumerstream.h>
 #include "include\DataSourceAccountAzure.h"
+#include <Bentley\BeStringUtilities.h>
+#include <Bentley/WString.h>
 
 #ifdef SM_STREAMING_PERF
 #include <iostream>
@@ -19,7 +21,7 @@ DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const A
     setDefaultSegmentSize(0);
 
                                                             // Multi-threaded segmented transfers used for Azure, so initialize it
-    getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
+    getTransferScheduler()->initializeTransferTasks(getDefaultNumTransferTasks());
 }
 
 
@@ -301,9 +303,17 @@ DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & acco
     return DataSourceStatus();
     }
 
+void DataSourceAccountAzureCURL::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>& tokenGetter)
+    {
+    m_getSASToken = tokenGetter;
+    }
+
 DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
     {
-    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + blobPath);
+    auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
+    auto azureToken = this->m_getSASToken(Utf8String(this->getAccountKey().c_str()));
+    if (!azureToken.empty()) uriEncodedBlobUrl += ("?" + azureToken).c_str();
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str(), BentleyCharEncoding::Utf8).c_str()));
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
     CURL* curl = curl_handle->get();

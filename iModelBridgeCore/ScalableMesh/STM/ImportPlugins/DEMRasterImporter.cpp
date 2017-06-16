@@ -231,8 +231,9 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         try
             {
             const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + pi_rSourceRef.GetPathCStr());
-            const HRFRasterFileCreator* foundCreatorP = HRFRasterFileFactory::GetInstance()->FindCreator(urlPtr, HFC_READ_ONLY);
-            assert(0 != foundCreatorP);
+                        
+            HUTDEMRasterXYZPointsExtractor extractor(urlPtr->GetURL(), GetPoolInstance(), false);
+
             return true;
             }
         catch (const HFCException&)

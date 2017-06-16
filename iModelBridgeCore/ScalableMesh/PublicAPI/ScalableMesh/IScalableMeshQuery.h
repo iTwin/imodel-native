@@ -327,6 +327,7 @@ struct IScalableMeshMesh : public RefCountedBase
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const = 0;
 
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const = 0;
+        virtual bool _IntersectRay(bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& pt, const DRay3d& ray) const = 0;
 
         virtual void _WriteToFile(WString& filePath) = 0;
 
@@ -357,6 +358,7 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
 
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray) const;
+        BENTLEY_SM_EXPORT bool IntersectRay(bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& points, const DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT void WriteToFile(WString& filePath);
 
@@ -456,6 +458,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const = 0;
 
         virtual bvector<IScalableMeshNodePtr> _GetChildrenNodes() const = 0;
+
+        virtual IScalableMeshNodePtr _GetParentNode() const = 0;
         
         virtual void     _ApplyAllExistingClips() const = 0;
 
@@ -533,6 +537,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetNeighborAt(char relativePosX,  char relativePosY,  char relativePosZ) const;
 
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetChildrenNodes() const;        
+
+        BENTLEY_SM_EXPORT IScalableMeshNodePtr GetParentNode() const;
 
         BENTLEY_SM_EXPORT void     ApplyAllExistingClips() const;
 
@@ -628,6 +634,7 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
         virtual StatusInt _SetResolution(float geometricResolution, float textureResolution) = 0;
 
         virtual bvector<IScalableMeshNodeEditPtr> _EditChildrenNodes() = 0;
+        virtual IScalableMeshNodeEditPtr _EditParentNode() = 0;
 
     public:
         BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices);
@@ -641,6 +648,7 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
         BENTLEY_SM_EXPORT StatusInt SetResolution(float geometricResolution, float textureResolution);
 
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodeEditPtr> EditChildrenNodes();
+        BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr EditParentNode();
     };
 
 
@@ -658,12 +666,16 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         virtual bool  _GetUseAllResolutions() = 0;
 
+        virtual double  _GetTargetPixelTolerance() = 0;
+
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
 
         virtual void _SetLevel(size_t depth) = 0;
 
         virtual void _SetUseAllResolutions(bool useAllResolutions) = 0;
+
+        virtual void _SetTargetPixelTolerance(double pixelTol) = 0;
     public:
         BENTLEY_SM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
@@ -674,12 +686,16 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT bool GetUseAllResolutions();
 
+        BENTLEY_SM_EXPORT double GetTargetPixelTolerance();
+
         BENTLEY_SM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
 
         BENTLEY_SM_EXPORT void SetLevel(size_t depth);
 
         BENTLEY_SM_EXPORT void SetUseAllResolutions(bool useAllResolutions);
+
+        BENTLEY_SM_EXPORT void SetTargetPixelTolerance(double pixelTol);
     };
 
 

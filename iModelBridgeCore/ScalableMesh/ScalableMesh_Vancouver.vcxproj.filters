@@ -1009,6 +1009,9 @@
     <ClInclude Include="stm\ReprojectionModel.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
+    <ClInclude Include="STM\ScalableMeshAnalysis.h">
+      <Filter>Includes\Core\Analysis</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1465,12 +1468,17 @@
     <ClCompile Include="stm\ReprojectionModel.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
+    <ClCompile Include="STM\ScalableMeshAnalysis.cpp">
+      <Filter>Source\Core\Analysis</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\TextureImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMesh.mke" />
-    <None Include="ScalableMesh.mki" />
+    <None Include="ScalableMesh_Vancouver.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMesh.PartFile.xml" />
+    <Xml Include="ScalableMeshCore.PartFile.xml" />
   </ItemGroup>
 </Project>

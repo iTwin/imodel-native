@@ -584,6 +584,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const override;
 
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const override;
+        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pts, const DRay3d& ray) const override;
 
         virtual void _WriteToFile(WString& filePath) override;
 
@@ -742,6 +743,17 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             return m_maxPixelError;
         }
 
+        virtual double _GetTargetPixelTolerance() override
+        {
+            assert(false && "Not supported by this query");
+            return 0.0;
+        }
+
+        virtual void _SetTargetPixelTolerance(double pixelTol) override
+        {
+            assert(false && "Not supported by this query");
+        }
+
         virtual StopQueryCallbackFP _GetStopQueryCallback() const
             {
             return m_stopQueryCallbackFP;
@@ -833,6 +845,8 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         size_t m_depth;
         bool m_useAllResolutions;
 
+        double m_pixelTolerance;
+
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
@@ -851,6 +865,16 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         virtual bool _GetUseAllResolutions() override
             {
             return m_useAllResolutions;
+            }
+
+        virtual double _GetTargetPixelTolerance() override
+        {
+            return m_pixelTolerance;
+        }
+
+        virtual void _SetTargetPixelTolerance(double pixelTol) override
+            {
+            m_pixelTolerance = pixelTol;
             }
 
         virtual void _SetLevel(size_t depth) override
@@ -875,6 +899,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
             {
             m_depth = (size_t)-1;
             m_useAllResolutions = false;
+            m_pixelTolerance = 0.0;
             }
 
         virtual ~ScalableMeshMeshQueryParams()
@@ -1166,6 +1191,17 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
             return m_depth;
             }
 
+        virtual double _GetTargetPixelTolerance() override
+        {
+            assert(false && "Not supported by this query");
+            return 0.0;
+        }
+
+        virtual void _SetTargetPixelTolerance(double pixelTol) override
+        {
+            assert(false && "Not supported by this query");
+        }
+
         virtual size_t _GetLevel() override { return 0; }
         virtual void _SetLevel(size_t depth) override {};
         virtual void _SetUseAllResolutions(bool useAllResolutions) override {};
@@ -1312,6 +1348,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bvector<IScalableMeshNodePtr> _GetChildrenNodes() const override;
 
+        virtual IScalableMeshNodePtr _GetParentNode() const override;
+
         virtual DRange3d _GetNodeExtent() const override;
 
         virtual DRange3d _GetContentExtent() const override;
@@ -1429,8 +1467,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
             mutable RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
-            bvector<ClipVectorPtr>                                          m_clipVectors;
-            Transform m_reprojectionTransform;
+            bvector<ClipVectorPtr>                                          m_clipVectors;            
             const IScalableMesh* m_scalableMeshP;
 
 
@@ -1575,6 +1612,7 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual void _LoadHeader() const override;
 
         virtual bvector<IScalableMeshNodeEditPtr> _EditChildrenNodes() override;
+        virtual IScalableMeshNodeEditPtr _EditParentNode() override;
 
     public:
         ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);

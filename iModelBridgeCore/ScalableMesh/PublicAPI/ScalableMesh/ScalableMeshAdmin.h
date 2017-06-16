@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshAdmin.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,6 +21,8 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 {
     private :         
 
+        IScalableMeshTextureGeneratorPtr m_textureGeneratorPtr;
+
     public : 
 
         virtual int                     _GetVersion() const {return 1;} // Do not override!
@@ -33,10 +35,13 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 
         virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator () 
             {
-            IScalableMeshTextureGeneratorPtr textureGeneratorPtr;
-
-            return textureGeneratorPtr;
+            return m_textureGeneratorPtr;            
             }        
+
+        virtual void _SetTextureGenerator(IScalableMeshTextureGeneratorPtr& textureGenerator)
+            { 
+            m_textureGeneratorPtr = textureGenerator;        
+            }
 
     #ifdef VANCOUVER_API
         virtual DgnModelRefP _GetActiveModelRef() const
@@ -57,17 +62,31 @@ struct WsgTokenAdmin
         std::function<Utf8String(void)> m_getToken;
 
     public:
-    WsgTokenAdmin()
-        {
-        }
+    WsgTokenAdmin() {}
     WsgTokenAdmin(std::function<Utf8String(void)> tokenGetter)
         : m_getToken(tokenGetter)
-        {
-        }
+        {}
     Utf8String GetToken()
         {
         return m_getToken();
         }
+    };
+
+struct SASTokenAdmin
+    {
+    private:
+        typedef std::function<Utf8String(const Utf8String& guid)> TokenFromGUID;
+        TokenFromGUID m_getToken;
+
+    public:
+        SASTokenAdmin() {}
+        SASTokenAdmin(TokenFromGUID tokenGetter)
+            : m_getToken(tokenGetter)
+            {}
+        Utf8String GetToken(const Utf8String& guid)
+            {
+            return m_getToken(guid);
+            }
     };
 
 struct SSLCertificateAdmin
@@ -76,13 +95,10 @@ struct SSLCertificateAdmin
         std::function<Utf8String(void)> m_getSSLCertificatePath;
 
     public:
-        SSLCertificateAdmin()
-            {
-            }
+        SSLCertificateAdmin() {}
         SSLCertificateAdmin(std::function<Utf8String(void)> SSLCertificatePathGetter)
             : m_getSSLCertificatePath(SSLCertificatePathGetter)
-            {
-            }
+            {}
         Utf8String GetSSLCertificatePath()
             {
             return m_getSSLCertificatePath();

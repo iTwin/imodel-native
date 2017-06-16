@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/TilePublisher.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,31 +37,47 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct BatchIdMap
 {
 private:
-    bmap<BentleyApi::BeInt64Id, uint16_t>   m_map;
-    bvector<BentleyApi::BeInt64Id>          m_list;
+    bmap<BENTLEY_NAMESPACE_NAME::BeInt64Id, uint16_t>   m_map;
+    bvector<BENTLEY_NAMESPACE_NAME::BeInt64Id>          m_list;
     TileSource                  m_source;
 public:
     BatchIdMap(TileSource source);
 
-    uint16_t GetBatchId(BentleyApi::BeInt64Id entityId);
+    uint16_t GetBatchId(BENTLEY_NAMESPACE_NAME::BeInt64Id entityId);
+#ifndef VANCOUVER_API
     void ToJson(Json::Value& value, DgnDbP db) const;
+#else
+    void ToJson(Json::Value& value) const;
+#endif
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
 
 
-struct  ScalableMeshTileNode : BentleyApi::Dgn::ModelTileNode
+#ifndef VANCOUVER_API
+struct  ScalableMeshTileNode : BENTLEY_NAMESPACE_NAME::Dgn::ModelTileNode
+#else
+struct  ScalableMeshTileNode : ModelTileNode
+#endif
     {
     IScalableMeshNodePtr    m_node;
     Transform               m_transform;
     //DgnModelId              m_modelId;
     //PublishTileNode(DgnModelId modelId, SceneR scene, NodeR node, TransformCR transformDbToTile, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
     //    : ModelTileNode(dgnRange, transformDbToTile, depth, siblingIndex, parent, tolerance), m_scene(&scene), m_node(&node), m_clip(clip), m_modelId(modelId) { }
+#ifndef VANCOUVER_API
     ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, BentleyApi::Dgn::TileNodeP parent) :
         /*m_modelId(modelId), */m_node(node), m_transform(transform), BentleyApi::Dgn::ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
+#else
+    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
+        /*m_modelId(modelId), */m_node(node), m_transform(transform), ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
+#endif
         {}
 
-
-    virtual TileMeshList _GenerateMeshes(/*TileGenerationCacheCR, DgnDbR dgnDb,*/ TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override
+#ifndef VANCOUVER_API
+    virtual TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override
+#else
+    TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
+#endif
         {
         TileMeshList        tileMeshes;
         //
@@ -118,7 +134,7 @@ struct  ScalableMeshTileNode : BentleyApi::Dgn::ModelTileNode
     };  //  ScalableMeshTileNode
 
 struct PublisherContext;
-DEFINE_REF_COUNTED_PTR(PublisherContext);
+typedef RefCountedPtr<PublisherContext> PublisherContextPtr; 
 
 //=======================================================================================
 //! Context in which tile publishing occurs.
@@ -176,7 +192,7 @@ public:
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     TransformCR  GetTilesetTransform () const { return m_tilesetTransform; }
 //    ViewControllerCPtr GetViewController() const { return m_viewController; }
-    DgnDbP GetDgnDb() const { return nullptr/*m_viewController.GetDgnDb()*/; }
+    //DgnDbP GetDgnDb() const { return nullptr/*m_viewController.GetDgnDb()*/; }
     size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantPolylines() const { return m_publishPolylines; }
@@ -187,10 +203,10 @@ public:
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
 //    TileGenerationCacheCR GetCache() const { return _GetCache(); }
 
-    TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
-    TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
-    TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
-    TILEPUBLISHER_EXPORT bool IsGeolocated () const;
+    //TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
+    //TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
+    //TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
+    //TILEPUBLISHER_EXPORT bool IsGeolocated () const;
 
     template<typename T> static Json::Value IdSetToJson(T const& ids)
         {
@@ -222,7 +238,7 @@ private:
     std::FILE*              m_outputFile;
     DPoint3d                m_centroid;
     TileMeshList            m_meshes;
-    TileNodeCPtr            m_tile;
+    TileNodeCPtr            m_tile = nullptr;
     ByteStream              m_binaryData;
     PublisherContextPtr     m_context;
     bmap<TileTextureImageCP, Utf8String>    m_textureImages;
@@ -255,9 +271,10 @@ private:
 public:
     TILEPUBLISHER_EXPORT TilePublisher(PublisherContextPtr context);
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
-    TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile);
+    TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS);
 
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
+    TILEPUBLISHER_EXPORT PublisherContext::Status Publish(bvector<Byte>& outData);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish(TileMeshR mesh, bvector<Byte>& outData);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish(TileMeshR mesh, Utf8StringR sceneStr);
 

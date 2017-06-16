@@ -16,6 +16,7 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
 #include <ScalableMesh/IScalableMeshEdit.h>
+#include <ScalableMesh/IScalableMeshAnalysis.h>
 
 #undef static_assert
 
@@ -48,6 +49,9 @@ typedef RefCountedPtr<IScalableMeshTileTriangulatorManager> IScalableMeshTileTri
 
 struct IScalableMeshGroundPreviewer;
 typedef RefCountedPtr<IScalableMeshGroundPreviewer> IScalableMeshGroundPreviewerPtr;
+
+struct IScalableMeshProgress;
+typedef RefCountedPtr<IScalableMeshProgress>            IScalableMeshProgressPtr;
 
 namespace GeoCoords {
 struct GCS;
@@ -131,9 +135,13 @@ struct IScalableMesh abstract:  IRefCounted
         //Methods for the public interface.       
         virtual __int64          _GetPointCount() = 0;
 
+        virtual uint64_t          _GetNodeCount() = 0;
+
         virtual bool          _IsTerrain() = 0;
 
         virtual bool          _IsTextured() = 0;
+
+        virtual bool          _IsCesium3DTiles() = 0;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
 
@@ -167,6 +175,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual IScalableMeshEditPtr    _GetMeshEditInterface() const = 0;
 
+        virtual IScalableMeshAnalysisPtr    _GetMeshAnalysisInterface() = 0;
+
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DTMAnalysisType type) = 0;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) = 0;
@@ -192,7 +202,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
-        virtual int                                 _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk) const = 0;
+        virtual int                                 _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress = nullptr) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, const double& newGeometricErrorValue = 0.0) const = 0;
@@ -275,6 +285,10 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) =0;
 
+#ifdef VANCOUVER_API
+        virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) = 0;
+#endif
+
         virtual Transform              _GetReprojectionTransform() const = 0;
 
 
@@ -307,9 +321,13 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 
+        BENTLEY_SM_EXPORT uint64_t          GetNodeCount();
+
         BENTLEY_SM_EXPORT bool          IsTerrain();
 
         BENTLEY_SM_EXPORT bool          IsTextured();
+
+        BENTLEY_SM_EXPORT bool          IsCesium3DTiles();
 
         BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
 
@@ -340,6 +358,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
         BENTLEY_SM_EXPORT IScalableMeshEditPtr    GetMeshEditInterface() const;
+
+        BENTLEY_SM_EXPORT IScalableMeshAnalysisPtr    GetMeshAnalysisInterface();
 
         BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DTMAnalysisType type = DTMAnalysisType::Precise);
 
@@ -427,7 +447,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const;
+        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr) const;
 
         BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
 
@@ -446,6 +466,10 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
 
         BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
+
+#ifdef VANCOUVER_API
+        BENTLEY_SM_EXPORT BentleyStatus          Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel);
+#endif
 
         BENTLEY_SM_EXPORT Transform              GetReprojectionTransform() const;
 

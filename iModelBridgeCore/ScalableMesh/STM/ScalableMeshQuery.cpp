@@ -744,6 +744,11 @@ bool IScalableMeshMesh::IntersectRay(DPoint3d& pt, const DRay3d& ray) const
     return _IntersectRay(pt,ray);
     }
 
+bool IScalableMeshMesh::IntersectRay(bvector<DTMRayIntersection>& pts, const DRay3d& ray) const
+    {
+    return _IntersectRay(pts, ray);
+    }
+
 bool IScalableMeshMesh::FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d) const
     {
     return _FindTriangleForProjectedPoint(outTriangle, point, use2d);
@@ -1629,6 +1634,57 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
     return minParam < DBL_MAX;
     }
 
+bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DRay3d& ray) const
+    {
+    if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
+    double minParam = DBL_MAX;
+ 
+    for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
+        {
+        DPoint3d projectedPt;
+        DPoint3d bary;
+        double param;
+        DPoint3d pts[3];
+        pts[0] = m_points[m_faceIndexes[i] - 1];
+        pts[1] = m_points[m_faceIndexes[i + 1] - 1];
+        pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+        if (ray.direction.x == 0 && ray.direction.y == 0 && ray.direction.z == -1)
+            {
+            if (m_boxes.size() > 0)
+                if (!m_boxes[i / 3].IsContainedXY(ray.origin)) continue;
+                else
+                    if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
+            }
+
+        bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
+            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0;
+        //&& param < minParam;
+        if (intersectTri)
+            {
+            DTMRayIntersection rayInter;
+            rayInter.point = projectedPt;
+            rayInter.rayFraction = param;
+
+            DVec3d normal = DVec3d::FromNormalizedCrossProduct(pts[1]-pts[0], pts[2]-pts[0]);
+            rayInter.normal = normal;
+            rayInter.hasNormal = true;
+
+            hits.push_back(rayInter);
+            if (param<minParam)
+                minParam = param;
+            }
+        }
+
+    // Sort
+    DTMIntersectionCompare Comparator;
+    std::sort(hits.begin(), hits.end(), Comparator);
+    
+    // filter the intersections
+    // TODO : need to filter the intersection to remove same points, update normals for degenrate cases
+
+    return minParam < DBL_MAX;
+    }
+
 bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const
     {
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
@@ -2197,6 +2253,16 @@ size_t IScalableMeshMeshQueryParams::GetLevel()
     return _GetLevel();
     }
 
+double IScalableMeshMeshQueryParams::GetTargetPixelTolerance()
+{
+    return _GetTargetPixelTolerance();
+}
+
+void IScalableMeshMeshQueryParams::SetTargetPixelTolerance(double pixelTol)
+{
+    return _SetTargetPixelTolerance(pixelTol);
+}
+
 bool IScalableMeshMeshQueryParams::GetUseAllResolutions()
     {
     return _GetUseAllResolutions();
@@ -2556,9 +2622,20 @@ bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetChildrenNodes() const
     return _GetChildrenNodes();
     }
 
+IScalableMeshNodePtr  IScalableMeshNode::GetParentNode() const
+    {
+    return _GetParentNode();
+    }
+
+
 bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
     {
     return _EditChildrenNodes();
+    }
+
+IScalableMeshNodeEditPtr  IScalableMeshNodeEdit::EditParentNode()
+    {
+    return _EditParentNode();
     }
 
 DRange3d  IScalableMeshNode::GetNodeExtent() const

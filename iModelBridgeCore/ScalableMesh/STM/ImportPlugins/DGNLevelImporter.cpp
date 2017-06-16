@@ -404,9 +404,12 @@ struct DGNSourceRefVisitor// : SourceRefVisitor
 
 
     static bool                         IsActiveDgnFile        (const WChar*                          dgnFilePath)
-        {
-        DgnFileP activeDgnFile(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
-                            
+        {        
+        DgnFileP activeDgnFile = nullptr; 
+
+        if (ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef() != nullptr)
+            activeDgnFile = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP();
+                                    
         return 0 != activeDgnFile && 0 == wcscmp(dgnFilePath, activeDgnFile->GetFileName().c_str());
         }
 
@@ -874,9 +877,17 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
         {
-            SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+        DTMFeatureType linearType = DTMFeatureType::Breakline;
+
+        SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+                
+        if (sourceImportConf != nullptr)
+            { 
             ScalableMeshData data = sourceImportConf->GetReplacementSMData();
-        return new DGNLevelLinearExtractor(sourceBase, data.GetLinearFeatureType());
+            linearType = data.GetLinearFeatureType();
+            }
+        
+        return new DGNLevelLinearExtractor(sourceBase, linearType);
         }
     };
 

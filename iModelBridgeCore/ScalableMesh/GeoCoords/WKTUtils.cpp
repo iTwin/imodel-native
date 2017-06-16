@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:24:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -381,7 +381,7 @@ ISMStore::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, const WString& wk
 
     size_t charInd;    
 
-    for (charInd = wktStr.size() - 1; charInd >= 0; charInd--)
+    for (charInd = wktStr.size() - 1; charInd != size_t(-1); charInd--)
         {
         if (wktStr[charInd] == L']')
             {

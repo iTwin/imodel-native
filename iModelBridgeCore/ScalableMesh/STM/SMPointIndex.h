@@ -579,7 +579,7 @@ public:
     virtual bool Destroy();
 
 
-    virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly);
+    virtual void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly);
 
     uint32_t       GetNbObjects() const;
 
@@ -603,7 +603,7 @@ public:
         }
 
     void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
-    virtual void         SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup);
+    virtual bool         SaveGroupedNodeHeaders(SMNodeGroupPtr pi_pGroup, IScalableMeshProgressPtr progress);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -719,7 +719,14 @@ public:
 
         //NEEDS_WORK_SM : Try do create something cleaner when doing storage factoring 
         //(i.e. : having count only in header automatically modified when storedpoolvector is modified).
-        return m_nodeHeader.m_nodeCount;       
+        if (m_nodeHeader.m_nodeCount > 0)
+            return m_nodeHeader.m_nodeCount;       
+
+        // Maybe points are not loaded yet...
+        SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>*>(this);
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(UNCONSTTHIS->GetPointsPtr());
+        return ptsPtr->size();
+
         }
 
     void LockPts()
@@ -944,9 +951,9 @@ public:
                         //HASSERT(m_nodeHeader.m_balanced == m_pSubNodeNoSplit->m_nodeHeader.m_balanced);
 
                         //HASSERT(ExtentOp<EXTENT>::GetXMin(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent));
-                       // HASSERT(ExtentOp<EXTENT>::GetXMax(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent));
-                       // HASSERT(ExtentOp<EXTENT>::GetYMin(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent));
-                       // HASSERT(ExtentOp<EXTENT>::GetYMax(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
+                        //HASSERT(ExtentOp<EXTENT>::GetXMax(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent));
+                        //HASSERT(ExtentOp<EXTENT>::GetYMin(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent));
+                        //HASSERT(ExtentOp<EXTENT>::GetYMax(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
                         }
 
                     }
@@ -959,8 +966,8 @@ public:
                             //HASSERT(m_nodeHeader.m_balanced == m_apSubNodes[indexNodes]->m_nodeHeader.m_balanced);
                             //HASSERT(ExtentOp<EXTENT>::GetXMin(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent));
                             //HASSERT(ExtentOp<EXTENT>::GetXMax(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent));
-                           // HASSERT(ExtentOp<EXTENT>::GetYMin(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent));
-                           // HASSERT(ExtentOp<EXTENT>::GetYMax(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
+                            //HASSERT(ExtentOp<EXTENT>::GetYMin(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent));
+                            //HASSERT(ExtentOp<EXTENT>::GetYMax(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
                             }
 
                         }
@@ -1092,7 +1099,7 @@ protected:
     /**----------------------------------------------------------------------------
     Publishes node header and point data in Cesium 3D tile format.
     -----------------------------------------------------------------------------*/
-    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
+    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1264,8 +1271,8 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
     friend class SMMeshIndexNode<POINT, EXTENT>;
 public:
 
-    static map<void*, int> s_allNodes;
-    static int s_lastNodeIdx;
+    //static map<void*, int> s_allNodes;
+    //static int s_lastNodeIdx;
     // Primary methods
     /**----------------------------------------------------------------------------------------------
      Constructor for this class. The split threshold is used to indicate the maximum
@@ -1392,7 +1399,7 @@ public:
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
     StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
-    StatusInt           SavePointsToCloud(DataSourceManager *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
+    StatusInt           SavePointsToCloud(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
     StatusInt           SaveMasterHeaderToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
 
 #ifdef INDEX_DUMPING_ACTIVATED    
@@ -1547,6 +1554,14 @@ public:
     uint64_t              GetCount() const;
 
     /**----------------------------------------------------------------------------
+    Returns the total number of nodes in index
+
+    @return The number of objects
+
+    -----------------------------------------------------------------------------*/
+    uint64_t              GetNodeCount();
+
+    /**----------------------------------------------------------------------------
     Indicates if the index is empty
 
     @return true if the index is empty and false otherwise
@@ -1563,7 +1578,7 @@ public:
     -----------------------------------------------------------------------------*/
     size_t              GetSplitTreshold() const;
 
-    void LoadTree (size_t& nLoaded, int level, bool headersOnly);
+    void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly);
     void SetGenerating(bool isGenerating)
         {
         m_isGenerating = isGenerating;
@@ -1584,9 +1599,9 @@ public:
         return m_isCanceled;
         }
 
-    void               SetProgressCallback(IScalableMeshProgress* progress);
+    void               SetProgressCallback(IScalableMeshProgressPtr progress);
 
-    IScalableMeshProgress* m_progress = nullptr;
+    IScalableMeshProgressPtr m_progress = nullptr;
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
 
@@ -1613,6 +1628,9 @@ protected:
        
     ISMDataStoreTypePtr<EXTENT> m_dataStore;
     std::atomic<uint64_t>       m_nextNodeID;
+
+    uint64_t                    m_smID;
+    static uint64_t             m_nextSMID;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;
@@ -1642,6 +1660,7 @@ protected:
 
     //progress info
     bvector<size_t> m_countsOfNodesAtLevel;
+    size_t m_countsOfNodesTotal = 0;
 
     std::atomic<size_t> m_nMeshedNodes;
     std::atomic<size_t> m_nStitchedNodes;

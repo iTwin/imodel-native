@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 22:03:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -55,7 +55,7 @@ struct IScalableMeshNodeCreator::Impl : public IScalableMeshCreator::Impl
 
         void SetDataResolution(float resolution);
 
-        virtual StatusInt                           CreateScalableMesh(bool isSingleFile = true, bool restrictLevelForPropagation= false) override;
+        virtual StatusInt                           CreateScalableMesh(bool isSingleFile = true, bool restrictLevelForPropagation= false, bool doPartialUpdate = false) override;
 
     };
 

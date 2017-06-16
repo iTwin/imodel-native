@@ -7,9 +7,10 @@
 #include <assert.h>
 #include <sstream>
 
-DataSourceTransferScheduler & DataSourceAccount::getTransferScheduler(void)
+DataSourceTransferScheduler::Ptr  DataSourceAccount::getTransferScheduler(void)
     {
-    return transferScheduler;
+    dataSourceTransferScheduler = DataSourceTransferScheduler::Get();
+    return dataSourceTransferScheduler;
     }
 
 unsigned int DataSourceAccount::getDefaultNumTransferTasks(void)
@@ -39,7 +40,7 @@ bool DataSourceAccount::destroyAll(void)
 DataSourceStatus DataSourceAccount::destroyDataSources(void)
     {
                                                             // Shut down any potential theaded transfers before destroying DataSources
-    getTransferScheduler().shutDown();
+    dataSourceTransferScheduler = nullptr;
                                                             // Destroy DataSources associated with this Account
     return getDataSourceManager().destroyDataSources(this);
     }
@@ -139,7 +140,12 @@ const DataSourceAccount::AccountSSLCertificatePath DataSourceAccount::getAccount
     return accountSSLCertificatePath;
     }
 
-CLOUD_EXPORT void DataSourceAccount::setWSGTokenGetterCallback(const std::function<std::string(void)>& )
+void DataSourceAccount::setWSGTokenGetterCallback(const std::function<std::string(void)>& )
+    {
+    // Nothing to do
+    }
+
+void DataSourceAccount::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>&)
     {
     // Nothing to do
     }
@@ -164,7 +170,7 @@ DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
     std::thread::id threadID = std::this_thread::get_id();
     name << threadID;
 
-    dataSourceName = name.str();
+    dataSourceName = getAccountName() + L"_thread-" + name.str();
 
     return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, created);
     }
@@ -192,7 +198,7 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
     if ((buffer = dataSourceBuffered->transferBuffer()) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
-    getTransferScheduler().addBuffer(*buffer);
+    getTransferScheduler()->addBuffer(*buffer);
                                                             // Wait for all segments to complete
     //return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
     return DataSourceStatus();
@@ -212,7 +218,7 @@ DataSourceStatus DataSourceAccount::upload(DataSource &dataSource)
 
     buffer->setSegmented(false);
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
-    getTransferScheduler().addBuffer(*buffer);
+    getTransferScheduler()->addBuffer(*buffer);
                                                             // Wait for all segments to complete
     //return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
     return DataSourceStatus();
@@ -312,7 +318,7 @@ DataSourceStatus DataSourceAccount::downloadSegments(DataSource &dataSource, Dat
     buffer = dataSourceBuffered->getBuffer();
     buffer->setLocator(*dataSourceBuffered);
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
-    getTransferScheduler().addBuffer(*buffer);
+    getTransferScheduler()->addBuffer(*buffer);
                                                             // Wait for specified timeout
     return buffer->waitForSegments(dataSource.getTimeout());
     }
@@ -334,7 +340,7 @@ DataSourceStatus DataSourceAccount::download(DataSource &dataSource, DataSourceB
     buffer = dataSourceBuffered->getBuffer();
     buffer->setLocator(*dataSourceBuffered);
                                                             // Transfer the buffer to the upload scheduler
-    getTransferScheduler().addBuffer(*buffer);
+    getTransferScheduler()->addBuffer(*buffer);
                                                             // Wait for specified timeout
     DataSourceStatus status =  buffer->waitForSegments(dataSource.getTimeout());
     readSize = buffer->getReadSize();

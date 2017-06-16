@@ -984,7 +984,6 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
 
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
     {     
-    if (std::find(m_smOverviews.begin(), m_smOverviews.end(), sMesh) != m_smOverviews.end()) return;
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
     assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || node->GetNbPoints() == 0);
     
@@ -1019,7 +1018,7 @@ static double s_validExtentRatio = 0;
 
 void EstimateMeanNbPointsPerNode(int64_t& nbObjects, int64_t& nbNodes, HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node)
     {            						
-	if (node->GetNbObjects() > 0 )
+	if (!node->IsEmpty())
 		{
 		double nodeExtentArea = (ExtentOp<Extent3dType>::GetXMax(node->GetNodeExtent()) - ExtentOp<Extent3dType>::GetXMin(node->GetNodeExtent())) *
 							(ExtentOp<Extent3dType>::GetYMax(node->GetNodeExtent()) - ExtentOp<Extent3dType>::GetYMin(node->GetNodeExtent()));
@@ -1067,20 +1066,24 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
     _SetActiveClips(activeClips, scalableMeshPtr);
 
     if (rootNodePtr == nullptr) return;
-    PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
+	if (std::find(m_smOverviews.begin(), m_smOverviews.end(), scalableMeshPtr.get()) == m_smOverviews.end())
+		PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
 
-	int64_t nbObjects = 0;
-	int64_t nbNodes = 0;
-	EstimateMeanNbPointsPerNode(nbObjects, nbNodes, rootNodePtr);
+    if (rootNodePtr->GetMinResolution() == 0)
+        {
+        int64_t nbObjects = 0;
+        int64_t nbNodes = 0;
+        EstimateMeanNbPointsPerNode(nbObjects, nbNodes, rootNodePtr);
 
-	if (nbNodes > 0)
-		{
-		s_minScreenPixelCorrectionFactor = ((double)nbObjects / nbNodes) / rootNodePtr->GetSplitTreshold();
-		}
-	else
-		{
-		s_minScreenPixelCorrectionFactor = 1.0;
-		}
+        if (nbNodes > 0)
+            {
+            s_minScreenPixelCorrectionFactor = ((double)nbObjects / nbNodes) / rootNodePtr->GetSplitTreshold();
+            }
+        else
+            {
+            s_minScreenPixelCorrectionFactor = 1.0;
+            }
+        }
     }
 
 ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()

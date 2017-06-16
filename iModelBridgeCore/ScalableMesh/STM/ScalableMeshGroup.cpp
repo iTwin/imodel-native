@@ -60,6 +60,15 @@ __int64          ScalableMeshGroup::_GetPointCount()
     return ptCount;
     }
 
+uint64_t          ScalableMeshGroup::_GetNodeCount()
+    {
+    uint64_t nodeCount = 0;
+
+    for (auto& member : m_members)
+        nodeCount += member->GetNodeCount();
+    return nodeCount;
+    }
+
 bool          ScalableMeshGroup::_IsTerrain()
     {
     for (auto& member : m_members)
@@ -209,12 +218,18 @@ bool                               ScalableMeshGroup::_ModifyClip(const DPoint3d
             CurveVectorPtr curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
 
             CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *clipVecPtr);
+
+
+#ifndef VANCOUVER_API
             if (!intersection.IsNull())
                 {
                 bvector<bvector<DPoint3d>> loops;
                 if (intersection->CollectLinearGeometry(loops) && !loops.empty())
                     if (m_members[i]->ModifyClip(loops.front().data(), loops.front().size(), clipID)) return true;
                 }
+#else
+            assert(!"Reactivate on Vancouver");
+#endif
             }
         }
 
@@ -245,9 +260,13 @@ bool                               ScalableMeshGroup::_AddClip(const DPoint3d* p
             CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *clipVecPtr);
             if (!intersection.IsNull() && curveVectorPtr->PointInOnOutXY(pts[0]) != CurveVector::InOutClassification::INOUT_Out)
                 {
+#ifndef VANCOUVER_API
                 bvector<bvector<DPoint3d>> loops;
                 if(intersection->CollectLinearGeometry(loops) && !loops.empty())
                     if (m_members[i]->AddClip(loops.front().data(), loops.front().size(), clipID)) return true;
+#else
+                assert(!"Reactivate on Vancouver");
+#endif
                 }
             }
         }
@@ -294,9 +313,13 @@ bool                               ScalableMeshGroup::_AddClip(const DPoint3d* p
              CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *clipVecPtr);
              if (!intersection.IsNull() && curveVectorPtr->PointInOnOutXY(pts[0]) != CurveVector::InOutClassification::INOUT_Out)
                  {
+#ifndef VANCOUVER_API
                  bvector<bvector<DPoint3d>> loops;
                  if (intersection->CollectLinearGeometry(loops) && !loops.empty())
                      if (m_members[i]->AddClip(loops.front().data(), loops.front().size(), clipID, geom, type, isActive)) return true;
+#else
+                 assert(!"Reactivate on Vancouver");
+#endif
                  }
              }
          }
@@ -327,9 +350,13 @@ bool                               ScalableMeshGroup::_AddClip(const DPoint3d* p
              CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *clipVecPtr);
              if (!intersection.IsNull() && curveVectorPtr->PointInOnOutXY(pts[0]) != CurveVector::InOutClassification::INOUT_Out)
                  {
+#ifndef VANCOUVER_API
                  bvector<bvector<DPoint3d>> loops;
                  if (intersection->CollectLinearGeometry(loops) && !loops.empty())
                      if (m_members[i]->ModifyClip(loops.front().data(), loops.front().size(), clipID, geom, type, isActive)) return true;
+#else
+                 assert(!"Reactivate on Vancouver");
+#endif
                  }
              }
          }
@@ -474,6 +501,13 @@ BentleyStatus                      ScalableMeshGroup::_SetReprojection(GeoCoordi
     {
     return ERROR;
     }
+
+#ifdef VANCOUVER_API
+BentleyStatus                      ScalableMeshGroup::_Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel)
+    {
+    return ERROR;
+    }
+#endif
 
 Transform                          ScalableMeshGroup::_GetReprojectionTransform() const
     {
@@ -753,19 +787,37 @@ DTMStatusInt ScalableMeshGroupDTM::_CalculateSlopeArea(double& flatArea, double&
 
         BeFileName terrainPath = BeFileName(((ScalableMeshBase*)scalableMesh)->GetPath());
         BeFileName newName = BeFileName(fileNameP);
-
+        
+#ifndef VANCOUVER_API
         WString ext = newName.GetExtension();
-        newName = newName.GetDirectoryName();
+        newName = newName.GetDirectoryName();        
         newName.AppendToPath(BeFileName(BeFileName(fileNameP).GetFileNameWithoutExtension()));
+#else                     
+        WString ext = BeFileName::GetExtension(newName.c_str());
+        newName.Clear();
+        newName.AppendToPath(BeFileName::GetDirectoryName(newName.c_str()).c_str());
+        newName.AppendToPath(BeFileName::GetFileNameWithoutExtension(fileNameP).c_str());
+#endif        
 
         size_t position = terrainPath.FindI(L"terrain");
         if (position != std::string::npos)
             {
-            BeFileName subTerrainPath = BeFileName(terrainPath.substr(position));
+            BeFileName subTerrainPath = BeFileName(terrainPath.substr(position).c_str());
             newName.append(L"_");
+#ifndef VANCOUVER_API
             newName.AppendString(subTerrainPath.GetFileNameWithoutExtension().c_str());
+#else
+            newName.AppendString(BeFileName::GetFileNameWithoutExtension(subTerrainPath).c_str());
+#endif
             }
-        else newName.AppendString(terrainPath.GetFileNameWithoutExtension().c_str());
+        else 
+            {
+#ifndef VANCOUVER_API
+            newName.AppendString(terrainPath.GetFileNameWithoutExtension().c_str());
+#else
+            newName.AppendString(BeFileName::GetFileNameWithoutExtension(terrainPath).c_str());
+#endif
+            }
         newName.AppendExtension(ext.c_str());
 
         scalableMesh->GetDTMInterface(m_type)->ExportToGeopakTinFile(newName.c_str(), transformation);
@@ -908,6 +960,11 @@ bool ScalableMeshGroupDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMa
         }
 
     return DTM_ERROR;
+    }
+
+bool ScalableMeshGroupDTM::_IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) 
+    {
+    return false;
     }
 
 bool ScalableMeshGroupDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)

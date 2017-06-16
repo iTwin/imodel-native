@@ -7,6 +7,8 @@
 //:>+--------------------------------------------------------------------------------------
 
 #include "ScalableMeshQuadTreeQueries.h"
+#include "ScalableMeshProgress.h"
+
 using namespace ISMStore;
 
 //=======================================================================================
@@ -5978,24 +5980,35 @@ bool SMPointIndexNode<POINT, EXTENT>::IsEmpty() const
     if (GetNbPoints() > 0)
         return false;
 
-    if (HasRealChildren())
-        {
-        if (m_pSubNodeNoSplit != NULL)
-            {
-            return m_pSubNodeNoSplit->IsEmpty();
-            }
-        else
-            {
-            for (size_t i = 0; i < GetNumberOfSubNodesOnSplit(); ++i)
-                {
-                if (!m_apSubNodes[i]->IsEmpty())
-                    return false;
-                }
-            }
-        }
-    HINVARIANTS;
+    if (!(m_nodeHeader.m_contentExtent.IsNull() || m_nodeHeader.m_contentExtent.IsEmpty()))
+        return false;
 
-    return true;
+    SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>*>(this);
+    for (auto point : *UNCONSTTHIS->GetPointsPtr())
+        {
+        m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(m_nodeHeader.m_contentExtent, SpatialOp<POINT, POINT, EXTENT>::GetExtent(point));
+        }
+
+    return UNCONSTTHIS->GetPointsPtr()->size() > 0;
+    
+    //if (HasRealChildren())
+    //    {
+    //    if (m_pSubNodeNoSplit != NULL)
+    //        {
+    //        return m_pSubNodeNoSplit->IsEmpty();
+    //        }
+    //    else
+    //        {
+    //        for (size_t i = 0; i < GetNumberOfSubNodesOnSplit(); ++i)
+    //            {
+    //            if (!m_apSubNodes[i]->IsEmpty())
+    //                return false;
+    //            }
+    //        }
+    //    }
+    //HINVARIANTS;
+    //
+    //return true;
     }
 
 
@@ -6592,7 +6605,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
     return digDown;
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
 {
     HINVARIANTS;
 
@@ -6612,22 +6625,26 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadTr
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadTreeNode(nLoaded, level, headersOnly);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadIndexNodes(nLoaded, level, headersOnly);
             }
         else
             {
                 for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
                     {
-                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadTreeNode(nLoaded, level, headersOnly);
+                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadIndexNodes(nLoaded, level, headersOnly);
                     }
 
             }
         }
 }
 
-template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::LoadTree(size_t& nLoaded, int level, bool headersOnly)
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
 {
-    if(m_pRootNode != NULL) m_pRootNode->LoadTreeNode(nLoaded, level, headersOnly);
+    if (m_pRootNode != NULL)
+        {
+        m_pRootNode->LoadIndexNodes(nLoaded, level, headersOnly);
+        m_countsOfNodesTotal = nLoaded;
+        }
 }
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode)
@@ -6748,6 +6765,16 @@ template<class POINT, class EXTENT> uint32_t SMPointIndexNode<POINT, EXTENT>::Ge
         uint32_t NbObjects;
 
         NbObjects = (uint32_t)m_nodeHeader.m_nodeCount;
+
+        if (NbObjects == 0 && !IsEmpty())
+            {
+            SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>*>(this);
+            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(UNCONSTTHIS->GetPointsPtr());
+
+            NbObjects = (uint32_t)pointsPtr->size();
+
+            }
+        //std::cout << "node (" << m_nodeHeader.m_id.m_integerID << ") --> count (" << NbObjects << ")" << std::endl;
 
         //Compute the
         if (((m_filter == NULL) ||(m_filter->IsProgressiveFilter() == true)) && (GetParentNodePtr() != 0))
@@ -6883,8 +6910,10 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup::Ptr pi_pGroup)
+template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroupPtr pi_pGroup, IScalableMeshProgressPtr progress)
     {
+    if (progress != nullptr && progress->IsCanceled()) return false;
+ 
     if (!IsLoaded())
         Load();
 
@@ -6893,39 +6922,42 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
     if (!m_nodeHeader.m_IsLeaf)
         {
         pi_pGroup->IncreaseDepth();
-        SMNodeGroup::Ptr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup(this->m_nodeHeader, pi_pGroup);
+        SMNodeGroupPtr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup(this->m_nodeHeader, pi_pGroup);
 
-        static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
-            {
-            child->SetParentNodePtr(0);
-
-            s_createdNodeMutex.lock();
-
-            CreatedNodeMap::iterator nodeIter(child->m_createdNodeMap->find(child->GetBlockID().m_integerID));
-
-            if (nodeIter != child->m_createdNodeMap->end())
-                {
-                child->m_createdNodeMap->erase(nodeIter);
-                }
-
-            s_createdNodeMutex.unlock();
-            child = NULL;
-            };
+        //static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
+        //    {
+        //    child->SetParentNodePtr(0);
+        //
+        //    s_createdNodeMutex.lock();
+        //
+        //    CreatedNodeMap::iterator nodeIter(child->m_createdNodeMap->find(child->GetBlockID().m_integerID));
+        //
+        //    if (nodeIter != child->m_createdNodeMap->end())
+        //        {
+        //        child->m_createdNodeMap->erase(nodeIter);
+        //        }
+        //
+        //    s_createdNodeMutex.unlock();
+        //    child = NULL;
+        //    };
 
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup);
-            disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
-            this->m_pSubNodeNoSplit = nullptr;
+            if (!static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, progress)) return false;
+            //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
+            //this->m_pSubNodeNoSplit = nullptr;
+            // Ensure coherent id values
+            ((this->m_nodeHeader).m_apSubNodeID)[0] = (this->m_nodeHeader).m_SubNodeNoSplitID;
+            pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, 0, pi_pGroup, nextGroup);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup);
-                disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
-                this->m_apSubNodes[indexNode] = nullptr;
-                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, pi_pGroup, nextGroup);
+                if (!static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, progress)) return false;
+                //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
+                //this->m_apSubNodes[indexNode] = nullptr;
+                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, indexNode, pi_pGroup, nextGroup);
 
                 }
             }
@@ -6933,6 +6965,14 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
         pi_pGroup->DecreaseDepth();
         pi_pGroup->GetStrategy<EXTENT>()->ApplyPostProcess(this->m_nodeHeader, pi_pGroup);
         }
+
+    // Report progress
+    if (progress != nullptr)
+        {
+        static std::atomic<uint64_t> currentIter = 0;
+        static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(++currentIter);
+        }
+    return true;
     }
 
 //=======================================================================================
@@ -7380,8 +7420,6 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
     HINVARIANTS;
     if (m_SMIndex->m_progress->IsCanceled()) return;
 
-    size_t nOfNodes = std::accumulate(m_SMIndex->m_countsOfNodesAtLevel.begin(), m_SMIndex->m_countsOfNodesAtLevel.end(), (size_t) 0);
-
     if (pi_levelToFilter == -1 || (int)this->m_nodeHeader.m_level <= pi_levelToFilter)
         {
         // If there are sub-nodes and these need filtering then first do the subnodes
@@ -7411,7 +7449,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                         if (s_useThreadsInFiltering)
                             {
                             m_SMIndex->m_nFilteredNodes++;
-                            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+                            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / m_SMIndex->m_countsOfNodesTotal * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / m_SMIndex->m_countsOfNodesTotal * 1 / 3;
 
                             if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                             RunOnNextAvailableThread(std::bind([] (SMPointIndexNode<POINT, EXTENT>* node, vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>>& subNodes, size_t threadId) ->void
@@ -7426,7 +7464,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                         else
                             {
                             m_SMIndex->m_nFilteredNodes++;
-                            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes / nOfNodes) * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes / nOfNodes) * 1 / 3;
+                            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes / m_SMIndex->m_countsOfNodesTotal) * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes / m_SMIndex->m_countsOfNodesTotal) * 1 / 3;
 
                             if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                             m_filter->Filter(this, pSubNodes, 1);
@@ -7466,7 +7504,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                     if (s_useThreadsInFiltering)
                         {
                         m_SMIndex->m_nFilteredNodes++;
-                        float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+                        float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / m_SMIndex->m_countsOfNodesTotal * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / m_SMIndex->m_countsOfNodesTotal * 1 / 3;
 
                         if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                         if (!m_SMIndex->m_progress->IsCanceled())
@@ -7482,7 +7520,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                     else
                         {
                         m_SMIndex->m_nFilteredNodes++;
-                        float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+                        float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / m_SMIndex->m_countsOfNodesTotal * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / m_SMIndex->m_countsOfNodesTotal * 1 / 3;
 
                         if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                         m_filter->Filter(this, subNodes, m_nodeHeader.m_numberOfSubNodesOnSplit);
@@ -7525,7 +7563,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
         else
             {
             m_SMIndex->m_nFilteredNodes++;
-            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / nOfNodes * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / nOfNodes * 1 / 3;
+            float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / m_SMIndex->m_countsOfNodesTotal * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / m_SMIndex->m_countsOfNodesTotal * 1 / 3;
 
             if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
             if (m_filter->FilterLeaf (this))
@@ -7699,6 +7737,8 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
 //=====================================================================================================================
 //=====================================================================================================================
 
+template <class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::m_nextSMID = 0;
+
 /**----------------------------------------------------------------------------------------------
  Constructor for this class. The split threshold is used to indicate the maximum
  amount of spatial objects to be indexed by an index node after which the node is
@@ -7716,7 +7756,8 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
 -------------------------------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(ISMDataStoreTypePtr<EXTENT>& dataStore, size_t pi_SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter,bool balanced, bool propagatesDataDown, bool shouldCreateRoot)
   : m_dataStore(dataStore),
-    m_filter (filter)
+    m_filter (filter),
+    m_smID(m_nextSMID++)
     {
     m_isCanceled = false;
     m_nextNodeID = 0;
@@ -7740,6 +7781,9 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     // If a store is provided ...
     if (m_dataStore != NULL)
         {
+        // Register new index to the store
+        m_dataStore->Register(m_smID);
+
         // Try to load master header
         if (0 != m_dataStore->LoadMasterHeader(&m_indexHeader, sizeof(m_indexHeader)))
             {
@@ -7782,6 +7826,8 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::~SMPointIndex()
 
     m_pRootNode = NULL;
 
+    m_dataStore->Unregister(m_smID);
+
     // Close store
     m_dataStore->Close();
 
@@ -7812,7 +7858,7 @@ This method saves the points for streaming.
 template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode, bool pi_pCompress)
     {
     BeFileName path(pi_pOutputDirPath.c_str());
-    if (pi_pGroupMode != SMNodeGroup::VIRTUAL)
+    if (pi_pGroupMode != SMGroupGlobalParameters::VIRTUAL)
         {
         BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
         if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
@@ -7827,13 +7873,10 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-    SMNodeGroup::Ptr group(
-#ifndef VANCOUVER_API
-        new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode))
-#else
-        SMNodeGroup::Create(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode))
-#endif
-    );
+#ifdef VANCOUVER_API
+    SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType(pi_pGroupMode), dataSourceAccount);
+    SMGroupCache::Ptr groupCache = nullptr;
+    SMNodeGroupPtr group = SMNodeGroup::Create(groupParameters, groupCache, pi_pOutputDirPath, 0, nullptr);
 
     group->SetMaxGroupDepth(this->GetDepth() % s_max_group_depth + 1);
 
@@ -7841,7 +7884,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
 
     strategy->SetOldMasterHeader(oldMasterHeader);
 
-    GetRootNode()->SaveGroupedNodeHeaders(group);
+    GetRootNode()->SaveGroupedNodeHeaders(group, nullptr /*no progress*/);
 
     // Handle all open groups 
     strategy->SaveAllOpenGroups();
@@ -7852,7 +7895,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     masterHeaderPath.PopDir();
 
     strategy->SaveMasterHeader(masterHeaderPath);
-
+#else
+	assert(!"Not yet on dgndb, missing SMNodeGroup::Create overload");
+#endif
     return SUCCESS;
     }
 /**----------------------------------------------------------------------------
@@ -7860,7 +7905,7 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceManager *dataSourceManager, const WString& pi_pOutputDirPath, bool pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(const WString& pi_pOutputDirPath, bool pi_pCompress)
     {
     BeFileName path(pi_pOutputDirPath.c_str());
     BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
@@ -7871,9 +7916,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
 
     ISMDataStoreTypePtr<Extent3dType> dataStore(
  #ifndef VANCOUVER_API
-    new SMStreamingStore<Extent3dType>(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
+    new SMStreamingStore<Extent3dType>(pi_pOutputDirPath, pi_pCompress)
    #else
-   SMStreamingStore<Extent3dType>::Create(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
+   SMStreamingStore<Extent3dType>::Create(pi_pOutputDirPath, pi_pCompress)
    #endif
     );                    
 
@@ -8154,11 +8199,11 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::GatherCoun
     for (size_t level = 0; level < GetDepth()+1; ++level)
         {
         vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode> nodes;
-        ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT> query(GetIndexExtent(), level, true, true);
+        ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT> query(GetIndexExtent(), level, true/*alwaysVisible*/, false/*includeUnbalancedLeafs*/, true/*ignoreIndexes*/);
         Query(&query, nodes);
         m_countsOfNodesAtLevel[level] = nodes.size();
         }
-
+    m_countsOfNodesTotal = std::accumulate(m_countsOfNodesAtLevel.begin(), m_countsOfNodesAtLevel.end(), (size_t)0);;
     m_nMeshedNodes = 0;
     m_nFilteredNodes = 0;
     m_nStitchedNodes = 0;
@@ -8945,6 +8990,20 @@ template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetCou
     return m_pRootNode->GetCount();
     }
 
+//=======================================================================================
+// @bsimethod                                                   Richard.Bois 06/2017
+//=======================================================================================
+template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNodeCount()
+    {
+    HINVARIANTS;
+    
+    // NEEDS_WORK_SM : Would querying the node count directly from sqlite be more efficient?
+    if (m_countsOfNodesTotal == 0)
+        GatherCounts();
+
+    return m_countsOfNodesTotal;
+    }
+
 /**----------------------------------------------------------------------------
 PROTECTED
 Indicates if the index has a limiting outter extent (maximum extent).
@@ -9304,7 +9363,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::RemovePoin
     }
 
 
-template<class POINT, class EXTENT> void  SMPointIndex<POINT, EXTENT>::SetProgressCallback(IScalableMeshProgress* progress)
+template<class POINT, class EXTENT> void  SMPointIndex<POINT, EXTENT>::SetProgressCallback(IScalableMeshProgressPtr progress)
     {
     m_progress = progress;
     }

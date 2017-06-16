@@ -5,7 +5,6 @@
 #include <curl/curl.h>
 #include <openssl/crypto.h>
 #include <locale>
-#include <codecvt>
 #include <Bentley/BeFileName.h>
 #include "include/DataSourceAccountCURL.h"
 #include "include/DataSourceCURL.h"
@@ -49,7 +48,7 @@ DataSourceAccountCURL::DataSourceAccountCURL(const ServiceName & name, const Acc
     setDefaultSegmentSize(0);
 
                                                             // Multi-threaded segmented transfers used for Azure, so initialize it
-    getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
+    getTransferScheduler()->initializeTransferTasks(getDefaultNumTransferTasks());
 
     curl_global_init(CURL_GLOBAL_ALL);
 
@@ -148,13 +147,12 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         {
         url = L"file:///" + url;
         }
-
     struct CURLHandle::CURLDataMemoryBuffer buffer;
 
     buffer.data = dest;
     buffer.size = 0;
 
-    std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
+    Utf8String utf8URL (url.c_str());
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
 
@@ -179,8 +177,8 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
 #ifndef NDEBUG
     if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
         {
-        assert(!"HTTP error, download failed");
-        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
+        assert(!"HTTP error, download failed or resource not found");
+        return DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
     if (!response_header.data.empty()) response_header.data.clear();
 #endif
@@ -214,10 +212,10 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
     buffer.size = size;
     struct CURLHandle::CURLDataResponseHeader response_header;
 
-    std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
+    Utf8String utf8URL = Utf8String(url.c_str());
     std::string contentLength = "Content-Length " + std::to_string(size);
     std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
-    contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
+    contentDisposition += Utf8String(filename.c_str()).c_str();
     contentDisposition += "\"";
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();

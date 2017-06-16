@@ -7,14 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include <TilePublisher/MeshTile.h>
-#include <DgnPlatform/RenderMaterial.h>
+//#include <DgnPlatform/RenderMaterial.h>
 //#include "DgnPlatformInternal.h"
 //#include <folly/BeFolly.h>
 //#include <folly/futures/Future.h>
 #include <Geom/XYZRangeTree.h>
 //#include <DgnPlatform/DgnBRep/OCBRep.h>
 
-#include <png/png.h>
+//#include <png/png.h>
 #include <BeJpeg/BeJpeg.h>
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
@@ -25,13 +25,13 @@ BEGIN_UNNAMED_NAMESPACE
 //static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 //static UnconditionalTileGenerationFilter s_defaultFilter;
 
-struct RangeTreeNode
-{
-    size_t          m_facetCount;
-    DgnElementId    m_elementId;
-
-    RangeTreeNode(DgnElementId elemId, size_t facetCount) : m_facetCount(facetCount), m_elementId(elemId) { }
-};
+//struct RangeTreeNode
+//{
+//    size_t          m_facetCount;
+//    //DgnElementId    m_elementId;
+//
+//    RangeTreeNode(DgnElementId elemId, size_t facetCount) : m_facetCount(facetCount), m_elementId(elemId) { }
+//};
 
 static const double s_minRangeBoxSize = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const size_t s_maxGeometryIdCount = 0xffff; // Max batch table ID - 16-bit unsigned integers
@@ -129,17 +129,17 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //    return m_geometrySources.end() != iter ? iter->second.get() : nullptr;
 //    }
 
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   09/16
-//=======================================================================================
-struct FreeLeafDataTreeHandler : XYZRangeTreeHandler
-{
-    virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
-        {
-        delete reinterpret_cast<RangeTreeNode*>(pLeaf->GetData());
-        return true;
-        }
-};
+////=======================================================================================
+//// @bsistruct                                                   Paul.Connelly   09/16
+////=======================================================================================
+//struct FreeLeafDataTreeHandler : XYZRangeTreeHandler
+//{
+//    virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
+//        {
+//        delete reinterpret_cast<RangeTreeNode*>(pLeaf->GetData());
+//        return true;
+//        }
+//};
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -503,7 +503,10 @@ void Image::ReadImageData(ImageSourceCR source, Format targetFormat, Image::Bott
     if (ImageSource::Format::Jpeg == source.GetFormat())
         ReadJpeg(input.GetData(), input.GetSize(), targetFormat, bottomUp);
     else
-        ReadPng(input.GetData(), input.GetSize(), targetFormat);
+        {
+        assert(false); // not implemented
+        //ReadPng(input.GetData(), input.GetSize(), targetFormat);
+        }
     }
 
 
@@ -530,18 +533,18 @@ void Image::ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetForma
         Invalidate();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Image::ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat)
-    {
-    assert(false); // no png for the moment
-    //m_format = targetFormat;
-    //
-    //PngData pngData(srcData, srcLen);
-    //if (SUCCESS != pngData.DoRead(*this))
-        Invalidate();
-    }
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Paul.Connelly   05/16
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//void Image::ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat)
+//    {
+//    assert(false); // no png for the moment
+//    //m_format = targetFormat;
+//    //
+//    //PngData pngData(srcData, srcLen);
+//    //if (SUCCESS != pngData.DoRead(*this))
+//        Invalidate();
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
@@ -570,11 +573,19 @@ ImageSource::ImageSource(ImageCR image, Format format, int quality, Image::Botto
     if (m_format == Format::Jpeg)
         {
         BeJpegCompressor writer;
+#ifndef VANCOUVER_API
         bvector<Byte> stream;
         if (SUCCESS == writer.Compress(stream, image.GetByteStream().GetData(), image.GetWidth(), image.GetHeight(),
                                        image.GetFormat() == Image::Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA,
                                        quality/*,
                                        Image::BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No*/))
+#else
+        ByteStream stream;
+        if (SUCCESS == writer.Compress(stream, image.GetByteStream().GetData(), image.GetWidth(), image.GetHeight(),
+            image.GetFormat() == Image::Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA,
+            quality/*,
+                   Image::BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No*/))
+#endif
             {
             m_stream.Resize((uint32_t)stream.size());
             memcpy(m_stream.data(), stream.data(), stream.size());
@@ -738,6 +749,31 @@ bool TileMesh::HasNonPlanarNormals() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMesh::ReprojectPoints(GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS)
+    {
+    if (sourceGCS == nullptr || sourceGCS == destinationGCS) return;
+
+    // Otherwise, compute a reprojection
+    for (auto& p : m_points)
+        {
+        GeoPoint inLatLong, outLatLong;
+        if (sourceGCS->LatLongFromCartesian(inLatLong, p) != SUCCESS)
+            return;
+        if (sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *destinationGCS) != SUCCESS)
+            return;
+        if (destinationGCS->XYZFromLatLong(p, outLatLong) != SUCCESS)
+            return;
+        }
+    }
+
+void TileMesh::ApplyTransform(const Transform & transform)
+    {
+    for (auto& p : m_points) transform.Multiply(p);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param/*, BeInt64Id entityId*/)
@@ -845,8 +881,8 @@ TileMeshBuilder::TriangleKey::TriangleKey(TriangleCR triangle)
             m_sortedIndices[2] = triangle.m_indices[0];
             }
         }
-    BeAssert (m_sortedIndices[0] < m_sortedIndices[1]);
-    BeAssert (m_sortedIndices[1] < m_sortedIndices[2]);
+    //BeAssert (m_sortedIndices[0] < m_sortedIndices[1]);
+    //BeAssert (m_sortedIndices[1] < m_sortedIndices[2]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -866,8 +902,8 @@ bool TileMeshBuilder::TriangleKey::operator<(TriangleKey const& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileMeshBuilder::AddTriangle(TriangleCR triangle)
     {
-    if (triangle.IsDegenerate())
-        return;
+    //if (triangle.IsDegenerate())
+    //    return;
 
     TriangleKey key(triangle);
 
@@ -950,7 +986,11 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id ent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifndef VANCOUVER_API
 void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles)
+#else
+void TileMeshBuilder::AddPolyface(PolyfaceQueryCR polyface, bool twoSidedTriangles)
+#endif
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
         AddTriangle(*visitor, /*materialId, dgnDb, entityId,*/ false, twoSidedTriangles);
@@ -962,9 +1002,10 @@ void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId mater
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     {
-    auto found = m_unclusteredVertexMap.find(vertex);
-    if (m_unclusteredVertexMap.end() != found)
-        return found->second;
+    // Consider all points, otherwise strange artifacts appear for textured meshes...
+    //auto found = m_unclusteredVertexMap.find(vertex);
+    //if (m_unclusteredVertexMap.end() != found)
+    //    return found->second;
 
     auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam()/*, vertex.m_entityId*/);
     m_unclusteredVertexMap[vertex] = index;
@@ -1151,11 +1192,14 @@ TileNodePList TileNode::GetTiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifndef VANCOUVER_API
 TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ bool isCurved, DgnDbR db)
     : /*m_params(params),*/ m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved)/*, m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())*/
-    {
-    //
-    }
+#else
+TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, bool isCurved)
+    : m_transform(tf), m_tileRange(range), m_isCurved(isCurved)
+#endif
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -1474,39 +1518,39 @@ void TileGeometry::SetFacetCount(size_t numFacets)
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
-struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
-{
-    DRange3d        m_range;
-    size_t          m_facetCount = 0;
-    size_t          m_maxFacetCount;
-
-    ComputeFacetCountTreeHandler(DRange3dCR range, size_t maxFacetCount) : m_range(range), m_maxFacetCount(maxFacetCount) { }
-
-    virtual bool ShouldRecurseIntoSubtree(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior) override
-        {
-        return !Exceeded() && pInterior->Range().IntersectsWith(m_range);
-        }
-    virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
-        {
-        if (Exceeded())
-            return false;
-
-        DRange3d intersection;
-        intersection.IntersectionOf(pLeaf->Range(), m_range);
-        if (!intersection.IsNull())
-            {
-            auto const& node = *reinterpret_cast<RangeTreeNode const*>(pLeaf->GetData());
-            double rangeVolume = pLeaf->Range().Volume();
-            BeAssert(0.0 != rangeVolume);   // or we would not have an intersection...
-            double facetCountDensity = static_cast<double>(node.m_facetCount) / rangeVolume;
-            m_facetCount += static_cast<size_t>(facetCountDensity * intersection.Volume());
-            }
-
-        return true;
-        }
-
-    bool Exceeded() const { return m_facetCount >= m_maxFacetCount; }
-};
+//struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
+//{
+//    DRange3d        m_range;
+//    size_t          m_facetCount = 0;
+//    size_t          m_maxFacetCount;
+//
+//    ComputeFacetCountTreeHandler(DRange3dCR range, size_t maxFacetCount) : m_range(range), m_maxFacetCount(maxFacetCount) { }
+//
+//    virtual bool ShouldRecurseIntoSubtree(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior) override
+//        {
+//        return !Exceeded() && pInterior->Range().IntersectsWith(m_range);
+//        }
+//    virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
+//        {
+//        if (Exceeded())
+//            return false;
+//
+//        DRange3d intersection;
+//        intersection.IntersectionOf(pLeaf->Range(), m_range);
+//        if (!intersection.IsNull())
+//            {
+//            auto const& node = *reinterpret_cast<RangeTreeNode const*>(pLeaf->GetData());
+//            double rangeVolume = pLeaf->Range().Volume();
+//            BeAssert(0.0 != rangeVolume);   // or we would not have an intersection...
+//            double facetCountDensity = static_cast<double>(node.m_facetCount) / rangeVolume;
+//            m_facetCount += static_cast<size_t>(facetCountDensity * intersection.Volume());
+//            }
+//
+//        return true;
+//        }
+//
+//    bool Exceeded() const { return m_facetCount >= m_maxFacetCount; }
+//};
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                                    Ray.Bentley     10/16

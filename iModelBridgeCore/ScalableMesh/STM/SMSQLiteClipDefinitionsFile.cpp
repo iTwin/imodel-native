@@ -2,15 +2,6 @@
 #include "SMSQLiteClipDefinitionsFile.h"
 
 
-#ifdef VANCOUVER_API
-#define WSTRING_FROM_CSTR(cstr) WString(cstr)
-#define MAKE_COPY_NO Statement::MAKE_COPY_No
-#define MAKE_COPY_YES Statement::MAKE_COPY_Yes
-#define GET_VALUE_STR(stmt, id) stmt->GetValueUtf8(id)
-#define BIND_VALUE_STR(stmt, id, utf8str, copyval) stmt->BindUtf8String(id, utf8str, copyval)
-#define READONLY Db::OpenMode::OPEN_Readonly
-#define READWRITE Db::OpenMode::OPEN_ReadWrite
-#else
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
 #define MAKE_COPY_NO Statement::MakeCopy::No
 #define MAKE_COPY_YES Statement::MakeCopy::Yes
@@ -18,7 +9,6 @@
 #define BIND_VALUE_STR(stmt, id, utf8str, copyval) stmt->BindText(id, utf8str, copyval)
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
-#endif
 
 const SchemaVersion SMSQLiteClipDefinitionsFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 4);
 

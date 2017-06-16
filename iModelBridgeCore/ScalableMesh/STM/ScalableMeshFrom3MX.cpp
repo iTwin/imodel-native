@@ -11,9 +11,12 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
-
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
 
 #include <stack>
+#include <map>
 
 using namespace std;
 
@@ -86,14 +89,6 @@ protected:
 };
 
 
-// Default progress handler which does nothing
-class ScalableMeshFrom3MXDefaultProgressHandler : public IScalableMeshFrom3MXProgressHandler
-{
-public:
-    virtual bool _Progress(float progress) { return true; }
-};
-
-
 // Class handling conversion of a single 3MXB file. It implements the BaseMeshNode interface used by ThreeMXReader
 #ifndef VANCOUVER_API
 class Convert3MXBFile : public ThreeMxSchema::BaseMeshNode
@@ -108,6 +103,7 @@ public:
         IScalableMeshNodeEditPtr scNode;    // Corresponding Scalable Mesh node
         DRange3d nodeExtent;                // Extent as read in the 3MX file and modified with reprojection
         DRange3d geomExtent;                // Actual geometric extent of this node, in the output GCS. Maybe a null range.
+        bool isProxy;                       // true if the node is just a proxy that must always be replaced by children nodes
         float resolution;
         bvector<DPoint3d> vertices;
         bvector<int32_t> ptsIndices;
@@ -171,6 +167,7 @@ private:
         // Deduce the resolution of the node from the sphere radius and the threshold
         // If the threshold is 0 (children must always be displayed), use the diameter of the bounding sphere instead
         node.resolution = (nodeInfo.m_dMax > 0) ? static_cast<float>(nodeInfo.m_radius * 2. / nodeInfo.m_dMax) : static_cast<float>(nodeInfo.m_radius * 2.);
+        node.isProxy = (nodeInfo.m_dMax == 0);
         m_nodeArray.push_back(std::move(node));
     }
 
@@ -216,16 +213,17 @@ private:
             width = FreeImage_GetWidth(bitmap);
             height = FreeImage_GetHeight(bitmap);
 
-            byte const*     inP = FreeImage_GetBits(bitmap);
-            size_t          bufferSize = 3 * width * height;
-
+            size_t bufferSize = 3 * width * height;
             rgb.resize(bufferSize);
-            for (byte* outP = &rgb.front(), *endP = outP + bufferSize; outP < endP; outP += 3, inP += 4)
+            byte* outP = &rgb.front();
+            for (unsigned int y = 0; y < height; y++) for (unsigned int x = 0; x < width; x++)
             {
-                outP[0] = inP[2];
-                outP[1] = inP[1];
-                outP[2] = inP[0];
-
+                RGBQUAD rgba;
+                FreeImage_GetPixelColor(bitmap, x, height-1-y, &rgba);
+                outP[0] = rgba.rgbRed;
+                outP[1] = rgba.rgbGreen;
+                outP[2] = rgba.rgbBlue;
+                outP += 3;
             }
 
             FreeImage_Unload(bitmap);
@@ -281,10 +279,18 @@ private:
         }
         Convert3MXBNode& node = m_nodeArray[nodeId];
 
+        // Skip the geometries corresponding to proxies
+        if (node.isProxy)
+        {
+            node.geomExtent = DRange3d::NullRange();
+            node.textureID = -1;
+            return;
+        }
+
         // If there is already a geometry, return with an error. Scalable Mesh does not support several geometries per node
         if (!node.vertices.empty())
         {
-            m_convertStatus = SMFrom3MXStatus::UnsupportedCase;
+            m_convertStatus = SMFrom3MXStatus::SeveralGeometriesError;
             return;
         }
 
@@ -345,6 +351,27 @@ private:
 
     virtual void _SetDirectory(BeFileNameCR dir) {}
 
+    // Enforce that node extent of a node and its ancestors contain a certain range
+    SMFrom3MXStatus fixNodeExtents(IScalableMeshNodeEditPtr scNode, DRange3d& range)
+    {
+        // If the node extent does not contain the range
+        DRange3d nodeExtent = scNode->GetNodeExtent();
+        if (!range.IsContained(nodeExtent))
+        {
+            // Modify the node extent
+            nodeExtent.Extend(range);
+            if (scNode->SetNodeExtent(nodeExtent) != SUCCESS)
+                return SMFrom3MXStatus::ScalableMeshSDKError;
+
+            // Check the same for the parent if not root
+            IScalableMeshNodeEditPtr scParentNode = scNode->EditParentNode();
+            if (scParentNode != nullptr)
+                return fixNodeExtents(scParentNode, range);
+        }
+
+        return SMFrom3MXStatus::Success;
+    }
+
 public:
     // Constructor
     Convert3MXBFile(IScalableMeshNodeCreatorPtr scMesh, DPoint3dCR pOrigin, IScalableMeshFrom3MXGCSHandler& gcsHandler) : m_scMesh(scMesh), m_pOrigin(pOrigin), m_gcsHandler(gcsHandler), m_convertStatus(SMFrom3MXStatus::Success) {}
@@ -382,8 +409,25 @@ public:
         // Create the different nodes
         for (Convert3MXBNode& node : m_nodeArray)
         {
-            ScalableMesh::IScalableMeshNodeEditPtr scNode = (scParentNode == nullptr) ? m_scMesh->AddNode(status) : m_scMesh->AddNode(scParentNode, node.nodeExtent, status);
-            if (scParentNode == nullptr) scRootNode = scNode;
+            // Fix the content extent of the parent if necessary, before adding the child
+            if (scParentNode != nullptr)
+            {
+                SMFrom3MXStatus tmpStatus = fixNodeExtents(scParentNode, node.nodeExtent);
+                if (tmpStatus != SMFrom3MXStatus::Success)
+                    return tmpStatus;
+            }
+
+            // Create the root node or add a child node
+            ScalableMesh::IScalableMeshNodeEditPtr scNode;
+            if (scParentNode == nullptr)
+            {
+                scNode = m_scMesh->AddNode(status);
+                scRootNode = scNode;
+            }
+            else
+            {
+                scNode = m_scMesh->AddNode(scParentNode, node.nodeExtent, status);
+            }
 
             // We handle errors differently depending on whether the node extent is empty or not
             if (node.nodeExtent.IsNull())
@@ -452,14 +496,18 @@ private:
     IScalableMeshNodeEditPtr m_scRootNode;
     DPoint3d m_pOrigin;
     IScalableMeshFrom3MXGCSHandler& m_gcsHandler;
-    IScalableMeshFrom3MXProgressHandler& m_progressHandler;
+    IScalableMeshProgressPtr m_progressHandler;
 
-
-    SMFrom3MXStatus ConvertRecursive(BeFileName filename, IScalableMeshNodeEditPtr scParentNode, DRange3d& contentExtent, float beginProgress, float endProgress)
+    SMFrom3MXStatus ConvertRecursive(BeFileName filename, IScalableMeshNodeEditPtr scParentNode, DRange3d& contentExtent, float& dataResolution, float beginProgress, float endProgress)
     {
         // Report progress
-        if (!m_progressHandler._Progress(beginProgress))
-            return SMFrom3MXStatus::Canceled;
+        if (m_progressHandler != nullptr)
+        {
+            m_progressHandler->Progress() = beginProgress;
+            m_progressHandler->UpdateListeners();
+            if (m_progressHandler->IsCanceled())
+                return SMFrom3MXStatus::Canceled;
+        }
 
         // Count the number of children files, just to correctly track progress
         size_t nChildrenFiles = 0;
@@ -479,7 +527,7 @@ private:
             Convert3MXBFile conv3MXB(m_scMesh, m_pOrigin, m_gcsHandler);
             string sError;
             if (conv3MXB.Read3MXB(filename, sError) != SUCCESS)
-                return SMFrom3MXStatus::Read3MXError;
+                return SMFrom3MXStatus::Read3MXBError;
 
             // Create the corresponding 3SM nodes
             SMFrom3MXStatus convertStatus = conv3MXB.Create3SMNodes(scParentNode, m_scRootNode);
@@ -497,6 +545,10 @@ private:
                 const auto& tmpNodeInfo = tmpNodeArray[i];
                 nodeArray[i].geomExtent = tmpNodeInfo.geomExtent;
                 nodeArray[i].scNode = tmpNodeInfo.scNode;
+
+                // Update best data resolution
+                if (!tmpNodeInfo.isProxy && tmpNodeInfo.resolution < dataResolution)
+                    dataResolution = tmpNodeInfo.resolution;
 
                 // If node as an empty node extent, we don't traverse the children files (there shouldn't be any child anyway, but we never know ;-))
                 if (!tmpNodeInfo.nodeExtent.IsNull())
@@ -532,7 +584,7 @@ private:
 
                 // Traverse the child files
                 DRange3d childContentExtent = DRange3d::NullRange();
-                SMFrom3MXStatus convertStatus = ConvertRecursive(child3MXBPath, node.scNode, childContentExtent, beginChildProgress, endChildProgress);
+                SMFrom3MXStatus convertStatus = ConvertRecursive(child3MXBPath, node.scNode, childContentExtent, dataResolution, beginChildProgress, endChildProgress);
                 if (convertStatus != SMFrom3MXStatus::Success)
                     return convertStatus;
 
@@ -560,15 +612,48 @@ private:
         return SMFrom3MXStatus::Success;
     }
 
+    SMFrom3MXStatus CreateSource(BeFileNameCR input3MXPath, BeFileNameCR output3SMPath)
+    {
+        // Open the 3SM file for creation of a source
+        StatusInt status;
+        IScalableMeshSourceCreatorPtr scMesh = ScalableMesh::IScalableMeshSourceCreator::GetFor(output3SMPath.c_str(), status);
+        if (status != SUCCESS) return SMFrom3MXStatus::ScalableMeshSDKError;
+
+        // Create a source with the path of the 3MX file
+        IDTMSourcePtr pSource = IDTMLocalFileSource::Create(ScalableMesh::DTM_SOURCE_DATA_MESH, input3MXPath.c_str());
+        SourceImportConfig& config = pSource->EditConfig();
+        Import::ScalableMeshData data = config.GetReplacementSMData();
+        data.SetRepresenting3dData(true);
+        config.SetReplacementSMData(data);
+
+        // Add the source to the Scalable Mesh
+        status = scMesh->EditSources().Add(pSource);
+        if (status != SUCCESS) return SMFrom3MXStatus::ScalableMeshSDKError;
+
+        // Save the changes to the file
+        status = scMesh->SaveToFile();
+        if (status != SUCCESS) return SMFrom3MXStatus::ScalableMeshSDKError;
+
+        return SMFrom3MXStatus::Success;
+    }
+
 public:
     // Constructor
-    Convert3MXModel(IScalableMeshFrom3MXGCSHandler& gcsHandler, IScalableMeshFrom3MXProgressHandler& progressHandler) : m_gcsHandler(gcsHandler), m_progressHandler(progressHandler) {}
+    Convert3MXModel(IScalableMeshFrom3MXGCSHandler& gcsHandler, IScalableMeshProgressPtr progressHandler) : m_gcsHandler(gcsHandler), m_progressHandler(progressHandler) {}
 
     // Run conversion
     SMFrom3MXStatus Convert(BeFileNameCR input3MXPath, BeFileNameCR output3SMPath)
     {
-        if (!m_progressHandler._Progress(0.f))
-            return SMFrom3MXStatus::Canceled;
+        if (m_progressHandler != nullptr)
+        {
+            m_progressHandler->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_CREATION_FROM_3MX;
+            m_progressHandler->ProgressStep() = ScalableMeshStep::STEP_CREATE_FROM_3MX;
+            m_progressHandler->ProgressStepIndex() = 0;
+            m_progressHandler->Progress() = 0.f;
+            m_progressHandler->UpdateListeners();
+            if (m_progressHandler->IsCanceled())
+                return SMFrom3MXStatus::Canceled;
+        }
 
         // Read scene file
 
@@ -612,22 +697,37 @@ public:
 
         // If there is more than one mesh, we cannot handle the conversion
         if (sceneInfo.meshChildren.size() > 1)
-            return SMFrom3MXStatus::UnsupportedCase;
+            return SMFrom3MXStatus::SeveralLayersError;
 
         BeFileName root3MXBPath(BeFileName::GetDirectoryName(input3MXPath).c_str());
         root3MXBPath.AppendToPath(BeFileName(sceneInfo.meshChildren[0].c_str(), false));
 
         DRange3d contentExtent;
-        SMFrom3MXStatus convertStatus = ConvertRecursive(root3MXBPath, nullptr, contentExtent, 0.f, 0.95f);
+        float dataResolution = std::numeric_limits<float>::max();
+        SMFrom3MXStatus convertStatus = ConvertRecursive(root3MXBPath, nullptr, contentExtent, dataResolution, 0.f, 0.95f);
         if (convertStatus != SMFrom3MXStatus::Success)
             return convertStatus;
+
+        // Set data resolution of the 3SM
+        if (dataResolution < std::numeric_limits<float>::max())
+            m_scMesh->SetDataResolution(dataResolution);
 
         // Force nodes and Scalable Mesh to be persisted
         m_scRootNode = nullptr;
         m_scMesh = nullptr;
 
-        if (!m_progressHandler._Progress(1.f))
-            return SMFrom3MXStatus::Canceled;
+        // Set the source
+        convertStatus = CreateSource(input3MXPath, output3SMPath);
+        if (convertStatus != SMFrom3MXStatus::Success)
+            return convertStatus;
+
+        if (m_progressHandler != nullptr)
+        {
+            m_progressHandler->Progress() = 1.f;
+            m_progressHandler->UpdateListeners();
+            if (m_progressHandler->IsCanceled())
+                return SMFrom3MXStatus::Canceled;
+        }
 
         return SMFrom3MXStatus::Success;
     }
@@ -639,7 +739,7 @@ SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,
     BeFileNameCR output3SMPath,
     IScalableMeshFrom3MXGCSHandler& gcsHandler,
-    IScalableMeshFrom3MXProgressHandler& progressHandler
+    IScalableMeshProgressPtr progressHandler
 )
 {
     Convert3MXModel  converter(gcsHandler, progressHandler);
@@ -652,35 +752,10 @@ SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,
     BeFileNameCR output3SMPath,
     GeoCoordinates::BaseGCSPtr outputGCS,
-    IScalableMeshFrom3MXProgressHandler& progressHandler
+    IScalableMeshProgressPtr progressHandler
 )
 {
     ScalableMeshFrom3MXDefaultGCSHandler gcsHandler(outputGCS);
-    return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler);
-}
-
-
-SMFrom3MXStatus createScalableMeshFrom3MX
-(
-    BeFileNameCR input3MXPath,
-    BeFileNameCR output3SMPath,
-    IScalableMeshFrom3MXGCSHandler& gcsHandler
-)
-{
-    ScalableMeshFrom3MXDefaultProgressHandler progressHandler;
-    return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler);
-}
-
-
-SMFrom3MXStatus createScalableMeshFrom3MX
-(
-    BeFileNameCR input3MXPath,
-    BeFileNameCR output3SMPath,
-    GeoCoordinates::BaseGCSPtr outputGCS
-)
-{
-    ScalableMeshFrom3MXDefaultGCSHandler gcsHandler(outputGCS);
-    ScalableMeshFrom3MXDefaultProgressHandler progressHandler;
     return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler);
 }
 

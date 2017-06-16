@@ -995,8 +995,12 @@ bool GCSMathematicalDomainsOverlap(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseG
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GetCoverageTerrainAbsFileName(BeFileName& coverageFileName, const WString& baseExtraFilesPath, const Utf8String& coverageName)
     {
-    coverageFileName = BeFileName(baseExtraFilesPath);
+    coverageFileName = BeFileName(baseExtraFilesPath.GetWCharCP());
+#ifndef VANCOUVER_API
     coverageFileName = coverageFileName.GetDirectoryName();
+#else
+    coverageFileName = BeFileName(BeFileName::GetDirectoryName(coverageFileName).GetWCharCP());
+#endif
 
     BeFileName coverageBeFileName(coverageName);
     coverageFileName.AppendString(coverageBeFileName);
