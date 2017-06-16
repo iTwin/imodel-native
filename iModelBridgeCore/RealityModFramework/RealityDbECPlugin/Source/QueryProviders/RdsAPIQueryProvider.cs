@@ -435,8 +435,8 @@ namespace IndexECPlugin.Source.QueryProviders
                     List<string> coordList = new List<string>();
                     foreach ( JObject coordinate in coordinates )
                         {
-                        double lon = coordinate["Long"].Value<double>();
-                        double lat = coordinate["Lat"].Value<double>();
+                        string lon = coordinate["Longitude"].Value<string>();
+                        string lat = coordinate["Latitude"].Value<string>();
                         coordList.Add("[" + lon + "," + lat + "]");
                         }
                     stringWriter.Write(String.Join(",", coordList));
