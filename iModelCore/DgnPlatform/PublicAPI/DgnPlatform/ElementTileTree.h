@@ -158,7 +158,7 @@ private:
     Utf8CP _GetName() const override { return m_name.c_str(); }
     Render::ViewFlagsOverrides _GetViewFlagsOverrides() const override { return Render::ViewFlagsOverrides(); }
 
-    bool LoadRootTile(DRange3dCR range, GeometricModelR model);
+    bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
     static RootPtr Create(GeometricModelR model, Render::SystemR system);
     virtual ~Root() { ClearAllTiles(); }
@@ -201,8 +201,13 @@ private:
     double                      m_tolerance;
     mutable ElementAlignedBox3d m_contentRange;
     mutable DebugGraphics       m_debugGraphics;
+    double                      m_zoomFactor = 1.0;
+    bool                        m_hasZoomFactor = false;
+    bool                        m_displayable = true;
 
-    Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
+    Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
+    explicit Tile(Tile const& parent);
+
     void InitTolerance();
 
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) override;
@@ -211,6 +216,8 @@ private:
     void _Invalidate() override;
     bool _IsInvalidated(TileTree::DirtyRangesCR dirty) const override;
     void _DrawGraphics(TileTree::DrawArgsR) const override;
+    Utf8String _GetTileCacheKey() const override;
+    ChildTiles const* _GetChildren(bool load) const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
     Render::Primitives::GeometryList CollectGeometry(LoadContextCR context);
@@ -218,8 +225,9 @@ private:
 
     Render::GraphicPtr GetDebugGraphics(Root::DebugOptions options) const;
 public:
-    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
-    static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }
+    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr, true); }
+    static TilePtr CreateRoot(Root& root, DRange3dCR range, bool populate) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range, populate); }
+    static TilePtr CreateWithZoomFactor(Tile const& parent) { return new Tile(parent); }
 
     double GetTolerance() const { return m_tolerance; }
     DRange3d GetDgnRange() const;
@@ -230,6 +238,10 @@ public:
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
     Render::Primitives::GeometryCollection GenerateGeometry(LoadContextCR context);
+
+    void SetZoomFactor(double zoom) { BeAssert(!IsLeaf()); m_zoomFactor = zoom; m_hasZoomFactor = true; }
+    bool HasZoomFactor() const { return m_hasZoomFactor; }
+    double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 1.0; }
 };
 
 END_ELEMENT_TILETREE_NAMESPACE

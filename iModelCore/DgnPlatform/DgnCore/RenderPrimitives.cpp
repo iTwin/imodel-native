@@ -1410,6 +1410,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
     double facetAreaTolerance = tolerance * tolerance * ToleranceRatio::FacetArea();
 
     DRange3d range = m_geometries.ComputeRange();
+    bool is2d = range.IsAlmostZeroZ();
     bmap<MeshMergeKey, MeshBuilderPtr> builderMap;
     for (auto const& geom : m_geometries)
         {
@@ -1430,7 +1431,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, range);
+                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, range, is2d);
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1450,7 +1451,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, range);
+                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, range, is2d);
 
                 uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
@@ -1807,6 +1808,7 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh)
 
     m_disjoint = false;
     m_isEdge = true;
+    m_is2d = mesh.Is2d();
 
     m_polylines.reserve(meshEdges->m_polylines.size());
 
@@ -1827,7 +1829,7 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PolylineArgs::Reset()
     {
-    m_disjoint = false;
+    m_disjoint = m_is2d = false;
     m_numPoints = m_numLines = 0;
     m_points = nullptr;
     m_lines = nullptr;
@@ -1847,6 +1849,7 @@ bool PolylineArgs::Init(MeshCR mesh)
 
     initLinearGraphicParams(*this, mesh);
 
+    m_is2d = mesh.Is2d();
     m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
     m_polylines.reserve(mesh.Polylines().size());
 
