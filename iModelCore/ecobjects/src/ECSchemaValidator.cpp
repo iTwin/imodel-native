@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+#define BISCORE_CLASS_IParentElement        "BisCore:IParentElement"
+#define BISCORE_CLASS_ISubModeledElement    "BisCore:ISubModeledElement"
 
 Utf8CP oldStandardSchemaNames[] =
     {
@@ -58,6 +60,9 @@ ECSchemaValidatorP ECSchemaValidator::GetSingleton()
 
         IECClassValidatorPtr entityValidator = new EntityValidator();
         ECSchemaValidatorSingleton->AddClassValidator(entityValidator);
+
+        IECClassValidatorPtr relationshipValidator = new RelationshipValidator();
+        ECSchemaValidatorSingleton->AddClassValidator(relationshipValidator);
         }    
 
     return ECSchemaValidatorSingleton;
@@ -195,6 +200,55 @@ ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
     return ECObjectsStatus::Success;
     }
 
+ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8CP derivedRelationshipClassName, bool &entityDerivesFromSpecifiedClass)
+    {
+    if (entity.GetName().Equals(derivedClassName) || !entity.Is("BisCore", derivedClassName))
+        return ECObjectsStatus::Success;
+       
+    bool foundRelationshipConstraint = false;
+    
+    // There must be a relationship that derives from derivedClassName with this class as its constraint
+    for (ECClassCP classInCurrentSchema : entity.GetSchema().GetClasses())
+        {
+        ECRelationshipClassCP relClass = classInCurrentSchema->GetRelationshipClassCP();
+        if (nullptr == relClass)
+            continue;
+
+        if (ECClass::ClassesAreEqualByName(&entity, relClass->GetTarget().GetConstraintClasses()[0]) &&
+            !relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is("BisCore", derivedRelationshipClassName))
+            {
+            foundRelationshipConstraint = true;
+            break;
+            }
+        }
+
+    entityDerivesFromSpecifiedClass = true;
+    if (!foundRelationshipConstraint)
+        {
+        LOG.errorv("Entity class '%s' derives from '%s' so it must be in a relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
+        return ECObjectsStatus::Error;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus CheckPropertiesForLongAndId(ECClassCR ecClass)
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    for (ECPropertyP prop : ecClass.GetProperties(false))
+        {
+        if (prop->GetTypeName() == "long" && prop->GetName().EndsWith("Id"))
+            {
+            LOG.errorv("Warning treated as error in class '%s:%s' as it is of type 'long' and has a name ending with 'Id'", ecClass.GetFullName(), prop->GetName().c_str());
+            status = ECObjectsStatus::Error;
+            }
+        }
+    return status;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -202,7 +256,34 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     int numBaseClasses;
-    
+    bool entityDerivesFromSpecifiedClass = false;
+
+    // Bis specific rule
+    status = CheckBisAspects(entity, "ElementMultiAspect", "ElementOwnsMultiAspects", entityDerivesFromSpecifiedClass);
+    if (!entityDerivesFromSpecifiedClass)
+        status = CheckBisAspects(entity, "ElementUniqueAspect", "ElementOwnsUniqueAspect", entityDerivesFromSpecifiedClass);
+
+    // Validate relationship properties of type long and ending in Id
+    ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(entity);
+    if (status == ECObjectsStatus::Success)
+        status = propertyLongAndIdStatus;
+
+    // Class may not implement both bis:IParentElement and bis:ISubModeledElement
+    bool foundIParentElement = false;
+    bool foundISubModelElement = false;
+    for (ECClassCP baseClass : entity.GetBaseClasses())
+        {
+        if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_IParentElement) == 0)
+            foundIParentElement = true;
+        if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_ISubModeledElement) == 0)
+            foundISubModelElement = true;
+        }
+    if (foundIParentElement && foundISubModelElement)
+        {
+        LOG.errorv("Entity class '%s' implements both bis:IParentElement and bis:ISubModeledElement", entity.GetFullName());
+        status = ECObjectsStatus::Error;
+        }
+
     for (ECPropertyP prop : entity.GetProperties(false))
         {
         numBaseClasses = 0;
@@ -216,19 +297,104 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
         if (numBaseClasses > 1)
             {
             LOG.errorv("Error at property '%s'. There are %i base classes and entity class '%s' may not inherit a property from more than one base class",
-                prop->GetName().c_str(), numBaseClasses, entity.GetFullName());
+                       prop->GetName().c_str(), numBaseClasses, entity.GetFullName());
 
             status = ECObjectsStatus::Error;
             }
         if (!prop->GetBaseProperty()->GetClass().GetEntityClassCP()->IsMixin())
             continue;
         LOG.errorv("Error at property '%s'. Entity class '%s' overrides a property inherited from mixin class '%s'",
-            prop->GetName().c_str(), entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
+                   prop->GetName().c_str(), entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
 
         status = ECObjectsStatus::Error;
         }
-    
+
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  05/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus CheckStrength(ECRelationshipClassCP relClass)
+    {
+    ECObjectsStatus returnStatus = ECObjectsStatus::Success;
+    if (relClass->GetStrength() == StrengthType::Holding)
+        {
+        LOG.errorv("Relationship class '%s' strength must not be set to 'holding'.", relClass->GetFullName());
+        returnStatus = ECObjectsStatus::Error;
+        }
+
+    if (relClass->GetStrength() == StrengthType::Embedding)
+        {
+        if (relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward && relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1)
+            {
+            LOG.errorv("Relationship class '%s' has an 'embedding' strength with a forward direction so the source constraint may not have a multiplicity upper bound greater than 1",
+                       relClass->GetFullName());
+            returnStatus = ECObjectsStatus::Error;
+            }
+        if (relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward && relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
+            {
+            LOG.errorv("Relationship class '%s' has an 'embedding' strength with a backward direction so the target constraint may not have a multiplicity upper bound greater than 1",
+                       relClass->GetFullName());
+            returnStatus = ECObjectsStatus::Error;
+            }
+        if (relClass->GetName().Contains("Has"))
+            {
+            LOG.errorv("Relationship class '%s' has an 'embedding' strength and contains 'Has' in its name. Consider renaming this class.",
+                       relClass->GetFullName());
+            returnStatus = ECObjectsStatus::Error;
+            }
+        }
+    return returnStatus;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  04/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
+    if (nullptr == relClass)
+        return status;
+
+    // Validate relationship strength
+    status = CheckStrength(relClass);
+
+    // Validate relationship properties of type long and ending in Id
+    ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(ecClass);
+    if (status == ECObjectsStatus::Success)
+        status = propertyLongAndIdStatus;
+
+    ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
+    ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
+
+    // Validate both target and source.  If one of them fails, the class fails.
+    ECObjectsStatus targetStatus = RelationshipValidator::CheckLocalDefinitions(targetConstraint, "Target");
+    ECObjectsStatus sourceStatus = RelationshipValidator::CheckLocalDefinitions(sourceConstraint, "Source");
+
+    if (status == ECObjectsStatus::Success)
+        status = (ECObjectsStatus::Error == targetStatus) || (ECObjectsStatus::Error == sourceStatus) ? ECObjectsStatus::Error : ECObjectsStatus::Success;
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType) const
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    Utf8String className = constraint.GetRelationshipClass().GetFullName();
+    
+    if (constraint.IsAbstractConstraintDefined() && constraint.GetConstraintClasses().size() == 1)
+        {
+        LOG.errorv("Relationship class '%s' has an abstract constraint, '%s', and only one concrete constraint set in '%s'",
+                   className.c_str(), constraint.GetAbstractConstraint()->GetFullName(), constraintType.c_str());
+
+        status = ECObjectsStatus::Error;
+        }
+
+    return status;
+    }
 END_BENTLEY_ECOBJECT_NAMESPACE
