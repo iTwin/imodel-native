@@ -480,7 +480,7 @@ struct ICachingDataSource::Progress
         State m_bytes;
         State m_instances;
         Utf8StringCPtr m_label;
-		State m_currentFileBytes;
+        State m_currentFileBytes;
         ECInstanceKey m_currentFileKey;
     
     public:
@@ -507,7 +507,7 @@ struct ICachingDataSource::Progress
         ECInstanceKeyCR GetCurrentFileKey() const { return m_currentFileKey; };
         //! Get progress state of single (current) file which is in progress of syncing/uploading
         StateCR GetCurrentFileBytes() const { return m_currentFileBytes; };
-		
+        
         //! Get label of instance being synced
         WSCACHE_EXPORT Utf8StringCR GetLabel() const;
         //! Get label of instance being synced
@@ -520,7 +520,7 @@ struct ICachingDataSource::Progress
                 m_instances == other.m_instances &&
                 m_synced == other.m_synced &&
                 GetLabel() == other.GetLabel() &&
-				m_currentFileKey == other.m_currentFileKey &&
+                m_currentFileKey == other.m_currentFileKey &&
                 m_currentFileBytes == other.m_currentFileBytes;
             };
 

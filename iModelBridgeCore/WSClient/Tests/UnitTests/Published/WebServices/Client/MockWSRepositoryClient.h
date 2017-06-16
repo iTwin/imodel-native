@@ -148,7 +148,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct
             ));
 
-        MOCK_CONST_METHOD5(SendCreateObjectRequestWithRel, AsyncTaskPtr<WSCreateObjectResult>
+        MOCK_CONST_METHOD5(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
             (
             ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
