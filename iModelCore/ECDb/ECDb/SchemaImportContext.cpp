@@ -208,15 +208,21 @@ ECSchemaCP SchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle      06/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPolicies::ReadPolicies(ECDbCR ecdb, ECN::ECSchemaCR schema)
+BentleyStatus SchemaPolicies::ReadPolicies(ECDbCR ecdb)
     {
-    if (SUCCESS != ReadPolicy(ecdb, schema, SchemaPolicy::Type::NoAdditionalForeignKeyConstraints))
-        return ERROR;
+    for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
+        {
+        if (SUCCESS != ReadPolicy(ecdb, *schema, SchemaPolicy::Type::NoAdditionalForeignKeyConstraints))
+            return ERROR;
 
-    if (SUCCESS != ReadPolicy(ecdb, schema, SchemaPolicy::Type::NoAdditionalLinkTables))
-        return ERROR;
+        if (SUCCESS != ReadPolicy(ecdb, *schema, SchemaPolicy::Type::NoAdditionalLinkTables))
+            return ERROR;
 
-    return ReadPolicy(ecdb, schema, SchemaPolicy::Type::NoAdditionalRootEntityClasses);
+        if (SUCCESS != ReadPolicy(ecdb, *schema, SchemaPolicy::Type::NoAdditionalRootEntityClasses))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -327,7 +333,7 @@ Utf8CP SchemaPolicy::TypeToString(Type type)
 BentleyStatus NoAdditionalRootEntityClassesPolicy::Evaluate(ECDbCR ecdb, ECN::ECClassCR ecClass) const
     {
     if (ecClass.GetSchema().GetId() == GetOptingInSchemaId() || 
-        ecClass.HasBaseClasses() || !ecClass.IsEntityClass() || !ecClass.GetEntityClassCP()->IsMixin() ||
+        ecClass.HasBaseClasses() || !ecClass.IsEntityClass() || ecClass.GetEntityClassCP()->IsMixin() ||
         IsException(ecClass))
         return SUCCESS;
 

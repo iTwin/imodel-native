@@ -202,11 +202,8 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     if (schemasToMap.empty())
         return SUCCESS;
 
-    for (ECSchemaCP schema : schemasToMap)
-        {
-        if (SUCCESS != ctx.GetSchemaPoliciesR().ReadPolicies(m_ecdb, *schema))
-            return ERROR;
-        }
+    if (SUCCESS != ctx.GetSchemaPoliciesR().ReadPolicies(m_ecdb))
+        return ERROR;
 
     if (SUCCESS != ViewGenerator::DropECClassViews(GetECDb()))
         return ERROR;
@@ -315,7 +312,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
 
     primarySchemas.clear(); // Just make sure no one tries to use it anymore
     
-      ECDbExpressionSymbolContext symbolsContext(m_ecdb);
+    ECDbExpressionSymbolContext symbolsContext(m_ecdb);
 
     SchemaWriter schemaWriter(m_ecdb, context);
     return schemaWriter.ImportSchemas(schemasToMap, primarySchemasOrderedByDependencies);

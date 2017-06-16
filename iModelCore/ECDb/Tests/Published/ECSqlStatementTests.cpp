@@ -3218,50 +3218,7 @@ TEST_F(ECSqlStatementTestFixture, ReadonlyPropertiesAreUpdatable)
     ASSERT_EQ(20, stmt.GetValueInt(1));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Maha Nasir                         06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSqlStatementTestFixture, InVirtualSet)
-    {
-    const auto perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, SetupECDb("InVirtualSet.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, perClassRowCount));
 
-    bvector<ECInstanceId> idList;
-    ECInstanceIdSet idSet;
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ecsql.P"));
-
-    //Populates the vector with EcInstanceId's
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        idList.push_back(stmt.GetValueId<ECInstanceId>(0));
-        }
-    stmt.Finalize();
-
-    ASSERT_EQ(10, idList.size());
-
-    //Populates the ECInstanceId set
-    for (ECInstanceId id : idList)
-        {
-        idSet.insert(id);
-        }
-
-    ASSERT_EQ(10, idSet.size());
-
-    //Binding a virtualSet with the ecsql.
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ecsql.P WHERE I=123 AND InVirtualSet(?, ECInstanceId)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindVirtualSet(1, idSet));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(10, stmt.GetValueInt(0));
-    stmt.Finalize();
-
-    //Binding an empty virtualSet with the ecsql is expected to succeed as it expects an empty VirtualSet as a Null set.
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ecsql.P WHERE I=123 AND InVirtualSet(?, ECInstanceId)"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(0, stmt.GetValueInt(0));
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  08/15

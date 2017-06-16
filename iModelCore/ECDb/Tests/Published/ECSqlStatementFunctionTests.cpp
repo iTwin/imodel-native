@@ -454,6 +454,26 @@ TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
 
+    statement.Reset();
+    statement.ClearBindings();
+
+    //now binding a NULL virtual set
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0)) << statement.GetECSql() << " with NULL bound for the virtual set";
+
+    statement.Reset();
+    statement.ClearBindings();
+
+    //now binding an empty virtual set
+    idSet.clear();
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(0, statement.GetValueInt(0)) << statement.GetECSql() << " with empty virtual set";
+
     //now same statement but with InVirtualSet in parentheses
     statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT count(*) FROM ecsql.PSA WHERE (InVirtualSet(?, ECInstanceId))"));
@@ -475,6 +495,9 @@ TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding a virtual set in parentheses";
     ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
+
+
     }
+
 
 END_ECDBUNITTESTS_NAMESPACE

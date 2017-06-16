@@ -116,7 +116,7 @@ struct SchemaPolicies final
     public:
         SchemaPolicies() {}
 
-        BentleyStatus ReadPolicies(ECDbCR, ECN::ECSchemaCR);
+        BentleyStatus ReadPolicies(ECDbCR);
         bool IsOptedIn(SchemaPolicy const*&, SchemaPolicy::Type) const;
     };
 

@@ -102,7 +102,7 @@ struct ColumnInfo final
         { 
         Utf8String str; 
         if (!m_propAccessString.empty())
-            str.append("Property access str: ").append(m_propAccessString);
+            str.append("Property: ").append(m_propAccessString).append("|");
 
 
         str.append("Column: ").append(m_tableName).append(":").append(m_columnName);
