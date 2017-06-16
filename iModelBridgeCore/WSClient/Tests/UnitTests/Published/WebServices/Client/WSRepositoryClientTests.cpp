@@ -1132,6 +1132,86 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithMoreThanOneR
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelatedObjectId_DoesNotSendCreateRequestAndReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "className" : "TestClass",
+                "properties" : {}
+                }
+            })");
+
+    auto stubObjectId = StubObjectId();
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi11());
+
+    auto result = client->SendCreateObjectRequest(stubObjectId, objectCreationJson)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ReceivedError, result.GetError().GetStatus());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV25WithRelatedObjectId_ChangedToCorrectURL)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "TargetObjectSchema",
+                "className" : "TargetObjectClass",
+                "properties" : {}
+                }
+            })");
+
+    auto relatedObject = ObjectId("RelatedObjectSchema", "RelatedObjectClass", "RelatedObjectId");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("POST", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.5/Repositories/foo/RelatedObjectSchema/RelatedObjectClass/RelatedObjectId/TargetObjectSchema.TargetObjectClass", request.GetUrl().c_str());
+        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        return StubHttpResponse(ConnectionStatus::OK);
+        });
+    client->SendCreateObjectRequest(relatedObject, objectCreationJson)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV25WithRelatedObjectIdSameSchema_ChangedToCorrectURL)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "RelatedObjectSchema",
+                "className" : "TargetObjectClass",
+                "properties" : {}
+                }
+            })");
+
+    auto relatedObject = ObjectId("RelatedObjectSchema", "RelatedObjectClass", "RelatedObjectId");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("POST", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.5/Repositories/foo/RelatedObjectSchema/RelatedObjectClass/RelatedObjectId/TargetObjectClass", request.GetUrl().c_str());
+        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        return StubHttpResponse(ConnectionStatus::OK);
+        });
+    client->SendCreateObjectRequest(relatedObject, objectCreationJson)->Wait();
+    }
+
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson_TakesClassInfoFromJsonAndSendsObjectCreationJsonWithRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
