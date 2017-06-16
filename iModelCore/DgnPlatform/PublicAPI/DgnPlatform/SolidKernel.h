@@ -723,10 +723,26 @@ struct Modify
     //! Modify the target solid or sheet body by transforming selected faces.
     //! @param[in,out] target The target body to modify.
     //! @param[in] faces The array of faces to be transformed.
-    //! @param[in] translations The array of transforms for each face.
+    //! @param[in] transforms The array of transforms for each face.
     //! @param[in] addStep The option for how to handle the creation of step faces.
     //! @return SUCCESS if faces could be transformed.
-    DGNPLATFORM_EXPORT static BentleyStatus TransformFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<Transform> const& translations, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
+    DGNPLATFORM_EXPORT static BentleyStatus TransformFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<Transform> const& transforms, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
+
+    //! Modify the target solid or sheet body by transforming selected edges.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] edges The array of edges to be transformed.
+    //! @param[in] transforms The array of transforms for each edge.
+    //! @param[in] addStep The option for how to handle the creation of step faces. NOTE: AddNonCoincident is only supported for pure translation/rotation...
+    //! @return SUCCESS if edges could be transformed.
+    DGNPLATFORM_EXPORT static BentleyStatus TransformEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<Transform> const& transforms, StepFacesOption addStep = StepFacesOption::AddSmooth);
+
+    //! Modify the target solid or sheet body by transforming selected vertices.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] vertices The array of vertices to be transformed.
+    //! @param[in] transforms The array of transforms for each vertex.
+    //! @param[in] addStep The option for how to handle the creation of step faces. NOTE: AddNonCoincident is only supported for pure translation/rotation...
+    //! @return SUCCESS if vertices could be transformed.
+    DGNPLATFORM_EXPORT static BentleyStatus TransformVertices(IBRepEntityR target, bvector<ISubEntityPtr>& vertices, bvector<Transform> const& transforms, StepFacesOption addStep = StepFacesOption::AddNone);
 
     //! Modify the target solid or sheet body by sweeping selected faces along a path vector.
     //! @param[in,out] target The target body to modify.
@@ -750,7 +766,7 @@ struct Modify
     //! @param[in] direction The taper direction.
     //! @param[in] angles The taper angle(s). Either a single taper angle or a taper angle for each face entry. (value in range of -2pi to 2pi)
     //! @return SUCCESS if faces could be tapered.
-    DGNPLATFORM_EXPORT static BentleyStatus TaperFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& edges, DVec3dCR direction, bvector<double>& angles);
+    DGNPLATFORM_EXPORT static BentleyStatus TaperFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& edges, DVec3dCR direction, bvector<double>& angles, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
 
     //! Modify the target solid or sheet body by removing selected faces and healing.
     //! @param[in,out] target The target body to modify.
