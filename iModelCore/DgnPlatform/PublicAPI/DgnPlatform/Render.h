@@ -1884,9 +1884,9 @@ struct QPoint2d
             scale.y = Quantization::ComputeScale(diagonal.y);
             }
 
-    DPoint2dCR GetOrigin() const { return origin; }
-    DPoint2dCR GetScale() const { return scale; }
-    DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
+        DPoint2dCR GetOrigin() const { return origin; }
+        DPoint2dCR GetScale() const { return scale; }
+        DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
@@ -1919,11 +1919,56 @@ struct QPoint2d
         }
 };
 
+//=======================================================================================
+//! Represents a scalar value quantized within some known range to a 16-bit integer.
+//! This is a lossy compression technique.
+// @bsistruct                                                   Paul.Connelly   06/17
+//=======================================================================================
+struct QPoint1d
+{
+    struct Params
+    {
+        double  origin;
+        double  scale;
+
+        Params() : Params(DRange1d::NullRange()) { }
+        explicit Params(DRange1d range) : origin(range.low), scale(range.IsNull() ? 0.0 : Quantization::ComputeScale(range.high - range.low)) { }
+
+        double GetOrigin() const { return origin; }
+        double GetScale() const { return scale; }
+        DRange1d GetRange() const { return DRange1d::From(origin, origin + Quantization::RangeScale() * scale); }
+    };
+
+    using T_Range = DRange1d;
+    using T_DPoint = double;
+    using T_DVec = double;
+    using T_FPoint = float;
+
+    static float ToFPoint(double dx) { return static_cast<float>(dx); }
+    static double ToDPoint(float fx) { return fx; }
+
+    uint16_t    x;
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+
+    QPoint1d() { }
+    QPoint1d(double x, DRange1d range) : QPoint1d(x, Params(range)) { }
+    QPoint1d(float x, DRange1d range) : QPoint1d(ToDPoint(x), Params(range)) { }
+    QPoint1d(float x, ParamsCR params) : QPoint1d(ToDPoint(x), params) { }
+    QPoint1d(double x, ParamsCR params) : x(Quantization::Quantize(x, params.origin, params.scale)) { }
+
+    double Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+    float Unquantize32(ParamsCR params) const { return ToFPoint(Unquantize(params)); }
+    double UnquantizeAsVector(ParamsCR params) const { return Quantization::Unquantize(x, params.origin, params.scale); }
+};
+
+typedef Quantization::QPointList<QPoint1d> QPoint1dList;
 typedef Quantization::QPointList<QPoint2d> QPoint2dList;
 typedef Quantization::QPointList<QPoint3d> QPoint3dList;
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint3dList)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint1dList)
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint2dList)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint3dList)
 
 //=======================================================================================
 //! Describes the type of fill associated with a mesh.
