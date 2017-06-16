@@ -113,7 +113,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
         <SubPart PartName="DgnPlatformDLL"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" SubPartDirectory="PublishedApi/DgnProject" Required="false"/>
