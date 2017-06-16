@@ -641,6 +641,13 @@ void SMNodeGroup::SetURL(DataSourceURL url)
     m_url = url;
     }
 
+Json::Value* SMNodeGroup::GetSMMasterHeaderInfo()
+    {
+    if (m_tilesetRootNode.isMember("root") && m_tilesetRootNode["root"].isMember("SMMasterHeader"))
+        return &m_tilesetRootNode["root"]["SMMasterHeader"];
+    return nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -433,7 +433,19 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
         m_CesiumGroup->ResetNodeIDGenerator();
-        //m_CesiumGroup->Load(rootNodeBlockID);
+        m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID);
+        Json::Value* masterJSONPtr = nullptr;
+        if ((masterJSONPtr = m_CesiumGroup->GetSMMasterHeaderInfo()) != nullptr)
+            {
+            // Override defaults by given values
+            auto const& masterJSON = *masterJSONPtr;
+            indexHeader->m_SplitTreshold = masterJSON["SplitTreshold"].asUInt();
+            indexHeader->m_balanced = masterJSON["Balanced"].asBool();
+            indexHeader->m_depth = masterJSON["Depth"].asUInt();
+            indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
+            indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
+            indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
+            }
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
         //m_settings->SetGCSString(wkt);
