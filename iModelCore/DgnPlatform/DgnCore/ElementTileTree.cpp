@@ -880,7 +880,7 @@ BentleyStatus Loader::_LoadTile()
 
     Render::Primitives::GeometryCollection geometry;
 
-    if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadTile (geometry, m_tileBytes, *root.GetModel()))
+    if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
         return ERROR;
 
     // No point subdividing empty nodes - improves performance if we don't
@@ -939,7 +939,7 @@ BentleyStatus Loader::DoGetFromSource()
     if (loadContext.WasAborted())
         return ERROR;
         
-    return TileTree::TileIO::WriteTile (m_tileBytes, geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
+    return TileTree::TileIO::WriteDgnTile (m_tileBytes, geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
     }
 
 

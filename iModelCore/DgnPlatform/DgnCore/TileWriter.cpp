@@ -518,7 +518,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshMaterial(MeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db) : TileMaterial(Utf8String("Material_")+suffix)
+MeshMaterial(MeshCR mesh, bool is3d, Utf8StringCR suffix, DgnDbR db) : TileMaterial(Utf8String("Material_")+suffix)
     {
     DisplayParamsCR params = mesh.GetDisplayParams();
 
@@ -1073,6 +1073,15 @@ struct  Writer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+void WriteLength(uint32_t startPosition, uint32_t lengthDataPosition)
+    {
+    uint32_t    dataSize = static_cast<uint32_t> (m_buffer.GetSize() - startPosition);
+    memcpy(m_buffer.GetDataP() + lengthDataPosition, &dataSize, sizeof(uint32_t));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void    AddBinaryData (void const* data, size_t size) 
     {
     m_binaryData.Append (static_cast<uint8_t const*> (data), size);
@@ -1391,7 +1400,7 @@ void AddColors(Json::Value& primitive, ColorIndex const& colorIndex, size_t nVer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/02016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String AddTextureImage (TileTexture const& tileTexture, Utf8CP suffix)
+Utf8String AddTextureImage (TileTexture const& tileTexture, Utf8StringCR suffix)
     {
     Utf8String  textureId = Utf8String ("texture_") + suffix;
 
@@ -1494,7 +1503,7 @@ Utf8String AddTextureImage (TileTexture const& tileTexture, Utf8CP suffix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String AddColorIndex(TileColorIndex& colorIndex, MeshCR mesh, Utf8CP suffix)
+Utf8String AddColorIndex(TileColorIndex& colorIndex, MeshCR mesh, Utf8StringCR suffix)
     {
     Utf8String textureId("texture_"),
                imageId("image_"),
@@ -1539,7 +1548,7 @@ Utf8String AddColorIndex(TileColorIndex& colorIndex, MeshCR mesh, Utf8CP suffix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AddMaterialColor(Json::Value& matJson,  TileMaterial& mat, DisplayParamsCR displayParams, MeshCR mesh, Utf8CP suffix)
+void    AddMaterialColor(Json::Value& matJson,  TileMaterial const& mat, DisplayParamsCR displayParams, MeshCR mesh, Utf8StringCR suffix)
     {
     auto dim = TileColorIndex::CalcDimension(mesh.GetColorTable().GetNumIndices());
 
@@ -1676,46 +1685,6 @@ Utf8String AddMeshShaderTechnique(MeshMaterial const& mat, bool doBatchIds)
     return techniqueName;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshMaterial AddMeshMaterial(MeshCR mesh, Utf8CP suffix, DisplayParamsCR displayParams, bool doBatchIds)
-    {
-    Utf8String      name = Utf8String("MeshMaterial_") + suffix;
-    Json::Value&    matJson = m_json["materials"][name];
-    MeshMaterial    mat(mesh, m_model.Is3d(), suffix, m_model.GetDgnDb());
-
-#ifdef NEEDS_WORK
-    if (nullptr != displayParams.GetMaterial())
-        matJson["name"] = displayParams.GetMaterial()->GetMaterialName().c_str();
-#endif
-
-    if (displayParams.IsTextured())
-        {
-        TileTexture const*  texture = static_cast<TileTexture const*> (displayParams.GetTexture());
-        matJson["values"]["tex"] = AddTextureImage(*texture, suffix);
-        }
-    else
-        {
-        AddMaterialColor (matJson, mat, displayParams, mesh, suffix);
-        }
-
-    matJson["technique"] = AddMeshShaderTechnique(mat, doBatchIds).c_str();
-
-    if (!displayParams.IgnoresLighting())
-        {
-        matJson["values"]["specularExponent"] = mat.GetSpecularExponent();
-
-        auto& specColor = matJson["values"]["specularColor"];
-        specColor.append(mat.GetSpecularColor().red);
-        specColor.append(mat.GetSpecularColor().green);
-        specColor.append(mat.GetSpecularColor().blue);
-        }
-
-    return mat;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1750,9 +1719,9 @@ static Json::Value CreateDecodeQuantizeValues(double const* min, double const* m
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String    AddQuantizedPointsAttribute(QPoint3dCP qPoints, size_t nPoints, QPoint3d::Params params, Utf8CP name, Utf8CP id) 
+Utf8String    AddQuantizedPointsAttribute(QPoint3dCP qPoints, size_t nPoints, QPoint3d::Params params, Utf8StringCR name, Utf8StringCR id) 
     {
-    Utf8String          nameId =  Utf8String(name) + Utf8String(id),
+    Utf8String          nameId =  name + id,
                         accessorId = Utf8String("acc") + nameId,
                         bufferViewId = Utf8String("bv") + nameId;
     Json::Value         accessor   = Json::objectValue;
@@ -1775,7 +1744,7 @@ Utf8String    AddQuantizedPointsAttribute(QPoint3dCP qPoints, size_t nPoints, QP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String    AddVertexParamAttribute(bvector<FPoint2d> const& params, Utf8CP name, Utf8CP id) 
+Utf8String    AddQuantizedParamAttribute(bvector<FPoint2d> const& params, Utf8StringCR name, Utf8StringCR id) 
     {
     QPoint2dList        qParams;
     
@@ -1804,7 +1773,7 @@ Utf8String    AddVertexParamAttribute(bvector<FPoint2d> const& params, Utf8CP na
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String AddMeshIndices(Utf8CP name, int32_t const* indices, size_t numIndices, Utf8StringCR idStr)
+Utf8String AddMeshIndices(Utf8StringCR name, int32_t const* indices, size_t numIndices, Utf8StringCR idStr)
     {
     Utf8String          nameId           = name + idStr,
                         accIndexId       = "acc" + nameId,
@@ -1867,6 +1836,55 @@ void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange)
     positionValue["max"].append(pointRange.high.z);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value     CreateColorJson(RgbFactorCR color)
+    {
+    Json::Value     colorJson = Json::objectValue;
+
+    colorJson.append(color.red);
+    colorJson.append(color.green);
+    colorJson.append(color.blue);
+
+    return colorJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Json::Value  _CreateMeshMaterialJson(MeshCR mesh, MeshMaterial const& meshMaterial, Utf8StringCR suffix, DisplayParamsCR displayParams, bool doBatchIds) 
+    {
+    Json::Value    matJson = Json::objectValue;
+
+#ifdef NEEDS_WORK
+    if (nullptr != displayParams.GetMaterial())
+        matJson["name"] = displayParams.GetMaterial()->GetMaterialName().c_str();
+#endif
+
+    if (meshMaterial.IsTextured())
+        {
+        TileTexture const*  texture = static_cast<TileTexture const*> (displayParams.GetTexture());
+        matJson["values"]["tex"] = AddTextureImage(*texture, suffix);
+        }
+    else
+        {
+        AddMaterialColor (matJson, meshMaterial, displayParams, mesh, suffix);
+        }
+
+    matJson["technique"] = AddMeshShaderTechnique(meshMaterial, doBatchIds).c_str();
+
+    if (!displayParams.IgnoresLighting())
+        {
+        matJson["values"]["specularExponent"] = meshMaterial.GetSpecularExponent();
+        matJson["values"]["specularColor"] = CreateColorJson(meshMaterial.GetSpecularColor());
+        }
+    
+    return matJson;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1882,17 +1900,19 @@ void AddTriMesh(Json::Value& primitivesNode, MeshArgs const& meshArgs, MeshCR me
     if (doBatchIds)
         AddBatchIds(primitive, meshArgs.m_features, meshArgs.m_numPoints, idStr);
 
-    MeshMaterial meshMat = AddMeshMaterial(mesh, idStr.c_str(), mesh.GetDisplayParams(), doBatchIds);
-    primitive["material"] = meshMat.GetName();
+    MeshMaterial meshMaterial(mesh, m_model.Is3d(), idStr, m_model.GetDgnDb());
+    m_json["materials"][meshMaterial.GetName()] = _CreateMeshMaterialJson(mesh, meshMaterial, idStr, mesh.GetDisplayParams(), doBatchIds);
+
+    primitive["material"] = meshMaterial.GetName();
     primitive["mode"] = GLTF_TRIANGLES;
 
     Utf8String      accPositionId =  AddQuantizedPointsAttribute(meshArgs.m_points, meshArgs.m_numPoints, meshArgs.m_pointParams, "Position", idStr.c_str());
     primitive["attributes"]["POSITION"] = accPositionId;
 
-    bool isTextured = meshMat.IsTextured();
+    bool isTextured = meshMaterial.IsTextured();
     BeAssert (isTextured == !mesh.Params().empty());
     if (!mesh.Params().empty() && isTextured)
-        primitive["attributes"]["TEXCOORD_0"] = AddVertexParamAttribute (mesh.Params(), "Param", idStr.c_str());
+        primitive["attributes"]["TEXCOORD_0"] = AddQuantizedParamAttribute (mesh.Params(), "Param", idStr.c_str());
     else if (meshArgs.m_colors.m_numColors > 1)
         AddColors(primitive, meshArgs.m_colors, meshArgs.m_numPoints, idStr);
 
@@ -1973,21 +1993,20 @@ BentleyStatus WriteGltf(Render::Primitives::GeometryCollectionCR geometry, DPoin
     AddMeshes (geometry);
 
     Utf8String  sceneStr = Json::FastWriter().write(m_json);
-    uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size()), zero = 0;
+    uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size());
 
     long    startPosition =  m_buffer.GetSize();
-    m_buffer.Append((const uint8_t*) s_gltfMagic, sizeof(s_gltfMagic));
-    m_buffer.Append((const uint8_t*) &s_gltfVersion, sizeof(s_gltfVersion));
+    m_buffer.Append((const uint8_t*) s_gltfMagic, 4);
+    m_buffer.Append(s_gltfVersion);
     long    lengthDataPosition = m_buffer.GetSize();
-    m_buffer.Append((const uint8_t*) &zero, sizeof(zero));        // Filled in below.
+    m_buffer.Append((uint32_t) 0);
     m_buffer.Append((const uint8_t*) &sceneStrLength, sizeof(sceneStrLength));
     m_buffer.Append((const uint8_t*) &s_gltfSceneFormat, sizeof(s_gltfSceneFormat));
     m_buffer.Append((const uint8_t*) sceneStr.data(), sceneStrLength);
     if (!m_binaryData.empty())
         m_buffer.Append((const uint8_t*) m_binaryData.data(), BinaryDataSize());
 
-    uint32_t    dataSize = static_cast<uint32_t> (m_buffer.GetSize() - startPosition);
-    memcpy(m_buffer.GetDataP() + lengthDataPosition, &dataSize, sizeof(uint32_t));
+    WriteLength(startPosition, lengthDataPosition);
 
 #define DEBUG_TO_GLB
 #ifdef DEBUG_TO_GLB
@@ -2014,29 +2033,29 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WriteBatchedModel(Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
+BentleyStatus WriteTile(Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
     {
     Utf8String          batchTableStr = BatchTableBuilder (geometry.Meshes().FeatureTable(), m_model.GetDgnDb(), m_model.Is3d()).ToString();
     uint32_t            batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-    uint32_t            zero = 0;
     uint32_t            b3dmNumBatches = geometry.Meshes().FeatureTable().size();
+    uint32_t            zero;
 
-    long    startPosition = m_buffer.GetSize();
+    uint32_t    startPosition = m_buffer.GetSize();
     m_buffer.Append((const uint8_t *) s_b3dmMagic, 4);
-    m_buffer.Append((const uint8_t *) &s_b3dmVersion, 4);
-    long    lengthDataPosition = m_buffer.GetSize();
-    m_buffer.Append((const uint8_t *) &zero, sizeof(uint32_t));    // Filled in below.
-    m_buffer.Append((const uint8_t *) &batchTableStrLen, sizeof(uint32_t));
-    m_buffer.Append((const uint8_t *) &zero, sizeof(uint32_t)); // length of binary portion of batch table - we have no binary batch table data
-    m_buffer.Append((const uint8_t *) &b3dmNumBatches, sizeof(uint32_t));
+    m_buffer.Append(s_b3dmVersion);
+    uint32_t    lengthDataPosition = m_buffer.GetSize();
+    m_buffer.Append((uint32_t) 0);              // Filled in below.
+    m_buffer.Append(batchTableStrLen);
+    m_buffer.Append((uint32_t) 0); // length of binary portion of batch table - we have no binary batch table data
+    m_buffer.Append(b3dmNumBatches);
     m_buffer.Append((const uint8_t *) batchTableStr.data(), batchTableStrLen);
 
+    PadTo4ByteBoundary ();
     if (SUCCESS != WriteGltf (geometry, centroid))
         return ERROR;
 
     PadTo4ByteBoundary ();
-    uint32_t    dataSize = static_cast<uint32_t> (m_buffer.GetSize() - startPosition);
-    memcpy(m_buffer.GetDataP() + lengthDataPosition, &dataSize, sizeof(uint32_t));
+    WriteLength(startPosition, lengthDataPosition);
 
 #ifdef DEBUG_TO_BATCHED_MODEL
     std::FILE* outputFile = fopen("d:\\tmp\\test.b3dm","wb");
@@ -2048,14 +2067,106 @@ BentleyStatus WriteBatchedModel(Render::Primitives::GeometryCollectionCR geometr
 };  // BatchedModelWriter
 
 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     06/2017
+//=======================================================================================
+struct DgnCacheTileWriter : GltfWriter
+{
+
+public:
+    DgnCacheTileWriter(StreamBufferR streamBuffer, DgnModelR model) : GltfWriter(streamBuffer, model) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Json::Value  _CreateMeshMaterialJson(MeshCR mesh, MeshMaterial const& meshMaterial, Utf8StringCR suffix, DisplayParamsCR displayParams, bool doBatchIds) override 
+    {
+    Json::Value     value = Json::objectValue;
+
+    // GeomParams...
+    if (displayParams.GetCategoryId().IsValid())
+        value["categoryId"] = displayParams.GetCategoryId().GetValue();
+    
+    if (displayParams.GetSubCategoryId().IsValid())
+        value["subCategoryId"] = displayParams.GetSubCategoryId().GetValue();
+
+
+    if (displayParams.GetMaterialId().IsValid())
+        value["materialId"] = displayParams.GetMaterialId().GetValue();
+
+    value["class"] = (uint16_t) displayParams.GetClass();
+
+    // GraphicsParams...
+    value["fillColor"] = displayParams.GetFillColor();
+
+    // Are these needed for meshes (Edges??)
+    value["lineColor"]  = displayParams.GetLineColor();     // Edges?
+    value["lineWidth"]  = displayParams.GetLineWidth();
+    value["linePixels"] = (uint32_t) displayParams.GetLinePixels();     // Edges?
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void WriteFeatureTable(FeatureTableCR featureTable)
+    {
+    uint32_t      startPosition = m_buffer.GetSize();
+    m_buffer.Append((uint32_t) 0);              // Filled in below.
+
+    m_buffer.Append(featureTable.GetMaxFeatures());
+    m_buffer.Append((uint32_t) featureTable.size());
+    for (auto& feature : featureTable)
+        {
+        m_buffer.Append(feature.first.GetElementId().GetValue());
+        m_buffer.Append(feature.first.GetSubCategoryId().GetValue());
+        m_buffer.Append(static_cast<uint32_t> (feature.first.GetClass()));
+        m_buffer.Append(feature.second);
+        }
+    WriteLength(startPosition, startPosition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WriteTile(Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
+    {
+    uint32_t    startPosition = m_buffer.GetSize();
+    m_buffer.Append((const uint8_t *) s_dgnTileMagic, 4);
+    m_buffer.Append(s_dgnTileVersion);
+
+    uint32_t    lengthDataPosition = m_buffer.GetSize();
+    m_buffer.Append((uint32_t) 0);              // Filled in below.
+    WriteFeatureTable(geometry.Meshes().FeatureTable());
+    PadTo4ByteBoundary ();
+    if (SUCCESS != WriteGltf (geometry, centroid))
+        return ERROR;
+
+    PadTo4ByteBoundary ();
+    WriteLength(startPosition, lengthDataPosition);
+
+    return SUCCESS;
+    }
+};  // DgnCacheTileWriter
+
 END_TILEWRITER_NAMESPACE
    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileIO::WriteTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid)
+BentleyStatus TileIO::Write3dTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid)
     {
-    return TileWriter::BatchedModelWriter(streamBuffer, model).WriteBatchedModel(geometry, centroid);
+    return TileWriter::BatchedModelWriter(streamBuffer, model).WriteTile(geometry, centroid);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileIO::WriteDgnTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid)
+    {
+    return TileWriter::DgnCacheTileWriter(streamBuffer, model).WriteTile(geometry, centroid);
+    }
+
 
 

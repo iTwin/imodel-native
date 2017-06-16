@@ -2349,7 +2349,7 @@ public:
 
         return found;
         }
-
+    
     uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
@@ -2362,6 +2362,12 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
+
+    // Used by tile reader...
+    void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
+    bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
+
+
 };
 
 //=======================================================================================

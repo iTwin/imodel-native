@@ -24,7 +24,7 @@ BEGIN_TILEREADER_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     06/2017
 +===============+===============+===============+===============+===============+======*/
-struct Reader
+struct GltfReader
 {
     StreamBufferR       m_buffer;
     DgnModelR           m_model;
@@ -33,8 +33,9 @@ struct Reader
     Json::Value         m_accessors;     
     Json::Value         m_bufferViews;
     uint8_t const*      m_binaryData;
+    Render::System&     m_renderSystem;
 
-    Reader(StreamBufferR buffer, DgnModelR model) : m_buffer(buffer), m_model(model) { }
+    GltfReader(StreamBufferR buffer, DgnModelR model, Render::System& renderSystem) : m_buffer(buffer), m_model(model), m_renderSystem(renderSystem) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -60,7 +61,13 @@ BentleyStatus    GetAccessorAndBufferView(Json::Value& accessor, Json::Value& bu
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayParamsPtr ReadDisplayParams(Json::Value const& primitiveValue)
     {
-    BeAssert(false && "WIP");
+    auto&       material = primitiveValue["material"];
+
+    if (!material.isObject())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,20 +286,35 @@ BentleyStatus ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json::Value const
     return SUCCESS;
     }
 
-     
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
+    {
+    BeAssert (false && "WIP - Create DisplayParams from GLTF Material");
+    return nullptr;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  ReadMeshPrimitive(Render::Primitives::GeometryCollectionR geometry, Json::Value const& primitiveValue)
+Render::Primitives::MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue)
     {
-#ifdef WIP
-    TileDisplayParamsPtr    displayParams;
-
-    if(!(displayParams = ReadDisplayParams(primitiveValue)).IsValid())
-        return nullptr;
+    Json::Value     materialName = primitiveValue["material"], materialValue;
         
+    if (!materialName.isString() ||
+        !(materialValue = m_materialValues[materialName.asString()]).isObject())
+        {
+        BeAssert(false && "Material not found");
+        return nullptr;
+        }
+
+    DisplayParamsCPtr    displayParams = _CreateDisplayParams(materialValue);
+
+    if(!(displayParams = _CreateDisplayParams(primitiveValue)).IsValid())
+        return nullptr;
+
+#ifdef WIP        
     TileMeshPtr         mesh = TileMesh::Create(displayParams);
     bvector<uint16_t>   batchIds;
 
@@ -315,39 +337,19 @@ void  ReadMeshPrimitive(Render::Primitives::GeometryCollectionR geometry, Json::
                 mesh->EntityIdsR().push_back(entityId);
             }
         }
+#else
+    return nullptr;
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus  ReadBatchedModel(Render::Primitives::GeometryCollectionR geometry)
+TileIO::ReadStatus  ReadGltf(Render::Primitives::GeometryCollectionR geometryCollection)
     {
-    char            b3dmMagic[4];
-    uint32_t        b3dmLength, b3dmVersion, batchTableStrLen, batchTableBinaryLen, b3dmNumBatches; 
-
-    if (! m_buffer.ReadBytes(b3dmMagic, 4) ||  
-        0 != memcmp(b3dmMagic, s_b3dmMagic, 4) ||
-        !m_buffer.Read(b3dmVersion) ||  
-        b3dmVersion != s_b3dmVersion ||
-        !m_buffer.Read(b3dmLength) ||
-        !m_buffer.Read(batchTableStrLen) ||
-        !m_buffer.Read(batchTableBinaryLen) ||
-        !m_buffer.Read(b3dmNumBatches))
-        return TileIO::ReadStatus::InvalidHeader;
-
-    bvector<char>       batchTableData(batchTableStrLen);
-    Json::Value         batchTableValue;
-    Json::Reader        reader;                                                                                                                        
-    
-    if(!m_buffer.ReadBytes(batchTableData.data(), batchTableStrLen))
-        return TileIO::ReadStatus::ReadError;
-    
-    if(! reader.parse(batchTableData.data(), batchTableData.data() + batchTableStrLen, m_batchData))
-        return TileIO::ReadStatus::BatchTableParseError;
-
     char            gltfMagic[4];
     uint32_t        gltfVersion, gltfLength, sceneStrLength, gltfSceneFormat;
+    Json::Reader    reader;                                                                                                                        
 
     if(!m_buffer.ReadBytes(gltfMagic, 4) ||
         0 != memcmp(gltfMagic, s_gltfMagic, 4) ||
@@ -391,13 +393,176 @@ TileIO::ReadStatus  ReadBatchedModel(Render::Primitives::GeometryCollectionR geo
             BeAssert(false);
             continue;
             }
+
         for(auto& primitive : primitives)
-            ReadMeshPrimitive(geometry, primitive);
+            {
+            MeshPtr     mesh;
+            
+            if ((mesh = ReadMeshPrimitive(primitive)).IsValid())
+                geometryCollection.Meshes().push_back(mesh);
+            }
         }
 
     return TileIO::ReadStatus::Success; 
     }
-};  // Reader
+
+};  // GltfReader
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     06/2017
++===============+===============+===============+===============+===============+======*/
+struct BatchedModelReader : GltfReader
+{
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::ReadStatus  ReadTile(Render::Primitives::GeometryCollectionR geometry)
+    {
+    char            b3dmMagic[4];
+    uint32_t        b3dmLength, b3dmVersion, batchTableStrLen, batchTableBinaryLen, b3dmNumBatches; 
+
+    if (! m_buffer.ReadBytes(b3dmMagic, 4) ||  
+        0 != memcmp(b3dmMagic, s_b3dmMagic, 4) ||
+        !m_buffer.Read(b3dmVersion) ||  
+        b3dmVersion != s_b3dmVersion ||
+        !m_buffer.Read(b3dmLength) ||
+        !m_buffer.Read(batchTableStrLen) ||
+        !m_buffer.Read(batchTableBinaryLen) ||
+        !m_buffer.Read(b3dmNumBatches))
+        return TileIO::ReadStatus::InvalidHeader;
+
+    bvector<char>       batchTableData(batchTableStrLen);
+    Json::Value         batchTableValue;
+    Json::Reader        reader;                                                                                                                        
+    
+    if(!m_buffer.ReadBytes(batchTableData.data(), batchTableStrLen))
+        return TileIO::ReadStatus::ReadError;
+    
+    if(! reader.parse(batchTableData.data(), batchTableData.data() + batchTableStrLen, m_batchData))
+        return TileIO::ReadStatus::BatchTableParseError;
+
+    return ReadGltf (geometry);
+    }
+};  // BatchedModelReader
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     06/2017
++===============+===============+===============+===============+===============+======*/
+struct DgnCacheTileReader : GltfReader
+{
+    DgnCacheTileReader(StreamBufferR buffer, DgnModelR model, Render::System& renderSystem) : GltfReader(buffer, model, renderSystem) { }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue) override
+    {
+    GraphicParams   graphicParams;
+    GeometryParams  geometryParams, *geometryParamsP = nullptr;
+    bool            categoryValid;
+
+    if (materialValue.isMember("categoryId"))
+        {
+        geometryParamsP = &geometryParams;
+        geometryParams.SetCategoryId(DgnCategoryId(materialValue["categoryId"].asUInt64()));
+        }
+        
+    if (materialValue.isMember("subCategoryId"))
+        geometryParams.SetSubCategoryId(DgnSubCategoryId(materialValue["subCategoryId"].asUInt64()));
+
+    geometryParams.SetGeometryClass((DgnGeometryClass) materialValue["class"].asUInt());
+   graphicParams.SetFillColor(ColorDef(materialValue["fillColor"].asUInt()));
+   graphicParams.SetLineColor(ColorDef(materialValue["lineColor"].asUInt()));
+    graphicParams.SetWidth(materialValue["lineWidth"].asUInt());
+
+    if (materialValue.isMember("materialId"))
+        {
+        DgnMaterialId       materialId = DgnMaterialId(materialValue["materialId"].asUInt64());
+
+        if (materialId.IsValid())
+            graphicParams.SetMaterial(m_renderSystem._GetMaterial(materialId, m_model.GetDgnDb()).get());
+        }
+
+    switch ((DisplayParams::Type) materialValue["type"].asUInt())
+        {
+        case DisplayParams::Type::Mesh:
+            return DisplayParams::CreateForMesh(graphicParams, geometryParamsP, false, m_model.GetDgnDb(), m_renderSystem);
+
+        case DisplayParams::Type::Linear:
+            return DisplayParams::CreateForLinear(graphicParams, geometryParamsP);
+
+        case DisplayParams::Type::Text:
+            return DisplayParams::CreateForText(graphicParams, geometryParamsP);
+
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::ReadStatus  ReadFeatureTable(FeatureTableR featureTable)
+    {
+    uint32_t            featureTableLength, maxFeatures, featureCount;
+
+    if (!m_buffer.Read(featureTableLength) ||
+        !m_buffer.Read(maxFeatures) ||
+        !m_buffer.Read(featureCount))
+        return TileIO::ReadStatus::ReadError;
+
+    featureTable.SetMaxFeatures(maxFeatures);
+
+    for (size_t i=0;i<featureCount; i++)
+        {
+        uint64_t    elementId = 0;
+        uint64_t    subCategoryId = 0;
+        uint32_t    geometryClass = 0;
+        uint32_t    index = 0;
+
+        if (!m_buffer.Read(elementId) ||
+            !m_buffer.Read(subCategoryId) ||
+            !m_buffer.Read(geometryClass) ||
+            !m_buffer.Read(index))
+            {
+            BeAssert(false);
+            return TileIO::ReadStatus::FeatureTableError;;
+            }
+
+        featureTable.Insert(Feature(DgnElementId(elementId), DgnSubCategoryId(subCategoryId), static_cast<DgnGeometryClass>(geometryClass)), index);
+        }
+    // TBD - Check length against buffer position.
+
+    return TileIO::ReadStatus::Success;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::ReadStatus  ReadTile(Render::Primitives::GeometryCollectionR geometry)
+    {
+    char                dgnTileMagic[4];
+    uint32_t            dgnTileLength, dgnTileVersion;
+    TileIO::ReadStatus  status;
+
+    if (! m_buffer.ReadBytes(dgnTileMagic, 4) ||  
+        0 != memcmp(dgnTileMagic, s_dgnTileMagic, 4) ||
+        !m_buffer.Read(dgnTileVersion) ||  
+        dgnTileVersion != s_dgnTileVersion ||
+        !m_buffer.Read(dgnTileLength))
+        return TileIO::ReadStatus::InvalidHeader;
+    
+    if (TileIO::ReadStatus::Success != (status = ReadFeatureTable(geometry.Meshes().FeatureTable())))
+        return status;
+
+    return ReadGltf (geometry);
+    }
+};  // BatchedModelReader
 
 END_TILEREADER_NAMESPACE
 
@@ -405,7 +570,7 @@ END_TILEREADER_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus TileIO::ReadTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model)
+TileIO::ReadStatus TileIO::ReadDgnTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem)
     {
-    return TileReader::Reader(streamBuffer, model).ReadBatchedModel(geometry);
+    return TileReader::DgnCacheTileReader(streamBuffer, model, renderSystem).ReadTile(geometry);
     }

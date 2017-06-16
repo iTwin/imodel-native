@@ -263,6 +263,7 @@ struct MeshList : bvector<MeshPtr>
     explicit MeshList(uint32_t maxFeatures=2048*1024) : m_features(maxFeatures) { }
 
     FeatureTableCR  FeatureTable() const { return m_features; }
+    FeatureTableR  FeatureTable()  { return m_features; }
 };
 
 /*---------------------------------------------------------------------------------**//**
