@@ -13,7 +13,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
-    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
+    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
 
     // Create Horizontal 
@@ -74,7 +74,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
-    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
+    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->InsertWithMainPair(*alignPairPtr).IsValid());
 
     ASSERT_TRUE(alignmentPtr->GetHorizontal()->GetElementId().IsValid());
@@ -103,7 +103,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmationTest)
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
-    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
+    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
 
     // Create Stations
