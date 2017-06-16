@@ -120,7 +120,7 @@ struct RelationshipClassEndTableMappingContext : NonCopyableClass
                 void Clear();
                 bool IsValid() const;
                 bool IsPersisted() const { return m_isPersisted; }
-                static ColumnId ConstraintECInstanceId(ECN::ECRelationshipEnd end)  { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnId::SourceECInstanceId : ColumnId::TargetECClassId; }
+                static ColumnId ConstraintECInstanceId(ECN::ECRelationshipEnd end)  { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnId::SourceECInstanceId : ColumnId::TargetECInstanceId; }
                 static ColumnId ConstraintECClassId(ECN::ECRelationshipEnd end) { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnId::SourceEClassId : ColumnId::TargetECClassId; }
             };
 
@@ -154,7 +154,7 @@ struct RelationshipClassEndTableMappingContext : NonCopyableClass
         bool PersistedEndHasNonVirtualForeignKeyColumn() const;
         bool TryGetPartition(ClassMapCR classMap, std::vector<PartitionInfo*>& partitions);
         PartitionInfo* CreatePartition(DbTableId id);
-        void AddIndexToRelationshipEnd(PartitionInfo const& info);
+        BentleyStatus AddIndexToRelationshipEnd(PartitionInfo const& info);
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind);
         DbColumn* CreateForeignKeyColumn( DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo &fkColInfo);
         ClassMappingStatus CreateForeignKeyConstraint(DbTable const& referencedTable);

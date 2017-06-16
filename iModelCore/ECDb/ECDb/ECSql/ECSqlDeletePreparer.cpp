@@ -20,17 +20,18 @@ ECSqlStatus ECSqlDeletePreparer::Prepare(ECSqlPrepareContext& ctx, DeleteStateme
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
     ClassMap const& classMap = classNameExp->GetInfo().GetMap();
+    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+        {
+        LOG.errorv("Failed to delete ECRelationshipClass %s. Use navigation property pointing to this class to delete relationships.", classMap.GetClass().GetFullName());
+        return ECSqlStatus::InvalidECSql;
+        }
 
     NativeSqlSnippets deleteNativeSqlSnippets;
     ECSqlStatus stat = GenerateNativeSqlSnippets(deleteNativeSqlSnippets, ctx, exp, *classNameExp);
     if (!stat.IsSuccess())
         return stat;
 
-    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-        stat = PrepareForEndTableRelationship(ctx, deleteNativeSqlSnippets, classMap.GetAs<RelationshipClassEndTableMap>());
-    else
-        stat = PrepareForClass(ctx, deleteNativeSqlSnippets);
-
+     stat = PrepareForClass(ctx, deleteNativeSqlSnippets);
     ctx.PopScope();
     return stat;
     }
@@ -43,16 +44,6 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForClass(ECSqlPrepareContext& ctx, Nativ
     {
     BuildNativeSqlDeleteStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets);
     return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassEndTableMap const& classMap)
-    {
-    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Delete from RelationshipClassEndTableMap map is not supported.");
-    return ECSqlStatus::InvalidECSql;
     }
 
 //-----------------------------------------------------------------------------------------

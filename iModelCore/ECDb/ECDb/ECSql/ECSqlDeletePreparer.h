@@ -28,17 +28,12 @@ private:
         NativeSqlBuilder m_systemWhereClauseNativeSqlSnippet;
         };
 
-
     //static class
     ECSqlDeletePreparer ();
     ~ECSqlDeletePreparer ();
 
-    static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& deleteNativeSqlSnippets, ECSqlPrepareContext&, 
-                        DeleteStatementExp const&, ClassNameExp const&);
-
+    static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& deleteNativeSqlSnippets, ECSqlPrepareContext&, DeleteStatementExp const&, ClassNameExp const&);
     static ECSqlStatus PrepareForClass (ECSqlPrepareContext&, NativeSqlSnippets&);
-    static ECSqlStatus PrepareForEndTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets&, RelationshipClassEndTableMap const&);
-
     static void BuildNativeSqlDeleteStatement (NativeSqlBuilder& deleteBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets);
 
 

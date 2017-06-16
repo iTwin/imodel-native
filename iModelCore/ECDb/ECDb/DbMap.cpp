@@ -143,7 +143,7 @@ BentleyStatus DbMap::MapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaC
         return ERROR;
         }
     PERFLOG_FINISH("ECDb", "Schema import> Create or update tables");
-
+    const_cast<ECDbR>(GetECDb()).SaveChanges();
     PERFLOG_START("ECDb", "Schema import> Create or update indexes");
     if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
         {
@@ -722,6 +722,9 @@ BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
             Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
+
+        if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+            classMap.GetAs<RelationshipClassEndTableMap>().RestPartitionCache();
         }
 
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(GetECDb()))

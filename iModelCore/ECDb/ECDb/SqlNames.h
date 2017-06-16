@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLE_CustomAttribute "ec_CustomAttribute"
 #define TABLE_Class "ec_Class"
 #define TABLE_Schema "ec_Schema"
-
+#define TABLE_ClassMap "ec_ClassMap"
 #define TABLE_ClassHierarchyCache "ec_cache_ClassHierarchy"
 #define TABLE_ClassHasTablesCache "ec_cache_ClassHasTables"
 

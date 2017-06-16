@@ -400,7 +400,6 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         classIdColSql.append(classIdColumn.GetName());
         Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
         desc.GetClassId().ToString(classIdStr);
-
         if (!polymorphic)
             {
             //if partition's table is only used by a single class, no filter needed     

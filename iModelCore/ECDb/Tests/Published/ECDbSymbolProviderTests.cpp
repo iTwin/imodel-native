@@ -239,7 +239,7 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasOn
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
     
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -271,7 +271,7 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMu
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB2);
     
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB1->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -309,7 +309,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -340,7 +340,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -374,7 +374,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB2);
 
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -408,7 +408,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     stmt.BindText(1, instanceA2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -463,7 +463,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "INSERT INTO [test2].[DifferentRelationship] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test2].[DifferentRelationship] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -529,7 +529,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     ECInstanceInserter(m_ecdb, *classC, nullptr).Insert(*instanceC);
 
     ECSqlStatement insertStmt;
-    insertStmt.Prepare(m_ecdb, "INSERT INTO [test2].[CHasSubA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO [test2].[CHasSubA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     insertStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     insertStmt.BindId(2, classC->GetId());
     insertStmt.BindText(3, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
@@ -589,7 +589,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceV
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
     
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);

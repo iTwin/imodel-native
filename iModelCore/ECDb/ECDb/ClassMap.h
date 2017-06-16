@@ -131,9 +131,9 @@ struct ClassMap : RefCountedBase
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         BentleyStatus MapSystemColumns();
-        void Modified() { if (m_state == ObjectState::Persisted) m_state = ObjectState::Modified; }
     public:
         virtual ~ClassMap() {}
+        void Modified() { if (m_state == ObjectState::Persisted) m_state = ObjectState::Modified; }
 
         //! Called when loading an existing class map from the ECDb file 
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }

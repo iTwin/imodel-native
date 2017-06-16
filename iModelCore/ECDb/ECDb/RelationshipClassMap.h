@@ -99,7 +99,10 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             DbColumn const& GetSourceECClassId() const { return m_sourceClassId; }
             DbColumn const& GetTargetECInstanceId() const { return m_targetId; }
             DbColumn const& GetTargetECClassId() const { return m_targetClassId; }
+            DbColumn const& GetConstraintECInstanceId(ECN::ECRelationshipEnd end) const { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECInstanceId() : GetTargetECInstanceId();}
+            DbColumn const& GetConstraintECClassId(ECN::ECRelationshipEnd end) const { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassId() : GetTargetECClassId(); }
             uint64_t GetHashCode() const { return m_hashCode; }
+            bool CanQuery() const { return GetTable().GetType()!=DbTable::Type::Virtual; }
             static std::unique_ptr<Partition> Create(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const& sourceClassId, DbColumn const& targetId, DbColumn const& targetClassId, ECN::ECRelationshipEnd fromEnd);
         };
 
@@ -117,12 +120,25 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             ECN::ECRelationshipEnd GetToEnd() const;
             ECN::ECRelationshipEnd GetFromEnd() const;
             PartitionView(RelationshipClassEndTableMap const& relationshipMap);
-
+            BentleyStatus AddDefaultPartition();
         public:
+            const std::vector <DbTable const*> GetTables(bool skipVirtualPartition) const;
             const std::map <DbTable const*, std::vector<Partition const*>> GetPartitionMap() const;
-            const std::vector<Partition const*> GetPartitions() const;
-            const std::vector<Partition const*> GetPartitions(DbTable const& toEnd) const;
+            const std::vector<Partition const*> GetPartitions(bool skipVirtualPartition) const;
+            const std::vector<Partition const*> GetPartitions(DbTable const& toEnd, bool skipVirtualPartition) const;
             static std::unique_ptr< PartitionView> Create(RelationshipClassEndTableMap const& relationMap);
+            std::vector<Partition const*>  GetPhysicalPartitions() const
+                {
+                std::vector<Partition const*> physcialPartitions;
+                for (DbTable const* table : GetTables(true))
+                    {
+                    for (auto const* part : GetPartitions(*table, true))
+                        if (part->CanQuery())
+                            physcialPartitions.push_back(part);
+                    }
+
+                return physcialPartitions;
+                }
         };
 
     private:
@@ -140,6 +156,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ECN::ECRelationshipEnd GetForeignEnd() const;
         ECN::ECRelationshipEnd GetReferencedEnd() const;
         PartitionView const& GetPartitionView() const;
+        void RestPartitionCache() const { m_partitionCollection = nullptr; }
     };
 
 /*==========================================================================

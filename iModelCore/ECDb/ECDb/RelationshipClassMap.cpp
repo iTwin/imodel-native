@@ -89,8 +89,8 @@ bool RelationshipClassEndTableMap::Partition::Check(DbTable const& table, DbColu
 
     if (!skipTableCheck)
         {
-        BeAssert(table.GetId() == checkColumn.GetId());
-        if (table.GetId() != checkColumn.GetId())
+        BeAssert(table.GetId() == checkColumn.GetTable().GetId());
+        if (table.GetId() != checkColumn.GetTable().GetId())
             return  false;
         }
 
@@ -142,7 +142,7 @@ std::unique_ptr<RelationshipClassEndTableMap::Partition> RelationshipClassEndTab
     if (!Check(table, ecInstanceId, DbColumn::Kind::ECInstanceId))
         return nullptr;
 
-    if (!Check(table, ecClassId, DbColumn::Kind::ECClassId))
+    if (!Check(table, ecClassId, DbColumn::Kind::RelECClassId))
         return nullptr;
 
     if (!Check(table, sourceId, DbColumn::Kind::SourceECInstanceId))
@@ -171,6 +171,7 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
     ECDbCR ecdb = m_relationshipMap.GetECDb();
     DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
     std::vector<DbTable const*> list;
+    std::vector<DbTable const*> nvlist;
     if (otherEndConstraint.GetIsPolymorphic())
         {
         CachedStatementPtr stmt = ecdb.GetCachedStatement(
@@ -181,16 +182,19 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
             "       INNER JOIN [ec_cache_ClassHierarchy] [CH] ON [CH].[BaseClassId] = [RCC].[ClassId] "
             "       INNER JOIN [ec_cache_ClassHasTables] [CHT] ON [CHT].[ClassId] = [CH].[ClassId] "
             "WHERE  [RC].[RelationshipClassId] = ? "
-            "       AND [RC].[RelationshipEnd] = ? "
-            "       AND [T].[Type] = 0; ");
-
-        PRECONDITION(stmt == nullptr, list);
+            "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined);
+            
+        PRECONDITION(stmt != nullptr, list);
         stmt->BindId(1, m_relationshipMap.GetClass().GetId());
         stmt->BindInt(2, Enum::ToInt(otherEnd));
         while (stmt->Step() == BE_SQLITE_ROW)
             {
             if (DbTable const* table = dbSchema.FindTable(stmt->GetValueId<DbTableId>(0)))
+                {
                 list.push_back(table);
+                if (table->GetType() != DbTable::Type::Virtual)
+                    nvlist.push_back(table);
+                }
             else
                 {
                 list.clear();
@@ -207,16 +211,19 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
             "       INNER JOIN [ec_Table] [T] ON [T].[Id] = [CHT].[TableId] "
             "       INNER JOIN [ec_cache_ClassHasTables] [CHT] ON [CHT].[ClassId] = [RCC].[ClassId] "
             "WHERE  [RC].[RelationshipClassId] = ? "
-            "       AND [RC].[RelationshipEnd] = ? "
-            "       AND [T].[Type] = 0; ");
+            "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined);
 
-        PRECONDITION(stmt == nullptr, list);
+        PRECONDITION(stmt != nullptr, list);
         stmt->BindId(1, m_relationshipMap.GetClass().GetId());
         stmt->BindInt(2, Enum::ToInt(otherEnd));
         while (stmt->Step() == BE_SQLITE_ROW)
             {
             if (DbTable const* table = dbSchema.FindTable(stmt->GetValueId<DbTableId>(0)))
+                {
                 list.push_back(table);
+                if (table->GetType() != DbTable::Type::Virtual)
+                    nvlist.push_back(table);
+                }
             else
                 {
                 list.clear();
@@ -224,6 +231,9 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
                 }
             }
         }
+
+    if (!nvlist.empty())
+        return nvlist;
 
     return list;
     }
@@ -255,7 +265,7 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::ResurrectPartition(st
 
     DbTable const& table = navId.GetTable();
     DbColumn const* fromEndClassId = tables.front()->FindFirst(DbColumn::Kind::ECClassId);
-    DbColumn const* toEndClassId = tables.front()->FindFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* toEndClassId = navId.GetTable().FindFirst(DbColumn::Kind::ECClassId);
     DbColumn const* ecInstnaceId = table.FindFirst(DbColumn::Kind::ECInstanceId);
     DbColumn const* ecClassId = &navRelECClassId;
     DbColumn const* sourceECInstanceId = GetFromEnd() == ECRelationshipEnd_Source ? &navId : ecInstnaceId;
@@ -276,12 +286,31 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::ResurrectPartition(st
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipClassEndTableMap::PartitionView::AddDefaultPartition()
+    {
+    DbTable const* table = m_relationshipMap.GetTables().front();
+    return InsertPartition(
+        Partition::Create(
+            m_relationshipMap.GetECInstanceIdPropertyMap()->FindDataPropertyMap(*table)->GetColumn(),
+            m_relationshipMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table)->GetColumn(),
+            m_relationshipMap.GetSourceECInstanceIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
+            m_relationshipMap.GetSourceECClassIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
+            m_relationshipMap.GetTargetECInstanceIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
+            m_relationshipMap.GetTargetECClassIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
+            GetFromEnd()), true);
+    }
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         06/17
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipClassEndTableMap::PartitionView::Load()
     {
     if (m_loadedPartitions)
         return SUCCESS;
 
     m_partitionMap.clear();
+    if (AddDefaultPartition() != SUCCESS)
+        return ERROR;
+
     enum class PropertyMapKind
         {
         Id = 1,
@@ -299,7 +328,7 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::Load()
         "       INNER JOIN [ec_PropertyMap] [PM] ON [PM].[PropertyPathId] = [PP].[Id] "
         "       INNER JOIN [ec_Column] [C] ON [C].[Id] = [PM].[ColumnId] "
         "       INNER JOIN [ec_Table] [T] ON [T].[Id] = [C].[TableId] "
-        "WHERE  [P].[NavigationRelationshipClassId] = ? ORDER BY [T].[Id], [P].[Id], PropertyMapKind; ";
+        "WHERE  [P].[NavigationRelationshipClassId] = ? ORDER BY [T].[Id], [PM].[ClassId], [PropertyMapKind]; ";
 
     ECDbCR ecdb = m_relationshipMap.GetECDb();
     DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
@@ -316,7 +345,6 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::Load()
         //3. Expecting PropertyMapKind 2 to be second
         PropertyMapKind idPropertyMapKind = Enum::FromInt<PropertyMapKind>(stmt->GetValueInt(0));
         DbTableId idTableId = stmt->GetValueId<DbTableId>(1);
-
         if (idPropertyMapKind != PropertyMapKind::Id)
             return ERROR;
 
@@ -333,7 +361,6 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::Load()
 
         PropertyMapKind relECClassIdPropertyMapKind = Enum::FromInt<PropertyMapKind>(stmt->GetValueInt(0));
         DbTableId relECClassIdTableId = stmt->GetValueId<DbTableId>(1);
-
         if (relECClassIdPropertyMapKind != PropertyMapKind::RelEClassId)
             return ERROR;
 
@@ -385,12 +412,33 @@ const std::map <DbTable const*, std::vector<RelationshipClassEndTableMap::Partit
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-const std::vector<RelationshipClassEndTableMap::Partition const*> RelationshipClassEndTableMap::PartitionView::GetPartitions() const
+const std::vector <DbTable const*> RelationshipClassEndTableMap::PartitionView::GetTables(bool skipVirtualPartition) const
+    {
+    std::vector <DbTable const*> list;
+    for (auto const& partition : GetPartitionMap())
+        {
+        if (partition.first->GetType() == DbTable::Type::Virtual && skipVirtualPartition)
+            continue;
+
+        list.push_back(partition.first);
+        }
+
+    return list;
+    }
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+const std::vector<RelationshipClassEndTableMap::Partition const*> RelationshipClassEndTableMap::PartitionView::GetPartitions(bool skipVirtualPartition) const
     {
     std::vector<Partition const*> list;
     for (auto const& partition : m_partitionMap)
         for (auto const& entry : partition.second)
+            {
+            if (skipVirtualPartition && entry->GetTable().GetType() == DbTable::Type::Virtual)
+                continue;
+
             list.push_back(entry.get());
+            }
 
     return list;
     }
@@ -398,7 +446,7 @@ const std::vector<RelationshipClassEndTableMap::Partition const*> RelationshipCl
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-const std::vector<RelationshipClassEndTableMap::Partition const*> RelationshipClassEndTableMap::PartitionView::GetPartitions(DbTable const& toEnd) const
+const std::vector<RelationshipClassEndTableMap::Partition const*> RelationshipClassEndTableMap::PartitionView::GetPartitions(DbTable const& toEnd, bool skipVirtualPartition) const
     {
     std::vector<Partition const*> list;
     auto itor = m_partitionMap.find(toEnd.GetId());
@@ -409,12 +457,21 @@ const std::vector<RelationshipClassEndTableMap::Partition const*> RelationshipCl
     else
         {
         for (auto const& entry : itor->second)
+            {
+            if (skipVirtualPartition && entry->GetTable().GetType() == DbTable::Type::Virtual)
+                continue;
+
             list.push_back(entry.get());
+            }
         }
 
     return list;
     }
-    std::unique_ptr< RelationshipClassEndTableMap::PartitionView> RelationshipClassEndTableMap::PartitionView::Create(RelationshipClassEndTableMap const& relationMap)
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr< RelationshipClassEndTableMap::PartitionView> RelationshipClassEndTableMap::PartitionView::Create(RelationshipClassEndTableMap const& relationMap)
     {
     std::unique_ptr< PartitionView> col = std::unique_ptr< PartitionView>(new PartitionView(relationMap));
     POSTCONDITION(col->Load() == SUCCESS, nullptr);
@@ -574,14 +631,16 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (SUCCESS != MapSystemColumns())
         return ClassMappingStatus::Error;
 
+    
     DbTable* vtable = GetTables().front();
+    const_cast<DbColumn&>(vtable->GetECClassIdColumn()).AddKind(DbColumn::Kind::RelECClassId);
     PRECONDITION(vtable != nullptr && vtable->GetType() == DbTable::Type::Virtual, ClassMappingStatus::Error);
     {////////SourceECInstanceId
-    DbColumn* sourceECInstanceId = vtable->CreateColumn("SourceECInstanceId", DbColumn::Type::Integer, DbColumn::Kind::SourceECInstanceId, PersistenceType::Virtual);
+    DbColumn* sourceECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::SourceECInstanceId, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECInstanceId});
     if (propMap == nullptr || sourceECInstanceId == nullptr)
         {
-        BeAssert(false && "Failed to create PropertyMap ECClassId");
+        BeAssert(false && "Failed to create PropertyMap SourceECInstanceId");
         return ClassMappingStatus::Error;
         }
 
@@ -592,11 +651,11 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////SourceECClassId
-    DbColumn* sourceECClassId = vtable->CreateColumn("SourceECClassId", DbColumn::Type::Integer, DbColumn::Kind::SourceECClassId, PersistenceType::Virtual);
+    DbColumn* sourceECClassId = vtable->CreateColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::SourceECClassId, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECClassId});
     if (propMap == nullptr || sourceECClassId == nullptr)
         {
-        BeAssert(false && "Failed to create PropertyMap ECClassId");
+        BeAssert(false && "Failed to create PropertyMap SourceECClassId");
         return ClassMappingStatus::Error;
         }
 
@@ -607,11 +666,11 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////TargetECInstanceId
-    DbColumn* targetECInstanceId = vtable->CreateColumn("TargetECInstanceId", DbColumn::Type::Integer, DbColumn::Kind::TargetECInstanceId, PersistenceType::Virtual);
+    DbColumn* targetECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::TargetECInstanceId, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECInstanceId});
     if (propMap == nullptr || targetECInstanceId == nullptr)
         {
-        BeAssert(false && "Failed to create PropertyMap ECClassId");
+        BeAssert(false && "Failed to create PropertyMap TargetECInstanceId");
         return ClassMappingStatus::Error;
         }
 
@@ -622,11 +681,11 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////TargetECClassId
-    DbColumn* targetECClassId = vtable->CreateColumn("TargetECClassId", DbColumn::Type::Integer, DbColumn::Kind::TargetECClassId, PersistenceType::Virtual);
+    DbColumn* targetECClassId = vtable->CreateColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::TargetECClassId, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECClassId});
     if (propMap == nullptr || targetECClassId == nullptr)
         {
-        BeAssert(false && "Failed to create PropertyMap ECClassId");
+        BeAssert(false && "Failed to create PropertyMap TargetECClassId");
         return ClassMappingStatus::Error;
         }
 

@@ -24,29 +24,27 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     ctx.PushScope(exp);
 
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-
-    DbTable const& table = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
-    if (table.GetType() == DbTable::Type::Virtual)
+    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
-        if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-            {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("ECRelationshipClass' foreign key end is abstract. Cannot insert into such an ECRelationshipClass.");
-            return ECSqlStatus::InvalidECSql;
-            }
-
-        BeAssert(false && "Should have been caught before");
+        LOG.errorv("Failed to insert into ECRelationshipClass %s. Use navigation property pointing to this class to create relationships.", classMap.GetClass().GetFullName());
         return ECSqlStatus::InvalidECSql;
         }
+    else
+        {
+        DbTable const& table = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
+        if (table.GetType() == DbTable::Type::Virtual)
+            {
 
+            BeAssert(false && "Should have been caught before");
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
     NativeSqlSnippets insertNativeSqlSnippets;
     ECSqlStatus stat = GenerateNativeSqlSnippets(insertNativeSqlSnippets, ctx, exp, classMap);
     if (!stat.IsSuccess())
         return stat;
 
-    if (classMap.IsRelationshipClassMap())
-        stat = PrepareInsertIntoRelationship(ctx, insertNativeSqlSnippets, exp, classMap);
-    else
-        stat = PrepareInsertIntoClass(ctx, insertNativeSqlSnippets, classMap, exp);
+     stat = PrepareInsertIntoClass(ctx, insertNativeSqlSnippets, classMap, exp);
 
     ctx.PopScope();
     return stat;
@@ -69,11 +67,8 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoClass(ECSqlPrepareContext& ctx
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, ClassMap const& classMap)
     {
-    BeAssert(classMap.IsRelationshipClassMap());
-    if (classMap.GetType() == ClassMap::Type::RelationshipLinkTable)
-        return PrepareInsertIntoLinkTableRelationship(ctx, nativeSqlSnippets, exp, classMap.GetAs<RelationshipClassLinkTableMap>());
-
-    return PrepareInsertIntoEndTableRelationship(ctx, nativeSqlSnippets, exp, classMap.GetAs<RelationshipClassEndTableMap>());
+    BeAssert(classMap.IsRelationshipClassMap() && classMap.GetType() == ClassMap::Type::RelationshipLinkTable);
+    return PrepareInsertIntoLinkTableRelationship(ctx, nativeSqlSnippets, exp, classMap.GetAs<RelationshipClassLinkTableMap>());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -85,16 +80,6 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
     PrepareClassId(ctx, nativeSqlSnippets, relationshipClassMap);
     BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, exp);
     return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassEndTableMap const& relationshipClassMap)
-    {
-    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Insert into RelationshipClassEndTableMap map is not supported.");
-    return ECSqlStatus::InvalidECSql;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -190,7 +175,5 @@ void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insert
 
     insertBuilder.AppendParenRight();
     }
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
