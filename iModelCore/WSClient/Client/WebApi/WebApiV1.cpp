@@ -945,7 +945,7 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Petras.Sukys    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequestWithRel
+AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
 (
 ObjectIdCR relatedObjectId,
 JsonValueCR objectCreationJson,
