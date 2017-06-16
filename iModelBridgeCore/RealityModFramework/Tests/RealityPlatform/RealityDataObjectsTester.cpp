@@ -783,10 +783,10 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_TRUE(myRange.high.y == 46.8);
 
 
-    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": 12.500000000, \"Lat\": 45.800000000},{\"Long\": 12.500000000, \"Lat\": 46.800000000},{\"Long\": 13.500000000, \"Lat\": 46.800000000},{\"Long\": 13.500000000, \"Lat\": 45.800000000},{\"Long\": 12.500000000, \"Lat\": 45.800000000}]}");
+    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": \"12.500000000\", \"Lat\": \"45.800000000\"},{\"Long\": \"12.500000000\", \"Lat\": \"46.800000000\"},{\"Long\": \"13.500000000\", \"Lat\": \"46.800000000\"},{\"Long\": \"13.500000000\", \"Lat\": \"45.800000000\"},{\"Long\": \"12.500000000\", \"Lat\": \"45.800000000\"}]}");
 
-    myRealityData->SetFootprintString("{\"Coordinates\": [{\"Long\": 0.00000000, \"Lat\": 0.00000000},{\"Long\": 1.000000000, \"Lat\": 0.000000000},{\"Long\": 1.000000000, \"Lat\": 1.00000000},{\"Long\": 0.00000000, \"Lat\": 1.000000000},{\"Long\": 0.000000000, \"Lat\": 0.00000000}]}");
-    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": 0.00000000, \"Lat\": 0.00000000},{\"Long\": 1.000000000, \"Lat\": 0.000000000},{\"Long\": 1.000000000, \"Lat\": 1.00000000},{\"Long\": 0.00000000, \"Lat\": 1.000000000},{\"Long\": 0.000000000, \"Lat\": 0.00000000}]}");
+    myRealityData->SetFootprintString("{\"Coordinates\": [{\"Long\": \"0.00000000\", \"Lat\": \"0.00000000\"},{\"Long\": \"1.000000000\", \"Lat\": \"0.000000000\"},{\"Long\": \"1.000000000\", \"Lat\": \"1.00000000\"},{\"Long\": \"0.00000000\", \"Lat\": \"1.000000000\"},{\"Long\": \"0.000000000\", \"Lat\": \"0.00000000\"}]}");
+    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": \"0.00000000\", \"Lat\": \"0.00000000\"},{\"Long\": \"1.000000000\", \"Lat\": \"0.000000000\"},{\"Long\": \"1.000000000\", \"Lat\": \"1.00000000\"},{\"Long\": \"0.00000000\", \"Lat\": \"1.000000000\"},{\"Long\": \"0.000000000\", \"Lat\": \"0.00000000\"}]}");
 
 
 
@@ -854,7 +854,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataCustomCreate)
     EXPECT_TRUE(myRange.low.y == 45.8);
     EXPECT_TRUE(myRange.high.y == 46.8);
 
-    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": 12.500000000, \"Lat\": 45.800000000},{\"Long\": 12.500000000, \"Lat\": 46.800000000},{\"Long\": 13.500000000, \"Lat\": 46.800000000},{\"Long\": 13.500000000, \"Lat\": 45.800000000},{\"Long\": 12.500000000, \"Lat\": 45.800000000}]}");
+    EXPECT_STREQ(myRealityData->GetFootprintString().c_str(), "{\"Coordinates\": [{\"Long\": \"12.500000000\", \"Lat\": \"45.800000000\"},{\"Long\": \"12.500000000\", \"Lat\": \"46.800000000\"},{\"Long\": \"13.500000000\", \"Lat\": \"46.800000000\"},{\"Long\": \"13.500000000\", \"Lat\": \"45.800000000\"},{\"Long\": \"12.500000000\", \"Lat\": \"45.800000000\"}]}");
 
     EXPECT_STREQ(myRealityData->GetName().c_str(), "MyName");
 

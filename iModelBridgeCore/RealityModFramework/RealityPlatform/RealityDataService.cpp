@@ -489,7 +489,7 @@ RDSFilter RealityDataFilterCreator::FilterBySize(uint64_t minSize, uint64_t maxS
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys)
     {   
-    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToGCSString(area, Utf8PrintfString("%lu", coordSys))));
+    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToRDSString(area, Utf8PrintfString("%lu", coordSys))));
     }
 
 //=====================================================================================

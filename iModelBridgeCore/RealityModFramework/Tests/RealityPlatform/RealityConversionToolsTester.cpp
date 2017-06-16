@@ -592,8 +592,11 @@ TEST_F(RealityConversionTestFixture, RealityDataToJson)
                 {
                 // Footprint is a string but parsed then recreated the result may be non-string equal and still be numerically equal.
                 // To compare we parse to footprint then compare coordinates.
-                bvector<GeoPoint2d> RealityDataBase::RDSJSONToFootprint(const Json::Value& footprintJson, Utf8String& coordSys)
+                
+                bvector<GeoPoint2d> expectedFootprint = RealityDataBase::RDSJSONToFootprint(expectedValue[memberName], "");
+                bvector<GeoPoint2d> testFootprint = RealityDataBase::RDSJSONToFootprint(valueUnderTest[memberName], "");
 
+                EXPECT_TRUE(expectedFootprint == testFootprint);
                 }
             else
 			    EXPECT_TRUE(expectedValue[memberName] == valueUnderTest[memberName]);

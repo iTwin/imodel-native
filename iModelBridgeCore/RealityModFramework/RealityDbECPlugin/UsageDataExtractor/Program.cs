@@ -181,10 +181,9 @@ namespace UsageDataExtractor
             string line;
 
             string serverURL = ConfigurationManager.AppSettings["serverURL"];
-            string password = GetPassword();
 
             DateTime lastTokenTime = DateTime.Now;
-            string base64Token = GetToken(password);
+            string base64Token = GetToken();
 
             TimeSpan limitSpan = new TimeSpan(0, 30, 0);
 
@@ -202,7 +201,7 @@ namespace UsageDataExtractor
                             if ( (DateTime.Now - lastTokenTime) > limitSpan )
                                 {
                                 lastTokenTime = DateTime.Now;
-                                base64Token = GetToken(password);
+                                base64Token = GetToken();
                                 }
                             string packageId = line.Split(' ').First();
                             string date;
@@ -251,10 +250,9 @@ namespace UsageDataExtractor
             {
 
             string serverURL = ConfigurationManager.AppSettings["serverURL"];
-            string password = GetPassword();
 
             DateTime lastTokenTime = DateTime.Now;
-            string base64Token = GetToken(password);
+            string base64Token = GetToken();
 
             JArray statsArray = GetJSonStats(serverURL, base64Token, beginning, end);
 
@@ -399,24 +397,26 @@ namespace UsageDataExtractor
             return password;
             }
 
-        private static string GetToken (string password)
+        private static string GetToken ()
             {
-            SecurityToken token = null;
+            //SecurityToken token = null;
 
-            string strServiceURL = ConfigurationManager.AppSettings["serviceUrl"];
+            //string strServiceURL = ConfigurationManager.AppSettings["serviceUrl"];
 
-            Uri BaseUri = new Uri(strServiceURL);
+            //Uri BaseUri = new Uri(strServiceURL);
 
-            string activeSTSUrl = ConfigurationManager.AppSettings["activeSTSUrl"];
+            //string activeSTSUrl = ConfigurationManager.AppSettings["activeSTSUrl"];
 
-            StsHelper sts = new StsHelper(activeSTSUrl, BaseUri.ToString().Replace("/api/", "/"));
-            string clientKey = ConfigurationManager.AppSettings["email"];
+            //StsHelper sts = new StsHelper(activeSTSUrl, BaseUri.ToString().Replace("/api/", "/"));
+            //string clientKey = ConfigurationManager.AppSettings["email"];
 
-            token = sts.GetSecurityToken(clientKey, password, new List<Microsoft.IdentityModel.Protocols.WSTrust.RequestClaim>(), new Dictionary<string, string>());
+            //token = sts.GetSecurityToken(clientKey, password, new List<Microsoft.IdentityModel.Protocols.WSTrust.RequestClaim>(), new Dictionary<string, string>());
 
-            string tokenString = StsHelper.SerializeToken(token);
+            //string tokenString = StsHelper.SerializeToken(token);
 
-            return System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(tokenString));
+            //return System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(tokenString));
+            var connectApi = new ConnectAPI(ConfigurationManager.AppSettings["serviceUrl"]);
+            return connectApi.GetTokenIfConnected();
             }
 
         private static string GetPolygon (string packageId, string serverURL, string base64Token, string baseResultName, out string date)
