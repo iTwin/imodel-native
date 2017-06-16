@@ -1891,6 +1891,10 @@ public:
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     //! @see GetPropertyIndex
     DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
+
+    //! @private
+    DGNPLATFORM_EXPORT void GetCustomHandledPropertiesAsJson(Json::Value& json) const;
+
     //! @}
 };
 
@@ -3325,9 +3329,12 @@ public:
 
     //! @private
     Utf8StringCR GetSelectEcPropsECSql(ECSqlClassInfo&, ECN::ECClassCR) const;
-
+    //! @private
+    DGNPLATFORM_EXPORT Utf8StringCR GetAutoHandledPropertiesSelectECSql(ECN::ECClassCR ecclass) const;
     //! @private
     ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
+    //! @private
+    ECSqlClassInfo& FindClassInfo(DgnClassId classId) const;
     
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //!< @private
