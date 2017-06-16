@@ -290,7 +290,6 @@ public:
         struct FontAdmin : IHostObject
         {
         protected:
-            bool m_isInitialized;
             BeSQLite::DbP m_lastResortFontDb;
             DgnFonts* m_dbFonts;
             DgnFontPtr m_lastResortTTFont;
@@ -298,36 +297,37 @@ public:
             DgnFontPtr m_lastResortShxFont;
             DgnFontPtr m_decoratorFont;
             bool m_triedToLoadFTLibrary;
+            bool m_suspended = false;
             FreeType_LibraryP m_ftLibrary;
         
             DGNPLATFORM_EXPORT virtual BeFileName _GetLastResortFontDbPath();
             DGNPLATFORM_EXPORT virtual BentleyStatus _EnsureLastResortFontDb();
             DGNPLATFORM_EXPORT virtual DgnFontPtr _CreateLastResortFont(DgnFontType);
         
+            virtual DgnFontCR _GetLastResortTrueTypeFont() {return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType));}
+            virtual DgnFontCR _GetLastResortRscFont() {return m_lastResortRscFont.IsValid() ? *m_lastResortRscFont : *(m_lastResortRscFont = _CreateLastResortFont(DgnFontType::Rsc));}
+            virtual DgnFontCR _GetLastResortShxFont() {return m_lastResortShxFont.IsValid() ? *m_lastResortShxFont : *(m_lastResortShxFont = _CreateLastResortFont(DgnFontType::Shx));}
+            virtual DgnFontCR _GetAnyLastResortFont() {return _GetLastResortTrueTypeFont();}
+            DGNPLATFORM_EXPORT virtual DgnFontCR _GetDecoratorFont();
+            DGNPLATFORM_EXPORT virtual FreeType_LibraryP _GetFreeTypeLibrary();
         public:
-            FontAdmin() : m_isInitialized(false), m_lastResortFontDb(nullptr), m_dbFonts(nullptr), m_triedToLoadFTLibrary(false), m_ftLibrary(nullptr) {}
+            FontAdmin() : m_lastResortFontDb(nullptr), m_dbFonts(nullptr), m_triedToLoadFTLibrary(false), m_ftLibrary(nullptr) {}
             DGNPLATFORM_EXPORT virtual ~FontAdmin();
 
-            virtual DgnFontCR _GetLastResortTrueTypeFont() {return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType));}
             DgnFontCR GetLastResortTrueTypeFont() {return _GetLastResortTrueTypeFont();}
-            virtual DgnFontCR _GetLastResortRscFont() {return m_lastResortRscFont.IsValid() ? *m_lastResortRscFont : *(m_lastResortRscFont = _CreateLastResortFont(DgnFontType::Rsc));}
             DgnFontCR GetLastResortRscFont() {return _GetLastResortRscFont();}
-            virtual DgnFontCR _GetLastResortShxFont() {return m_lastResortShxFont.IsValid() ? *m_lastResortShxFont : *(m_lastResortShxFont = _CreateLastResortFont(DgnFontType::Shx));}
             DgnFontCR GetLastResortShxFont() {return _GetLastResortShxFont();}
-            virtual DgnFontCR _GetAnyLastResortFont() {return _GetLastResortTrueTypeFont();}
             DgnFontCR GetAnyLastResortFont() {return _GetAnyLastResortFont();}
-            DGNPLATFORM_EXPORT virtual DgnFontCR _GetDecoratorFont();
             DgnFontCR GetDecoratorFont() {return _GetDecoratorFont();}
             DGNPLATFORM_EXPORT virtual DgnFontCR _ResolveFont(DgnFontCP);
             DgnFontCR ResolveFont(DgnFontCP font) {return _ResolveFont(font);}
             virtual bool _IsUsingAnRtlLocale() {return false;}
             bool IsUsingAnRtlLocale() {return _IsUsingAnRtlLocale();}
-            DGNPLATFORM_EXPORT virtual FreeType_LibraryP _GetFreeTypeLibrary();
             FreeType_LibraryP GetFreeTypeLibrary() {return _GetFreeTypeLibrary();}
             DGNPLATFORM_EXPORT void Suspend();
             DGNPLATFORM_EXPORT void Resume();
 
-            DGNPLATFORM_EXPORT void EnsureInitialized();
+            void Initialize();
         };
 
         //! Allows interaction between the host and the LineStyleManager.

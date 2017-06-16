@@ -477,14 +477,16 @@ private:
     Features                        m_features;
     PrimitiveType                   m_type;
     mutable MeshEdgesPtr            m_edges;
+    bool                            m_is2d;
 
-    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range)
-        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_normals(QPoint3d::Params::FromNormalizedRange()) { }
+    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d)
+        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_normals(QPoint3d::Params::FromNormalizedRange()), m_is2d(is2d) { }
 
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
 public:
-    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range) { return new Mesh(params, featureTable, type, range); }
+    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d)
+        { return new Mesh(params, featureTable, type, range, is2d); }
 
     DPoint3d                        GetPoint(uint32_t index) const;
     DGNPLATFORM_EXPORT DRange3d     GetTriangleRange(TriangleCR triangle) const;
@@ -509,6 +511,7 @@ public:
     MeshEdgesPtr                    GetEdges() const { return m_edges; }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
+    bool Is2d() const { return m_is2d; }
     PrimitiveType GetType() const { return m_type; }
 
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
@@ -617,14 +620,13 @@ private:
     RefCountedPtr<Polyface>         m_currentPolyface;
     DRange3d                        m_tileRange;
 
-
-    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range)
-        : m_mesh(Mesh::Create(params, featureTable, type, range)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d)
+        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
 
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
-    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range)
-        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range); }
+    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d)
+        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);

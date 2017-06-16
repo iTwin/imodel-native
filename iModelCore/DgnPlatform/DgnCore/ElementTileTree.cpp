@@ -240,6 +240,7 @@ static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
 struct RangeAccumulator : RangeIndex::Traverser
 {
     DRange3dR       m_range;
+    uint32_t        m_numElements = 0;
     bool            m_is2d;
 
     RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
@@ -248,6 +249,7 @@ struct RangeAccumulator : RangeIndex::Traverser
     Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return Accept::Yes; }
     Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
+        ++m_numElements;
         m_range.Extend(entry.m_range.ToRange3d());
         return Stop::No;
         }
@@ -259,7 +261,34 @@ struct RangeAccumulator : RangeIndex::Traverser
         else
             return !m_range.IsNull();
         }
+
+    uint32_t GetElementCount() const { return m_numElements; }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool isElementCountLessThan(uint32_t threshold, RangeIndex::Tree& tree)
+    {
+    struct Counter : RangeIndex::Traverser
+    {
+        uint32_t    m_count = 0;
+        uint32_t    m_threshold;
+
+        explicit Counter(uint32_t threshold) : m_threshold(threshold) { }
+
+        Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return m_count < m_threshold ? Accept::Yes : Accept::No; }
+        Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+            {
+            ++m_count;
+            return m_count < m_threshold ? Stop::No : Stop::Yes;
+            }
+    };
+
+    Counter counter(threshold);
+    tree.Traverse(counter);
+    return counter.m_count < threshold;
+    }
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
@@ -1086,12 +1115,14 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         return nullptr;
 
     DRange3d range;
+    bool populateRootTile;
     if (model.Is3dModel())
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
 
         // This drastically reduces the time required to generate the root tile, so that the user sees *something* on the screen much sooner.
         range.ScaleAboutCenter(range, s_spatialRangeMultiplier);
+        populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
         }
     else
         {
@@ -1102,7 +1133,14 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
             // return nullptr; ###TODO_ELEMENT_TILE: Empty models exist...
             range = DRange3d::From(DPoint3d::FromZero());
             }
+
+        populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
+
+#if defined(POPULATE_ROOT_TILE)
+    // For debugging...
+    populateRootTile = true;
+#endif
 
     // Translate world coordinates to center of range in order to reduce precision errors
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
@@ -1114,34 +1152,29 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     PSolidKernelManager::StartSession();
 #endif
 
-    // Prepare for multi-threaded access to this stuff when generating geometry...
-    T_HOST.GetFontAdmin().EnsureInitialized();
-    model.GetDgnDb().Fonts().Update();
-
     RootPtr root = new Root(model, transform, system);
     Transform rangeTransform;
 
     rangeTransform.InverseOf(transform);
     DRange3d tileRange;
     rangeTransform.Multiply(tileRange, range);
-    return root->LoadRootTile(tileRange, model) ? root : nullptr;
+    return root->LoadRootTile(tileRange, model, populateRootTile) ? root : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
+bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate)
     {
     // We want to generate the lowest-resolution tiles before any of their descendants, so that we always have *something* to draw
     // However, if we generated the single root tile before any others, we'd have to process every element in the model and waste all our work threads.
     // Instead, make the root tile empty & undisplayable; its direct children can be generated in parallel instead as the lowest-resolution tiles.
-    // Possible optimization: Don't do this if the number of elements in the model is less than the min number of elements per tile, so that we reduce the number
+    // Optimization: Don't do this if the number of elements in the model is less than the min number of elements per tile, so that we reduce the number
     // of tiles required.
-    m_rootTile = Tile::Create(*this, range);
+    m_rootTile = Tile::CreateRoot(*this, range, populate);
 
-#if !defined(POPULATE_ROOT_TILE)
-    m_rootTile->SetIsReady();
-#endif
+    if (!populate)
+        m_rootTile->SetIsReady();
 
     return true;
     }
@@ -1402,6 +1435,25 @@ Root::DebugOptions Root::GetDebugOptions() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::ToggleDebugBoundingVolumes()
+    {
+    switch (s_globalDebugOptions)
+        {
+        case DebugOptions::None:
+            s_globalDebugOptions = DebugOptions::ShowBoundingVolume;
+            break;
+        case DebugOptions::ShowContentVolume:
+            s_globalDebugOptions = DebugOptions::None;
+            break;
+        default:
+            s_globalDebugOptions = DebugOptions::ShowContentVolume;
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
@@ -1423,10 +1475,11 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     params.SetWidth(0);
     if (wantRange)
         {
-        ColorDef color = IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
+        bool isLeaf = IsLeaf() || HasZoomFactor();
+        ColorDef color = isLeaf ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
         params.SetLineColor(color);
         params.SetFillColor(color);
-        params.SetLinePixels(IsLeaf() ? LinePixels::Code5 : LinePixels::Code4);
+        params.SetLinePixels(isLeaf ? LinePixels::Code5 : LinePixels::Code4);
         gf->ActivateGraphicParams(params);
         gf->AddRangeBox(GetRange());
         }
@@ -1445,6 +1498,14 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Tile::_GetTileCacheKey() const
+    {
+    return Utf8PrintfString("%d/%d/%d/%d:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
@@ -1458,8 +1519,8 @@ void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range)
-    : T_Super(octRoot, id, parent, false)
+Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable)
+    : T_Super(octRoot, id, parent, false), m_displayable(displayable)
     {
     if (nullptr != parent)
         m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this));
@@ -1470,11 +1531,24 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot()), parent.GetTileId(), &parent, false)
+    {
+    m_range.Extend(parent.GetRange());
+
+    BeAssert(parent.HasZoomFactor());
+    SetZoomFactor(parent.GetZoomFactor() * 2.0);
+
+    InitTolerance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::InitTolerance()
     {
-    m_tolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
+    m_tolerance = m_range.DiagonalDistance() / (s_minToleranceRatio * m_zoomFactor);
     m_isLeaf = false;
     }
 
@@ -1526,17 +1600,26 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::ChildTiles const* Tile::_GetChildren(bool load) const
+    {
+    if (HasZoomFactor() && load && m_children.empty())
+        {
+        // Create a single child containing same geometry in same range, faceted to a higher resolution.
+        m_children.push_back(CreateWithZoomFactor(*this));
+        }
+
+    return T_Super::_GetChildren(load);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
-#if !defined(POPULATE_ROOT_TILE)
-    // The root tile is undisplayable (that's what returning 0.0 indicates)
-    return 0 == GetDepth() ? 0.0 : s_tileScreenSize; // ###TODO: come up with a decent value, and account for device ppi
-#else
-    // for debugging only...
-    return s_tileScreenSize;
-#endif
+    // returning 0.0 signifies undisplayable tile...
+    return m_displayable ? s_tileScreenSize * m_zoomFactor : 0.0;
     }
 
 //=======================================================================================
@@ -1608,7 +1691,8 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
     if (m_builderMap.end() != found)
         return *found->second;
 
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange);
+    bool is2d = m_tile.GetElementRoot().Is2d();
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange, is2d);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -2056,13 +2140,6 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
         // We may want to turn this into a leaf node if it contains strictly linear geometry - but we can't do that if any elements were excluded
         geometries.MarkIncomplete();
         }
-    else if (!IsLeaf() && collector.GetEntries().size() <= s_minElementsPerTile)
-        {
-        // If no elements were skipped and only a small number of elements exist within this tile's range, make it a leaf tile.
-        // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
-        SetIsLeaf();
-        m_tolerance = std::min(m_tolerance, collector.ComputeLeafTolerance());
-        }
 
     if (collector.AnySkipped())
         geometries.MarkIncomplete();
@@ -2089,6 +2166,19 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
             tileContext.TruncateGeometryList(maxFeatures);
             break;
             }
+        }
+
+    if (!loadContext.WasAborted() && !IsLeaf() && !HasZoomFactor() && collector.GetEntries().size() <= s_minElementsPerTile)
+        {
+        // If no elements were skipped and only a small number of elements exist within this tile's range:
+        //  - Make it a leaf tile, if it contains no curved geometry; otherwise
+        //  - Mark it so that it will have only a single child tile, containing the same geometry faceted at a higher resolution
+        // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
+        // Also note that if we're a child of a tile with zoom factor, we already have our own (higher) zoom factor
+        if (!geometries.ContainsCurves())
+            SetIsLeaf();
+        else
+            SetZoomFactor(1.0);
         }
 
     return geometries;

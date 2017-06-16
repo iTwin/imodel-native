@@ -1995,10 +1995,11 @@ struct IndexedPolylineArgs
     LinePixels          m_linePixels = LinePixels::Solid;
     bool                m_disjoint = false;
     bool                m_isEdge = false;
+    bool                m_is2d = false;
 
     IndexedPolylineArgs() { }
-    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams)
-        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams) { }
+    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams, bool is2d)
+        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams), m_is2d(is2d) { }
 };
 
 //=======================================================================================
