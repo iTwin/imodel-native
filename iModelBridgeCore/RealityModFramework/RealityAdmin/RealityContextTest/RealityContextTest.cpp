@@ -710,6 +710,8 @@ int main(int argc, char* argv[])
                 serverType = RealityPlatform::CONNECTServerType::QA;
             else if (strstr(argv[i], "prod"))
                 serverType = RealityPlatform::CONNECTServerType::PROD;
+            else if (strstr(argv[i], "perf"))
+                serverType = RealityPlatform::CONNECTServerType::PERF;
             else
                 serverType = RealityPlatform::CONNECTServerType::DEV;
             }

@@ -173,9 +173,9 @@ void RDSStats::WriteToFileBody(int userCount, Utf8String path, std::ofstream& fi
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
-RDSUser::RDSUser(): User(), m_handshake(AzureHandshake()) {}
+// RDSUser::RDSUser(): User(), m_handshake(AzureHandshake()) {}
 
-RDSUser::RDSUser(int id, Stats* stats) : User(id, stats), m_handshake(AzureHandshake()) {}
+RDSUser::RDSUser(int id, Stats* stats, RealityData& realityData, Utf8String fileName) : User(id, stats), m_handshake(AzureHandshake()), m_realityData(realityData), m_fileName(fileName) {}
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Spencer Mason                   4/2017
@@ -452,6 +452,7 @@ CURL* RDSUser::CreateRealityData()
     {
     BeAssert(m_id.empty());
 
+#if (0)
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     
     properties.Insert(RealityDataField::Name, "Load Test (ERASE)");
@@ -461,8 +462,11 @@ CURL* RDSUser::CreateRealityData()
     properties.Insert(RealityDataField::Type, "3DTiles");
 
     properties.Insert(RealityDataField::Visibility, "ENTERPRISE");
-
     RealityDataCreateRequest createRequest = RealityDataCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
+
+#endif
+    RealityDataCreateRequest createRequest = RealityDataCreateRequest(m_realityData);
+
     m_correspondance.response.clear();
     m_correspondance.req.url = createRequest.GetHttpRequestString();
     m_correspondance.req.headers = createRequest.GetRequestHeaders();
@@ -669,21 +673,79 @@ int main(int argc, char* argv[])
         std::cout << "  -o, --project  A project id to an existing project for which you have required permissions is mandatory" << std::endl;
         }
 
+
+    double min_lon = 12.402;
+    double min_lat = 23.502;
+    double max_lon = 12.456;
+    double max_lat = 23.513;
+
+    RealityDataPtr newRealityData = RealityData::Create();
+    newRealityData->SetName("INTERNAL-ONLY TEST Reality Data");
+    newRealityData->SetResolution("1.11x1.12");
+    newRealityData->SetAccuracy("3.1");
+    newRealityData->SetClassification(RealityDataBase::Classification::MODEL);
+    newRealityData->SetVisibility(RealityDataBase::Visibility::PRIVATE);
+    newRealityData->SetDataset("INTERNAL-ONLY TEST DATASET");
+    newRealityData->SetRealityDataType("TEST_ONLY");
+    newRealityData->SetStreamed(false);
+    newRealityData->SetThumbnailDocument("Thumnail.jpg");
+    newRealityData->SetRootDocument("root.test");
+    newRealityData->SetListable(true);
+    newRealityData->SetMetadataUrl("metadata.xml");
+    newRealityData->SetCopyright("belongs to every one");
+    newRealityData->SetTermsOfUse("use wisely");
+    newRealityData->SetGroup("TestGroup-185a9dbe-d9ed-4c87-9289-57beb3c94a1a");
+    newRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam vestibulum nunc quis malesuada varius. Donec at molestie enim, sit amet interdum mauris.\
+                                    Sed dapibus ultricies orci, id dictum ligula consectetur vitae. Quisque eu ipsum in urna molestie ultricies. Nullam fringilla erat vitae placerat semper. Nulla consectetur justo lacinia, \
+                                    lobortis mi et, feugiat arcu. Mauris ullamcorper sapien quis urna feugiat porta. Curabitur et velit quis dolor sodales commodo. \
+                                    Interdum et malesuada fames ac ante ipsum primis in faucibus. Proin id eros felis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas");
+
+    bvector<GeoPoint2d> myFootprint;
+    myFootprint.push_back(GeoPoint2d::From(min_lon, min_lat));
+    myFootprint.push_back(GeoPoint2d::From(min_lon, max_lat));
+    myFootprint.push_back(GeoPoint2d::From(max_lon, max_lat));
+    myFootprint.push_back(GeoPoint2d::From(max_lon, min_lat));
+    myFootprint.push_back(GeoPoint2d::From(min_lon, min_lat));
+
+    newRealityData->SetFootprint(myFootprint);
+    newRealityData->SetApproximateFootprint(false);
+
+    // Create a temporary file
+    char fileNameBuffer[1025];
+    Utf8String tempFileName = Utf8String(tmpnam(fileNameBuffer));
+
+    // Fill the temporary file with data
+    FILE* theFile = fopen(tempFileName.c_str(),"w");
+
+    if (theFile == NULL)
+        throw std::exception();
+
+    char buffer[1024];
+    for (int index = 1 ; index < 1000000; index++ /* Needed to advance past modulo 1000 */)
+        
+        {
+        for (; (index % 1000) != 0; index++)
+            buffer[index % 1000] = index % 255;
+        
+        fwrite(buffer, 1000, 1, theFile);
+        }
+    fclose(theFile);
+
     std::queue<User*> inactiveUsers;
 
     if(!tester.trickle)
         {
         for(int i = 0; i < tester.userManager.m_userCount; i++)
             {
-            tester.userManager.users.push_back(new RDSUser(i, &stats));
+            tester.userManager.users.push_back(new RDSUser(i, &stats, *newRealityData, tempFileName));
             }
         }
     else
         {
-        tester.userManager.users.push_back(new RDSUser(0, &stats)); //start with one
+        tester.userManager.users.push_back(new RDSUser(0, &stats, *newRealityData, tempFileName)); //start with one
         for (int i = 1; i < tester.userManager.m_userCount; i++)
             {
-            inactiveUsers.push(new RDSUser(i, &stats)); //feed the rest to the Dispatcher
+            inactiveUsers.push(new RDSUser(i, &stats, *newRealityData, tempFileName)); //feed the rest to the Dispatcher
             }
         }
 
@@ -691,6 +753,8 @@ int main(int argc, char* argv[])
         RealityDataService::SetServerComponents("connect-realitydataservices.bentley.com", "2.4", "S3MXECPlugin--Server", "S3MX");
     else if (tester.m_serverType == RealityPlatform::CONNECTServerType::QA)
         RealityDataService::SetServerComponents("qa-connect-realitydataservices.bentley.com", "2.4", "S3MXECPlugin--Server", "S3MX");
+    else if (tester.m_serverType == RealityPlatform::CONNECTServerType::PERF)
+        RealityDataService::SetServerComponents("perf-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
     else // (tester.m_serverType == RealityPlatform::CONNECTServerType::DEV)
         RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
