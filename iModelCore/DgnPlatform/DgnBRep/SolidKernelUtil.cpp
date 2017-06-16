@@ -3110,7 +3110,10 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
             bvector<ISubEntityPtr>::iterator it = std::find_if(faces.begin(), faces.end(), std::bind2nd(IsSubEntityPtrEqual(), facePtr.get()));
 
             if (it != faces.end())
+                {
+                faceTransforms[it - faces.begin()] = edgeTransform; // If more than 1 edge from same face is selected...just apply input transform to face...
                 continue;
+                }
 
             DRange1d uRangeF, vRangeF;
 
@@ -3268,7 +3271,10 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
             bvector<ISubEntityPtr>::iterator it = std::find_if(faces.begin(), faces.end(), std::bind2nd(IsSubEntityPtrEqual(), facePtr.get()));
 
             if (it != faces.end())
+                {
+                faceTransforms[it - faces.begin()] = vertexTransform; // If more than 1 vertex from same face is selected...just apply input transform to face...
                 continue;
+                }
 
             DRange1d uRangeF, vRangeF;
 
