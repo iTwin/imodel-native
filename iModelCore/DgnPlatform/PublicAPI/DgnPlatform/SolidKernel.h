@@ -734,7 +734,7 @@ struct Modify
     //! @param[in] transforms The array of transforms for each edge.
     //! @param[in] addStep The option for how to handle the creation of step faces. NOTE: AddNonCoincident is only supported for pure translation/rotation...
     //! @return SUCCESS if edges could be transformed.
-    DGNPLATFORM_EXPORT static BentleyStatus TransformEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<Transform> const& transforms, StepFacesOption addStep = StepFacesOption::AddSmooth);
+    DGNPLATFORM_EXPORT static BentleyStatus TransformEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<Transform> const& transforms, StepFacesOption addStep = StepFacesOption::AddNone);
 
     //! Modify the target solid or sheet body by transforming selected vertices.
     //! @param[in,out] target The target body to modify.
