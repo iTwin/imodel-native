@@ -103,6 +103,7 @@
     <ClCompile Include="presentation\PresentationRules\SortingRule.cpp" />
     <ClCompile Include="presentation\PresentationRules\StyleOverride.cpp" />
     <ClCompile Include="presentation\PresentationRules\UserSettingsGroup.cpp" />
+    <ClCompile Include="PropertyCategory.cpp" />
     <ClCompile Include="SchemaLocalizedStrings.cpp" />
     <ClCompile Include="SchemaResourceKeyHelper.cpp" />
     <ClCompile Include="SchemaXml.cpp" />

@@ -18,45 +18,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct NonPublishedSchemaTest : ECTestFixture {};
-TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
-    {
-    ECSchemaPtr schema;
-    ECEntityClassP foo;
-    ECEntityClassP bar;
-    
-    ECSchema::CreateSchema(schema, "TestSchema", "testAlias", 5, 5, 5);
-    schema->CreateEntityClass(foo, "foo");
-    schema->CreateEntityClass(bar, "bar");
-
-    ClassMap classMap;
-    classMap.insert (bpair<Utf8CP, ECClassP> (foo->GetName().c_str(), foo));
-    classMap.insert (bpair<Utf8CP, ECClassP> (bar->GetName().c_str(), bar));
-    
-    int count = 0;
-    ECClassContainer container(classMap);
-    for (ECClassContainer::const_iterator cit = container.begin(); cit != container.end(); ++cit)
-        {
-        ECClassCP ecClass = *cit;
-        ASSERT_TRUE(ecClass != NULL);
-#if PRINT_DUMP
-        Utf8String name = ecClass->GetName();
-        printf("ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
-#endif
-        count++;
-        }
-    ASSERT_EQ(2, count);
-
-    for (ECClassCP ecClass: container)
-        {
-        ASSERT_TRUE(ecClass != NULL);
-#if PRINT_DUMP
-        Utf8String name = ecClass->GetName();
-        printf("ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
-#endif
-        count++;
-        }
-    ASSERT_EQ(4, count);
-    }
 
 TEST_F (NonPublishedSchemaTest, TestCircularReferenceWithLocateSchema)
     {

@@ -26,7 +26,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr)
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr), m_propertyCategory(nullptr)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -443,6 +443,30 @@ bool ECProperty::HasExtendedType () const
     return this->_HasExtendedType();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+PropertyCategoryCP ECProperty::GetPropertyCategory() const
+    {
+    if (m_propertyCategory == nullptr)
+        {
+        ECPropertyCP baseProperty = GetBaseProperty();
+        if (nullptr != baseProperty)
+            return baseProperty->GetPropertyCategory();
+        }
+
+    return m_propertyCategory;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECProperty::SetPropertyCategory(PropertyCategoryCP propertyCategory)
+    {
+    m_propertyCategory = propertyCategory;
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -497,6 +521,29 @@ ECObjectsStatus resolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8
         }
 
     kindOfQuantity = result;
+    return ECObjectsStatus::Success;
+    }
+
+ECObjectsStatus resolvePropertyCategory(PropertyCategoryCP& propertyCategory, Utf8StringCR typeName, ECSchemaCR parentSchema)
+    {
+    // typeName may potentially be qualified so we must parse into an alias and short class name
+    Utf8String alias;
+    Utf8String propertyCategoryName;
+    if (ECObjectsStatus::Success != ECXml::ParseFullyQualifiedName(alias, propertyCategoryName, typeName))
+        {
+        LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByAliasP(alias);
+    if (nullptr == resolvedSchema)
+        return ECObjectsStatus::SchemaNotFound;
+
+    auto result = resolvedSchema->GetPropertyCategoryCP(propertyCategoryName.c_str());
+    if (nullptr == result)
+        return ECObjectsStatus::DataTypeNotSupported;
+
+    propertyCategory = result;
     return ECObjectsStatus::Success;
     }
 
@@ -558,6 +605,22 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
             }
 
         SetKindOfQuantity(kindOfQuantity);
+        }
+
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, CATEGORY_ATTRIBUTE))
+        {
+        PropertyCategoryCP propertyCategory;
+        if (resolvePropertyCategory(propertyCategory, value, GetClass().GetSchema()) != ECObjectsStatus::Success)
+            {
+            LOG.errorv("Could not resolve PropertyCategory '%s' found on property '%s.%s'.",
+                value.c_str(),
+                GetClass().GetFullName(),
+                GetName().c_str());
+
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
+        SetPropertyCategory(propertyCategory);
         }
 
     if(CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes (propertyNode, context, GetClass().GetSchema()))
@@ -696,6 +759,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         {
         xmlWriter.WriteAttribute(MINIMUM_LENGTH_ATTRIBUTE, m_minimumLength);
         }
+
+    // Only serialize for 3.1 or newer
+    if (IsPropertyCategoryDefinedLocally() && ECVersion::V3_1 <= ecXmlVersion)
+        xmlWriter.WriteAttribute(CATEGORY_ATTRIBUTE, GetPropertyCategory()->GetQualifiedName(GetClass().GetSchema()).c_str());
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
         {

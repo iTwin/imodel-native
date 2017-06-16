@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/PropertyOverrideTests.cpp $
+|     $Source: test/Published/PropertyTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,6 +12,9 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
+struct PropertyTest : ECTestFixture {};
+struct PropertyDeserializationTest : ECTestFixture {};
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -20,17 +23,364 @@ struct PropertyOverrideTests : ECTestFixture
     ECSchemaPtr RoundTripSchema(ECSchemaPtr testSchema);
     void VerifyPropertyInheritance(ECClassCP ab, ECClassCP cd, ECClassCP ef, ECClassCP gh, ECClassCP ij, ECClassCP kl, ECClassCP mn);
     ECSchemaPtr SetUpBaseSchema();
-
-    void ExpectBasePropertyFromClass (Utf8CP propName, ECClassCP derived, ECClassCP base)
-        {
-        auto baseProp = derived->GetPropertyP (propName)->GetBaseProperty();
-        EXPECT_TRUE (baseProp->GetClass().GetName().Equals (base->GetName()))
-            << "Base property " << propName
-            << " expected from class " << base->GetName().c_str()
-            << " actually from class " << baseProp->GetClass().GetName().c_str();
-        }
+    void ExpectBasePropertyFromClass(Utf8CP propName, ECClassCP derived, ECClassCP base);
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, SetGetMinMaxInt)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='Foo' >"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+
+    PrimitiveECPropertyP primp;
+    ASSERT_EQ(cp->CreatePrimitiveProperty(primp, "Foo"), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->SetType(PrimitiveType::PRIMITIVETYPE_Integer), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
+    ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
+    ASSERT_EQ(primp->IsMaximumValueDefined(), false);
+    ASSERT_EQ(primp->IsMinimumValueDefined(), false);
+
+    ECValue val;
+    val.SetUtf8CP("bar");
+    ASSERT_EQ(primp->SetMaximumValue(val), ECObjectsStatus::DataTypeNotSupported);
+    val.SetInteger(42);
+    ASSERT_EQ(primp->SetMaximumValue(val), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->IsMaximumValueDefined(), true);
+    val.SetToNull(); //ensure val has been copied
+    ASSERT_EQ(primp->IsMaximumValueDefined(), true);
+
+    ASSERT_EQ(primp->GetMaximumValue(val), ECObjectsStatus::Success);
+    ASSERT_EQ(val.GetInteger(), 42);
+
+    primp->ResetMaximumValue();
+    ASSERT_EQ(primp->IsMaximumValueDefined(), false);
+    ASSERT_EQ(primp->GetMaximumValue(val), ECObjectsStatus::Error);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, GetSetPropertyMinMaxLength)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='Foo' >"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+
+    PrimitiveECPropertyP primp;
+    ASSERT_EQ(cp->CreatePrimitiveProperty(primp, "Foo"), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->SetType(PrimitiveType::PRIMITIVETYPE_String), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
+    ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
+
+    ASSERT_EQ(primp->SetMaximumLength(42), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->IsMaximumLengthDefined(), true);
+    ASSERT_EQ(primp->GetMaximumLength(), 42);
+
+    primp->ResetMaximumLength();
+    ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
+    ASSERT_EQ(primp->GetMaximumLength(), 0);
+
+    ASSERT_EQ(primp->SetMinimumLength(10), ECObjectsStatus::Success);
+    ASSERT_EQ(primp->IsMinimumLengthDefined(), true);
+    ASSERT_EQ(primp->GetMinimumLength(), 10);
+
+    primp->ResetMinimumLength();
+    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
+    ASSERT_EQ(primp->GetMinimumLength(), 0);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, GetSetCategory)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP entityClass;
+    PropertyCategoryP propertyCategory;
+    PrimitiveECPropertyP prop;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+
+    schema->CreatePropertyCategory(propertyCategory, "TestPropertyCategory");
+    schema->CreateEntityClass(entityClass, "TestClass");
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetPropertyCategory(propertyCategory));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, GetSetInheritedCategory)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP entityClass;
+    ECEntityClassP derivedEntityClass;
+    PropertyCategoryP propertyCategory;
+    PrimitiveECPropertyP prop;
+    PrimitiveECPropertyP derivedProp;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    schema->CreateEntityClass(derivedEntityClass, "DerivedClass");
+    schema->CreatePropertyCategory(propertyCategory, "TestPropertyCategory");
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetPropertyCategory(propertyCategory));
+
+    derivedEntityClass->CreatePrimitiveProperty(derivedProp, "TestProp");
+
+    derivedEntityClass->AddBaseClass(*entityClass);
+    EXPECT_FALSE(derivedProp->IsPropertyCategoryDefinedLocally());
+    EXPECT_EQ(derivedProp->GetPropertyCategory(), prop->GetPropertyCategory());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, MinMaxValue)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='DoubleProp' typeName='double' MaximumValue='3.0' MinimumValue='42'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+
+    ECPropertyP pp = cp->GetPropertyP("DoubleProp");
+    ASSERT_NE(pp, nullptr);
+
+    ECValue minVal;
+    ECValue maxVal;
+    ASSERT_EQ(pp->GetMinimumValue(minVal), ECObjectsStatus::Success);
+    ASSERT_EQ(pp->GetMaximumValue(maxVal), ECObjectsStatus::Success);
+
+    ASSERT_EQ(minVal.IsNull(), false);
+    ASSERT_EQ(maxVal.IsNull(), false);
+
+    ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, MinMaxLength)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='StringProp' typeName='string' MinimumLength='3' MaximumLength='42'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+
+    ECPropertyP pp = cp->GetPropertyP("StringProp");
+    ASSERT_NE(pp, nullptr);
+
+    EXPECT_TRUE(pp->IsMinimumLengthDefined());
+    EXPECT_TRUE(pp->IsMaximumLengthDefined());
+
+    EXPECT_EQ(3, pp->GetMinimumLength());
+    EXPECT_EQ(42, pp->GetMaximumLength());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, CategoryAttribute)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding="utf-8"?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECEntityClass typeName='Foo'>
+               <ECProperty propertyName='StringProp' typeName='string' category="testPropCategory"/>
+            </ECEntityClass>
+            <PropertyCategory typeName="testPropCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="0"/>
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassCP ecClass = schema->GetClassCP("Foo");
+    ASSERT_NE(nullptr, ecClass);
+
+    ECPropertyP ecProp = ecClass->GetPropertyP("StringProp");
+    ASSERT_NE(nullptr, ecProp);
+
+    PropertyCategoryCP propCategory = ecProp->GetPropertyCategory();
+    EXPECT_NE(nullptr, propCategory);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, CategoryFromReferencedSchema)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    {
+    Utf8CP refSchemaXml = R"xml(<?xml version='1.0' encoding="utf-8"?>
+        <ECSchema schemaName='RefSchemaWithPropertyCategory' alias='rswpc' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <PropertyCategory typeName="testPropCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="0"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr refSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *context));
+    }
+
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding="utf-8"?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='RefSchemaWithPropertyCategory' version='01.00' alias='rswpc' />
+            <ECEntityClass typeName='Foo'>
+                <ECProperty propertyName='StringProp' typeName='string' category="rswpc:testPropCategory"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassCP ecClass = schema->GetClassCP("Foo");
+    ASSERT_NE(nullptr, ecClass);
+
+    ECPropertyP ecProp = ecClass->GetPropertyP("StringProp");
+    ASSERT_NE(nullptr, ecProp);
+
+    PropertyCategoryCP propCategory = ecProp->GetPropertyCategory();
+    EXPECT_NE(nullptr, propCategory);
+    EXPECT_STREQ("testPropCategory", propCategory->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, CategoryFromReferencedSchema_MissingSchemaReference)
+    {
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding="utf-8"?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='RefSchemaWithPropertyCategory' version='01.00' alias='rswpc' />
+            <ECEntityClass typeName='Foo'>
+                <ECProperty propertyName='StringProp' typeName='string' category="rswpc:testPropCategory"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::ReferencedSchemaNotFound, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    {
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP refSchemaXml = R"xml(<?xml version='1.0' encoding="utf-8"?>
+        <ECSchema schemaName='RefSchemaWithPropertyCategory' alias='rswpc' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        </ECSchema>)xml";
+
+    ECSchemaPtr refSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *context));
+
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding="utf-8"?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='RefSchemaWithPropertyCategory' version='01.00' alias='rswpc' />
+            <ECEntityClass typeName='Foo'>
+                <ECProperty propertyName='StringProp' typeName='string' category="rswpc:testPropCategory"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, CategoryAttributeInherited)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding="utf-8"?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECEntityClass typeName='Foo'>
+                <ECProperty propertyName='StringProp' typeName='string' category="testPropCategory"/>
+            </ECEntityClass>
+            <ECEntityClass typeName='Foo2'>
+                <BaseClass>Foo</BaseClass>
+                <ECProperty propertyName='StringProp' typeName='string'/>
+            </ECEntityClass>
+            <PropertyCategory typeName="testPropCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="0"/>
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassCP ecClass = schema->GetClassCP("Foo");
+    ASSERT_NE(nullptr, ecClass);
+
+    ECPropertyP ecProp = ecClass->GetPropertyP("StringProp");
+    ASSERT_NE(nullptr, ecProp);
+
+    PropertyCategoryCP propCategory = ecProp->GetPropertyCategory();
+    EXPECT_NE(nullptr, propCategory);
+
+    ECPropertyP derivedProp = ecClass->GetPropertyP("StringProp");
+    ASSERT_NE(nullptr, derivedProp);
+    
+    PropertyCategoryCP derivedPropCategory = derivedProp->GetPropertyCategory();
+    EXPECT_NE(nullptr, derivedPropCategory);
+
+    EXPECT_EQ(derivedPropCategory, propCategory);
+    EXPECT_STREQ(derivedPropCategory->GetFullName().c_str(), propCategory->GetFullName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyOverrideTests::ExpectBasePropertyFromClass (Utf8CP propName, ECClassCP derived, ECClassCP base)
+    {
+    auto baseProp = derived->GetPropertyP (propName)->GetBaseProperty();
+    EXPECT_TRUE (baseProp->GetClass().GetName().Equals (base->GetName()))
+        << "Base property " << propName
+        << " expected from class " << base->GetName().c_str()
+        << " actually from class " << baseProp->GetClass().GetName().c_str();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -580,5 +930,39 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     EXPECT_EQ(ECObjectsStatus::Success, primArrPropOverride2->SetKindOfQuantity(inch));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PropertyOverrideTests, CategoryOverride)
+    {
+    ECSchemaPtr ecSchema;
+    ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
+
+    ECEntityClassP a;
+    ECEntityClassP b;
+
+    PropertyCategoryP propertyCategoryA;
+    PropertyCategoryP propertyCategoryB;
+
+    PrimitiveECPropertyP primProp;
+    PrimitiveECPropertyP primPropOverride;
+
+    ecSchema->CreateEntityClass(a, "A");
+    ecSchema->CreateEntityClass(b, "B");
+
+    ecSchema->CreatePropertyCategory(propertyCategoryA, "CategoryA");
+    ecSchema->CreatePropertyCategory(propertyCategoryB, "CategoryB");
+
+    a->CreatePrimitiveProperty(primProp, "PrimProp");
+    b->CreatePrimitiveProperty(primPropOverride, "PrimProp");
+
+    EXPECT_EQ(ECObjectsStatus::Success, primProp->SetPropertyCategory(propertyCategoryA));
+    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride->SetPropertyCategory(propertyCategoryB));
+
+    EXPECT_EQ(ECObjectsStatus::Success, b->AddBaseClass(*a));
+
+    EXPECT_EQ(propertyCategoryB, primPropOverride->GetPropertyCategory());
+    EXPECT_STREQ(propertyCategoryB->GetFullName().c_str(), primPropOverride->GetPropertyCategory()->GetFullName().c_str());
+    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

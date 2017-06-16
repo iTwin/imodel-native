@@ -49,25 +49,18 @@ Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(ECClassCR ecClass)
                                   ecClass.GetInvariantDisplayLabel().c_str());
     }
 
-Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(ECEnumerationCR ecEnumeration)
-    {
-    return GetTypeDisplayLabelKey(ecEnumeration.GetSchema().GetName().c_str(),
-                                  ecEnumeration.GetName().c_str(),
-                                  ecEnumeration.GetInvariantDisplayLabel().c_str());
-    }
-
-Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(KindOfQuantityCR kindOfQuantity)
-    {
-    return GetTypeDisplayLabelKey(kindOfQuantity.GetSchema().GetName().c_str(),
-                                  kindOfQuantity.GetName().c_str(),
-                                  kindOfQuantity.GetInvariantDisplayLabel().c_str());
-    }
-
 Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECClassCR ecClass)
     {
     return GetTypeDescriptionKey(ecClass.GetSchema().GetName().c_str(),
                                  ecClass.GetName().c_str(),
                                  ecClass.GetInvariantDescription().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(ECEnumerationCR ecEnumeration)
+    {
+    return GetTypeDisplayLabelKey(ecEnumeration.GetSchema().GetName().c_str(),
+                                  ecEnumeration.GetName().c_str(),
+                                  ecEnumeration.GetInvariantDisplayLabel().c_str());
     }
 
 Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECEnumerationCR ecEnumeration)
@@ -77,11 +70,32 @@ Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECEnumerationCR ecEnum
                                  ecEnumeration.GetInvariantDescription().c_str());
     }
 
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(KindOfQuantityCR kindOfQuantity)
+    {
+    return GetTypeDisplayLabelKey(kindOfQuantity.GetSchema().GetName().c_str(),
+                                  kindOfQuantity.GetName().c_str(),
+                                  kindOfQuantity.GetInvariantDisplayLabel().c_str());
+    }
+
 Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(KindOfQuantityCR kindOfQuantity)
     {
     return GetTypeDescriptionKey(kindOfQuantity.GetSchema().GetName().c_str(),
                                  kindOfQuantity.GetName().c_str(),
                                  kindOfQuantity.GetInvariantDescription().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(PropertyCategoryCR propertyCategory)
+    {
+    return GetTypeDisplayLabelKey(propertyCategory.GetSchema().GetName().c_str(),
+                                  propertyCategory.GetName().c_str(),
+                                  propertyCategory.GetInvariantDisplayLabel().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(PropertyCategoryCR propertyCategory)
+    {
+    return GetTypeDescriptionKey(propertyCategory.GetSchema().GetName().c_str(),
+                                 propertyCategory.GetName().c_str(),
+                                 propertyCategory.GetInvariantDescription().c_str());
     }
 
 Utf8String SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty)

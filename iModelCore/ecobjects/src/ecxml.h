@@ -39,6 +39,7 @@
 #define     EC_ENUMERATION_ELEMENT              "ECEnumeration"
 #define     EC_ENUMERATOR_ELEMENT               "ECEnumerator"
 #define     KIND_OF_QUANTITY_ELEMENT            "KindOfQuantity"
+#define     PROPERTY_CATEGORY_ELEMENT           "PropertyCategory"
 
 #define     BASECLASS_ATTRIBUTE                 "baseClass"
 #define     TYPE_NAME_ATTRIBUTE                 "typeName"
@@ -57,7 +58,6 @@
 #define     RELATIONSHIP_NAME_ATTRIBUTE         "relationshipName"
 #define     DIRECTION_ATTRIBUTE                 "direction"
 #define     DESCRIPTION_ATTRIBUTE               "description"
-#define     MINIMUM_VALUE_ATTRIBUTE             "MinimumValue"
 #define     SCHEMA_NAME_ATTRIBUTE               "schemaName"
 #define     SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE   "nameSpacePrefix"
 #define     SCHEMA_VERSION_ATTRIBUTE            "version"
@@ -75,6 +75,7 @@
 #define     PERSISTENCE_UNIT_ATTRIBUTE          "persistenceUnit"
 #define     PRESENTATION_UNITS_ATTRIBUTE        "presentationUnits"
 #define     RELATIVE_ERROR_ATTRIBUTE            "relativeError"
+#define     CATEGORY_ATTRIBUTE                  "category"
 
 #define     STRENGTH_ATTRIBUTE                  "strength"
 #define     STRENGTHDIRECTION_ATTRIBUTE         "strengthDirection"
@@ -189,6 +190,7 @@ public:
     static ECObjectsStatus ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString);
     static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     static ECObjectsStatus ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString);
+    static ECObjectsStatus ParseFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse);
     static void FormatXml(BeXmlDomR xmlDom);
 };
 

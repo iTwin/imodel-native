@@ -64,7 +64,6 @@
     <ClCompile Include="NonPublished\MemoryLayoutTests.cpp" />
     <ClCompile Include="NonPublished\NonPublishedSchemaTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRulesTests.cpp" />
-    <ClCompile Include="NonPublished\PropertyOverrideTests.cpp" />
     <ClCompile Include="NonPublished\SchemaLocalizationTests.cpp" />
     <ClCompile Include="NonPublished\SchemaTests.cpp" />
     <ClCompile Include="NonPublished\StringEncodingTests.cpp" />
