@@ -75,6 +75,7 @@ public:
             m_size += size;
             }
         }
+    template<typename T> void Append (T const& buf) {Append((uint8_t const*)&buf, sizeof(buf));}
 
     bool empty() const {return !HasData();}
     size_t size() const {return GetSize();}
