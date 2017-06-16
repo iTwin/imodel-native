@@ -385,6 +385,7 @@ ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
     
     return status;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------

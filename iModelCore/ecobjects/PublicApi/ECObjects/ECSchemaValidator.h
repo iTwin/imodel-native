@@ -84,19 +84,19 @@ struct MixinValidator : IECClassValidator
     };
 
 struct EntityValidator : IECClassValidator
-{
+    {
     // An entity class may not inherit a property from more than one base class
     // An entity class may not override a property inherited from a mixin class
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
     bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsEntityClass();}
-};
+    };
 
 struct RelationshipValidator : IECClassValidator
-{
+    {
     // Relationship local definition validation
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
     bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsRelationshipClass();}
     ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType) const;
-};
+    };
 END_BENTLEY_ECOBJECT_NAMESPACE
 

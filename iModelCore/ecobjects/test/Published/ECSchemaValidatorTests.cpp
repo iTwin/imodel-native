@@ -1148,6 +1148,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOn
     ASSERT_TRUE(schema2.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema2)) << "Abstract constraints are defined locally in source and target so validation should succeed";
     }
+
 TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
     {
     Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
