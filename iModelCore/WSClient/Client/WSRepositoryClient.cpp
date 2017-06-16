@@ -251,7 +251,7 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Petras.Sukys    06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequestWithRel
+AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequest
 (
 ObjectIdCR relatedObjectId,
 JsonValueCR objectCreationJson,
@@ -262,7 +262,7 @@ ICancellationTokenPtr ct
     {
     return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendCreateObjectRequestWithRel(relatedObjectId, objectCreationJson, filePath, uploadProgressCallback, ct);
+        return webApi->SendCreateObjectRequest(relatedObjectId, objectCreationJson, filePath, uploadProgressCallback, ct);
         }, ct);
     }
 

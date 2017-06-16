@@ -163,7 +163,7 @@ struct IWSRepositoryClient
         //! @param uploadProgressCallback - file upload progress
         //! @param ct
         //! @return JSON representing created object and new file ETag if available
-        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithRel
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
@@ -340,7 +340,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithRel
+        WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
