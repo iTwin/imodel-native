@@ -491,7 +491,7 @@ TEST_F(DgnModelTests, ModelIterator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, AbandonChanges)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     DgnDbR db = GetDgnDb();
 
     PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");

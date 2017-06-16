@@ -378,14 +378,8 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args, int depth)
 
         m_graphic = args.m_context.CreateBranch(branch, &toNpc, nullptr);
         }
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Attachment::Tile2dModel::_GetGraphics(DrawGraphicsR drawGraphics, int depth) const
-    {
-    drawGraphics.m_graphics.Add(*m_graphic);
+    args.m_graphics.m_graphics.Add(*m_graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**

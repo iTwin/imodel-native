@@ -136,9 +136,9 @@ TEST_F(CompatibilityTests, ModifyCurrent)
 // This unit test runs the "Modify" and "Insert" tests using the current DgnPlatform against saved baselines of the DgnDb file format.
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-TEST_F(CompatibilityTests, DISABLED_ModifyBaseline) // Must disable this test in the "Holdouts" branch
+TEST_F(CompatibilityTests, ModifyBaseline) // Must disable this test in the "Holdouts" branch
     {
-    SetUpFromBaselineCopy("2-0-1-36", TEST_NAME, BE_SQLITE_OK);
+    SetUpFromBaselineCopy("2-0-1-46", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
@@ -831,7 +831,6 @@ GenericGroupCPtr CompatibilityTests::GetSpatialLocationGroup(SubjectCR subject)
 void CompatibilityTests::ImportFunctionalSchema()
     {
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    FlushLocalChanges(); // Flush any un-committed or committed transactions before importing the schema
     ASSERT_EQ(SchemaStatus::Success, FunctionalDomain::GetDomain().ImportSchema(GetDgnDb()));
     }
 
@@ -1403,7 +1402,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(sourceFileName);
         sourceFileName.AppendToPath(L"CompatibilityTestFiles");
         sourceFileName.AppendToPath(BeFileName(versionString, BentleyCharEncoding::Utf8));
-        sourceFileName.AppendToPath(L"CompatibilityTest.bim");
+        sourceFileName.AppendToPath(L"InstancesCompatibilitySeed.bim");
         ASSERT_TRUE(sourceFileName.DoesPathExist());
 
         //Destination file path
@@ -1494,11 +1493,11 @@ TEST_F(ECInstancesCompatibility, InstancesCompatibilitySeed)
 
 //---------------------------------------------------------------------------------------------
 // @bsimethod                                      Maha Nasir                  04/17
-// WIP: Reads the Instances from the preserved Bim and perform CRUD oerations on it.
+// Reads and verifies the Instances from the preserved Bim
 //+---------------+---------------+---------------+---------------+---------------+------------
 TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
     {
-    SetUpDbFromBaselineCopy("2-0-1-36", TEST_NAME, BE_SQLITE_OK);
+    SetUpDbFromBaselineCopy("2-0-1-46", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db= GetDgnDb();
 
@@ -1518,4 +1517,40 @@ TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
              ASSERT_TRUE(element.GetElementId().IsValid());
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------------
+// @bsimethod                                      Maha Nasir                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------------
+TEST_F(ECInstancesCompatibility, UpdateInstances)
+    {
+    SetUpDbFromBaselineCopy("2-0-1-46", TEST_NAME, BE_SQLITE_OK);
+
+    DgnDbR db = GetDgnDb();
+
+    bvector<DgnElementId> idList;
+    {
+    Utf8PrintfString fullClassName("%s.%s", BIS_ECSCHEMA_NAME, "Element");
+    ElementIterator iter = db.Elements().MakeIterator(fullClassName.c_str());
+    idList = iter.BuildIdList<DgnElementId>();
+    }
+
+    int i = 0;
+    for (auto elementId : idList)
+        {
+        if (elementId.GetValue() != 1099511627800 && elementId.GetValue() != 1099511627818)
+            {
+            ASSERT_TRUE(db.IsDbOpen());
+            ASSERT_TRUE(elementId.IsValid());
+
+            DgnElementPtr ele = db.Elements().GetForEdit<DgnElement>(elementId);
+            ASSERT_TRUE(ele.IsValid());
+            ele->SetUserLabel("Updated");
+
+            ASSERT_TRUE(ele->Update().IsValid());
+            ASSERT_STREQ("Updated", ele->GetUserLabel());
+            i++;
+            }
+        }
+    ASSERT_EQ(50, i);
     }

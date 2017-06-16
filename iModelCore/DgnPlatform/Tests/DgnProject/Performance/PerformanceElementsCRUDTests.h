@@ -60,4 +60,5 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         void ExtendGeometry(DgnElementPtr element) const;
 
         void LogTiming(StopWatch& timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const;
+        int  GetfirstElementId(Utf8CP className);
     };

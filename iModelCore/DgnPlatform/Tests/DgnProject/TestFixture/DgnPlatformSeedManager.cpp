@@ -68,7 +68,7 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
         DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
     //  First request for this seed file. Create it.
-    DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true, true);
+    DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true);
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, info.physicalPartitionName.c_str());
     DgnDbTestUtils::InsertSpatialCategory(*db, info.categoryName.c_str());
     
@@ -76,15 +76,8 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
         DgnDbTestUtils::InsertCameraView(*model, info.viewName.c_str());
 
     if (info.options.testDomain)
-        {
-        // Flush any un-committed or committed transactions before importing the schema
-        db->SaveChanges();
-        db->Revisions().StartCreateRevision();
-        db->Revisions().FinishCreateRevision();
-
         EXPECT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
-        }
-        
+
     db->SaveSettings();
     db->SaveChanges();
     return info;
