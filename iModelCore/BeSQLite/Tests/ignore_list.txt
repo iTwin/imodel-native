@@ -1,4 +1,3 @@
 # Tests that should not be run
 
 InsertPerformanceTests.* # BeSQLite INSERT performance tests (run on demand)
-CompressionTests.CreateZipFile   # crashing when run seperately from test suite

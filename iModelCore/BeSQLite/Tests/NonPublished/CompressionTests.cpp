@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/CompressionTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -492,6 +492,10 @@ TEST(CompressionTests, DirectComparisonBigInput)
 //---------------------------------------------------------------------------------------
 TEST(CompressionTests, CreateZipFile)
     {
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    BentleyApi::BeSQLite::BeSQLiteLib::Initialize(tempDir);
+	
     BeFileName  zipFileName;
     BeTest::GetHost().GetTempDir (zipFileName);
     zipFileName.AppendToPath (L"CompressionTests_CreateZipFile.zip");
