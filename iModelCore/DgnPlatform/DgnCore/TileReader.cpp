@@ -443,7 +443,7 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
             return nullptr;
         }
 
-    MeshPtr     mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange());
+    MeshPtr     mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d());
 
     if(SUCCESS != ReadColorTable(mesh->GetColorTableR(), primitiveValue) || 
        SUCCESS != ReadIndices(*mesh, primitiveValue) ||
