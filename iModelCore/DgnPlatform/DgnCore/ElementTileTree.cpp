@@ -37,9 +37,6 @@ typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     Thread
 
 class   ParasolidException {};
 
-#define REALITY_CACHE_SUPPORT
-
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      10/2015
@@ -851,7 +848,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
-    : T_Super("", tile, loads, "", renderSys)
+    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys)
     {
     //
     }
@@ -870,6 +867,38 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 #ifdef REALITY_CACHE_SUPPORT
 
 #define POPULATE_ROOT_TILE      // Fow now - easier to debug..
+
+static bool s_useRealityCache = true;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
+    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+#endif
+
+    auto& tile = static_cast<TileR>(*m_tile);
+    RootR root = tile.GetElementRoot();
+
+    auto  system = GetRenderSystem();
+    if (nullptr == system)
+        {
+        // This is checked in _CreateTileTree()...
+        BeAssert(false && "ElementTileTree requires a Render::System");
+        return ERROR;
+        }
+
+    LoadContext loadContext(this);
+    geometry = tile.GenerateGeometry(loadContext);
+
+    return loadContext.WasAborted() ? ERROR : SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -877,11 +906,18 @@ BentleyStatus Loader::_LoadTile()
     { 
     TileR   tile = static_cast<TileR> (*m_tile);
     RootR   root = tile.GetElementRoot();
-
     Render::Primitives::GeometryCollection geometry;
 
-    if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
-        return ERROR;
+    if (!s_useRealityCache)
+        {
+        if (SUCCESS != LoadGeometryFromModel(geometry))
+            return ERROR;
+        }
+    else
+        {
+        if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
+            return ERROR;
+        }
 
     // No point subdividing empty nodes - improves performance if we don't
     // Also not much point subdividing nodes containing no curved geometry
@@ -906,6 +942,25 @@ BentleyStatus Loader::_LoadTile()
     for (auto const& mesh : geometry.Meshes())
         mesh->GetGraphics (graphics, *system, args, root.GetDgnDb());
 
+    if (!graphics.empty())
+        {
+        GraphicPtr graphic;
+        switch (graphics.size())
+            {
+            case 0:
+                break;
+            case 1:
+                graphic = *graphics.begin();
+                break;
+            default:
+                graphic = system->_CreateGraphicList(std::move(graphics), root.GetDgnDb());
+                break;
+            }
+
+        if (graphic.IsValid())
+            tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
+        }
+
     tile.SetIsReady();
     return SUCCESS;
     }
@@ -915,29 +970,17 @@ BentleyStatus Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::DoGetFromSource()
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-    PSolidKernelManager::StartSession();
-    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
+    if (!s_useRealityCache)
+        return IsCanceledOrAbandoned() ? ERROR : SUCCESS;
+      
+    TileR   tile = static_cast<TileR> (*m_tile);
+    RootR   root = tile.GetElementRoot();
+    Render::Primitives::GeometryCollection geometry;
 
-    auto& tile = static_cast<TileR>(*m_tile);
-    RootR root = tile.GetElementRoot();
-
-    auto  system = GetRenderSystem();
-    if (nullptr == system)
-        {
-        // This is checked in _CreateTileTree()...
-        BeAssert(false && "ElementTileTree requires a Render::System");
+    if (SUCCESS != LoadGeometryFromModel(geometry))
         return ERROR;
-        }
 
-    LoadContext loadContext(this);
-    auto geometry = tile.GenerateGeometry(loadContext);
-
-    if (loadContext.WasAborted())
-        return ERROR;
+    m_saveToCache = true;
         
     return TileTree::TileIO::WriteDgnTile (m_tileBytes, geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
     }
@@ -1029,6 +1072,7 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
+    CreateCache(model.GetName().c_str(), 1024*1024*1024, false); // 1 GB
     }
 
 /*---------------------------------------------------------------------------------**//**

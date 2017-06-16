@@ -2434,3 +2434,14 @@ void QVertex3dList::Requantize()
     m_fpoints.clear();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void QVertex3dList::Init(DRange3dCR range, QPoint3dCP qPoints, size_t nPoints)
+    {
+    m_range = range;
+    m_qpoints.resize(nPoints);
+    m_qpoints.SetParams(QPoint3d::Params(range));
+    memcpy (m_qpoints.data(), qPoints, nPoints * sizeof(QPoint3d));
+    }
+
