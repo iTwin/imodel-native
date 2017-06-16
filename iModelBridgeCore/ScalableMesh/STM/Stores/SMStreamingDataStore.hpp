@@ -238,7 +238,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([](const Utf8String& docGuid) -> std::string
             {
-            return ScalableMesh::ScalableMeshLib::GetHost().GetSASTokenAdmin().GetToken(docGuid).c_str();
+            if (ScalableMesh::ScalableMeshLib::IsInitialized())
+                return ScalableMesh::ScalableMeshLib::GetHost().GetSASTokenAdmin().GetToken(docGuid).c_str();
+            return std::string();
             }));
         }
     else if (settings->IsDataFromAzure() && settings->IsUsingCURL())

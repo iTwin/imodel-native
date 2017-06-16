@@ -116,7 +116,7 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
 
-	DataSourceManager::Shutdown();
+    //DataSourceManager::Shutdown();
 
     }
 
@@ -203,6 +203,15 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
     BeSQLiteLib::Initialize(tempDir);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois  06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshLib::Terminate(ScalableMeshLib::Host& host)
+    {
+    assert(t_scalableTerrainModelHost == &host);
+    t_scalableTerrainModelHost->Terminate(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

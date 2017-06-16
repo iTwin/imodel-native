@@ -73,6 +73,8 @@ public:
     //! Must be called once per Host before calling any method in ScalableMesh. Applications can have more than one Host. 
     BENTLEY_SM_EXPORT static void Initialize (Host& host);
 
+    BENTLEY_SM_EXPORT static void Terminate (Host& host);
+
     //! Query if the ScalableMesh library has been initialized on this thread.
     BENTLEY_SM_EXPORT static bool IsInitialized ();
 
