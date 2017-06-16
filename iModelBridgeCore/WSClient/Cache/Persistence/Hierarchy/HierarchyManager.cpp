@@ -160,10 +160,7 @@ BentleyStatus HierarchyManager::CheckAndCleanupHiearchy(ECInstanceKeyCR instance
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HierarchyManager::DeleteInstance(ECInstanceKeyCR instance)
     {
-    ECInstanceKeyMultiMap instances;
-    instances.Insert(instance.GetClassId(), instance.GetInstanceId());
-
-    return m_dbAdapter.DeleteInstances(instances);
+    return m_dbAdapter.DeleteInstance(instance);
     }
 
 /*--------------------------------------------------------------------------------------+

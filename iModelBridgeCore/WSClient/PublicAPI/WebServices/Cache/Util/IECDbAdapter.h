@@ -147,7 +147,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
         virtual ECInstanceKey FindRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
         virtual bool HasRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
 
-        //! Delete instances by nofiying any related instance deletion by embedded or holding relationship rules.
+        //! Delete instance by nofiying any related instances deletion by embedded or holding relationship rules.
+        //! Will invoke DeleteListeners for each deleted object and relationship instance.
+        virtual BentleyStatus DeleteInstance(ECInstanceKeyCR instanceKey) = 0;
+
+        //! Delete instances by nofiying any related instances deletion by embedded or holding relationship rules.
         //! Will invoke DeleteListeners for each deleted object and relationship instance.
         virtual BentleyStatus DeleteInstances(const ECInstanceKeyMultiMap& instances) = 0;
 

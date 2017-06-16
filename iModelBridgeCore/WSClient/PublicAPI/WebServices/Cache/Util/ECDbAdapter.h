@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ECDbAdapter.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -150,6 +150,7 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         WSCACHE_EXPORT ECInstanceKey FindRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;
         WSCACHE_EXPORT bool HasRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;
 
+        WSCACHE_EXPORT BentleyStatus DeleteInstance(ECInstanceKeyCR instanceKey) override;
         WSCACHE_EXPORT BentleyStatus DeleteInstances(const ECInstanceKeyMultiMap& instances) override;
         WSCACHE_EXPORT BentleyStatus DeleteRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;
 
