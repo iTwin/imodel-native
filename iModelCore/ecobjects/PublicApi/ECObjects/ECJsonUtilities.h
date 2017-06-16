@@ -18,6 +18,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 #define JSON_POINT_Y_KEY "y"
 #define JSON_POINT_Z_KEY "z"
 
+#define JSON_NAVIGATION_ID_KEY "id"
+#define JSON_NAVIGATION_RELECCLASSID_KEY "relECClassId"
+
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      01/2014
 +===============+===============+===============+===============+===============+======*/
