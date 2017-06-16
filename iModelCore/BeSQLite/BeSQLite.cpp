@@ -5142,10 +5142,11 @@ void BeIdSet::FromString(Utf8StringCR str)
     {
     if (str.empty())
         return;
-    else if ('+' == *str.begin())
+
+    if ('+' == *str.begin())
         return FromCompactString(str);
-    else
-        return FromReadableString(str);
+
+    return FromReadableString(str);
     }
 
 /*---------------------------------------------------------------------------------**//**

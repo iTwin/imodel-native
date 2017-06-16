@@ -34,6 +34,26 @@ DbResult SetupDb(Db& db, WCharCP dbName)
     return result;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeSQLiteDb, BeBriefcaseBasedIdTest)
+    {
+    BeBriefcaseId bc(100);
+    BeBriefcaseBasedId id1(bc, 4443332222);
+    EXPECT_TRUE(bc == id1.GetBriefcaseId());
+    EXPECT_TRUE(4443332222 == id1.GetLocalId());
+
+    Json::Value val=id1.ToJson();
+    EXPECT_TRUE(100 == val["b"].asUInt());
+    EXPECT_TRUE(4443332222 == val["l"].asUInt64());
+    Utf8String str = val.ToString();
+    EXPECT_EQ("{\"b\":100,\"l\":4443332222}", str);
+
+    BeBriefcaseBasedId id2 = BeBriefcaseBasedId::FromJson(val);
+    EXPECT_TRUE(id2 == id1);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     11/13
 //+---------------+---------------+---------------+---------------+---------------+------
