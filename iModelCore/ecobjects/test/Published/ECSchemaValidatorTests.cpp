@@ -538,10 +538,11 @@ TEST_F(SchemaValidatorTests, BisCoreRelatedTests)
             <BaseClass>ElementUniqueAspect</BaseClass>
         </ECEntityClass>      
     </ECSchema>)xml";
-
-    ECSchema::ReadFromXmlString(schema, goodSchemaXml1, *context6);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "This not a bis schema, so validation should succeed as this rule does not apply";
+    ECSchemaPtr schema7;
+    ECSchemaReadContextPtr context7 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema7, goodSchemaXml1, *context7);
+    ASSERT_TRUE(schema7.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema7)) << "This not a bis schema, so validation should succeed as this rule does not apply";
 
     goodSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -560,10 +561,10 @@ TEST_F(SchemaValidatorTests, BisCoreRelatedTests)
             </Target>
         </ECRelationshipClass>
     </ECSchema>)xml";
-    ECSchemaPtr schema7;
-    ECSchemaReadContextPtr context7 = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(schema7, goodSchemaXml2, *context7);
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema7)) << "The relationship does not DERIVE from 'ElementUniqueAspect', it IS 'ElementUniqueAspect'. Validation should succeed.";
+    ECSchemaPtr schema8;
+    ECSchemaReadContextPtr context8 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema8, goodSchemaXml2, *context8);
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema8)) << "The relationship does not DERIVE from 'ElementUniqueAspect', it IS 'ElementUniqueAspect'. Validation should succeed.";
 
     goodSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="BisCore" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -595,11 +596,11 @@ TEST_F(SchemaValidatorTests, BisCoreRelatedTests)
             </Target>
         </ECRelationshipClass>
     </ECSchema>)xml";
-    ECSchemaPtr schema8;
-    ECSchemaReadContextPtr context8 = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(schema8, goodSchemaXml3, *context8);
-    ASSERT_TRUE(schema8.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema8)) << "BisCore example of a valid unique aspect relationship. Validation should succeed";
+    ECSchemaPtr schema9;
+    ECSchemaReadContextPtr context9 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema9, goodSchemaXml3, *context9);
+    ASSERT_TRUE(schema9.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema9)) << "BisCore example of a valid unique aspect relationship. Validation should succeed";
     }
 
 TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
