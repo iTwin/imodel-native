@@ -85,6 +85,7 @@ struct WSError : public AsyncError
         BentleyStatus ParseBody(HttpResponseCR httpResponse);
         BentleyStatus ParseJsonError(HttpResponseCR httpResponse);
         BentleyStatus ParseXmlError(HttpResponseCR httpResponse);
+        BentleyStatus ParseXmlAzureError(HttpResponseCR httpResponse, struct BeXmlDom& xmlDom);
 
         void SetStatusServerNotSupported();
         void SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);

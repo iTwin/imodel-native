@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -23,6 +23,11 @@
 #define XML_ErrorId             "error:errorId"
 #define XML_ErrorMessage        "error:errorMessage"
 #define XML_ErrorDescription    "error:errorDescription"
+
+#define XML_Azure_Error         "Error"
+#define XML_Azure_Code          "Code"
+#define XML_Azure_Message       "Message"
+#define XML_Azure_BlobNotFound  "BlobNotFound"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
@@ -51,9 +56,7 @@ WSError::Id WSError::ErrorIdFromString(Utf8StringCR errorIdString)
 
     auto it = map.find(errorIdString);
     if (it != map.end())
-        {
         return it->second;
-        }
 
     return Id::Unknown;
     }
@@ -104,22 +107,16 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         m_message = HttpError(httpResponse).GetMessage();
         
         if (ConnectionStatus::CertificateError == httpResponse.GetConnectionStatus())
-            {
             m_status = Status::CertificateError;
-            }
         else
-            {
             m_status = Status::ConnectionError;
-            }
 
         m_id = WSError::Id::Unknown;
         return;
         }
 
     if (SUCCESS == ParseBody(httpResponse))
-        {
         return;
-        }
 
     if (ImsClient::IsLoginRedirect(httpResponse) ||                 // Bentley CONNECT login redirect
         HttpStatus::Unauthorized == httpResponse.GetHttpStatus())   // Bentley CONNECT token could not be retrieved
@@ -182,9 +179,7 @@ BentleyStatus WSError::ParseJsonError(HttpResponseCR httpResponse)
     {
     Json::Value jsonError = httpResponse.GetBody().AsJson();
     if (!IsValidErrorJson(jsonError))
-        {
         return ERROR;
-        }
 
     WSError::Id errorId = ErrorIdFromString(jsonError[JSON_ErrorId].asString());
     Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString();
@@ -201,9 +196,8 @@ BentleyStatus GetChildNodeContents(BeXmlNodeP node, Utf8CP childNodePath, Utf8St
     {
     BeXmlNodeP childNode = node->SelectSingleNode(childNodePath);
     if (nullptr == childNode)
-        {
         return ERROR;
-        }
+
     childNode->GetContent(contentsOut);
     return SUCCESS;
     }
@@ -218,14 +212,18 @@ BentleyStatus WSError::ParseXmlError(HttpResponseCR httpResponse)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, bodyStr.c_str(), bodyStr.size());
     if (BeXmlStatus::BEXML_Success != xmlStatus)
-        {
         return ERROR;
-        }
+
     xmlDom->RegisterNamespace(XML_NAMESPACE_PREFIX, XML_NAMESPACE);
 
     BeXmlNodeP rootNode = xmlDom->GetRootElement();
-    if (nullptr == rootNode || Utf8String(XML_ROOTNODE_NAME) != rootNode->GetName())
+    if (nullptr == rootNode)
+        return ERROR;
+
+    if (Utf8String(XML_ROOTNODE_NAME) != rootNode->GetName())
         {
+        if (Utf8String(XML_Azure_Error) == rootNode->GetName())
+            return ParseXmlAzureError(httpResponse, *xmlDom);
         return ERROR;
         }
 
@@ -243,6 +241,32 @@ BentleyStatus WSError::ParseXmlError(HttpResponseCR httpResponse)
     WSError::Id errorId = ErrorIdFromString(errorIdStr);
 
     SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSError::ParseXmlAzureError(HttpResponseCR httpResponse, BeXmlDom& xmlDom)
+    {
+    BeXmlNodeP rootNode = xmlDom.GetRootElement();
+    if (nullptr == rootNode)
+        return ERROR;
+
+    Utf8String errorCode;
+    Utf8String errorMessage;
+
+    if (SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Code, errorCode) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Message, errorMessage))
+        {
+        return ERROR;
+        }
+
+    auto errorId = WSError::Id::Unknown;
+    if (XML_Azure_BlobNotFound == errorCode)
+        errorId = WSError::Id::FileNotFound;
+
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, nullptr);
     return SUCCESS;
     }
 
@@ -334,9 +358,8 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
 bool IsMemberStringOrNull(JsonValueCR json, Utf8CP name)
     {
     if (!json.isMember(name))
-        {
         return false;
-        }
+
     JsonValueCR member = json[name];
     return member.isString() || member.isNull();
     }
