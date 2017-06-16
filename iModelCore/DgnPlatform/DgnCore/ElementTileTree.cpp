@@ -1408,6 +1408,14 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Tile::_GetTileCacheKey() const
+    {
+    return Utf8PrintfString("%d/%d/%d/%d:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
@@ -1433,11 +1441,24 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot()), parent.GetTileId(), &parent, false)
+    {
+    m_range.Extend(parent.GetRange());
+
+    BeAssert(parent.HasZoomFactor());
+    SetZoomFactor(parent.GetZoomFactor() * 2.0);
+
+    InitTolerance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::InitTolerance()
     {
-    m_tolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
+    m_tolerance = m_range.DiagonalDistance() / (s_minToleranceRatio * m_zoomFactor);
     m_isLeaf = false;
     }
 
@@ -1489,13 +1510,27 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::ChildTiles const* Tile::_GetChildren(bool load) const
+    {
+    if (HasZoomFactor() && load && m_children.empty())
+        {
+        // Create a single child containing same geometry in same range, faceted to a higher resolution.
+        m_children.push_back(CreateWithZoomFactor(*this));
+        }
+
+    return T_Super::_GetChildren(load);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
 #if !defined(POPULATE_ROOT_TILE)
     // The root tile is undisplayable (that's what returning 0.0 indicates)
-    return 0 == GetDepth() ? 0.0 : s_tileScreenSize; // ###TODO: come up with a decent value, and account for device ppi
+    return 0 == GetDepth() ? 0.0 : s_tileScreenSize * m_zoomFactor; // ###TODO: come up with a decent value, and account for device ppi
 #else
     // for debugging only...
     return s_tileScreenSize;
@@ -2020,13 +2055,6 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
         // We may want to turn this into a leaf node if it contains strictly linear geometry - but we can't do that if any elements were excluded
         geometries.MarkIncomplete();
         }
-    else if (!IsLeaf() && collector.GetEntries().size() <= s_minElementsPerTile)
-        {
-        // If no elements were skipped and only a small number of elements exist within this tile's range, make it a leaf tile.
-        // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
-        SetIsLeaf();
-        m_tolerance = std::min(m_tolerance, collector.ComputeLeafTolerance());
-        }
 
     if (collector.AnySkipped())
         geometries.MarkIncomplete();
@@ -2053,6 +2081,19 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
             tileContext.TruncateGeometryList(maxFeatures);
             break;
             }
+        }
+
+    if (!loadContext.WasAborted() && !IsLeaf() && !HasZoomFactor() && collector.GetEntries().size() <= s_minElementsPerTile)
+        {
+        // If no elements were skipped and only a small number of elements exist within this tile's range:
+        //  - Make it a leaf tile, if it contains no curved geometry; otherwise
+        //  - Mark it so that it will have only a single child tile, containing the same geometry faceted at a higher resolution
+        // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
+        // Also note that if we're a child of a tile with zoom factor, we already have our own (higher) zoom factor
+        if (!geometries.ContainsCurves())
+            SetIsLeaf();
+        else
+            SetZoomFactor(1.0);
         }
 
     return geometries;
