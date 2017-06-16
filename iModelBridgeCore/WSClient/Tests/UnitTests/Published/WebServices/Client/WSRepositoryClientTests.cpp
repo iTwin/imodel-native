@@ -25,6 +25,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 #define HEADER_MasFileETag          "Mas-File-ETag"
 #define HEADER_MasConnectionInfo    "Mas-Connection-Info"
+#define HEADER_MasFileAccessUrlType "Mas-File-Access-Url-Type"
+#define HEADER_Location             "Location"
 
 Json::Value StubWSObjectCreationJson()
     {
@@ -492,7 +494,7 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseFou
 
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseBentleyConnectV1());
-    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Found, "", {{"Location", "http://file.location/"}}));
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Found, "", {{HEADER_Location, "http://file.location/"}}));
     GetHandler().ForRequest(3, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ("GET", request.GetMethod().c_str());
@@ -576,8 +578,8 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndAzureRedirectRece
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
-                {"Location", "https://foo.com/boo"},
-                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
+                {HEADER_Location, "https://foo.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}});
         });
     GetHandler().ForRequest(3, [=] (HttpRequestCR request)
         {
@@ -605,8 +607,8 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectRe
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
-                {"Location", "https://foo.com/boo"},
-                {"Mas-File-Access-Url-Type", "SomethingNotSupportedHere"}});
+                {HEADER_Location, "https://foo.com/boo"},
+                {HEADER_MasFileAccessUrlType, "SomethingNotSupportedHere"}});
         });
     GetHandler().ForRequest(3, [=] (HttpRequestCR request)
         {
@@ -634,8 +636,8 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectSt
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
         return StubHttpResponse(HttpStatus::Found, "", {
-                {"Location", "https://foo.com/boo"},
-                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
+                {HEADER_Location, "https://foo.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}});
         });
 
     auto response = client->SendGetFileRequest(StubObjectId(), fileName)->GetResult();
@@ -669,19 +671,44 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24ETagSetAndReceivedAz
         {
         EXPECT_STREQ("RequestETag", request.GetHeaders().GetIfNoneMatch());
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
-                {"Location", "https://foo.com/boo"},
-                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
+                {HEADER_Location, "https://foo.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}});
         });
     GetHandler().ForRequest(3, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
-        EXPECT_STREQ("RequestETag", request.GetHeaders().GetIfNoneMatch()); // TODO: azure etag?
-        return StubHttpResponse(HttpStatus::OK, "", {{"ETag", "ResponseETag"}}); // TODO: azure etag?
+        EXPECT_STREQ("RequestETag", request.GetHeaders().GetIfNoneMatch());
+        return StubHttpResponse(HttpStatus::OK, "", {{"ETag", "ResponseETag"}});
         });
 
     auto result = client->SendGetFileRequest(StubObjectId(), StubFilePath(), "RequestETag")->GetResult();
     EXPECT_TRUE(result.IsSuccess());
     EXPECT_STREQ("ResponseETag", result.GetValue().GetETag().c_str());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndReceivedAzureRedirectAndAzureReturnsError_ErrorIsParsedAndReturned)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {HEADER_Location, "https://foo.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}});
+        });
+    GetHandler().ForRequest(3, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
+        return StubHttpResponse(HttpStatus::NotFound,
+R"(<?xml version="1.0" encoding="utf-8"?><Error><Code>BlobNotFound</Code><Message>TestMessage</Message></Error>)",
+{{"Content-Type", "application/xml"}}); 
+        });
+
+    auto result = client->SendGetFileRequest(StubObjectId(), StubFilePath())->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::FileNotFound, result.GetError().GetId());
     }
 
 //TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV2ButNoSchemaInObjectId_ReturnsError)
@@ -1809,8 +1836,8 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
         {
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
-                {"Location", "https://foozure.com/boo"},
-                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"},
+                {HEADER_Location, "https://foozure.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
                 {"Mas-Upload-Confirmation-Id", "TestUploadId"}});
         });
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
@@ -1848,8 +1875,8 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
         {
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
-                {"Location", "https://foozure.com/boo"},
-                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
+                {HEADER_Location, "https://foozure.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}});
         });
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
         {
@@ -1876,8 +1903,8 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     EXPECT_REQUEST_COUNT(GetHandler(), 5);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
-            {"Location", "https://foozure.com/boo"},
-            {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"},
+            {HEADER_Location, "https://foozure.com/boo"},
+            {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
             {"Mas-Upload-Confirmation-Id", "TestUploadId"}}));
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "OtherTag"}}));
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "NewTag"}}));
@@ -1895,8 +1922,8 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     EXPECT_REQUEST_COUNT(GetHandler(), 4);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
-            {"Location", "https://foozure.com/boo"},
-            {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}}));
+            {HEADER_Location, "https://foozure.com/boo"},
+            {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}}));
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "OtherTag"}}));
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "NewTag"}}));
 
@@ -1916,8 +1943,8 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
         return StubHttpResponse(HttpStatus::Found, "", {
-                {"Location", "https://foo.com/boo"},
-                {"Mas-File-Access-Url-Type", "SomethingNotSupportedHere"},
+                {HEADER_Location, "https://foo.com/boo"},
+                {HEADER_MasFileAccessUrlType, "SomethingNotSupportedHere"},
         });
         });
 
