@@ -151,7 +151,7 @@ private:
     };
 
 
-
+#if 0
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert               12/2016
 //! This class provides functionality to filter a list of SpatialEntity objects.
@@ -270,4 +270,6 @@ public:
     REALITYDATAPLATFORM_EXPORT static const bvector<SpatialEntityDataSourcePtr> FilterByServerLoginKey(bvector<SpatialEntityDataSourcePtr> const & listToFilter, Utf8String loginKey);
 
     };
+
+    #endif
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
