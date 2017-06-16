@@ -91,6 +91,15 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
             ObjectIdCR objectId,
@@ -111,15 +120,6 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
-            ) const = 0;
-
-        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithRel
-            (
-            ObjectIdCR relatedObjectId,
-            JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;

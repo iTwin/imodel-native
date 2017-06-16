@@ -183,7 +183,7 @@ struct WebApiV1 : public WebApi
             ICancellationTokenPtr ct = nullptr
             ) const override;
         
-        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithRel
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
