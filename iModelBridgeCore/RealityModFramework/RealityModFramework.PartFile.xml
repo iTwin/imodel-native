@@ -99,7 +99,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="3CSLoadTest" BentleyBuildMakeFile="RealityAdmin\3CSLoadTester\3CSLoadTest.mke">
+    <Part Name="3CSLoadTest" BentleyBuildMakeFile="RealityAdmin\LoadTesters\3CSLoadTester\3CSLoadTest.mke">
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>

@@ -157,24 +157,24 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Footprint": {
                         "Coordinates": [
                             {
-                                "Long": 24.7828757,
-                                "Lat": 59.9224887
+                                "Long": "24.782875700",
+                                "Lat": "59.922488700"
                             },
                             {
-                                "Long": 25.2544848,
-                                "Lat": 59.9224887
+                                "Long": "25.254484800",
+                                "Lat": "59.922488700"
                             },
                             {
-                                "Long": 25.2544848,
-                                "Lat": 60.2978389
+                                "Long": "25.254484800",
+                                "Lat": "60.297838900"
                             },
                             {
-                                "Long": 24.7828757,
-                                "Lat": 60.2978389
+                                "Long": "24.782875700",
+                                "Lat": "60.297838900"
                             },
                             {
-                                "Long": 24.7828757,
-                                "Lat": 59.9224887
+                                "Long": "24.782875700",
+                                "Lat": "59.922488700"
                             }
                         ]
                     },
@@ -214,24 +214,24 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Footprint": {
                         "Coordinates": [
                             {
-                                "Long": 24.7828757,
-                                "Lat": 59.9224887
+                                "Long": "24.782875700",
+                                "Lat": "59.922488700"
                             },
                             {
-                                "Long": 25.2544848,
-                                "Lat": 59.9224887
+                                "Long": "25.254484800",
+                                "Lat": "59.922488700"
                             },
                             {
-                                "Long": 25.2544848,
-                                "Lat": 60.2978389
+                                "Long": "25.254484800",
+                                "Lat": "60.297838900"
                             },
                             {
-                                "Long": 24.7828757,
-                                "Lat": 60.2978389
+                                "Long": "24.782875700",
+                                "Lat": "60.297838900"
                             },
                             {
-                                "Long": 24.7828757,
-                                "Lat": 59.9224887
+                                "Long": "24.782875700",
+                                "Lat": "59.922488700"
                             }
                         ]
                     },
@@ -537,7 +537,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetClassificationTag(), "Terrain");
     ASSERT_EQ(realityData->IsStreamed(), false);
     ASSERT_EQ(realityData->GetRealityDataType(), "3mx");
-    ASSERT_EQ(realityData->GetFootprintString(), "{\"Coordinates\": [{\"Long\": 24.782875700, \"Lat\": 59.922488700},{\"Long\": 25.254484800, \"Lat\": 59.922488700},{\"Long\": 25.254484800, \"Lat\": 60.297838900},{\"Long\": 24.782875700, \"Lat\": 60.297838900},{\"Long\": 24.782875700, \"Lat\": 59.922488700}]}");
+    ASSERT_EQ(realityData->GetFootprintString(), "{\"Coordinates\": [{\"Long\": \"24.782875700\", \"Lat\": \"59.922488700\"},{\"Long\": \"25.254484800\", \"Lat\": \"59.922488700\"},{\"Long\": \"25.254484800\", \"Lat\": \"60.297838900\"},{\"Long\": \"24.782875700\", \"Lat\": \"60.297838900\"},{\"Long\": \"24.782875700\", \"Lat\": \"59.922488700\"}]}");
     ASSERT_EQ(realityData->GetThumbnailDocument(), "Helsinki/thumbnail.jpg");
     ASSERT_EQ(realityData->GetMetadataUrl(), "www.bigTest.com");
     ASSERT_EQ(realityData->GetUltimateId(), "uId");
