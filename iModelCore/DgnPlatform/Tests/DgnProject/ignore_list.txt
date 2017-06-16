@@ -589,3 +589,11 @@ SchemaVersionTestFixture.IncompatibleUpgrade
 # !!!! Only ignore on bim0200holdouts !!!!
 # Shaun: This test starts with a baseline copy from a previous version and then tries to update it.  Compatibility tests like this are not expected to pass on “holdouts”…
 ECInstancesCompatibility.UpdateInstances
+
+
+#DgnPlatformTest ECSchema had link table ECRelationships which did not subclass from BIS and which therefore were removed
+#Test code needs to be adjusted.
+TransactionManagerTests.TestRelationshipLinkTableTracking
+
+#SampleDgnDbEditor ECSchema violates the BIS schema rules as well. Schema needs to be adjusted
+DgnProjectPackageTest.EnforceLinkTableFor11Relationship
