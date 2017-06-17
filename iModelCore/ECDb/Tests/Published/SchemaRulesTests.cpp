@@ -363,7 +363,7 @@ TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
                     </ECEntityClass>
                </ECSchema>)xml"))) << "Mixin may not have ClassMap CA";
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract"/>
@@ -386,7 +386,7 @@ TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
                         </ECCustomAttributes>
                         <ECProperty propertyName="Prop1" typeName="string" />
                     </ECEntityClass>
-               </ECSchema>)xml"))) << "Mixin may have DbIndexList CA";
+               </ECSchema>)xml"))) << "Mixin may not have DbIndexList CA";
 
 
     ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>

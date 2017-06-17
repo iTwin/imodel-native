@@ -1132,6 +1132,12 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
     {
     if (dbIndexListCA.IsValid())
         {
+        if (ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin())
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map mixin ECClass %s. DbIndexes cannot be defined for mixins.", ecClass.GetFullName());
+            return ERROR;
+            }
+
         bvector<DbIndexListCustomAttribute::DbIndex> indices;
         if (SUCCESS != dbIndexListCA.GetIndexes(indices))
             return ERROR;

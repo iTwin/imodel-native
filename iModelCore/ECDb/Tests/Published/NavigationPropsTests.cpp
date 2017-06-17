@@ -88,6 +88,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
 TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
     {
             {
+            //EC3.1 schema
             ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                                          SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                     "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -143,6 +144,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
             }
 
             {
+            //EC3.0 schema
             ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                  SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <ECSchema schemaName="Workspace" nameSpacePrefix="WS" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
@@ -2385,5 +2387,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, EndTablePolymorphicRelationshipTest)
 
     m_ecdb.SaveChanges();
     }
+
 END_ECDBUNITTESTS_NAMESPACE
+
 
