@@ -3091,9 +3091,27 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
         if (SUCCESS != BRepUtil::GetEdgeParameterRange(*edges[iEdge], uRangeE))
             continue;
 
-        double      uParam = (uRangeE.high+uRangeE.low) * 0.5;
-        DVec3d      edgeTangent;
+        double      uParam;
         DPoint3d    edgePoint;
+
+        // Choose start, middle, or end of edge based on pick location in case of a curved edge...
+        if (edges[iEdge]->GetEdgeLocation(edgePoint, uParam))
+            {
+            double  delta = fabs(uRangeE.high-uRangeE.low) * 0.25;
+
+            if (fabs(uParam-uRangeE.high) < delta)
+                uParam = uRangeE.high;
+            else if (fabs(uParam-uRangeE.low) < delta)
+                uParam = uRangeE.low;
+            else
+                uParam = (uRangeE.high+uRangeE.low) * 0.5;
+            }
+        else
+            {
+            uParam = (uRangeE.high+uRangeE.low) * 0.5;
+            }
+
+        DVec3d      edgeTangent;
 
         if (SUCCESS != BRepUtil::EvaluateEdge(*edges[iEdge], edgePoint, edgeTangent, uParam))
             continue;
@@ -3146,55 +3164,6 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
                 continue;
 
             ISubEntityPtr extremePtr = PSolidSubEntity::CreateSubEntity(topolTag, fwdTargetTransform);
-
-            if (!extremePtr.IsValid())
-                continue;
-
-            switch (extremePtr->GetSubEntityType())
-                {
-                case ISubEntity::SubEntityType::Edge:
-                    break;
-
-                case ISubEntity::SubEntityType::Vertex:
-                    {
-                    bvector<ISubEntityPtr> vertexEdges;
-
-                    if (SUCCESS != BRepUtil::GetVertexEdges(vertexEdges, *extremePtr))
-                        break;
-
-                    double        lastDot = 0.0;
-                    ISubEntityPtr bestEdgePtr = nullptr;
-
-                    for (ISubEntityPtr& vertexEdgePtr : vertexEdges)
-                        {
-                        if (SUCCESS != BRepUtil::GetEdgeParameterRange(*vertexEdgePtr, uRangeE))
-                            continue;
-
-                        DVec3d      thisEdgeTangent;
-                        DPoint3d    thisEdgePoint;
-
-                        if (SUCCESS != BRepUtil::EvaluateEdge(*vertexEdgePtr, thisEdgePoint, thisEdgeTangent, (uRangeE.high+uRangeE.low) * 0.5))
-                            continue;
-
-                        double      thisDot = fabs(thisEdgeTangent.DotProduct(edgeTangent));
-
-                        if (!bestEdgePtr.IsValid() || thisDot > lastDot)
-                            {
-                            bestEdgePtr = vertexEdgePtr;
-                            lastDot = thisDot;
-                            }
-                        }
-
-                    extremePtr = (bestEdgePtr.IsValid() ? bestEdgePtr : nullptr);
-                    break;
-                    }
-
-                default:
-                    {
-                    extremePtr = nullptr;
-                    break;
-                    }
-                }
 
             if (!extremePtr.IsValid())
                 continue;
@@ -3307,57 +3276,6 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
                 continue;
 
             ISubEntityPtr extremePtr = PSolidSubEntity::CreateSubEntity(topolTag, fwdTargetTransform);
-
-            if (!extremePtr.IsValid())
-                continue;
-
-            switch (extremePtr->GetSubEntityType())
-                {
-                case ISubEntity::SubEntityType::Edge:
-                    break;
-
-                case ISubEntity::SubEntityType::Vertex:
-                    {
-                    bvector<ISubEntityPtr> vertexEdges;
-
-                    if (SUCCESS != BRepUtil::GetVertexEdges(vertexEdges, *extremePtr))
-                        break;
-
-                    double        lastDot = 0.0;
-                    ISubEntityPtr bestEdgePtr = nullptr;
-
-                    for (ISubEntityPtr& vertexEdgePtr : vertexEdges)
-                        {
-                        DRange1d    uRangeE;
-
-                        if (SUCCESS != BRepUtil::GetEdgeParameterRange(*vertexEdgePtr, uRangeE))
-                            continue;
-
-                        DVec3d      thisEdgeTangent;
-                        DPoint3d    thisEdgePoint;
-
-                        if (SUCCESS != BRepUtil::EvaluateEdge(*vertexEdgePtr, thisEdgePoint, thisEdgeTangent, (uRangeE.high+uRangeE.low) * 0.5))
-                            continue;
-
-                        double      thisDot = fabs(thisEdgeTangent.DotProduct(testDir));
-
-                        if (!bestEdgePtr.IsValid() || thisDot > lastDot)
-                            {
-                            bestEdgePtr = vertexEdgePtr;
-                            lastDot = thisDot;
-                            }
-                        }
-
-                    extremePtr = (bestEdgePtr.IsValid() ? bestEdgePtr : nullptr);
-                    break;
-                    }
-
-                default:
-                    {
-                    extremePtr = nullptr;
-                    break;
-                    }
-                }
 
             if (!extremePtr.IsValid())
                 continue;
