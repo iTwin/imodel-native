@@ -205,7 +205,7 @@ public:
     void SetIsPrimaryKeyColumn(PrimaryKeyDbConstraint const& pkConstraint) { m_pkConstraint = &pkConstraint; }
     BentleyStatus SetKind(Kind);
     BentleyStatus AddKind(Kind kind) { return SetKind(Enum::Or(m_kind, kind)); }
-
+    bool IsVirtual() const { return GetPersistenceType() == PersistenceType::Virtual; }
     //!@return position of this column in its table (0-based index).
     int DeterminePosition() const;
 

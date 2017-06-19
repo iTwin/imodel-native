@@ -189,7 +189,6 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
     BentleyStatus r = Query(columnMaps, classMap, filter, nullptr);
     stopwatch.Stop();
     fullTime += stopwatch.GetElapsedSeconds();
-    LOG.debugv("ColumnMapContext::Query(%s) (%.4f seconds). [total=%.4f]", classMap.GetClass().GetFullName(), stopwatch.GetElapsedSeconds(), fullTime);
     return r;
     }
 

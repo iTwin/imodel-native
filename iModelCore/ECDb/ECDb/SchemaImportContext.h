@@ -10,7 +10,6 @@
 #include "ClassMap.h"
 #include "DbSchemaPersistenceManager.h"
 #include "SchemaComparer.h"
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -120,6 +119,7 @@ struct SchemaPolicies final
         bool IsOptedIn(SchemaPolicy const*&, SchemaPolicy::Type) const;
     };
 
+struct EndTableMappingContextCollection;
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
@@ -134,47 +134,43 @@ struct SchemaImportContext final
         MappingRelationships,
         CreatingUserDefinedIndexes
         };
-private:
-    SchemaManager::SchemaImportOptions m_options;
-    Phase m_phase = Phase::ImportingSchemas;
+    private:
+        SchemaManager::SchemaImportOptions m_options;
+        Phase m_phase = Phase::ImportingSchemas;
 
-    ClassMapLoadContext m_loadContext;
-    bset<ECN::ECClassId> m_classMapsToSave;
-    mutable std::map<ECN::ECClassCP, std::unique_ptr<ClassMappingCACache>> m_classMappingCACache;
-    std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
-    bmap<ECN::ECClassId, ForeignKeyConstraintCustomAttribute> m_fkConstraintCACache;
-    ForeignKeyConstraintCustomAttribute m_emptyFkConstraintCA;
+        ClassMapLoadContext m_loadContext;
+        bset<ECN::ECClassId> m_classMapsToSave;
+        mutable std::map<ECN::ECClassCP, std::unique_ptr<ClassMappingCACache>> m_classMappingCACache;
+        std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
+        bmap<ECN::ECClassId, ForeignKeyConstraintCustomAttribute> m_fkConstraintCACache;
+        ForeignKeyConstraintCustomAttribute m_emptyFkConstraintCA;
+        std::unique_ptr<EndTableMappingContextCollection> m_relCol;
+        SchemaPolicies m_schemaPolicies;
 
-    SchemaPolicies m_schemaPolicies;
+    public:
+        explicit SchemaImportContext(SchemaManager::SchemaImportOptions options);
+        void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }
+        Phase GetPhase() const { return m_phase; }
+        SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
+        ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
+        ClassMappingCACache* GetClassMappingCACacheP(ECN::ECClassCR) const;
+        void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
+        std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
+        //!@return true if @p navProp has the ForeignConstraintCA, false otherwise
+        bool CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp);
+        ForeignKeyConstraintCustomAttribute const& GetFkConstraintCAFromCache(ECN::ECClassId relClassId) const
+            {
+            auto it = m_fkConstraintCACache.find(relClassId);
+            if (it == m_fkConstraintCACache.end())
+                return m_emptyFkConstraintCA;
 
-public:
-    explicit SchemaImportContext(SchemaManager::SchemaImportOptions options) : m_options(options) {}
-
-    void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }
-    Phase GetPhase() const { return m_phase; }
-
-    SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
-
-    ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
-    ClassMappingCACache* GetClassMappingCACacheP(ECN::ECClassCR) const;
-
-    void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
-    std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
-    //!@return true if @p navProp has the ForeignConstraintCA, false otherwise
-    bool CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp);
-
-    ForeignKeyConstraintCustomAttribute const& GetFkConstraintCAFromCache(ECN::ECClassId relClassId) const
-        {
-        auto it = m_fkConstraintCACache.find(relClassId);
-        if (it == m_fkConstraintCACache.end())
-            return m_emptyFkConstraintCA;
-
-        return it->second;
-        }
-
-    ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
-    void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
-    bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
+            return it->second;
+            }
+        ClassMappingStatus MapNavigationProperty(NavigationPropertyMap& navPropMap);
+        ClassMappingStatus FinishEndTableMapping();
+        ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
+        void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
+        bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
 
     SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
     SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }

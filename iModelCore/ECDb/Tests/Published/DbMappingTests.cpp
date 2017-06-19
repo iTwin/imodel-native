@@ -11,7 +11,123 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+TEST_F(DbMappingTestFixture, MultiSessionImportWithMixin)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("MultiSessionImportWithMixin.ecdb", SchemaItem(
+                         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                         "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+                         "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+                         "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
+                         "      <ECCustomAttributes>"
+                         "          <ClassMap xmlns='ECDbMap.02.00'>"
+                         "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+                         "          </ClassMap>"
+                         "          <ShareColumns xmlns='ECDbMap.02.00'>"
+                         "              <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
+                         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                         "          </ShareColumns>"
+                         "      </ECCustomAttributes>"
+                         "      <ECProperty propertyName='Code' typeName='string' />"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
+                         "      <ECCustomAttributes>"
+                         "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                         "              <AppliesToEntityClass>Equipment</AppliesToEntityClass>"
+                         "          </IsMixin>"
+                         "      </ECCustomAttributes>"
+                         "      <ECProperty propertyName='www' typeName='long' />"
+                         "      <ECNavigationProperty propertyName='Car' relationshipName='BaseRelationship' direction='Backward' />"
+                         "  </ECEntityClass>"
+                         "  <ECRelationshipClass typeName='BaseRelationship' strength='holding' strengthDirection='Forward' modifier='Abstract'>"
+                         "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+                         "         <Class class='Car' />"
+                         "     </Source>"
+                         "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='B'>"
+                         "        <Class class='IEndPoint' />"
+                         "     </Target>"
+                         "  </ECRelationshipClass>"
+                         "  <ECRelationshipClass typeName='CarHasEndPoint' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
+                         "      <BaseClass>BaseRelationship</BaseClass>"
+                         "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>"
+                         "         <Class class='Car' />"
+                         "     </Source>"
+                         "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='B'>"
+                         "        <Class class='IEndPoint' />"
+                         "     </Target>"
+                         "  </ECRelationshipClass>"
+                         "  <ECEntityClass typeName='Car'>"
+                         "      <ECProperty propertyName='Name' typeName='string' />"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='Engine'>"
+                         "      <BaseClass>Equipment</BaseClass>"
+                         "      <BaseClass>IEndPoint</BaseClass>"
+                         "      <ECProperty propertyName='Volumn' typeName='double' />"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='ExtendedLater'>"
+                         "      <BaseClass>Equipment</BaseClass>"
+                         "      <ECProperty propertyName='Type1' typeName='string' />"
+                         "      <ECProperty propertyName='Type2' typeName='string' />"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='Tire'>"
+                         "      <BaseClass>Equipment</BaseClass>"
+                         "      <ECProperty propertyName='Diameter' typeName='double' />"
+                         "  </ECEntityClass>"
+                         "</ECSchema>")));
+    
+    ECClassId relId = m_ecdb.Schemas().GetClassId("TestSchema", "CarHasEndPoint");
+    ECClassId carId = m_ecdb.Schemas().GetClassId("TestSchema", "Car");
+    ECClassId engineId = m_ecdb.Schemas().GetClassId("TestSchema", "Engine");
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Car(Name) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, SqlPrintfString("INSERT INTO ts.Engine(Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Tire(Code, Diameter) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.ExtendedLater(Code, Type1,Type2 ) VALUES ('CODE-3', 'TYPE-1', 'TYPE-2')"));
 
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        "<ECSchema schemaName='TestSchema2' alias='ts2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='TestSchema' version='01.00.00' alias='ts'/>"
+        "  <ECEntityClass typeName='Sterring'>"
+        "      <BaseClass>ts:ExtendedLater</BaseClass>"
+        "      <BaseClass>ts:IEndPoint</BaseClass>"
+        "      <ECProperty propertyName='Type' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
+    m_ecdb.SaveChanges();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts2.Sterring"));
+    stmt.Finalize();
+
+    ECClassId sterringId = m_ecdb.Schemas().GetClassId("TestSchema2", "Sterring");
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, SqlPrintfString("INSERT INTO ts2.Sterring(Code, www, Type,Car.Id,Car.RelECClassId) VALUES ('CODE-2','www2', 'S-Type',1,%d)", relId.GetValue())));
+
+
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    m_ecdb.SaveChanges();
+  
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(5, stmt.GetValueInt64(0)); //ECInstanceId
+    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1)); //ECClassId
+    ASSERT_EQ(1, stmt.GetValueInt64(2));//SourceECInstanceId
+    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));//SourceECClassId
+    ASSERT_EQ(5, stmt.GetValueInt64(4));//TargetECInstanceId
+    ASSERT_EQ(sterringId.GetValue(), stmt.GetValueInt64(5));//TargetECClassId
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_EQ(2, stmt.GetValueInt64(0));                  //ECInstanceId
+    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));   //ECClassId
+    ASSERT_EQ(1, stmt.GetValueInt64(2));                  //SourceECInstanceId
+    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));   //SourceECClassId
+    ASSERT_EQ(2, stmt.GetValueInt64(4));                  //TargetECInstanceId
+    ASSERT_EQ(engineId.GetValue(), stmt.GetValueInt64(5));//TargetECClassId
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts2.Sterring"));
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -139,7 +255,7 @@ TEST_F(DbMappingTestFixture, SimpleFK_Dervied)
                   </Target>
                </ECRelationshipClass>
             </ECSchema>)xml")));
-
+    m_ecdb.SaveChanges();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.A1HasB1")); stmt.Finalize();
@@ -157,19 +273,33 @@ TEST_F(DbMappingTestFixture, SimpleFK_Dervied)
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1", "ECClassId"), "ts_A", "ECClassId");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1", "Price"), "ts_A", "Price");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1", "Tag"), "ts_A", "Tag");
-    ////
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECInstanceId"), "ts_B", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECClassId"), "ts_B", "ARelECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECInstanceId"), "ts_B", "AId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECClassId"), "ts_A", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECInstanceId"), "ts_B", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECClassId"), "ts_B", "ECClassId");
-    ////
+
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECInstanceId"), "ts_AHasB", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECClassId"), "ts_AHasB", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECInstanceId"), "ts_AHasB", "SourceECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECClassId"), "ts_AHasB", "SourceECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECInstanceId"), "ts_AHasB", "TargetECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECClassId"), "ts_AHasB", "TargetECClassId");
+
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1HasB1", "ECInstanceId"), "ts_AHasB", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1HasB1", "ECClassId"), "ts_AHasB", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1HasB1", "SourceECInstanceId"), "ts_AHasB", "SourceECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1HasB1", "SourceECClassId"), "ts_AHasB", "SourceECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1HasB1", "TargetECInstanceId"), "ts_AHasB", "TargetECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A1HasB1", "TargetECClassId"), "ts_AHasB", "TargetECClassId");
+
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "ECInstanceId"), "ts_B", "Id");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "ECClassId"), "ts_B", "ECClassId");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "Cost"), "ts_B", "Cost");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.Id"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.Id"), "ts_B", "AId");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.RelECClassId"), "ts_B", "ARelECClassId");
+
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B1", "ECInstanceId"), "ts_B1", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B1", "ECClassId"), "ts_B1", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B1", "Cost"), "ts_B1", "Cost");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B1", "A.Id"), "ts_B1", "AId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B1", "A.RelECClassId"), "ts_B1", "ARelECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B1", "Tag"), "ts_B1", "Tag");
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
@@ -209,16 +339,16 @@ TEST_F(DbMappingTestFixture, SimpleFK)
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECInstanceId"), "ts_A", "Id");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "ECClassId"), "ts_A", "ECClassId");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "A", "Price"), "ts_A", "Price");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECInstanceId"), "ts_B", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECClassId"), "ts_B", "ARelECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECInstanceId"), "ts_B", "AId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECClassId"), "ts_A", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECInstanceId"), "ts_B", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECClassId"), "ts_B", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECInstanceId"), "ts_AHasB", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "ECClassId"), "ts_AHasB", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECInstanceId"), "ts_AHasB", "SourceECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "SourceECClassId"), "ts_AHasB", "SourceECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECInstanceId"), "ts_AHasB", "TargetECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "AHasB", "TargetECClassId"), "ts_AHasB", "TargetECClassId");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "ECInstanceId"), "ts_B", "Id");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "ECClassId"), "ts_B", "ECClassId");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "Cost"), "ts_B", "Cost");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.Id"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.Id"), "ts_B", "AId");
     ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, PropertyAccessString("TestSchema", "B", "A.RelECClassId"), "ts_B", "ARelECClassId");
     }
 //---------------------------------------------------------------------------------------
@@ -2047,8 +2177,10 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                                          "       </Target>"
                                          "     </ECRelationshipClass>"
                                          "</ECSchema>"))) << "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped only if nav prop class has it too";
-
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    //Affan: Following test will pass on Bim0200 because We map end table relationship using nav property.
+    //       In following case nav property is in unmapped class and ther for its not processed. 
+    //       In following relationship itself is mapped to virtual table 
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                          "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                          "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                          "    <ECEntityClass typeName='A' modifier='None'>"

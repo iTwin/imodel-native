@@ -383,12 +383,10 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = classMap.GetAs<RelationshipClassEndTableMap> ();
-        for (DbTable const* endTable : relClassMap.GetTables())
+        for (DbTable const* endTable : relClassMap.GetPartitionView().GetTables(false))
             {
             const LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
-
             Partition* hp = storageDescription->AddHorizontalPartition(*endTable, true);
-
             for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationshipClass(classId))
                 {
                 ECClassId constraintClassId = kvpair.first;

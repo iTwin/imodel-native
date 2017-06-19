@@ -253,40 +253,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::MapNavigationProperty(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap)
     {
-    NavigationECPropertyCR navProp = static_cast<NavigationECPropertyCR>(navPropMap.GetProperty());
-    ECRelationshipClassCP navRel = navProp.GetRelationshipClass();
-    if (navRel == nullptr)
-        return ClassMappingStatus::Error;
-
-    ClassMapCP classMap = GetDbMap().GetClassMap(*navRel);
-    if (classMap == nullptr)
-        {
-        ClassMappingStatus r = GetDbMap().MapRelationshipClass(ctx, *navRel);
-        if (r != ClassMappingStatus::Success)
-            return r;
-
-        classMap = GetDbMap().GetClassMap(*navRel);
-        if (classMap == nullptr)
-            return ClassMappingStatus::Error;
-        }
-
-    if (classMap->GetType() != ClassMap::Type::RelationshipEndTable)
-        {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
-                                                                   navProp.GetClass().GetFullName(), navProp.GetName().c_str());
-        return ClassMappingStatus::Error;
-        }
-    
-    const bool useColumnReservation = GetColumnFactory().UsesSharedColumnStrategy();
-    if (useColumnReservation)
-        GetColumnFactory().ReserveSharedColumns(navPropMap.GetName());
-
-    ClassMappingStatus status = static_cast<RelationshipClassEndTableMap*>(const_cast<ClassMap*>(classMap))->UpdatePersistedEnd(ctx, navPropMap);
-
-    if (useColumnReservation)
-        GetColumnFactory().ReleaseSharedColumnReservation();
-
-    return status;
+    return ctx.MapNavigationProperty(navPropMap);
     }
 
 //---------------------------------------------------------------------------------------

@@ -848,55 +848,92 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, Context& ctx, RelationshipClassEndTableMap const& relationMap) 
+BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, Context& ctx, RelationshipClassEndTableMap const& relationMap)
     {
     NativeSqlBuilder::List unionList;
-    for (DbTable const* table : relationMap.GetTables())
+
+    const bool isECClassView =ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames();
+    if (isECClassView)
         {
-        if (table->GetType() == DbTable::Type::Virtual)
-            continue;
+        ECClassViewContext& viewContext = ctx.GetAs<ECClassViewContext>();
+        viewContext.AddViewColumnName(relationMap.GetECInstanceIdPropertyMap()->GetAccessString());
+        viewContext.AddViewColumnName(relationMap.GetECClassIdPropertyMap()->GetAccessString());
+        viewContext.AddViewColumnName(relationMap.GetSourceECInstanceIdPropMap()->GetAccessString());
+        viewContext.AddViewColumnName(relationMap.GetSourceECClassIdPropMap()->GetAccessString());
+        viewContext.AddViewColumnName(relationMap.GetTargetECInstanceIdPropMap()->GetAccessString());
+        viewContext.AddViewColumnName(relationMap.GetTargetECClassIdPropMap()->GetAccessString());
+        }
 
-        NativeSqlBuilder view;
-        ConstraintECClassIdJoinInfo sourceECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetSourceECClassIdPropMap(), *table);
-        ConstraintECClassIdJoinInfo targetECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetTargetECClassIdPropMap(), *table);
+    const DbColumn::Type castIntoType = isECClassView ? DbColumn::Type::Integer : DbColumn::Type::Any; //Any mean do not cast.
 
-        if (DoRenderRelationshipClassMap(view, ctx, relationMap, *table, sourceECClassIdJoinInfo, targetECClassIdJoinInfo) != SUCCESS)
-            return ERROR;
-
-        //capture view column names only for the first table, all other tables will be unioned together and therefore
-        //have the same select clause
-        if (ctx.GetViewType() == ViewType::ECClassView)
-            ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
-
-        if (sourceECClassIdJoinInfo.RequiresJoin())
-            view.Append(sourceECClassIdJoinInfo.GetNativeJoinSql());
-
-        if (targetECClassIdJoinInfo.RequiresJoin())
-            view.Append(targetECClassIdJoinInfo.GetNativeJoinSql());
-
-        view.Append(" WHERE ").AppendEscaped(relationMap.GetReferencedEndECInstanceIdPropMap()->GetAccessString().c_str()).Append(" IS NOT NULL");
-        //! Add Polymorphic Filter if required
-        if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table))
+    const ECClassId classId = relationMap.GetClass().GetId();
+    const ECClassId sourceECClassId = relationMap.GetRelationshipClass().GetSource().GetConstraintClasses().front()->GetId();
+    const ECClassId targetECClassId = relationMap.GetRelationshipClass().GetTarget().GetConstraintClasses().front()->GetId();    
+    for (auto const& key : relationMap.GetPartitionView().GetPartitionMap())
+        {
+        for (auto const & partition : key.second)
             {
-            const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
-            if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
-                (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
-                {    
-                NativeSqlBuilder classIdFilter;
-                Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
-                relationMap.GetClass().GetId().ToString(classIdStr);
-                classIdFilter.AppendEscaped(table->GetName().c_str()).AppendDot().AppendEscaped(classIdPropertyMap->GetColumn().GetName().c_str());
+            if (!partition->CanQuery())
+                continue;
 
-                if (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery())
-                    classIdFilter.Append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").Append(classIdStr).Append(")");
-                else
-                    classIdFilter.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(classIdStr);
+            bool  appendAlias = unionList.empty();
+            NativeSqlBuilder view;
+            view.Append("SELECT ");
 
-                //We always have a WHERE so always add AND operator
-                view.AppendSpace().Append(ExpHelper::ToSql(BooleanSqlOperator::And)).AppendSpace().Append(classIdFilter);
+            //ECCInstance
+            if(isECClassView)
+                view.Append(partition->GetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECInstanceId).AppendComma();
+            else
+                view.Append(partition->GetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECInstanceId).AppendComma();
+
+            //ECClassId
+            if (partition->GetECClassId().IsVirtual())
+                view.Append(classId).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECClassId).AppendComma();
+            else
+                view.Append(partition->GetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECClassId).AppendComma();
+
+            //SourceECInstanceId
+            view.Append(partition->GetSourceECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECInstanceId).AppendComma();
+
+            //SourceECClassID
+            if (partition->GetSourceECClassId().IsVirtual())
+                view.Append(sourceECClassId).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+            else
+                view.Append(partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+
+            //TargetECInstanceId
+            view.Append(partition->GetTargetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECInstanceId).AppendComma();
+
+            //TargetECClassId
+            if (partition->GetTargetECClassId().IsVirtual())
+                view.Append(targetECClassId).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+            else
+                view.Append(partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+
+            //FROM
+            view.Append(" FROM ").Append(partition->GetECInstanceId().GetTable());
+
+            DbColumn const& refClassId = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECClassId() : partition->GetTargetECClassId();
+            DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceId() : partition->GetTargetECInstanceId();
+            if (refClassId.GetPersistenceType() == PersistenceType::Physical && refClassId.GetTable().GetId() != partition->GetECInstanceId().GetTable().GetId())
+                {
+                DbColumn const* idColumn = refClassId.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
+                view.Append(" INNER JOIN ").Append(refClassId.GetTable()).Append(" ON ").Append(*idColumn).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
                 }
+
+            view.Append(" WHERE ").Append(referenceIdColumn).Append(" IS NOT NULL");
+            if (partition->GetECClassId().GetPersistenceType() == PersistenceType::Physical)
+                {
+                const bool isPolymorphic = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery() : true;
+                view.Append(" AND ").Append(partition->GetECClassId());
+                if (isPolymorphic)
+                    view.Append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").Append(relationMap.GetClass().GetId()).Append(")");
+                else
+                    view.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(relationMap.GetClass().GetId());
+                }
+
+            unionList.push_back(view);
             }
-        unionList.push_back(view);
         }
 
     if (unionList.empty())
@@ -909,7 +946,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         if (ctx.GetViewType() == ViewType::SelectFromView)
             viewSql.AppendParenLeft();
 
-        viewSql.Append(unionList, " UNION ");
+        viewSql.Append(unionList, " UNION ALL ");
 
         if (ctx.GetViewType() == ViewType::SelectFromView)
             viewSql.AppendParenRight();

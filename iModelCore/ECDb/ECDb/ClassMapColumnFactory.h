@@ -121,7 +121,6 @@ struct ClassMapColumnFactory : NonCopyableClass
         DbTable* GetEffectiveTable() const;
         DbTable* GetOrCreateOverflowTable() const;
         DbColumn* ReuseOrCreateSharedColumn() const;
-        bool IsColumnInUse(DbColumn const& column) const;
         ColumnMaps* GetColumnMaps() const;
         ECDbCR GetECDb() const;
         DbColumn* RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const;
@@ -135,6 +134,7 @@ struct ClassMapColumnFactory : NonCopyableClass
         explicit ClassMapColumnFactory(ClassMap const& classMap);
         ~ClassMapColumnFactory() {};
         bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
+        bool IsColumnInUse(DbColumn const& column) const;
         void ReserveSharedColumns(Utf8StringCR propertyName) const;
         void ReserveSharedColumns(uint32_t columnsRequired) const;
         void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }

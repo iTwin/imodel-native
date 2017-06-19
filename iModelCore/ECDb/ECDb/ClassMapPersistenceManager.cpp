@@ -183,8 +183,7 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
 BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
     loadContext.m_isValid = false;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy,ShareColumnsMode,MaxSharedColumnsBeforeOverflow,JoinedTableInfo "
-                                                      "FROM ec_ClassMap WHERE ClassId=?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy,ShareColumnsMode,MaxSharedColumnsBeforeOverflow,JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
