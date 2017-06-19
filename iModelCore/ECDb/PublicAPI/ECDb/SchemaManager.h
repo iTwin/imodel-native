@@ -195,6 +195,12 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         //! @return The retrieved KindOfQuantity or nullptr if not found
         ECDB_EXPORT ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
 
+        //! Gets the PropertyCategory for the specified name.
+        //! @param[in] schemaName Name (not full name) of the schema containing the PropertyCategory
+        //! @param[in] propertyCategoryName Name of the PropertyCategory to be retrieved
+        //! @return The retrieved PropertyCategory or nullptr if not found
+        ECDB_EXPORT ECN::PropertyCategoryCP GetPropertyCategory(Utf8CP schemaName, Utf8CP propertyCategoryName) const;
+
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
         //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code. 

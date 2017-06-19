@@ -58,6 +58,7 @@ public:
     static ECN::ECClassId GetClassId(ECDbCR, Utf8CP schemaNameOrAlias, Utf8CP className, SchemaLookupMode);
     static ECN::ECEnumerationId GetEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
     static ECN::KindOfQuantityId GetKindOfQuantityId(ECDbCR, Utf8CP schemaName, Utf8CP koqName);
+    static ECN::PropertyCategoryId GetPropertyCategoryId(ECDbCR, Utf8CP schemaName, Utf8CP catName);
     static ECN::ECPropertyId GetPropertyId(ECDbCR, ECN::ECClassId, Utf8CP propertyName);
     static ECN::ECPropertyId GetPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 

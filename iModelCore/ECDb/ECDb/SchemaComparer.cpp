@@ -469,6 +469,29 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
     //if (a.GetMinimumValue() != b.GetMinimumValue())
     //    change.GetMinimumValue().SetValue(a.GetMinimumValue(), b.GetMinimumValue());
 
+    KindOfQuantityCP aKoq = a.GetKindOfQuantity();
+    KindOfQuantityCP bKoq = b.GetKindOfQuantity();
+    if (aKoq != nullptr && bKoq != nullptr)
+        {
+        if (aKoq != bKoq)
+            change.GetKindOfQuantity().SetValue(aKoq->GetFullName(), bKoq->GetFullName());
+        }
+    else if (aKoq != nullptr && bKoq == nullptr)
+        change.GetKindOfQuantity().SetValue(ValueId::Deleted, aKoq->GetFullName());
+    else if (aKoq == nullptr && bKoq != nullptr)
+        change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
+
+    PropertyCategoryCP aCat = a.GetPropertyCategory();
+    PropertyCategoryCP bCat = b.GetPropertyCategory();
+    if (aCat != nullptr && bCat != nullptr)
+        {
+        if (aCat != bCat)
+            change.GetCategory().SetValue(aCat->GetFullName(), bCat->GetFullName());
+        }
+    else if (aCat != nullptr && bCat == nullptr)
+        change.GetCategory().SetValue(ValueId::Deleted, aCat->GetFullName());
+    else if (aCat == nullptr && bCat != nullptr)
+        change.GetCategory().SetValue(ValueId::New, bCat->GetFullName());
 
     auto aNavigation = a.GetAsNavigationProperty();
     auto bNavigation = b.GetAsNavigationProperty();
@@ -543,34 +566,16 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
         Utf8String bExtendedTypeName = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetExtendedTypeName() : b.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
         if (!aExtendedTypeName.EqualsIAscii(bExtendedTypeName))
             change.GetExtendedTypeName().SetValue(aExtendedTypeName, bExtendedTypeName);
-
-        KindOfQuantityCP aKoq = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetKindOfQuantity() : a.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-        KindOfQuantityCP bKoq = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetKindOfQuantity() : b.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-        if (aKoq != nullptr && bKoq != nullptr)
-            {
-            if (aKoq != bKoq)
-                change.GetKindOfQuantity().SetValue(aKoq->GetFullName(), bKoq->GetFullName());
-            }
-        else if (aKoq != nullptr && bKoq == nullptr)
-            change.GetKindOfQuantity().SetValue(ValueId::Deleted, aKoq->GetFullName());
-        else if (aKoq == nullptr && bKoq != nullptr)
-            change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
         }
     else if (aIsExtendedType && !bIsExtendedType)
         {
         Utf8String aExtendedTypeName = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetExtendedTypeName() : a.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
         change.GetExtendedTypeName().SetValue(ValueId::Deleted, aExtendedTypeName);
-        KindOfQuantityCP aKoq = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetKindOfQuantity() : a.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-        if (aKoq != nullptr)
-            change.GetKindOfQuantity().SetValue(ValueId::Deleted, aKoq->GetFullName());
         }
     else if (!aIsExtendedType && bIsExtendedType)
         {
         Utf8String bExtendedTypeName = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetExtendedTypeName() : b.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
         change.GetExtendedTypeName().SetValue(ValueId::New, bExtendedTypeName);
-        KindOfQuantityCP bKoq = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetKindOfQuantity() : b.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-        if (bKoq != nullptr)
-            change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
         }
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
@@ -747,6 +752,51 @@ BentleyStatus SchemaComparer::CompareKindOfQuantities(KindOfQuantityChanges& cha
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges& changes, PropertyCategoryContainerCR a, PropertyCategoryContainerCR b)
+    {
+    std::map<Utf8CP, PropertyCategoryCP, CompareIUtf8Ascii> aMap, bMap, cMap;
+    for (PropertyCategoryCP catCP : a)
+        aMap[catCP->GetName().c_str()] = catCP;
+
+    for (PropertyCategoryCP catCP : b)
+        bMap[catCP->GetName().c_str()] = catCP;
+
+    cMap.insert(aMap.cbegin(), aMap.cend());
+    cMap.insert(bMap.cbegin(), bMap.cend());
+
+    for (auto& u : cMap)
+        {
+        auto itorA = aMap.find(u.first);
+        auto itorB = bMap.find(u.first);
+
+        bool existInA = itorA != aMap.end();
+        bool existInB = itorB != bMap.end();
+        if (existInA && existInB)
+            {
+            auto& catChange = changes.Add(ChangeState::Modified, u.first);
+            if (ComparePropertyCategory(catChange, *itorA->second, *itorB->second) == ERROR)
+                return ERROR;
+            }
+        else if (existInA && !existInB)
+            {
+            if (AppendPropertyCategory(changes, *itorA->second, ValueId::Deleted) == ERROR)
+                return ERROR;
+            }
+        else if (!existInA && existInB)
+            {
+            if (AppendPropertyCategory(changes, *itorB->second, ValueId::New) == ERROR)
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1047,6 +1097,26 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::ComparePropertyCategory(PropertyCategoryChange& change, PropertyCategoryCR a, PropertyCategoryCR b)
+    {
+    if (a.GetName() != b.GetName())
+        change.GetName().SetValue(a.GetName(), b.GetName());
+
+    if (a.GetDisplayLabel() != b.GetDisplayLabel())
+        change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
+
+    if (a.GetDescription() != b.GetDescription())
+        change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+
+    if (a.GetPriority() != b.GetPriority())
+        change.GetPriority().SetValue(a.GetPriority(), b.GetPriority());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
@@ -1289,6 +1359,21 @@ BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChanges& change
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::AppendPropertyCategory(PropertyCategoryChanges& changes, PropertyCategoryCR cat, ValueId appendType)
+    {
+    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
+    PropertyCategoryChange& catChange = changes.Add(state, cat.GetName().c_str());
+    catChange.GetName().SetValue(appendType, cat.GetName());
+    catChange.GetDisplayLabel().SetValue(appendType, cat.GetDisplayLabel());
+    catChange.GetDescription().SetValue(appendType, cat.GetDescription());
+    catChange.GetPriority().SetValue(appendType, cat.GetPriority());
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1302,6 +1387,9 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPro
 
     propertyChange.GetDescription().SetValue(appendType, v.GetInvariantDescription());
     propertyChange.GetTypeName().SetValue(appendType, v.GetTypeName());
+
+    if (v.GetPropertyCategory() != nullptr)
+        propertyChange.GetCategory().SetValue(appendType, v.GetPropertyCategory()->GetFullName());
 
     if (NavigationECPropertyCP prop = v.GetAsNavigationProperty())
         {

@@ -362,9 +362,6 @@
     <ClInclude Include="ChangeSummaryImpl.h">
       <Filter>ChangeSummary</Filter>
     </ClInclude>
-    <ClInclude Include="BeBriefcaseBasedIdSequence.h">
-      <Filter>ECDb</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbMapSchemaHelper.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
@@ -698,9 +695,6 @@
     </ClCompile>
     <ClCompile Include="ChangeSummaryImpl.cpp">
       <Filter>ChangeSummary</Filter>
-    </ClCompile>
-    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp">
-      <Filter>ECDb</Filter>
     </ClCompile>
     <ClCompile Include="ECDbMapSchemaHelper.cpp">
       <Filter>SchemaManager</Filter>

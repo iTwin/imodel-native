@@ -31,7 +31,6 @@
     <ClCompile Include="ECDbPch.cpp" />
     <ClCompile Include="ECDbSqlFunctions.cpp" />
     <ClCompile Include="ECDbSystemSchemaHelper.cpp" />
-    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
     <ClCompile Include="ECInstanceFinder.cpp" />
     <ClCompile Include="ECSql\ArrayECSqlBinder.cpp" />
     <ClCompile Include="ECSql\ArrayECSqlField.cpp" />
@@ -131,7 +130,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\SchemaManager.h" />
-    <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ChangeSummaryImpl.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapColumnFactory.h" />

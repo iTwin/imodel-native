@@ -193,6 +193,25 @@ KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8C
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2017
+//---------------------------------------------------------------------------------------
+//static
+PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP catName)
+    {
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT cat.Id FROM ec_PropertyCategory cat, ec_Schema s WHERE cat.SchemaId=s.Id AND s.Name=? AND cat.Name=?");
+    if (stmt == nullptr)
+        return PropertyCategoryId();
+
+    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText(2, catName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return PropertyCategoryId();
+
+    return stmt->GetValueId<PropertyCategoryId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
 ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, ECClassId ecClassId, Utf8CP propertyName)

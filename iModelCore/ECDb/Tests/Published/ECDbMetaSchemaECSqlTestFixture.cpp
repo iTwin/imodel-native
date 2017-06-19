@@ -883,6 +883,16 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
+        if (colName.EqualsI("Category"))
+            {
+            if (expectedProp.GetPropertyCategory() != nullptr)
+                ASSERT_EQ(expectedProp.GetPropertyCategory()->GetId(), val.GetId<PropertyCategoryId>()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
         FAIL() << "ECProperty ECPropertyDef." << colName.c_str() << " not tested. Test needs to be adjusted for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
         }
     }
