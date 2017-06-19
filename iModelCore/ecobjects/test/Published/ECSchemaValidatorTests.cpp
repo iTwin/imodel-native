@@ -1486,6 +1486,63 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema2)) << "Should succeed validation as relationship is 'referncing', not 'embedding'";
     }
 
+TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
+    {
+    Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BadSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <KindOfQuantity typeName="BadKOQ" displayLabel="OFFSET" persistenceUnit="IN" relativeError="1e-2" />
+    </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, badSchemaXml1, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as persistence unit is a UCUSTOM unit, 'IN', not an SI unit";
+
+    Utf8CP badSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BadSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <KindOfQuantity typeName="BadKOQ2" displayLabel="LENGTH" persistenceUnit="US_SURVEY_IN" relativeError="1e-3" />
+    </ECSchema>)xml";
+    ECSchemaPtr schema2;
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema2, badSchemaXml2, *context2);
+    ASSERT_TRUE(schema2.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema2)) << "Should fail validation as persistence unit is a USSURVEY unit, 'US_SURVEY_IN', not an SI unit";
+
+    Utf8CP badSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="BadSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <KindOfQuantity typeName="BadKOQ3" displayLabel="DEPTH" persistenceUnit="NAUT_MILE" relativeError="1e-3" />
+    </ECSchema>)xml";
+    ECSchemaPtr schema3;
+    ECSchemaReadContextPtr context3 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema3, badSchemaXml3, *context3);
+    ASSERT_TRUE(schema3.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema3)) << "Should fail validation as persistence unit is a MARITIME unit, 'NAUT_MILE', not an SI unit";
+
+    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <KindOfQuantity typeName="GoodKOQ" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-1" />
+    </ECSchema>)xml";
+    ECSchemaPtr schema4;
+    ECSchemaReadContextPtr context4 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema4, goodSchemaXml, *context4);
+    ASSERT_TRUE(schema4.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema4)) << "Should succeed validation as persistence unit is an SI unit, 'M'";
+
+    Utf8CP goodSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="GoodSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="TestClass"/>
+        <KindOfQuantity typeName="GoodKOQ2" displayLabel="OFFSET" persistenceUnit="CM" relativeError="1e-4" />
+    </ECSchema>)xml";
+    ECSchemaPtr schema5;
+    ECSchemaReadContextPtr context5 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema5, goodSchemaXml2, *context5);
+    ASSERT_TRUE(schema5.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema5)) << "Should succeed validation as persistence unit is an SI unit, 'CM'";
+    }
 TEST_F(SchemaConverterTests, RelationshipClassMustLocallyDefineRoleLabelConversion)
     {
     // Relationship source and target role label must be defined locally. Conversion should fix this validation failure.

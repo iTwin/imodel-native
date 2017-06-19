@@ -36,7 +36,16 @@ struct IECClassValidator : RefCountedBase, NonCopyableClass
     virtual ~IECClassValidator() {};
 };
 
+struct IKindOfQuantityValidator : RefCountedBase, NonCopyableClass
+    {
+    virtual ECObjectsStatus Validate(KindOfQuantityCP koq) const = 0;
+
+    //! destructor
+    virtual ~IKindOfQuantityValidator() {};
+    };
+
 typedef RefCountedPtr<IECClassValidator> IECClassValidatorPtr;
+typedef RefCountedPtr<IKindOfQuantityValidator> IKindOfQuantityValidatorPtr;
 
 struct ECSchemaValidator
     {
@@ -49,10 +58,12 @@ private:
     bool m_validated;
     bvector<IECSchemaValidatorPtr> m_validators;
     bvector<IECClassValidatorPtr> m_classValidators;
+    bvector<IKindOfQuantityValidatorPtr> m_koqValidators;
 
     void ValidateSchema(ECSchemaR schema);
     bvector<IECSchemaValidatorPtr>const & GetValidators() { return m_validators; }
     bvector<IECClassValidatorPtr>const & GetClassValidators() { return m_classValidators; }
+    bvector<IKindOfQuantityValidatorPtr>const & GetKindOfQuantityValidators() { return m_koqValidators; }
 
 public:
     //! Validates the schema based on the added validators.
@@ -62,7 +73,7 @@ public:
     //! Adds the supplied IECSchemaValidatorP which will be later called when ECSchemaValidator::Validate is run
     ECOBJECTS_EXPORT static ECObjectsStatus AddValidator(IECSchemaValidatorPtr& validator);
     ECOBJECTS_EXPORT static ECObjectsStatus AddClassValidator(IECClassValidatorPtr& validator);
-
+    ECOBJECTS_EXPORT static ECObjectsStatus AddKindOfQuantityValidator(IKindOfQuantityValidatorPtr& validator);
     };
 
 struct BaseECValidator : IECSchemaValidator
@@ -72,7 +83,7 @@ struct BaseECValidator : IECSchemaValidator
 
 struct BaseECClassValidator : IECClassValidator
     {
-    ECObjectsStatus Validate(ECClassCR schema) const override {return ECObjectsStatus::Success;}
+    ECObjectsStatus Validate(ECClassCR ecClass) const override {return ECObjectsStatus::Success;}
     };
 
 struct MixinValidator : IECClassValidator
@@ -87,16 +98,23 @@ struct EntityValidator : IECClassValidator
     {
     // An entity class may not inherit a property from more than one base class
     // An entity class may not override a property inherited from a mixin class
+    // ... etc
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
     bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsEntityClass();}
     };
 
 struct RelationshipValidator : IECClassValidator
     {
-    // Relationship local definition validation
+    // Relationship strength and local definition validation
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
     bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsRelationshipClass();}
     ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType) const;
+    };
+
+struct KindOfQuantityValidator : IKindOfQuantityValidator
+    {
+    // KindOfQuantities should only use SI units for persistence units
+    ECObjectsStatus Validate(KindOfQuantityCP koq) const;
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
