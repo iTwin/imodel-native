@@ -6833,6 +6833,33 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
 
     ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
+        "    <ECEntityClass typeName='Foo' modifier='None' />"
+        "    <ECEntityClass typeName='MyMixin' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "                   <AppliesToEntityClass>Foo</AppliesToEntityClass>"
+        "            </IsMixin>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>False</IsUnique>"
+        "                       <Name>ix_mymixin_code</Name>"
+        "                       <Properties>"
+        "                          <string>Code</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "                 </Indexes>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='int'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "Cannot define index on mixin";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='A' modifier='None' >"
@@ -7265,25 +7292,6 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='RootProp' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
-        "        <ECCustomAttributes>"
-        "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
-        "            </IsMixin>"
-        "            <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>True</IsUnique>"
-        "                       <Name>uix_interface</Name>"
-        "                       <Properties>"
-        "                          <string>InterfaceProp</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
-        "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub'>"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
@@ -7299,7 +7307,6 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
         "            </DbIndexList>"
         "        </ECCustomAttributes>"
         "       <BaseClass>Root</BaseClass>"
-        "       <BaseClass>Interface</BaseClass>"
         "        <ECProperty propertyName='SubProp' typeName='int' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='SubSub'>"
@@ -7334,7 +7341,6 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
         "            </DbIndexList>"
         "        </ECCustomAttributes>"
         "       <BaseClass>Root</BaseClass>"
-        "       <BaseClass>Interface</BaseClass>"
         "        <ECProperty propertyName='Sub2Prop' typeName='int' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='RootUnshared' modifier='Abstract'>"
@@ -7392,7 +7398,6 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
         "            </DbIndexList>"
         "        </ECCustomAttributes>"
         "       <BaseClass>ts8:Root</BaseClass>"
-        "       <BaseClass>ts8:Interface</BaseClass>"
         "        <ECProperty propertyName='Sub3Prop' typeName='int' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub2Unshared'>"
@@ -7418,9 +7423,6 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
     AssertIndex(m_ecdb, "uix_root", true, "ts8_Root", {"RootProp"});
 
     //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
-    AssertIndex(m_ecdb, "uix_interface_ts8_Sub", true, "ts8_Sub", {"InterfaceProp"});
-    AssertIndex(m_ecdb, "uix_interface_ts8_Sub2", true, "ts8_Sub2", {"InterfaceProp"});
-    AssertIndex(m_ecdb, "uix_interface_ts82_Sub3", true, "ts82_Sub3", {"InterfaceProp"});
     AssertIndex(m_ecdb, "uix_sub", true, "ts8_Sub", {"SubProp"});
     AssertIndex(m_ecdb, "uix_sub2", true, "ts8_Sub2", {"Sub2Prop"});
     AssertIndex(m_ecdb, "uix_sub3", true, "ts82_Sub3", {"Sub3Prop"});
@@ -7478,58 +7480,6 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
         "</ECSchema>")));
 
     AssertIndex(m_ecdb, "ix_dgnelement_model_id_code", false, "ts9_DgnElement", {"ModelId","Code"});
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                  02/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, UserDefinedIndexOnMixin)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindexonmixin.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Root' modifier='Abstract'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='RootProp' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
-        "        <ECCustomAttributes>"
-        "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
-        "            </IsMixin>"
-        "            <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>True</IsUnique>"
-        "                       <Name>uix_interface</Name>"
-        "                       <Properties>"
-        "                          <string>InterfaceProp</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub'>"
-        "       <BaseClass>Root</BaseClass>"
-        "       <BaseClass>Interface</BaseClass>"
-        "        <ECProperty propertyName='SubProp' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='SubSub'>"
-        "       <BaseClass>Sub</BaseClass>"
-        "        <ECProperty propertyName='SubSubProp' typeName='int' />"
-        "    </ECEntityClass>"
-        "</ECSchema>"))) << "Index on mixin";
-
-    AssertIndex(m_ecdb, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
     }
 
 

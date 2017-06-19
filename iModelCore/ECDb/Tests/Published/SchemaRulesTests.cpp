@@ -363,7 +363,7 @@ TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
                     </ECEntityClass>
                </ECSchema>)xml"))) << "Mixin may not have ClassMap CA";
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract"/>
@@ -386,7 +386,7 @@ TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
                         </ECCustomAttributes>
                         <ECProperty propertyName="Prop1" typeName="string" />
                     </ECEntityClass>
-               </ECSchema>)xml"))) << "Mixin may have DbIndexList CA";
+               </ECSchema>)xml"))) << "Mixin may not have DbIndexList CA";
 
 
     ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
@@ -1000,6 +1000,158 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                         </Target>
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Navigation properties on all constraint classes must have same name.";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="ParentHasChild" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="ParentHasChild" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is referenced by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Nav prop on the source class for a 1:1 cardinality is expected to fail.";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="NavProp" relationshipName="ParentHasChild" direction="Forward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="ParentHasChild" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is referenced by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Relationship class with a Nav prop on the FK end with 'Forward' direction is expected to fail.";
+
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="NavProp" relationshipName="ParentHasChild" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="ParentHasChild" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is referenced by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Relationship class with a Nav prop on the FK end with 'Backward' direction is expected to succedd.";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECNavigationProperty propertyName="NavProp" relationshipName="ParentHasChild" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="ParentHasChild" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Relationship class doesn't support the nav property to be mapped to the source class for a 1:N cardinality.";
+
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="NavProp" relationshipName="ParentHasChild" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="ParentHasChild" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Relationship class with a Nav prop on the FK end with 'Backward' direction and a 1:N cardinality is expected to succedd.";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="NavProp" relationshipName="ParentHasChild" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="ParentHasChild" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is referenced by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Relationship class with an N:1 cardinality expects the Nav property to be on the source class.";
+
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECNavigationProperty propertyName="NavProp" relationshipName="ParentHasChild" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="ParentHasChild" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is referenced by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Relationship class with an N:1 cardinality and Nav prop with direction 'Backward' on the source class is expected to fail.";
+
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                       <ECNavigationProperty propertyName="NavProp" relationshipName="ParentHasChild" direction="Forward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="ParentHasChild" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is referenced by">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Relationship class with an N:1 cardinality and Nav prop on the source class is expected to succeed.";
     }
 
 //---------------------------------------------------------------------------------------
