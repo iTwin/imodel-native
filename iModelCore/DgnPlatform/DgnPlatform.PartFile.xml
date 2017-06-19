@@ -434,9 +434,11 @@
             <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
                 CompatibilityTestFiles/CompatibilityTestSeed.bim
             </Files>
-			<Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+            <!-- WIP: Need to get CInstancesCompatibility.InstancesCompatibilitySeed unit test working again
+	    <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
                 CompatibilityTestFiles/InstancesCompatibilitySeed.bim
             </Files>
+            -->
         </Bindings>
     </Part>
     
