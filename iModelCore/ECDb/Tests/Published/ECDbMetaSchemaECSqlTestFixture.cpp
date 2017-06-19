@@ -921,7 +921,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 
         if (colName.EqualsI("Category"))
             {
-            PropertyCategoryCP expectedCat = expectedProp.GetPropertyCategory();
+            PropertyCategoryCP expectedCat = expectedProp.GetCategory();
 
             if (expectedCat != nullptr)
                 {
@@ -998,8 +998,8 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 
         if (colName.EqualsI("Category"))
             {
-            if (expectedProp.GetPropertyCategory() != nullptr)
-                ASSERT_EQ(expectedProp.GetPropertyCategory()->GetId(), val.GetId<PropertyCategoryId>()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            if (expectedProp.GetCategory() != nullptr)
+                ASSERT_EQ(expectedProp.GetCategory()->GetId(), val.GetId<PropertyCategoryId>()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 

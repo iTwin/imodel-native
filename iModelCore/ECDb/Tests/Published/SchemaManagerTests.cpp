@@ -1075,25 +1075,25 @@ TEST_F(SchemaManagerTests, GetPropertyCategory)
 
     ECPropertyCP prop = testClass->GetPropertyP("Length");
     ASSERT_TRUE(prop != nullptr);
-    coreCat = prop->GetPropertyCategory();
+    coreCat = prop->GetCategory();
     ASSERT_TRUE(coreCat != nullptr);
     ASSERT_STREQ("Core", coreCat->GetName().c_str());
     ASSERT_EQ(1, (int) coreCat->GetPriority());
 
     prop = testClass->GetPropertyP("AlternativeLengths");
     ASSERT_TRUE(prop != nullptr);
-    miscCat = prop->GetPropertyCategory();
+    miscCat = prop->GetCategory();
     ASSERT_TRUE(miscCat != nullptr);
     ASSERT_STREQ("Misc", miscCat->GetName().c_str());
     ASSERT_EQ(0, (int) miscCat->GetPriority());
 
     prop = testClass->GetPropertyP("Homepage");
     ASSERT_TRUE(prop != nullptr);
-    ASSERT_TRUE(prop->GetPropertyCategory() == nullptr);
+    ASSERT_TRUE(prop->GetCategory() == nullptr);
 
     prop = testClass->GetPropertyP("Favorites");
     ASSERT_TRUE(prop != nullptr);
-    ASSERT_TRUE(prop->GetPropertyCategory() == nullptr);
+    ASSERT_TRUE(prop->GetCategory() == nullptr);
     }
 
     {
