@@ -1285,7 +1285,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             if (SUCCESS != ReadPropertyCategory(cat, ctx, rowInfo.m_catId))
                 return ERROR;
 
-            prop->SetPropertyCategory(cat);
+            prop->SetCategory(cat);
             }
 
         if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property))

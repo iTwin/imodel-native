@@ -481,8 +481,8 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
     else if (aKoq == nullptr && bKoq != nullptr)
         change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
 
-    PropertyCategoryCP aCat = a.GetPropertyCategory();
-    PropertyCategoryCP bCat = b.GetPropertyCategory();
+    PropertyCategoryCP aCat = a.GetCategory();
+    PropertyCategoryCP bCat = b.GetCategory();
     if (aCat != nullptr && bCat != nullptr)
         {
         if (aCat != bCat)
@@ -1388,8 +1388,8 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPro
     propertyChange.GetDescription().SetValue(appendType, v.GetInvariantDescription());
     propertyChange.GetTypeName().SetValue(appendType, v.GetTypeName());
 
-    if (v.GetPropertyCategory() != nullptr)
-        propertyChange.GetCategory().SetValue(appendType, v.GetPropertyCategory()->GetFullName());
+    if (v.Category() != nullptr)
+        propertyChange.GetCategory().SetValue(appendType, v.Category()->GetFullName());
 
     if (NavigationECPropertyCP prop = v.GetAsNavigationProperty())
         {

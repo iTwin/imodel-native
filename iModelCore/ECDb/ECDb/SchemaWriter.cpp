@@ -974,10 +974,10 @@ BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int pa
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::BindPropertyCategoryId(Statement& stmt, int paramIndex, ECPropertyCR prop)
     {
-    if (!prop.IsPropertyCategoryDefinedLocally() || prop.GetPropertyCategory() == nullptr)
+    if (!prop.IsPropertyCategoryDefinedLocally() || prop.GetCategory() == nullptr)
         return SUCCESS;
 
-    PropertyCategoryCP cat = prop.GetPropertyCategory();
+    PropertyCategoryCP cat = prop.GetCategory();
     if (SUCCESS != ImportPropertyCategory(*cat))
         return ERROR;
 
