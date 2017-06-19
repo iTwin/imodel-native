@@ -239,11 +239,9 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasOn
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
     
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classB->GetId());
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -271,11 +269,9 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMu
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB2);
     
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB1->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classB->GetId());
+    stmt.BindText(2, instanceB1->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Reset();
@@ -309,11 +305,9 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classB->GetId());
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -340,11 +334,9 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classB->GetId());
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -374,12 +366,10 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB2);
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classB->GetId());
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    stmt.BindText(2, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
     ExpressionContextPtr exprContext = CreateContext(*instanceA);
@@ -408,12 +398,10 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
     stmt.BindText(1, instanceA2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classB->GetId());
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
     ExpressionContextPtr exprContext = CreateContext(*instanceB);
@@ -463,11 +451,9 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test2].[DifferentRelationship] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE DifferentSchema.DifferentClassB SET A.Id = ? WHERE ECInstanceId=?"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classB->GetId());
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -529,11 +515,9 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     ECInstanceInserter(m_ecdb, *classC, nullptr).Insert(*instanceC);
 
     ECSqlStatement insertStmt;
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO [test2].[CHasSubA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "UPDATE DifferentSchema.SubA SET C.Id = ? WHERE ECInstanceId=?"));
     insertStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    insertStmt.BindId(2, classC->GetId());
-    insertStmt.BindText(3, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    insertStmt.BindId(4, classA->GetId());
+    insertStmt.BindText(2, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
     insertStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
@@ -589,11 +573,9 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceV
     ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
     
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindId(4, classB->GetId());
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);

@@ -29,15 +29,6 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 # This must be cleared before merge.
 #----------------------------------------------------------------------------------------------------------------------------
 ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
-ECDbExpressionSymbolContextTests.HasRelatedInstance_ReturnsTrueWhenHasOneRelatedInstance
-ECDbExpressionSymbolContextTests.HasRelatedInstance_ReturnsTrueWhenHasMultipleRelatedInstances
-ECDbExpressionSymbolContextTests.GetRelatedInstance_FollowsForwardRelationshipWithSingleInstance
-ECDbExpressionSymbolContextTests.GetRelatedInstance_FollowsBackwardRelationshipWithSingleInstance
-ECDbExpressionSymbolContextTests.GetRelatedInstance_FollowsForwardRelationshipWithMultipleInstances
-ECDbExpressionSymbolContextTests.GetRelatedInstance_FollowsBackwardRelationshipWithMultipleInstances
-ECDbExpressionSymbolContextTests.GetRelatedInstance_FollowsRelationshipWhenRelationshipAndRelatedClassAreInDifferentSchema
-ECDbExpressionSymbolContextTests.SymbolsAreInjectedWhenDeserializingSchemas
-ECDbExpressionSymbolContextTests.GetRelatedValue_ReturnsRelatedInstanceValue
 ECInstanceInserterTests.InsertSingleRelationshipInstance
 ECInstanceInserterTests.InsertMultipleRelationshipInstances
 ECInstanceInserterTests.InsertSelfJoinRelationshipInstances
