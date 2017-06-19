@@ -1016,6 +1016,84 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, GetPropertyCategory)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("getpropertycategories.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <PropertyCategory typeName="MyCategory" description="My Category"
+                                                     displayLabel="My Category" priority="1" />
+                                     </ECSchema>)xml")));
+
+
+    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <ECSchemaReference name="Schema1" version="01.00.00" alias="s1" />
+                                       <ECEntityClass typeName="Foo" >
+                                         <ECProperty propertyName="Length" typeName="double" propertyCategory="s1:MyCategory" />
+                                         <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
+                                         <ECArrayProperty propertyName="AlternativeLengths" typeName="double" minOccurs="0" maxOccurs="unbounded" propertyCategory="s1:MyCategory"/>
+                                         <ECArrayProperty propertyName="Favorites" typeName="string" extendedTypeName="URL" minOccurs="0" maxOccurs="unbounded" />
+                                       </ECEntityClass>
+                                     </ECSchema>)xml")));
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+
+    PropertyCategoryCP cat = m_ecdb.Schemas().GetPropertyCategory("Schema1", "MyCategory");
+    ASSERT_TRUE(cat != nullptr);
+    ASSERT_STREQ("MyCategory", cat->GetName().c_str());
+    ASSERT_EQ(1, (int) cat->GetPriority());
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1", false);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(0, schema->GetPropertyCategoryCount());
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("Schema2", "Foo");
+    ASSERT_TRUE(testClass != nullptr);
+    ASSERT_EQ(1, schema->GetPropertyCategoryCount());
+    PropertyCategoryCP cat = schema->GetPropertyCategoryCP("MyCategory");
+    ASSERT_TRUE(cat != nullptr);
+    ASSERT_STREQ("MyCategory", cat->GetName().c_str());
+    ASSERT_EQ(1, (int) cat->GetPriority());
+
+    ECPropertyCP prop = testClass->GetPropertyP("Length");
+    ASSERT_TRUE(prop != nullptr);
+    cat = prop->GetPropertyCategory();
+    ASSERT_TRUE(cat != nullptr);
+    ASSERT_STREQ("MyCategory", cat->GetName().c_str());
+    ASSERT_EQ(1, (int) cat->GetPriority());
+
+    prop = testClass->GetPropertyP("AlternativeLengths");
+    ASSERT_TRUE(prop != nullptr);
+    cat = prop->GetPropertyCategory();
+    ASSERT_TRUE(cat != nullptr);
+    ASSERT_STREQ("MyCategory", cat->GetName().c_str());
+    ASSERT_EQ(1, (int) cat->GetPriority());
+
+    prop = testClass->GetPropertyP("Homepage");
+    ASSERT_TRUE(prop != nullptr);
+    ASSERT_TRUE(prop->GetPropertyCategory() == nullptr);
+
+    prop = testClass->GetPropertyP("Favorites");
+    ASSERT_TRUE(prop != nullptr);
+    ASSERT_TRUE(prop->GetPropertyCategory() == nullptr);
+    }
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1", true);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(1, schema->GetPropertyCategoryCount());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetPropertyWithExtendedType)

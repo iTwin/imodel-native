@@ -27,6 +27,8 @@ private:
     void AssertEnumerationValue(ECEnumeratorCR expectedEnumValue, IECSqlValue const& actualEnumValue);
     void AssertKindOfQuantityDefs(ECSchemaCR expectedSchema);
     void AssertKindOfQuantityDef(KindOfQuantityCR expectedKoq, ECSqlStatement const& actualKoqDefRow);
+    void AssertPropertyCategoryDefs(ECSchemaCR expectedSchema);
+    void AssertPropertyCategoryDef(PropertyCategoryCR expectedCat, ECSqlStatement const& actualCatDefRow);
     void AssertPropertyDefs(ECClassCR expectedClass);
     void AssertPropertyDef(ECPropertyCR expectedProp, ECSqlStatement const& actualPropertyDefRow);
 
@@ -57,6 +59,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertSchemaDefs()
         AssertClassDefs(*expectedSchema);
         AssertEnumerationDefs(*expectedSchema);
         AssertKindOfQuantityDefs(*expectedSchema);
+        AssertPropertyCategoryDefs(*expectedSchema);
         actualSchemaCount++;
         }
 
@@ -584,6 +587,104 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
         }
     }
 
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertPropertyCategoryDefs(ECSchemaCR expectedSchema)
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT cat.Name, cat.* FROM meta.ECSchemaDef s "
+                                                      "JOIN meta.PropertyCategoryDef cat USING meta.SchemaOwnsPropertyCategories "
+                                                      "WHERE s.Name=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, expectedSchema.GetName().c_str(), IECSqlBinder::MakeCopy::No));
+
+    int actualCatCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        Utf8CP actualCatName = statement.GetValueText(0);
+        PropertyCategoryCP expectedCat = expectedSchema.GetPropertyCategoryCP(actualCatName);
+        ASSERT_TRUE(expectedCat != nullptr);
+
+        AssertPropertyCategoryDef(*expectedCat, statement);
+        actualCatCount++;
+        }
+
+    ASSERT_EQ((int) expectedSchema.GetPropertyCategoryCount(), actualCatCount);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertPropertyCategoryDef(PropertyCategoryCR expectedCat, ECSqlStatement const& actualCatDefRow)
+    {
+    const int colCount = actualCatDefRow.GetColumnCount();
+    for (int i = 0; i < colCount; i++)
+        {
+        IECSqlValue const& val = actualCatDefRow.GetValue(i);
+        ECSqlColumnInfoCR colInfo = val.GetColumnInfo();
+
+        ECPropertyCP colInfoProp = colInfo.GetProperty();
+        ASSERT_TRUE(colInfoProp != nullptr);
+
+        Utf8StringCR colName = colInfoProp->GetName();
+
+        if (colName.EqualsI("ECInstanceId"))
+            {
+            //EnumerationId is not exposed in API. So we can only test that the actual id is generally a valid one
+            ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "PropertyCategoryDef.ECInstanceId";
+            continue;
+            }
+
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "PropertyCategoryDef")->GetId(), val.GetId<ECClassId>()) << "PropertyCategoryDef.ECClassId";
+            continue;
+            }
+
+        if (colName.EqualsI("Schema"))
+            {
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expectedCat.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "PropertyCategoryDef.Schema";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "PropertyCategoryDef.Schema";
+            continue;
+            }
+
+        if (colName.EqualsI("Name"))
+            {
+            ASSERT_STREQ(expectedCat.GetName().c_str(), val.GetText()) << "PropertyCategoryDef.Name";
+            continue;
+            }
+
+        if (colName.EqualsI("DisplayLabel"))
+            {
+            if (expectedCat.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expectedCat.GetInvariantDisplayLabel().c_str(), val.GetText()) << "PropertyCategoryDef.DisplayLabel";
+            else
+                ASSERT_TRUE(val.IsNull()) << "PropertyCategoryDef.DisplayLabel";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Description"))
+            {
+            if (!expectedCat.GetInvariantDescription().empty())
+                ASSERT_STREQ(expectedCat.GetInvariantDescription().c_str(), val.GetText()) << "PropertyCategoryDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "PropertyCategoryDef.Description";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Priority"))
+            {
+            ASSERT_EQ((int) expectedCat.GetPriority(), val.GetInt()) << "PropertyCategoryDef.Priority";
+            continue;
+            }
+        }
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -804,20 +905,32 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 
         if (colName.EqualsI("KindOfQuantity"))
             {
-            KindOfQuantityCP expectedKoq = nullptr;
-            if (primProp != nullptr)
-                expectedKoq = primProp->GetKindOfQuantity();
-            else if (primArrayProp != nullptr)
-                expectedKoq = primArrayProp->GetKindOfQuantity();
+            KindOfQuantityCP expectedKoq = expectedProp.GetKindOfQuantity();
 
             if (expectedKoq != nullptr)
                 {
                 ECClassId actualRelClassId;
-                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.KindOfQuantity for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.KindOfQuantity for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                 }
             else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantity for neither prim nor prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("Category"))
+            {
+            PropertyCategoryCP expectedCat = expectedProp.GetPropertyCategory();
+
+            if (expectedCat != nullptr)
+                {
+                ECClassId actualRelClassId;
+                ASSERT_EQ(expectedCat->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.Category for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.Category for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Category for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }

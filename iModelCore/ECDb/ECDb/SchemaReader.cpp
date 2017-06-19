@@ -633,7 +633,7 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
     if (!stmt->IsColumnNull(priorityColIx))
         {
         //uint32_t is persisted as int64 to not lose unsigned-ness
-        prio.ValueR() = (uint32_t) stmt->GetValueInt64(priorityColIx);
+        prio = (uint32_t) stmt->GetValueInt64(priorityColIx);
         }
 
     cat = nullptr;
@@ -1545,6 +1545,7 @@ void SchemaReader::ClearCache() const
     m_classIdCache.clear();
     m_enumCache.clear();
     m_koqCache.clear();
+    m_propCategoryCache.clear();
     m_classCache.clear();
     m_schemaCache.clear();
     m_systemSchemaHelper.ClearCache();
