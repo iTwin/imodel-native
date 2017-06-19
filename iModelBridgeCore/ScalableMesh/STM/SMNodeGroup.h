@@ -428,6 +428,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             return *m_tileTreeMap[id];
             }
 
+        Json::Value* GetSMMasterHeaderInfo();
+
         Json::Value* DownloadNodeHeader(const uint64_t& id);
 
         unordered_map<uint64_t, Json::Value*>& GetJsonNodeHeaders()

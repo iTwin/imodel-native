@@ -433,7 +433,19 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
         m_CesiumGroup->ResetNodeIDGenerator();
-        //m_CesiumGroup->Load(rootNodeBlockID);
+        m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID);
+        Json::Value* masterJSONPtr = nullptr;
+        if ((masterJSONPtr = m_CesiumGroup->GetSMMasterHeaderInfo()) != nullptr)
+            {
+            // Override defaults by given values
+            auto const& masterJSON = *masterJSONPtr;
+            indexHeader->m_SplitTreshold = masterJSON["SplitTreshold"].asUInt();
+            indexHeader->m_balanced = masterJSON["Balanced"].asBool();
+            indexHeader->m_depth = masterJSON["Depth"].asUInt();
+            indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
+            indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
+            indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
+            }
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
         //m_settings->SetGCSString(wkt);
@@ -1329,10 +1341,15 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
 
         //header->m_isTextured = nodeHeader["areTextured"].asBool();
         header->m_isTextured = true; // Assume textured, update later if it is not...
+        header->m_totalCountDefined = false; // Default not defined
 
-        //header->m_totalCount = nodeHeader["totalCount"].asUInt();
-        header->m_totalCountDefined = false;
-        //header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
+        if (nodeHeader.isMember("totalCount"))
+            {
+            header->m_totalCount = nodeHeader["totalCount"].asUInt();
+            header->m_totalCountDefined = true;
+            }
+
+        if (nodeHeader.isMember("nodeCount")) header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
         //header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
         header->m_arePoints3d = false; // NEEDS_WORK_SM_STREAMING : Always true for Cesium original datasets?
         //assert(header->m_arePoints3d == nodeHeader["arePoints3d"].asBool());
@@ -1347,35 +1364,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
 
         header->m_geometricResolution = cesiumNodeHeader["geometricError"].asFloat();
         header->m_textureResolution = header->m_geometricResolution;
-        //auto& nodeExtent = nodeHeader["nodeExtent"];
-        //assert(nodeExtent.isObject());
-        //ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
-        //ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, nodeExtent["yMin"].asDouble());
-        //ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, nodeExtent["zMin"].asDouble());
-        //ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, nodeExtent["xMax"].asDouble());
-        //ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, nodeExtent["yMax"].asDouble());
-        //ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, nodeExtent["zMax"].asDouble());
-        //
-        //header->m_contentExtentDefined = nodeHeader["contentExtentDefined"].asBool();
-        //if (header->m_contentExtentDefined)
-        //    {
-        //    auto& contentExtent = nodeHeader["contentExtent"];
-        //    assert(contentExtent.isObject());
-        //    ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, contentExtent["xMin"].asDouble());
-        //    ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, contentExtent["yMin"].asDouble());
-        //    ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, contentExtent["zMin"].asDouble());
-        //    ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, contentExtent["xMax"].asDouble());
-        //    ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, contentExtent["yMax"].asDouble());
-        //    ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, contentExtent["zMax"].asDouble());
-        //    }
 
         if (cesiumNodeHeader.isMember("transform"))
             {
-            //auto& transform = cesiumNodeHeader["transform"];
-            //m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
-            //                                       transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
-            //                                       transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
-            m_transform = Transform::From(533459, 5212605, 0);
+            auto& transform = cesiumNodeHeader["transform"];
+            m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
+                                                   transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
+                                                   transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
+            //m_transform = Transform::From(533459, 5212605, 0);
             }
 
         if (cesiumNodeHeader.isMember("boundingVolume"))
@@ -1440,16 +1436,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                 m_transform.Multiply(header->m_contentExtent, header->m_contentExtent);
                 }
             else
-            //else if (cesiumNodeHeader.isMember("children"))
                 {
                 header->m_contentExtent = header->m_nodeExtent;
                 }
-            //header->m_nodeCount = header->m_contentExtentDefined ? 1 : 0;
             }
-        //auto& indices = nodeHeader["indiceID"];
-        //assert(indices.isArray() && indices.size() <= 1);
-        //
-        //uint32_t idx = indices.empty() ? SQLiteNodeHeader::NO_NODEID : indices[(Json::ArrayIndex)0].asUInt();
         uint32_t idx = header->m_id.m_integerID;
 
         if (header->m_isTextured)
@@ -1472,23 +1462,15 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         //    for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
         //    }
 
-        //auto& children = nodeHeader["children"];
         auto& children = cesiumNodeHeader["children"];
         assert(children.isArray());
 
-        //assert(header->m_numberOfSubNodesOnSplit == children.size());
         header->m_numberOfSubNodesOnSplit = children.size();
-        //assert(header->m_numberOfSubNodesOnSplit == nodeHeader["nbChildren"].asUInt());
-
         header->m_IsBranched = children.size() > 1;
-        //assert(header->m_IsBranched == nodeHeader["isBranched"].asBool());
-
         header->m_IsLeaf = children.size() == 0;
-        //assert(nodeHeader["isLeaf"].asBool() == header->m_IsLeaf);
 
         if (children.size() > 0)
             {
-            //assert(header->m_numberOfSubNodesOnSplit == children.size());
             assert((!header->m_IsBranched && children.size() == 1) || header->m_IsBranched);
             assert(!header->m_IsLeaf);
             header->m_apSubNodeID.resize(children.size());
