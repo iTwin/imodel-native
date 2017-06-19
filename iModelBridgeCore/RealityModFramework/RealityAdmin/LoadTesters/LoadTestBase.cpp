@@ -54,6 +54,7 @@ RPS::RPS() :requestLog(bmap<int, bmap<int64_t, int>>()){}
 //+---------------+---------------+---------------+---------------+---------------+------*/
 void RPS::AddRequest(int type, int64_t time)
     {
+    time /= 1000; //need seconds, not milliseconds
     std::lock_guard<std::mutex> lock(rpsMutex);
     requestLog[type][time] += 1;
     }
@@ -63,12 +64,11 @@ void RPS::AddRequest(int type, int64_t time)
 //+---------------+---------------+---------------+---------------+---------------+------*/
 double RPS::GetRPS(int type, int64_t time)
     {
-    bmap<int64_t, int> times = requestLog[type];
-
     int64_t amount = 0;
+    time /= 1000; //need seconds, not milliseconds
     //get the average number of requests per second, over ten seconds
     for (int64_t i = (time - 12); i < (time - 2); i++)
-        amount += times[i];
+        amount += requestLog[type][i];
     return amount / 10.0;
     }
 
