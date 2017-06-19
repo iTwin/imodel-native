@@ -105,7 +105,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgClashIssues;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgSharedContent;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectForms;
-            WSCLIENT_EXPORT static const UrlDescriptor iModelHubServices;
+            WSCLIENT_EXPORT static const UrlDescriptor iModelHubApi;
             WSCLIENT_EXPORT static const UrlDescriptor ImsStsAuth;
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveStsDelegationService;
             WSCLIENT_EXPORT static const UrlDescriptor ImsFederatedAuth;
