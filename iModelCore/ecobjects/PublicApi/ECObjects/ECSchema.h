@@ -1308,7 +1308,7 @@ public:
 
 typedef bvector<ECClassP> ECBaseClassesList;
 typedef bvector<ECClassP> ECDerivedClassesList;
-typedef bvector<ECEntityClassCP> ECRelationshipConstraintClassList;
+typedef bvector<ECClassCP> ECRelationshipConstraintClassList;
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 struct SchemaXmlReader;
 struct SchemaXmlWriter;
@@ -2162,12 +2162,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipConstraint : IECCustomAttributeCont
 friend struct ECRelationshipClass;
 
 private:
-    bool                        m_isSource;
-    bool                        m_isPolymorphic;
-    bool                        m_verify;
-    bool                        m_verified;
+    bool m_isSource;
+    bool m_isPolymorphic;
+    bool m_verify;
+    bool m_verified;
     Utf8String                  m_roleLabel;
-    ECEntityClassCP             m_abstractConstraint;
+    ECClassCP                   m_abstractConstraint;
     ECRelationshipClassP        m_relClass;
     RelationshipMultiplicity*   m_multiplicity;
     ECRelationshipConstraintClassList    m_constraintClasses;
@@ -2175,6 +2175,9 @@ private:
     ECObjectsStatus             SetMultiplicity(uint32_t& lowerLimit, uint32_t& upperLimit);
     ECObjectsStatus             SetMultiplicity(Utf8CP multiplicity, bool validate);
 
+    ECObjectsStatus             AddClass(ECClassCR classConstraint);
+    ECObjectsStatus             RemoveClass(ECClassCR classConstraint);
+    ECObjectsStatus             SetAbstractConstraint(ECClassCR abstractConstraint);
     ECObjectsStatus             SetAbstractConstraint(Utf8CP value, bool validate);
 
     // Legacy: Only used for version 3.0 and previous
@@ -2185,13 +2188,14 @@ private:
 
     bool                        IsValid(bool resolveIssues);
     ECObjectsStatus             ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
-    ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false);
-    ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false) {return ValidateAbstractConstraint(GetAbstractConstraint(), resolveIssues);}
-    ECObjectsStatus             ValidateRoleLabel(bool resolveIssues = false);
-    ECObjectsStatus             ValidateClassConstraint() const;
-    ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
-    ECObjectsStatus             ValidateMultiplicityConstraint(bool resolveIssues = false) const;
-    ECObjectsStatus             ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
+
+    ECObjectsStatus ValidateAbstractConstraint(ECClassCP abstractConstraint, bool resolveIssues = false);
+    ECObjectsStatus ValidateAbstractConstraint(bool resolveIssues = false) { return ValidateAbstractConstraint(GetAbstractConstraint(), resolveIssues); }
+    ECObjectsStatus ValidateRoleLabel(bool resolveIssues = false);
+    ECObjectsStatus ValidateClassConstraint() const;
+    ECObjectsStatus ValidateClassConstraint(ECClassCR constraintClass) const;
+    ECObjectsStatus ValidateMultiplicityConstraint(bool resolveIssues = false) const;
+    ECObjectsStatus ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
     ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify)
         : m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity),
@@ -2256,13 +2260,18 @@ public:
     //! @remarks The specified class must be a base class class of all constraint classes defined in
     //! @param[in] abstractConstraint The ECEntityClass to be set as the abstract constraint of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(ECEntityClassCR abstractConstraint);
-    
+
+    //! Set the abstract constraint class of the constraint in the relationship. 
+    //! @remarks The specified class must be a base class class of all constraint classes defined in
+    //! @param[in] abstractConstraint The ECRelationshipClass to be set as the abstract constraint of the constraint in the relationship
+    ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(ECRelationshipClassCR abstractConstraint);
+
     //! Get the abstract constraint class for this ECRelationshipConstraint. 
     //! @remarks If the abstract constraint is not explicitly defined locally, it will be inherited from its base constraint, if one exists.
     //! If one does not exist and there is only one constraint class, that constraint class will be returned. If fail to find a valid class
     //! nullptr will be returned.
-    //! @return The abstract constraint, ECEntityClass, if one is defined, if one cannot be found nullptr is returned.
-    ECOBJECTS_EXPORT ECEntityClassCP const GetAbstractConstraint() const;
+    //! @return The abstract constraint, an ECEntityClass or ECRelationshipClass, if one is defined, if one cannot be found nullptr is returned.
+    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint() const;
     
     //! Determine whether the abstract constraint is set in this constraint.
     bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}
@@ -2272,9 +2281,18 @@ public:
     //! @note If the class does not derive from the abstract constraint it will fail to be added and an error will be returned.
     ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECEntityClassCR classConstraint);
 
-    //! Remove the specified class from the constraint.
-    //! @param[in] classConstraint  The class to remove from the constraint class list
+    //! Remove the specified entity class from the constraint.
+    //! @param[in] classConstraint  The ECEntityClass to remove from the constraint class list
     ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECEntityClassCR classConstraint);
+
+    //! Add the specified relationship class to the constraint. 
+    //! @param[in] classConstraint  The ECRelationshipClass to add as a constraint class
+    //! @note If the class does not derive from the abstract constraint it will fail to be added and an error will be returned.
+    ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECRelationshipClassCR classConstraint);
+
+    //! Remove the specified relationship class from the constraint.
+    //! @param[in] classConstraint  The ECRelationshipClass to remove from the constraint class list
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECRelationshipClassCR classConstraint);
 
     //! Removes all constraint classes.
     void RemoveConstraintClasses() {m_constraintClasses.clear();}
