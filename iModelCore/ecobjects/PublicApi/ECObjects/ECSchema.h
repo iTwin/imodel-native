@@ -918,7 +918,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetCategory(PropertyCategoryCP propertyCategory);
 
     //! Returns whether the PropertyCategory has been set explicitly and not inherited from base property
-    bool IsPropertyCategoryDefinedLocally() const {return nullptr != m_propertyCategory;}
+    bool IsCategoryDefinedLocally() const {return nullptr != m_propertyCategory;}
 
     //! Returns whether this property has an extended type specified
     ECOBJECTS_EXPORT bool               HasExtendedType() const;

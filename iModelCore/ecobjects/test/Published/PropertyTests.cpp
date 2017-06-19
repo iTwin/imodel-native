@@ -155,7 +155,7 @@ TEST_F(PropertyTest, GetSetInheritedCategory)
     derivedEntityClass->CreatePrimitiveProperty(derivedProp, "TestProp");
 
     derivedEntityClass->AddBaseClass(*entityClass);
-    EXPECT_FALSE(derivedProp->IsPropertyCategoryDefinedLocally());
+    EXPECT_FALSE(derivedProp->IsCategoryDefinedLocally());
     EXPECT_EQ(derivedProp->GetCategory(), prop->GetCategory());
     }
 
