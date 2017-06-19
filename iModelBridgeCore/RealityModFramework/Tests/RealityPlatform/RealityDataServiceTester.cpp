@@ -256,7 +256,8 @@ TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestEmpty
 	
 	auto requestString = requestUT.GetHttpRequestString();
 	//e82a584b%2D9fae%2D409f%2D9581%2Dfd154f7b9ef9 <= Bentley OrganizationId
-	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$filter=OrganizationId+eq+'e82a584b%2D9fae%2D409f%2D9581%2Dfd154f7b9ef9'"));
+        // OrganizationID seems to change base on the connection client channel
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$filter=OrganizationId+eq+'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=AccuracyInMeters+desc"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=77&$top=75"));

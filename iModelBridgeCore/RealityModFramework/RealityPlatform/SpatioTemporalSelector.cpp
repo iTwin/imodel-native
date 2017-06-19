@@ -20,8 +20,10 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //-------------------------------------------------------------------------------------
 const bvector<Utf8String> SpatioTemporalSelector::GetIDsFromJson(Utf8CP data,
                                                                  const bvector<GeoPoint2d>& regionOfInterest,
-                                                                 ResolutionCriteria qualityCriteria,
-                                                                 DateCriteria captureDateCriteria)
+                                                                 ResolutionCriteria imageryQualityCriteria,
+                                                                 DateCriteria imageryDateCriteria,
+                                                                 ResolutionCriteria terrainQualityCriteria,
+                                                                 DateCriteria terrainDateCriteria)
     {
     bvector<Utf8String> selectedIDs = bvector<Utf8String>();
 
@@ -36,12 +38,13 @@ const bvector<Utf8String> SpatioTemporalSelector::GetIDsFromJson(Utf8CP data,
         return selectedIDs;
 
     // Select imagery data.
-    bvector<Utf8String> imageryIDs = GetIDs(pDataset->GetImageryGroup(), *pROIShape, qualityCriteria, captureDateCriteria);
+    bvector<Utf8String> imageryIDs = GetIDs(pDataset->GetImageryGroup(), *pROIShape, imageryQualityCriteria, imageryDateCriteria);
     if (!imageryIDs.empty())
         selectedIDs.insert(selectedIDs.end(), imageryIDs.begin(), imageryIDs.end());
 
     // Select terrain data.
-    bvector<Utf8String> terrainIDs = GetIDs(pDataset->GetTerrainGroup(), *pROIShape, qualityCriteria, captureDateCriteria);
+    // For terrain, up-to-date high-res data is a priority.
+    bvector<Utf8String> terrainIDs = GetIDs(pDataset->GetTerrainGroup(), *pROIShape, terrainQualityCriteria, terrainDateCriteria);
     if (!terrainIDs.empty())
         selectedIDs.insert(selectedIDs.end(), terrainIDs.begin(), terrainIDs.end());
 

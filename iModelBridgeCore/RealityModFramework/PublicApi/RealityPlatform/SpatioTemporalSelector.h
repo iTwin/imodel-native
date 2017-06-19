@@ -50,8 +50,10 @@ public:
     //! Create dataset from a JSON document and get the best matching IDs for a selected region.
     REALITYDATAPLATFORM_EXPORT static const bvector<Utf8String> GetIDsFromJson(Utf8CP data,
                                                                                const bvector<GeoPoint2d>& regionOfInterest,
-                                                                               ResolutionCriteria qualityCriteria = ResolutionCriteria::High,
-                                                                               DateCriteria captureDateCriteria = DateCriteria::UpToDate);
+                                                                               ResolutionCriteria imageryQualityCriteria,
+                                                                               DateCriteria imageryDateCriteria,
+                                                                               ResolutionCriteria terrainQualityCriteria = ResolutionCriteria::High,
+                                                                               DateCriteria terrainDateCriteria = DateCriteria::UpToDate);
 
     //! Create dataset from a JSON document and get the best matching IDs for a selected region.
     REALITYDATAPLATFORM_EXPORT static const bvector<Utf8String> GetIDsFromJson(Utf8CP data, 
