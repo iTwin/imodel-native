@@ -1388,8 +1388,8 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPro
     propertyChange.GetDescription().SetValue(appendType, v.GetInvariantDescription());
     propertyChange.GetTypeName().SetValue(appendType, v.GetTypeName());
 
-    if (v.Category() != nullptr)
-        propertyChange.GetCategory().SetValue(appendType, v.Category()->GetFullName());
+    if (v.GetCategory() != nullptr)
+        propertyChange.GetCategory().SetValue(appendType, v.GetCategory()->GetFullName());
 
     if (NavigationECPropertyCP prop = v.GetAsNavigationProperty())
         {
