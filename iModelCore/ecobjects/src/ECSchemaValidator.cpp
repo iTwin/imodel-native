@@ -8,6 +8,10 @@
 #include "ECObjectsPch.h"
 #define BISCORE_CLASS_IParentElement        "BisCore:IParentElement"
 #define BISCORE_CLASS_ISubModeledElement    "BisCore:ISubModeledElement"
+#define ElementMultiAspect                  "ElementMultiAspect"
+#define ElementUniqueAspect                 "ElementUniqueAspect"
+#define ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
+#define ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -212,7 +216,7 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
     if (entity.GetName().Equals(derivedClassName) || !entity.Is("BisCore", derivedClassName))
         return ECObjectsStatus::Success;
        
-    bool foundRelationshipConstraint = false;
+    bool foundValidRelationshipConstraint = false;
     
     // There must be a relationship that derives from derivedClassName with this class as its constraint
     for (ECClassCP classInCurrentSchema : entity.GetSchema().GetClasses())
@@ -221,18 +225,18 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
         if (nullptr == relClass)
             continue;
 
-        if (ECClass::ClassesAreEqualByName(&entity, relClass->GetTarget().GetConstraintClasses()[0]) &&
+        if (ECClass::ClassesAreEqualByName(&entity, relClass->GetTarget().GetConstraintClasses()[0]) && !relClass->GetTarget().GetIsPolymorphic() &&
             !relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is("BisCore", derivedRelationshipClassName))
             {
-            foundRelationshipConstraint = true;
+            foundValidRelationshipConstraint = true;
             break;
             }
         }
 
     entityDerivesFromSpecifiedClass = true;
-    if (!foundRelationshipConstraint)
+    if (!foundValidRelationshipConstraint)
         {
-        LOG.errorv("Entity class '%s' derives from '%s' so it must be in a relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
+        LOG.errorv("Entity class '%s' derives from '%s' so it must be in a non-polymorphic relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
         return ECObjectsStatus::Error;
         }
 
@@ -266,9 +270,9 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
     bool entityDerivesFromSpecifiedClass = false;
     
     // Bis specific rule
-    status = CheckBisAspects(entity, "ElementMultiAspect", "ElementOwnsMultiAspects", entityDerivesFromSpecifiedClass);
+    status = CheckBisAspects(entity, ElementMultiAspect, ElementOwnsMultiAspects, entityDerivesFromSpecifiedClass);
     if (!entityDerivesFromSpecifiedClass)
-        status = CheckBisAspects(entity, "ElementUniqueAspect", "ElementOwnsUniqueAspect", entityDerivesFromSpecifiedClass);
+        status = CheckBisAspects(entity, ElementUniqueAspect, ElementOwnsUniqueAspect, entityDerivesFromSpecifiedClass);
     
     // Validate relationship properties of type long and ending in Id
     ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(entity);
