@@ -1114,11 +1114,11 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithProperty
     
     schema->CreateEntityClass(entityClass, "Entity");
     entityClass->CreatePrimitiveProperty(primProp, "PrimProp");
-    primProp->SetPropertyCategory(propertyCategory);
+    primProp->SetCategory(propertyCategory);
 
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the property category was removed when it shouldn't be because it is still in use within the ECProperty";
 
-    ASSERT_EQ(ECObjectsStatus::Success, primProp->SetPropertyCategory(nullptr));
+    ASSERT_EQ(ECObjectsStatus::Success, primProp->SetCategory(nullptr));
     EXPECT_FALSE(primProp->IsPropertyCategoryDefinedLocally());
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the propertyCateogry could not be removed even though all references to it have been removed.";

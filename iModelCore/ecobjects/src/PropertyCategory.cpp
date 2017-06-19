@@ -88,9 +88,9 @@ SchemaReadStatus PropertyCategory::ReadXml(BeXmlNodeR propertyCategoryNode, ECSc
     READ_REQUIRED_XML_ATTRIBUTE(propertyCategoryNode, TYPE_NAME_ATTRIBUTE, this, Name, propertyCategoryNode.GetName())
     READ_OPTIONAL_XML_ATTRIBUTE(propertyCategoryNode, DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
     READ_OPTIONAL_XML_ATTRIBUTE(propertyCategoryNode, DESCRIPTION_ATTRIBUTE, this, Description)
-
+    
     uint32_t priority = 0;
-    if (BEXML_Success == propertyCategoryNode.GetAttributeUInt32Value(priority, "priority"))
+    if (BEXML_Success == propertyCategoryNode.GetAttributeUInt32Value(priority, PRIORITY_ATTRIBUTE))
         SetPriority(priority);
 
     return SchemaReadStatus::Success;
@@ -108,6 +108,12 @@ SchemaWriteStatus PropertyCategory::WriteXml(BeXmlWriterR xmlWriter, ECVersion e
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
     xmlWriter.WriteElementStart(elementName);
+
+    xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+    if (GetIsDisplayLabelDefined())
+        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
+    xmlWriter.WriteAttribute(PRIORITY_ATTRIBUTE, GetPriority());
 
     xmlWriter.WriteElementEnd();
     return status;

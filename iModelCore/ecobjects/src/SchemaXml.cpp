@@ -1332,6 +1332,12 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
                 WriteKindOfQuantity(*kindOfQuantity);
                 }
             }
+        else if (elementType == ECSchemaElementType::PropertyCategory)
+            {
+            PropertyCategoryCP propertyCategory = m_ecSchema.GetPropertyCategoryCP(elementName);
+            if (nullptr != propertyCategory)
+                WritePropertyCategory(*propertyCategory);
+            }
         }
 
     m_xmlWriter.WriteElementEnd();

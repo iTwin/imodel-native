@@ -912,10 +912,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(KindOfQuantityCP kindOfQuantity);
 
     //! Gets the PropertyCategory of this property or nullptr, if none has been set and cannot be inherited from base property
-    ECOBJECTS_EXPORT PropertyCategoryCP GetPropertyCategory() const;
+    ECOBJECTS_EXPORT PropertyCategoryCP GetCategory() const;
 
     //! Sets the PropertyCategory of this property, provide nullptr to unset.
-    ECOBJECTS_EXPORT ECObjectsStatus SetPropertyCategory(PropertyCategoryCP propertyCategory);
+    ECOBJECTS_EXPORT ECObjectsStatus SetCategory(PropertyCategoryCP propertyCategory);
 
     //! Returns whether the PropertyCategory has been set explicitly and not inherited from base property
     bool IsPropertyCategoryDefinedLocally() const {return nullptr != m_propertyCategory;}

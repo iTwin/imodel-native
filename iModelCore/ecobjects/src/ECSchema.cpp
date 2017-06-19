@@ -1738,7 +1738,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
 
             if (prop->IsPropertyCategoryDefinedLocally())
                 {
-                if (prop->GetPropertyCategory()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+                if (prop->GetCategory()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
 
@@ -2828,6 +2828,17 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
             }
         else
             AddElement(pKindOfQuantity->GetName().c_str(), ECSchemaElementType::KindOfQuantity);
+        }
+
+    for (auto pPropertyCategory : ecSchema.GetPropertyCategories())
+        {
+        if (nullptr == pPropertyCategory)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            AddElement(pPropertyCategory->GetName().c_str(), ECSchemaElementType::PropertyCategory);
         }
     }
 

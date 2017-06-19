@@ -76,6 +76,7 @@
 #define     PRESENTATION_UNITS_ATTRIBUTE        "presentationUnits"
 #define     RELATIVE_ERROR_ATTRIBUTE            "relativeError"
 #define     CATEGORY_ATTRIBUTE                  "category"
+#define     PRIORITY_ATTRIBUTE                  "priority"
 
 #define     STRENGTH_ATTRIBUTE                  "strength"
 #define     STRENGTHDIRECTION_ATTRIBUTE         "strengthDirection"

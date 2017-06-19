@@ -446,13 +446,13 @@ bool ECProperty::HasExtendedType () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                      06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyCategoryCP ECProperty::GetPropertyCategory() const
+PropertyCategoryCP ECProperty::GetCategory() const
     {
     if (m_propertyCategory == nullptr)
         {
         ECPropertyCP baseProperty = GetBaseProperty();
         if (nullptr != baseProperty)
-            return baseProperty->GetPropertyCategory();
+            return baseProperty->GetCategory();
         }
 
     return m_propertyCategory;
@@ -461,7 +461,7 @@ PropertyCategoryCP ECProperty::GetPropertyCategory() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                      06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECProperty::SetPropertyCategory(PropertyCategoryCP propertyCategory)
+ECObjectsStatus ECProperty::SetCategory(PropertyCategoryCP propertyCategory)
     {
     m_propertyCategory = propertyCategory;
     return ECObjectsStatus::Success;
@@ -470,7 +470,7 @@ ECObjectsStatus ECProperty::SetPropertyCategory(PropertyCategoryCP propertyCateg
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
+bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
     {
     bool wasCalculated = IsCalculated();
     bool set = _SetCalculatedPropertySpecification (spec);
@@ -620,7 +620,7 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-        SetPropertyCategory(propertyCategory);
+        SetCategory(propertyCategory);
         }
 
     if(CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes (propertyNode, context, GetClass().GetSchema()))
@@ -762,7 +762,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
 
     // Only serialize for 3.1 or newer
     if (IsPropertyCategoryDefinedLocally() && ECVersion::V3_1 <= ecXmlVersion)
-        xmlWriter.WriteAttribute(CATEGORY_ATTRIBUTE, GetPropertyCategory()->GetQualifiedName(GetClass().GetSchema()).c_str());
+        xmlWriter.WriteAttribute(CATEGORY_ATTRIBUTE, GetCategory()->GetQualifiedName(GetClass().GetSchema()).c_str());
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
         {

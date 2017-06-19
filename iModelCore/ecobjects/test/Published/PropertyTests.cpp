@@ -128,7 +128,7 @@ TEST_F(PropertyTest, GetSetCategory)
     schema->CreateEntityClass(entityClass, "TestClass");
 
     entityClass->CreatePrimitiveProperty(prop, "TestProp");
-    EXPECT_EQ(ECObjectsStatus::Success, prop->SetPropertyCategory(propertyCategory));
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetCategory(propertyCategory));
     }
 
 //---------------------------------------------------------------------------------------
@@ -150,13 +150,13 @@ TEST_F(PropertyTest, GetSetInheritedCategory)
     schema->CreatePropertyCategory(propertyCategory, "TestPropertyCategory");
 
     entityClass->CreatePrimitiveProperty(prop, "TestProp");
-    EXPECT_EQ(ECObjectsStatus::Success, prop->SetPropertyCategory(propertyCategory));
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetCategory(propertyCategory));
 
     derivedEntityClass->CreatePrimitiveProperty(derivedProp, "TestProp");
 
     derivedEntityClass->AddBaseClass(*entityClass);
     EXPECT_FALSE(derivedProp->IsPropertyCategoryDefinedLocally());
-    EXPECT_EQ(derivedProp->GetPropertyCategory(), prop->GetPropertyCategory());
+    EXPECT_EQ(derivedProp->GetCategory(), prop->GetCategory());
     }
 
 //---------------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ TEST_F(PropertyDeserializationTest, CategoryAttribute)
     ECPropertyP ecProp = ecClass->GetPropertyP("StringProp");
     ASSERT_NE(nullptr, ecProp);
 
-    PropertyCategoryCP propCategory = ecProp->GetPropertyCategory();
+    PropertyCategoryCP propCategory = ecProp->GetCategory();
     EXPECT_NE(nullptr, propCategory);
     }
 
@@ -284,7 +284,7 @@ TEST_F(PropertyDeserializationTest, CategoryFromReferencedSchema)
     ECPropertyP ecProp = ecClass->GetPropertyP("StringProp");
     ASSERT_NE(nullptr, ecProp);
 
-    PropertyCategoryCP propCategory = ecProp->GetPropertyCategory();
+    PropertyCategoryCP propCategory = ecProp->GetCategory();
     EXPECT_NE(nullptr, propCategory);
     EXPECT_STREQ("testPropCategory", propCategory->GetName().c_str());
     }
@@ -357,13 +357,13 @@ TEST_F(PropertyDeserializationTest, CategoryAttributeInherited)
     ECPropertyP ecProp = ecClass->GetPropertyP("StringProp");
     ASSERT_NE(nullptr, ecProp);
 
-    PropertyCategoryCP propCategory = ecProp->GetPropertyCategory();
+    PropertyCategoryCP propCategory = ecProp->GetCategory();
     EXPECT_NE(nullptr, propCategory);
 
     ECPropertyP derivedProp = ecClass->GetPropertyP("StringProp");
     ASSERT_NE(nullptr, derivedProp);
     
-    PropertyCategoryCP derivedPropCategory = derivedProp->GetPropertyCategory();
+    PropertyCategoryCP derivedPropCategory = derivedProp->GetCategory();
     EXPECT_NE(nullptr, derivedPropCategory);
 
     EXPECT_EQ(derivedPropCategory, propCategory);
@@ -956,13 +956,13 @@ TEST_F(PropertyOverrideTests, CategoryOverride)
     a->CreatePrimitiveProperty(primProp, "PrimProp");
     b->CreatePrimitiveProperty(primPropOverride, "PrimProp");
 
-    EXPECT_EQ(ECObjectsStatus::Success, primProp->SetPropertyCategory(propertyCategoryA));
-    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride->SetPropertyCategory(propertyCategoryB));
+    EXPECT_EQ(ECObjectsStatus::Success, primProp->SetCategory(propertyCategoryA));
+    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride->SetCategory(propertyCategoryB));
 
     EXPECT_EQ(ECObjectsStatus::Success, b->AddBaseClass(*a));
 
-    EXPECT_EQ(propertyCategoryB, primPropOverride->GetPropertyCategory());
-    EXPECT_STREQ(propertyCategoryB->GetFullName().c_str(), primPropOverride->GetPropertyCategory()->GetFullName().c_str());
+    EXPECT_EQ(propertyCategoryB, primPropOverride->GetCategory());
+    EXPECT_STREQ(propertyCategoryB->GetFullName().c_str(), primPropOverride->GetCategory()->GetFullName().c_str());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

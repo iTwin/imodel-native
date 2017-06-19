@@ -118,11 +118,11 @@ TEST_F(PropertyCategoryTest, PropertyCategoryContainer)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCategoryDeserializationTest, BasicTest)
+TEST_F(PropertyCategoryDeserializationTest, BasicRoundTripTest)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <PropertyCategory typeName="propCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="0"/>
+            <PropertyCategory typeName="propCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="2"/>
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -135,7 +135,21 @@ TEST_F(PropertyCategoryDeserializationTest, BasicTest)
 
     EXPECT_STREQ("PropertyCategory", propCategory->GetDisplayLabel().c_str());
     EXPECT_STREQ("This is an awesome new Property Category", propCategory->GetDescription().c_str());
-    EXPECT_EQ(0, propCategory->GetPriority());
+    EXPECT_EQ(2, propCategory->GetPriority());
+
+    Utf8String serializedSchemaXml;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
+    
+    ECSchemaPtr serializedSchema;
+    ECSchemaReadContextPtr serializedContext = ECSchemaReadContext::CreateContext();
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(serializedSchema, serializedSchemaXml.c_str(), *serializedContext));
+    EXPECT_EQ(1, serializedSchema->GetPropertyCategoryCount());
+    PropertyCategoryCP serializedPropCategory = serializedSchema->GetPropertyCategoryCP("propCategory");
+    EXPECT_TRUE(nullptr != serializedPropCategory);
+
+    EXPECT_STREQ("PropertyCategory", serializedPropCategory->GetDisplayLabel().c_str());
+    EXPECT_STREQ("This is an awesome new Property Category", serializedPropCategory->GetDescription().c_str());
+    EXPECT_EQ(2, serializedPropCategory->GetPriority());
     }
 
 //---------------------------------------------------------------------------------------
