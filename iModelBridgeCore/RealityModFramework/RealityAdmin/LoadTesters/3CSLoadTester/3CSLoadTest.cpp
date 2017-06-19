@@ -419,7 +419,7 @@ CURL* ThreeCSUser::AddProject()
     m_correspondance.response.clear();
     m_correspondance.req.url = s_server;
     m_correspondance.req.url.append("api/v1/projects");
-    m_correspondance.req.payload = Utf8PrintfString("{\"region\": \"eus\", \"connectProjectId\":\"%s\", \"name\":\"something\"}", m_RDGuid);
+    m_correspondance.req.payload = Utf8PrintfString("{\"region\": \"eus\", \"connectProjectId\":\"%s\", \"name\":\"Load Test (ERASE)\"}", m_RDGuid);
     
     return PrepareRequest();
     }
