@@ -972,7 +972,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
         //Empty node are never loaded
         if (node->IsLoaded() == false) continue;
         
-        if (!node->IsClippingUpToDate() || !node->HasCorrectClipping(m_activeClips))
+        if (!node->IsClippingUpToDate() || !node->HasCorrectClipping(m_activeClips) || node->HasInvertedClips() != m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips())
             {
             node->ApplyAllExistingClips();
             node->RemoveDisplayDataFromCache();                    
