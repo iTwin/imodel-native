@@ -182,7 +182,7 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
             "       INNER JOIN [ec_cache_ClassHierarchy] [CH] ON [CH].[BaseClassId] = [RCC].[ClassId] "
             "       INNER JOIN [ec_cache_ClassHasTables] [CHT] ON [CHT].[ClassId] = [CH].[ClassId] "
             "WHERE  [RC].[RelationshipClassId] = ? "
-            "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined);
+            "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined " AND [T].[Type] != " SQLVAL_DbTable_Type_Overflow);
             
         PRECONDITION(stmt != nullptr, list);
         stmt->BindId(1, m_relationshipMap.GetClass().GetId());
@@ -211,7 +211,7 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
             "       INNER JOIN [ec_Table] [T] ON [T].[Id] = [CHT].[TableId] "
             "       INNER JOIN [ec_cache_ClassHasTables] [CHT] ON [CHT].[ClassId] = [RCC].[ClassId] "
             "WHERE  [RC].[RelationshipClassId] = ? "
-            "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined);
+            "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined " AND [T].[Type] != " SQLVAL_DbTable_Type_Overflow);
 
         PRECONDITION(stmt != nullptr, list);
         stmt->BindId(1, m_relationshipMap.GetClass().GetId());
