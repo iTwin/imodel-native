@@ -1144,8 +1144,8 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECR
     if (left.GetRoleLabel() != right.GetRoleLabel())
         diff->Add (DiffNodeId::RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
 
-    ECEntityClassCP leftAbstract = left.GetAbstractConstraint();
-    ECEntityClassCP rightAbstract = right.GetAbstractConstraint();
+    ECClassCP leftAbstract = left.GetAbstractConstraint();
+    ECClassCP rightAbstract = right.GetAbstractConstraint();
     if (nullptr != leftAbstract && nullptr != rightAbstract && (strcmp(leftAbstract->GetFullName(), rightAbstract->GetFullName()) != 0))
         diff->Add(DiffNodeId::AbstractConstraint)->SetValue(leftAbstract->GetFullName(), rightAbstract->GetFullName());
 
@@ -2240,7 +2240,13 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         mergedConstraint.SetAbstractConstraint(v->GetValueString().c_str());
     else
         if (defaultContraint)
-            mergedConstraint.SetAbstractConstraint(*defaultContraint->GetAbstractConstraint());
+            {
+            ECClassCP defaultAbstractConstraint = defaultContraint->GetAbstractConstraint();
+            if (defaultAbstractConstraint->IsEntityClass())
+                mergedConstraint.SetAbstractConstraint(*defaultAbstractConstraint->GetEntityClassCP());
+            else
+                mergedConstraint.SetAbstractConstraint(*defaultAbstractConstraint->GetRelationshipClassCP());
+            }
 
     set<Utf8String> constraintClasses;
     if (defaultContraint)
@@ -2250,22 +2256,25 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
     ECDiffNodeP constraintClassDiffNode = diff.ImplGetChildById (DiffNodeId::ConstraintClasses);
     if (constraintClassDiffNode)
         for (ECDiffNode::const_iterator itor = constraintClassDiffNode->begin(); itor != constraintClassDiffNode->end(); ++itor)
-            if ((v = GetMergeValue (**itor)) != NULL)
+            if ((v = GetMergeValue (**itor)) != nullptr)
                 if (constraintClasses.find(v->GetValueString()) == constraintClasses.end())
                     constraintClasses.insert(v->GetValueString());
     for (set<Utf8String>::const_iterator itor = constraintClasses.begin(); itor != constraintClasses.end(); ++itor)
         {
         ECClassCP resolvedConstraintClass = ResolveClass(*itor);
-        if (resolvedConstraintClass == NULL)
+        if (nullptr == resolvedConstraintClass)
             return MergeStatus::ErrorClassNotFound;
-        if (nullptr == resolvedConstraintClass->GetEntityClassCP())
-            return MergeStatus::ErrorClassTypeMismatch;
 
-        mergedConstraint.AddClass (*resolvedConstraintClass->GetEntityClassCP());
+        if (resolvedConstraintClass->IsEntityClass())
+            mergedConstraint.AddClass(*resolvedConstraintClass->GetEntityClassCP());
+        else if (resolvedConstraintClass->IsRelationshipClass())
+            mergedConstraint.AddClass(*resolvedConstraintClass->GetRelationshipClassCP());
+        else
+            return MergeStatus::ErrorClassTypeMismatch;
         }
 
     ECDiffNodeP customAttributesDiffNode = diff.ImplGetChildById (DiffNodeId::CustomAttributes);
-    if (customAttributesDiffNode == NULL)
+    if (nullptr == customAttributesDiffNode)
         {
         if (defaultContraint)
             if ((status = AppendCustomAttributesToMerge (mergedConstraint, *defaultContraint)) != MergeStatus::Success)
