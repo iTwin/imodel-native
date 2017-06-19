@@ -28,19 +28,16 @@ ContextDir = $(BuildContext)CompatibilityTestFiles/
 $(ContextDir)CompatibilityTestSeed.bim : $(CacheDir)CompatibilityTestSeed.bim
     $(LinkFirstDepToFirstTarget)
 
-###########################################################################################################################
-##### WIP: Temporarily comment off until the ECInstancesCompatibility.InstancesCompatibilitySeed unit test is working again
-###########################################################################################################################
-###### Saves the Bim produced by the ECInstancesCompatibility
-#####	
-#####%if exists($(TestOutputDir2)InstancesCompatibilitySeed.bim)
-#####    $(CacheDir)InstancesCompatibilitySeed.bim : $(TestOutputDir2)InstancesCompatibilitySeed.bim
-#####        $(CopyFirstDepToFirstTarget)
-#####%endif
-#####
-#####%if !exists($(CacheDir)InstancesCompatibilitySeed.bim)
-#####    %error This part must be run at least once after a full execution of the DgnPlatform GTest suite.
-#####%endif
-#####
-#####$(ContextDir)InstancesCompatibilitySeed.bim : $(CacheDir)InstancesCompatibilitySeed.bim
-#####    $(LinkFirstDepToFirstTarget)
+# Saves the Bim produced by the ECInstancesCompatibility
+	
+%if exists($(TestOutputDir2)InstancesCompatibilitySeed.bim)
+    $(CacheDir)InstancesCompatibilitySeed.bim : $(TestOutputDir2)InstancesCompatibilitySeed.bim
+        $(CopyFirstDepToFirstTarget)
+%endif
+
+%if !exists($(CacheDir)InstancesCompatibilitySeed.bim)
+    %error This part must be run at least once after a full execution of the DgnPlatform GTest suite.
+%endif
+
+$(ContextDir)InstancesCompatibilitySeed.bim : $(CacheDir)InstancesCompatibilitySeed.bim
+    $(LinkFirstDepToFirstTarget)
