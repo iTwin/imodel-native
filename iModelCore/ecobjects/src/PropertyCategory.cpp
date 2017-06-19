@@ -89,6 +89,10 @@ SchemaReadStatus PropertyCategory::ReadXml(BeXmlNodeR propertyCategoryNode, ECSc
     READ_OPTIONAL_XML_ATTRIBUTE(propertyCategoryNode, DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
     READ_OPTIONAL_XML_ATTRIBUTE(propertyCategoryNode, DESCRIPTION_ATTRIBUTE, this, Description)
 
+    uint32_t priority = 0;
+    if (BEXML_Success == propertyCategoryNode.GetAttributeUInt32Value(priority, "priority"))
+        SetPriority(priority);
+
     return SchemaReadStatus::Success;
     }
 
