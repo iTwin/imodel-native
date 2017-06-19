@@ -154,11 +154,11 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
             ECObjectsStatus status = koqValidator->Validate(koq);
             if (ECObjectsStatus::Success != status)
                 {
-                LOG.errorv("Failed KindOfQuantity of '%s'", koq->GetName().c_str());
+                LOG.errorv("Failed validation of KindOfQuantity '%s'", koq->GetName().c_str());
                 m_validated = false;
                 }
             else
-                LOG.debugv("Succeeded KindOfQuantity of '%s'", koq->GetName().c_str());
+                LOG.debugv("Succeeded validation of KindOfQuantity '%s'", koq->GetName().c_str());
             }
         }
 
