@@ -85,6 +85,7 @@ public:
     CURL* CreateJob(Utf8String outputGuid);
     void  ValidateCreateJob(int activeUsers);
     CURL* SubmitJob();
+    void  ValidateSubmitJob(int activeUsers);
     CURL* DeleteJob();
     CURL* GetJobs();
     CURL* GetJobById();
