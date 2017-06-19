@@ -92,11 +92,11 @@ ECObjectsStatus ECSchemaValidator::AddValidator(IECSchemaValidatorPtr& validator
 //+---------------+---------------+---------------+---------------+---------------+------
 // static
 ECObjectsStatus ECSchemaValidator::AddClassValidator(IECClassValidatorPtr& validator)
-{
+    {
     ECSchemaValidatorP schemaValidator = GetSingleton();
     schemaValidator->m_classValidators.push_back(validator);
     return ECObjectsStatus::Success;
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  06/2017
