@@ -761,7 +761,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         }
 
     // Only serialize for 3.1 or newer
-    if (IsPropertyCategoryDefinedLocally() && ECVersion::V3_1 <= ecXmlVersion)
+    if (IsCategoryDefinedLocally() && ECVersion::V3_1 <= ecXmlVersion)
         xmlWriter.WriteAttribute(CATEGORY_ATTRIBUTE, GetCategory()->GetQualifiedName(GetClass().GetSchema()).c_str());
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())

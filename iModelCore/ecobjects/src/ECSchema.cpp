@@ -1736,7 +1736,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                     return ECObjectsStatus::SchemaInUse;
                 }
 
-            if (prop->IsPropertyCategoryDefinedLocally())
+            if (prop->IsCategoryDefinedLocally())
                 {
                 if (prop->GetCategory()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
