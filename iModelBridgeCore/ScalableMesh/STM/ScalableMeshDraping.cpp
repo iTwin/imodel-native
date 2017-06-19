@@ -723,7 +723,7 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
         }
 
     // transform and sort the hits
-    for (auto hit : AllHits)
+    for (auto& hit : AllHits)
         m_transform.Multiply(hit.point);
 
     // Sort by fraction
