@@ -765,7 +765,7 @@ struct Modify
     //! @param[in] edges The array of references edges (one for each face entry) that should retain their geometry after the taper has been applied.
     //! @param[in] direction The taper direction.
     //! @param[in] angles The taper angle(s). Either a single taper angle or a taper angle for each face entry. (value in range of -2pi to 2pi)
-    //! @param[in] addStep The option for how to handle the creation of step faces. NOTE: AddNonCoincident is only supported for pure translation/rotation...
+    //! @param[in] addStep The option for how to handle the creation of step faces.
     //! @return SUCCESS if faces could be tapered.
     DGNPLATFORM_EXPORT static BentleyStatus TaperFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& edges, DVec3dCR direction, bvector<double>& angles, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
 
