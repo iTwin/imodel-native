@@ -89,9 +89,6 @@ ReferentialIntegrityTestFixture.AllowDuplicateRelationships
 RelationshipStrengthTestFixture.BackwardEmbedding
 RelationshipStrengthTestFixture.RelationshipTest
 RelationshipStrengthTestFixture.BackwardHoldingForwardEmbedding
-SchemaManagerTests.ImportToken
 SchemaRulesTestFixture.RelationshipCardinality
 SchemaRulesTestFixture.RelationshipMappingLimitations_SupportedCases
-SchemaUpdateTestFixture.DeleteConcreteImplementationOfAbstractConstraintClass
-SchemaUpdateTestFixture.AddNewDerivedEndTableRelationship
 #============================================================================================================================

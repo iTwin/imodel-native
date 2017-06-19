@@ -4326,16 +4326,10 @@ TEST_F(SchemaUpdateTestFixture, DeleteConcreteImplementationOfAbstractConstraint
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    ECClassCP classB = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("B");
-    ECClassCP classD = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("D");
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.B(ECInstanceId, propA, propB) VALUES(1, 11, 22)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.D(ECInstanceId, propC, propD) VALUES(2, 33, 44)");
-
-    Utf8String ecsql;
-    ecsql.Sprintf("INSERT INTO ts.RelClass(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(101, 1, %llu, 2, %llu)", classB->GetId().GetValue(), classD->GetId().GetValue());
-    //Insert Relationship instance
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "UPDATE ts.C SET A.Id=1 WHERE ECInstanceId=2");
 
     //Verify Insertion
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT * FROM ts.RelClass");

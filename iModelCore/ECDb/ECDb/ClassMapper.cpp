@@ -1138,6 +1138,8 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::CreateForeignKeyCons
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
     {
+    if (m_relationshipMap.IsSubRelationship())
+        return ClassMappingStatus::Success;
     ECRelationshipConstraintCR refConstraint = GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? m_relationshipMap.GetRelationshipClass().GetSource() : m_relationshipMap.GetRelationshipClass().GetTarget();
     std::set<DbTable const*> tables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(m_relationshipMap.GetDbMap(), m_schemaContext, refConstraint, true);
     for (ECClassCP constraintClass : refConstraint.GetConstraintClasses())
