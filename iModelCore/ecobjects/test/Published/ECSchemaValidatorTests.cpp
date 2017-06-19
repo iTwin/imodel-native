@@ -1543,6 +1543,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     ASSERT_TRUE(schema5.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema5)) << "Should succeed validation as persistence unit is an SI unit, 'CM'";
     }
+
 TEST_F(SchemaConverterTests, RelationshipClassMustLocallyDefineRoleLabelConversion)
     {
     // Relationship source and target role label must be defined locally. Conversion should fix this validation failure.
