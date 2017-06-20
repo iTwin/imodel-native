@@ -154,6 +154,8 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     if (!projectPtr.IsValid() || DbResult::BE_SQLITE_OK != createStatus)
         return nullptr;
 
+    BeAssert(BentleyStatus::SUCCESS == projectPtr->Schemas().CreateClassViewsInDb());
+
     return projectPtr;
     }
 

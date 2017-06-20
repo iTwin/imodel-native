@@ -16,13 +16,11 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     {    
     RegisterHandler(RoadRailCategoryModelHandler::GetHandler());
 
-    RegisterHandler(CrossSectionDefinitionModelHandler::GetHandler());
-    RegisterHandler(CrossSectionPortionBreakDownModelHandler::GetHandler());
-    /*RegisterHandler(CrossSectionElementHandler::GetHandler());
-    RegisterHandler(RoadCrossSectionHandler::GetHandler());*/
+    RegisterHandler(TypicalSectionModelHandler::GetHandler());
+    RegisterHandler(TypicalSectionPortionBreakDownModelHandler::GetHandler());
 
-    RegisterHandler(CrossSectionPortionDefinitionElementHandler::GetHandler());
-    RegisterHandler(CrossSectionPortionDefinitionHandler::GetHandler());
+    RegisterHandler(TypicalSectionPortionElementHandler::GetHandler());
+    RegisterHandler(TypicalSectionPortionHandler::GetHandler());
 
     RegisterHandler(TravelwayDefinitionModelHandler::GetHandler());
     RegisterHandler(TravelwayDefinitionElementHandler::GetHandler());
@@ -98,19 +96,19 @@ PhysicalModelPtr RoadRailPhysicalDomain::QueryPhysicalModel(Dgn::SubjectCR paren
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createCrossSectionsPartition(SubjectCR subject)
+DgnDbStatus createTypicalSectionsPartition(SubjectCR subject)
     {
     DgnDbStatus status;
 
-    auto crossSectionsPartitionPtr = DefinitionPartition::Create(subject, "CrossSections");
-    if (crossSectionsPartitionPtr->Insert(&status).IsNull())
+    auto typicalSectionDefsPartitionPtr = DefinitionPartition::Create(subject, "Typical Sections");
+    if (typicalSectionDefsPartitionPtr->Insert(&status).IsNull())
         return status;
 
-    auto crossSectionDefModelPtr = CrossSectionDefinitionModel::Create(CrossSectionDefinitionModel::CreateParams(subject.GetDgnDb(), crossSectionsPartitionPtr->GetElementId()));
-    if (DgnDbStatus::Success != (status = crossSectionDefModelPtr->Insert()))
+    auto typicalSectionDefModelPtr = TypicalSectionModel::Create(TypicalSectionModel::CreateParams(subject.GetDgnDb(), typicalSectionDefsPartitionPtr->GetElementId()));
+    if (DgnDbStatus::Success != (status = typicalSectionDefModelPtr->Insert()))
         return status;
 
-    auto travelwayDefPortionPtr = CrossSectionPortionDefinition::Create(*crossSectionDefModelPtr, "Travelway Definitions");
+    auto travelwayDefPortionPtr = TypicalSectionPortion::Create(*typicalSectionDefModelPtr, "Travelway Definitions");
     if (travelwayDefPortionPtr->Insert(&status).IsNull())
         return status;
 
@@ -118,7 +116,7 @@ DgnDbStatus createCrossSectionsPartition(SubjectCR subject)
     if (DgnDbStatus::Success != (status = travelwayDefModelPtr->Insert()))
         return status;
 
-    auto endCondDefPortionPtr = CrossSectionPortionDefinition::Create(*crossSectionDefModelPtr, "End-Condition Definitions");
+    auto endCondDefPortionPtr = TypicalSectionPortion::Create(*typicalSectionDefModelPtr, "End-Condition Definitions");
     if (endCondDefPortionPtr->Insert(&status).IsNull())
         return status;
 
@@ -201,7 +199,7 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, 
 
         return status;
 
-    if (DgnDbStatus::Success != (status = createCrossSectionsPartition(subject)))
+    if (DgnDbStatus::Success != (status = createTypicalSectionsPartition(subject)))
         return status;
 
     if (DgnDbStatus::Success != (status = createPhysicalPartition(subject, physicalPartitionName)))

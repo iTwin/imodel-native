@@ -43,7 +43,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     auto travelwayDefModelPtr = projectPtr->Models().Get<TravelwayDefinitionModel>(travelwayDefModelId);
     auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*travelwayDefModelPtr, "2 lane");
 
-    CrossSectionPortionBreakDownModelPtr breakDownModelPtr;
+    TypicalSectionPortionBreakDownModelPtr breakDownModelPtr;
     ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());
 
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 

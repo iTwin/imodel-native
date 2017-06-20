@@ -55,9 +55,6 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\CrossSection.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadClass.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
@@ -68,6 +65,9 @@
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySegment.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\TypicalSection.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
@@ -87,9 +87,6 @@
     <ClCompile Include="RoadSegment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CrossSection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RoadClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -100,6 +97,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TravelwaySegment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TypicalSection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
