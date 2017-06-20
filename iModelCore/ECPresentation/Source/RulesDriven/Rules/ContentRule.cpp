@@ -32,7 +32,7 @@ ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHa
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::ContentRule(ContentRuleCR other)
-    : m_customControl(other.m_customControl)
+    : PresentationRule(other), m_customControl(other.m_customControl)
     {
     CommonTools::CloneRules(m_specifications, other.m_specifications);
     }

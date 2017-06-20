@@ -123,7 +123,7 @@ ChildNodeRule::ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfN
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeRule::ChildNodeRule(ChildNodeRuleCR other)
-    : m_targetTree(other.m_targetTree), m_stopFurtherProcessing(other.m_stopFurtherProcessing)
+    : PresentationRule(other), m_targetTree(other.m_targetTree), m_stopFurtherProcessing(other.m_stopFurtherProcessing)
     {
     CommonTools::CopyRules(m_subConditions, other.m_subConditions);
     CommonTools::CloneRules(m_specifications, other.m_specifications);

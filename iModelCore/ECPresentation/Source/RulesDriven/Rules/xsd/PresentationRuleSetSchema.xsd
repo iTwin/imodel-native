@@ -16,6 +16,7 @@
                 <xs:element ref="RootNodeRule"/>
                 <xs:element ref="ChildNodeRule"/>
                 <xs:element ref="ContentRule"/>
+                <xs:element ref="ContentModifier"/>
             </xs:choice>
             <xs:attribute name="RuleSetId" type="xs:string" use="required"/>
             <xs:attribute name="SupportedSchemas" type="xs:string"/>
@@ -208,6 +209,17 @@
         <xs:attribute name="Condition" type="xs:string"/>
         <xs:attribute default="false" name="OnlyIfNotHandled" type="xs:boolean"/>
     </xs:attributeGroup>
+    <xs:element name="ContentModifier">
+        <xs:complexType mixed="true">
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" />
+                <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
+            </xs:choice>
+            <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
+            <xs:attribute name="SchemaName" type="xs:string" use="required"/>
+            <xs:attribute name="ClassName" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
 
     <xs:complexType name="RelatedInstanceDef">
         <xs:attribute name="ClassName" type="xs:string" use="required" />
@@ -479,7 +491,7 @@
 
     <xs:complexType name="ContentRelatedPropertiesDef">
         <xs:sequence>
-            <xs:element name="ContentRelatedProperties" type="ContentRelatedPropertiesDef" maxOccurs="unbounded" minOccurs="0" />
+            <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" maxOccurs="unbounded" minOccurs="0" />
         </xs:sequence>
         <xs:attribute default="Both" name="RequiredDirection">
             <xs:simpleType>

@@ -27,6 +27,7 @@ EC_TYPEDEFS (RenameNodeRule);
 EC_TYPEDEFS (SortingRule);
 EC_TYPEDEFS (DisplayRelatedItemsSpecification);
 EC_TYPEDEFS (GroupingRule);
+EC_TYPEDEFS (ContentModifier);
 EC_TYPEDEFS (GroupSpecification);
 EC_TYPEDEFS (SameLabelInstanceGroup);
 EC_TYPEDEFS (ClassGroup);
@@ -72,5 +73,6 @@ typedef bvector<UserSettingsGroupP>                 UserSettingsGroupList;
 typedef bvector<CheckBoxRuleP>                      CheckBoxRuleList;
 typedef bvector<RenameNodeRuleP>                    RenameNodeRuleList;
 typedef bvector<SortingRuleP>                       SortingRuleList;
+typedef bvector<ContentModifierP>                   ContentModifierList;
 
 END_BENTLEY_ECOBJECT_NAMESPACE

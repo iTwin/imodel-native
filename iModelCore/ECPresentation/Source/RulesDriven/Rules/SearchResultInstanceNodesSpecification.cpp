@@ -38,6 +38,16 @@ bool groupByLabel
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SearchResultInstanceNodesSpecification::SearchResultInstanceNodesSpecification(SearchResultInstanceNodesSpecification const& other)
+    : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass), m_groupByLabel(other.m_groupByLabel)
+    {
+    for (QuerySpecificationP spec : other.GetQuerySpecifications())
+        m_querySpecifications.push_back(spec->Clone());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 SearchResultInstanceNodesSpecification::~SearchResultInstanceNodesSpecification()

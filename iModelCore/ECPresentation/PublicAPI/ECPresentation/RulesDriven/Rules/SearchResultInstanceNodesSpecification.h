@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/SearchResultInstanceNodesSpecification.h $
+|     $Source: PublicApi/ECPresentationRules/SearchResultInstanceNodesSpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -46,10 +46,13 @@ protected:
     virtual Utf8CP _GetXmlElementName() const = 0;
     ECOBJECTS_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode);
     ECOBJECTS_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const;
+    virtual QuerySpecification* _Clone() const = 0;
 
 public:
     QuerySpecification() {}
     virtual ~QuerySpecification() {}
+
+    QuerySpecification* Clone() const {return _Clone();}
 
     //! Returns XmlElement name that is used to read/save this rule information.
     Utf8CP GetXmlElementName() const {return _GetXmlElementName();}
@@ -90,6 +93,7 @@ protected:
     ECOBJECTS_EXPORT virtual Utf8CP _GetXmlElementName() const override;
     ECOBJECTS_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECOBJECTS_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
+    QuerySpecification* _Clone() const override {return new StringQuerySpecification(*this);}
 
 public:
     //! Constructor
@@ -120,6 +124,7 @@ protected:
     ECOBJECTS_EXPORT virtual Utf8CP _GetXmlElementName() const override;
     ECOBJECTS_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECOBJECTS_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
+    QuerySpecification* _Clone() const override{return new ECPropertyValueQuerySpecification(*this);}
 
 public:
     //! Constructor
@@ -172,6 +177,9 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
         //! Constructor.
         ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
                                                                  bool hideIfNoChildren, bool groupByClass, bool groupByLabel);
+        
+        //! Copy Constructor.
+        ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification (SearchResultInstanceNodesSpecification const&);
 
         //! Destructor.
         ECOBJECTS_EXPORT ~SearchResultInstanceNodesSpecification();

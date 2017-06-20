@@ -93,6 +93,10 @@
 #define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_NESTINGDEPTH                  "NestingDepth"
 #define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPCLASSES           "RelationshipClasses"
 
+#define CONTENTMODIEFIER_XML_NODE_NAME                                                "ContentModifier"
+#define CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME                                     "SchemaName"
+#define CONTENTMODIEFIER_XML_ATTRIBUTE_CLASSNAME                                      "ClassName"
+
 #define CLASS_GROUP_XML_NODE_NAME                                                     "ClassGroup"
 #define CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME                                          "SchemaName"
 #define CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME                                       "BaseClassName"

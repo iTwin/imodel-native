@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleSet.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -151,6 +151,7 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     CommonTools::LoadRulesFromXmlNode <CheckBoxRule>      (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <RenameNodeRule>    (ruleSetNode, m_renameNodeRules,  RENAMENODE_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <SortingRule>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIEFIER_XML_NODE_NAME);
 
     return true;
     }
@@ -185,6 +186,7 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
     CommonTools::WriteRulesToXmlNode<CheckBoxRule,      CheckBoxRuleList>      (ruleSetNode, m_checkBoxRules);
     CommonTools::WriteRulesToXmlNode<RenameNodeRule,    RenameNodeRuleList>    (ruleSetNode, m_renameNodeRules);
     CommonTools::WriteRulesToXmlNode<SortingRule,       SortingRuleList>       (ruleSetNode, m_sortingRules);
+    CommonTools::WriteRulesToXmlNode<ContentModifier,   ContentModifierList>   (ruleSetNode, m_contentModifiers);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -264,6 +266,11 @@ bool PresentationRuleSet::WriteToXmlFile (WCharCP xmlFilePath)
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR           PresentationRuleSet::GetRuleSetId (void) const         { return m_ruleSetId;        }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                   PresentationRuleSet::SetRuleSetId(Utf8StringCR id)     { m_ruleSetId = id;          }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -380,6 +387,11 @@ RenameNodeRuleList const& PresentationRuleSet::GetRenameNodeRules (void) const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 SortingRuleList const& PresentationRuleSet::GetSortingRules (void) const      { return m_sortingRules;     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentModifierList const& PresentationRuleSet::GetContentModifierRules (void) const { return m_contentModifiers; }
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 template<> RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>() {return &m_rootNodesRules;}
 template<> ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>() {return &m_childNodesRules;}
@@ -391,6 +403,7 @@ template<> GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>() {retu
 template<> CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>() {return &m_checkBoxRules;}
 template<> RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>() {return &m_renameNodeRules;}
 template<> SortingRuleList* PresentationRuleSet::GetRules<SortingRule>() {return &m_sortingRules;}
+template<> ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>() {return &m_contentModifiers;}
 template<> UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>() {return &m_userSettings;}
 template<> LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>() {return &m_localizationResourceKeyDefinitions;}
 END_BENTLEY_ECOBJECT_NAMESPACE
