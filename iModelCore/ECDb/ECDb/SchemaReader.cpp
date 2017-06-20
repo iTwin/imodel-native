@@ -1447,7 +1447,10 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
             return ERROR;
             }
 
-        if (ECObjectsStatus::Success != constraint.SetAbstractConstraint(*abstractConstraintClass->GetEntityClassCP()))
+        ECObjectsStatus status = ECObjectsStatus::Success;
+        abstractConstraintClass->IsEntityClass() ? constraint.SetAbstractConstraint(*abstractConstraintClass->GetEntityClassCP())
+                                                : constraint.SetAbstractConstraint(*abstractConstraintClass->GetRelationshipClassCP());
+        if (ECObjectsStatus::Success != status)
             return ERROR;
         }
 
