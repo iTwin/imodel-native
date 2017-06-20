@@ -32,10 +32,6 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 
 # Tests not adjusted yet
 ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
-ECInstanceInserterTests.InsertSingleRelationshipInstance
-ECInstanceInserterTests.InsertMultipleRelationshipInstances
-ECInstanceInserterTests.InsertSelfJoinRelationshipInstances
 ECInstanceInserterTests.InsertInstanceWithOutProvidingSourceTargetClassIds
-ECSqlAdapterTestFixture.FindECInstancesFromSelectWithMultipleClasses
 ECRelationshipInheritanceTestFixture.RelECClassId
 #============================================================================================================================
