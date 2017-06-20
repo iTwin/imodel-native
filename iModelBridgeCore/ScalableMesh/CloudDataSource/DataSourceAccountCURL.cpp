@@ -143,11 +143,13 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSource &dataSource,
 
 DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
     {
+    DataSourceStatus status;
     if (isLocalOrNetworkAccount)
         {
         url = L"file:///" + url;
         }
     struct CURLHandle::CURLDataMemoryBuffer buffer;
+    struct CURLHandle::CURLDataResponseHeader response_header;
 
     buffer.data = dest;
     buffer.size = 0;
@@ -160,36 +162,33 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
-
-#ifndef NDEBUG
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
-    struct CURLHandle::CURLDataResponseHeader response_header;
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
-#endif
+    
     auto res = curl_easy_perform(curl);
     if (CURLE_OK != res)
         {
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         assert(!"cURL error, download failed");
-        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
+        status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
 
-#ifndef NDEBUG
     if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
         {
         assert(!"HTTP error, download failed or resource not found");
-        return DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
+        status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
     if (!response_header.data.empty()) response_header.data.clear();
-#endif
 
     curl_handle->free_header_list();
 
-    assert(buffer.size <= size);
-    readSize = buffer.size;
-    (void)size;
+    if (status.isOK())
+        {
+        readSize = buffer.size;
+        (void)size;
+        }
 
-    return DataSourceStatus();
+    return status;
     }
 
 DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
