@@ -38,6 +38,4 @@ ECInstanceInserterTests.InsertSelfJoinRelationshipInstances
 ECInstanceInserterTests.InsertInstanceWithOutProvidingSourceTargetClassIds
 ECSqlAdapterTestFixture.FindECInstancesFromSelectWithMultipleClasses
 ECRelationshipInheritanceTestFixture.RelECClassId
-ECRelationshipInheritanceTestFixture.NarrowingSemanticsFKMapping
-ECRelationshipInheritanceTestFixture.NarrowingSemanticsFKMapping_NonAbstractRelBaseClass
 #============================================================================================================================

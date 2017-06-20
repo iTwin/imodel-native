@@ -304,20 +304,9 @@ TEST_F(ECInstanceInserterTests, InsertIntoNestedStructArray)
     ASSERT_EQ(instanceList.size(), out.size());
     ASSERT_TRUE(inXml == outXml);
     }
-TEST_F(ECInstanceInserterTests, InsertSingleRelationshipInstance)
-    {
-    InsertRelationshipInstances("FolderHasDocuments", "Folder", "Document", "KitchenSink", 1, 1);
-    }
 
-TEST_F(ECInstanceInserterTests, InsertMultipleRelationshipInstances)
-    {
-    InsertRelationshipInstances("FolderHasDocuments", "Folder", "Document", "KitchenSink", 10, 10);
-    }
 
-TEST_F(ECInstanceInserterTests, InsertSelfJoinRelationshipInstances)
-    {
-    InsertRelationshipInstances("FolderHasSubFolders", "Folder", "Folder", "KitchenSink", 10, 10);
-    }
+
 
 TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfComplexClass)
     {
@@ -687,29 +676,25 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteInsertECSql(key5, m_ecdb, "INSERT INTO rc.ClassD (P4) VALUES(4)"));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(m_ecdb, "INSERT INTO rc.RelationshipClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE rc.ClassC SET A1.Id=? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     stmt.BindId(1, key1.GetInstanceId());
-    stmt.BindId(2, key1.GetClassId());
-    stmt.BindId(3, key3.GetInstanceId());
-    stmt.BindId(4, key3.GetClassId());
+    stmt.BindId(2, key3.GetInstanceId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
-    //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:N, end tabler relationship
-    ASSERT_EQ(stmt.Prepare(m_ecdb, "INSERT INTO rc.RelationshipClassA (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
+
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE rc.ClassC SET A1.Id=? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     stmt.BindId(1, key1.GetInstanceId());
     stmt.BindId(2, key4.GetInstanceId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
-    ASSERT_EQ(stmt.Prepare(m_ecdb, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE rc.ClassC SET A2.Id=? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     stmt.BindId(1, key1.GetInstanceId());
-    stmt.BindId(2, key1.GetClassId());
-    stmt.BindId(3, key3.GetInstanceId());
-    stmt.BindId(4, key3.GetClassId());
+    stmt.BindId(2, key3.GetInstanceId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
-    //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:1, end tabler relationship
-    ASSERT_EQ(stmt.Prepare(m_ecdb, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
+
+    ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE rc.ClassC SET A2.Id=? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     stmt.BindId(1, key2.GetInstanceId());
     stmt.BindId(2, key4.GetInstanceId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
@@ -789,71 +774,6 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
     BeTest::SetFailOnAssert(true);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   02/14
-//---------------------------------------------------------------------------------------
-TEST_F(ECSqlAdapterTestFixture, FindECInstancesFromSelectWithMultipleClasses)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
-
-    bvector<IECInstancePtr> instances;
-    ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Company"));
-    ASSERT_EQ(3, (int) instances.size());
-    IECInstancePtr sourceInstance = instances[0];
-
-    instances.clear();
-    ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Project"));
-    ASSERT_EQ(3, (int) instances.size());
-    IECInstancePtr targetInstance = instances[0];
-
-    ECRelationshipClassCP relClass = m_ecdb.Schemas().GetClass("StartupCompany", "CompanyProject")->GetRelationshipClassCP();
-    ASSERT_TRUE(relClass != nullptr) << "Could not find relationship class EmployeeHardware in test schema";
-
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
-    ASSERT_TRUE(relationshipInstance.IsValid());
-    relationshipInstance->SetSource(sourceInstance.get());
-    relationshipInstance->SetTarget(targetInstance.get());
-    relationshipInstance->SetInstanceId("source->target");
-
-    ECInstanceInserter inserter(m_ecdb, *relClass, nullptr);
-    ASSERT_TRUE(inserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*relationshipInstance));
-
-    ECSqlStatement ecStatement;
-    ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(m_ecdb, "SELECT c0.Name, c1.ProjectName from [StartupCompany].[Company] c0 join [StartupCompany].[Project] c1 using StartupCompany.CompanyProject"));
-
-    ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
-    int rows = 0;
-    ECValue v;
-    IECInstancePtr resultInstance = nullptr;
-    while (ecStatement.Step() == BE_SQLITE_ROW)
-        {
-        BeTest::SetFailOnAssert(false);
-        resultInstance = dataAdapter.GetInstance();
-        BeTest::SetFailOnAssert(true);
-        ASSERT_TRUE(resultInstance == nullptr);
-        rows++;
-        }
-    ASSERT_TRUE(rows > 0) << "Should have found at least one Foo instance";
-
-    ecStatement.Reset();
-
-    rows = 0;
-    ECClassCP ecClass = m_ecdb.Schemas().GetClass("StartupCompany", "Project");
-    ASSERT_TRUE(ecClass != nullptr) << "ECDbTestSchemaManager::GetClassP returned null";
-    while (ecStatement.Step() == BE_SQLITE_ROW)
-        {
-        resultInstance = dataAdapter.GetInstance(ecClass->GetId());
-        ASSERT_TRUE(resultInstance.IsValid());
-        ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "ProjectName"));
-        ASSERT_FALSE(v.IsNull());
-        rows++;
-        }
-    ASSERT_TRUE(rows > 0) << "Should have found at least one Bar instance";
-
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                           07/12
