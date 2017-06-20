@@ -923,8 +923,8 @@ TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
         }
     ASSERT_EQ(2, rowCount);
     stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY TargetECInstanceId"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY TargetECClassId"));
     rowCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -3208,7 +3208,7 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubclasses)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
           <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
           <ECEntityClass typeName="Element" modifier="Abstract">
@@ -3241,7 +3241,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClassAn
           </ECRelationshipClass>
         </ECSchema>)xml")));
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
           <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
           <ECEntityClass typeName="Element" modifier="Abstract">

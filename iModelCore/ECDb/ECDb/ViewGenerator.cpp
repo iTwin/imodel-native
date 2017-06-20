@@ -867,8 +867,6 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
     const DbColumn::Type castIntoType = isECClassView ? DbColumn::Type::Integer : DbColumn::Type::Any; //Any mean do not cast.
 
     const ECClassId classId = relationMap.GetClass().GetId();
-    const ECClassId sourceECClassId = relationMap.GetRelationshipClass().GetSource().GetConstraintClasses().front()->GetId();
-    const ECClassId targetECClassId = relationMap.GetRelationshipClass().GetTarget().GetConstraintClasses().front()->GetId();    
     for (auto const& key : relationMap.GetPartitionView().GetPartitionMap())
         {
         for (auto const & partition : key.second)
@@ -897,7 +895,16 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
             //SourceECClassID
             if (partition->GetSourceECClassId().IsVirtual())
-                view.Append(sourceECClassId).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+                {
+                // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
+                // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
+                std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetSourceECClassId().GetTable());
+                BeAssert(classIds.size() == 1);
+                if (classIds.size() != 1)
+                    return ERROR;
+
+                view.Append(classIds.front()).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+                }
             else
                 view.Append(partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
 
@@ -906,7 +913,16 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
             //TargetECClassId
             if (partition->GetTargetECClassId().IsVirtual())
-                view.Append(targetECClassId).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+                {
+                // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
+                // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
+                std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetTargetECClassId().GetTable());
+                BeAssert(classIds.size() == 1);
+                if (classIds.size() != 1)
+                    return ERROR;
+
+                view.Append(classIds.front()).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+                }
             else
                 view.Append(partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
 

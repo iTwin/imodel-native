@@ -30,12 +30,6 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 # This must be cleared before merge.
 #----------------------------------------------------------------------------------------------------------------------------
 
-# Real bugs
-RelationshipMappingTestFixture.MultipleFkEndTables
-
-# What is contract for rel with abstract parent class w/o subclass?
-RelationshipMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
-
 # Tests not adjusted yet
 ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
 ECInstanceInserterTests.InsertSingleRelationshipInstance
