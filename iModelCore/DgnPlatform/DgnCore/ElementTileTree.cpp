@@ -1669,7 +1669,6 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
 
     // Get the polyfaces and strokes with no transform applied
     PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr);
-    facetOptions->SetNormalsRequired(false);
     StrokesList strokes = part.GetStrokes(*facetOptions, nullptr);
 
     // For each instance, transform the polyfaces and add them to the mesh
@@ -1726,7 +1725,7 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
     {
     PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
-    if (nullptr == polyface || 0 == polyface->GetPointCount())
+    if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
         return;
 
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
