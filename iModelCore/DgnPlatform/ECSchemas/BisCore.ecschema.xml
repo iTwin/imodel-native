@@ -14,14 +14,7 @@
                 <string>Functional:FunctionalElement.TypeDefinition</string>
             </Exceptions>
         </NoAdditionalForeignKeyConstraints>
-        <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.1.0">
-            <Exceptions>
-                <string>ECObjects:ClassHasAllBaseClasses</string>
-                <string>ECObjects:ClassHasBaseClasses</string>
-                <string>ECObjects:RelationshipConstraintHasClasses</string>
-                <string>ECObjects:SchemaHasSchemaReferences</string>
-            </Exceptions>
-        </NoAdditionalLinkTables>
+        <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.1.0" />
     </ECCustomAttributes>
 
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
