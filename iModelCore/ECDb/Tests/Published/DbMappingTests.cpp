@@ -9369,6 +9369,61 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
     }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir             06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, CRUDOnMixins)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("CRUDOnMixin.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Parent" modifier="Abstract">
+            <ECProperty propertyName="Parent_Prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="IMixin" modifier="Abstract">
+            <ECCustomAttributes>
+                <IsMixin xmlns="CoreCustomAttributes.01.00">
+                    <AppliesToEntityClass>Parent</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+            <ECProperty propertyName="IMixin_Prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Child" >
+            <BaseClass>Parent</BaseClass>
+            <BaseClass>IMixin</BaseClass>
+            <ECProperty propertyName="Child_Prop" typeName="int" />
+        </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECSqlStatement stmt;
+
+    //-----------INSERT----------
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.IMixin(IMixin_Prop) VALUES('TestVal')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.Parent(Parent_Prop) VALUES('TestVal')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Child(Child_Prop) VALUES(100)"));
+    stmt.Finalize();
+
+    //-----------DELETE----------
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.IMixin"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Parent"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Child"));
+    stmt.Finalize();
+
+    //-----------UPDATE----------
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.IMixin SET IMixin_Prop='UpdatedVal'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Parent SET Parent_Prop='UpdatedVal'"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Child SET Child_Prop=200"));
+    stmt.Finalize();
+
+    //-----------SELECT----------
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.IMixin"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Parent"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Child"));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      05/17
