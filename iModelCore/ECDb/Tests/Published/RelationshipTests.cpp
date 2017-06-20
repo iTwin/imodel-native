@@ -804,54 +804,23 @@ TEST_F(RelationshipMappingTestFixture, CascadeDeletion)
     EXPECT_TRUE(ClassC != nullptr);
 
     //Instance of ClassA
-    StandaloneECInstancePtr ClassA_Instance = ClassA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ClassA_Instance->SetValue("AA", ECValue("val1"));
+    ECInstanceKey aKey, bKey, cKey;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassA(AA) VALUES('val1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(aKey));
+    stmt.Finalize();
 
-    //Instance of ClassB
-    StandaloneECInstancePtr ClassB_Instance = ClassB->GetDefaultStandaloneEnabler()->CreateInstance();
-    ClassB_Instance->SetValue("BB", ECValue("val3"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassB(BB, A.Id) VALUES('val3',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, aKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bKey));
+    stmt.Finalize();
 
-    //Inserter of ClassA
-    ECInstanceInserter ClassA_Inserter(m_ecdb, *ClassA, nullptr);
-    ASSERT_TRUE(ClassA_Inserter.IsValid());
-    ClassA_Inserter.Insert(*ClassA_Instance);
-
-    //Inserter of ClassB
-    ECInstanceInserter ClassB_Inserter(m_ecdb, *ClassB, nullptr);
-    ASSERT_TRUE(ClassB_Inserter.IsValid());
-    ClassB_Inserter.Insert(*ClassB_Instance);
-
-    ECRelationshipClassCP AHasB = m_ecdb.Schemas().GetClass("TestSchema", "AHasB")->GetRelationshipClassCP();
-    ECRelationshipClassCP BHasC = m_ecdb.Schemas().GetClass("TestSchema", "BHasC")->GetRelationshipClassCP();
-
-    //Inserting relationship instance.
-    ECN::StandaloneECRelationshipInstancePtr ClassAHasB_relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*AHasB)->CreateRelationshipInstance();
-    ClassAHasB_relationshipInstance->SetSource(ClassA_Instance.get());
-    ClassAHasB_relationshipInstance->SetTarget(ClassB_Instance.get());
-
-    ECInstanceInserter AHasB_relationshipInserter(m_ecdb, *AHasB, nullptr);
-    AHasB_relationshipInserter.Insert(*ClassAHasB_relationshipInstance);
-
-
-    //Inserting instances of ClassC
-    StandaloneECInstancePtr ClassC_Instance = ClassC->GetDefaultStandaloneEnabler()->CreateInstance();
-    ClassC_Instance->SetValue("CC", ECValue("val5"));
-
-    //Inserter of ClassC
-    ECInstanceInserter ClassC_Inserter(m_ecdb, *ClassC, nullptr);
-    ASSERT_TRUE(ClassC_Inserter.IsValid());
-    ClassC_Inserter.Insert(*ClassC_Instance);
-
-    //Inserting relationship instances.
-    ECN::StandaloneECRelationshipInstancePtr ClassBHasC_relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*BHasC)->CreateRelationshipInstance();
-    ClassBHasC_relationshipInstance->SetSource(ClassB_Instance.get());
-    ClassBHasC_relationshipInstance->SetTarget(ClassC_Instance.get());
-
-    ECInstanceInserter BHasC_relationshipInserter(m_ecdb, *BHasC, nullptr);
-    BHasC_relationshipInserter.Insert(*ClassBHasC_relationshipInstance);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassC(CC, B.Id) VALUES('val5',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, bKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(cKey));
+    stmt.Finalize();
 
     //Deletes instance of ClassA. Instances of ClassB and ClassC are also deleted.
-    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.ClassA WHERE ECInstanceId=1"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -1078,7 +1047,7 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationship)
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, Utf8PrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, TestHelper::PrepareECSql(m_ecdb, "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     m_ecdb.SaveChanges();
     }
 
@@ -1275,27 +1244,27 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(2, stmt.GetValueInt64(0));
-    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));
+    ASSERT_EQ(relId, stmt.GetValueId<ECClassId>(1));
     ASSERT_EQ(1, stmt.GetValueInt64(2));
-    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));
+    ASSERT_EQ(carId, stmt.GetValueId<ECClassId>(3));
     ASSERT_EQ(2, stmt.GetValueInt64(4));
-    ASSERT_EQ(engineId.GetValue(), stmt.GetValueInt64(5));
+    ASSERT_EQ(engineId, stmt.GetValueId<ECClassId>(5));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ASSERT_EQ(3, stmt.GetValueInt64(0));
-    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));
+    ASSERT_EQ(relId, stmt.GetValueId<ECClassId>(1));
     ASSERT_EQ(1, stmt.GetValueInt64(2));
-    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));
+    ASSERT_EQ(carId, stmt.GetValueId<ECClassId>(3));
     ASSERT_EQ(3, stmt.GetValueInt64(4));
-    ASSERT_EQ(sterringId.GetValue(), stmt.GetValueInt64(5));
+    ASSERT_EQ(sterringId, stmt.GetValueId<ECClassId>(5));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
-    stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
+
+    ASSERT_EQ(ECSqlStatus::Success, TestHelper::PrepareECSql(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
+    ASSERT_EQ(ECSqlStatus::Success, TestHelper::PrepareECSql(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
     }
 
 
@@ -3449,54 +3418,36 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
 
         ECInstanceKey elem1Key, elem2Key, geomElem1Key, geomElem2Key, geom1Key, geom2Key;
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ExtendedElement (Code,Name) VALUES('0001','NonGeom1')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ExtendedElement(Code,Name) VALUES('0001','NonGeom1')"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elem1Key));
         stmt.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ExtendedElement (Code,Name) VALUES('0002','NonGeom2')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ExtendedElement(Code,Name) VALUES('0002','NonGeom2')"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elem2Key));
         stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GeometricElement (Code,Name) VALUES('0003','Geom1')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GeometricElement(Code,Name) VALUES('0003','Geom1')"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomElem1Key));
         stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GeometricElement (Code,Name) VALUES('0004','Geom2')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GeometricElement(Code,Name) VALUES('0004','Geom2')"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomElem2Key));
         stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ElementGeometry (Geom) VALUES('0x13124')"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom1Key));
-        stmt.Finalize();
-
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ElementGeometry (Geom) VALUES('0x42343')"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom2Key));
-        stmt.Finalize();
-        m_ecdb.SaveChanges();
-
         //now do actual tests with relationship
-        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "Before inserting one relationship";
+        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "Before inserting nav prop";
 
-        ECSqlStatement insertStmt;
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ElementGeometry(Source.Id) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomElem1Key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom1Key));
+        stmt.Reset();
+        stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, geomElem1Key.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, geomElem1Key.GetClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom1Key.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom1Key.GetClassId()));
+        ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "After inserting one nav prop";
 
-        ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against GeometricElement is expected to succeed";
-        insertStmt.Reset();
-        insertStmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elem1Key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom1Key));
 
-        ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "After inserting one relationship";
-
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, elem1Key.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, elem1Key.GetClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom2Key.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom2Key.GetClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against ExtendedElement is also expected to succeed";
-        insertStmt.Reset();
-        insertStmt.ClearBindings();
+        ASSERT_EQ(2, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "After inserting second nav prop";
         }
     }
 
@@ -4231,26 +4182,20 @@ TEST_F(RelationshipMappingTestFixture, DiegoRelationshipTest)
 
         IECInstancePtr civilModel1 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
         IECInstancePtr civilModel2 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
-        IECInstancePtr geometricModel = ECDbTestUtility::CreateArbitraryECInstance(*geometricModelClass);
-
-        StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*(relClass->GetRelationshipClassCP()));
-        StandaloneECRelationshipInstancePtr rel1 = relationshipEnabler->CreateRelationshipInstance();
-
-        rel1->SetSource(civilModel2.get());
-        rel1->SetTarget(geometricModel.get());
 
         ECInstanceInserter civilModelInserter(m_ecdb, *civilModelClass, nullptr);
         ASSERT_TRUE(civilModelInserter.IsValid());
         ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(*civilModel1));
-        ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(*civilModel2));
+        ECInstanceKey civilModel2Key;
+        ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(civilModel2Key, *civilModel2));
+
+        IECInstancePtr geometricModel = ECDbTestUtility::CreateArbitraryECInstance(*geometricModelClass);
+        ECValue navPropValue(civilModel2Key.GetInstanceId());
+        ASSERT_EQ(ECObjectsStatus::Success, geometricModel->SetValue("CivilModel", navPropValue));
 
         ECInstanceInserter geometricModelInserter(m_ecdb, *geometricModelClass, nullptr);
         ASSERT_TRUE(geometricModelInserter.IsValid());
         ASSERT_EQ(BE_SQLITE_OK, geometricModelInserter.Insert(*geometricModel));
-
-        ECInstanceInserter relInserter(m_ecdb, *relClass, nullptr);
-        ASSERT_TRUE(relInserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(*rel1));
         }
 
 //---------------------------------------------------------------------------------------

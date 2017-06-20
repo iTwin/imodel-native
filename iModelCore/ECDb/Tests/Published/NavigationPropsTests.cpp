@@ -87,7 +87,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
     {
-            {
+            {//Logical FK
             //EC3.1 schema
             ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                                          SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -105,6 +105,70 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
                                                     "        <ECProperty propertyName='Code' typeName='string' />"
                                                     "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElement' direction='Backward' />"
                                                     "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElement' direction='Backward' />"
+                                                    "    </ECEntityClass>"
+                                                    "    <ECEntityClass typeName='SubElement'>"
+                                                    "        <BaseClass>Element</BaseClass>"
+                                                    "        <ECProperty propertyName='SubProp1' typeName='int' />"
+                                                    "    </ECEntityClass>"
+                                                    "   <ECRelationshipClass typeName='ModelHasElement' strength='Embedding'  modifier='Sealed'>"
+                                                    "      <Source multiplicity='(1..1)' polymorphic='False' roleLabel='Model'>"
+                                                    "          <Class class ='Model' />"
+                                                    "      </Source>"
+                                                    "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element'>"
+                                                    "          <Class class ='Element' />"
+                                                    "      </Target>"
+                                                    "   </ECRelationshipClass>"
+                                                    "   <ECRelationshipClass typeName='ElementOwnsChildElement' strength='Embedding'  modifier='Abstract'>"
+                                                    "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Element'>"
+                                                    "          <Class class ='Element' />"
+                                                    "      </Source>"
+                                                    "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Child Element'>"
+                                                    "          <Class class ='Element' />"
+                                                    "      </Target>"
+                                                    "   </ECRelationshipClass>"
+                                                    "   <ECRelationshipClass typeName='ElementOwnsSubElement' strength='Embedding'  modifier='Sealed'>"
+                                                    "        <BaseClass>ElementOwnsChildElement</BaseClass>"
+                                                    "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Owner Element'>"
+                                                    "          <Class class ='Element' />"
+                                                    "      </Source>"
+                                                    "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Owned SubElement'>"
+                                                    "          <Class class ='SubElement' />"
+                                                    "      </Target>"
+                                                    "   </ECRelationshipClass>"
+                                                    "</ECSchema>")));
+
+            ASSERT_FALSE(m_ecdb.ColumnExists("ts_Element", "ModelRelECClassId"));
+            ASSERT_TRUE(m_ecdb.ColumnExists("ts_Element", "ParentRelECClassId"));
+            AssertIndexExists(m_ecdb, "ix_ts_Element_ModelRelECClassId", false); // rel class id is virtual -> no index
+            AssertIndexExists(m_ecdb, "ix_ts_Element_ParentRelECClassId", false); // logical FK -> no index
+            }
+
+            {//Physical FK
+            //EC3.1 schema
+            ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+                                         SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                    "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                    "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                    "    <ECEntityClass typeName='Model'>"
+                                                    "        <ECProperty propertyName='Name' typeName='string' />"
+                                                    "    </ECEntityClass>"
+                                                    "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+                                                    "        <ECCustomAttributes>"
+                                                    "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                    "            </ClassMap>"
+                                                    "        </ECCustomAttributes>"
+                                                    "        <ECProperty propertyName='Code' typeName='string' />"
+                                                    "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElement' direction='Backward' >"
+                                                    "          <ECCustomAttributes>"
+                                                    "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                                    "          </ECCustomAttributes>"
+                                                    "        </ECNavigationProperty>"
+                                                    "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElement' direction='Backward' >"
+                                                    "          <ECCustomAttributes>"
+                                                    "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                                                    "          </ECCustomAttributes>"
+                                                    "        </ECNavigationProperty>"
                                                     "    </ECEntityClass>"
                                                     "    <ECEntityClass typeName='SubElement'>"
                                                     "        <BaseClass>Element</BaseClass>"

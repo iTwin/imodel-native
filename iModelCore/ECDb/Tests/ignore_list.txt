@@ -23,11 +23,20 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 #Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
+
 #============================================================================================================================
 # RelationshipClassEndTableMap does not support INSERT/DELETE using relationship name.
 # Following test must be  updated to use Navigation property and not INSERT INTO rel(..)
 # This must be cleared before merge.
 #----------------------------------------------------------------------------------------------------------------------------
+
+# Real bugs
+RelationshipMappingTestFixture.MultipleFkEndTables
+
+# What is contract for rel with abstract parent class w/o subclass?
+RelationshipMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
+
+# Tests not adjusted yet
 ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
 ECInstanceInserterTests.InsertSingleRelationshipInstance
 ECInstanceInserterTests.InsertMultipleRelationshipInstances
@@ -70,14 +79,7 @@ JoinedTableECSqlStatementsTests.PersistSqlForQueryOnAbstractBaseClass
 JoinedTableECSqlStatementsTests.UnionTests
 JoinedTableECSqlStatementsTests.ExceptTests
 JoinedTableECSqlStatementsTests.IntersectTests
-ECSqlNavigationPropertyTestFixture.RelECClassId
-RelationshipMappingTestFixture.CascadeDeletion
-RelationshipMappingTestFixture.MultipleFkEndTables
-RelationshipMappingTestFixture.LogicalForeignKeyRelationship
-RelationshipMappingTestFixture.LogicalForeignKeyRelationshipMappedToSharedColumn
-RelationshipMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
-RelationshipMappingTestFixture.RelationshipWithAbstractConstraintClass
-RelationshipMappingTestFixture.DiegoRelationshipTest
+
 ECDbHoldingRelationshipStrengthTestFixture.OneToOneForward
 ECDbHoldingRelationshipStrengthTestFixture.OneToOneBackward
 ECDbHoldingRelationshipStrengthTestFixture.OneToManyForward

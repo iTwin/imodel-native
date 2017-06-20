@@ -45,6 +45,7 @@ struct TestHelper
 
         static Utf8String RetrieveDdl(ECDbCR, Utf8CP entityName, Utf8CP entityType = "table");
 
+        static ECSqlStatus PrepareECSql(ECDbCR ecdb, Utf8CP ecsql) { ECSqlStatement stmt;  return stmt.Prepare(ecdb, ecsql); }
         static DbResult ExecuteNonSelectECSql(ECDbCR, Utf8CP ecsql);
         static DbResult ExecuteInsertECSql(ECInstanceKey&, ECDbCR, Utf8CP ecsql);
     };

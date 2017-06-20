@@ -44,7 +44,7 @@
     | Struct         | no              | no                  | no     | no              | no                  | no              | no                 |
     | Custom attribute | no            | no                  | no     | no              | no                  | no              | no                 |
 
-        * Use navigation property in order to insert, update or delete a relationship with navigation property.
+    @b * Use navigation property in order to insert, update or delete a relationship with navigation property.
 
     @section ECSqlECInstanceIdDetails ECInstanceId
     The ECInstanceId is the unique identifier for an ECInstance. In @ref ECSQLOverview you use the
