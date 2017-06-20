@@ -704,17 +704,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
     {
     Savepoint savepoint (ecdb, "Inserting test instances");
     psaECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
-    pECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
-
-    Utf8String ecsql;
-    ecsql.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%llu, %llu)", psaECInstanceId.GetValue(), pECInstanceId.GetValue());
-    psaHasPECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, ecsql.c_str ());
-    if (!psaECInstanceId.IsValid () || !pECInstanceId.IsValid () || !psaHasPECInstanceId.IsValid ())
-        {
-        savepoint.Cancel ();
-        return dataset;
-        }
-
+    psaHasPECInstanceId= pECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, SqlPrintfString("INSERT INTO ecsql.P (I, S,  MyPSA.Id) VALUES (100, 'Test instance for relationship tests',%llu)", psaECInstanceId.GetValue()).GetUtf8CP());
     savepoint.Commit ();
     }
 
