@@ -50,8 +50,10 @@ public:
     //! Create dataset from a JSON document and get the best matching IDs for a selected region.
     REALITYDATAPLATFORM_EXPORT static const bvector<Utf8String> GetIDsFromJson(Utf8CP data,
                                                                                const bvector<GeoPoint2d>& regionOfInterest,
-                                                                               ResolutionCriteria qualityCriteria = ResolutionCriteria::High,
-                                                                               DateCriteria captureDateCriteria = DateCriteria::UpToDate);
+                                                                               ResolutionCriteria imageryQualityCriteria,
+                                                                               DateCriteria imageryDateCriteria,
+                                                                               ResolutionCriteria terrainQualityCriteria = ResolutionCriteria::High,
+                                                                               DateCriteria terrainDateCriteria = DateCriteria::UpToDate);
 
     //! Create dataset from a JSON document and get the best matching IDs for a selected region.
     REALITYDATAPLATFORM_EXPORT static const bvector<Utf8String> GetIDsFromJson(Utf8CP data, 
@@ -151,7 +153,7 @@ private:
     };
 
 
-
+#if 0
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert               12/2016
 //! This class provides functionality to filter a list of SpatialEntity objects.
@@ -270,4 +272,6 @@ public:
     REALITYDATAPLATFORM_EXPORT static const bvector<SpatialEntityDataSourcePtr> FilterByServerLoginKey(bvector<SpatialEntityDataSourcePtr> const & listToFilter, Utf8String loginKey);
 
     };
+
+    #endif
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
