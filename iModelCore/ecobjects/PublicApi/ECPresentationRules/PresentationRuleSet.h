@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/PresentationRuleSet.h $
+|     $Source: PublicApi/ECPresentationRules/PresentationRuleSet.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -45,6 +45,7 @@ struct PresentationRuleSet : public RefCountedBase
         RenameNodeRuleList                     m_renameNodeRules;
         SortingRuleList                        m_sortingRules;
         UserSettingsGroupList                  m_userSettings;
+        ContentModifierList                    m_contentModifiers;
 
     private:
         //Private constructor. This class instance should be creates using static helper methods.
@@ -121,6 +122,9 @@ struct PresentationRuleSet : public RefCountedBase
         //! PresentationRuleSet identification.
         ECOBJECTS_EXPORT Utf8StringCR                   GetRuleSetId (void) const;
 
+        //! Sets new PresentationRuleSet identification.
+        ECOBJECTS_EXPORT void                           SetRuleSetId (Utf8StringCR);
+
         //! Full id of PresentationRuleSet that includes RuleSetId, Version, and IsSupplemental flag.
         ECOBJECTS_EXPORT Utf8String                     GetFullRuleSetId (void) const;
 
@@ -192,6 +196,9 @@ struct PresentationRuleSet : public RefCountedBase
 
         //! Collection of rules, which should be used for configuring sorting of ECInstances.
         ECOBJECTS_EXPORT SortingRuleList const&         GetSortingRules (void) const;
+
+        //! Collection of rules, which should be for supplementing ruleset with additional rules
+        ECOBJECTS_EXPORT ContentModifierList const&     GetContentModifierRules(void) const;
     };
 
 template<> ECOBJECTS_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
@@ -205,6 +212,7 @@ template<> ECOBJECTS_EXPORT CheckBoxRuleList* PresentationRuleSet::GetRules<Chec
 template<> ECOBJECTS_EXPORT RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
 template<> ECOBJECTS_EXPORT SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
 template<> ECOBJECTS_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
+template<> ECOBJECTS_EXPORT ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>();
 template<> ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
 
 END_BENTLEY_ECOBJECT_NAMESPACE

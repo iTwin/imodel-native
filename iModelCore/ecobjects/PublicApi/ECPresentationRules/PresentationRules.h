@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/PresentationRules.h $
+|     $Source: PublicApi/ECPresentationRules/PresentationRules.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -33,6 +33,7 @@
 #include <ECPresentationRules/InstanceNodesOfSpecificClassesSpecification.h>
 #include <ECPresentationRules/SearchResultInstanceNodesSpecification.h>
 #include <ECPresentationRules/ContentSpecification.h>
+#include <ECPresentationRules/ContentModifier.h>
 #include <ECPresentationRules/RelatedPropertiesSpecification.h>
 #include <ECPresentationRules/HiddenPropertiesSpecification.h>
 #include <ECPresentationRules/ContentInstancesOfSpecificClassesSpecification.h>

@@ -34,7 +34,7 @@ GroupingRule::GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNot
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::GroupingRule(GroupingRuleCR other)
-    : m_schemaName(other.m_schemaName), m_className(other.m_className), m_contextMenuCondition(other.m_contextMenuCondition),
+    : CustomizationRule(other), m_schemaName(other.m_schemaName), m_className(other.m_className), m_contextMenuCondition(other.m_contextMenuCondition),
     m_contextMenuLabel(other.m_contextMenuLabel), m_settingsId(other.m_settingsId)
     {
     CommonTools::CloneRules(m_groups, other.m_groups);
@@ -351,9 +351,9 @@ PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageI
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::PropertyGroup(PropertyGroupCR other)
-    : m_imageId(other.m_imageId), m_createGroupForSingleItem(other.m_createGroupForSingleItem),
+    : GroupSpecification(other), m_imageId(other.m_imageId), m_createGroupForSingleItem(other.m_createGroupForSingleItem),
     m_createGroupForUnspecifiedValues(other.m_createGroupForUnspecifiedValues), m_propertyName(other.m_propertyName), 
-    m_groupingValue(PropertyGroupingValue::DisplayLabel), m_sortingValue(PropertyGroupingValue::DisplayLabel)
+    m_groupingValue(other.m_groupingValue), m_sortingValue(other.m_sortingValue)
     {
     CommonTools::CopyRules(m_ranges, other.m_ranges);
     }

@@ -717,4 +717,67 @@ TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras               05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRulesTests, TestContentModifierRuleLoadingFromXml)
+    {
+    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        "  <PresentationRuleSet"
+        "    RuleSetId=\"Items\""
+        "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+        "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
+        "    <ContentModifier SchemaName=\"TestSchema\" ClassName=\"TestClassName\">"
+        "      <RelatedProperties RelationshipClassNames=\"Schema:OnSameElement\" RequiredDirection=\"Forward\" />"
+        "      <HiddenProperties ClassName=\"HiddenClassName\" PropertyNames=\"Label\" />"
+        "      <CalculatedProperties>"
+        "         <Property Label=\"Label1\" Priority=\"1000\">\"Value1\"</Property>"
+        "      </CalculatedProperties>"
+        "    </ContentModifier>"
+        "  </PresentationRuleSet>";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
+    EXPECT_FALSE(ruleSet.IsNull());
+
+    ASSERT_EQ(1, ruleSet->GetContentModifierRules().size());
+    ASSERT_EQ(1, ruleSet->GetContentModifierRules()[0]->GetRelatedProperties().size());
+    ASSERT_EQ(1, ruleSet->GetContentModifierRules()[0]->GetHiddenProperties().size());
+    ASSERT_EQ(1, ruleSet->GetContentModifierRules()[0]->GetCalculatedProperties().size());
+
+    EXPECT_EQ(RequiredRelationDirection_Forward, ruleSet->GetContentModifierRules()[0]->GetRelatedProperties()[0]->GetRequiredRelationDirection());
+    EXPECT_STREQ("HiddenClassName", ruleSet->GetContentModifierRules()[0]->GetHiddenProperties()[0]->GetFullClassName().c_str());
+    EXPECT_STREQ("Label1", ruleSet->GetContentModifierRules()[0]->GetCalculatedProperties()[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras               05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRulesTests, TestContentModifierWriteToXml)
+    {
+    //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
+    ASSERT_TRUE(nullptr != ruleSet.get());
+
+    ContentModifierP modifier = new ContentModifier("SchemaName", "ClassName");
+    ruleSet->AddPresentationRule(*modifier);
+    ASSERT_TRUE(nullptr != modifier);
+    modifier->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", "RelatedClassNames", "Properties"));
+    modifier->GetHiddenPropertiesR().push_back(new HiddenPropertiesSpecification("ClassName", "Properties"));
+    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label", 0, "Value"));
+
+    //Serialize RuleSet to string and deserialize from the same string.
+    Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
+    Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
+            "<ContentModifier ClassName=\"ClassName\" SchemaName=\"SchemaName\" Condition=\"\" OnlyIfNotHandled=\"false\">"
+                "<RelatedProperties RelationshipClassNames=\"RelationshipClassName\" RelatedClassNames=\"RelatedClassNames\" PropertyNames=\"Properties\" RequiredDirection=\"Forward\"/>"
+                "<HiddenProperties ClassName=\"ClassName\" PropertyNames=\"Properties\"/>"
+                "<CalculatedProperties>"
+                    "<Property Label=\"label\" Priority=\"0\">Value</Property>"
+                "</CalculatedProperties>"
+            "</ContentModifier>"
+        "</PresentationRuleSet>";
+    EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE

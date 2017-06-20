@@ -46,7 +46,7 @@ ContentSpecification::~ContentSpecification ()
     CommonTools::FreePresentationRules (m_relatedPropertiesSpecification);
     CommonTools::FreePresentationRules (m_hiddenPropertiesSpecification);
     CommonTools::FreePresentationRules (m_displayRelatedItemsSpecification);
-    CommonTools::FreePresentationRules(m_calculatedPropertiesSpecification);
+    CommonTools::FreePresentationRules (m_calculatedPropertiesSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**
