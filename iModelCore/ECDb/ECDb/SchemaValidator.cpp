@@ -151,15 +151,6 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter co
             valid = false;
             }
 
-        ECRelationshipClassCP relClassAsConstraint = constraintClass->GetRelationshipClassCP();
-        if (relClassAsConstraint != nullptr)
-            {
-            issueReporter.Report(" The relationship class '%s' has the %s constraint class '%s' which is a relationship class. This is not supported.", relClass.GetFullName(),
-                                 constraintEnd == ECRelationshipEnd_Source ? "source" : "target",
-                                 relClassAsConstraint->GetFullName());
-            valid = false;
-            }
-
         if (duplicateConstraintClasses.find(constraintClass) != duplicateConstraintClasses.end())
             {
             issueReporter.Report(" The relationship class '%s' defines class '%s' more than once in the %s constraint. This is not supported.", 

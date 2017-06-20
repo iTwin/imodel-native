@@ -1235,7 +1235,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
                 case PropertyKind::Navigation:
                 {
-                BeAssert(ecClass->IsEntityClass());
+                BeAssert(ecClass->IsEntityClass() || ecClass->IsRelationshipClass());
 
                 BeAssert(rowInfo.m_navPropRelClassId.IsValid() && !rowInfo.m_navPropDirection.IsNull());
                 ECClassCP relClassRaw = GetClass(ctx, rowInfo.m_navPropRelClassId);
@@ -1245,8 +1245,21 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 BeAssert(relClassRaw->IsRelationshipClass());
                 ECRelatedInstanceDirection direction = (ECRelatedInstanceDirection) rowInfo.m_navPropDirection.Value();
                 NavigationECPropertyP navProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
+                if (ecClass->IsEntityClass())
+                    {
+                    if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
+                        return ERROR;
+                    }
+                else if (ecClass->IsRelationshipClass())
+                    {
+                    if (ECObjectsStatus::Success != ecClass->GetRelationshipClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
+                        return ERROR;
+                    }
+                else
+                    {
+                    BeAssert(false && "Can only create nav props for entity and relationshpi classes. Should have been caught at import time");
                     return ERROR;
+                    }
 
                 //keep track of nav prop as we need to validate them when everything else is loaded
                 ctx.AddNavigationProperty(*navProp);
@@ -1428,9 +1441,9 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
     if (abstractConstraintClassId.IsValid())
         {
         ECClassCP abstractConstraintClass = GetClass(ctx, abstractConstraintClassId);
-        if (abstractConstraintClass == nullptr || !abstractConstraintClass->IsEntityClass())
+        if (abstractConstraintClass == nullptr || (!abstractConstraintClass->IsEntityClass() && !abstractConstraintClass->IsRelationshipClass()))
             {
-            BeAssert(false && "Could not load abstract constraint class or it is not an entity class");
+            BeAssert(false && "Could not load abstract constraint class or it is neither an entity class nor a relationship class");
             return ERROR;
             }
 
@@ -1466,15 +1479,27 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintClassesFromDb(ECRelationsh
         if (constraintClass == nullptr)
             return ERROR;
 
-        ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
-        if (nullptr == constraintAsEntity)
+        if (!constraintClass->IsEntityClass() && !constraintClass->IsRelationshipClass())
             {
             BeAssert(false && "Relationship constraint classes are expected to be entity classes.");
             return ERROR;
             }
 
-        if (ECObjectsStatus::Success != constraint.AddClass(*constraintAsEntity))
+        if (constraintClass->IsEntityClass())
+            {
+            if (ECObjectsStatus::Success != constraint.AddClass(*constraintClass->GetEntityClassCP()))
+                return ERROR;
+            }
+        else if (constraintClass->IsRelationshipClass())
+            {
+            if (ECObjectsStatus::Success != constraint.AddClass(*constraintClass->GetRelationshipClassCP()))
+                return ERROR;
+            }
+        else
+            {
+            BeAssert(false && "Relationship constraint classes are expected to be entity classes or relationships.");
             return ERROR;
+            }
         }
 
     return SUCCESS;
