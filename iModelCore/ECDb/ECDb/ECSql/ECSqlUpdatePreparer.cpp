@@ -23,7 +23,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
-        LOG.errorv("Failed to update ECRelationshipClass %s. Use navigation property pointing to this class to update relationships.", classMap.GetClass().GetFullName());
+        BeAssert(false && "Should have been caught before");
         return ECSqlStatus::InvalidECSql;
         }
 

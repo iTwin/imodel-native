@@ -261,21 +261,19 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlInsert.sampleCode
     $SAMPLECODE_END
 
-    @note Deleting an instance also deletes any of its relationships. The relationship
-    strengths are honored during the delete.
-    i.e., if the relationships are setup to have embedding strength, the child instances are
-    also automatically deleted.
-    If the relationships are setup with holding strength, the child instances are deleted
-    only if the children don't have any parents left.
-
     @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleInsertRelationship Insert a relationship
 
-    This sample shows how to insert a relationship between two instances into an @ref ECDbFile "ECDb file".
+    If a navigation property is defined for a relationship, you must use the navigation property to insert, update or delete
+    the relationship.
 
-    Deleting relationships works likewise.
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlInsertRelationViaNavigationProperty,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlInsertRelationViaNavigationProperty.sampleCode
+    $SAMPLECODE_END
+
+    If no navigation property is defined, you can directly insert, update or delete the relationship.
 
     $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlInsertRelation,Example]
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlInsertRelation.sampleCode

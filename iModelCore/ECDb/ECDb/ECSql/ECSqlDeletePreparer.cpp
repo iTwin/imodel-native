@@ -22,7 +22,7 @@ ECSqlStatus ECSqlDeletePreparer::Prepare(ECSqlPrepareContext& ctx, DeleteStateme
     ClassMap const& classMap = classNameExp->GetInfo().GetMap();
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
-        LOG.errorv("Failed to delete ECRelationshipClass %s. Use navigation property pointing to this class to delete relationships.", classMap.GetClass().GetFullName());
+        BeAssert(false && "Should have been caught before");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -31,19 +31,9 @@ ECSqlStatus ECSqlDeletePreparer::Prepare(ECSqlPrepareContext& ctx, DeleteStateme
     if (!stat.IsSuccess())
         return stat;
 
-     stat = PrepareForClass(ctx, deleteNativeSqlSnippets);
+    BuildNativeSqlDeleteStatement(ctx.GetSqlBuilderR(), deleteNativeSqlSnippets);
     ctx.PopScope();
     return stat;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlDeletePreparer::PrepareForClass(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets)
-    {
-    BuildNativeSqlDeleteStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets);
-    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
