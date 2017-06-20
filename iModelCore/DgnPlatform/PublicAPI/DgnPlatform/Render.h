@@ -1,4 +1,4 @@
-/*------------------------------------------------------------------------]--------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
@@ -1729,6 +1729,7 @@ namespace Quantization
             }
 
         Params const& GetParams() const { return m_params; }
+        void SetParams(Params const& params) { m_params = params; }
 
         //! Quantize the specified point and add it to this list
         void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
@@ -1760,6 +1761,7 @@ namespace Quantization
         static DPoint ToDPoint(FPoint const& fpt) { return T::ToDPoint(fpt); }
         static FPoint ToFPoint(FPoint const& fpt) { return fpt; }
         static DPoint ToDPoint(DPoint const& dpt) { return dpt; }
+
     };
 }
 
@@ -1804,7 +1806,7 @@ struct QPoint3d
 
         DPoint3dCR GetOrigin() const { return origin; }
         DPoint3dCR GetScale() const { return scale; }
-        DRange3d GetRange() const { return DRange3d::From (origin.x, origin.y, origin.z, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y, origin.z + Quantization::RangeScale() * scale.z); }
+        DRange3d GetRange() const { return DRange3d::From (origin, QPoint3d((uint16_t) Quantization::RangeScale(), (uint16_t)Quantization::RangeScale(), (uint16_t)Quantization::RangeScale()).Unquantize(*this)); }
 
     };
 
@@ -2395,7 +2397,7 @@ public:
 
         return found;
         }
-
+    
     uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
@@ -2408,6 +2410,12 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
+
+    // Used by tile reader...
+    void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
+    bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
+
+
 };
 
 //=======================================================================================

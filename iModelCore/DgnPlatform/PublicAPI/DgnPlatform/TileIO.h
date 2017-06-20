@@ -14,14 +14,40 @@
 
 BEGIN_TILETREE_NAMESPACE
 
+static const char s_dgnTileMagic[]              = "dgnT";
+static const uint32_t s_dgnTileVersion         = 0;
+
+
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     06/2017
 //=======================================================================================
 struct TileIO
 {
+    enum class ReadStatus
+        {
+        Success = 0,
+        InvalidHeader,    
+        ReadError,
+        BatchTableParseError,
+        SceneParseError,
+        SceneDataError,
+        FeatureTableError,
+        };
 
-    static BentleyStatus WriteTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
-    static BentleyStatus ReadTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model);
+    enum Flags
+        {
+        None            = 0,
+        ContainsCurves  = 0x0001,
+        };
+
+    // 3D tiles per the published specification...
+    static BentleyStatus Write3dTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
+    static ReadStatus Read3dTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem);
+
+
+    // DgnTiles are tiles with GLTF meshes - but optimized for caching RenderPrimitives (storing feature table directly etc.)
+    static BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
+    static ReadStatus ReadDgnTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem);
 };  
 
 

@@ -94,6 +94,7 @@ struct DisplayParams : RefCountedBase
 
     enum class Type { Mesh, Linear, Text };
 private:
+    Type                m_type;
     DgnCategoryId       m_categoryId;
     DgnSubCategoryId    m_subCategoryId;
     TexturePtr          m_texture; // meshes only
@@ -119,6 +120,7 @@ private:
     DisplayParams(DisplayParamsCR rhs) = default;
     void Resolve(DgnDbR, System&);
 public:
+    Type GetType() const { return m_type; }
     ColorDef GetFillColorDef() const { return m_fillColor; }
     uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
     ColorDef GetLineColorDef() const { return m_lineColor; }
@@ -166,6 +168,7 @@ public:
         {
         return new DisplayParams(Type::Text, gf, geom, false);
         }
+
 };
 
 //=======================================================================================
@@ -263,6 +266,7 @@ struct MeshList : bvector<MeshPtr>
     explicit MeshList(uint32_t maxFeatures=2048*1024) : m_features(maxFeatures) { }
 
     FeatureTableCR  FeatureTable() const { return m_features; }
+    FeatureTableR  FeatureTable()  { return m_features; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -394,7 +398,8 @@ public:
 //! initial range are quantized to that range; vertices outside of it are stored directly,
 //! and used to extend the initial range.
 //! After mesh generation completes, the entire list is requantized to the actual range
-//! if necessary.
+//! if necessary.         
+
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct QVertex3dList
@@ -434,6 +439,7 @@ public:
 
     //! Returns the accumulated range, which may be larger than the initial range passed to the constructor.
     DRange3dCR GetRange() const { return m_range; }
+    void Init(DRange3dCR range, QPoint3dCP points, size_t nPoints); 
 };
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QVertex3dList);
@@ -496,12 +502,18 @@ public:
     PolylineList const&             Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
     QPoint3dListCR                  Points() const { return m_verts.GetQuantizedPoints(); } //!< Position vertex attribute array
     QVertex3dListCR                 Verts() const { return m_verts; }
-    QPoint3dListCR                  Normals() const { return m_normals; } //!< Normal vertex attribute array
-    bvector<FPoint2d> const&        Params() const { return m_uvParams; } //!< UV params vertex attribute array
-    bvector<uint16_t> const&        Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
+    QVertex3dListR                  VertsR() { return m_verts; }
+    QPoint3dListCR                  Normals() const { return m_normals; }   //!< Normal vertex attribute array
+    QPoint3dListR                   NormalsR()  { return m_normals; }       //!< Normal vertex attribute array
+    bvector<FPoint2d> const&        Params() const { return m_uvParams; }   //!< UV params vertex attribute array
+    bvector<FPoint2d>&              ParamsR() { return m_uvParams; }        //!< UV params vertex attribute array
+    bvector<uint16_t> const&        Colors() const { return m_colors; }     //!< Vertex attribute array specifying an index into the color table
+    bvector<uint16_t>&              ColorsR() { return m_colors; }          //!< Vertex attribute array specifying an index into the color table
     ColorTableCR                    GetColorTable() const { return m_colorTable; }
+    ColorTableR                     GetColorTableR() { return m_colorTable; }
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
     MeshEdgesPtr                    GetEdges() const { return m_edges; }
+    MeshEdgesPtr&                   GetEdgesR() { return m_edges; }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }
