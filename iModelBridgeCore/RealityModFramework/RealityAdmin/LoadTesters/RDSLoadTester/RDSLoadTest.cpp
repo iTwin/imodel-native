@@ -752,13 +752,13 @@ int main(int argc, char* argv[])
         }
 
     if (tester.m_serverType == RealityPlatform::CONNECTServerType::PROD)
-        RealityDataService::SetServerComponents("connect-realitydataservices.bentley.com", "2.4", "S3MXECPlugin--Server", "S3MX");
+        RealityDataService::SetServerComponents("connect-realitydataservices.bentley.com", "2.5", "S3MXECPlugin--Server", "S3MX");
     else if (tester.m_serverType == RealityPlatform::CONNECTServerType::QA)
-        RealityDataService::SetServerComponents("qa-connect-realitydataservices.bentley.com", "2.4", "S3MXECPlugin--Server", "S3MX");
+        RealityDataService::SetServerComponents("qa-connect-realitydataservices.bentley.com", "2.5", "S3MXECPlugin--Server", "S3MX");
     else if (tester.m_serverType == RealityPlatform::CONNECTServerType::PERF)
-        RealityDataService::SetServerComponents("perf-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
+        RealityDataService::SetServerComponents("perf-realitydataservices-eus.cloudapp.net", "2.5", "S3MXECPlugin--Server", "S3MX");
     else // (tester.m_serverType == RealityPlatform::CONNECTServerType::DEV)
-        RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
+        RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.5", "S3MXECPlugin--Server", "S3MX");
 
     tester.SetupInactiveUsers(inactiveUsers);
 
