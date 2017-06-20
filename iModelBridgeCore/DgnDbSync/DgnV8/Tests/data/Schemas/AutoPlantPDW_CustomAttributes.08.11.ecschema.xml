@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="AutoPlantPDW_CustomAttributes" nameSpacePrefix="apca" version="8.11" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes>
+        <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.00" />
+    </ECCustomAttributes>
+    <ECClass typeName="AP_3D_AttributeProperties" displayLabel="AutoPLANT_PDW_Property_Map" isDomainClass="True" isCustomAttributeClass="True">
+        <ECProperty propertyName="PropertyName" typeName="string" />
+    </ECClass>
+    <ECClass typeName="AP_3D_ClassProperties" displayLabel="AutoPLANT_PDW_Class_Map" isDomainClass="True" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="ClassNames" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="ModuleNames" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+</ECSchema>

@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+  
+    <!-- ........................................................................................................................................ -->
+    <!-- iModelBridge    The bridge DLL. -->
+    <!-- ........................................................................................................................................ -->
+
+    <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" >
+        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Libs Required="false">Delivery/$(libprefix)iModelBridge$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iModelBridge$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+  
+    <Part Name="PublicApi" BentleyBuildMakeFile="iModelBridge/prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="iModelBridge" />
+        </Bindings>
+    </Part>
+
+    <Part Name="Docs" BentleyBuildMakeFile="iModelBridge/BuildDoc.mke">
+      <SubPart PartName="iModelBridgeLibrary" />
+      <Bindings>
+        <Directory SourceName="Delivery/docs" ProductDirectoryName="iModelBridgeDoc" />
+      </Bindings>
+    </Part>
+  
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- iModelBridgeFwk - Loads and runs iModelBridges connected to iModelHub -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <Product Name="iModelBridgeFwk" SaveProduct="true">
+      <SubPart PartName="iModelBridgeFwkExe" />
+      <SubPart PartName="Docs" />
+      <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
+      <Directories DirectoryListName="iModelBridgeFwkDirList" />
+    </Product>
+
+    <ProductDirectoryList ListName="iModelBridgeFwkDirList">
+        <ProductDirectory Name="applicationroot" Path=""/>
+        <ProductDirectory Name="Assemblies"                Path="lib/x64"   RelativeTo="applicationroot"/>
+        <ProductDirectory Name="iModelBridgeDoc"           Path="docs"      RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Libs"                      Path=""          RelativeTo="Assemblies"/>
+        <ProductDirectory Name="PublicApi"                 Path="include"   RelativeTo="applicationroot"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml" Path=""          RelativeTo="Assemblies"/>
+        <ProductDirectory Name="VendorApi"                 Path="include"   RelativeTo="applicationroot"/>
+    </ProductDirectoryList>
+
+    <Part Name="iModelBridgeFwkExe" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwk.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+      <SubPart PartName="PublicAPI"/>
+      <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
+      <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <!-- NEEDS WORK - this subpart dependency is needed only because Briefcase_Initialize must call DgnClientFx::DgnClientFxL10N::Initialize and that is 
+                        because WSClient requires it. The whole dependency of WSClient on DgnClientFx must be removed. -->
+      <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+      <Bindings>
+        <Files ProductDirectoryName="Assemblies">Delivery\iModelBridgeFwk.exe</Files>
+        <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/iModelBridgeFwk/iModelBridgeFwk.logging.config.xml</Files>
+        <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery\iModelBridgeFwk_en-US.sqlang.db3</Files>
+      </Bindings>
+    </Part>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- iModelBridgeFwkICSPlugin - a product that installs a plugin into ProjectWise Orchestration Framework/Automation Services -->
+    <!-- This plugin invokes iModelBridgeFwk. The plugin is and must be a separate product WITH NO BUILD CHAIN DEPENDENCIES
+           because the plugin must be 32-bit, while iModelBridgeFwk must be 64-bit. The user installs each product separately. 
+      -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <Product Name="iModelBridgeFwkICSPlugin">
+      <SubPart PartName="iModelBridgeFwkICSPluginRequiredRepos"/>
+      <SubPart PartName="iModelBridgeFwkICSPluginDll"/>
+      <SubPart PartName="iModelBridgeFwkICSPluginConfigBootStrapperExe" />
+      <Directories DirectoryListName="iModelBridgeFwkICSPluginDirList" />
+    </Product>
+
+    <!--
+          Firebug and PRG do a single pull (as WinX64 right now), but build for multiple architectures.
+          Ensure that WinX64 pulls these required repos even though only the WinX86 will need them.
+      -->
+    <Part Name="iModelBridgeFwkICSPluginRequiredRepos" OnlyPlatforms="x64">
+      <RequiredRepository>pas81114Bin</RequiredRepository>
+      <RequiredRepository>orchfrwk81114Bin</RequiredRepository>
+    </Part>
+
+    <ProductDirectoryList ListName="iModelBridgeFwkICSPluginDirList">
+      <ProductDirectory Name="iModelBridgeFwkICSPluginBinaries" Path=""/>
+    </ProductDirectoryList>
+
+    <Part Name="iModelBridgeFwkICSPluginConfigBootStrapperExe" BMakeFile="iModelBridge/Fwk/bas/Bootstrapper/iModelBridgeFwkICSPluginConfigBootStrapper.mke" OnlyPlatforms="x86">
+      <RequiredRepository>pas81114Bin</RequiredRepository>
+      <Bindings>
+        <Assemblies ProductDirectoryName="iModelBridgeFwkICSPluginBinaries">Delivery/iModelBridgeFwkICSPluginConfigBootStrapper.exe</Assemblies>
+      </Bindings>
+    </Part>
+
+    <Part Name="iModelBridgeFwkICSPluginDll" BMakeFile="iModelBridge/Fwk/bas/iModelBridgeFwkICSPlugin.mke" OnlyPlatforms="x86">
+      <SubPart PartName="iModelBridgeFwkICSPluginRequiredRepos"/>
+      <Bindings>
+        <Assemblies ProductDirectoryName="iModelBridgeFwkICSPluginBinaries">Delivery/iModelBridgeFwkICSPlugin.dll</Assemblies>
+      </Bindings>
+    </Part>
+  
+    <!-- ******************************** Documentation ************************************** -->
+  
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
+        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
+        <SubPart PartName="iModelBridgeLibrary" />
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/iModelBridge"/>
+        </Bindings>
+    </Part>
+
+    <!-- ******************************** Unit Tests ************************************** -->
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="iModelBridge/Tests/Prewire.mke">
+        <SubPart PartName="iModelBridgeLibrary"/>
+        <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="iModelBridge" SubPartDirectory="UnitTests/iModelBridge">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="iModelBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="iModelBridge/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
+    <Product Name="iModelBridge-Tests">
+        <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
+        <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <!-- ********************** -->
+    <!-- **** Gtest **** -->
+    <!-- ********************** -->
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelBridgeTest -dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="iModelBridge-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelBridgeTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelBridgeTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelBridge-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/iModelBridge-Gtest/iModelBridgeTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="iModelBridge-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/iModelBridgeTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="iModelBridge-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelBridge-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=iModelBridge-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="iModelBridge-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/iModelBridge-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelBridge -dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="iModelBridge-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/iModelBridge/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelBridge-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=iModelBridge-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="iModelBridge-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/iModelBridge-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=iModelBridge -dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="B02"
+        >
+        <SubProduct ProductName="iModelBridge-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/iModelBridgeUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelBridge-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=iModelBridge-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubProduct ProductName="iModelBridge-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/iModelBridge-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+  <ProductDirectoryList ListName="iModelBridgeAppCommonDirList">
+    <ProductDirectory Name="applicationroot"            Path=""/>
+    <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot"/>
+    <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot" LibType="static"/>
+    <ProductDirectory Name="VendorNotices"              Path="notices" />
+    <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
+    <ProductDirectory Name="ImportConfig"               RelativeTo="applicationroot" />
+    <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+    <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
+    <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
+    <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8"/>
+
+  </ProductDirectoryList>
+
+</BuildContext>

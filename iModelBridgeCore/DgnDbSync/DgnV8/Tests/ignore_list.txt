@@ -1,0 +1,15 @@
+    #----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+# to be executed by testing team after the build, for EC Data and views verifications. 
+DataValidation_Tests.* 
+DataValidationTests.*
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+#TFS 365625: DgnDbSync DgnV8Converter does embed configuration file
+ImportConfigTests.embedConfigFile
+
+ECConversionTests.RelationshipInstance       # WIP UmarH
+

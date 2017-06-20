@@ -1,0 +1,71 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Dwg/Samples/XData/ImportXData.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName             = ImportXData
+baseDir             = $(_MakeFilePath)
+DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
+DgnDbSyncPubAPI     = $(DgnDbSyncRootDir)PublicAPI/DgnDbSync/
+DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
+DwgPublicAPI        = $(DwgRootDir)PublicAPI/
+DwgDbLibName        = $(DWGTOOLKIT)DbExchange
+DwgImporterDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
+
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(appName)/
+always:
+    ~mkdir $(o)
+
+ImportXDataDepends  = $(baseDir)ImportXData.h                   \
+                      $(DgnDbSyncPubAPI)DgnDbSync.h             \
+                      $(DgnDbSyncPubAPI)Dwg/DwgImporter.h
+
+### Pass $(DWGTOOLKIT) to compiler
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT)
+
+%if $(DWGTOOLKIT) == "RealDwg"
+    ### Need to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h; else we have link with acpal.lib!!??
+    ### Remove it when RealDWG2018 has it fixed (request has been sent to Adesk)!
+    CCompOpts + -D_ADESK_STATIC_LINKING_
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)ImportXData.obj    : $(baseDir)ImportXData.cpp $(ImportXDataDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST            = $(o)
+EXE_NAME            = $(appname)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:wmainCRTStartup
+EXE_TMP_DIR         = $(o)
+EXE_NO_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES    = $(DwgImporterDir)DwgImporter$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeJsonCpp$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)ECObjects$(libext)
+
+%include $(sharedMki)linktool.mki
+
+# Symlink source to Delivery
+always:
+    ~linkdir "$(BuildContext)Delivery/Samples/XData=$(baseDir)"
+
+%if !defined(NDEBUG)
+# Symlink the exe to RealDwgImporter for debugging purpose
+always:
+    ~linkfile "$(OutputRootDir)Product/RealDwgImporter/$(EXE_NAME)$(exeext)=$(EXE_DEST)$(EXE_NAME)$(exeext)"
+%endif

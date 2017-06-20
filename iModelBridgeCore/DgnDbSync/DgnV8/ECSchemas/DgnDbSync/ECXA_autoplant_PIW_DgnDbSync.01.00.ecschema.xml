@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="ECXA_autoplant_PIW_DgnDbSync" nameSpacePrefix="ecxadgndb" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="DgnDbSyncV8" version="01.00" prefix="syncv8" />
+    <ECClass typeName="AUTOPLANT_PIPERUN" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AUTOPLANT_HVALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AUTOPLANT_CVALVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+

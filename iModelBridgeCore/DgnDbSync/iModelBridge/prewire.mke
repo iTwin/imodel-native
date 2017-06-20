@@ -1,0 +1,15 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: iModelBridge/prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir         = $(SrcRoot)DgnDbSync/
+
+# Wire in my own public header files.
+always:
+    ~linkdir "$(BuildContext)PublicAPI/iModelBridge=$(baseDir)PublicAPI/iModelBridge"
+

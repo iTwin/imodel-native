@@ -1,0 +1,110 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelBridge/Fwk/bas/iModelBridgeFwkICSPlugin.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#OVERRIDE_DEFAULT_TOOLSET = VC9
+
+appName=DgnV8MirrorICSPlugin
+
+%include mdl.mki
+o =% $(OutputRootDir)build/$(appName)/
+
+buildDir         = $(o)
+ContextDeliveryDir = $(BuildContext)Delivery/
+ContextSubpartsAssembliesDir = $(BuildContext)SubParts/Assemblies/
+
+always:
+    !~@mkdir $(buildDir)
+
+#-----------------------------------------------------------------------
+#   MyDocProcessorExt assembly
+#-----------------------------------------------------------------------
+
+ASSEMBLY_NAME       = $(appName)
+
+baseDir             = $(_MakeFilePath)
+
+ASSEMBLY_TARGET_DIRECTORY    = $(buildDir)
+%mkdir $(ASSEMBLY_TARGET_DIRECTORY)
+
+#----------------------------------------------------------------------
+#  allow shared assemblies to be located 
+#----------------------------------------------------------------------
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\pas81114\Pas\WinX86\Delivery\Bentley.AutomationServices.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\pas81114\Pas\WinX86\Delivery\Bentley.Applications.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\orchfrwk81114\OrchestrationFramework\WinX86\Delivery\Bentley.Orchestration.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\orchfrwk81114\OrchestrationFramework\WinX86\Delivery\Bentley.MSProcessor.dll
+%include csrefapnd.mki
+
+#-----------------------------------------------------------------------
+# Create the main resource to be embeded in the main assembly
+#-----------------------------------------------------------------------
+ASSEMBLY_DEFAULT_NAMESPACE = BentleyB0200.Dgn.DgnV8Mirror.ICS
+
+ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)Resource1.resx
+ASSEMBLY_RES_TO_ADD = Resource1
+%include assemblyResxAppend.mki
+
+ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)DgnV8MirrorICSPluginControls.resx
+ASSEMBLY_RES_TO_ADD = PluginDialog
+%include assemblyResxAppend.mki
+
+#-----------------------------------------------------------------------
+# Add config file to assembly
+#-----------------------------------------------------------------------
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)
+
+ASSEMBLY_RES_TO_ADD_FILENAME = $(appName).dll.config
+%include assemblyResourceAppend.mki
+
+
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+%include $(SharedMki)stdversion.mki
+
+ASSEMBLY_DLL = 1
+ASSEMBLY_NAME                   = $(appName)
+ASSEMBLY_TITLE                  = $(appName)
+ASSEMBLY_DESCRIPTION            = DgnV8 to iModelHub Plugin
+ASSEMBLY_STRONGNAME             = 1
+ASSEMBLY_VERSION                = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+ASSEMBLY_FILE_VERSION           = $(ASSEMBLY_VERSION)
+ASSEMBLY_PRODUCT_NAME           = $(productName)
+ASSEMBLY_COMPANY_NAME           = $(companyName)
+ASSEMBLY_COPYRIGHT              = $(Bentley_Copyright)
+RIGHTSCOMPLIANT                 = false
+
+%include $(SharedMki)isRightsCompliant.mki
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+
+ASSEMBLY_KEYFILE                =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE            =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+ASSEMBLY_SOURCE_LIST = $(baseDir)Configurator.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)DelegateProcessorExtension.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)DgnV8MirrorICSPluginConfigData.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)DgnV8MirrorICSPluginConstants.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)DgnV8MirrorICSPluginControls.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)DgnV8MirrorICSPluginControls.Designer.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)DgnV8MirrorICSPluginLoader.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)JobCompleteExtension.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)JobDefinitionExtension.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)SmartDispatcherExtension.cs
+ASSEMBLY_SOURCE_LIST + $(baseDir)Util.cs
+
+%include mkcsharp.mki
+
+$(ContextDeliveryDir)iModelBridgeFwkICSPlugin.dll  :   "$(buildDir)$(appName).dll"
+    $(LinkFirstDepToFirstTarget)

@@ -1,0 +1,359 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema  xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xi="http://www.w3.org/2001/XInclude" >
+    <xs:element name="ImportConfig">
+        <xs:annotation>
+            <xs:documentation>
+                <!--Holds information that configures the import process.-->
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="Levels" minOccurs="1" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Options for importing levels.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="copy" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Set to 'Never' if the converter should never make model-specific copies of any levels. This is the default. This is the best option to use if all level definitions are consistent across reference files.
+                                    Set to 'Always' if the converter should always make model-specific copies of any levels. This option may result in a large number of subcategories and subcategory overrides. This is the best option to use if you want to replicate MicroStation's approach of defining levels differently in each reference file and controlling level visibility on a per-model basis.
+                                    Set to 'IfDifferent' if the converter should make model-specific copies of levels that differ from the definition found in the root file either in symbology or visibility. This option may resuult in a large number of subcategories and subcategory overrides, but fewer than the 'Always' option. This is the best option to use if you care most about visual fidelity.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:token">
+                                    <xs:enumeration value="Never"/>
+                                    <xs:enumeration value="Always"/>
+                                    <xs:enumeration value="IfDifferent"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Models" minOccurs="1" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Options for importing models.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="ImportRules" minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Rules that control how models are renamed when merged from a input file into the DgnDb project.
+                                        Rules are checked in the order given, and the first matching rule is applied.
+                                        Therefore more specific rules should come before more general rules in the list.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="If" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Specifies properties to match.
+                                                    A rule is applied to a given model if all of the properties specified match the corresponding properties of the model.
+                                                    A rule that specifies no properties matches all models.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:all>
+                                                    <xs:element name="Then" minOccurs="1" maxOccurs="1">
+                                                        <xs:annotation>
+                                                            <xs:documentation>
+                                                                Specifies what the importer should do when the rule is applied to a model.
+                                                            </xs:documentation>
+                                                        </xs:annotation>
+                                                        <xs:complexType>
+                                                            <xs:attribute name="newName" type="xs:string" use="required">
+                                                                <xs:annotation>
+                                                                    <xs:documentation>New name for the model. If the value includes %file, it is replaced with the request the name of the input file.</xs:documentation>
+                                                                </xs:annotation>
+                                                            </xs:attribute>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:all>
+                                                <xs:attribute name="file" type="xs:string" use="optional">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Matches models from a specified input file. Do not include drive, directory, or file extension. May contain wildcards.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="not_file" type="xs:string" use="optional">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Matches models that are not from a specified input file. Do not include drive, directory, or file extension. May contain wildcards.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="name" type="xs:string" use="optional">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Matches models with the specified name. May contain wildcards.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="not_name" type="xs:string" use="optional">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Matches models that do not have the specified name. May contain wildcards.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="References" minOccurs="1" maxOccurs="1" >
+                    <xs:annotation>
+                        <xs:documentation>Controls how DgnV8 reference attachments are merged into the database.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="newLevelDisplay" type="xs:boolean" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    When set to true, display newly created levels in references. By default, when new levels are created in a model that is referenced by another model, the new levels are not displayed when the referencing model is opened. Newly created levels are considered to be new until 'Save settings' is performed in the parent file.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="mergeIntoParent" type="xs:boolean" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    If true, all reference attachments are merged into their parent models.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                      <xs:attribute name="cloneDuplicates" type="xs:boolean" use="optional">
+                        <xs:annotation>
+                          <xs:documentation>
+                            If true, duplicate reference attachments of the same model are cloned. Otherwise, only the first is saved.
+                          </xs:documentation>
+                        </xs:annotation>
+                      </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Fonts" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Controls how fonts are imported.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Font" minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>Fonts are identified by their type and name. Last-in wins. Wildcards are used as defaults, which are always overridden by explicitly named fonts.</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="EmbedAction" minOccurs="0" maxOccurs="1">
+                                            <xs:annotation>
+                                                <xs:documentation>By default, all used fonts are imported and embedded. Use this element to override the embedding of the font.</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:string">
+                                                    <xs:enumeration value="IfUsed">
+                                                        <xs:annotation>
+                                                            <xs:documentation>This is the default. If this font is used in the file, the converter will attempt to find it and embed it.</xs:documentation>
+                                                        </xs:annotation>
+                                                    </xs:enumeration>
+                                                    <xs:enumeration value="Always">
+                                                        <xs:annotation>
+                                                            <xs:documentation>Always attempt to find this font on the system and embed it, regardless of whether it was used in the file.</xs:documentation>
+                                                        </xs:annotation>
+                                                    </xs:enumeration>
+                                                    <xs:enumeration value="Never">
+                                                        <xs:annotation>
+                                                            <xs:documentation>Never attempt to find this font and embed it, regardless of whether it was used in the file.</xs:documentation>
+                                                        </xs:annotation>
+                                                    </xs:enumeration>
+                                                </xs:restriction>
+                                            </xs:simpleType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="type" use="required">
+                                        <xs:simpleType>
+                                            <xs:restriction base="xs:string">
+                                                <xs:enumeration value="*"/>
+                                                <xs:enumeration value="RSC"/>
+                                                <xs:enumeration value="SHX"/>
+                                                <xs:enumeration value="TrueType"/>
+                                            </xs:restriction>
+                                        </xs:simpleType>
+                                    </xs:attribute>
+                                    <xs:attribute name="name" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="searchPaths" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>A semi-colon delimited list of paths to search for fonts found in DgnV8 files. The special token $(AppRoot) can be used to reference the path of the converter executable.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Raster" minOccurs="1" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Controls how DgnV8 raster attachments are merged into the database.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="importAttachments" type="xs:boolean" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    This controls whether raster attachment is imported.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="exportNonPortableFormats" type="xs:boolean" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    If true, the rasters not portable to all platforms (e.g. jpg2000, MrSid, ...) are exported as itiff; otherwise, the original format is kept.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="PointCloud" minOccurs="1" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Controls how DgnV8 point cloud attachments are merged into the database.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="importAttachments" type="xs:boolean" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    This controls whether point cloud attachment is imported.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Thumbnails" minOccurs="1" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This configuration information informs the code that generates thumbnail images from views during DgnDb import. Unlike most DgnDb import logic, the thumbnail logic is in DgnView.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="viewTypes">
+                            <xs:simpleType>
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        This is a space separated list of the view types that the importer should render into thumbnail images and include in the properties table as blobs.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:list>
+                                    <xs:simpleType>
+                                        <xs:restriction base="xs:token">
+                                            <xs:enumeration value="None"/>
+                                            <xs:enumeration value="Physical">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        View of a physical, 3d project model
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:enumeration>
+                                            <xs:enumeration value="Drawing">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        View of a drawing, 2d project model
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:enumeration>
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:list>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="pixelResolution">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    This controls pixel resolution of any thumbnails generated by DgnViewTable::RenderAndSaveThumbnail() method at DgnDb import time. Note that this controls both the x and y resolution (the images are always square).
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:positiveInteger">
+                                    <xs:minInclusive value="64" />
+                                    <xs:maxInclusive value="1600" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="renderModeOverride">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Provide this element to override the render mode that is naturally defined within the view defintion.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:token">
+                                    <xs:enumeration value="None"/>
+                                    <xs:enumeration value="WIREFRAME"/>
+                                    <xs:enumeration value="CROSSSECTION"/>
+                                    <xs:enumeration value="WIREMESH"/>
+                                    <xs:enumeration value="HIDDENLINE"/>
+                                    <xs:enumeration value="SOLIDFILL"/>
+                                    <xs:enumeration value="CONSTANTSHADE"/>
+                                    <xs:enumeration value="SMOOTHSHADE"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+
+                <xs:element name="Options" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element ref="ZAbstractOptionBase" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                    <xs:unique name="OptionsCannotShareNames">
+                        <xs:selector xpath="*"/>
+                        <xs:field xpath="@name"/>
+                    </xs:unique>
+                </xs:element>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="ZAbstractOptionBaseCT">
+        <xs:attribute name="name" type="xs:Name" use="required"/>
+    </xs:complexType>
+    <!-- ======================================================================================= -->
+    <xs:element name="ZAbstractOptionBase" type="ZAbstractOptionBaseCT" abstract="true"/>
+    <!-- ======================================================================================= -->
+    <xs:element name="OptionString" substitutionGroup="ZAbstractOptionBase">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="ZAbstractOptionBaseCT">
+                    <xs:attribute name="value" type="xs:string" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="OptionBool" substitutionGroup="ZAbstractOptionBase">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="ZAbstractOptionBaseCT">
+                    <xs:attribute name="value" type="xs:boolean" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="OptionDouble" substitutionGroup="ZAbstractOptionBase">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="ZAbstractOptionBaseCT">
+                    <xs:attribute name="value" type="xs:double" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="OptionInt64" substitutionGroup="ZAbstractOptionBase">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="ZAbstractOptionBaseCT">
+                    <xs:attribute name="value" type="xs:long" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

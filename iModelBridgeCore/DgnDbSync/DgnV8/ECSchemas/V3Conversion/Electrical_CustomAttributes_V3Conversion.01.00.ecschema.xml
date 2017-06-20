@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Electrical_CustomAttributes_V3Conversion" nameSpacePrefix="elecv3" version="1.0" description="Bentley Electrical Schema RCM" displayLabel="Bentley Electrical Schema RCM" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="MAPPING" displayLabel="Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+

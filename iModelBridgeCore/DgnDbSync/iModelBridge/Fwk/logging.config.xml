@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <!--
+       ALWAYS write logging messages to a file.
+       DO NOT CHANGE THE NAME OF THIS FILE unless you also change DgnV8MirrorICSPlugin.
+    -->
+    <appender name="RollingFileAppender" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\iModelBridge.log"/> <!-- Required -->
+        <param name="MaxFileSize" value="1000000" /> <!-- Required -->
+        <param name="MaxBackupIndex" value="5"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %c - %m%n"/>
+        </layout>
+        <param name="Append" value="true"/>
+    </appender>
+
+    <root>                            
+        <priority value="fatal" />
+        <appender-ref ref="RollingFileAppender" />
+    </root>
+
+    <category name="BeSQLite">
+        <priority value="error"/>
+    </category>
+    <category name="iModelBridge">
+        <priority value="info"/>
+    </category>
+    <category name="DgnV8Converter">
+        <priority value="info"/>
+    </category>
+    <category name="DgnDbServer">
+        <priority value="info"/>
+    </category>
+    <category name="DgnV8Converter.Performance">
+        <priority value="fatal"/>
+    </category>
+    <category name="RenderThread">
+        <priority value="error"/>
+    </category>
+
+</log4j:configuration>

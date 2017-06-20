@@ -1,0 +1,63 @@
+#----------------------------------------------------------------------
+#
+#     $Source: iModelBridge/Fwk/iModelBridgeFwk.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName     = iModelBridgeFwk
+baseDir     = $(_MakeFilePath)
+
+o = $(OutputRootDir)Build/$(appName)/
+always:
+    ~mkdir $(o)
+
+iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+DLM_NAME        =% $(appName)
+CCompPDBName    =% $(appName)
+
+$(o)iModelBridgeFwk.obj: $(baseDir)iModelBridgeFwk.cpp $(baseDir)iModelBridgeFwk.h
+
+$(o)Briefcase.obj: $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(baseDir)iModelBridgeFwk.h $(baseDir)DgnDbServerClientUtils.h
+
+$(o)DgnDbServerClientUtils.obj: $(baseDir)DgnDbServerClientUtils.cpp $(BuildContext)PublicApi/WebServices/iModelHub/Client/ClientHelper.h $(baseDir)DgnDbServerClientUtils.h $(DgnDbServerDepends)
+
+objs = $(o)iModelBridgeFwk.obj $(o)Briefcase.obj $(o)DgnDbServerClientUtils.obj
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(objs)
+EXE_LOPT1    = -entry:wmainCRTStartup
+EXE_TMP_DIR  = $(o)
+
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeHttp.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIeS  + $(ContextSubpartsLibs)iModelHubClient.lib
+LINKER_LIBRARIeS  + $(ContextSubpartsLibs)iModelBridge.lib
+LINKER_LIBRARIeS  + $(ContextSubpartsLibs)WebServicesClient.lib
+LINKER_LIBRARIeS  + $(ContextSubpartsLibs)DgnClientFx.lib
+LINKER_LIBRARIeS  + $(ContextSubpartsLibs)BeJsonCpp.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
+SQLANG_OutputDb     = $(o)iModelBridgeFwk_en-US.sqlang.db3
+SQLANG_DeliveryDir  = $(BuildContext)Delivery/
+SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
+%include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke

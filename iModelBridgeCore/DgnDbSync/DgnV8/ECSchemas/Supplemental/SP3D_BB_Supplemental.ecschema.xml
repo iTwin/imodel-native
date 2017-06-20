@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SP3D_BB_Supplemental_DgnDbConversion" nameSpacePrefix="sp3dBBdgndb" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.11" prefix="bsca" />
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.11">
+            <PrimarySchemaName>SP3D_BB</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>2</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>1</PrimarySchemaMinorVersion>
+            <Precedence>998</Precedence>
+            <Purpose>Fix relationship cardinalities </Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+    <ECRelationshipClass typeName="AssemblyHierarchy" displayLabel="Assembly Hierarchy" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CablePath" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CablePathGenPart" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ContainsNote" displayLabel="Object to Note" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CoordinateSystemToAxis" displayLabel="CoordinateSystem To Axis" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,3)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DistribPorts" displayLabel="Object to Distribution Port" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FlowPorts" displayLabel="Object to Distribution Connection" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FromCustomToDesignChildRln" displayLabel="Custom To Design Child" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GeneratesConnectionItems" displayLabel="Connection to Connection Items" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="HasControlPoints" displayLabel="Object to Control points" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="HasEqpAsChild" displayLabel="System to Equipment" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="HasEqpComponents" displayLabel="Equipment to EquipmentComponent" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="HasImpliedParts" displayLabel="Master Part to Implied Parts" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="HasShapes" displayLabel="Equipment to Shape" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="HasSolids" displayLabel="Parent to Solid" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="LayerComposition" displayLabel="Slab to Slab Layer" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="OffLineFeatures" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="OwnsDistributionConnection" displayLabel="Run to Connection" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="OwnsImpliedItems" displayLabel="Part to Connection Item" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="OwnsLogicalConnection" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="OwnsParts" displayLabel="Run to Part" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PartOccToMaterialControlData" displayLabel="Occurence To Material Control Data" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PathRunUsesSpec" displayLabel="PathRun To Spec" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PathSpecification" displayLabel="Run to Feature" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PlaneRotation" displayLabel="Plane Rotation" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RunSupport" displayLabel="Run Support" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SPSDefinitionCrossSectionRln" displayLabel="Cross Section Definition To Part Generator" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SPSFrameConnectionDesignParentRln" displayLabel="Member System to Frame Connection" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,2)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,2)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SPSMemberDesignParentRln" displayLabel="System to Member Part" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SPSMemberSystemSysParentRln" displayLabel="System To Member System" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SPSPartFeatureRln" displayLabel="Part To Feature" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SlabCompositionTypeReferenceRln" displayLabel="Slab to Composition Part" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SlabEntityTypeReferenceRln" displayLabel="Slab to Type Part" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SlabLayerTypeReferenceRln" displayLabel="Slab Layer to Type Part" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SymbolPortHasConnection_Driven" displayLabel="Symbol Port Has Connection Driven" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SpaceHierarchy" displayLabel="Space Hierarchy" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="StructCompositionToCatalog" displayLabel="Struct Composition To Catalog" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SystemHierarchy" displayLabel="System Hierarchy" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SystemTree" displayLabel="System to Part" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ToBeConnected" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TrunkFeatEntryExit" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="WallTypeToPartType" displayLabel="Wall Type To Part Type" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(1,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="XAxisCS" displayLabel="X Plane To Coordinate System" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="YAxisCS" displayLabel="Y Plane To Coordinate System" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ZAxisCS" displayLabel="Z Plane To Coordianate System" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+
+</ECSchema>
+

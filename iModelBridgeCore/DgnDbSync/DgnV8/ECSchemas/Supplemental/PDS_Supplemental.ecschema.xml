@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="PDS_Supplemental_DgnDbConversion" nameSpacePrefix="sappdw" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.11" prefix="bsca" />
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.11">
+            <PrimarySchemaName>PDS</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>1</PrimarySchemaMinorVersion>
+            <Precedence>998</Precedence>
+            <Purpose>DgnDbSync hints for the PDS schema. </Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+    <ECRelationshipClass typeName="SEGMENT_HAS_COMPONENT" displayLabel="Segment Has Component" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
+

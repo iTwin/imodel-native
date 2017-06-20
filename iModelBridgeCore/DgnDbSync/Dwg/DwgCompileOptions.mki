@@ -1,0 +1,65 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Dwg/DwgCompileOptions.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
+
+DgnDbSyncPubApi     = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/
+DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+    ToolkitRoot     = $(BuildContext)VendorAPI/Teigha/
+    ToolkitCoreInc  = $(ToolkitRoot)Core/Include/
+    ToolkitSub1Inc  = $(ToolkitRoot)Architecture/
+    ToolkitSub2Inc  = $(ToolkitRoot)Core/Extensions/ExServices/
+    ToolkitLibs     = $(BuildContext)SubParts/teigha/Libs/
+
+    %if $(TARGET_PLATFORM)=="Windows"
+    ToolkitSub3Inc  = $(ToolkitRoot)Core/Extensions/win/Crypt/
+    CCompOpts       + -D_TOOLKIT_IN_DLL_
+    %endif
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+
+    ToolkitRoot     = $(BuildContext)VendorAPI/Realdwg/
+    ToolkitLibs     = $(BuildContext)SubParts/RealDwg/Libs/
+
+    ### a hack to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h!  Remove it when RealDWG2018 has it fixed!
+    CCompOpts       + -D_ADESK_STATIC_LINKING_
+
+%else
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+%endif
+
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT)
+
+%if defined(DEBUG) && !defined(NDEBUG)
+    CCompOpts + -DDEBUG
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Include search path
+#----------------------------------------------------------------------------------------
+###  Need to build source from \Core\Extensions\ExServices\
+%if defined(ToolkitCoreInc)
+    cIncs + -I$(ToolkitCoreInc)
+%endif
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+%if defined(DEBUG) && !defined(NDEBUG)
+always:
+        |  -------- -------- --------- -------- -------- ---------
+        |  Compiler options: $(cDefs) $(CCompOpts) $(cIncs)
+        |  -------- -------- --------- -------- -------- ---------
+%endif
+
+
+

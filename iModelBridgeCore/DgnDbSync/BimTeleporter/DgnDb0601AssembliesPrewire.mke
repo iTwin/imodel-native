@@ -1,0 +1,129 @@
+#----------------------------------------------------------------------
+#
+#     $Source: BimTeleporter/DgnDb0601AssembliesPrewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+PolicyFile=$(SrcRoot)bsicommon/sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+%include LocateDgnDbPlatform.mki
+
+# See $(DGNDB_VER) for the version suffix
+
+.dll.dll : 
+    $(LinkFirstDepToFirstTarget)
+
+.lib.lib :
+    $(LinkFirstDepToFirstTarget)
+
+Delivery=$(BuildContext)Delivery/
+DeliveryDgnDbPlatformAssets=$(Delivery)DgnDbPlatformAssets/
+DeliveryDgnDbPlatformLibs=$(Delivery)DgnDbLibs/
+SourceAssets = $(DgnDbDgnPlatformBase)assets/
+
+DgnDbDlls = $(DgndbDgnPlatformLibDir)
+%warn DgnDbDlls=$(DgnDbDlls)
+
+%if !defined (ApiNumber)
+    ApiNumber = G06
+%endif
+
+$(Delivery)Bentley$(ApiNumber).dll : $(DgnDbDlls)Bentley$(ApiNumber).dll
+
+$(Delivery)BeIcu4c$(ApiNumber).dll : $(DgnDbDlls)BeIcu4c$(ApiNumber).dll
+
+$(Delivery)BeXml$(ApiNumber).dll : $(DgnDbDlls)BeXml$(ApiNumber).dll
+
+$(Delivery)BeLibXml2$(ApiNumber).dll : $(DgnDbDlls)BeLibXml2$(ApiNumber).dll
+
+$(Delivery)BeSQLite$(ApiNumber).dll : $(DgnDbDlls)BeSQLite$(ApiNumber).dll
+
+$(Delivery)BeSQLiteEC$(ApiNumber).dll : $(DgnDbDlls)BeSQLiteEC$(ApiNumber).dll
+
+$(Delivery)ECObjects$(ApiNumber).dll : $(DgnDbDlls)ECObjects$(ApiNumber).dll
+
+$(Delivery)BentleyGeom$(ApiNumber).dll : $(DgnDbDlls)BentleyGeom$(ApiNumber).dll
+
+$(Delivery)DgnPlatform$(ApiNumber).dll : $(DgnDbDlls)DgnPlatform$(ApiNumber).dll
+
+$(Delivery)BentleyGeomSerialization$(ApiNumber).dll : $(DgnDbDlls)BentleyGeomSerialization$(ApiNumber).dll
+
+$(Delivery)BaseGeoCoord$(ApiNumber).dll : $(DgnDbDlls)BaseGeoCoord$(ApiNumber).dll
+
+$(Delivery)BeCurl$(ApiNumber).dll : $(DgnDbDlls)BeCurl$(ApiNumber).dll
+
+$(Delivery)freetype2$(ApiNumber).dll : $(DgnDbDlls)freetype2$(ApiNumber).dll
+
+$(Delivery)BeOpenSSL$(ApiNumber).dll : $(DgnDbDlls)BeOpenSSL$(ApiNumber).dll
+
+$(Delivery)DgnView$(ApiNumber).dll : $(DgnDbDlls)DgnView$(ApiNumber).dll
+
+#$(Delivery)libv8.dll : $(DgnDbDlls)libv8.dll
+
+$(Delivery)qvision$(ApiNumber).dll : $(DgnDbDlls)qvision$(ApiNumber).dll
+
+$(Delivery)System.Json.dll : $(DgnDbDlls)System.Json.dll
+
+$(Delivery)BeHttp$(ApiNumber).dll : $(DgnDbDlls)BeHttp$(ApiNumber).dll
+
+$(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll
+
+$(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumber).dll
+
+$(Delivery)BeSecurity$(ApiNumber).dll : $(DgnDbDlls)BeSecurity$(ApiNumber).dll
+
+$(Delivery)Units$(ApiNumber).dll : $(DgnDbDlls)Units$(ApiNumber).dll
+
+
+always:
+   !~@mkdir ${DeliveryDgnDbPlatformLibs}
+
+$(DeliveryDgnDbPlatformLibs)Bentley.lib : $(DgnDbDlls)Bentley.lib
+
+$(DeliveryDgnDbPlatformLibs)BeSQLite.lib : $(DgnDbDlls)BeSQLite.lib
+
+$(DeliveryDgnDbPlatformLibs)BeSQLiteEC.lib : $(DgnDbDlls)BeSQLiteEC.lib
+
+$(DeliveryDgnDbPlatformLibs)ECObjects.lib : $(DgnDbDlls)ECObjects.lib
+
+$(DeliveryDgnDbPlatformLibs)BentleyGeom.lib : $(DgnDbDlls)BentleyGeom.lib
+
+$(DeliveryDgnDbPlatformLibs)BentleyGeomSerialization.lib : $(DgnDbDlls)BentleyGeomSerialization.lib
+
+$(DeliveryDgnDbPlatformLibs)DgnPlatform.lib : $(DgnDbDlls)DgnPlatform.lib
+
+$(DeliveryDgnDbPlatformLibs)BaseGeoCoord.lib : $(DgnDbDlls)BaseGeoCoord.lib
+
+$(DeliveryDgnDbPlatformLibs)BeXml.lib : $(DgnDbDlls)BeXml.lib
+
+$(DeliveryDgnDbPlatformLibs)BeLibXml2.lib : $(DgnDbDlls)BeLibXml2.lib
+
+$(DeliveryDgnDbPlatformLibs)BeHttp.lib : $(DgnDbDlls)BeHttp.lib
+
+$(DeliveryDgnDbPlatformLibs)BeJsonCpp.lib : $(DgnDbDlls)BeJsonCpp.lib
+
+
+always:
+   !~@mkdir ${DeliveryDgnDbPlatformAssets}
+   CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)ECSchemas=$(SourceAssets)ECSchemas"
+   CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)sqlang=$(SourceAssets)sqlang"
+   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)icudt55l.dat=$(SourceAssets)icudt55l.dat"
+   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)lastresortfonts=$(SourceAssets)lastresortfonts"
+   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformLibs)BeJsonCpp.pdb=$(DgnDbDlls)BeJsonCpp.pdb"
+
+DGNDB_VERSIONEDAPI_INPUTDIR = $(DgndbDgnPlatformIncludeDir)
+DGNDB_VERSIONEDAPI_OUTPUTDIR = $(OutputRootDir)build/SdkDistribution/
+
+%warn including $(DGNDB_VERSIONEDAPI_INPUTDIR)
+always:
+    ~mkdir $(DGNDB_VERSIONEDAPI_INPUTDIR)
+    ~mkdir $(DGNDB_VERSIONEDAPI_OUTPUTDIR)
+
+%include MakeDgnDbVersionedApi.mki
+
+# MakeDgnDbVersionedApi.mki sets DGNDB_VERSIONEDAPI_INCLUDE_ROOT
+
+always:
+   @CreateSymLinks.py -d"$(BuildContext)VendorAPI/$(DGNDB_VERSIONEDAPI_INCLUDE_ROOT)=${DGNDB_VERSIONEDAPI_OUTPUTDIR}/$(DGNDB_VERSIONEDAPI_INCLUDE_ROOT)"

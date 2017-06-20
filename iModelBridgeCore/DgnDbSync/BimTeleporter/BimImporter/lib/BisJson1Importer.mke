@@ -1,0 +1,63 @@
+#----------------------------------------------------------------------
+#
+#     $Source: BimTeleporter/BimImporter/lib/BisJson1Importer.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+cdefs + -D__BIM_TELEPORTER_BUILD__
+%include mdl.mki
+
+appName     = BisJson1Importer
+baseDir     = $(_MakeFilePath)
+
+o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
+always:
+    ~mkdir $(o)
+
+PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimTeleporter/
+
+HeaderFiles = $(PublicApi)BimTeleporter.h $(PublicApi)BisJson1Importer.h
+
+$(o)BisJson1Importer.obj: $(baseDir)BisJson1Importer.cpp $(HeaderFiles) $(baseDir)BisJson1ImporterImpl.h
+
+$(o)BisJson1ImporterImpl.obj: $(baseDir)BisJson1ImporterImpl.cpp $(HeaderFiles) $(baseDir)SyncInfo.h $(baseDir)BisJson1ImporterImpl.h
+
+$(o)SyncInfo.obj: $(baseDir)SyncInfo.cpp $(HeaderFiles) $(baseDir)SyncInfo.h
+
+$(o)Readers.obj: $(baseDir)Readers.cpp $(HeaderFiles) $(baseDir)Readers.h
+
+
+#----------------------------------------------------------------------
+#   Link the library
+#----------------------------------------------------------------------
+
+DgnDbLibs=$(BuildContext)SubParts/DgnDbLibs/
+
+DLM_NAME            = $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(o)BisJson1Importer.obj $(o)BisJson1ImporterImpl.obj $(o)SyncInfo.obj $(o)Readers.obj
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLiteEC.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
+LINKER_LIBRARIES  + user32.lib
+
+%include $(sharedMki)LinkLibrary.mki
+
+# -- Localize -------------------------------------------------------------------------------------
+SQLANG_OutputDb         = $(o)$(appName)_en-US.sqlang.db3
+SQLANG_DeliveryDir      = $(BuildContext)Delivery/
+SQLANG_XliffWildcard    = $(BuildContext)SubParts/xliffs/*.xliff
+
+%include $(SrcRoot)bsicommon/sqlang/mki/XliffsToDb.mke
+

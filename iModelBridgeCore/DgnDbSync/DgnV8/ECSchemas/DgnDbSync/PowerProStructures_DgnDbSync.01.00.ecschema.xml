@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="PowerProStructures_DgnDbSync" nameSpacePrefix="psdgndb" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="DgnDbSyncV8" version="01.00" prefix="syncv8" />
+    <ECRelationshipClass typeName="RebarSetToRebar" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>
+

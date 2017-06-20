@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FontConfig>
+    <Languages>
+        <!--
+        <LangInfo> nodes specify default settings for individual locales.
+            <Language>              (Required) String identifying the locale that the node defines. This corresponds to the value of MS_RTCONFIG, or the primary locale name of your active code page.
+                                    Must be one of English|Japanese|SimpChinese|Korean|TradChinese|Vietnamese|Arabic|Hebrew|Thai
+            <DefaultRscFont>        (Required) Name of the default RSC font. This is used as the fallback font (in case of missing fonts), as well as in some APIs.
+                                    This can be a comma-separated list. As the list is processed, the first font that can be resolved is used (i.e. others are ignored).
+            <DefaultTTFont>         (Required) Name of the default TrueType font. This is used as the fallback font (in case of missing fonts), as well as in some APIs.
+                                    This can be a comma-separated list. As the list is processed, the first font that can be resolved is used (i.e. others are ignored).
+            <DefaultShxFont>        (Required) Name of the default SHX font. This is used as the fallback font (in case of missing fonts), as well as in some APIs.
+                                    This can be a comma-separated list. As the list is processed, the first font that can be resolved is used (i.e. others are ignored).
+            <DefaultShxBigFont>     (Required) Name of the default SHX big font. This is used as the fallback font (in case of missing fonts), as well as in some APIs.
+                                    This can be a comma-separated list. As the list is processed, the first font that can be resolved is used (i.e. others are ignored).
+            <EnableFontLinking>     (Optional; default=False) Indicates whether font linking is used to allow Windows to substitute fonts on a character-by-character basis for missing glyphs. This affects performance, and should only be enabled when you must use fonts that don't contain characters in your locale.
+                                    Must be one of True|False
+            <DisableGlyphShaping>   (Optional; default=False) Allows you to prevent glyph shaping. Note that disabling shaping can prevent some scripts from displaying correctly (notably Arabic and Hebrew). However, shaping can also adversely affect glyph substitution in some languages causung missing glyphs (notably Chinese, Japanese, and Korean). Disabling shaping may also improve performance.
+                                    Must be one of True|False
+        -->
+
+        <LangInfo>
+            <Language>English</Language>
+            <DefaultRscFont>Standard</DefaultRscFont>
+            <DefaultTTFont>Arial</DefaultTTFont>
+            <DefaultShxFont>simplex,msdefault</DefaultShxFont>
+            <DefaultShxBigFont>bigfont,kanjibig</DefaultShxBigFont>
+            
+            <!-- Purely a performance consideration. -->
+            <DisableGlyphShaping>True</DisableGlyphShaping>
+        </LangInfo>
+
+        <LangInfo>
+            <Language>Japanese</Language>
+            <DefaultRscFont>Kanji</DefaultRscFont>
+            <DefaultTTFont>MS Gothic</DefaultTTFont>
+            <DefaultShxFont>kanji</DefaultShxFont>
+            <DefaultShxBigFont>bigfont,kanjibig</DefaultShxBigFont>
+            <EnableFontLinking>True</EnableFontLinking>
+
+            <!-- Mitigates glyph substitution issues. -->
+            <DisableGlyphShaping>True</DisableGlyphShaping>
+        </LangInfo>
+
+        <LangInfo>
+            <Language>SimpChinese</Language>
+            <DefaultRscFont>Standard</DefaultRscFont>
+            <DefaultTTFont>SimSun</DefaultTTFont>
+            <DefaultShxFont>simplex,msdefault</DefaultShxFont>
+            <DefaultShxBigFont>gbcbig</DefaultShxBigFont>
+            <EnableFontLinking>True</EnableFontLinking>
+
+            <!-- Mitigates glyph substitution issues. -->
+            <DisableGlyphShaping>True</DisableGlyphShaping>
+        </LangInfo>
+
+        <LangInfo>
+            <Language>TradChinese</Language>
+            <DefaultRscFont>chinese_traditional</DefaultRscFont>
+            <DefaultTTFont>MingLiU</DefaultTTFont>
+            <DefaultShxFont>tradch</DefaultShxFont>
+            <DefaultShxBigFont>chineset</DefaultShxBigFont>
+            <EnableFontLinking>True</EnableFontLinking>
+
+            <!-- Mitigates glyph substitution issues. -->
+            <DisableGlyphShaping>True</DisableGlyphShaping>
+        </LangInfo>
+
+        <LangInfo>
+            <Language>Korean</Language>
+            <DefaultRscFont>Gothic_single</DefaultRscFont>
+            <DefaultTTFont>GulimChe</DefaultTTFont>
+            <DefaultShxFont>kor</DefaultShxFont>
+            <DefaultShxBigFont>whgtxt,korbig</DefaultShxBigFont>
+            <EnableFontLinking>True</EnableFontLinking>
+
+            <!-- Mitigates glyph substitution issues. -->
+            <DisableGlyphShaping>True</DisableGlyphShaping>
+        </LangInfo>
+
+        <LangInfo>
+            <Language>Arabic</Language>
+            <DefaultRscFont>Standard</DefaultRscFont>
+            <DefaultTTFont>Arial</DefaultTTFont>
+            <DefaultShxFont>simplex,msdefault</DefaultShxFont>
+            <DefaultShxBigFont>bigfont,kanjibig</DefaultShxBigFont>
+        </LangInfo>
+
+        <LangInfo>
+            <Language>Hebrew</Language>
+            <DefaultRscFont>Standard</DefaultRscFont>
+            <DefaultTTFont>Arial</DefaultTTFont>
+            <DefaultShxFont>simplex,msdefault</DefaultShxFont>
+            <DefaultShxBigFont>bigfont,kanjibig</DefaultShxBigFont>
+        </LangInfo>
+
+        <LangInfo>
+            <Language>Thai</Language>
+            <DefaultRscFont>Standard</DefaultRscFont>
+            <DefaultTTFont>Arial</DefaultTTFont>
+            <DefaultShxFont>simplex,msdefault</DefaultShxFont>
+            <DefaultShxBigFont>bigfont,kanjibig</DefaultShxBigFont>
+        </LangInfo>
+
+        <LangInfo>
+            <Language>Vietnamese</Language>
+            <DefaultRscFont>Standard</DefaultRscFont>
+            <DefaultTTFont>Arial</DefaultTTFont>
+            <DefaultShxFont>simplex,msdefault</DefaultShxFont>
+            <DefaultShxBigFont>bigfont,kanjibig</DefaultShxBigFont>
+        </LangInfo>
+
+    </Languages>
+
+    <Fonts>
+        <!--
+        <RscFontInfo> nodes specify settings for individual RSC fonts. This is metadata that is required for correct character mapping and operation, but is not available in the RSC font definition.
+            <Name>              (Required) Comma-separate list of fonts names to which this node corresponds to.
+            <CodePage>          (Required) The code page associated with these fonts. See http://msdn.microsoft.com/en-us/goglobal/bb964654.aspx.
+                                If an RSC font is not specifically configured in this file, it is assumed to use your ACP (Active Code Page).
+                                At the time of this writing, should be one of:
+                                    874     (Thai)
+                                    932     (Japanese Shift-JIS)
+                                    936     (Simplified Chinese GBK)
+                                    949     (Korean)
+                                    950     (Traditional Chinese Big5)
+                                    1250    (Central Europe)
+                                    1251    (Cyrillic)
+                                    1252    (Latin I)
+                                    1253    (Greek)
+                                    1254    (Turkish)
+                                    1255    (Hebrew)
+                                    1256    (Arabic)
+                                    1257    (Baltic)
+                                    1258    (Vietnam)
+            <DegreeChar>        (Optional; default=94) The code point / glyph index of the degree glyph. This number must be in base-10 (NOT hexadecimal).
+            <DiameterChar>      (Optional; default=216) The code point / glyph index of the diameter glyph. This number must be in base-10 (NOT hexadecimal).
+            <PlusMinusChar>     (Optional; default=200) The code point / glyph index of the plus/minus glyph. This number must be in base-10 (NOT hexadecimal).
+            <NamedSymbols>      (Optional) One or more <NamedSymbol> nodes (see below) that allow you to define named code points for custom glyphs in fonts.
+            <CreateShxUnifont>  (Optional; default=True) When converting to DWG, controls whether a Unifont (vs. old locale-encoded) is created when converting RSC fonts.
+                                The only time this should be False is for symbol fonts, which re-purpose code points to be custom symbols, and thus Unicode re-mapping is useless.
+                                Must be one of True|False.
+            
+            <NamedSymbol>
+                <Key>           (Required) A non-localized string that identifies this symbol across cultures.
+                                The following are reserved for internal use: "Degree", "Diameter", "PlusMinus".
+                <DisplayName>   (Required*) The name of the symbol; this will be displayed in pickers.
+                                This is required for all user-defined symbols; Bentley-delivered symbols rely on a hard-coded lookup based on their <Key> for localization purposes.
+                <CodePoint>     (Required) The code point / glyph index of the symbol. This number must be in base-10 (NOT hexadecimal).
+        -->
+
+        <RscFontInfo>
+            <Name>architectural,block_outline,char_fast_font,compressed,engineering,fancy,iso_fontleft,iso_fontright,italics,low_res_filled,standard,uppercase,working</Name>
+            <CodePage>1252</CodePage>
+            <DiameterChar>201</DiameterChar>
+            <PlusMinusChar>200</PlusMinusChar>
+            <DegreeChar>94</DegreeChar>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>intl_engineering,intl_iso,intl_iso_equal,intl_iso_italic,intl_iso_italic_equal</Name>
+            <CodePage>1252</CodePage>
+            <DegreeChar>176</DegreeChar>
+            <DiameterChar>248</DiameterChar>
+            <PlusMinusChar>177</PlusMinusChar>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>intl_working</Name>
+            <CodePage>1252</CodePage>
+            <DegreeChar>94</DegreeChar>
+            <DiameterChar>248</DiameterChar>
+            <PlusMinusChar>240</PlusMinusChar>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>ansi_symbols,feature_control_symbols</Name>
+            <CodePage>1252</CodePage>
+            <DegreeChar>94</DegreeChar>
+            <DiameterChar>110</DiameterChar>
+            <PlusMinusChar>126</PlusMinusChar>
+            <CreateShxUnifont>False</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>font_iso,gen_eng</Name>
+            <CodePage>1252</CodePage>
+            <DegreeChar>94</DegreeChar>
+            <DiameterChar>126</DiameterChar>
+            <PlusMinusChar>200</PlusMinusChar>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>iges1001</Name>
+            <CodePage>1252</CodePage>
+            <DegreeChar>94</DegreeChar>
+            <DiameterChar>110</DiameterChar>
+            <PlusMinusChar>200</PlusMinusChar>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>iges1002</Name>
+            <CodePage>1252</CodePage>
+            <DegreeChar>94</DegreeChar>
+            <DiameterChar>201</DiameterChar>
+            <PlusMinusChar>35</PlusMinusChar>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>iges1003</Name>
+            <CodePage>1252</CodePage>
+            <DegreeChar>94</DegreeChar>
+            <DiameterChar>201</DiameterChar>
+            <PlusMinusChar>35</PlusMinusChar>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>cs_ansi_symbols,cs_architectural,cs_block_outline,cs_char_fast_font,cs_compressed,cs_engineering,cs_fancy,cs_feature_control_sysmbols,cs_iges1001,cs_iges1002,cs_iges1003,cs_intl_engineering,cs_intl_iso,cs_intl_iso_equal,cs_intl_iso_italic,cs_intl_iso_italic_equal,cs_intl_working,cs_iso_fontleft,cs_iso_fontright,cs_italics,cs_low_res_filled,cs_standard,cs_uppercase,cs_working</Name>
+            <CodePage>1250</CodePage>
+            <DegreeChar>176</DegreeChar>
+            <DiameterChar>1</DiameterChar>
+            <PlusMinusChar>177</PlusMinusChar>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>kanji</Name>
+            <CodePage>932</CodePage>
+            <DiameterChar>934</DiameterChar>
+            <DegreeChar>33163</DegreeChar>
+            <PlusMinusChar>33149</PlusMinusChar>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>myongjo_outline,myongjo_fill,gothic_outline,gothic_fill,myongjo_single,gothic_single</Name>
+            <CodePage>949</CodePage>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>chinese_traditional</Name>
+            <CodePage>950</CodePage>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <RscFontInfo>
+            <Name>atisb,atisn</Name>
+            <CodePage>1256</CodePage>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <!-- For RSC fonts not listed above. -->
+        <RscFontInfo>
+            <Name>*</Name>
+            <DegreeChar>94</DegreeChar>
+            <DiameterChar>216</DiameterChar>
+            <PlusMinusChar>200</PlusMinusChar>
+            <CreateShxUnifont>True</CreateShxUnifont>
+        </RscFontInfo>
+
+        <!--
+        <ShxFontInfo> nodes specify settings for individual SHX fonts. This is metadata that is required for correct character mapping and operation, but is not available in the SHX font definition.
+            <Name>              (Required) Comma-separate list of fonts names to which this node corresponds to.
+            <CodePage>          (Required for non-Unifont) The code page associated with these fonts. See http://msdn.microsoft.com/en-us/goglobal/bb964654.aspx.
+                                This only applies to non-Unifont SHX fonts (which assume 1200). Nodes for Unifonts can omit this.
+                                If a non-Unifont SHX font is not specifically configured in this file, it is assumed to use your ACP (Active Code Page).
+                                At the time of this writing, should be one of:
+                                    874     (Thai)
+                                    932     (Japanese Shift-JIS)
+                                    936     (Simplified Chinese GBK)
+                                    949     (Korean)
+                                    950     (Traditional Chinese Big5)
+                                    1250    (Central Europe)
+                                    1251    (Cyrillic)
+                                    1252    (Latin I)
+                                    1253    (Greek)
+                                    1254    (Turkish)
+                                    1255    (Hebrew)
+                                    1256    (Arabic)
+                                    1257    (Baltic)
+                                    1258    (Vietnam)
+            <DegreeChar>        (Optional) The code point / glyph index of the degree glyph. This number must be in base-10 (NOT hexadecimal).
+                                Default (shape font)    = 127
+                                Default (locale font)   = 256
+                                Default (big font)      = locale of Unicode 176
+                                Default (Unifont)       = 176
+            <DiameterChar>      (Optional) The code point / glyph index of the diameter glyph. This number must be in base-10 (NOT hexadecimal).
+                                Default (shape font)    = 129
+                                Default (locale font)   = 258
+                                Default (big font)      = locale of Unicode 8709
+                                Default (Unifont)       = 8709
+            <PlusMinusChar>     (Optional) The code point / glyph index of the plus/minus glyph. This number must be in base-10 (NOT hexadecimal).
+                                Default (shape font)    = 128
+                                Default (locale font)   = 257
+                                Default (big font)      = locale of Unicode 177
+                                Default (Unifont)       = 177
+            <NamedSymbols>      (Optional) One or more <NamedSymbol> nodes (see below) that allow you to define named code points for custom glyphs in fonts.
+            
+            <NamedSymbol>
+                <Key>           (Required) A non-localized string that identifies this symbol across cultures.
+                                The following are reserved for internal use: "Degree", "Diameter", "PlusMinus".
+                <DisplayName>   (Required*) The name of the symbol; this will be displayed in pickers.
+                                This is required for all user-defined symbols; Bentley-delivered symbols rely on a hard-coded lookup based on their <Key> for localization purposes.
+                <CodePoint>     (Required) The code point / glyph index of the symbol. This number must be in base-10 (NOT hexadecimal).
+        -->
+
+        <!-- Japanese SHX fonts. -->
+        <ShxFontInfo>
+            <Name>kanji,kanjibig,bigfont,extfont,extfont2,@extfont2,spec_bar,spec_sl,special</Name>
+            <CodePage>932</CodePage>
+        </ShxFontInfo>
+
+        <!-- Simplified Chinese SHX fonts. -->
+        <ShxFontInfo>
+            <Name>gbcbig,tssdchn,hzjd,hztxt</Name>
+            <CodePage>936</CodePage>
+        </ShxFontInfo>
+
+        <!-- Traditional Chinese SHX fonts. -->
+        <ShxFontInfo>
+            <Name>tradch,chineset,tradchbig,chinese_traditionalbig</Name>
+            <CodePage>950</CodePage>
+        </ShxFontInfo>
+
+        <!-- Korean SHX fonts. -->
+        <ShxFontInfo>
+            <Name>whgdtxt,whgtxt,whtgtxt,whtmtxt,kor,korbig,myongjo_outlinebig,myongjo_fillbig,gothic_outlinebig,gothic_fillbig,myongjo_singlebig,gothic_singlebig</Name>
+            <CodePage>949</CodePage>
+        </ShxFontInfo>
+
+        <!-- Cyrillic SHX fonts. -->
+        <ShxFontInfo>
+            <Name>russ</Name>
+            <CodePage>1251</CodePage>
+        </ShxFontInfo>
+
+        <!-- For SHX fonts not listed above. -->
+        <ShxFontInfo>
+            <Name>*</Name>
+        </ShxFontInfo>
+
+        <!--
+        <TTFontInfo> nodes specify settings for individual TrueType fonts. This is metadata that is required for correct character mapping and operation, but is not available in the TrueType font definition.
+            Note that all TrueType fonts are inherently Unicode, and thus character mapping is inferred from that.
+            
+            <Name>              (Required) Comma-separate list of fonts names to which this node corresponds to.
+            <NamedSymbols>      (Optional) One or more <NamedSymbol> nodes (see below) that allow you to define named code points for custom glyphs in fonts.
+            
+            <NamedSymbol>
+                <Key>           (Required) A non-localized string that identifies this symbol across cultures.
+                                The following are reserved for internal use: "Degree", "Diameter", "PlusMinus".
+                <DisplayName>   (Required*) The name of the symbol; this will be displayed in pickers.
+                                This is required for all user-defined symbols; Bentley-delivered symbols rely on a hard-coded lookup based on their <Key> for localization purposes.
+                <CodePoint>     (Required) The code point / glyph index of the symbol. This number must be in base-10 (NOT hexadecimal).
+        -->
+
+        <!-- For TrueType fonts not listed above. -->
+        <TTFontInfo>
+            <Name>*</Name>
+            <NamedSymbols>
+                <NamedSymbol>
+                    <Key>CenterLine</Key>
+                    <CodePoint>8452</CodePoint>
+                </NamedSymbol>
+            </NamedSymbols>
+        </TTFontInfo>
+
+    </Fonts>
+    
+</FontConfig>

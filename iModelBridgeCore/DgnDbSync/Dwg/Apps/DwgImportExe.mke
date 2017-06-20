@@ -1,0 +1,73 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Dwg/Apps/DwgImportExe.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+%if $(DWGTOOLKIT) != "OpenDwg" && $(DWGTOOLKIT) != "RealDwg"
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+%elif $(DWGTOOLKIT) == "RealDwg" && $(TARGET_PLATFORM) != "Windows"
+    %error RealDWG only supports Windows platform!
+%endif
+
+appName             = DwgImporter
+baseDir             = $(_MakeFilePath)
+DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
+DgnDbSyncPubAPI     = $(DgnDbSyncRootDir)PublicAPI/DgnDbSync/
+DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
+DwgPublicAPI        = $(DwgRootDir)PublicAPI/
+DwgDbLibName        = $(DWGTOOLKIT)DbExchange
+ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
+DwgCommonResDir     = $(OutputRootDir)Build/DwgCommonRes/
+
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)Importer/Apps/
+always:
+    ~mkdir $(o)
+
+DwgImportAppDepends = $(baseDir)DwgImportApp.h                  \
+                      $(DgnDbSyncPubAPI)DgnDbSync.h             \
+                      $(DgnDbSyncPubAPI)Dwg/DwgImporter.h
+
+CompileOptionsMki   = $(DwgRootDir)DwgCompileOptions.mki
+%include $(CompileOptionsMki)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)DwgImportApp.obj    : $(baseDir)DwgImportApp.cpp $(DwgImportAppDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST            = $(o)
+EXE_NAME            = $(appname)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:wmainCRTStartup
+EXE_TMP_DIR         = $(o)
+
+LINKER_LIBRARIES    = $(ContextDeliveryDir)DwgImporter.lib
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite.lib
+
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(DwgDbLibName).lib
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)BeJsonCpp.lib
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(ContextDeliveryDir)$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+
+$(ContextDeliveryDir)DwgImporter.logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
+# Create the sqlang database
+SQLANG_OutputDb     = $(DwgCommonResDir)DwgImporter_en-US.sqlang.db3
+SQLANG_DeliveryDir  = $(ContextDeliveryDir)
+SQLANG_XliffWildcard =$(BuildContext)SubParts/xliffs/*.xliff
+%include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke

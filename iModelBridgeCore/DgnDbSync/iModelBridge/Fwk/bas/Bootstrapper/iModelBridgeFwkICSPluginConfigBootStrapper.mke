@@ -1,0 +1,69 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelBridge/Fwk/bas/Bootstrapper/iModelBridgeFwkICSPluginConfigBootStrapper.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName=$(_MakeFileName)
+
+%include mdl.mki
+o =% $(OutputRootDir)build/$(appName)/
+
+buildDir         = $(o)
+ContextDeliveryDir = $(BuildContext)Delivery/
+ContextSubpartsAssembliesDir = $(BuildContext)SubParts/Assemblies/
+
+always:
+    !~@mkdir $(buildDir)
+
+#-----------------------------------------------------------------------
+#   MyDocProcessorExt assembly
+#-----------------------------------------------------------------------
+
+ASSEMBLY_NAME       = $(appName)
+
+baseDir             = $(_MakeFilePath)
+
+ASSEMBLY_TARGET_DIRECTORY    = $(buildDir)
+
+#----------------------------------------------------------------------
+#  allow shared assemblies to be located 
+#----------------------------------------------------------------------
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\pas81114\Pas\WinX86\Delivery\Bentley.AutomationServices.dll
+%include csrefapnd.mki
+
+#-----------------------------------------------------------------------
+# Create the main resource to be embeded in the main assembly
+#-----------------------------------------------------------------------
+ASSEMBLY_DEFAULT_NAMESPACE = BentleyB0200.Dgn.DgnV8Mirror.ICS.BootStrapper
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+%include $(SharedMki)stdversion.mki
+
+ASSEMBLY_NAME                   = $(appName)
+ASSEMBLY_TITLE                  = $(appName)
+ASSEMBLY_DESCRIPTION            = DgnV8 to iModelHub Plugin
+ASSEMBLY_STRONGNAME             = 1
+ASSEMBLY_VERSION                = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+ASSEMBLY_FILE_VERSION           = $(ASSEMBLY_VERSION)
+ASSEMBLY_PRODUCT_NAME           = $(productName)
+ASSEMBLY_COMPANY_NAME           = $(companyName)
+ASSEMBLY_COPYRIGHT              = $(Bentley_Copyright)
+RIGHTSCOMPLIANT                 = false
+
+%include $(SharedMki)isRightsCompliant.mki
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+
+ASSEMBLY_KEYFILE                =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE            =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+ASSEMBLY_SOURCE_LIST = $(baseDir)Program.cs
+
+%include mkcsharp.mki
+
+$(ContextDeliveryDir)$(appName).exe  :   $(buildDir)$(appName).exe
+    $(LinkFirstDepToFirstTarget)

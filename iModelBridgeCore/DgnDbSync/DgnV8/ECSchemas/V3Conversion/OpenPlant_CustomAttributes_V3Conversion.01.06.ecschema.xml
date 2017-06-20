@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="OpenPlant_CustomAttributes_V3Conversion" nameSpacePrefix="opcav3" version="01.06" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="EW_DMS_Map_Base" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_3D_Catalogue_Class_Map_Struct" displayLabel="AutoPLANT_PDW_Catalogue_Class_Map_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="END_PREPARATION_TYPE_PROPERTY_MAP_STRUCT" displayLabel="End Preparation Type Property Map Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_AdditionalClause_Struct" displayLabel="OpenPlant_Physical_AdditionalClause_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_AdditionalQuery_Struct" displayLabel="OpenPlant_Physical_AdditionalQuery_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_Class_Map_Struct" displayLabel="OpenPlant_Physical_Catalogue_Class_Map_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_JointTypeProperties_Struct" displayLabel="OpenPlant_Physical_JointType_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPMM_3D_Catalogue_Class_Map_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OPENPLANT_ASSOCIATED_COMPONENT" displayLabel="Associated Component Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_TransformationMatrix_Definition_Struct" displayLabel="PSDS TransformationMatrix Definition Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+

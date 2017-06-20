@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="VersionedV8_InternalSDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SdkSource>V8_InternalSDK</SdkSource>
+        <Bindings>
+            <PublicAPI Domain="VersionedDgnV8Api" />
+            <Files ProductDirectoryName="DgnV8Dlls" SubPartDirectory="DgnPlatformV8Sdk/Dlls" Required="true">
+                Delivery/DgnPlatformV8Sdk/Dlls/*.dll
+            </Files>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/ECSchemas" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="ECSchemas" SubPartDirectory="DgnPlatformV8Sdk/Dlls/ECSchemas" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Fonts" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Fonts" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Fonts" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/RealDwg" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="RealDwg" SubPartDirectory="DgnPlatformV8Sdk/Dlls/RealDwg" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/schema" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="schema" SubPartDirectory="DgnPlatformV8Sdk/Dlls/schema" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Seed" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Seed" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Seed" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Symb" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Symb" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Symb" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Libs" Required="false" SubPartDirectory="VersionedDgnV8Libs" />
+        </Bindings>
+    </Part>
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="DgnDbSync.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="DgnDbSync" />
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="B02"  OnlyPlatforms="x64" ExcludeLibType="Static">
+        <RequiredRepository>V8IModelExtraFiles</RequiredRepository>
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="VersionedV8_InternalSDK" />
+        <SubPart PartName="rapidxml2json" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
+        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
+        <!-- The following subparts produce libraries that define optional domains. If you intend to use these domains and if you do not depend on the DgnClientSDK, then you must depend on these subcategories directly. -->
+        <SubPart PartName="Raster"              PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="PointCloud"          PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <Bindings>
+            <Libs ProductDirectoryName="DgnV8ConverterLibs" Required="false">Delivery/$(libprefix)DgnV8Converter$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DgnV8Converter$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnV8Converter_en.xliff</Files>
+            <Files Required="false" ProductDirectoryName="ImportConfig" SubPartDirectory="ConverterImportConfig">Delivery/ImportConfig*</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/DgnDbSync" SubPartDirectory="ECSchemas/DgnDbSync">
+                ECSchemas/DgnDbSync/*.ecschema.xml
+            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+                ECSchemas/Standard/*.ecschema.xml
+            </Files>
+            <Directory SourceName="ECSchemas/Supplemental" ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Supplemental" SubPartDirectory="ECSchemas/Supplemental" />
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/V3Conversion" SubPartDirectory="ECSchemas/V3Conversion">
+                ECSchemas/V3Conversion/*.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ScalableMeshV8SDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" BMakeOptions="+dDGNV8_DGNPLATFORM_SDK=$(BuildContext)SdkSources\ScalableMeshSDK\" OnlyPlatforms="x64" ExcludeLibType="Static">
+      <SdkSource>ScalableMeshSDK</SdkSource>
+      <Bindings>
+        <PublicAPI Domain="VersionedDgnV8Api" />
+        <Directory SourceName="SdkSources/ScalableMeshSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
+        <Directory SourceName="SdkSources/ScalableMeshSDK/Libs" Required="false" SubPartDirectory="VersionedDgnV8Libs" />        
+        <Files ProductDirectoryName="VendorNotices">
+          SdkSources/ScalableMeshSDK/Notices/eigen-license.txt
+          SdkSources/ScalableMeshSDK/Notices/flann-license.txt
+          SdkSources/ScalableMeshSDK/Notices/pcl-license.txt
+          SdkSources/ScalableMeshSDK/Notices/vtk-license.txt
+        </Files>             
+      </Bindings>
+    </Part>
+  
+    <Part Name="ConceptStationDgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="B02"  OnlyPlatforms="x64" ExcludeLibType="Static">
+      <RequiredRepository>V8IModelExtraFiles</RequiredRepository>
+      <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+      <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+      <SubPart PartName="ScalableMeshV8SDK" />
+      <SubPart PartName="rapidxml2json" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
+      <SubPart PartName="PublicAPI"/>
+      <SubPart PartName="ImagePP"               PartFile="ImagePP"          Repository="ImagePP" />
+      <SubPart PartName="BeLibJpegTurbo"        PartFile="BeLibJpegTurbo"   Repository="Libsrc-libjpegturbo"/>
+      <SubPart PartName="Raster"                PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+      <SubPart PartName="PointCloud"            PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+      <Bindings>
+        <Libs ProductDirectoryName="DgnV8ConverterLibs" Required="false">Delivery/$(libprefix)DgnV8Converter$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)DgnV8Converter$(ApiNumber)$(shlibext)</Assemblies>
+        <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnV8Converter_en.xliff</Files>
+        <Files Required="false" ProductDirectoryName="ImportConfig" SubPartDirectory="ImportConfig">Delivery/ImportConfig*</Files>
+        <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/DgnDbSync" SubPartDirectory="ECSchemas/DgnDbSync">
+          ECSchemas/DgnDbSync/*.ecschema.xml
+        </Files>
+          <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
+              ECSchemas/Standard/*.ecschema.xml
+          </Files>
+          <Directory SourceName="ECSchemas/Supplemental" ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Supplemental" SubPartDirectory="ECSchemas/Supplemental" />
+      </Bindings>
+    </Part>
+
+    <Part Name="DgnV8Converter-PublishedApiAndDoc" DeferType="BuildDocs" BentleyBuildMakeFile="DgnV8/BuildDoc.mke" OnlyPlatforms="x64">
+        <RequiredRepository>Bsitools-Doxygen</RequiredRepository>
+        <SubPart PartName="DgnV8Converter_PublishedApi"/>
+    </Part>
+
+    <Part Name ="DgnV8Converter_PublishedApi" BentleyBuildMakeFile="DgnV8/PublishedApi.mke">
+        <SubPart PartName="DgnV8ConverterDLL"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" ProductDirectoryName="DgnV8Converter_PublishedApi" SubPartDirectory="DgnV8Converter_PublishedApi"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="SyncManager" BentleyBuildMakeFile="SyncManager/SyncManager.mke" ApiNumber="B02"  OnlyPlatforms="x64,x86">
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="BentleyDll" PartFile="Bentley"  Repository="Bentley"/>
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
+        <Bindings>
+            <Libs ProductDirectoryName="DgnV8ConverterLibs" Required="false">Delivery/$(libprefix)SyncManager$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)SyncManager$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="DgnDbSyncAppCommonDirList">
+        <ProductDirectory Name="applicationroot"            Path=""/>
+        <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="VendorNotices"              Path="notices" />
+        <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
+        <ProductDirectory Name="ImportConfig"               RelativeTo="applicationroot" />
+        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+        <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8"/>
+
+    </ProductDirectoryList>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- DgnV8Bridge - an iModelBridge that converts DgnV8 files. This bridge starts with a root model.              -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <Product Name="DgnV8Bridge" SaveProduct="true">
+      <SubPart PartName="DgnV8ConverterExe" />
+      <SubPart PartName="DgnV8ConverterDLL" />
+      <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+      <Directories DirectoryListName="DgnV8BridgeDirList" />
+    </Product>
+
+    <ProductDirectoryList ListName="DgnV8BridgeDirList">
+        <ProductDirectory Name="applicationroot" Path=""/>
+        <ProductDirectory Name="Assemblies"     Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnV8Dlls"      Path="DgnV8"    RelativeTo="Assemblies"/>
+        <ProductDirectory Name="PublicApi"      Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="VendorApi"      Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Libs"           Path=""         RelativeTo="Assemblies"/>
+        <ProductDirectory Name="ImportConfig"   Path=""         RelativeTo="Assemblies"/>
+        <ProductDirectory Name="DgnV8ConverterLibs" Path=""     RelativeTo="Assemblies"/>
+    </ProductDirectoryList>
+
+
+    <Product Name="DgnV8Converter">
+        <SubPart PartName="TiledDgnV8ConverterExe" />
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList" />
+    </Product>
+
+  <ProductDirectoryList ListName="Bimv8SyncSDKDirList">
+        <ProductDirectory Name="PublicAPI"                  Deliver="true" Path="PublicAPI"/>
+        <ProductDirectory Name="DgnV8ConverterLibs"         Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="Libs"                       Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="DgnV8Dlls"                  Deliver="false" Path="DgnV8"/>
+        <ProductDirectory Name="BeJsonCppStaticLibDir"      Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="CsmapStaticLibDir"          Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="MicrosoftCRT"               Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="MicrosoftMFC"               Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="MrSidAssemblies"            Deliver="true" Path="Libs" />
+        <ProductDirectory Name="DataCaptureAssemblies"      Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="DataCaptureLibs"            Deliver="true" Path="Libs"/>
+  </ProductDirectoryList>
+  
+  <Part Name="Bimv8SyncVendorAPI" BentleyBuildMakeFile="Bimv8SyncVendorAPI.mke"  OnlyPlatforms="x64">
+    <SubPart PartName="DgnV8ConverterDLL"/>
+    <Bindings>
+        <PublicAPI Domain="json" />
+        <PublicAPI Domain="rapidjson" />
+        <PublicAPI Domain="libxml" />
+        <PublicAPI Domain="csmap" />
+        <PublicAPI Domain="zlib" />
+        <PublicAPI Domain="folly" />
+    </Bindings>
+  </Part>
+  
+  <Product Name="Bimv8SyncSDK">
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="DgnV8ConverterDLL"/>
+        <SubPart PartName="SyncManager"/>
+        <SubPart PartName="Bimv8SyncVendorAPI" />
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="DgnV8ConverterExe"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList" />
+        <Directories DirectoryListName="Bimv8SyncSDKDirList" />
+  </Product>
+
+    <ProductDirectoryList ListName="DgnV8ConverterDirList">
+        <ProductDirectory Name="applicationroot" Path=""/>
+        <ProductDirectory Name="DgnPlatformV8Assemblies"                         RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnPlatformV8TranskitEn"            Path="en"    RelativeTo="applicationroot"/>
+    </ProductDirectoryList>
+
+    <Part Name="ConverterApp-Source" BentleyBuildMakeFile="DgnV8/Converters/DeliverConverterAppSource.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <Bindings>
+            <Files SubPartDirectory="DgnDbSync/ConverterApp">Delivery\ConverterApp.cpp</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/DgnV8Converter.mke" ApiNumber="B02" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
+        <SubPart PartName="DgnV8ConverterDLL" />
+        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
+        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\DgnV8Converter.exe</Files>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\ImportConfig.xml</Files>
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/DgnV8Converter.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery\DgnV8Converter_en-US.sqlang.db3</Files>
+            <Assemblies>Delivery/$(shlibprefix)DgnV8Bridge$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)DgnV8Bridge$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="TiledDgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/TiledConverterApp.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="DgnV8ConverterExe" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\TiledDgnV8Converter.exe</Files>
+        </Bindings>
+    </Part>
+
+    <!--DgnV8 to DgnDb converter used by ConceptStation which uses the ScalableMeshSDK instead of the Dgn V8 internal SDK-->
+    <Part Name="ConceptStationDgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/DgnV8Converter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
+        <SubPart PartName="ConceptStationDgnV8ConverterDLL" />
+        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\DgnV8Converter.exe</Files>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\ImportConfig.xml</Files>
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/DgnV8Converter.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery\DgnV8Converter_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- DgnV8ConverterTests -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <Part Name="GTestDependencies" DeferType="BuildUnitTests">
+        <SubPart PartName="google_gtest_lib"     PartFile="gtest"                   Repository="util-gtest" />
+    </Part>
+    
+    <Part Name="DgnDbUnitTestsData" DeferType="BuildUnitTests" OnlyPlatforms="x64,x86">
+        <RequiredRepository>DgnClientSdkUnitTestData</RequiredRepository>
+    </Part>
+    
+    <Part Name="DgnV8ConverterTestsExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="DgnV8/Tests/Tests.mke" OnlyPlatforms="x64">
+        <SubPart PartName="GTestDependencies"/>
+        <SubPart PartName="DgnV8ConverterDLL"/>
+        <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="DgnDbUnitTestsData"/>
+        <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <Bindings>
+            <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/DgnV8ConverterTests.exe</Files>
+            <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/DgnV8ConverterTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/DgnV8ConverterTests_en-US.sqlang.db3</Files>
+            <Files Required="false" ProductDirectoryName="ImportConfig" SubPartDirectory="ImportConfig">Delivery/ImportConfig*</Files>
+            <Files ProductDirectoryName="IgnoreList">Delivery/ignore_list.txt</Files>
+            <Files ProductDirectoryName="TestSchemas">
+                Delivery/NamedGroupTestSchema_DgnDbSync.01.00.ecschema.xml
+            </Files>
+            <Directory SourceName="Delivery/DgnDbSyncTestData"  SubPartDirectory="TestData"  ProductDirectoryName="DgnDbSync_TestData" />
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="Tests">
+        <ProductDirectory Name="DgnV8ConverterTestsExe"         Path=""/>
+        <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
+        <ProductDirectory Name="DgnV8ConverterSeedData"         Path="SeedData"/>
+        <ProductDirectory Name="DgnDbSync_TestData"             Path="TestData"/>
+        <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
+        <ProductDirectory Name="TestSchemas"                    Path="Assets/ECSchemas/DgnDbSync"/>
+        <ProductDirectory Name="UnitTests-Assets" Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList" Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Product Name="DgnV8ConverterTests" OnlyPlatforms="x64">
+        <SubPart PartName="DgnV8ConverterExe"/>
+        <SubPart PartName="DgnV8ConverterTestsExe"/>
+        <!--
+        <Directories PartFile="BeGTest" Repository="BeGTest" DirectoryListName="BeGTestDirList"/>
+        -->
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList" />
+        <Directories DirectoryListName="Tests"/>
+    </Product>
+
+    <Part Name="RunDgnV8ConverterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/DgnV8ConverterTests/DgnV8ConverterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="DgnV8ConverterTests" />
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnV8ConverterTests.log</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="FontConverterAppExe" BentleyBuildMakeFile="DgnV8/Converters/FontConverterApp.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
+        <SubPart PartName="DgnV8ConverterDLL"/>
+        <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\FontConverter.exe</Files>
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/FontConverter.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery\FontConverter_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="FontConverterApp">
+        <SubPart PartName="FontConverterAppExe" />
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList" />
+        <FeatureExclude>ImagePP,PointCloud</FeatureExclude>
+    </Product>
+
+    <Part Name="Converters-Untested" >
+        <!-- V8 converter -->
+        <SubPart PartName="DgnV8ConverterExe" />
+        <SubProduct ProductName="DgnV8Converter" />
+        <SubPart PartName="DwgConverter" PartFile="DwgConverter"/>
+    </Part>
+
+    <Part Name="TeleporterPublicApi" BentleyBuildMakeFile="BimTeleporter/BimTeleporter.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="BimTeleporter" />
+        </Bindings>
+    </Part>
+
+    <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="TeleporterPublicAPI"/>
+        <Bindings>
+            <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)BisJson1Importer$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BisJson1Importer$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/BisJson1Importer_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BimImporterExe" BentleyBuildMakeFile="BimTeleporter/BimImporter/exe/BimImporter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="TeleporterPublicAPI"/>
+        <SubPart PartName="BisJson1Importer"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\BimImporter.exe</Files>
+            <!--
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/BimImporter_en-US.sqlang.db3</Files>
+            -->
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimTeleporter.logging.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BimTeleporterExe" BentleyBuildMakeFile="BimTeleporter/src/BimTeleporter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="BisJson1Importer"/>
+        <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\BimTeleporter.exe</Files>
+            <!--
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/BimImporter_en-US.sqlang.db3</Files>
+            -->
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimTeleporter.logging.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="BimTeleporterDirList">
+        <ProductDirectory Name="applicationroot" Path=""/>
+        <ProductDirectory Name="BimTeleporterNativeAssemblies"          Path=""/>
+        <ProductDirectory Name="DgnDbAssemblies"                        Path=""/>
+        <ProductDirectory Name="Assets"                                 Path="Assets"/>
+        <ProductDirectory Name="DgnDbPlatformAssets"                    Path="Assets"/>
+        <ProductDirectory Name="DgnDb06PlatformAssets"                  Path="Assets06"/>
+    </ProductDirectoryList>
+
+    <Product Name="BimImporter">
+        <SubPart PartName="BimImporterExe"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="BimTeleporterDirList" />
+    </Product>
+
+    <Product Name="BimExporter0601">
+        <SubPart PartFile="BimTeleporter" PartName="BimExporter0601Exe"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="BimTeleporterDirList" />
+    </Product>
+
+    <Product Name="BimTeleporter">
+        <SubPart PartName="BimTeleporterExe"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="BimTeleporterDirList" />
+    </Product>
+    
+    <Part Name="BisJson" BentleyBuildMakeFile="BimTeleporter/BisJson.prewire.mke">
+        <SubPart PartName="PublicApi" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <Bindings>
+            <Files ProductDirectoryName="BisJsonSchema">*Delivery\*.json</Files>
+        </Bindings>
+    </Part>
+    
+    <ProductDirectoryList ListName="BisJsonDirList">
+        <ProductDirectory Name="PublicApi"          Deliver="false"/>
+        <ProductDirectory Name="BisJsonSchema"      Path=""/>
+        <ProductDirectory Name="ECSchemas"          Path=""/>
+    </ProductDirectoryList>
+    
+    <Product Name="BisJsonSdk">
+        <SubPart PartName="BisJson"/>
+        <Directories DirectoryListName="BisJsonDirList"/>
+    </Product>
+
+</BuildContext>

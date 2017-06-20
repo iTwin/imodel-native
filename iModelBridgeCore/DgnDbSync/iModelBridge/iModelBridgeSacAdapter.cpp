@@ -1,0 +1,859 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: iModelBridge/iModelBridgeSacAdapter.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#if defined(_WIN32)
+#include <windows.h>
+#elif defined(__linux)
+#include <unistd.h> 
+#endif
+
+#include <stdio.h>
+#include <iModelBridge/iModelBridgeSacAdapter.h>
+#include <iModelBridge/iModelBridgeBimHost.h>
+#include <Bentley/BeTest.h>
+#include <Bentley/BeDirectoryIterator.h>
+#include <DgnPlatform/DgnProgressMeter.h>
+#include <DgnPlatform/DgnIModel.h>
+
+USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_LOGGING
+
+#undef min
+#undef max
+
+#undef LOG
+#define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct CompressProgressMeter : BeSQLite::ICompressProgressTracker
+{
+private:
+    uint32_t m_lastReported;
+    uint32_t m_fileSize;
+    BeMutex m_criticalSection;
+    Utf8String  m_operation;
+
+public:
+    void Reset(uint64_t fileSize)
+        {
+        m_lastReported = 0;
+        m_fileSize = (uint32_t)(fileSize / (1024 * 1024));
+        }
+
+    CompressProgressMeter(uint64_t fileSize, Utf8CP operation)
+        {
+        Reset(fileSize);
+        m_operation.assign(operation);
+        }
+
+    StatusInt _Progress(uint64_t inputProcessed, int64_t outputProcessed) override
+        {
+        BeMutexHolder holder(m_criticalSection);
+
+        uint32_t oneMeg = 1024 * 1024;
+        uint32_t current = (uint32_t)(inputProcessed / oneMeg);
+        if (current <= m_lastReported)
+            return BSISUCCESS;
+
+        m_lastReported = current;
+        printf("++++ PROGRESS> %s processed %d meg of %d\r", m_operation.c_str(), current, m_fileSize);
+        return BSISUCCESS;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isBimExt(BeFileNameCR fn)
+    {
+    auto ext = fn.GetExtension();
+    return ext.EqualsI(iModelBridge::str_BriefcaseExt()) || ext.EqualsI(iModelBridge::str_BriefcaseIExt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isImodelExt(BeFileNameCR fn)
+    {
+    auto ext = fn.GetExtension();
+    return ext.EqualsI(iModelBridgeSacAdapter::std_CompressedDgnDbExt());
+    }
+
+#ifdef _WIN32
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName iModelBridgeSacAdapter::GetExecutablePath(WCharCP argv0)
+    {
+    wchar_t moduleFileName[MAX_PATH];
+    ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
+    return BeFileName(moduleFileName);
+    }
+#elif defined(__linux)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName iModelBridgeSacAdapter::GetExecutablePath(WCharCP argv0)
+    {
+    Utf8PrintfString exelink("/proc/%ld/exe", getpid());
+
+    char exepath[PATH_MAX + 1] = {0};
+    
+    ssize_t linklen = readlink(exelink.c_str(), exepath, _countof(exepath)-1);
+
+    if( linklen >= 0 )
+        exepath[linklen] = '\0';
+    else
+        exepath[0] = '\0';
+
+    return BeFileName(exepath, BentleyCharEncoding::Utf8);
+    }
+#else
+
+// *** NEEDS WORK: do something like this for MacOS. See "whereami.c"
+/*
+WAI_FUNCSPEC
+int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
+{
+  char buffer1[PATH_MAX];
+  char buffer2[PATH_MAX];
+  char* path = buffer1;
+  char* resolved = NULL;
+  int length = -1;
+
+  for (;;)
+  {
+    uint32_t size = (uint32_t)sizeof(buffer1);
+    if (_NSGetExecutablePath(path, &size) == -1)
+    {
+      path = (char*)WAI_MALLOC(size);
+      if (!_NSGetExecutablePath(path, &size))
+        break;
+    }
+
+    resolved = realpath(path, buffer2);
+    if (!resolved)
+      break;
+
+    length = (int)strlen(resolved);
+    if (length <= capacity)
+    {
+      memcpy(out, resolved, length);
+
+      if (dirname_length)
+      {
+        int i;
+
+        for (i = length - 1; i >= 0; --i)
+        {
+          if (out[i] == '/')
+          {
+            *dirname_length = i;
+            break;
+          }
+        }
+      }
+    }
+
+    break;
+  }
+
+  if (path != buffer1)
+    WAI_FREE(path);
+
+  return length;
+}
+*/
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName iModelBridgeSacAdapter::GetExecutablePath(WCharCP argv0)
+    {
+    // *** TBD: Fix up argv0 using cwd, etc.
+    return BeFileName(argv0);
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge, WCharCP sqlangRelPath)
+    {
+    WString bridgeSqlangRelpath(bridge._SupplySqlangRelPath());
+    if (WString::IsNullOrEmpty(sqlangRelPath))
+        sqlangRelPath = bridgeSqlangRelpath.c_str();
+
+    iModelBridgeKnownLocationsAdmin::SetAssetsDir(bridge._GetParams().GetAssetsDir()); // Note that we set up the host with the assets directory for the *the bridge*
+    static iModelBridgeBimHost s_host(bridge._GetParams().GetRepositoryAdmin(), sqlangRelPath);
+    DgnViewLib::Initialize(s_host, true);
+
+    static PrintfProgressMeter s_meter;
+    T_HOST.SetProgressMeter(&s_meter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static size_t countTxnsInFile(DgnDbR db)
+    {
+    BeSQLite::Statement stmt;
+    stmt.Prepare(db, "SELECT COUNT(*) FROM " DGN_TABLE_Txns);
+    if (BeSQLite::BE_SQLITE_ROW != stmt.Step())
+        {
+        BeAssert(false);
+        return 0;
+        }
+    return stmt.GetValueInt64(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSacAdapter::CreateIModel(BeFileNameCR imodelName, BeFileNameCR bimName, Params const& saparams)
+    {
+    CreateIModelParams createImodelParams;
+    createImodelParams.SetOverwriteExisting(true);
+    if (0 != saparams.GetCompressChunkSize())
+        createImodelParams.SetChunkSize(saparams.GetCompressChunkSize());
+
+    T_HOST.GetProgressMeter()->SetCurrentStepName ("Creating IModel");
+    BeSQLite::DbResult rc = DgnIModel::Create (imodelName, bimName, createImodelParams);
+
+    if (BeSQLite::BE_SQLITE_OK == rc)
+        {
+        fwprintf(stdout, L"Created %ls\n", imodelName.GetName());
+        return BSISUCCESS;
+        }
+
+    fprintf(stderr, "*** IModel Creation failed.****\n");
+    imodelName.BeDeleteFile();
+    return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridgeSacAdapter::ExtractFromIModel(BeFileName& outFile, BeFileNameCR imodelFile)
+    {
+    uint64_t fileSize;
+    imodelFile.GetFileSize(fileSize);
+    CompressProgressMeter progress(fileSize, "Extract");
+
+    BeSQLite::DbResult dbResult;
+    auto status = DgnIModel::ExtractUsingDefaults(dbResult, outFile, imodelFile, true, &progress);
+
+    if (status != DgnDbStatus::Success)
+        {
+        fprintf(stderr, "*** IModel extraction failed.****\n");
+        return BSIERROR;
+        }
+    
+    fwprintf(stdout, L"Extracted %ls\n", outFile.GetName());
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const& saparams)
+    {
+    saparams.Initialize();
+
+    BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
+    BeFileName inputFileName  = bridge._GetParams().GetInputFileName();
+
+    if (isBimExt(inputFileName) && isImodelExt(outputFileName))
+        {
+        CreateIModel(outputFileName, inputFileName, saparams);
+        return BSISUCCESS;
+        }
+    if (isImodelExt(inputFileName) && isBimExt(outputFileName))
+        {
+        return ExtractFromIModel(outputFileName, inputFileName);
+        }
+
+    bool wasCreated = false;
+    bool wasUpdateEmpty = false;
+
+    if (!saparams.ShouldTryUpdate())
+        BeFileName::BeDeleteFile(outputFileName);
+
+    DgnDbPtr db;
+    if (!outputFileName.DoesPathExist())
+        {
+        wasCreated = true;
+        bvector<DgnModelId> dont_care;
+        db = bridge.DoCreateDgnDb(dont_care);
+        if (!db.IsValid())
+            {
+            fwprintf(stderr, L"%ls - creation failed. See %ls for details.\n", inputFileName.GetName(), 
+                     bridge._GetParams().GetReportFileName().GetName());
+            return BSIERROR;
+            }
+        }
+    else
+        {
+        BeSQLite::DbResult dbres;
+        bool madeSchemaChanges_dont_care;
+        db = bridge.OpenBim(dbres, madeSchemaChanges_dont_care);
+        if (!db.IsValid())
+            {
+            fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
+            return BSIERROR;
+            }
+
+        auto txnsBefore = countTxnsInFile(*db);
+
+        if (BSISUCCESS != bridge.DoConvertToExistingBim(*db))
+            {
+            fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(), 
+                     bridge._GetParams().GetReportFileName().GetName());
+            return BSIERROR;
+            }
+
+        wasUpdateEmpty = (countTxnsInFile(*db) > txnsBefore);
+        }
+
+    if (saparams.GetExpirationDate().IsValid())
+        db->SaveExpirationDate(saparams.GetExpirationDate());
+
+    auto rc = db->SaveChanges();//_GetParams().GetDescription().c_str());
+    if (BeSQLite::BE_SQLITE_OK != rc)
+        {
+        //ReportIssueV(IssueSeverity::Fatal, IssueCategory::DiskIO(), Issue::SaveError(), nullptr, m_dgndb->GetLastError().c_str());
+        LOG.fatalv("SaveChanges failed with %s", db->GetLastError().c_str());
+        db->AbandonChanges();
+        db = nullptr;
+        if (wasCreated)
+            {
+            outputFileName.BeDeleteFile();
+            bridge._DeleteSyncInfo();
+            }
+        return BentleyStatus::ERROR;
+        }
+
+    /* NEEDS WORK
+    if (m_config.GetOptionValueBool("CompactDatabase", true))
+        {
+        SetStepName(ProgressMessage::STEP_COMPACTING());
+        m_dgndb->CompactFile();
+        }
+        */
+    
+    if (wasCreated)
+        fwprintf(stdout, L"Created %ls\n", outputFileName.c_str());
+    else
+        {
+        if (wasUpdateEmpty)
+            fwprintf(stdout, L"No changes found\n");
+        else
+            fwprintf(stdout, L"Updated %ls\n", outputFileName.c_str());
+        }
+
+    db = nullptr;
+
+    if (saparams.GetCreateStandalone())
+        {
+        db = DgnDb::OpenDgnDb(nullptr, outputFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        if (db.IsValid())
+            {
+            db->AssignBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+            db->SaveChanges();
+            db->CloseDb();
+            db = nullptr;
+            }
+        }
+
+    if (saparams.ShouldCompress() && (wasCreated || !wasUpdateEmpty))
+        {
+        BeFileName briefcaseName(outputFileName);
+        BeFileName imodelName(briefcaseName);
+        imodelName.OverrideNameParts(L".imodel");
+        CreateIModel(imodelName, briefcaseName, saparams);
+        }
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::Params::Initialize() const
+    {
+    InitCrt(m_quietAsserts);
+
+    // Init logging
+    if (!m_loggingConfigFile.empty() && m_loggingConfigFile.DoesPathExist())
+        {
+        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, m_loggingConfigFile);
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+        return;
+        }
+        
+    fprintf(stderr, "Logging.config.xml not specified. Activating default logging using console provider.\n");
+    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+    NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_TRACE);
+    //NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_TRACE);
+    //NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_TRACE);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::Params::PrintUsage()
+    {
+    fprintf(stderr, 
+"STAND-ALONE-SPECIFIC CONVERTER OPTIONS:\n"
+"--no-assert-dialogs            (optional) Prevents modal assert dialogs\n"
+"--update[=description]         (optional) Causes the converter to update the output file, rather than re-create it.\n"
+"--logging-config-file=         (optional) The name of the logging configuration file.\n"
+"--standalone                   (optional) Create a standalone (user-editable) DgnDb rather than a master DgnDb\n"
+"--compress                     (optional) Additionally compresses the output into an .imodel\n"
+"--description=                 (optional) A string saved as the 'description' property in the DgnDb.\n"
+"--job-name=                    (optional) The code for the new job subject when creating a dgndb.\n"
+    );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::Params::ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
+    {
+    if (0 == wcscmp(argv[iArg], L"--no-assert-dialogs"))
+        {
+        m_quietAsserts = true;
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+    if (0 == wcscmp(argv[iArg], L"--update") || argv[iArg] == wcsstr(argv[iArg], L"--update="))
+        {
+        m_tryUpdate = true;
+        if (argv[iArg] == wcsstr(argv[iArg], L"--update="))
+            SetDescription(iModelBridge::GetArgValue(argv[iArg]).c_str());
+
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+    if (argv[iArg] == wcsstr(argv[iArg], L"--logging-config-file"))
+        {
+        m_loggingConfigFile.SetName(iModelBridge::GetArgValueW(argv[iArg]).c_str());
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+    if (0 == wcscmp(argv[iArg], L"--standalone"))
+        {
+        SetCreateStandalone(true);
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--description="))
+        {
+        SetDescription(iModelBridge::GetArgValue(argv[iArg]).c_str());
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--expiration="))
+        {
+        DateTime expiry;
+        if (BSISUCCESS != DateTime::FromString(expiry, iModelBridge::GetArgValue(argv[iArg]).c_str()))
+            {
+            fprintf(stderr, "%s - invalid date\n", iModelBridge::GetArgValue(argv[iArg]).c_str());
+            return iModelBridge::CmdLineArgStatus::Error;
+            }
+        if (expiry.GetInfo().GetKind() == DateTime::Kind::Utc)
+            SetExpirationDate(expiry);
+        else
+            {
+            DateTime expiryUtc(DateTime::Kind::Local, expiry.GetYear(), expiry.GetMonth(), expiry.GetDay(), expiry.GetHour(), expiry.GetMinute(), expiry.GetSecond(), expiry.GetMillisecond());
+            expiryUtc.ToUtc(expiryUtc);
+            SetExpirationDate(expiryUtc);
+            }
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (0 == wcscmp(argv[iArg], L"--compress"))
+        {
+        m_shouldCompress = true;
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--compress-chunk-size"))
+        {
+        WCharCP compressSizeSpec = wcschr(argv[iArg], L'=');
+        if (nullptr != compressSizeSpec)
+            m_compressChunkSize = BeStringUtilities::Wtoi(compressSizeSpec+1);
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    return iModelBridge::CmdLineArgStatus::NotRecognized;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iModelBridge::Params& bparams, int iArg, int argc, WCharCP argv[])
+    {
+    if (argv[iArg] == wcsstr(argv[iArg], L"--output=") || argv[iArg] == wcsstr(argv[iArg], L"-o="))
+        {
+        bparams.m_briefcaseName.SetName(iModelBridge::GetArgValueW(argv[iArg]));
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--input=") || argv[iArg] == wcsstr(argv[iArg], L"-i="))
+        {
+        BeFileName::FixPathName (bparams.m_inputFileName, iModelBridge::GetArgValueW(argv[iArg]).c_str());
+        return BeFileName::IsDirectory(bparams.m_inputFileName.c_str())? iModelBridge::CmdLineArgStatus::Error: iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs=") || argv[iArg] == wcsstr(argv[iArg], L"--output-gcs="))
+        {
+        iModelBridge::GCSDefinition* gcs = (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs="))? &bparams.m_inputGcs: &bparams.m_outputGcs;
+        if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(*gcs, iModelBridge::GetArgValue(argv[iArg])))
+            return iModelBridge::CmdLineArgStatus::Error;
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--geoCalculation="))
+        {
+        if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(bparams.m_gcsCalculationMethod, iModelBridge::GetArgValue(argv[iArg])))
+            return iModelBridge::CmdLineArgStatus::Error;
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--drawings-dirs="))
+        {
+        bparams.m_drawingsDirs.SetName(iModelBridge::GetArgValueW(argv[iArg]).c_str());
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (0 == wcscmp(argv[iArg], L"--no-thumbnails"))
+        {
+        bparams.m_wantThumbnails = false;
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--thumbnailTimeout"))
+        {
+        WCharCP val = wcschr(argv[iArg], L'=');
+        if (nullptr == val)
+            {
+            fwprintf(stderr, L"%ls - missing timeout value - specify the number of seconds to wait as an integer\n", val);
+            return iModelBridge::CmdLineArgStatus::Error;
+            }
+        ++val; // step past the =
+        auto ival = BeStringUtilities::Wtoi(val); // returns 0 in case of parsing error
+        if (ival <= 0)
+            {
+            fwprintf(stderr, L"%ls - invalid timeout value - specify the number of seconds to wait as an integer\n", val);
+            return iModelBridge::CmdLineArgStatus::Error;
+            }
+        bparams.m_thumbnailTimeout = BeDuration::Seconds(ival);
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+    if (argv[iArg] == wcsstr(argv[iArg], L"--job-name="))
+        {
+        bparams.SetBridgeJobName(iModelBridge::GetArgValue(argv[iArg]).c_str());
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+    return iModelBridge::CmdLineArgStatus::NotRecognized;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::Init(iModelBridge::Params& bparams, int argc, WCharCP argv[])
+    {
+    bparams.m_isCreatingNewDb = false;
+    bparams.m_libraryDir = iModelBridgeSacAdapter::GetExecutablePath(argv[0]).GetDirectoryName();
+    bparams.m_assetsDir = bparams.m_libraryDir;
+    bparams.m_assetsDir.AppendToPath(L"Assets");
+    bparams.m_repoAdmin = new DgnPlatformLib::Host::RepositoryAdmin;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::InitForBeTest(iModelBridge::Params& bparams)
+    {
+    bparams.m_isCreatingNewDb = false;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(bparams.m_assetsDir);
+    bparams.m_libraryDir = bparams.m_assetsDir;
+    bparams.m_libraryDir.AppendToPath(L"..");
+    bparams.m_libraryDir.BeGetFullPathName();
+    bparams.m_repoAdmin = new DgnPlatformLib::Host::RepositoryAdmin;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSacAdapter::ParseCommandLine(bvector<WString>& unrecognized, iModelBridge::Params& bparams, Params& saparams, int argc, WCharCP argv[])
+    {
+    // The most common need for a developer is to publish one DGN file to the current directory with default options... make that easy.
+    if (2 == argc)
+        {
+        WString arg1 = iModelBridge::GetArgValueW(argv[1]);
+        if (BeFileName::DoesPathExist(arg1.c_str()))
+            {
+            BeFileName::FixPathName(bparams.m_inputFileName, arg1.c_str());
+            bparams.m_briefcaseName.SetName(L".");
+            return BentleyStatus::SUCCESS;
+            }
+        }
+    
+    for (int iArg = 1; iArg < argc; ++iArg)
+        {
+        iModelBridge::CmdLineArgStatus res = ParseCommandLineArg(bparams, iArg, argc, argv);
+        if (iModelBridge::CmdLineArgStatus::NotRecognized == res)
+            {
+            res = saparams.ParseCommandLineArg(iArg, argc, argv);
+            if (iModelBridge::CmdLineArgStatus::NotRecognized == res)
+                {
+                unrecognized.push_back(argv[iArg]);
+                continue;
+                }
+            }
+
+        if (iModelBridge::CmdLineArgStatus::Success != res)    // handled but invalid
+            return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2012
+//---------------------------------------------------------------------------------------
+static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t line, BeAssertFunctions::AssertType atype)
+    {
+    WPrintfString str(L"ASSERT: (%ls) @ %ls:%u\n", message, file, line);
+    LOG.error(str.c_str());
+    //::OutputDebugStringW (str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::InitCrt(bool quietAsserts)
+    {
+#ifdef NDEBUG
+    quietAsserts = true; // we never allow disruptive asserts in a production program
+#endif
+
+    if (quietAsserts)
+        BeAssertFunctions::SetBeAssertHandler(justLogAssertionFailures);
+
+#ifdef _WIN32
+    if (quietAsserts)
+        _set_error_mode(_OUT_TO_STDERR);
+    else
+        _set_error_mode(_OUT_TO_MSGBOX);
+
+    #if defined (UNICODE_OUTPUT_FOR_TESTING)
+        // turning this on makes it so we can show unicode characters, but screws up piped output for programs like python.
+        _setmode(_fileno(stdout), _O_U16TEXT);  // so we can output any and all unicode to the console
+        _setmode(_fileno(stderr), _O_U16TEXT);  // so we can output any and all unicode to the console
+    #endif
+
+    // FOR THE CONSOLE PUBLISHER ONLY! "Gui" publishers won't have any console output and won't need this.
+    // C++ programs start-up with the "C" locale in effect by default, and the "C" locale does not support conversions of any characters outside
+    // the "basic character set". ... The call to setlocale() says "I want to use the user's default narrow string encoding". This encoding is
+    // based on the Posix-locale for Posix environments. In Windows, this encoding is the ACP, which is based on the system-locale.
+    // However, the success of this code is dependent on two things:
+    //      1) The narrow encoding must support the wide character being converted.
+    //      2) The font/gui must support the rendering of that character.
+    // In Windows, #2 is often solved by setting cmd.exe's font to Lucida Console."
+    // (http://cboard.cprogramming.com/cplusplus-programming/145590-non-english-characters-cout-2.html)
+    setlocale(LC_CTYPE, "");
+#else
+    // unix-specific CRT init
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridgeSacAdapter::FixInputFileName(iModelBridge::Params& bparams)
+    {
+    BeFileName fixedName = bparams.GetInputFileName();
+    if ((BeFileNameStatus::Success != fixedName.BeGetFullPathName()) || !fixedName.DoesPathExist() && fixedName.IsDirectory())
+        return ERROR;
+        
+    bparams.m_inputFileName = fixedName;
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSacAdapter::FixBriefcaseName(iModelBridge::Params& bparams)
+    {
+    BeFileName fixedName = bparams.GetBriefcaseName();
+    fixedName.BeGetFullPathName();
+    if (!fixedName.DoesPathExist())
+        {
+        if (fixedName.GetExtension().empty())    // it's probably supposed to be a directory name
+            fixedName.AppendSeparator();
+        BeFileName outputDir = fixedName.GetDirectoryName();
+        if (!outputDir.DoesPathExist() && (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDir.c_str())))
+            {
+            LOG.fatalv(L"Cannot create output directory <%ls>\n", outputDir.c_str());
+            return BSIERROR;
+            }
+        }
+
+    if (fixedName.IsDirectory())
+        {
+        fixedName.AppendToPath(bparams.GetInputFileName().GetFileNameWithoutExtension().c_str());
+        fixedName.AppendExtension(iModelBridge::str_BriefcaseIExt());
+        }
+    else//If no extension override it
+        {
+        //fixedName.OverrideNameParts(L"." str_BriefcaseIExt());
+        }
+
+    bparams.m_briefcaseName = fixedName;
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSacAdapter::ParseCommandLine(iModelBridge& bridge, Params& saparams, int argc, WCharCP argv[])
+    {
+    Init(bridge._GetParams(), argc, argv);
+
+    bvector<WString> unrecognizedArgs;
+
+    if (BSISUCCESS != ParseCommandLine(unrecognizedArgs, bridge._GetParams(), saparams, argc, argv))
+        {
+        PrintCommandLineUsage(bridge, argc, argv);
+        return BSIERROR;
+        }
+
+    if (BSISUCCESS != bridge._GetParams().Validate())
+        {
+        PrintCommandLineUsage(bridge, argc, argv);
+        return BSIERROR;
+        }
+
+    FixInputFileName(bridge._GetParams());
+    FixBriefcaseName(bridge._GetParams());
+
+    bridge._GetParams().SetReportFileName();
+    bridge._GetParams().GetReportFileName().BeDeleteFile();
+
+    if (unrecognizedArgs.empty())
+        return BSISUCCESS;
+
+    int unrecognizedArgCount = (int)unrecognizedArgs.size();
+    bvector<WCharCP> unrecognizedArgPtrs;
+    for (auto& a : unrecognizedArgs)
+        unrecognizedArgPtrs.push_back(a.c_str());
+
+    for (int i=0; i<unrecognizedArgCount; ++i)
+        {
+        auto status = bridge._ParseCommandLineArg(i, unrecognizedArgCount, unrecognizedArgPtrs.data());
+        if (iModelBridge::CmdLineArgStatus::Success == status)
+            continue;
+
+        if (iModelBridge::CmdLineArgStatus::NotRecognized == status)
+            fwprintf(stderr, L"unrecognized option: %s\n", unrecognizedArgPtrs[i]);
+        else
+            fwprintf(stderr, L"invalid option: %s\n", unrecognizedArgPtrs[i]);
+
+        PrintCommandLineUsage(bridge, argc, argv);
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void buildArgv(bvector<WCharCP>& bargptrs, bvector<WString>& bargs, bvector<bpair<WString,WString>> const& args)
+    {
+    bargs.push_back(L"do not try to use program name");
+
+    for (auto& pair : args)
+        {
+        WString arg(pair.first);
+        arg.append(pair.second);
+        bargs.push_back(arg);
+        }
+
+    for (auto& arg : bargs)
+        bargptrs.push_back(arg.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::ParseCommandLineForBeTest(iModelBridge& bridge, bvector<bpair<WString,WString>> const& argPairs)
+    {
+    bvector<WCharCP> bargptrs;
+    bvector<WString> bargs;
+    buildArgv(bargptrs, bargs, argPairs);
+
+    int argc = (int)bargptrs.size();
+    WCharCP* argv = bargptrs.data();
+
+    InitForBeTest(bridge._GetParams());
+
+    bvector<WString> unrecognizedArgs;
+
+    Params saparams;
+    ASSERT_EQ(BSISUCCESS, ParseCommandLine(unrecognizedArgs, bridge._GetParams(), saparams, argc, argv));
+
+    ASSERT_EQ(BSISUCCESS, bridge._GetParams().Validate());
+
+    FixBriefcaseName(bridge._GetParams());
+
+    if (unrecognizedArgs.empty())
+        return;
+
+    int unrecognizedArgCount = (int)unrecognizedArgs.size();
+    bvector<WCharCP> unrecognizedArgPtrs;
+    for (auto& a : unrecognizedArgs)
+        unrecognizedArgPtrs.push_back(a.c_str());
+
+    for (int i=0; i<unrecognizedArgCount; ++i)
+        {
+        auto status = bridge._ParseCommandLineArg(i, unrecognizedArgCount, unrecognizedArgPtrs.data());
+        ASSERT_EQ(iModelBridge::CmdLineArgStatus::Success, status);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::PrintCommandLineUsage(iModelBridge& bridge, int argc, WCharCP argv[])
+    {
+    fwprintf(stderr,
+L"Usage: %ls -i|--input= -o|--output= [OPTIONS...]\n"
+L"--input=                    (required)  A directory or wildcard specfication for the tile files. May appear multiple times.\n"
+L"--output=                   (required)  Output directory\n"
+L"OPTIONS:\n"
+L"--input-gcs=gcsspec         (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS.\n"
+L"--output-gcs=gcsspec        (optional)  Specifies the GCS of the output DgnDb file. Ignored if the output DgnDb file already has a GCS (update mode).\n"
+L"                                        gcsspec is either the keyname of a GCS or the coordinates of the origin and the azimuthal angle for an AZMEA GCS.\n"
+L"--drawings-dirs=            (optional)  A semicolon-separated list of directories to search recursively for drawings and sheets.\n"
+L"--geoCalculation=           (optional)  If a new model is added with the --update option, sets the geographic coordinate calculation method. Possible Values are:\n"
+L"                                        Default   - Base the calculation method on the source GCS. GCS's calculated from Placemarks are transformed, others are reprojected\n"
+L"                                        Reproject - Do full geographic reprojection of each point\n"
+L"                                        Transform - use the source GCS and DgnDb GCS to construct and use a linear transform\n"
+L"                                        TransformScaled - Similar to Transform, except the transform is scaled to account for the GCS grid to ground scale (also known as K factor).\n"
+L"--revision-comment=         (optional)  A description of the changes that are being pushed in the revision.\n"
+L"--job-name=                 (optional)  A description of the job (becomes the job subject element's code). Used only in the initial conversion.\n"
+L"--no-thumbnails             (optional)  Do not generate view thumbnails\n"
+L"--thumbnailTimeout          (optional)  Maximum number of seconds wait for each thumbnail. The default is 30 seconds.\n"
+    , argv[0]);
+
+    Params::PrintUsage();
+
+    bridge._PrintUsage();
+    }
