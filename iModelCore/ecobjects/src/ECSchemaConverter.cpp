@@ -306,10 +306,17 @@ void ECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstraintR 
 
     // Need to set the abstract constraint, if one is needed, before adding constraint classes.
     if (1 < baseConstraint.GetConstraintClasses().size())
-        constraint.SetAbstractConstraint(*baseConstraint.GetAbstractConstraint());
+        {
+        ECClassCP baseAbstractConstraint = baseConstraint.GetAbstractConstraint();
+        (baseAbstractConstraint->IsEntityClass()) ? constraint.SetAbstractConstraint(*baseAbstractConstraint->GetEntityClassCP())
+                                                : constraint.SetAbstractConstraint(*baseAbstractConstraint->GetRelationshipClassCP());
+        }
 
-    for (ECEntityClassCP baseConstraintClass : baseConstraint.GetConstraintClasses())
-        constraint.AddClass(*baseConstraintClass);
+    for (ECClassCP baseConstraintClass : baseConstraint.GetConstraintClasses())
+        {
+        (baseConstraintClass->IsEntityClass()) ? constraint.AddClass(*baseConstraintClass->GetEntityClassCP()) : 
+                                                constraint.AddClass(*baseConstraintClass->GetRelationshipClassCP());
+        }
     }
 
 //---------------------------------------------------------------------------------------

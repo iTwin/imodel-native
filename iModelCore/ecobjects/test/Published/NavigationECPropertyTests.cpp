@@ -590,6 +590,88 @@ TEST_F(NavigationECPropertyTests, MustBeAddedToConcreteConstraintClass)
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(NavigationECPropertyTests, EndpointsWithRelationshipsCannotBeUsed)
+    {
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP source;
+    ECEntityClassP target;
+    ECRelationshipClassP relClass;
+    ECRelationshipClassP relWithRelEndpoint;
+    NavigationECPropertyP navProp;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 0);
+    schema->CreateEntityClass(source, "Source");
+    schema->CreateEntityClass(target, "Target");
+    schema->CreateRelationshipClass(relClass, "TestRelationship", *source, "Source", *target, "Target");
+    
+    schema->CreateRelationshipClass(relWithRelEndpoint, "RelWithRelEndpoint");
+    relWithRelEndpoint->GetSource().SetRoleLabel("Source");
+    relWithRelEndpoint->GetSource().AddClass(*source);
+    relWithRelEndpoint->GetTarget().SetRoleLabel("Target");
+    relWithRelEndpoint->GetTarget().AddClass(*relClass);
+
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, source->CreateNavigationProperty(navProp, "BadNavProp", *relWithRelEndpoint, ECRelatedInstanceDirection::Forward));
+    }
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP source;
+    ECEntityClassP target;
+    ECRelationshipClassP relClass;
+    ECRelationshipClassP relWithRelEndpoint;
+    NavigationECPropertyP navProp;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 0);
+    schema->CreateEntityClass(source, "Source");
+    schema->CreateEntityClass(target, "Target");
+    schema->CreateRelationshipClass(relClass, "TestRelationship", *source, "Source", *target, "Target");
+    
+    schema->CreateRelationshipClass(relWithRelEndpoint, "RelWithRelEndpoint");
+    relWithRelEndpoint->SetStrengthDirection(ECRelatedInstanceDirection::Backward);
+    relWithRelEndpoint->GetSource().SetRoleLabel("Source");
+    relWithRelEndpoint->GetSource().AddClass(*relClass);
+    relWithRelEndpoint->GetTarget().SetRoleLabel("Target");
+    relWithRelEndpoint->GetTarget().AddClass(*source);
+
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, source->CreateNavigationProperty(navProp, "BadNavProp", *relWithRelEndpoint, ECRelatedInstanceDirection::Forward));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NavigationECPropertyTests, RelationshipPointsToEntity)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP classA;
+    ECEntityClassP classB;
+    ECEntityClassP navPropEndpoint;
+    ECRelationshipClassP relAToB;
+    ECRelationshipClassP relAToBRelatesToNavPropEndpoint;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 1, 0, 0);
+    schema->CreateEntityClass(classA, "Source");
+    schema->CreateEntityClass(classB, "Target");
+    schema->CreateRelationshipClass(relAToB, "relAToB", *classA, "Source", *classB, "Target");
+
+    schema->CreateEntityClass(navPropEndpoint, "NavPropEndpoint");
+    schema->CreateRelationshipClass(relAToBRelatesToNavPropEndpoint, "AtoBRelatesToNavPropEndpoint");
+    relAToBRelatesToNavPropEndpoint->GetSource().AddClass(*relAToB);
+    relAToBRelatesToNavPropEndpoint->GetSource().SetRoleLabel("Source");
+    relAToBRelatesToNavPropEndpoint->GetTarget().AddClass(*navPropEndpoint);
+    relAToBRelatesToNavPropEndpoint->GetTarget().SetRoleLabel("Target");
+
+    NavigationECPropertyP navProp;
+    EXPECT_EQ(ECObjectsStatus::Success, relAToB->CreateNavigationProperty(navProp, "Test", *relAToBRelatesToNavPropEndpoint, ECRelatedInstanceDirection::Forward));
+
+    bvector<NavigationECPropertyCP> expectedNavProps;
+    expectedNavProps.push_back(navProp);
+    ValidateRoundTripEC3Serialization(schema, expectedNavProps);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, InvalidXml)
     {
     ECSchemaPtr schema;

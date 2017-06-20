@@ -685,7 +685,7 @@ TEST_F(ECRelationshipClassTest, TestBaseClassRules)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipClassTest, TestAbstractConstraint)
+TEST_F(ECRelationshipClassTest, TestAbstractConstraint_Entity)
     {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
@@ -721,6 +721,54 @@ TEST_F(ECRelationshipClassTest, TestAbstractConstraint)
 
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint is locally set therefore should return true.";
     EXPECT_STREQ("B", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipClassTest, TestAbstractConstraint_Relationships)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ecSchema->CreateEntityClass(entityClassA, "A");
+    ecSchema->CreateEntityClass(entityClassB, "B");
+
+    ECRelationshipClassP relClassA;
+    ECRelationshipClassP relClassB;
+    ECRelationshipClassP relClassC;
+    ecSchema->CreateRelationshipClass(relClassA, "RelA", *entityClassA, "Source", *entityClassB, "Target");
+    ecSchema->CreateRelationshipClass(relClassB, "RelB", *entityClassA, "Source", *entityClassB, "Target");
+    ecSchema->CreateRelationshipClass(relClassC, "RelC", *entityClassA, "Source", *entityClassB, "Target");
+
+    ECRelationshipClassP relationClass;
+    ecSchema->CreateRelationshipClass(relationClass, "RelARelatesToRelB");
+    relationClass->SetStrength(StrengthType::Referencing);
+    relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClass->SetClassModifier(ECClassModifier::Abstract);
+    relationClass->GetSource().AddClass(*relClassA);
+    relationClass->GetSource().SetRoleLabel("ARelB");
+    relationClass->GetTarget().AddClass(*relClassC);
+    relationClass->GetTarget().SetRoleLabel("ARelB (Reversed)");
+
+    EXPECT_FALSE(relationClass->GetSource().IsAbstractConstraintDefined()) << "The Source Constraint's Abstract Constraint is implicitly set therefore should be false.";
+    EXPECT_STREQ("RelA", relationClass->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should be implicitly set to the only constraint class.";
+    EXPECT_FALSE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint should be implicitly set since therefore should be false.";
+    EXPECT_STREQ("RelC", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should be implicitly set to the only constraint class.";
+
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*relClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*relClassB)) << "The abstract constraint cannot be set to B because C is not nor derived from B.";
+    relClassC->AddBaseClass(*relClassB); // Making C derive from B
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*relClassB)) << "The abstract constraint can now be set because B is a base class of C";
+
+    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint is locally set therefore should return true.";
+    EXPECT_STREQ("RelB", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+
+    EXPECT_TRUE(ecSchema->Validate());
     }
 
 //---------------------------------------------------------------------------------------
@@ -773,6 +821,72 @@ TEST_F(ECRelationshipClassTest, TestRelationshipDelayedValidation)
 
     relationClass->RemoveBaseClass(*baseRelationClass);
     EXPECT_FALSE(relationClass->GetIsVerified()) << "The base class which made this relationship valid has been removed. The relationship should now not be valid";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipClassTest, TestRelationshipAsEndpoint)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ECEntityClassP entityClassC;
+    ECRelationshipClassP relClassAToB;
+    ECRelationshipClassP relClassCRelAToB;
+
+    ecSchema->CreateEntityClass(entityClassA, "A");
+    ecSchema->CreateEntityClass(entityClassB, "B");
+    ecSchema->CreateEntityClass(entityClassC, "C");
+
+    ecSchema->CreateRelationshipClass(relClassAToB, "AToB");
+    relClassAToB->GetSource().AddClass(*entityClassA);
+    relClassAToB->GetSource().SetRoleLabel("Source");
+    relClassAToB->GetTarget().AddClass(*entityClassB);
+    relClassAToB->GetTarget().SetRoleLabel("Target");
+
+    ecSchema->CreateRelationshipClass(relClassCRelAToB, "CRelAToB");
+    relClassCRelAToB->GetSource().AddClass(*entityClassC);
+    relClassCRelAToB->GetSource().SetRoleLabel("Source");
+    EXPECT_EQ(ECObjectsStatus::Success, relClassCRelAToB->GetTarget().AddClass(*relClassAToB));
+    relClassCRelAToB->GetTarget().SetRoleLabel("Target");
+
+    EXPECT_TRUE(ecSchema->Validate());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipClassTest, TestEntityAndRelationshipCannotBeOnTheSameEndpoint)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ECEntityClassP entityClassC;
+    ECRelationshipClassP relClassAToB;
+    ECRelationshipClassP relClassCRelAToB;
+
+    ecSchema->CreateEntityClass(entityClassA, "A");
+    ecSchema->CreateEntityClass(entityClassB, "B");
+    ecSchema->CreateEntityClass(entityClassC, "C");
+
+    ecSchema->CreateRelationshipClass(relClassAToB, "AToB");
+    relClassAToB->GetSource().AddClass(*entityClassA);
+    relClassAToB->GetTarget().AddClass(*entityClassB);
+
+    ecSchema->CreateRelationshipClass(relClassCRelAToB, "CRelAToB");
+    relClassCRelAToB->GetSource().AddClass(*entityClassC);
+    EXPECT_EQ(ECObjectsStatus::Success, relClassCRelAToB->GetTarget().AddClass(*relClassAToB));
+    EXPECT_EQ(ECObjectsStatus::Success, relClassCRelAToB->GetTarget().SetAbstractConstraint(*relClassAToB));
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relClassCRelAToB->GetTarget().AddClass(*entityClassB));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1668,6 +1782,53 @@ TEST_F(ECRelationshipDeserializationTest, ExpectSuccessWhenDerivedClassComesBefo
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipDeserializationTest, RelationshipClassAsEndpoint)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="A"/>
+            <ECEntityClass typeName="B"/>
+            <ECEntityClass typeName="C"/>
+            <ECRelationshipClass typeName="AToB" strength="Referencing" strengthDirection="forward" modifier="None">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Source">
+                    <Class class="A"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="Target">
+                    <Class class="B"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="CRelAToB" strength="Referencing" strengthDirection="forward" modifier="None">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Source">
+                    <Class class="C"/>
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="Target">
+                    <Class class="AToB"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassCP ecClass = schema->GetClassCP("CRelAToB");
+    ASSERT_NE(nullptr, ecClass);
+
+    ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+    ASSERT_NE(nullptr, relClass);
+
+    ASSERT_EQ(1, relClass->GetTarget().GetConstraintClasses().size());
+    ECClassCP relatedClass = relClass->GetTarget().GetConstraintClasses()[0];
+    ASSERT_NE(nullptr, relatedClass);
+    ECRelationshipClassCP relatedRelationship = relatedClass->GetRelationshipClassCP();
+    ASSERT_NE(nullptr, relatedRelationship);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
