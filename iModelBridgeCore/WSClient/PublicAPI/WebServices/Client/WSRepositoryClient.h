@@ -56,7 +56,6 @@ struct IWSRepositoryClient
             };
 
     public:
-        // WIP: SkipTokens disabled due to issues.
         WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
 
     public:

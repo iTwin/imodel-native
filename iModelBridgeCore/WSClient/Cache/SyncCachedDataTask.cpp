@@ -211,7 +211,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
 
     auto ct = GetCancellationToken();
 
-    m_ds->CacheObjects(responseKey, *query, CachingDataSource::DataOrigin::RemoteData, IWSRepositoryClient::InitialSkipToken, 0, ct)
+    m_ds->CacheObjects(responseKey, *query, CachingDataSource::DataOrigin::RemoteData, m_ds->GetInitialSkipToken(), 0, ct)
         ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::DataOriginResult result)
         {
         if (IsTaskCanceled())

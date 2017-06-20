@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/MockCachingDataSource.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,6 +63,7 @@ struct MockCachingDataSource : public ICachingDataSource
             void(IWSRepositoryClientPtr client));
         MOCK_METHOD0(CancelAllTasks,
             AsyncTaskPtr<void>());
+        MOCK_METHOD1(EnableSkipTokens,void(bool));
         MOCK_METHOD1(UpdateSchemas,
             AsyncTaskPtr<Result>(ICancellationTokenPtr ct));
 

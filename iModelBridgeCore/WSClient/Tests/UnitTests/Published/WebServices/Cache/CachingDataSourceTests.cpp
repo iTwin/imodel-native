@@ -2183,10 +2183,55 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndResponseNotModified_R
     EXPECT_THAT(result.GetValue().GetKeys(), ContainerEq(expectedInstances));
     }
 
+TEST_F(CachingDataSourceTests, GetObjects_SkipTokensNotEnabled_SkipTokenNotTest)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    CachedResponseKey key = CreateTestResponseKey(ds);
+
+    // Expect
+    auto query = StubWSQuery();
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(query, _, _, _))
+        .WillOnce(Invoke([] (WSQueryCR, Utf8StringCR, Utf8StringCR skipToken, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("", skipToken);
+        return CreateCompletedAsyncTask(WSObjectsResult::Error({}));
+        }));
+
+    // Act
+    ds->GetObjects(key, query, CachingDataSource::DataOrigin::RemoteData, nullptr, nullptr)->Wait();
+    }
+
+TEST_F(CachingDataSourceTests, GetObjects_SkipTokensEnabled_InitialSkipTokenSent)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    CachedResponseKey key = CreateTestResponseKey(ds);
+
+    ds->EnableSkipTokens(true);
+
+    // Expect
+    auto query = StubWSQuery();
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(query, _, WSRepositoryClient::InitialSkipToken, _))
+        .WillOnce(Invoke([] (WSQueryCR, Utf8StringCR, Utf8StringCR skipToken, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("0", skipToken);
+        return CreateCompletedAsyncTask(WSObjectsResult::Error({}));
+        }));
+
+    // Act
+    ds->GetObjects(key, query, CachingDataSource::DataOrigin::RemoteData, nullptr, nullptr)->Wait();
+    }
+
 TEST_F(CachingDataSourceTests, GetObjects_ClientRespondsWithSkipTokens_QueriesAndCachesMultiplePages)
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
+    ds->EnableSkipTokens(true);
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     // Expect
@@ -2225,6 +2270,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ClientRespondsWithSkipTokens_Queri
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
+    ds->EnableSkipTokens(true);
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     // Expect
@@ -2269,6 +2315,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ClientRespondsWithSkipTokensAndCal
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
+    ds->EnableSkipTokens(true);
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
@@ -5241,11 +5288,35 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedAndConnectio
     EXPECT_THAT(result.GetError().GetWSError().GetStatus(), WSError::Status::ConnectionError);
     }
 
+TEST_F(CachingDataSourceTests, SyncCachedData_SkipTokensNotEnabledInitialQueriesSuppliedAndServerRespondsWithSkipToken_SkipTokenNotUsed)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto ds = CreateMockedCachingDataSource(client, cache);
+    ds->EnableSkipTokens(false);
+
+    IQueryProvider::Query query(CachedResponseKey(StubECInstanceKey(11, 22), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
+
+    ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(""));
+    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(CacheStatus::OK));
+    ON_CALL(*cache, ReadResponseInstanceKeys(_, _)).WillByDefault(Return(CacheStatus::OK));
+
+    EXPECT_CALL(*client, SendQueryRequest(*query.query, _, _, _))
+        .WillOnce(Invoke([] (WSQueryCR, Utf8StringCR, Utf8StringCR skipToken, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("", skipToken);
+        return CreateCompletedAsyncTask(WSObjectsResult::Error({}));
+        }));
+
+    ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector({query}), bvector<IQueryProviderPtr>(), nullptr, nullptr)->Wait();
+    }
+
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedAndServerRespondsWithSkipToken_MultipleRequestsDone)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
     auto ds = CreateMockedCachingDataSource(client, cache);
+    ds->EnableSkipTokens(true);
 
     IQueryProvider::Query query(CachedResponseKey(StubECInstanceKey(11, 22), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
 
