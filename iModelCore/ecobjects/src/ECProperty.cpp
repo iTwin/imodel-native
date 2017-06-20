@@ -1744,6 +1744,9 @@ bool NavigationECProperty::Verify()
         thatConstraint = &m_relationshipClass->GetSource();
         }
 
+    if (nullptr != thatConstraint->GetAbstractConstraint() && thatConstraint->GetAbstractConstraint()->IsRelationshipClass())
+        return false;
+
     bool concreteClass = false;
     for (auto constraintClass : thisConstraint->GetConstraintClasses())
         {

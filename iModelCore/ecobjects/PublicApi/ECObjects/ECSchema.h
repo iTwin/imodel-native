@@ -1193,6 +1193,7 @@ struct EXPORT_VTABLE_ATTRIBUTE NavigationECProperty : public ECProperty
 DEFINE_T_SUPER(ECProperty)
 
 friend struct ECEntityClass;
+friend struct ECRelationshipClass;
 friend struct ECClass;
 private:
     ECRelationshipClassCP       m_relationshipClass;
@@ -2386,6 +2387,15 @@ public:
     //! @param[in] end The end to get the property name from.
     //! @return ::Success if the relationship class supports ordered relationships has a valid property name, otherwise ::Error.
     ECOBJECTS_EXPORT ECObjectsStatus GetOrderedRelationshipPropertyName(Utf8String& propertyName, ECRelationshipEnd end) const;
+
+    //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
+    // @param[out]  ecProperty          Outputs the property if successfully created
+    // @param[in]   name                The name for the navigation property.  Must be a valid ECName
+    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
+    // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
+    // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
+    // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_Long, bool verify = true);
 
     //! Returns true if successfully verifies the relationship, otherwise false.
     ECOBJECTS_EXPORT bool Verify() const;

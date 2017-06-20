@@ -3911,4 +3911,23 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
     return (!compareValue || GetStrengthDirection() == value);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
+    {
+    ecProperty = new NavigationECProperty(*this);
+    ecProperty->SetType(type);
+    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
+    if (ECObjectsStatus::Success == status)
+        status = AddProperty(ecProperty, name);
+
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecProperty;
+        ecProperty = nullptr;
+        }
+    return status;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
