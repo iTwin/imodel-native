@@ -622,5 +622,9 @@ void ScalableMeshAnalysis::_SetMaxThreadNumber(int num)
     m_ThreadNumber = num;
     }
 
+void ScalableMeshAnalysis::_SetUnitToMeter(double val)
+    {
+    m_unit2meter = val;
+    }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
