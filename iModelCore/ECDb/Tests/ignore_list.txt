@@ -40,12 +40,4 @@ ECSqlAdapterTestFixture.FindECInstancesFromSelectWithMultipleClasses
 ECRelationshipInheritanceTestFixture.RelECClassId
 ECRelationshipInheritanceTestFixture.NarrowingSemanticsFKMapping
 ECRelationshipInheritanceTestFixture.NarrowingSemanticsFKMapping_NonAbstractRelBaseClass
-JoinedTableTestFixture.SelfJoinRelationships
-JoinedTableTestFixture.BaseAndDirectDerivedClassRelationship
-JoinedTableTestFixture.RelationshipBetweenSubClasses
-JoinedTableTestFixture.RelationshipWithStandAloneClass
-JoinedTableTestFixture.RelationshipWithStandAloneClass1
-JoinedTableTestFixture.PolymorphicRelationshipWithStandAloneClass
-JoinedTableTestFixture.DropFKConstraintForSharedColumnForSubClasses
-JoinedTableTestFixture.VerifyONDeleteRestrictWithJoinedTable
 #============================================================================================================================

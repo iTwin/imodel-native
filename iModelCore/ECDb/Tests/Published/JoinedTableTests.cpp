@@ -22,6 +22,27 @@ struct JoinedTableTestFixture : DbMappingTestFixture
     protected:
         void AssertTableLayouts(ECDbCR, bmap<Utf8String, Utf8String> const& tableLayouts) const;
         ECInstanceId InsertTestInstance(ECDbCR ecdb, Utf8CP ecsql);
+        ECInstanceId InsertForeignKeyRelationship(ECDbCR ecdb, Utf8CP rel, ECInstanceId navId, ECInstanceId ecId)
+            {
+            Statement stmt;            
+            EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb,
+                                   "SELECT 'UPDATE [' || S.Alias || '].[' || C.Name || '] SET ['  || P.Name || '].[Id] = ? WHERE ECInstanceId = ?' FROM ec_Property P "
+                                   "       INNER JOIN ec_Class R ON R.Id = P.NavigationRelationshipClassId "
+                                   "       INNER JOIN ec_Class C ON C.Id = P.ClassId "
+                                   "       INNER JOIN ec_Schema S ON S.Id = C.SchemaId "
+                                   "WHERE  R.Name = ? "));
+            stmt.BindText(1, rel, Statement::MakeCopy::No);
+            EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW);
+            Utf8CP ecsql = stmt.GetValueText(0);
+            ECSqlStatement st;
+            EXPECT_EQ(ECSqlStatus::Success, st.Prepare(ecdb, ecsql)) << ecsql;
+            st.BindId(1, navId);
+            st.BindId(2, ecId);
+            EXPECT_EQ(BE_SQLITE_DONE, st.Step());
+            EXPECT_EQ(stmt.Step(), BE_SQLITE_DONE);
+            return ecId;
+            }
+
         Utf8String ToInsertECSql(ECDbCR ecdb, Utf8CP className);
         Utf8String ToSelectECSql(ECDbCR ecdb, Utf8CP className);
         void VerifyInsertedInstance(ECDbR ecdb, Utf8CP ecsql, ECInstanceId sourceInstanceId, ECInstanceId targetInstanceId, ECClassId sourceClassId, ECClassId targetClassId);
@@ -1460,6 +1481,8 @@ Utf8String JoinedTableTestFixture::ToInsertECSql(ECDbCR ecdb, Utf8CP className)
     {
     ECN::ECClassCP ecClass = ecdb.Schemas().GetClass("JoinedTableTest", className);
     EXPECT_TRUE(ecClass != nullptr);
+    
+   // CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT ec_Class")
 
     Utf8String insertECSql = "INSERT INTO ";
     insertECSql.append(ecClass->GetECSqlName()).append(" (SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES (%llu, %llu, %llu, %llu)");
@@ -1606,13 +1629,8 @@ TEST_F(JoinedTableTestFixture, SelfJoinRelationships)
     //Insert 1-1 Relationship
     {
     EC::ECInstanceId fooHasFooInstanceId1;
-    Savepoint savePoint(m_ecdb, "1-1 Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    fooHasFooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
-
-    savePoint.Commit();
+    fooHasFooInstanceId1 = InsertForeignKeyRelationship(m_ecdb, "FooHasFoo", fooInstanceId1, fooInstanceId1);
     ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasFoo").c_str(), fooHasFooInstanceId1.GetValue());
     VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
     }
@@ -1621,16 +1639,10 @@ TEST_F(JoinedTableTestFixture, SelfJoinRelationships)
     {
     EC::ECInstanceId fooHasManyFooInstanceId1;
     EC::ECInstanceId fooHasManyFooInstanceId2;
-    Savepoint savePoint(m_ecdb, "1-N Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId1.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    fooHasManyFooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
+    fooHasManyFooInstanceId1 = InsertForeignKeyRelationship(m_ecdb, "FooHasManyFoo", fooInstanceId1, fooInstanceId1);
+    fooHasManyFooInstanceId2 = InsertForeignKeyRelationship(m_ecdb, "FooHasManyFoo", fooInstanceId1, fooInstanceId2);
 
-    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasManyFoo").c_str(), fooInstanceId1.GetValue(), fooInstanceId2.GetValue(), fooClassId.GetValue(), fooClassId.GetValue());
-    fooHasManyFooInstanceId2 = InsertTestInstance(m_ecdb, ecsql.c_str());
-
-    savePoint.Commit();
 
     ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasManyFoo").c_str(), fooHasManyFooInstanceId1.GetValue());
     VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
@@ -1750,13 +1762,15 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
     EC::ECInstanceId fooInstanceId2;
     EC::ECInstanceId gooInstanceId1;
     EC::ECInstanceId gooInstanceId2;
-
+    EC::ECInstanceId fooHasGooInstanceId1;
+    EC::ECInstanceId fooHasManyGooInstanceId1;
+    EC::ECInstanceId fooHasManyGooInstanceId2;
     //Insert Instances for Constraint classes of Relationships
     {
     fooInstanceId1 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
     fooInstanceId2 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Foo (A, B) VALUES(100002, 'Class Foo Instance 2')");
-    gooInstanceId1 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Goo (C, D) VALUES(200001, 'Class Goo Instance 1')");
-    gooInstanceId2 = InsertTestInstance(m_ecdb, "INSERT INTO dgn.Goo (C, D) VALUES(200002, 'Class Goo Instance 2')");
+    fooHasManyGooInstanceId1 = fooHasGooInstanceId1 = gooInstanceId1 = InsertTestInstance(m_ecdb, SqlPrintfString("INSERT INTO dgn.Goo (C, D, Foo1.Id, Foo2.Id) VALUES(200001, 'Class Goo Instance 1', %s, %s)", fooInstanceId1.ToString().c_str(), fooInstanceId1.ToString().c_str()).GetUtf8CP());
+    fooHasManyGooInstanceId2= gooInstanceId2 = InsertTestInstance(m_ecdb, SqlPrintfString("INSERT INTO dgn.Goo (C, D, Foo2.Id) VALUES(200002, 'Class Goo Instance 2',  %s)", fooInstanceId1.ToString().c_str()).GetUtf8CP());
 
     if (!fooInstanceId1.IsValid() || !fooInstanceId2.IsValid() || !gooInstanceId1.IsValid() || !gooInstanceId2.IsValid())
         ASSERT_TRUE(false) << "Instance Id's not valid";
@@ -1764,34 +1778,14 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
 
     //Insert 1-1 Relationship
     {
-    EC::ECInstanceId fooHasGooInstanceId1;
-    Savepoint savePoint(m_ecdb, "1-1 Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    fooHasGooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
-
-    savePoint.Commit();
-
     ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasGoo").c_str(), fooHasGooInstanceId1.GetValue());
     VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
     }
 
     //Insert 1-N Relationship
     {
-    EC::ECInstanceId fooHasManyGooInstanceId1;
-    EC::ECInstanceId fooHasManyGooInstanceId2;
-    Savepoint savePoint(m_ecdb, "1-N Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId1.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    fooHasManyGooInstanceId1 = InsertTestInstance(m_ecdb, ecsql.c_str());
-
-    ecsql.Sprintf(ToInsertECSql(m_ecdb, "FooHasManyGoo").c_str(), fooInstanceId1.GetValue(), gooInstanceId2.GetValue(), fooClassId.GetValue(), gooClassId.GetValue());
-    fooHasManyGooInstanceId2 = InsertTestInstance(m_ecdb, ecsql.c_str());
-
-    savePoint.Commit();
-
     ecsql.Sprintf(ToSelectECSql(m_ecdb, "FooHasManyGoo").c_str(), fooHasManyGooInstanceId1.GetValue());
     VerifyInsertedInstance(m_ecdb, ecsql.c_str(), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
 
@@ -1938,13 +1932,8 @@ TEST_F(JoinedTableTestFixture, RelationshipBetweenSubClasses)
     //Insert 1-1 Relationship
     {
     EC::ECInstanceId gooHasRooInstanceId1;
-    Savepoint savePoint(db, "1-1 Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "GooHasRoo").c_str(), gooInstanceId1.GetValue(), rooInstanceId1.GetValue(), gooClassId.GetValue(), rooClassId.GetValue());
-    gooHasRooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
-
-    savePoint.Commit();
+    gooHasRooInstanceId1 = InsertForeignKeyRelationship(db, "GooHasRoo", gooInstanceId1, rooInstanceId1);
 
     ecsql.Sprintf(ToSelectECSql(db, "GooHasRoo").c_str(), gooHasRooInstanceId1.GetValue());
     VerifyInsertedInstance(db, ecsql.c_str(), gooInstanceId1, rooInstanceId1, gooClassId, rooClassId);
@@ -1954,16 +1943,9 @@ TEST_F(JoinedTableTestFixture, RelationshipBetweenSubClasses)
     {
     EC::ECInstanceId gooHasManyRooInstanceId1;
     EC::ECInstanceId gooHasManyRooInstanceId2;
-    Savepoint savePoint(db, "1-N Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "GooHasManyRoo").c_str(), gooInstanceId1.GetValue(), rooInstanceId1.GetValue(), gooClassId.GetValue(), rooClassId.GetValue());
-    gooHasManyRooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
-
-    ecsql.Sprintf(ToInsertECSql(db, "GooHasManyRoo").c_str(), gooInstanceId1.GetValue(), rooInstanceId2.GetValue(), gooClassId.GetValue(), rooClassId.GetValue());
-    gooHasManyRooInstanceId2 = InsertTestInstance(db, ecsql.c_str());
-
-    savePoint.Commit();
+    gooHasManyRooInstanceId1 = InsertForeignKeyRelationship(db, "GooHasManyRoo", gooInstanceId1, rooInstanceId1);
+    gooHasManyRooInstanceId2 = InsertForeignKeyRelationship(db, "GooHasManyRoo", gooInstanceId1, rooInstanceId2);
 
     ecsql.Sprintf(ToSelectECSql(db, "GooHasManyRoo").c_str(), gooHasManyRooInstanceId1.GetValue());
     VerifyInsertedInstance(db, ecsql.c_str(), gooInstanceId1, rooInstanceId1, gooClassId, rooClassId);
@@ -2103,14 +2085,8 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass)
     //Insert 1-1 Relationship
     {
     EC::ECInstanceId fooHasRooInstanceId1;
-    Savepoint savePoint(db, "1-1 Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasRoo").c_str(), fooInstanceId1.GetValue(), rooInstanceId1.GetValue(), fooClassId.GetValue(), rooClassId.GetValue());
-    fooHasRooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
-
-    savePoint.Commit();
-
+    fooHasRooInstanceId1 = InsertForeignKeyRelationship(db, "FooHasRoo", fooInstanceId1, rooInstanceId1);
     ecsql.Sprintf(ToSelectECSql(db, "FooHasRoo").c_str(), fooHasRooInstanceId1.GetValue());
     VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, rooInstanceId1, fooClassId, rooClassId);
     }
@@ -2119,16 +2095,10 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass)
     {
     EC::ECInstanceId fooHasManyRooInstanceId1;
     EC::ECInstanceId fooHasManyRooInstanceId2;
-    Savepoint savePoint(db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasManyRoo").c_str(), fooInstanceId1.GetValue(), rooInstanceId1.GetValue(), fooClassId.GetValue(), rooClassId.GetValue());
-    fooHasManyRooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
-
-    ecsql.Sprintf(ToInsertECSql(db, "FooHasManyRoo").c_str(), fooInstanceId1.GetValue(), rooInstanceId2.GetValue(), fooClassId.GetValue(), rooClassId.GetValue());
-    fooHasManyRooInstanceId2 = InsertTestInstance(db, ecsql.c_str());
-
-    savePoint.Commit();
+    fooHasManyRooInstanceId1 = InsertForeignKeyRelationship(db, "FooHasManyRoo", fooInstanceId1, rooInstanceId1);
+    fooHasManyRooInstanceId2 = InsertForeignKeyRelationship(db, "FooHasManyRoo", fooInstanceId1, rooInstanceId2);
 
     ecsql.Sprintf(ToSelectECSql(db, "FooHasManyRoo").c_str(), fooHasManyRooInstanceId1.GetValue());
     VerifyInsertedInstance(db, ecsql.c_str(), fooInstanceId1, rooInstanceId1, fooClassId, rooClassId);
@@ -2267,14 +2237,8 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass1)
     //Insert 1-1 Relationship
     {
     EC::ECInstanceId rooHasFooInstanceId1;
-    Savepoint savePoint(db, "1-1 Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "RooHasFoo").c_str(), rooInstanceId1.GetValue(), fooInstanceId1.GetValue(), rooClassId.GetValue(), fooClassId.GetValue());
-    rooHasFooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
-
-    savePoint.Commit();
-
+    rooHasFooInstanceId1 = InsertForeignKeyRelationship(db, "RooHasFoo", rooInstanceId1, fooInstanceId1);
     ecsql.Sprintf(ToSelectECSql(db, "RooHasFoo").c_str(), rooHasFooInstanceId1.GetValue());
     VerifyInsertedInstance(db, ecsql.c_str(), rooInstanceId1, fooInstanceId1, rooClassId, fooClassId);
     }
@@ -2283,16 +2247,9 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass1)
     {
     EC::ECInstanceId rooHasManyFooInstanceId1;
     EC::ECInstanceId rooHasManyFooInstanceId2;
-    Savepoint savePoint(db, "1-N Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "RooHasManyFoo").c_str(), rooInstanceId1.GetValue(), fooInstanceId1.GetValue(), rooClassId.GetValue(), fooClassId.GetValue());
-    rooHasManyFooInstanceId1 = InsertTestInstance(db, ecsql.c_str());
-
-    ecsql.Sprintf(ToInsertECSql(db, "RooHasManyFoo").c_str(), rooInstanceId1.GetValue(), fooInstanceId2.GetValue(), rooClassId.GetValue(), fooClassId.GetValue());
-    rooHasManyFooInstanceId2 = InsertTestInstance(db, ecsql.c_str());
-
-    savePoint.Commit();
+    rooHasManyFooInstanceId1 = InsertForeignKeyRelationship(db, "RooHasManyFoo", rooInstanceId1, fooInstanceId1);
+    rooHasManyFooInstanceId2 = InsertForeignKeyRelationship(db, "RooHasManyFoo", rooInstanceId1, fooInstanceId2);
 
     ecsql.Sprintf(ToSelectECSql(db, "RooHasManyFoo").c_str(), rooHasManyFooInstanceId1.GetValue());
     VerifyInsertedInstance(db, ecsql.c_str(), rooInstanceId1, fooInstanceId1, rooClassId, fooClassId);
@@ -2449,16 +2406,11 @@ TEST_F(JoinedTableTestFixture, PolymorphicRelationshipWithStandAloneClass)
     {
     EC::ECInstanceId IFaceHasBodyInstanceId1;
     EC::ECInstanceId IFaceHasBodyInstanceId2;
-    Savepoint savePoint(db, "1-1 Relationship Instances");
-
+ 
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "IFaceHasBody").c_str(), gooInstanceId1.GetValue(), bodyInstanceId1.GetValue(), gooClassId.GetValue(), bodyClassId.GetValue());
-    IFaceHasBodyInstanceId1 = InsertTestInstance(db, ecsql.c_str());
-
-    ecsql.Sprintf(ToInsertECSql(db, "IFaceHasBody").c_str(), booInstanceId1.GetValue(), bodyInstanceId2.GetValue(), booClassId.GetValue(), bodyClassId.GetValue());
-    IFaceHasBodyInstanceId2 = InsertTestInstance(db, ecsql.c_str());
-
-    savePoint.Commit();
+    IFaceHasBodyInstanceId1 = InsertForeignKeyRelationship(db, "IFaceHasBody", gooInstanceId1, bodyInstanceId1);
+    IFaceHasBodyInstanceId2 = InsertForeignKeyRelationship(db, "IFaceHasBody", booInstanceId1, bodyInstanceId2);
+    m_ecdb.SaveChanges();
 
     ecsql.Sprintf(ToSelectECSql(db, "IFaceHasBody").c_str(), IFaceHasBodyInstanceId1.GetValue());
     VerifyInsertedInstance(db, ecsql.c_str(), gooInstanceId1, bodyInstanceId1, gooClassId, bodyClassId);
@@ -2471,16 +2423,9 @@ TEST_F(JoinedTableTestFixture, PolymorphicRelationshipWithStandAloneClass)
     {
     EC::ECInstanceId IFaceHasManyBodyInstanceId1;
     EC::ECInstanceId IFaceHasManyBodyInstanceId2;
-    Savepoint savePoint(db, "1-N Relationship Instances");
-
     Utf8String ecsql;
-    ecsql.Sprintf(ToInsertECSql(db, "IFaceHasManyBody").c_str(), gooInstanceId1.GetValue(), bodyInstanceId1.GetValue(), gooClassId.GetValue(), bodyClassId.GetValue());
-    IFaceHasManyBodyInstanceId1 = InsertTestInstance(db, ecsql.c_str());
-
-    ecsql.Sprintf(ToInsertECSql(db, "IFaceHasManyBody").c_str(), booInstanceId1.GetValue(), bodyInstanceId2.GetValue(), booClassId.GetValue(), bodyClassId.GetValue());
-    IFaceHasManyBodyInstanceId2 = InsertTestInstance(db, ecsql.c_str());
-
-    savePoint.Commit();
+    IFaceHasManyBodyInstanceId1 = InsertForeignKeyRelationship(db, "IFaceHasManyBody", gooInstanceId1, bodyInstanceId1);
+    IFaceHasManyBodyInstanceId2 = InsertForeignKeyRelationship(db, "IFaceHasManyBody", booInstanceId1, bodyInstanceId2);
 
     ecsql.Sprintf(ToSelectECSql(db, "IFaceHasManyBody").c_str(), IFaceHasManyBodyInstanceId1.GetValue());
     VerifyInsertedInstance(db, ecsql.c_str(), gooInstanceId1, bodyInstanceId1, gooClassId, bodyClassId);
@@ -2580,12 +2525,12 @@ TEST_F(JoinedTableTestFixture, DropFKConstraintForSharedColumnForSubClasses)
 
     ASSERT_EQ(SUCCESS, SetupECDb("fkconstraintsonsharedcolumnsforsubclasses.ecdb", testItem));
     ECDbR ecdb = m_ecdb;
-
+    m_ecdb.Schemas().CreateClassViewsInDb();
     AssertForeignKey(false, ecdb, "ts_B1Sub", "sc_02");
 
     ECInstanceKey sourceKey;
     ECInstanceKey targetKey;
-    ECInstanceKey relKey;
+    ECInstanceId relKey;
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.A VALUES('A_prop')"));
@@ -2596,16 +2541,10 @@ TEST_F(JoinedTableTestFixture, DropFKConstraintForSharedColumnForSubClasses)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey));
     statement.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Rel1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
-    statement.BindId(1, sourceKey.GetInstanceId());
-    statement.BindId(2, targetKey.GetInstanceId());
-    statement.BindId(3, sourceKey.GetClassId());
-    statement.BindId(4, targetKey.GetClassId());
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(relKey));
-    statement.Finalize();
-
+    relKey = InsertForeignKeyRelationship(m_ecdb, "Rel1", sourceKey.GetInstanceId(), targetKey.GetInstanceId());
+    m_ecdb.SaveChanges();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId FROM ts.Rel1 WHERE ECInstanceId = ?"));
-    statement.BindId(1, relKey.GetInstanceId());
+    statement.BindId(1, relKey);
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(sourceKey.GetInstanceId().GetValue(), statement.GetValueInt64(0));
     ASSERT_EQ(targetKey.GetInstanceId().GetValue(), statement.GetValueInt64(1));
@@ -2682,13 +2621,7 @@ TEST_F(JoinedTableTestFixture, VerifyONDeleteRestrictWithJoinedTable)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey));
     statement.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.AOwnsB(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
-    statement.BindId(1, sourceKey.GetInstanceId());
-    statement.BindId(2, targetKey.GetInstanceId());
-    statement.BindId(3, sourceKey.GetClassId());
-    statement.BindId(4, targetKey.GetClassId());
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
+    InsertForeignKeyRelationship(m_ecdb, "AOwnsB", sourceKey.GetInstanceId(), targetKey.GetInstanceId());
 
     ECInstanceKey sourceKey1;
     ECInstanceKey targetKey1;
@@ -2702,13 +2635,7 @@ TEST_F(JoinedTableTestFixture, VerifyONDeleteRestrictWithJoinedTable)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey1));
     statement.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.AOwnsB1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
-    statement.BindId(1, sourceKey1.GetInstanceId());
-    statement.BindId(2, targetKey1.GetInstanceId());
-    statement.BindId(3, sourceKey1.GetClassId());
-    statement.BindId(4, targetKey1.GetClassId());
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
+    InsertForeignKeyRelationship(m_ecdb, "AOwnsB1", sourceKey1.GetInstanceId(), targetKey1.GetInstanceId());
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ts.A WHERE ECInstanceId = ?"));
     statement.BindId(1, sourceKey.GetInstanceId());
