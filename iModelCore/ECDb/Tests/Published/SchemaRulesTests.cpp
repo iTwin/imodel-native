@@ -2020,6 +2020,303 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
                                                             "</ECSchema>"))) << "Duplicate constraint classes are already merged by ECObjects, so this is fine";
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
+    {
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="A" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="B" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Definition" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="LinkTableRel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                        <ECNavigationProperty propertyName="Definition" relationshipName="LinkTableRelIsDefinedBy" direction="Backward"/>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelIsDefinedBy" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Definition"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="LinkTableRel"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Logical FK Nav prop Rel has link table rel as constraint class";
+
+            ASSERT_EQ(ColumnInfo::List({{"ts1_LinkTableRel","DefinitionId"}, {"ts1_LinkTableRel","DefinitionRelECClassId", true}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema1", "LinkTableRel", "Definition")));
+            }
+
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+                                         SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                     <ECEntityClass typeName="A" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="B" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Definition" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="LinkTableRel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                        <ECNavigationProperty propertyName="Definition" relationshipName="LinkTableRelIsDefinedBy" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelIsDefinedBy" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Definition"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="LinkTableRel"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Physical FK Nav prop Rel has link table rel as constraint class";
+
+            ASSERT_EQ(ColumnInfo::List({{"ts2_LinkTableRel","DefinitionId"}, {"ts2_LinkTableRel","DefinitionRelECClassId", true}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema2", "LinkTableRel", "Definition")));
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+                SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                     <ECEntityClass typeName="A" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="B" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Definition" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="LinkTableRel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelHasDefinition" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="Definition"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="LinkTableRel"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "LinkTable Rel has link table rel as constraint class";
+
+            ASSERT_EQ(ColumnInfo::List({{"ts3_LinkTableRel","SourceId"}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema3", "LinkTableRel", "SourceECInstanceId")));
+
+            ASSERT_EQ(ColumnInfo::List({{"ts3_LinkTableRel","TargetId"}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema3", "LinkTableRel", "TargetECInstanceId")));
+
+
+            ASSERT_EQ(ColumnInfo::List({{"ts3_LinkTableRelHasDefinition","SourceId"}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema3", "LinkTableRelHasDefinition", "SourceECInstanceId")));
+
+            ASSERT_EQ(ColumnInfo::List({{"ts3_LinkTableRelHasDefinition","TargetId"}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema3", "LinkTableRelHasDefinition", "TargetECInstanceId")));
+
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+                    SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                     <ECEntityClass typeName="A" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="B" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="LinkTableRel1" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRel2" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelHasDefinition" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="LinkTableRel1"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="LinkTableRel2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "LinkTable Rel has link table rel as constraint class on both sides";
+
+            ASSERT_EQ(ColumnInfo::List({{"ts4_LinkTableRelHasDefinition","SourceId"}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema4", "LinkTableRelHasDefinition", "SourceECInstanceId")));
+
+            ASSERT_EQ(ColumnInfo::List({{"ts4_LinkTableRel1","ECClassId", true}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema4", "LinkTableRelHasDefinition", "SourceECClassId")));
+
+            ASSERT_EQ(ColumnInfo::List({{"ts4_LinkTableRelHasDefinition","TargetId"}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema4", "LinkTableRelHasDefinition", "TargetECInstanceId")));
+
+            ASSERT_EQ(ColumnInfo::List({{"ts4_LinkTableRel2","ECClassId", true}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema4", "LinkTableRelHasDefinition", "TargetECClassId")));
+
+            }
+
+            {
+  /*          ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+                     SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                     <ECEntityClass typeName="A" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="B" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Definition" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="LinkTableRel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelSub1" modifier="Sealed" strength="Referencing">
+                        <BaseClass>LinkTableRel</BaseClass>
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelSub2" modifier="Sealed" strength="Referencing">
+                        <BaseClass>LinkTableRel</BaseClass>
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelHasDefinition" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="Definition"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has" abstractConstraint="LinkTableRel">
+                            <Class class="LinkTableRelSub1"/>
+                            <Class class="LinkTableRelSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "LinkTable Rel has two link table rels as constraint class";
+
+
+            ASSERT_EQ(ColumnInfo::List({{"ts5_LinkTableRelHasDefinition","SourceId"}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema5", "LinkTableRelHasDefinition", "SourceECInstanceId")));
+
+            ASSERT_EQ(ColumnInfo::List({{"ts5_LinkTableRelHasDefinition","TargetId"}}),
+                      GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema5", "LinkTableRelHasDefinition", "TargetECInstanceId")));
+                      */
+            }
+
+            ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="A" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="B" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Definition" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                        <ECNavigationProperty propertyName="LinkTableRel" relationshipName="LinkTableRelIsDefinedBy" direction="Backward"/>
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="LinkTableRel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelIsDefinedBy" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="LinkTableRel"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Definition"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Nav prop must not point to relationship";
+
+            ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                     <ECEntityClass typeName="A" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="B" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="LinkTableRel1" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRel2" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                        <ECNavigationProperty propertyName="LinkTableRel1" relationshipName="LinkTableRelIsDefinedBy" direction="Backward"/>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelIsDefinedBy" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="LinkTableRel1"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="LinkTableRel2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Nav prop must point to entity class";
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  12/16
 //+---------------+---------------+---------------+---------------+---------------+------

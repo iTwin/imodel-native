@@ -1729,6 +1729,59 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipInheritanceTestFixture, AddingPropertyToLinkTableSubclass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_linktable.ecdb",
+                                 SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                     <ECEntityClass typeName="A" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="B" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="LinkTableRel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="LinkTableRelSub" modifier="Sealed" strength="Referencing">
+                        <BaseClass>LinkTableRel</BaseClass>
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B"/>
+                        </Target>
+                        <ECProperty propertyName="Priority" typeName="string" />
+                     </ECRelationshipClass>
+                   </ECSchema>)xml")));
+
+    ASSERT_FALSE(m_ecdb.TableExists("LinkTableRelSub")) << "Link table subclassing always amounts to TablePerHierarachy";
+
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","Id"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "ECInstanceId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","ECClassId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "ECClassId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","SourceId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "SourceECInstanceId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_A","ECClassId", true}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "SourceECClassId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","TargetId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "TargetECInstanceId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_B","ECClassId", true}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "TargetECClassId")));
+
+
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","Id"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "ECInstanceId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","ECClassId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "ECClassId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","SourceId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "SourceECInstanceId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_A","ECClassId", true}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "SourceECClassId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","TargetId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "TargetECInstanceId")));
+    ASSERT_EQ(ColumnInfo::List({{"ts_B","ECClassId", true}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "TargetECClassId")));
+
+    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","Priority"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "Priority")));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationships)

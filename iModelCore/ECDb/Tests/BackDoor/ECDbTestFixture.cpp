@@ -189,7 +189,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
 
     if (SUCCESS != ImportSchema(ecdb, schema))
         {
-        EXPECT_TRUE(false) << "Importing schema failed: " << schema.ToString().c_str();
+        EXPECT_TRUE(false) << "Importing schema failed.";
         return ERROR;
         }
 
