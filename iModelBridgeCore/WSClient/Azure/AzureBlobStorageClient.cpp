@@ -136,7 +136,7 @@ ICancellationTokenPtr ct
             return;
             }
 
-        if (chunkNumber + 1 < ceil((double) fileSize / chunkSize))
+        if (chunkNumber + 1 < ceil((double) (fileSize / chunkSize)))
             {
             SendChunkAndContinue(url, blockIds, body, fileSize, chunkSize, chunkNumber + 1, progressCallback, ct)
                 ->Then([=] (const AzureResult& result)
