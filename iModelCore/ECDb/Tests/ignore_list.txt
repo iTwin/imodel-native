@@ -89,6 +89,4 @@ ReferentialIntegrityTestFixture.AllowDuplicateRelationships
 RelationshipStrengthTestFixture.BackwardEmbedding
 RelationshipStrengthTestFixture.RelationshipTest
 RelationshipStrengthTestFixture.BackwardHoldingForwardEmbedding
-SchemaRulesTestFixture.RelationshipCardinality
-SchemaRulesTestFixture.RelationshipMappingLimitations_SupportedCases
 #============================================================================================================================
