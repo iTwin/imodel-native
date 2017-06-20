@@ -168,7 +168,7 @@ public:
         {
         return new DisplayParams(Type::Text, gf, geom, false);
         }
-
+    static DisplayParamsCPtr CreateForGeomPartInstance(DisplayParamsCR partParams, DisplayParamsCR instanceParams);
 };
 
 //=======================================================================================

@@ -235,6 +235,32 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part, DisplayParamsCR inst)
+    {
+    if (part.GetType() == inst.GetType())
+        return &inst;
+
+    // We initially create the instance params via CreateForMesh(), because we don't know what type(s) of geometry the part will contain.
+    // Need to fix it up for linear/text
+    BeAssert(Type::Mesh == inst.GetType());
+    DisplayParamsPtr clone(new DisplayParams(part));
+    clone->m_fillColor = clone->m_lineColor = inst.m_lineColor;
+    clone->m_categoryId = inst.m_categoryId;
+    clone->m_subCategoryId = inst.m_subCategoryId;
+    clone->m_class = inst.m_class;
+
+    if (Type::Linear == clone->GetType())
+        {
+        clone->m_width = inst.m_width;
+        clone->m_linePixels = inst.m_linePixels;
+        }
+
+    return clone.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayParams::HasRegionOutline() const
@@ -318,6 +344,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     if (&rhs == this)
         return false;
 
+    TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
     TEST_LESS_THAN(GetMaterialId());
@@ -362,6 +389,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     if (&rhs == this)
         return true;
 
+    TEST_EQUAL(GetType());
     TEST_EQUAL(IgnoresLighting());
     TEST_EQUAL(GetLineWidth());
     TEST_EQUAL(GetMaterialId().GetValueUnchecked());
@@ -1241,7 +1269,6 @@ GeometryPtr Geometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR rang
     {
     return SolidKernelGeometry::Create(solid, tf, range, entityId, params, db);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016

@@ -1569,11 +1569,13 @@ private:
 
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
-    void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained);
+    void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained) { AddPolyface(polyfaces, geom, geom.GetDisplayParams(), rangePixels, isContained); }
+    void AddPolyface(Polyface& polyface, GeometryR, DisplayParamsCR ,double rangePixels, bool isContained);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
-    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained);
+    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained) { AddStrokes(strokes, geom, geom.GetDisplayParams(), rangePixels, isContained); }
+    void AddStrokes(StrokesR, GeometryR, DisplayParamsCR, double rangePixels, bool isContained);
     Strokes ClipStrokes(StrokesCR strokes) const;
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
@@ -1679,13 +1681,15 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
         for (auto& polyface : polyfaces)
             {
             polyface.Transform(instanceTransform);
-            AddPolyface(polyface, const_cast<GeometryR>(*instance), rangePixels, true);
+            DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*polyface.m_displayParams, instance->GetDisplayParams());
+            AddPolyface(polyface, const_cast<GeometryR>(*instance), *params, rangePixels, true);
             }
 
         for (auto& strokeList : strokes)
             {
             strokeList.Transform(instanceTransform);
-            AddStrokes(strokeList, *const_cast<GeometryP>(instance), rangePixels, true);
+            DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*strokeList.m_displayParams, instance->GetDisplayParams());
+            AddStrokes(strokeList, *const_cast<GeometryP>(instance), *params, rangePixels, true);
             }
         }
     }
@@ -1719,14 +1723,12 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
     {
     PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
     if (nullptr == polyface || 0 == polyface->GetPointCount())
         return;
 
-    // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
-    DisplayParamsCR displayParams = geom.GetDisplayParams();
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.IsTextured();
 
@@ -1857,7 +1859,7 @@ void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
     {
     if (m_loadContext.WasAborted())
         return;
@@ -1872,8 +1874,6 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
-    // NB: The strokes are shared amongst many instances, each of which may have its own display params. Use the params from the instance.
-    DisplayParamsCR displayParams = geom.GetDisplayParams();
     MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
     MeshBuilderR builder = GetMeshBuilder(key);
 
