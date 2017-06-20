@@ -3080,17 +3080,25 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
 
     bvector<ISubEntityPtr> faces;
     bvector<Transform> faceTransforms;
+    bvector<PK_CURVE_t> curves;
 
     for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
         {
         if (ISubEntity::SubEntityType::Edge != edges[iEdge]->GetSubEntityType())
             continue;
 
-        DRange1d    uRangeE;
+        PK_EDGE_t  edgeTag = PSolidSubEntity::GetSubEntityTag(*edges[iEdge]);
+        PK_CURVE_t curveTag = PK_ENTITY_null;
+        DRange1d   uRangeE;
 
-        if (SUCCESS != BRepUtil::GetEdgeParameterRange(*edges[iEdge], uRangeE))
+        if (SUCCESS != PSolidTopo::GetCurveOfEdge(curveTag, &uRangeE.low, &uRangeE.high, nullptr, edgeTag))
             continue;
 
+        // Ignore duplicate faces from edges that share the same curve as a previous edge...ex. creating T roof peak...
+        bvector<PK_CURVE_t>::iterator it = std::find(curves.begin(), curves.end(), curveTag);
+        bool isSameCurve = (it != curves.end());
+        curves.push_back(curveTag);
+        
         double      uParam;
         DPoint3d    edgePoint;
 
@@ -3100,7 +3108,7 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
             PK_EDGE_ask_type_t edgeTypes;
 
             // Use pick location for closed or ring edge...
-            if (SUCCESS != PK_EDGE_ask_type(PSolidSubEntity::GetSubEntityTag(*edges[iEdge]), &edgeTypes) || PK_EDGE_type_open_c == edgeTypes.vertex_type)
+            if (SUCCESS != PK_EDGE_ask_type(edgeTag, &edgeTypes) || PK_EDGE_type_open_c == edgeTypes.vertex_type)
                 {
                 double  delta = fabs(uRangeE.high-uRangeE.low) * 0.25;
 
@@ -3135,7 +3143,8 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
 
             if (it != faces.end())
                 {
-                faceTransforms[it - faces.begin()] = edgeTransform; // If more than 1 edge from same face is selected...just apply input transform to face...
+                if (!isSameCurve)
+                    faceTransforms[it - faces.begin()] = edgeTransform; // If more than 1 edge from same face is selected...just apply input transform to face...
                 continue;
                 }
 
