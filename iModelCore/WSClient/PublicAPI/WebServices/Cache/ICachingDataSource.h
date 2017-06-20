@@ -98,6 +98,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         virtual AsyncTaskPtr<void> CancelAllTasks() = 0;
 
+        //! Enable experimental skip token support while doing queries and caching data. Disabled by default.
+        //! If server-side supported, will do queries in pages.
+        //! WARNING: unfinished and non-tested functionality:
+        //!     * Data changes, page size changes, additions or removal of instances while pulling might corrupt/distort data or break caching. 
+        //!     * Connection loss while pulling data will leave response in state "NotCached" with partially new and old data in cache.
+        virtual void EnableSkipTokens(bool enable) = 0;
+
         //! Check server for schema changes and update if needed.
         virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct = nullptr) = 0;
 

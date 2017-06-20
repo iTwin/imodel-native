@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/CachingDataSource.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -59,6 +59,7 @@ struct CachingDataSource :
         NavigationCachingOptions                    m_cachingOptions;
 
         std::deque<std::shared_ptr<AsyncTask>>      m_syncLocalChangesQueue;
+        bool                                        m_enableSkipTokens = false;
 
     private:
         CachingDataSource
@@ -132,6 +133,8 @@ struct CachingDataSource :
             ICancellationTokenPtr ct
             );
 
+        Utf8String GetInitialSkipToken() const;
+
     public:
         virtual ~CachingDataSource() override;
 
@@ -169,6 +172,8 @@ struct CachingDataSource :
         WSCACHE_EXPORT void SetClient(IWSRepositoryClientPtr client) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<void> CancelAllTasks() override;
+
+        WSCACHE_EXPORT void EnableSkipTokens(bool enable) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct = nullptr) override;
 
