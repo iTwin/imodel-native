@@ -34,6 +34,7 @@ DgnV8Depends        = $(DgnV8APISrc)Converter.h \
                       $(baseDir)EntityConverter.h \
                       $(baseDir)LinkConverter.h \
                       $(baseDir)ECConversion.h \
+                      $(baseDir)ECDiff.h \
                       $(SrcV8IModelExtraFiles)V8IModelExtraFiles.h
 
 o = $(OutputRootDir)Build/DgnDbSync/DgnV8/Converter/
@@ -90,6 +91,8 @@ $(o)RootModelConverter$(oext):  $(baseDir)RootModelConverter.cpp $(DgnV8Depends)
 $(o)EntityConverter$(oext):  $(baseDir)EntityConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)ECConversion$(oext):  $(baseDir)ECConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ECDiff$(oext):  $(baseDir)ECDiff.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)GeometryConversion$(oext):  $(baseDir)GeometryConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 

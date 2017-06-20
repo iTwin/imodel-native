@@ -696,8 +696,8 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
         if (!schemaKey.Matches(key, matchType))
             continue;
 
-        ECN::ECSchemaPtr leftSchema;
-        if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlString(leftSchema, schemaIter->second.c_str(), schemaContext))
+        BECN::ECSchemaPtr leftSchema;
+        if (BECN::SchemaReadStatus::Success != BECN::ECSchema::ReadFromXmlString(leftSchema, schemaIter->second.c_str(), schemaContext))
             return nullptr;
 
         if (kvPairs.second.size() == 1)
@@ -711,11 +711,11 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
         for (; schemaIter != kvPairs.second.end(); schemaIter++)
             {
 //            ReportProgress();
-            ECN::ECSchemaPtr rightSchema;
-            if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlString(rightSchema, schemaIter->second.c_str(), schemaContext))
+            BECN::ECSchemaPtr rightSchema;
+            if (BECN::SchemaReadStatus::Success != BECN::ECSchema::ReadFromXmlString(rightSchema, schemaIter->second.c_str(), schemaContext))
                 return nullptr;
-            auto diff = ECN::ECDiff::Diff(*leftSchema, *rightSchema);
-            if (diff->GetStatus() == ECN::DiffStatus::Success)
+            auto diff = ECDiff::Diff(*leftSchema, *rightSchema);
+            if (diff->GetStatus() == DiffStatus::Success)
                 {
                 if (diff->IsEmpty())
                     continue;
@@ -739,13 +739,13 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
                     LOG.info("=====================================[ECDiff End]=====================================");
                     }
 
-                bmap<Utf8String, ECN::DiffNodeState> unitStates;
-                if (diff->GetNodesState(unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification") != ECN::DiffStatus::Success)
+                bmap<Utf8String, DiffNodeState> unitStates;
+                if (diff->GetNodesState(unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification") != DiffStatus::Success)
                     LOG.error("ECDiff: Error determining diff node state for UnitSpecification");
-                if (diff->GetNodesState(unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications") != ECN::DiffStatus::Success)
+                if (diff->GetNodesState(unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications") != DiffStatus::Success)
                     LOG.error("ECDiff: Error determining diff node state for UnitSpecifications");
                 ECN::ECSchemaPtr merged;
-                if (diff->Merge(merged, ECN::CONFLICTRULE_TakeLeft) == ECN::MergeStatus::Success)
+                if (diff->Merge(merged, CONFLICTRULE_TakeLeft) == MergeStatus::Success)
                     {
                     leftSchema = merged;
                     Utf8String xml;
@@ -760,10 +760,10 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
                     }
                 }
             }
-        ECN::ECSchemaP match = nullptr;
+        BECN::ECSchemaP match = nullptr;
         do
             {
-            match = schemaContext.GetCache().GetSchema(schemaKey, ECN::SchemaMatchType::Latest);
+            match = schemaContext.GetCache().GetSchema(schemaKey, BECN::SchemaMatchType::Latest);
             if (nullptr != match)
                 schemaContext.GetCache().DropSchema(match->GetSchemaKey());
             } while (match != nullptr);

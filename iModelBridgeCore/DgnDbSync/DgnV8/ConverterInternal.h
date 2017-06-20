@@ -93,6 +93,7 @@
 #include <Raster/RasterApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <ThreeMx/ThreeMxApi.h>
+#include "ECDiff.h"
 #include "EntityConverter.h"
 #include "ECConversion.h"
 #include "LinkConverter.h"

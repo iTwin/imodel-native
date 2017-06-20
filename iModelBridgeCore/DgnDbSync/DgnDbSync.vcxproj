@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClInclude Include="DgnV8\ConverterInternal.h" />
     <ClInclude Include="DgnV8\ECConversion.h" />
+    <ClInclude Include="DgnV8\ECDiff.h" />
     <ClInclude Include="DgnV8\EntityConverter.h" />
     <ClInclude Include="DgnV8\Extensions.h" />
     <ClInclude Include="ImportConfig.h">
@@ -35,6 +36,7 @@
     <ClCompile Include="DgnV8\DgnV8Text.cpp" />
     <ClCompile Include="DgnV8\DgnV8TextTable.cpp" />
     <ClCompile Include="DgnV8\ECConversion.cpp" />
+    <ClCompile Include="DgnV8\ECDiff.cpp" />
     <ClCompile Include="DgnV8\EntityConverter.cpp" />
     <ClCompile Include="DgnV8\Extensions.cpp" />
     <ClCompile Include="DgnV8\Extensions2.cpp" />

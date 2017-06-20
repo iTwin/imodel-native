@@ -46,6 +46,9 @@
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\DgnV8Font.h">
       <Filter>PublicAPI\DgnV8</Filter>
     </ClInclude>
+    <ClInclude Include="DgnV8\ECDiff.h">
+      <Filter>DgnV8</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DgnV8\Converter.cpp">
@@ -122,6 +125,9 @@
       <Filter>DgnV8</Filter>
     </ClCompile>
     <ClCompile Include="DgnV8\DgnV8Tags.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ECDiff.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
   </ItemGroup>
