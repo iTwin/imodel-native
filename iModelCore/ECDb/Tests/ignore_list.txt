@@ -79,8 +79,4 @@ JoinedTableECSqlStatementsTests.PersistSqlForQueryOnAbstractBaseClass
 JoinedTableECSqlStatementsTests.UnionTests
 JoinedTableECSqlStatementsTests.ExceptTests
 JoinedTableECSqlStatementsTests.IntersectTests
-
-RelationshipStrengthTestFixture.BackwardEmbedding
-RelationshipStrengthTestFixture.RelationshipTest
-RelationshipStrengthTestFixture.BackwardHoldingForwardEmbedding
 #============================================================================================================================

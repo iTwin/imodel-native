@@ -5100,16 +5100,107 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
 struct RelationshipStrengthTestFixture : ECDbTestFixture
     {
     protected:
+        static Utf8CP GetTestSchemaXml() {  return R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RelationshipStrengthTest" alias="rst" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+	        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Person" modifier="None">
+                <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
+                <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
+                <ECNavigationProperty propertyName="Parent1" relationshipName="SingleParentHasChildren" direction="Backward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Parent2" relationshipName="SingleParentHasChildren_backward" direction="Forward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Spouse1" relationshipName="ParentHasSpouse" direction="Backward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Spouse2" relationshipName="ParentHasSpouse_backward" direction="Forward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="SingleParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="SingleParentHasChildren_backward" modifier="Sealed" strength="embedding" strengthDirection="backward">
+                <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Single parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ChildrenHaveManyParents" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="Parents" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
+                <Source multiplicity="(1..*)" roleLabel="Parents" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ParentHasSpouse" modifier="Sealed" strength="referencing" strengthDirection="forward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Spouse" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Spouse" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>
+                )xml";
+        }
+
     //---------------------------------------------------------------------------------------
     //                                               Muhammad Hassan                  10/2014
     //+---------------+---------------+---------------+---------------+---------------+------
-    ECInstanceKey InsertPerson(Utf8CP firstName, Utf8CP lastName)
+    ECInstanceKey InsertPerson(Utf8CP firstName, Utf8CP lastName, ECInstanceId parent1Id = ECInstanceId(), ECInstanceId parent2Id = ECInstanceId(), ECInstanceId spouse1Id = ECInstanceId(), ECInstanceId spouse2Id = ECInstanceId())
         {
         Utf8String ecsql;
-        ecsql.Sprintf("INSERT INTO RelationshipStrengthTest.Person(FirstName,LastName) VALUES('%s','%s')", firstName, lastName);
+        ecsql.Sprintf("INSERT INTO RelationshipStrengthTest.Person(FirstName,LastName,Parent1.Id,Parent2.Id,Spouse1.Id,Spouse2.Id) VALUES('%s','%s',?,?,?,?)", firstName, lastName);
         ECSqlStatement stmt;
         if (stmt.Prepare(m_ecdb, ecsql.c_str()) != ECSqlStatus::Success)
             return ECInstanceKey();
+
+        if (parent1Id.IsValid())
+            stmt.BindId(1, parent1Id);
+
+        if (parent2Id.IsValid())
+            stmt.BindId(2, parent2Id);
+
+        if (spouse1Id.IsValid())
+            stmt.BindId(3, spouse1Id);
+
+        if (spouse2Id.IsValid())
+            stmt.BindId(4, spouse2Id);
 
         ECInstanceKey key;
         stmt.Step(key);
@@ -5119,7 +5210,7 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
     //---------------------------------------------------------------------------------------
     //                                               Muhammad Hassan                  10/2014
     //+---------------+---------------+---------------+---------------+---------------+------
-    ECInstanceKey InsertRelationship(Utf8CP relationshipClassECSqlName, ECInstanceKey const& source, ECInstanceKey const& target)
+    ECInstanceKey InsertLinkTableRelationship(Utf8CP relationshipClassECSqlName, ECInstanceKey const& source, ECInstanceKey const& target)
         {
         Utf8String ecsql;
         ecsql.Sprintf("INSERT INTO %s(SourceECInstanceId, TargetECInstanceId) VALUES(%s,%s)", relationshipClassECSqlName, source.GetInstanceId().ToString().c_str(),
@@ -5170,6 +5261,27 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
 
         return statement.Step() == BE_SQLITE_ROW;
         }
+
+    //---------------------------------------------------------------------------------------
+    //                                               Muhammad Hassan                  10/2014
+    //+---------------+---------------+---------------+---------------+---------------+------
+    bool IsNavigationPropertySet(ECInstanceKey const& key, Utf8CP navPropName)
+        {
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass(key.GetClassId());
+        if (ecClass == nullptr)
+            return false;
+
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT NULL FROM ONLY %s WHERE ECInstanceId=%s AND %s.Id IS NOT NULL",
+                      ecClass->GetECSqlName().c_str(), key.GetInstanceId().ToString().c_str(), navPropName);
+
+        ECSqlStatement statement;
+        if (ECSqlStatus::Success != statement.Prepare(m_ecdb, ecsql.c_str()))
+            return false;
+
+        return statement.Step() == BE_SQLITE_ROW;
+        }
+
     };
 
 
@@ -5179,24 +5291,21 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipStrengthTestFixture, BackwardEmbedding)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", SchemaItem(GetTestSchemaXml())));
     /*
     *                                           SingleParent
     *                                                 |
-    *                                                 | SingleParentHasChildren_backward (Backward EMBEDDING)
+    *                                                 | NavProp Parent2 (SingleParentHasChildren_backward (Backward EMBEDDING))
     *         ________________________________________|______________________________________
     *        |                                        |                                      |
     *      Child1                                   Child2                                 Child3
     */
-    ECInstanceKey child1 = InsertPerson("First", "Child");
-    ECInstanceKey child2 = InsertPerson("Second", "Child");
-    ECInstanceKey child3 = InsertPerson("Third", "Child");
     ECInstanceKey singleParent = InsertPerson("Only", "singleParent");
 
-    //Backward Embedding relationship (SingleParent -> Child1, Child2)
-    ECInstanceKey child1HasSingleParent = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren_backward", child1, singleParent);
-    ECInstanceKey child2HasSingleParent = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren_backward", child2, singleParent);
-    ECInstanceKey child3HasSingleParent = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren_backward", child3, singleParent);
+    ECInstanceKey child1 = InsertPerson("First", "Child", ECInstanceId(), singleParent.GetInstanceId());
+    ECInstanceKey child2 = InsertPerson("Second", "Child" , ECInstanceId(), singleParent.GetInstanceId());
+    ECInstanceKey child3 = InsertPerson("Third", "Child", ECInstanceId(), singleParent.GetInstanceId());
+
 
     /*
     * Test 1: Delete Child1
@@ -5207,13 +5316,14 @@ TEST_F(RelationshipStrengthTestFixture, BackwardEmbedding)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(child1));
-    ASSERT_FALSE(HasInstance(child1HasSingleParent));
 
     ASSERT_TRUE(HasInstance(singleParent));
-    ASSERT_TRUE(HasInstance(child2HasSingleParent));
-    ASSERT_TRUE(HasInstance(child3HasSingleParent));
     ASSERT_TRUE(HasInstance(child2));
+    ASSERT_FALSE(IsNavigationPropertySet(child2, "Parent1"));
+    ASSERT_TRUE(IsNavigationPropertySet(child2, "Parent2"));
     ASSERT_TRUE(HasInstance(child3));
+    ASSERT_FALSE(IsNavigationPropertySet(child3, "Parent1"));
+    ASSERT_TRUE(IsNavigationPropertySet(child3, "Parent2"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5221,7 +5331,7 @@ TEST_F(RelationshipStrengthTestFixture, BackwardEmbedding)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", SchemaItem(GetTestSchemaXml())));
 
     /*
      *          Create the following relationship hierarchy
@@ -5241,28 +5351,20 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
      */
 
     ECInstanceKey grandParent1 = InsertPerson("First", "GrandParent");
-    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent");
+    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent", ECInstanceId(), ECInstanceId(), grandParent1.GetInstanceId());
     ECInstanceKey singleParent = InsertPerson("Only", "SingleParent");
-    ECInstanceKey child1 = InsertPerson("First", "Child");
-    ECInstanceKey child2 = InsertPerson("Second", "Child");
+    ECInstanceKey child1 = InsertPerson("First", "Child", singleParent.GetInstanceId());
+    ECInstanceKey child2 = InsertPerson("Second", "Child", singleParent.GetInstanceId());
 
     // Referencing relationship (GrandParent1, GrandParent2 -> SingleParent)
-    ECInstanceKey grandParent1HasSingleParent = InsertRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent1, singleParent);
-    ECInstanceKey grandParent2HasSingleParent = InsertRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent2, singleParent);
-
-    // Embedding relationship (SingleParent -> Child1, Child2)
-    ECInstanceKey singleParentHasChild1 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child1);
-    ECInstanceKey singleParentHasChild2 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child2);
-
-    // Referencing relationship (GrandParent1 <-> GrandParent2)
-    ECInstanceKey grandParent1HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse", grandParent1, grandParent2);
-    ECInstanceKey grandParent2HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse", grandParent2, grandParent1);
+    ECInstanceKey grandParent1HasSingleParent = InsertLinkTableRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent1, singleParent);
+    ECInstanceKey grandParent2HasSingleParent = InsertLinkTableRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent2, singleParent);
 
     m_ecdb.SaveChanges();
 
     //Verify instances before deletion
-    ASSERT_TRUE(HasInstance(grandParent1HasSpouse));
-    ASSERT_TRUE(HasInstance(grandParent2HasSpouse));
+    ASSERT_TRUE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
 
     /*
     * Test 1: Delete GrandParent1
@@ -5273,8 +5375,8 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(grandParent1));
-    ASSERT_FALSE(HasInstance(grandParent1HasSpouse));
-    ASSERT_FALSE(HasInstance(grandParent2HasSpouse));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
     ASSERT_FALSE(HasInstance(grandParent1HasSingleParent));
 
     ASSERT_TRUE(HasInstance(singleParent));
@@ -5290,10 +5392,10 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
     ASSERT_FALSE(HasInstance(grandParent2HasSingleParent));
 
     ASSERT_TRUE(HasInstance(singleParent));
-    ASSERT_TRUE(HasInstance(singleParentHasChild1));
-    ASSERT_TRUE(HasInstance(singleParentHasChild2));
     ASSERT_TRUE(HasInstance(child1));
+    ASSERT_TRUE(IsNavigationPropertySet(child1, "Parent1"));
     ASSERT_TRUE(HasInstance(child2));
+    ASSERT_TRUE(IsNavigationPropertySet(child2, "Parent1"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -5301,7 +5403,7 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", SchemaItem(GetTestSchemaXml())));
 
     /*
     *          Create the following relationship hierarchy
@@ -5319,28 +5421,20 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     *   Child1                                             Child2
     *
     */
-    ECInstanceKey child1 = InsertPerson("First", "Child");
-    ECInstanceKey child2 = InsertPerson("Second", "Child");
-    ECInstanceKey singleParent = InsertPerson("Only", "singleParent");
     ECInstanceKey grandParent1 = InsertPerson("First", "GrandParent");
-    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent");
+    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent", ECInstanceId(), ECInstanceId(), ECInstanceId(), grandParent1.GetInstanceId());
+    ECInstanceKey singleParent = InsertPerson("Only", "singleParent");
+    ECInstanceKey child1 = InsertPerson("First", "Child", singleParent.GetInstanceId());
+    ECInstanceKey child2 = InsertPerson("Second", "Child", singleParent.GetInstanceId());
 
     // Backward referencing relationship (GrandParent1, GrandParent2 <- SingleParent)
-    ECInstanceKey singleParentHasGrandParent1 = InsertRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent1);
-    ECInstanceKey singleParentHasGrandParent2 = InsertRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent2);
-
-    //Forward Embedding relationship (SingleParent -> Child1, Child2)
-    ECInstanceKey singleParentHasChild1 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child1);
-    ECInstanceKey singleParentHasChild2 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child2);
-
-    //Backward Referencing relationship (GrandParent1 <-> GrandParent2)
-    ECInstanceKey grandParent1HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse_backward", grandParent1, grandParent2);
-    ECInstanceKey grandParent2HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse_backward", grandParent2, grandParent1);
+    ECInstanceKey singleParentHasGrandParent1 = InsertLinkTableRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent1);
+    ECInstanceKey singleParentHasGrandParent2 = InsertLinkTableRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent2);
 
     m_ecdb.SaveChanges();
 
     //Validate Instance exists before deletion
-    ASSERT_TRUE(HasInstance(singleParentHasChild1));
+    ASSERT_TRUE(IsNavigationPropertySet(child1, "Parent1"));
 
     /*
     * Test 1: Delete Child1
@@ -5351,9 +5445,10 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(child1));
-    ASSERT_FALSE(HasInstance(singleParentHasChild1));
+    ASSERT_FALSE(IsNavigationPropertySet(child1, "Parent1"));
 
     ASSERT_TRUE(HasInstance(child2));
+    ASSERT_TRUE(IsNavigationPropertySet(child2, "Parent1"));
 
     /*
     * Test 2: Delete Child2
@@ -5364,7 +5459,7 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(child2));
-    ASSERT_FALSE(HasInstance(singleParentHasChild2));
+    ASSERT_FALSE(IsNavigationPropertySet(child2, "Parent1"));
 
     ASSERT_TRUE(HasInstance(singleParent));
 
@@ -5377,10 +5472,10 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(grandParent1));
-    ASSERT_FALSE(HasInstance(grandParent1HasSpouse));
-    ASSERT_FALSE(HasInstance(grandParent2HasSpouse));
-    ASSERT_FALSE(HasInstance(singleParentHasGrandParent1));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
 
+    ASSERT_FALSE(HasInstance(singleParentHasGrandParent1));
     ASSERT_TRUE(HasInstance(singleParent));
 
     /*
