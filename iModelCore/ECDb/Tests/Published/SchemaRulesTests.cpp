@@ -2196,7 +2196,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
             }
 
             {
-  /*          ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
                      SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECEntityClass typeName="A" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -2250,7 +2250,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
 
             ASSERT_EQ(ColumnInfo::List({{"ts5_LinkTableRelHasDefinition","TargetId"}}),
                       GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema5", "LinkTableRelHasDefinition", "TargetECInstanceId")));
-                      */
+                      
             }
 
             ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
