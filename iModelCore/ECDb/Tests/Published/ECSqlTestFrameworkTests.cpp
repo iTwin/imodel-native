@@ -688,15 +688,6 @@ TEST_F(ECSqlUpdateTestFramework, WhereMatchTests)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdateTestFramework, WhereRelationshipEndTableMappingTests)
-    {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
-    RunTest(dataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  01/14
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdateTestFramework, WhereRelationshipLinkTableMappingTests)
     {
     auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests(ECSqlType::Update, m_ecdb, PerClassRowCount);
@@ -828,15 +819,6 @@ TEST_F(ECSqlDeleteTestFramework, WhereFunctionTests)
 TEST_F(ECSqlDeleteTestFramework, WhereMatchTests)
     {
     auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
-    RunTest(dataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  01/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeleteTestFramework, WhereRelationshipEndTableMappingTests)
-    {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests(ECSqlType::Delete, m_ecdb, PerClassRowCount);
     RunTest(dataset);
     }
 
