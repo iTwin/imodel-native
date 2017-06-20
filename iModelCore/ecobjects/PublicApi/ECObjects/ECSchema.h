@@ -691,6 +691,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ECProperty /*abstract*/ : public IECCustomAttribu
 friend struct ECClass;
 
 private:
+    bool                    m_priorityExplicitlySet;
+    int32_t                 m_priority;
     Utf8String              m_description;
     ECValue                 m_minimumValue;
     ECValue                 m_maximumValue;
@@ -876,6 +878,15 @@ public:
     //! Gets the minimum length for this ECProperty
     //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
     uint32_t           GetMinimumLength() const {return m_minimumLength;}
+
+    //! Sets the priority for this ECProperty. The default priority is 0.
+    //! @param[in]  priority The value to set as the priority
+    ECObjectsStatus SetPriority(int32_t priority) {m_priority = priority; m_priorityExplicitlySet = true; return ECObjectsStatus::Success;}
+    //! Gets the priority for this ECProperty if it is set locally, otherwise will return it's base property priority if one exists.
+    //! @return 0 if the priority is never set.
+    ECOBJECTS_EXPORT int32_t GetPriority() const;
+    //! Gets whether the priority is set locally.
+    bool IsPriorityLocallyDefined() const {return m_priorityExplicitlySet;}
 
     //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);

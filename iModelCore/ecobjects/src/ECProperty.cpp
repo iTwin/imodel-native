@@ -26,7 +26,8 @@ void ECProperty::SetErrorHandling (bool doAssert)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr), m_propertyCategory(nullptr)
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr), m_propertyCategory(nullptr),
+                                                m_priority(0), m_priorityExplicitlySet(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -341,6 +342,21 @@ void ECProperty::_AdjustMinMaxAfterTypeChange()
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+int32_t ECProperty::GetPriority() const
+    {
+    if (m_priorityExplicitlySet)
+        return m_priority;
+
+    ECPropertyCP baseProp = GetBaseProperty();
+    if (nullptr != baseProp)
+        return baseProp->GetPriority();
+
+    return m_priority;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -582,6 +598,12 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
         SetMaximumLength(maxLength);
         }
 
+    uint32_t priority;
+    if (propertyNode.GetAttributeUInt32Value(priority, PRIORITY_ATTRIBUTE) == BEXML_Success)
+        {
+        SetPriority(priority);
+        }
+
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
@@ -761,8 +783,14 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         }
 
     // Only serialize for 3.1 or newer
-    if (IsCategoryDefinedLocally() && ECVersion::V3_1 <= ecXmlVersion)
-        xmlWriter.WriteAttribute(CATEGORY_ATTRIBUTE, GetCategory()->GetQualifiedName(GetClass().GetSchema()).c_str());
+    if (ECVersion::V3_1 <= ecXmlVersion)
+        {
+        if (IsCategoryDefinedLocally())
+            xmlWriter.WriteAttribute(CATEGORY_ATTRIBUTE, GetCategory()->GetQualifiedName(GetClass().GetSchema()).c_str());
+
+        if (IsPriorityLocallyDefined())
+            xmlWriter.WriteAttribute(PRIORITY_ATTRIBUTE, GetPriority());
+        }
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
         {

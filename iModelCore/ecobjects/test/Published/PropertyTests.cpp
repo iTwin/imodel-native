@@ -13,7 +13,12 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct PropertyTest : ECTestFixture {};
-struct PropertyDeserializationTest : ECTestFixture {};
+struct PropertyDeserializationTest : ECTestFixture 
+    {
+    void VerifyDeserializedProperty(ECSchemaPtr deserializedSchema, ECPropertyCP expectedProp, Utf8StringCR className, Utf8StringCR propName);
+
+    void RoundTripSchema(ECSchemaCP schema, bvector<ECPropertyCP> expectedProperties);
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     07/15
@@ -160,6 +165,83 @@ TEST_F(PropertyTest, GetSetInheritedCategory)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, GetSetPriority)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP entityClass;
+    PrimitiveECPropertyP prop;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetPriority(3));
+
+    EXPECT_EQ(3, prop->GetPriority());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, InheritedPriority)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP entityClass;
+    ECEntityClassP derivedEntityClass;
+    PrimitiveECPropertyP prop;
+    PrimitiveECPropertyP derivedProp;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+
+    int32_t testPriority = -3;
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    schema->CreateEntityClass(derivedEntityClass, "DerivedClass");
+    EXPECT_EQ(ECObjectsStatus::Success, derivedEntityClass->AddBaseClass(*entityClass));
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetPriority(testPriority));
+
+    derivedEntityClass->CreatePrimitiveProperty(derivedProp, "TestProp");
+    EXPECT_EQ(testPriority, derivedProp->GetPriority());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                       06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyDeserializationTest::VerifyDeserializedProperty(ECSchemaPtr deserializedSchema, ECPropertyCP expectedProp, Utf8StringCR className, Utf8StringCR propName)
+    {
+    ECClassCP deserializedClass = deserializedSchema->GetClassCP(className.c_str());
+    ASSERT_TRUE(nullptr != deserializedClass) << "Class '" << className << "' containing property not found in deserialized schema";
+
+    ECPropertyP ecProp = deserializedClass->GetPropertyP(propName);
+    ASSERT_TRUE(nullptr != ecProp) << "Property '" << propName << "' not found in deserialized schema";
+    
+    ASSERT_EQ(expectedProp->GetName(), ecProp->GetName()) << "Property '" << propName << "' does not have correct name in deserialized schema";
+    ASSERT_EQ(expectedProp->GetPriority(), ecProp->GetPriority()) << "Property '" << propName << "' does not have correct priority in deserialized schema";
+    ASSERT_EQ(expectedProp->IsPriorityLocallyDefined(), ecProp->IsPriorityLocallyDefined());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                       06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyDeserializationTest::RoundTripSchema(ECSchemaCP schema, bvector<ECPropertyCP> expectedProperties)
+    {
+    Utf8String schemaString;
+    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString);
+    ASSERT_EQ(SchemaWriteStatus::Success, writeStatus) << "Failed to serialize schema";
+
+    ECSchemaPtr deserializedSchema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus readStatus = ECSchema::ReadFromXmlString(deserializedSchema, schemaString.c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, readStatus) << "Failed to deserialize schema";
+    for (auto const& prop : expectedProperties)
+        VerifyDeserializedProperty(deserializedSchema, prop, prop->GetClass().GetName(), prop->GetName());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Robert.Schili                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PropertyDeserializationTest, MinMaxValue)
@@ -222,6 +304,77 @@ TEST_F(PropertyDeserializationTest, MinMaxLength)
 
     EXPECT_EQ(3, pp->GetMinimumLength());
     EXPECT_EQ(42, pp->GetMaximumLength());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, Priority)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECEntityClass typeName='Foo'>"
+               <ECProperty propertyName='StringProp' typeName='string' priority="2"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+
+    ECPropertyP pp = cp->GetPropertyP("StringProp");
+    ASSERT_NE(pp, nullptr);
+
+    EXPECT_EQ(2, pp->GetPriority());
+
+    bvector<ECPropertyCP> expectedProps;
+    expectedProps.push_back(pp);
+    RoundTripSchema(schema.get(), expectedProps);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, InheritedPriority)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECEntityClass typeName='Foo'>
+                <ECProperty propertyName='StringProp' typeName='string' priority="2"/>
+            </ECEntityClass>
+            <ECEntityClass typeName='Foo2'>
+                <BaseClass>Foo</BaseClass>
+                <ECProperty propertyName='StringProp' typeName='string' priority="-4"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP foo = schema->GetClassP("Foo");
+    ASSERT_NE(foo, nullptr);
+
+    ECPropertyP pp = foo->GetPropertyP("StringProp");
+    ASSERT_NE(pp, nullptr);
+
+    EXPECT_EQ(2, pp->GetPriority());
+
+    ECClassP foo2 = schema->GetClassP("Foo2");
+    ASSERT_NE(foo2, nullptr);
+
+    ECPropertyP pp2 = foo2->GetPropertyP("StringProp");
+    ASSERT_NE(pp2, nullptr);
+
+    EXPECT_EQ(-4, pp2->GetPriority());
+
+    bvector<ECPropertyCP> expectedProps;
+    expectedProps.push_back(pp);
+    expectedProps.push_back(pp2);
+    RoundTripSchema(schema.get(), expectedProps);
     }
 
 //---------------------------------------------------------------------------------------
@@ -963,6 +1116,67 @@ TEST_F(PropertyOverrideTests, CategoryOverride)
 
     EXPECT_EQ(propertyCategoryB, primPropOverride->GetCategory());
     EXPECT_STREQ(propertyCategoryB->GetFullName().c_str(), primPropOverride->GetCategory()->GetFullName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PropertyOverrideTests, PriorityOverride)
+    {
+    {
+    ECSchemaPtr ecSchema;
+    ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
+
+    ECEntityClassP a;
+    ECEntityClassP b;
+
+    int32_t priorityA = 99;
+    int32_t priorityB = -99;
+
+    PrimitiveECPropertyP primProp;
+    PrimitiveECPropertyP primPropOverride;
+
+    ecSchema->CreateEntityClass(a, "A");
+    ecSchema->CreateEntityClass(b, "B");
+
+    a->CreatePrimitiveProperty(primProp, "PrimProp");
+    b->CreatePrimitiveProperty(primPropOverride, "PrimProp");
+
+    EXPECT_EQ(ECObjectsStatus::Success, primProp->SetPriority(priorityA));
+    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride->SetPriority(priorityB));
+
+    EXPECT_EQ(ECObjectsStatus::Success, b->AddBaseClass(*a));
+
+    EXPECT_EQ(priorityA, primProp->GetPriority());
+    EXPECT_EQ(priorityB, primPropOverride->GetPriority());
+    }
+    {
+    ECSchemaPtr ecSchema;
+    ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
+
+    ECEntityClassP a;
+    ECEntityClassP b;
+
+    int32_t priorityA = 99;
+    int32_t priorityB = 0;
+
+    PrimitiveECPropertyP primProp;
+    PrimitiveECPropertyP primPropOverride;
+
+    ecSchema->CreateEntityClass(a, "A");
+    ecSchema->CreateEntityClass(b, "B");
+
+    a->CreatePrimitiveProperty(primProp, "PrimProp");
+    b->CreatePrimitiveProperty(primPropOverride, "PrimProp");
+
+    EXPECT_EQ(ECObjectsStatus::Success, primProp->SetPriority(priorityA));
+    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride->SetPriority(priorityB));
+
+    EXPECT_EQ(ECObjectsStatus::Success, b->AddBaseClass(*a));
+
+    EXPECT_EQ(priorityA, primProp->GetPriority());
+    EXPECT_EQ(priorityB, primPropOverride->GetPriority());
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

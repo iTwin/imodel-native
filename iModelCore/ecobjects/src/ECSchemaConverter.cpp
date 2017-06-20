@@ -104,7 +104,7 @@ ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, St
     }
 
 static Utf8CP const  STANDARDVALUES_CUSTOMATTRIBUTE = "StandardValues";
-static Utf8CP const  STANDARDVALUES_SCHEMANAME = "EditorCustomAttributes";
+static Utf8CP const  BECA_SCHEMANAME = "EditorCustomAttributes";
 
 static Utf8CP const  UNIT_ATTRIBUTES                = "Unit_Attributes";
 static Utf8CP const  KOQ_NAME                       = "KindOfQuantityName";
@@ -117,6 +117,7 @@ static Utf8CP const IS_UNIT_SYSTEM                  = "IsUnitSystemSchema";
 static Utf8CP const MIXED_UNIT_SYSTEM               = "Mixed_UnitSystem";
 static Utf8CP const SI_UNIT_SYSTEM                  = "SI_UnitSystem";
 static Utf8CP const US_UNIT_SYSTEM                  = "US_UnitSystem";
+static Utf8CP const PROPERTY_PRIORITY               = "PropertyPriority";
 
 
 struct UnitSpecification
@@ -174,6 +175,9 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
         ECSchemaConverterSingleton = new ECSchemaConverter();
         IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
         ECSchemaConverterSingleton->AddConverter("EditorCustomAttributes", "StandardValues", scConv);
+
+        IECCustomAttributeConverterPtr priorityConv = new PropertyPriorityConverter();
+        ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, PROPERTY_PRIORITY, priorityConv);
 
         IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
         ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
@@ -268,6 +272,47 @@ IECCustomAttributeConverterP ECSchemaConverter::GetConverter(Utf8StringCR conver
     return nullptr;
     }
 
+static Utf8CP s_oldStandardSchemaNames[] =
+    {
+    "Bentley_Standard_CustomAttributes",
+    "Bentley_Standard_Classes",
+    "Bentley_ECSchemaMap",
+    "EditorCustomAttributes",
+    "Bentley_Common_Classes",
+    "Dimension_Schema",
+    "iip_mdb_customAttributes",
+    "KindOfQuantity_Schema",
+    "rdl_customAttributes",
+    "SIUnitSystemDefaults",
+    "Unit_Attributes",
+    "Units_Schema",
+    "USCustomaryUnitSystemDefaults"
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool IsCustomAttributeFromOldStandardSchemas(IECInstanceR customAttribute)
+    {
+    // Skip these for now... Once the conversions are added remove this check
+    bvector<Utf8CP> oldCAs = { "HideProperty", "Category", "DisplayOptions" };
+    for (auto oldCA : oldCAs)
+        if (0 == customAttribute.GetClass().GetName().CompareTo(oldCA))
+            return false;
+
+    SchemaKeyCR caSchemaKey = customAttribute.GetClass().GetSchema().GetSchemaKey();
+
+    // Only the ECDbMap.1.0 is an old version
+    if (0 == caSchemaKey.CompareByName("ECDbMap") && caSchemaKey.GetVersionRead() <= 1)
+        return true;
+
+    for (auto schemaName : s_oldStandardSchemaNames)
+        if (0 == caSchemaKey.CompareByName(schemaName))
+            return true;
+
+    return false;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -289,6 +334,10 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
                 }
             else    
                 LOG.debugv("Succeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
+            }
+        else if (IsCustomAttributeFromOldStandardSchemas(*attr))
+            {
+            m_convertedOK = container.RemoveCustomAttribute(attr->GetClass());
             }
         }
     }
@@ -483,7 +532,7 @@ bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR sc
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus StandardValuesConverter::Merge(ECPropertyP prop, StandardValueInfo* sdInfo, ECEnumerationP enumeration)
     {
-    IECInstancePtr currentInstance = prop->GetCustomAttributeLocal(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+    IECInstancePtr currentInstance = prop->GetCustomAttributeLocal(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
     if (!currentInstance.IsValid())
         return ECObjectsStatus::Success;
 
@@ -549,7 +598,7 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
                 return status;
                 }
                 
-            IECInstancePtr currentInstance = prop->GetCustomAttributeLocal(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+            IECInstancePtr currentInstance = prop->GetCustomAttributeLocal(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
             if (!currentInstance.IsValid())
                 return ECObjectsStatus::Success;
 
@@ -595,8 +644,8 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
             return ECObjectsStatus::DataTypeMismatch;
             }
         
-        prop->RemoveCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
-        prop->RemoveSupplementedCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+        prop->RemoveCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+        prop->RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
         }
     
     return status;
@@ -612,7 +661,7 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
     if (nullptr == prop)
         {
         LOG.warning("StandardValues custom attribute applied to a container which is not a property.  Removing Custom Attribute and skipping.");
-        container.RemoveCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+        container.RemoveCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
         return ECObjectsStatus::Success;
         }
 
@@ -637,8 +686,8 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
             || (existingEnumSdInfo.Contains(sdInfo)))
             {
             // Already successfully converted
-            prop->RemoveCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
-            prop->RemoveSupplementedCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+            prop->RemoveCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+            prop->RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
             return ECObjectsStatus::Success; 
             }
         }
@@ -1177,6 +1226,52 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyToEnu
         LOG.errorv("Couldn't set value of %s to %s", propertyName.c_str(), targetEnumerator->GetDisplayLabel().c_str());
         return ECObjectsStatus::Error;
         }
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
+    if (prop == nullptr)
+        {
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.warningv("Found PropertyPriority custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+        container.RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
+        container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
+        return ECObjectsStatus::Success;
+        }
+
+    ECValue previousPriority;
+    ECObjectsStatus status = instance.GetValue(previousPriority, "Priority");
+    if (ECObjectsStatus::Success != status || previousPriority.IsNull())
+        {
+        LOG.warningv("Found a PropertyPriority custom attribute on an the ECProperty, '%s.%s', but it did not contain a Priority value. Dropping custom attribute....",
+            prop->GetClass().GetFullName(), prop->GetName().c_str());
+        return ECObjectsStatus::Success;
+        }
+
+    status = prop->SetPriority(previousPriority.GetInteger());
+    if (ECObjectsStatus::Success != status)
+        {
+        LOG.errorv("Failed to set the priority on ECProperty, %s.%s, from the PropertyPriority custom attribute", 
+            prop->GetClass().GetFullName(), prop->GetName().c_str());
+        return status;
+        }
+
+    if (!prop->RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY) &&
+        !prop->RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY))
+        {
+        LOG.errorv("Couldn't remove the CustomAttribute %s:%s from the property %s.%s", BECA_SCHEMANAME, PROPERTY_PRIORITY, 
+            prop->GetClass().GetFullName(), prop->GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    // Attempt to remove the old referenced schema. If it fails that means it is still in use, so don't fail conversion.
+    schema.RemoveUnusedSchemaReferences();
 
     return status;
     }
