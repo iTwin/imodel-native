@@ -3198,6 +3198,14 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP abstractConstraint)
+    {
+    return SetAbstractConstraint(abstractConstraint, m_verify);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP value, bool validate)
@@ -3448,7 +3456,7 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (RelationshipMultiplic
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity, bool validate)
     {
-    PRECONDITION (NULL != multiplicity, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (nullptr != multiplicity, ECObjectsStatus::PreconditionViolated);
     uint32_t lowerLimit;
     uint32_t upperLimit;
     ECObjectsStatus status = ECXml::ParseMultiplicityString(lowerLimit, upperLimit, multiplicity);
@@ -3466,6 +3474,14 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity, b
         }
 
     return SetMultiplicity(lowerLimit, upperLimit);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity)
+    {
+    return SetMultiplicity(multiplicity, m_verify);
     }
 
 /*---------------------------------------------------------------------------------**//**

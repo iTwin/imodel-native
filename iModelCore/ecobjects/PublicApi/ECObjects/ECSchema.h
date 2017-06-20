@@ -2247,7 +2247,7 @@ public:
     //! Set the multiplicity of the constraint using the string format of RelationshipMultiplicity. Multiplicity is not set if input string cannot be parsed.
     //! @param[in] multiplicity The string representation of a multiplicity
     //! @return An error if it fails to parse the multiplicity string into a valid RelationshipMultiplicity.
-    ECObjectsStatus SetMultiplicity(Utf8CP multiplicity) {return SetMultiplicity(multiplicity, m_verify);}
+    ECOBJECTS_EXPORT ECObjectsStatus SetMultiplicity(Utf8CP multiplicity);
 
     //! Get the RelationshipMultiplicity of the constraint in the relationship
     RelationshipMultiplicityCR GetMultiplicity() const {return *m_multiplicity;}
@@ -2255,7 +2255,7 @@ public:
     //! Set the abstract constraint class by input string of format {SchemaName}:{ClassName}. All of the constraint classes must be or derive from. 
     //! @param[in] abstractConstraint String representation of the full name of an ECEntityClass
     //! @return ::Success if the abstract constraint can be parsed into a valid ECEntityClass
-    ECObjectsStatus SetAbstractConstraint(Utf8CP abstractConstraint) {return SetAbstractConstraint(abstractConstraint, m_verify);}
+    ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(Utf8CP abstractConstraint);
     
     //! Set the abstract constraint class of the constraint in the relationship. 
     //! @remarks The specified class must be a base class class of all constraint classes defined in
