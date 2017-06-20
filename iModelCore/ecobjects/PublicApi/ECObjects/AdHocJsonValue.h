@@ -10,7 +10,6 @@
 /*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECObjects.h>
 #include <json/value.h>
-#include <json/reader.h>
 #include <json/writer.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
