@@ -62,6 +62,7 @@ public:
         CustomAttributeId,
         EnumId,
         KoqId,
+        PropertyCategoryId,
         PropertyMapId,
         TableId,
         ColumnId,
@@ -77,7 +78,7 @@ public:
         m_sequenceManager(ecdb, {"ec_instanceidsequence", "ec_schemaidsequence","ec_schemarefidsequence", "ec_classidsequence","ec_classhasbaseclassesidsequence",
                                  "ec_propertyidsequence","ec_propertypathidsequence", 
                                 "ec_relconstraintidsequence", "ec_relconstraintclassidsequence",
-                                "ec_customattributeidsequence", "ec_enumidsequence","ec_koqidsequence", "ec_propertymapidsequence",
+                                "ec_customattributeidsequence", "ec_enumidsequence","ec_koqidsequence", "ec_propertycategoryidsequence", "ec_propertymapidsequence",
                                  "ec_tableidsequence","ec_columnidsequence", "ec_indexidsequence", "ec_indexcolumnidsequence"})
         {}
 

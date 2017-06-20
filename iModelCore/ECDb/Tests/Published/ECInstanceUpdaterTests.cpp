@@ -95,6 +95,25 @@ TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimit
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceUpdaterTests, UpdateRelationships)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("UpdateRelationships.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+
+    ECClassCP navPropRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasP_N1");
+    ASSERT_TRUE(navPropRelClass != nullptr);
+    ECInstanceUpdater updater(m_ecdb, *navPropRelClass, nullptr);
+    ASSERT_FALSE(updater.IsValid()) << "Cannot update nav prop relationship class " << navPropRelClass->GetFullName();
+
+    ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasPSA_NN");
+    ASSERT_TRUE(linkTableRelClass != nullptr);
+
+    ECInstanceUpdater updater2(m_ecdb, *linkTableRelClass, nullptr);
+    ASSERT_TRUE(updater2.IsValid()) << "Expected to be able to update into link table relationship class " << linkTableRelClass->GetFullName();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad.Zaighum                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)

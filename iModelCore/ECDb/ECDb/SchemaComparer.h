@@ -25,6 +25,7 @@ struct ECPropertyValueChange;
 struct ECObjectChange;
 struct ClassTypeChange;
 struct KindOfQuantityChange;
+struct PropertyCategoryChange;
 
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
@@ -97,6 +98,9 @@ enum class SystemId
     Navigation,
     Properties,
     Property,
+    PropertyCategories,
+    PropertyCategory,
+    PropertyCategoryPriority,
     PropertyType,
     PropertyValue,
     PropertyValues,
@@ -390,6 +394,20 @@ struct KindOfQuantityChanges final: ECChangeArray<KindOfQuantityChange>
             BeAssert(systemId == GetSystemId());
             }
         ~KindOfQuantityChanges() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle       06/2017
+//+===============+===============+===============+===============+===============+======
+struct PropertyCategoryChanges final : ECChangeArray<PropertyCategoryChange>
+    {
+    public:
+        PropertyCategoryChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<PropertyCategoryChange>(state, SystemId::PropertyCategories, parent, customId, SystemId::PropertyCategory)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~PropertyCategoryChanges() {}
     };
 
 //=======================================================================================
@@ -847,6 +865,7 @@ struct SchemaChange final : ECObjectChange
         ECEnumerationChanges& Enumerations() { return Get<ECEnumerationChanges>(SystemId::Enumerations); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
         KindOfQuantityChanges& KindOfQuantities() { return Get<KindOfQuantityChanges>(SystemId::KindOfQuantities); }
+        PropertyCategoryChanges& PropertyCategories() { return Get<PropertyCategoryChanges>(SystemId::PropertyCategories); }
     };
 
 //=======================================================================================
@@ -1019,6 +1038,24 @@ struct KindOfQuantityChange final :ECObjectChange
     };
 
 //=======================================================================================
+// @bsiclass                                                Krischan.Eberle       06/2017
+//+===============+===============+===============+===============+===============+======
+struct PropertyCategoryChange final : ECObjectChange
+    {
+    public:
+        PropertyCategoryChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::PropertyCategory, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~PropertyCategoryChange() {}
+        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
+        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
+        UInt32Change& GetPriority() { return Get<UInt32Change>(SystemId::PropertyCategoryPriority); }
+    };
+
+//=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
 struct ECRelationshipConstraintClassChange final :ECObjectChange
@@ -1156,6 +1193,7 @@ struct ECPropertyChange final :ECObjectChange
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
         StringChange& GetKindOfQuantity() { return Get<StringChange>(SystemId::KindOfQuantity); }
         StringChange& GetEnumeration() { return Get<StringChange>(SystemId::Enumeration); }
+        StringChange& GetCategory() { return Get<StringChange>(SystemId::PropertyCategory); }
     };
 
 //=======================================================================================
@@ -1221,6 +1259,9 @@ private :
     BentleyStatus AppendKindOfQuantity(KindOfQuantityChanges&, ECN::KindOfQuantityCR, ValueId appendType);
     BentleyStatus CompareKindOfQuantity(KindOfQuantityChange&, ECN::KindOfQuantityCR, ECN::KindOfQuantityCR);
     BentleyStatus CompareKindOfQuantities(KindOfQuantityChanges&, ECN::KindOfQuantityContainerCR, ECN::KindOfQuantityContainerCR);
+    BentleyStatus AppendPropertyCategory(PropertyCategoryChanges&, ECN::PropertyCategoryCR, ValueId appendType);
+    BentleyStatus ComparePropertyCategory(PropertyCategoryChange&, ECN::PropertyCategoryCR, ECN::PropertyCategoryCR);
+    BentleyStatus ComparePropertyCategories(PropertyCategoryChanges&, ECN::PropertyCategoryContainerCR, ECN::PropertyCategoryContainerCR);
 
 public:
     SchemaComparer(){}

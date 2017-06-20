@@ -411,7 +411,6 @@ ECDerivedClassesList const& SchemaManager::GetDerivedClasses(ECClassCR ecClass) 
 ECEnumerationCP SchemaManager::GetEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
     BeMutexHolder lock(m_mutex);
-
     return GetReader().GetEnumeration(schemaName, enumName);
     }
 
@@ -421,8 +420,16 @@ ECEnumerationCP SchemaManager::GetEnumeration(Utf8CP schemaName, Utf8CP enumName
 KindOfQuantityCP SchemaManager::GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const
     {
     BeMutexHolder lock(m_mutex);
-
     return GetReader().GetKindOfQuantity(schemaName, koqName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+PropertyCategoryCP SchemaManager::GetPropertyCategory(Utf8CP schemaName, Utf8CP catName) const
+    {
+    BeMutexHolder lock(m_mutex);
+    return GetReader().GetPropertyCategory(schemaName, catName);
     }
 
 /*---------------------------------------------------------------------------------------

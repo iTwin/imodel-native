@@ -69,15 +69,20 @@ ECSchemaId SchemaReader::GetSchemaId(ECSchemaCR ecSchema) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP SchemaReader::GetEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
+    ECEnumerationId enumId = SchemaPersistenceHelper::GetEnumerationId(m_ecdb, schemaName, enumName);
+    if (!enumId.IsValid())
+        return nullptr;
+
     SchemaReader::Context ctx;
-    ECEnumerationCP ecenum = GetEnumeration(ctx, schemaName, enumName);
-    if (ecenum == nullptr)
+
+    ECEnumerationP ecEnum = nullptr;
+    if (SUCCESS != ReadEnumeration(ecEnum, ctx, enumId))
         return nullptr;
 
     if (SUCCESS != ctx.Postprocess(*this))
         return nullptr;
 
-    return ecenum;
+    return ecEnum;
     }
 
 //---------------------------------------------------------------------------------------
@@ -108,9 +113,14 @@ ECEnumerationId SchemaReader::GetEnumerationId(ECEnumerationCR ecEnum) const
 //+---------------+---------------+---------------+---------------+---------------+------
 KindOfQuantityCP SchemaReader::GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const
     {
+    KindOfQuantityId koqId = SchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, schemaName, koqName);
+    if (!koqId.IsValid())
+        return nullptr;
+
     SchemaReader::Context ctx;
-    KindOfQuantityCP koq = GetKindOfQuantity(ctx, schemaName, koqName);
-    if (koq == nullptr)
+
+    KindOfQuantityP koq = nullptr;
+    if (SUCCESS != ReadKindOfQuantity(koq, ctx, koqId))
         return nullptr;
 
     if (SUCCESS != ctx.Postprocess(*this))
@@ -136,6 +146,49 @@ KindOfQuantityId SchemaReader::GetKindOfQuantityId(KindOfQuantityCR koq) const
         //it is possible that the KOQ was already imported before, but the given C++ object comes from another source.
         //in that case we assign it here on the fly.
         const_cast<KindOfQuantityR>(koq).SetId(id);
+        }
+
+    return id;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+PropertyCategoryCP SchemaReader::GetPropertyCategory(Utf8CP schemaName, Utf8CP catName) const
+    {
+    PropertyCategoryId catId = SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, schemaName, catName);
+    if (!catId.IsValid())
+        return nullptr;
+
+    SchemaReader::Context ctx;
+
+    PropertyCategoryP cat = nullptr;
+    if (SUCCESS != ReadPropertyCategory(cat, ctx, catId))
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess(*this))
+        return nullptr;
+
+    return cat;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   06/2017
+//---------------------------------------------------------------------------------------
+PropertyCategoryId SchemaReader::GetPropertyCategoryId(PropertyCategoryCR cat) const
+    {
+    if (cat.HasId()) //This is unsafe but since we do not delete PropertyCategory any class that hasId does exist in db
+        {
+        BeAssert(cat.GetId() == SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, cat.GetSchema().GetName().c_str(), cat.GetName().c_str()));
+        return cat.GetId();
+        }
+
+    const PropertyCategoryId id = SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, cat.GetSchema().GetName().c_str(), cat.GetName().c_str());
+    if (id.IsValid())
+        {
+        //it is possible that the PropertyCategory was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
+        const_cast<PropertyCategoryR>(cat).SetId(id);
         }
 
     return id;
@@ -398,22 +451,6 @@ bool SchemaReader::TryGetClassFromCache(ECClassP& ecClass, ECClassId ecClassId) 
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECEnumerationCP SchemaReader::GetEnumeration(Context& ctx, Utf8CP schemaName, Utf8CP enumName) const
-    {
-    ECEnumerationId enumId = SchemaPersistenceHelper::GetEnumerationId(m_ecdb, schemaName, enumName);
-    if (!enumId.IsValid())
-        return nullptr;
-
-    ECEnumerationP ecEnum = nullptr;
-    if (SUCCESS != ReadEnumeration(ecEnum, ctx, enumId))
-        return nullptr;
-
-    return ecEnum;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx, ECEnumerationId enumId) const
@@ -483,21 +520,6 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-KindOfQuantityCP SchemaReader::GetKindOfQuantity(Context& ctx, Utf8CP schemaName, Utf8CP koqName) const
-    {
-    KindOfQuantityId koqId = SchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, schemaName, koqName);
-    if (!koqId.IsValid())
-        return nullptr;
-
-    KindOfQuantityP koq = nullptr;
-    if (SUCCESS != ReadKindOfQuantity(koq, ctx, koqId))
-        return nullptr;
-
-    return koq;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    12/2015
@@ -570,6 +592,71 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     schemaKey->m_loadedTypeCount++;
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context& ctx, PropertyCategoryId catId) const
+    {
+    auto catEntryIt = m_propCategoryCache.find(catId);
+    if (catEntryIt != m_propCategoryCache.end())
+        {
+        cat = catEntryIt->second->m_cachedCategory;
+        return SUCCESS;
+        }
+
+    const int schemaIdIx = 0;
+    const int nameIx = 1;
+    const int displayLabelColIx = 2;
+    const int descriptionColIx = 3;
+    const int priorityColIx = 4;
+
+    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Priority FROM ec_PropertyCategory WHERE Id=?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, catId))
+        return ERROR;
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ERROR;
+
+    const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
+    SchemaDbEntry* schemaKey = nullptr;
+    if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
+        return ERROR;
+
+    Utf8CP catName = stmt->GetValueText(nameIx);
+    Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
+    Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
+    Nullable<uint32_t> prio;
+    if (!stmt->IsColumnNull(priorityColIx))
+        {
+        //uint32_t is persisted as int64 to not lose unsigned-ness
+        prio = (uint32_t) stmt->GetValueInt64(priorityColIx);
+        }
+
+    cat = nullptr;
+    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePropertyCategory(cat, catName))
+        return ERROR;
+
+    cat->SetId(catId);
+
+    if (displayLabel != nullptr)
+        cat->SetDisplayLabel(displayLabel);
+
+    cat->SetDescription(description);
+
+    if (!prio.IsNull())
+        cat->SetPriority(prio.Value());
+
+    //cache the category
+    m_propCategoryCache[catId] = std::unique_ptr<PropertyCategoryDbEntry>(new PropertyCategoryDbEntry(catId, *cat));
+
+    schemaKey->m_loadedTypeCount++;
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -734,6 +821,24 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
             return SUCCESS;
         }
 
+    stmt = nullptr;
+    stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyCategory WHERE SchemaId=?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        PropertyCategoryP cat = nullptr;
+        if (SUCCESS != ReadPropertyCategory(cat, ctx, stmt->GetValueId<PropertyCategoryId>(0)))
+            return ERROR;
+
+        if (ecSchemaKey->IsFullyLoaded())
+            return SUCCESS;
+        }
+       
     return SUCCESS;
     }
 
@@ -745,7 +850,8 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT S.Name, S.DisplayLabel,S.Description,S.Alias,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
                                                         "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM ec_KindOfQuantity koq WHERE S.Id = koq.SchemaId)"
+                                                        "(SELECT COUNT(*) FROM ec_KindOfQuantity koq WHERE S.Id = koq.SchemaId) + "
+                                                        "(SELECT COUNT(*) FROM ec_PropertyCategory cat WHERE S.Id = cat.SchemaId) "
                                                         "FROM ec_Schema S WHERE S.Id=?");
     if (stmt == nullptr)
         return ERROR;
@@ -858,6 +964,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             Utf8String m_extendedTypeName;
             ECEnumerationId m_enumId;
             KindOfQuantityId m_koqId;
+            PropertyCategoryId m_catId;
             int64_t m_arrayMinOccurs = INT64_C(0);
             Nullable<int64_t> m_arrayMaxOccurs;
             ECClassId m_navPropRelClassId;
@@ -877,13 +984,14 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             const int structClassIdIx = 8;
             const int extendedTypeIx = 9;
             const int koqIdIx = 10;
-            const int minOccursIx = 11;
-            const int maxOccursIx = 12;
-            const int navRelationshipClassId = 13;
-            const int navPropDirectionIx = 14;
+            const int catIdIx = 11;
+            const int minOccursIx = 12;
+            const int maxOccursIx = 13;
+            const int navRelationshipClassId = 14;
+            const int navPropDirectionIx = 15;
 
             CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,"
-                                                              "PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,"
+                                                              "PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
                                                               "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
                                                               "FROM ec_Property WHERE ClassId=? ORDER BY Ordinal");
             if (stmt == nullptr)
@@ -943,6 +1051,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     BeAssert(false && "KindOfQuantityId must only be set for primitive or primitive array props");
                     return ERROR;
                     }
+
+                if (!stmt->IsColumnNull(catIdIx))
+                    rowInfo.m_catId = stmt->GetValueId<PropertyCategoryId>(catIdIx);
 
                 if (stmt->IsColumnNull(minOccursIx))
                     {
@@ -1166,6 +1277,15 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 return ERROR;
 
             prop->SetKindOfQuantity(koq);
+            }
+
+        if (rowInfo.m_catId.IsValid())
+            {
+            PropertyCategoryP cat = nullptr;
+            if (SUCCESS != ReadPropertyCategory(cat, ctx, rowInfo.m_catId))
+                return ERROR;
+
+            prop->SetCategory(cat);
             }
 
         if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property))
@@ -1425,6 +1545,7 @@ void SchemaReader::ClearCache() const
     m_classIdCache.clear();
     m_enumCache.clear();
     m_koqCache.clear();
+    m_propCategoryCache.clear();
     m_classCache.clear();
     m_schemaCache.clear();
     m_systemSchemaHelper.ClearCache();

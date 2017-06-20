@@ -12,9 +12,15 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 struct ECSqlAdapterTestFixture : ECDbTestFixture
     {};
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 struct ECInstanceInserterTests : ECSqlAdapterTestFixture
     {
     protected:
@@ -22,6 +28,9 @@ struct ECInstanceInserterTests : ECSqlAdapterTestFixture
         void InsertRelationshipInstances(Utf8CP relationshipClassName, Utf8CP targetClassName, Utf8CP sourceClassName, Utf8CP schemaName, int numberOfSourceInstances, int numberOfTargetInstancesPerSource);
     };
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml")));
@@ -69,6 +78,9 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipClassName, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP schemaName, int numberOfSourceInstances, int numberOfTargetInstancesPerSource)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml")));
@@ -105,26 +117,60 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceInserterTests, InsertIntoRelationships)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertIntoelationships.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+
+    ECClassCP navPropRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasP_N1");
+    ASSERT_TRUE(navPropRelClass != nullptr);
+    ECInstanceInserter inserter(m_ecdb, *navPropRelClass, nullptr);
+    ASSERT_FALSE(inserter.IsValid()) << "Cannot insert into nav prop relationship class " << navPropRelClass->GetFullName();
+
+    ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasPSA_NN");
+    ASSERT_TRUE(linkTableRelClass != nullptr);
+
+    ECInstanceInserter inserter2(m_ecdb, *linkTableRelClass, nullptr);
+    ASSERT_TRUE(inserter2.IsValid()) << "Expected to be able to insert into link table relationship class " << linkTableRelClass->GetFullName();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfPrimitiveClass)
     {
     InsertInstances("PrimitiveClass", "KitchenSink", 1, true);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfPrimitiveClass)
     {
     InsertInstances("PrimitiveClass", "KitchenSink", 100, true);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfPrimitiveClassWithNullValues)
     {
     InsertInstances("PrimitiveClass", "KitchenSink", 1, false);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfPrimitiveClassWithNullValues)
     {
     InsertInstances("PrimitiveClass", "KitchenSink", 100, false);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Carole.MacDonald                  08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml")));

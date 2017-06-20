@@ -1417,7 +1417,64 @@ TEST_F(SchemaRulesTestFixture, Relationship)
 TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
     {
             {
-            //(1,1):(1,1)
+            //(1,1):(1,1) Physical FK
+            ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                "  <ECEntityClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='B'>"
+                "    <ECProperty propertyName='CodeId' typeName='string' />"
+                "    <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward' >"
+                "       <ECCustomAttributes>"
+                "          <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                "       </ECCustomAttributes>"
+                "    </ECNavigationProperty>"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
+                "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Source'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "    <Target multiplicity='(1..1)' polymorphic='True' roleLabel='Target'>"
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>")));
+            ECInstanceKey a1Key, a2Key;
+            ECInstanceKey b1Key, b2Key;
+
+            ECSqlStatement aStmt;
+            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(m_ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key));
+            aStmt.Reset();
+
+            ECSqlStatement bStmt;
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(m_ecdb, "INSERT INTO ts.B(MyA.Id) VALUES (?)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
+            bStmt.Reset();
+            bStmt.ClearBindings();
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetInstanceId()));
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key));
+            bStmt.Reset();
+            bStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetInstanceId()));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, bStmt.Step(b2Key))<< "A1 is already used by B1 so would violate 1:1 cardinality";
+            bStmt.Reset();
+            bStmt.ClearBindings();
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key)) << "Multiplicity of (1,1) for referenced end is not enforced yet";
+            aStmt.Reset();
+
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a2Key.GetInstanceId()));
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
+            bStmt.Reset();
+            bStmt.ClearBindings();
+            }
+
+            {
+            //(1,1):(1,1) Logical FK
             ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
@@ -1454,6 +1511,11 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
             bStmt.Reset();
             bStmt.ClearBindings();
 
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetInstanceId()));
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key)) << "This is a cardinality violation, but as it is a logical FK it is not enforced";
+            bStmt.Reset();
+            bStmt.ClearBindings();
+
             ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key)) << "Multiplicity of (1,1) for referenced end is not enforced yet";
             aStmt.Reset();
 
@@ -1461,23 +1523,6 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
             ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
             bStmt.Reset();
             bStmt.ClearBindings();
-
-            //Test that child can have one parent at most (enforce (0..1) parent multiplicity)
-            ECSqlStatement relStmt;
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(m_ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1..1):(1..1)]> Max of (1..1) multiplicity constraint is expected to be enforced";
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b2Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1..1):(1..1)]> Max of (1..1) multiplicity constraint is expected to be enforced";
             }
 
             {
@@ -1525,17 +1570,6 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
             ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key)) << "[(1..1):(1..*)]> (1..*) multiplicity is not expected to be violated by a second child" << bStmt.GetNativeSql() << " Error:" << m_ecdb.GetLastError().c_str();
             bStmt.Reset();
             bStmt.ClearBindings();
-
-            //Test that child can have one parent at most
-            ECSqlStatement relStmt;
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(m_ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1..1):(1..*)]> Max of (1..1) multiplicity constraint is expected to be enforced";
-            relStmt.Reset();
-            relStmt.ClearBindings();
             }
 
             {
@@ -1582,31 +1616,6 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
             aStmt.Reset();
             ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
             bStmt.Reset();
-
-            //Test that child can have one parent at most (enforce (0,1) parent multiplicity)
-            ECSqlStatement relStmt;
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(m_ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) multiplicity constraint is expected to be enforced";
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b2Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) multiplicity constraint is expected to be enforced";
             }
 
             {
@@ -1653,34 +1662,9 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
             aStmt.Reset();
             ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
             bStmt.Reset();
-
-            //Test that child can have one parent at most (enforce (0,1) parent multiplicity)
-            ECSqlStatement relStmt;
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(m_ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,N)]> Max of (0,1) multiplicity constraint is expected to be enforced";
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b2Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step()) << "[(0,1):(0,N)]> More than one child can exist";
             }
 
-        //** Unenforced cardinality for self-joins
+        //**  self-joins
             {
             ASSERT_EQ(SUCCESS, SetupECDb("relcardinality_selfjoins.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -1705,43 +1689,19 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
             ECInstanceKey a1Key, a2Key, a3Key;
 
             ECSqlStatement aStmt;
-            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(m_ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(m_ecdb, "INSERT INTO ts.A(Partner.Id) VALUES (?)"));
 
             ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key));
             aStmt.Reset();
+            aStmt.BindId(1, a1Key.GetInstanceId());
             ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
             aStmt.Reset();
-            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a3Key));
+            aStmt.ClearBindings();
+
+            aStmt.BindId(1, a1Key.GetInstanceId());
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, aStmt.Step(a3Key)) << "A1 already referenced by A2";
             aStmt.Reset();
-
-            //Test that child can have one parent at most (enforce (0,1) parent multiplicity)
-            ECSqlStatement relStmt;
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(m_ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a2Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, a2Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a3Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, a3Key.GetClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step());
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a3Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a3Key.GetClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a1Key.GetInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, a1Key.GetClassId()));
-            //THIS SHOULD ACTUALLY FAIL, but we cannot enforce that in ECDb, because the unique index is only on the FK column,
-            //but it would have to be on FK and PK at the same time.
-            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
-            relStmt.Reset();
-            relStmt.ClearBindings();
+            aStmt.ClearBindings();
             }
     }
 
@@ -2432,52 +2392,6 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_UnsupportedCases)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertRelationship(ECDbCR ecdb, Utf8CP schemaName, Utf8CP relationshipClassName, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey, Utf8CP assertMsg)
-    {
-    //insert relationship
-    Utf8String ecsql;
-    ecsql.Sprintf("INSERT INTO %s.%s(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%s,%s,%s,%s)",
-                  schemaName, relationshipClassName, sourceKey.GetInstanceId().ToString().c_str(), sourceKey.GetClassId().ToString().c_str(),
-                  targetKey.GetInstanceId().ToString().c_str(), targetKey.GetClassId().ToString().c_str());
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    stmt.Finalize();
-
-    const_cast<ECDbR>(ecdb).SaveChanges();
-    //select
-    ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId FROM %s.%s WHERE TargetECInstanceId=%s",
-                  schemaName, relationshipClassName, targetKey.GetInstanceId().ToString().c_str());
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(sourceKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(sourceKey.GetClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    stmt.Finalize();
-
-    ecsql.Sprintf("SELECT TargetECInstanceId, TargetECClassId FROM %s.%s WHERE SourceECInstanceId=%s",
-                  schemaName, relationshipClassName, sourceKey.GetInstanceId().ToString().c_str());
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(targetKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(targetKey.GetClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    stmt.Finalize();
-
-    //delete relationship
-    ecsql.Sprintf("DELETE FROM %s.%s WHERE SourceECInstanceId=%s AND SourceECClassId=%s AND TargetECInstanceId=%s AND TargetECClassId=%s",
-                  schemaName, relationshipClassName, sourceKey.GetInstanceId().ToString().c_str(), sourceKey.GetClassId().ToString().c_str(),
-                  targetKey.GetInstanceId().ToString().c_str(), targetKey.GetClassId().ToString().c_str());
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << assertMsg << ": ECSQL: " << ecsql.c_str();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  02/16
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     {
     ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
@@ -2557,8 +2471,32 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     AssertColumnNames(m_ecdb, "ts_ParentHasChildren", {"Id", "SourceId", "TargetId"}, "rel w/o nav prop");
     }
 
+    auto assertRelationship = [](ECDbCR ecdb, Utf8CP schemaName, Utf8CP relationshipClassName, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey)
+        {
+        //select
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId FROM %s.%s WHERE TargetECInstanceId=%s",
+                      schemaName, relationshipClassName, targetKey.GetInstanceId().ToString().c_str());
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(sourceKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(sourceKey.GetClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << ": ECSQL: " << ecsql.c_str();
+        stmt.Finalize();
+
+        ecsql.Sprintf("SELECT TargetECInstanceId, TargetECClassId FROM %s.%s WHERE SourceECInstanceId=%s",
+                      schemaName, relationshipClassName, sourceKey.GetInstanceId().ToString().c_str());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(targetKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(targetKey.GetClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << ": ECSQL: " << ecsql.c_str();
+        };
+
+
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childhierarchyinsharedtable.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childtph.ecdb", SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName='Parent' >"
@@ -2601,11 +2539,12 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     ECInstanceKey childKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ChildA(ChildAProp,ChildProp) VALUES(2,2)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ChildA(ChildAProp,ChildProp, Parent.Id) VALUES(2,2,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
     m_ecdb.SaveChanges();
-    AssertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "Child hierarchy in TPH");
+    assertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey);
     }
 
 
@@ -2653,11 +2592,12 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     ECInstanceKey childKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Child(ChildProp) VALUES(2)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Child(ChildProp, Parent.Id) VALUES(2,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
 
-    AssertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "");
+    assertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey);
     }
 
 
@@ -2706,11 +2646,12 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     ECInstanceKey childKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ChildA(ChildAProp) VALUES(2)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ChildA(ChildAProp, Parent.Id) VALUES(2,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
 
-    AssertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey, "");
+    assertRelationship(m_ecdb, "TestSchema", "ParentHasChildren", parentKey, childKey);
     }
     }
 
@@ -2726,17 +2667,9 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='Child' >"
         "    <ECProperty propertyName='ChildProp' typeName='int' />"
-        "    <ECNavigationProperty propertyName='Parent' relationshipName='Rel' direction='Backward'/>"
+        "    <ECNavigationProperty propertyName='Parent' relationshipName='NavPropRel' direction='Backward'/>"
         "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ChildA' >"
-        "     <BaseClass>Child</BaseClass>"
-        "    <ECProperty propertyName='ChildAProp' typeName='int' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ChildB' >"
-        "     <BaseClass>Child</BaseClass>"
-        "    <ECProperty propertyName='ChildBProp' typeName='int' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
+        "  <ECRelationshipClass typeName='NavPropRel' strength='embedding' modifier='Sealed'>"
         "     <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
         "         <Class class='Parent' />"
         "     </Source>"
@@ -2744,23 +2677,49 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
         "        <Class class='Child' />"
         "     </Target>"
         "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Children in different tables";
+        "  <ECRelationshipClass typeName='LinkTableRel' strength='embedding' modifier='Sealed'>"
+        "     <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
+        "         <Class class='Parent' />"
+        "     </Source>"
+        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
+        "        <Class class='Child' />"
+        "     </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>")));
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT SourceECInstance,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.Rel"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.NavPropRel"));
     }
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.Rel(SourceECInstance,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.NavPropRel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
     }
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.Rel SET SourceECInstanceId=?, TargetECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.NavPropRel SET SourceECInstanceId=?, TargetECInstanceId=?"));
     }
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ts.Rel"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ts.NavPropRel"));
     }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.LinkTableRel"));
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.LinkTableRel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.LinkTableRel SET SourceECInstanceId=?, TargetECInstanceId=?"));
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.LinkTableRel"));
+    }
+
     }
 END_ECDBUNITTESTS_NAMESPACE

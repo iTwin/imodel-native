@@ -219,6 +219,8 @@
         - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
     - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities"
         - @b Add a new @ref BentleyApi::ECN::KindOfQuantity "KindOfQuantity"
+    - @ref BentleyApi::ECN::ECSchema::GetPropertyCategories "PropertyCategories"
+        - @b Add a new @ref BentleyApi::ECN::PropertyCategory "PropertyCategory"
     - @b CustomAttributes on the ECSchema
         - @b Add, @b delete, @b modify
 
@@ -244,6 +246,8 @@
         - @ref BentleyApi::ECN::ECProperty::GetDescription "Description"
         - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "IsReadOnly"
+        - @ref BentleyApi::ECN::ECProperty::GetCategory "Category"
+
     - @b CustomAttributes on the ECProperty
         - @b Add, @b delete, @b modify
 

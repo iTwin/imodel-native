@@ -65,6 +65,18 @@ public:
     KindOfQuantityDbEntry(ECN::KindOfQuantityId koqId, ECN::KindOfQuantityCR koq) : m_koqId(koqId), m_cachedKoq(const_cast<ECN::KindOfQuantityP> (&koq)) {}
     };
 
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      06/2017
+//+===============+===============+===============+===============+===============+======
+struct PropertyCategoryDbEntry final
+    {
+    public:
+        ECN::PropertyCategoryId m_categoryId;
+        ECN::PropertyCategoryP m_cachedCategory = nullptr;
+
+        PropertyCategoryDbEntry(ECN::PropertyCategoryId id, ECN::PropertyCategoryCR cat) : m_categoryId(id), m_cachedCategory(const_cast<ECN::PropertyCategoryP> (&cat)) {}
+    };
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -89,15 +101,13 @@ struct SchemaReader final
         mutable std::map<ECN::ECClassId, std::unique_ptr<ClassDbEntry>> m_classCache;
         mutable std::map<ECN::ECEnumerationId, std::unique_ptr<EnumDbEntry>> m_enumCache;
         mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<KindOfQuantityDbEntry>> m_koqCache;
+        mutable std::map<ECN::PropertyCategoryId, std::unique_ptr<PropertyCategoryDbEntry>> m_propCategoryCache;
         mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
         ECDbSystemSchemaHelper m_systemSchemaHelper;
 
         ECN::ECSchemaCP GetSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetClass(Context&, ECN::ECClassId) const;
         bool TryGetClassFromCache(ECN::ECClassP&, ECN::ECClassId) const;
-        ECN::ECEnumerationCP GetEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
-        ECN::KindOfQuantityCP GetKindOfQuantity(Context&, Utf8CP schemaName, Utf8CP koqName) const;
-
         BentleyStatus LoadSchemaEntitiesFromDb(SchemaDbEntry*, Context&, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const;
         BentleyStatus LoadSchemaFromDb(SchemaDbEntry*&, ECN::ECSchemaId) const;
         BentleyStatus LoadPropertiesFromDb(ECN::ECClassP&, Context&, ECN::ECClassId) const;
@@ -111,6 +121,7 @@ struct SchemaReader final
         BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         BentleyStatus ReadEnumeration(ECN::ECEnumerationP&, Context&, ECN::ECEnumerationId) const;
         BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityP&, Context&, ECN::KindOfQuantityId) const;
+        BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryP&, Context&, ECN::PropertyCategoryId) const;
 
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 
@@ -130,6 +141,9 @@ struct SchemaReader final
 
         ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
         ECN::KindOfQuantityId GetKindOfQuantityId(ECN::KindOfQuantityCR) const;
+
+        ECN::PropertyCategoryCP GetPropertyCategory(Utf8CP schemaName, Utf8CP catName) const;
+        ECN::PropertyCategoryId GetPropertyCategoryId(ECN::PropertyCategoryCR) const;
 
         ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR) const;
 

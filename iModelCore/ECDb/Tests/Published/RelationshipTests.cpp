@@ -804,54 +804,23 @@ TEST_F(RelationshipMappingTestFixture, CascadeDeletion)
     EXPECT_TRUE(ClassC != nullptr);
 
     //Instance of ClassA
-    StandaloneECInstancePtr ClassA_Instance = ClassA->GetDefaultStandaloneEnabler()->CreateInstance();
-    ClassA_Instance->SetValue("AA", ECValue("val1"));
+    ECInstanceKey aKey, bKey, cKey;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassA(AA) VALUES('val1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(aKey));
+    stmt.Finalize();
 
-    //Instance of ClassB
-    StandaloneECInstancePtr ClassB_Instance = ClassB->GetDefaultStandaloneEnabler()->CreateInstance();
-    ClassB_Instance->SetValue("BB", ECValue("val3"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassB(BB, A.Id) VALUES('val3',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, aKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bKey));
+    stmt.Finalize();
 
-    //Inserter of ClassA
-    ECInstanceInserter ClassA_Inserter(m_ecdb, *ClassA, nullptr);
-    ASSERT_TRUE(ClassA_Inserter.IsValid());
-    ClassA_Inserter.Insert(*ClassA_Instance);
-
-    //Inserter of ClassB
-    ECInstanceInserter ClassB_Inserter(m_ecdb, *ClassB, nullptr);
-    ASSERT_TRUE(ClassB_Inserter.IsValid());
-    ClassB_Inserter.Insert(*ClassB_Instance);
-
-    ECRelationshipClassCP AHasB = m_ecdb.Schemas().GetClass("TestSchema", "AHasB")->GetRelationshipClassCP();
-    ECRelationshipClassCP BHasC = m_ecdb.Schemas().GetClass("TestSchema", "BHasC")->GetRelationshipClassCP();
-
-    //Inserting relationship instance.
-    ECN::StandaloneECRelationshipInstancePtr ClassAHasB_relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*AHasB)->CreateRelationshipInstance();
-    ClassAHasB_relationshipInstance->SetSource(ClassA_Instance.get());
-    ClassAHasB_relationshipInstance->SetTarget(ClassB_Instance.get());
-
-    ECInstanceInserter AHasB_relationshipInserter(m_ecdb, *AHasB, nullptr);
-    AHasB_relationshipInserter.Insert(*ClassAHasB_relationshipInstance);
-
-
-    //Inserting instances of ClassC
-    StandaloneECInstancePtr ClassC_Instance = ClassC->GetDefaultStandaloneEnabler()->CreateInstance();
-    ClassC_Instance->SetValue("CC", ECValue("val5"));
-
-    //Inserter of ClassC
-    ECInstanceInserter ClassC_Inserter(m_ecdb, *ClassC, nullptr);
-    ASSERT_TRUE(ClassC_Inserter.IsValid());
-    ClassC_Inserter.Insert(*ClassC_Instance);
-
-    //Inserting relationship instances.
-    ECN::StandaloneECRelationshipInstancePtr ClassBHasC_relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*BHasC)->CreateRelationshipInstance();
-    ClassBHasC_relationshipInstance->SetSource(ClassB_Instance.get());
-    ClassBHasC_relationshipInstance->SetTarget(ClassC_Instance.get());
-
-    ECInstanceInserter BHasC_relationshipInserter(m_ecdb, *BHasC, nullptr);
-    BHasC_relationshipInserter.Insert(*ClassBHasC_relationshipInstance);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassC(CC, B.Id) VALUES('val5',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, bKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(cKey));
+    stmt.Finalize();
 
     //Deletes instance of ClassA. Instances of ClassB and ClassC are also deleted.
-    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.ClassA WHERE ECInstanceId=1"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -1078,7 +1047,7 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationship)
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, Utf8PrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, TestHelper::PrepareECSql(m_ecdb, "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     m_ecdb.SaveChanges();
     }
 
@@ -1275,27 +1244,27 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint ORDER BY ECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(2, stmt.GetValueInt64(0));
-    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));
+    ASSERT_EQ(relId, stmt.GetValueId<ECClassId>(1));
     ASSERT_EQ(1, stmt.GetValueInt64(2));
-    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));
+    ASSERT_EQ(carId, stmt.GetValueId<ECClassId>(3));
     ASSERT_EQ(2, stmt.GetValueInt64(4));
-    ASSERT_EQ(engineId.GetValue(), stmt.GetValueInt64(5));
+    ASSERT_EQ(engineId, stmt.GetValueId<ECClassId>(5));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ASSERT_EQ(3, stmt.GetValueInt64(0));
-    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));
+    ASSERT_EQ(relId, stmt.GetValueId<ECClassId>(1));
     ASSERT_EQ(1, stmt.GetValueInt64(2));
-    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));
+    ASSERT_EQ(carId, stmt.GetValueId<ECClassId>(3));
     ASSERT_EQ(3, stmt.GetValueInt64(4));
-    ASSERT_EQ(sterringId.GetValue(), stmt.GetValueInt64(5));
+    ASSERT_EQ(sterringId, stmt.GetValueId<ECClassId>(5));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
-    stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
+
+    ASSERT_EQ(ECSqlStatus::Success, TestHelper::PrepareECSql(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
+    ASSERT_EQ(ECSqlStatus::Success, TestHelper::PrepareECSql(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
     }
 
 
@@ -1412,7 +1381,7 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint ORDER BY TargetECInstanceId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(ECInstanceId(UINT64_C(1)), stmt.GetValueId<ECInstanceId>(0));
     ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema","Car"), stmt.GetValueId<ECClassId>(1));
@@ -3449,54 +3418,36 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
 
         ECInstanceKey elem1Key, elem2Key, geomElem1Key, geomElem2Key, geom1Key, geom2Key;
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ExtendedElement (Code,Name) VALUES('0001','NonGeom1')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ExtendedElement(Code,Name) VALUES('0001','NonGeom1')"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elem1Key));
         stmt.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ExtendedElement (Code,Name) VALUES('0002','NonGeom2')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ExtendedElement(Code,Name) VALUES('0002','NonGeom2')"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elem2Key));
         stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GeometricElement (Code,Name) VALUES('0003','Geom1')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GeometricElement(Code,Name) VALUES('0003','Geom1')"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomElem1Key));
         stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GeometricElement (Code,Name) VALUES('0004','Geom2')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GeometricElement(Code,Name) VALUES('0004','Geom2')"));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomElem2Key));
         stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ElementGeometry (Geom) VALUES('0x13124')"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom1Key));
-        stmt.Finalize();
-
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ElementGeometry (Geom) VALUES('0x42343')"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom2Key));
-        stmt.Finalize();
-        m_ecdb.SaveChanges();
-
         //now do actual tests with relationship
-        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "Before inserting one relationship";
+        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "Before inserting nav prop";
 
-        ECSqlStatement insertStmt;
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ElementGeometry(Source.Id) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomElem1Key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom1Key));
+        stmt.Reset();
+        stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, geomElem1Key.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, geomElem1Key.GetClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom1Key.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom1Key.GetClassId()));
+        ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "After inserting one nav prop";
 
-        ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against GeometricElement is expected to succeed";
-        insertStmt.Reset();
-        insertStmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elem1Key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom1Key));
 
-        ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "After inserting one relationship";
-
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, elem1Key.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, elem1Key.GetClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom2Key.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom2Key.GetClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against ExtendedElement is also expected to succeed";
-        insertStmt.Reset();
-        insertStmt.ClearBindings();
+        ASSERT_EQ(2, getGeometrySourceHasGeometryRowCount(m_ecdb)) << "After inserting second nav prop";
         }
     }
 
@@ -4231,26 +4182,20 @@ TEST_F(RelationshipMappingTestFixture, DiegoRelationshipTest)
 
         IECInstancePtr civilModel1 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
         IECInstancePtr civilModel2 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
-        IECInstancePtr geometricModel = ECDbTestUtility::CreateArbitraryECInstance(*geometricModelClass);
-
-        StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*(relClass->GetRelationshipClassCP()));
-        StandaloneECRelationshipInstancePtr rel1 = relationshipEnabler->CreateRelationshipInstance();
-
-        rel1->SetSource(civilModel2.get());
-        rel1->SetTarget(geometricModel.get());
 
         ECInstanceInserter civilModelInserter(m_ecdb, *civilModelClass, nullptr);
         ASSERT_TRUE(civilModelInserter.IsValid());
         ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(*civilModel1));
-        ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(*civilModel2));
+        ECInstanceKey civilModel2Key;
+        ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(civilModel2Key, *civilModel2));
+
+        IECInstancePtr geometricModel = ECDbTestUtility::CreateArbitraryECInstance(*geometricModelClass);
+        ECValue navPropValue(civilModel2Key.GetInstanceId());
+        ASSERT_EQ(ECObjectsStatus::Success, geometricModel->SetValue("CivilModel", navPropValue));
 
         ECInstanceInserter geometricModelInserter(m_ecdb, *geometricModelClass, nullptr);
         ASSERT_TRUE(geometricModelInserter.IsValid());
         ASSERT_EQ(BE_SQLITE_OK, geometricModelInserter.Insert(*geometricModel));
-
-        ECInstanceInserter relInserter(m_ecdb, *relClass, nullptr);
-        ASSERT_TRUE(relInserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(*rel1));
         }
 
 //---------------------------------------------------------------------------------------
@@ -5149,302 +5094,113 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
     ASSERT_TRUE(readInstance.IsValid());
     }
 
-//=======================================================================================    
-// @bsiclass                                   Muhammad Hassan                     05/15
-//=======================================================================================    
-struct ReferentialIntegrityTestFixture : DbMappingTestFixture
-    {
-    private:
-        void VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const;
-        size_t GetRelationshipInstanceCount(ECDbCR ecdb, Utf8CP relationshipClass) const;
-
-    protected:
-        void ExecuteRelationshipInsertionIntegrityTest(ECDbCR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const;
-    };
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                              Muhammad Hassan                         04/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialIntegrity)
-    {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ForeignKeyConstraint_EnforceReferentialIntegrity.ecdb"));
-    ExecuteRelationshipInsertionIntegrityTest(m_ecdb, false, true, true);
-    //when AllowDuplicate is turned of, OneFooHasManyGoo will also be mapped as endtable therefore ReferentialIntegrityCheck will be performed for it, so there will be two rows in the ForeignKey table
-    ASSERT_FALSE(m_ecdb.TableExists("ts_OneFooHasOneGoo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_OneFooHasManyGoo"));
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                              Muhammad Hassan                         04/15
-//--------------------------------------------------------------------------------------
-TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation)
-    {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb"));
-    ExecuteRelationshipInsertionIntegrityTest(m_ecdb, true, true, true);
-    //when AllowDuplicate is turned on, OneFooHasManyGoo will also be mapped as endtable therefore there will be only one row in the ForeignKey table
-    ASSERT_FALSE(m_ecdb.TableExists("ts_OneFooHasOneGoo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_OneFooHasManyGoo"));
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         02/15
-//--------------------------------------------------------------------------------------
-TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
-    {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("RelationshipCardinalityTest.ecdb"));
-    ExecuteRelationshipInsertionIntegrityTest(m_ecdb, false, true, true);
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Foo"));
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_OneFooHasOneGoo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_OneFooHasManyGoo"));
-    ASSERT_TRUE(m_ecdb.TableExists("ts_ManyFooHasManyGoo"));
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         02/15
-//--------------------------------------------------------------------------------------
-TEST_F(ReferentialIntegrityTestFixture, AllowDuplicateRelationships)
-    {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb"));
-    ExecuteRelationshipInsertionIntegrityTest(m_ecdb, true, true, true);
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Foo"));
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_OneFooHasOneGoo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_OneFooHasManyGoo"));
-    ASSERT_TRUE(m_ecdb.TableExists("ts_ManyFooHasManyGoo"));
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         02/15
-//--------------------------------------------------------------------------------------
-void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const
-    {
-    ECSqlStatement stmt;
-    auto sql = SqlPrintfString("INSERT INTO %s (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(:sECInstanceId,:sECClassId,:tECInstanceId,:tECClassId)", relationshipClass);
-    ASSERT_EQ(stmt.Prepare(ecdb, sql.GetUtf8CP()), ECSqlStatus::Success);
-    ASSERT_EQ(expected.size(), sourceKeys.size() * targetKeys.size());
-
-    const int sECInstanceId = stmt.GetParameterIndex("sECInstanceId");
-    const int sECClassId = stmt.GetParameterIndex("sECClassId");
-    const int tECInstanceId = stmt.GetParameterIndex("tECInstanceId");
-    const int tECClassId = stmt.GetParameterIndex("tECClassId");
-
-    int n = 0;
-    for (auto& fooKey : sourceKeys)
-        {
-        for (auto& gooKey : targetKeys)
-            {
-            stmt.Reset();
-            ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
-            stmt.BindId(sECInstanceId, fooKey.GetInstanceId());
-            stmt.BindId(sECClassId, fooKey.GetClassId());
-            stmt.BindId(tECInstanceId, gooKey.GetInstanceId());
-            stmt.BindId(tECClassId, gooKey.GetClassId());
-            if (expected[n] != BE_SQLITE_DONE)
-                ASSERT_NE(BE_SQLITE_DONE, stmt.Step());
-            else
-                {
-                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-                rowInserted++;
-                }
-            n = n + 1;
-            }
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         02/15
-//--------------------------------------------------------------------------------------
-size_t ReferentialIntegrityTestFixture::GetRelationshipInstanceCount(ECDbCR ecdb, Utf8CP relationshipClass) const
-    {
-    ECSqlStatement stmt;
-    auto sql = SqlPrintfString("SELECT COUNT(*) FROM ONLY ts.Foo JOIN ts.Goo USING %s", relationshipClass);
-    if (stmt.Prepare(ecdb, sql.GetUtf8CP()) == ECSqlStatus::Success)
-        {
-        if (stmt.Step() == BE_SQLITE_ROW)
-            return static_cast<size_t>(stmt.GetValueInt(0));
-        }
-
-    return 0;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         02/15
-//--------------------------------------------------------------------------------------
-void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(ECDbCR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const
-    {
-    Utf8CP schemaTemplate = R"xml(<?xml version="1.0" encoding="utf-8"?>
-    <ECSchema schemaName="Testschema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-    <ECEntityClass typeName="Foo">
-        <ECProperty propertyName="fooProp" typeName="string" />
-    </ECEntityClass>
-    <ECEntityClass typeName="Goo" >
-        <ECProperty propertyName="gooProp" typeName="string" />
-        <ECNavigationProperty propertyName="PartnerFoo" relationshipName="OneFooHasOneGoo" direction="Backward">
-          <ECCustomAttributes>
-            %s
-          </ECCustomAttributes>
-        </ECNavigationProperty>                
-        <ECNavigationProperty propertyName="ParentFoo" relationshipName="OneFooHasManyGoo" direction="Backward">
-          <ECCustomAttributes>
-            %s
-          </ECCustomAttributes>
-        </ECNavigationProperty>                
-    </ECEntityClass>
-    <ECRelationshipClass typeName="OneFooHasOneGoo" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
-            <Class class="Foo" />
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="has">
-            <Class class="Goo" />
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="OneFooHasManyGoo" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
-            <Class class="Foo" />
-        </Source>
-        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
-            <Class class="Goo" />
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="ManyFooHasManyGoo" strength="referencing" modifier="Sealed">
-        <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
-            %s
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
-            <Class class="Foo" />
-        </Source>
-        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
-            <Class class="Goo" />
-        </Target>
-    </ECRelationshipClass>
-    </ECSchema>)xml";
-
-    Utf8CP linkTableCAStr = "";
-    Utf8CP fkCAStr = "";
-    if (allowDuplicateRelationships)
-        linkTableCAStr = R"xml(<AllowDuplicateRelationships>true</AllowDuplicateRelationships>)xml";
-
-    if (allowForeignKeyConstraint)
-        fkCAStr = R"xml(<ForeignKeyConstraint xmlns="ECDbMap.02.00"/>)xml";
-
-    Utf8String testSchemaXml;
-    testSchemaXml.Sprintf(schemaTemplate, fkCAStr, fkCAStr, linkTableCAStr);
-
-    BentleyStatus expectedStat = schemaImportExpectedToSucceed ? SUCCESS : ERROR;
-    ASSERT_EQ(expectedStat, ImportSchema(ecdb, SchemaItem(testSchemaXml.c_str())));
-    if (!schemaImportExpectedToSucceed)
-        return;
-
-    std::vector<ECInstanceKey> fooKeys, gooKeys;
-    const int maxFooInstances = 3;
-    const int maxGooInstances = 3;
-
-    ECSqlStatement fooStmt;
-    ASSERT_EQ(fooStmt.Prepare(ecdb, "INSERT INTO ts.Foo(fooProp) VALUES(?)"), ECSqlStatus::Success);
-    for (int i = 0; i < maxFooInstances; i++)
-        {
-        ECInstanceKey out;
-        ASSERT_EQ(fooStmt.Reset(), ECSqlStatus::Success);
-        ASSERT_EQ(fooStmt.ClearBindings(), ECSqlStatus::Success);
-        ASSERT_EQ(fooStmt.BindText(1, SqlPrintfString("foo_%d", i), IECSqlBinder::MakeCopy::Yes), ECSqlStatus::Success);
-        ASSERT_EQ(fooStmt.Step(out), BE_SQLITE_DONE);
-        fooKeys.push_back(out);
-        }
-
-    ECSqlStatement gooStmt;
-    ASSERT_EQ(gooStmt.Prepare(ecdb, "INSERT INTO ts.Goo(gooProp) VALUES(?)"), ECSqlStatus::Success);
-    for (int i = 0; i < maxGooInstances; i++)
-        {
-        ECInstanceKey out;
-        ASSERT_EQ(gooStmt.Reset(), ECSqlStatus::Success);
-        ASSERT_EQ(gooStmt.ClearBindings(), ECSqlStatus::Success);
-        ASSERT_EQ(gooStmt.BindText(1, SqlPrintfString("goo_%d", i), IECSqlBinder::MakeCopy::Yes), ECSqlStatus::Success);
-        ASSERT_EQ(gooStmt.Step(out), BE_SQLITE_DONE);
-        gooKeys.push_back(out);
-        }
-
-    //Compute what are the right valid permutation
-    std::vector<DbResult> oneFooHasOneGooResult;
-    std::vector<DbResult> oneFooHasManyGooResult;
-    std::vector<DbResult> manyFooHasManyGooResult;
-    std::vector<DbResult> reinsertResultError;
-    std::vector<DbResult> reinsertResultDone;
-    for (int f = 0; f < maxFooInstances; f++)
-        {
-        for (int g = 0; g < maxGooInstances; g++)
-            {
-            //1:1 is not effected with AllowDuplicateRelationships
-            if (f == g)
-                oneFooHasOneGooResult.push_back(BE_SQLITE_DONE);
-            else
-                oneFooHasOneGooResult.push_back(BE_SQLITE_CONSTRAINT_UNIQUE);
-
-            //1:N is effected with AllowDuplicateRelationships
-            if (f == 0)
-                oneFooHasManyGooResult.push_back(BE_SQLITE_DONE);
-            else
-                oneFooHasManyGooResult.push_back(BE_SQLITE_CONSTRAINT_UNIQUE);
-
-            manyFooHasManyGooResult.push_back(BE_SQLITE_DONE);
-            reinsertResultError.push_back(BE_SQLITE_CONSTRAINT_UNIQUE);
-            reinsertResultDone.push_back(BE_SQLITE_DONE);
-            }
-        }
-    //1:1--------------------------------
-    size_t count_OneFooHasOneGoo = 0;
-    VerifyRelationshipInsertionIntegrity(ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, oneFooHasOneGooResult, count_OneFooHasOneGoo);
-    VerifyRelationshipInsertionIntegrity(ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, reinsertResultError, count_OneFooHasOneGoo);
-
-    MapStrategyInfo mapStrategy;
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClassId("TestSchema","OneFooHasOneGoo")));
-    ASSERT_EQ((int) MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, (int) mapStrategy.m_strategy);
-    ASSERT_EQ(count_OneFooHasOneGoo, GetRelationshipInstanceCount(ecdb, "ts.OneFooHasOneGoo"));
-
-    //1:N--------------------------------
-    size_t count_OneFooHasManyGoo = 0;
-    VerifyRelationshipInsertionIntegrity(ecdb, "ts.OneFooHasManyGoo", fooKeys, gooKeys, oneFooHasManyGooResult, count_OneFooHasManyGoo);
-
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClassId("TestSchema", "OneFooHasManyGoo")));
-    ASSERT_EQ((int) MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, (int) mapStrategy.m_strategy);
-    ASSERT_EQ(count_OneFooHasManyGoo, GetRelationshipInstanceCount(ecdb, "ts.OneFooHasManyGoo"));
-
-    //N:N--------------------------------
-    size_t count_ManyFooHasManyGoo = 0;
-    VerifyRelationshipInsertionIntegrity(ecdb, "ts.ManyFooHasManyGoo", fooKeys, gooKeys, manyFooHasManyGooResult, count_ManyFooHasManyGoo);
-    if (allowDuplicateRelationships)
-        VerifyRelationshipInsertionIntegrity(ecdb, "ts.ManyFooHasManyGoo", fooKeys, gooKeys, reinsertResultDone, count_ManyFooHasManyGoo);
-    else
-        VerifyRelationshipInsertionIntegrity(ecdb, "ts.ManyFooHasManyGoo", fooKeys, gooKeys, reinsertResultError, count_ManyFooHasManyGoo);
-
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClassId("TestSchema", "ManyFooHasManyGoo")));
-
-    ASSERT_EQ((int) MapStrategyInfo::Strategy::OwnTable, (int) mapStrategy.m_strategy);
-    ASSERT_TRUE(mapStrategy.m_tphInfo.IsUnset());
-    ASSERT_EQ(count_ManyFooHasManyGoo, GetRelationshipInstanceCount(ecdb, "ts.ManyFooHasManyGoo"));
-    }
-
-
-
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  10/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 struct RelationshipStrengthTestFixture : ECDbTestFixture
     {
     protected:
+        static Utf8CP GetTestSchemaXml() {  return R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RelationshipStrengthTest" alias="rst" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+	        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Person" modifier="None">
+                <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
+                <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
+                <ECNavigationProperty propertyName="Parent1" relationshipName="SingleParentHasChildren" direction="Backward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Parent2" relationshipName="SingleParentHasChildren_backward" direction="Forward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Spouse1" relationshipName="ParentHasSpouse" direction="Backward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Spouse2" relationshipName="ParentHasSpouse_backward" direction="Forward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="SingleParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="SingleParentHasChildren_backward" modifier="Sealed" strength="embedding" strengthDirection="backward">
+                <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Single parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ChildrenHaveManyParents" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="Parents" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
+                <Source multiplicity="(1..*)" roleLabel="Parents" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ParentHasSpouse" modifier="Sealed" strength="referencing" strengthDirection="forward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Spouse" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Spouse" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>
+                )xml";
+        }
+
     //---------------------------------------------------------------------------------------
     //                                               Muhammad Hassan                  10/2014
     //+---------------+---------------+---------------+---------------+---------------+------
-    ECInstanceKey InsertPerson(Utf8CP firstName, Utf8CP lastName)
+    ECInstanceKey InsertPerson(Utf8CP firstName, Utf8CP lastName, ECInstanceId parent1Id = ECInstanceId(), ECInstanceId parent2Id = ECInstanceId(), ECInstanceId spouse1Id = ECInstanceId(), ECInstanceId spouse2Id = ECInstanceId())
         {
         Utf8String ecsql;
-        ecsql.Sprintf("INSERT INTO RelationshipStrengthTest.Person(FirstName,LastName) VALUES('%s','%s')", firstName, lastName);
+        ecsql.Sprintf("INSERT INTO RelationshipStrengthTest.Person(FirstName,LastName,Parent1.Id,Parent2.Id,Spouse1.Id,Spouse2.Id) VALUES('%s','%s',?,?,?,?)", firstName, lastName);
         ECSqlStatement stmt;
         if (stmt.Prepare(m_ecdb, ecsql.c_str()) != ECSqlStatus::Success)
             return ECInstanceKey();
+
+        if (parent1Id.IsValid())
+            stmt.BindId(1, parent1Id);
+
+        if (parent2Id.IsValid())
+            stmt.BindId(2, parent2Id);
+
+        if (spouse1Id.IsValid())
+            stmt.BindId(3, spouse1Id);
+
+        if (spouse2Id.IsValid())
+            stmt.BindId(4, spouse2Id);
 
         ECInstanceKey key;
         stmt.Step(key);
@@ -5454,7 +5210,7 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
     //---------------------------------------------------------------------------------------
     //                                               Muhammad Hassan                  10/2014
     //+---------------+---------------+---------------+---------------+---------------+------
-    ECInstanceKey InsertRelationship(Utf8CP relationshipClassECSqlName, ECInstanceKey const& source, ECInstanceKey const& target)
+    ECInstanceKey InsertLinkTableRelationship(Utf8CP relationshipClassECSqlName, ECInstanceKey const& source, ECInstanceKey const& target)
         {
         Utf8String ecsql;
         ecsql.Sprintf("INSERT INTO %s(SourceECInstanceId, TargetECInstanceId) VALUES(%s,%s)", relationshipClassECSqlName, source.GetInstanceId().ToString().c_str(),
@@ -5505,6 +5261,27 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
 
         return statement.Step() == BE_SQLITE_ROW;
         }
+
+    //---------------------------------------------------------------------------------------
+    //                                               Muhammad Hassan                  10/2014
+    //+---------------+---------------+---------------+---------------+---------------+------
+    bool IsNavigationPropertySet(ECInstanceKey const& key, Utf8CP navPropName)
+        {
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass(key.GetClassId());
+        if (ecClass == nullptr)
+            return false;
+
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT NULL FROM ONLY %s WHERE ECInstanceId=%s AND %s.Id IS NOT NULL",
+                      ecClass->GetECSqlName().c_str(), key.GetInstanceId().ToString().c_str(), navPropName);
+
+        ECSqlStatement statement;
+        if (ECSqlStatus::Success != statement.Prepare(m_ecdb, ecsql.c_str()))
+            return false;
+
+        return statement.Step() == BE_SQLITE_ROW;
+        }
+
     };
 
 
@@ -5514,24 +5291,21 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipStrengthTestFixture, BackwardEmbedding)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", SchemaItem(GetTestSchemaXml())));
     /*
     *                                           SingleParent
     *                                                 |
-    *                                                 | SingleParentHasChildren_backward (Backward EMBEDDING)
+    *                                                 | NavProp Parent2 (SingleParentHasChildren_backward (Backward EMBEDDING))
     *         ________________________________________|______________________________________
     *        |                                        |                                      |
     *      Child1                                   Child2                                 Child3
     */
-    ECInstanceKey child1 = InsertPerson("First", "Child");
-    ECInstanceKey child2 = InsertPerson("Second", "Child");
-    ECInstanceKey child3 = InsertPerson("Third", "Child");
     ECInstanceKey singleParent = InsertPerson("Only", "singleParent");
 
-    //Backward Embedding relationship (SingleParent -> Child1, Child2)
-    ECInstanceKey child1HasSingleParent = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren_backward", child1, singleParent);
-    ECInstanceKey child2HasSingleParent = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren_backward", child2, singleParent);
-    ECInstanceKey child3HasSingleParent = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren_backward", child3, singleParent);
+    ECInstanceKey child1 = InsertPerson("First", "Child", ECInstanceId(), singleParent.GetInstanceId());
+    ECInstanceKey child2 = InsertPerson("Second", "Child" , ECInstanceId(), singleParent.GetInstanceId());
+    ECInstanceKey child3 = InsertPerson("Third", "Child", ECInstanceId(), singleParent.GetInstanceId());
+
 
     /*
     * Test 1: Delete Child1
@@ -5542,13 +5316,14 @@ TEST_F(RelationshipStrengthTestFixture, BackwardEmbedding)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(child1));
-    ASSERT_FALSE(HasInstance(child1HasSingleParent));
 
     ASSERT_TRUE(HasInstance(singleParent));
-    ASSERT_TRUE(HasInstance(child2HasSingleParent));
-    ASSERT_TRUE(HasInstance(child3HasSingleParent));
     ASSERT_TRUE(HasInstance(child2));
+    ASSERT_FALSE(IsNavigationPropertySet(child2, "Parent1"));
+    ASSERT_TRUE(IsNavigationPropertySet(child2, "Parent2"));
     ASSERT_TRUE(HasInstance(child3));
+    ASSERT_FALSE(IsNavigationPropertySet(child3, "Parent1"));
+    ASSERT_TRUE(IsNavigationPropertySet(child3, "Parent2"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5556,7 +5331,7 @@ TEST_F(RelationshipStrengthTestFixture, BackwardEmbedding)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", SchemaItem(GetTestSchemaXml())));
 
     /*
      *          Create the following relationship hierarchy
@@ -5576,28 +5351,20 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
      */
 
     ECInstanceKey grandParent1 = InsertPerson("First", "GrandParent");
-    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent");
+    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent", ECInstanceId(), ECInstanceId(), grandParent1.GetInstanceId());
     ECInstanceKey singleParent = InsertPerson("Only", "SingleParent");
-    ECInstanceKey child1 = InsertPerson("First", "Child");
-    ECInstanceKey child2 = InsertPerson("Second", "Child");
+    ECInstanceKey child1 = InsertPerson("First", "Child", singleParent.GetInstanceId());
+    ECInstanceKey child2 = InsertPerson("Second", "Child", singleParent.GetInstanceId());
 
     // Referencing relationship (GrandParent1, GrandParent2 -> SingleParent)
-    ECInstanceKey grandParent1HasSingleParent = InsertRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent1, singleParent);
-    ECInstanceKey grandParent2HasSingleParent = InsertRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent2, singleParent);
-
-    // Embedding relationship (SingleParent -> Child1, Child2)
-    ECInstanceKey singleParentHasChild1 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child1);
-    ECInstanceKey singleParentHasChild2 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child2);
-
-    // Referencing relationship (GrandParent1 <-> GrandParent2)
-    ECInstanceKey grandParent1HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse", grandParent1, grandParent2);
-    ECInstanceKey grandParent2HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse", grandParent2, grandParent1);
+    ECInstanceKey grandParent1HasSingleParent = InsertLinkTableRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent1, singleParent);
+    ECInstanceKey grandParent2HasSingleParent = InsertLinkTableRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent2, singleParent);
 
     m_ecdb.SaveChanges();
 
     //Verify instances before deletion
-    ASSERT_TRUE(HasInstance(grandParent1HasSpouse));
-    ASSERT_TRUE(HasInstance(grandParent2HasSpouse));
+    ASSERT_TRUE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
 
     /*
     * Test 1: Delete GrandParent1
@@ -5608,8 +5375,8 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(grandParent1));
-    ASSERT_FALSE(HasInstance(grandParent1HasSpouse));
-    ASSERT_FALSE(HasInstance(grandParent2HasSpouse));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
     ASSERT_FALSE(HasInstance(grandParent1HasSingleParent));
 
     ASSERT_TRUE(HasInstance(singleParent));
@@ -5625,10 +5392,10 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
     ASSERT_FALSE(HasInstance(grandParent2HasSingleParent));
 
     ASSERT_TRUE(HasInstance(singleParent));
-    ASSERT_TRUE(HasInstance(singleParentHasChild1));
-    ASSERT_TRUE(HasInstance(singleParentHasChild2));
     ASSERT_TRUE(HasInstance(child1));
+    ASSERT_TRUE(IsNavigationPropertySet(child1, "Parent1"));
     ASSERT_TRUE(HasInstance(child2));
+    ASSERT_TRUE(IsNavigationPropertySet(child2, "Parent1"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -5636,7 +5403,7 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", SchemaItem(GetTestSchemaXml())));
 
     /*
     *          Create the following relationship hierarchy
@@ -5654,28 +5421,20 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     *   Child1                                             Child2
     *
     */
-    ECInstanceKey child1 = InsertPerson("First", "Child");
-    ECInstanceKey child2 = InsertPerson("Second", "Child");
-    ECInstanceKey singleParent = InsertPerson("Only", "singleParent");
     ECInstanceKey grandParent1 = InsertPerson("First", "GrandParent");
-    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent");
+    ECInstanceKey grandParent2 = InsertPerson("Second", "GrandParent", ECInstanceId(), ECInstanceId(), ECInstanceId(), grandParent1.GetInstanceId());
+    ECInstanceKey singleParent = InsertPerson("Only", "singleParent");
+    ECInstanceKey child1 = InsertPerson("First", "Child", singleParent.GetInstanceId());
+    ECInstanceKey child2 = InsertPerson("Second", "Child", singleParent.GetInstanceId());
 
     // Backward referencing relationship (GrandParent1, GrandParent2 <- SingleParent)
-    ECInstanceKey singleParentHasGrandParent1 = InsertRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent1);
-    ECInstanceKey singleParentHasGrandParent2 = InsertRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent2);
-
-    //Forward Embedding relationship (SingleParent -> Child1, Child2)
-    ECInstanceKey singleParentHasChild1 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child1);
-    ECInstanceKey singleParentHasChild2 = InsertRelationship("RelationshipStrengthTest.SingleParentHasChildren", singleParent, child2);
-
-    //Backward Referencing relationship (GrandParent1 <-> GrandParent2)
-    ECInstanceKey grandParent1HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse_backward", grandParent1, grandParent2);
-    ECInstanceKey grandParent2HasSpouse = InsertRelationship("RelationshipStrengthTest.ParentHasSpouse_backward", grandParent2, grandParent1);
+    ECInstanceKey singleParentHasGrandParent1 = InsertLinkTableRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent1);
+    ECInstanceKey singleParentHasGrandParent2 = InsertLinkTableRelationship("RelationshipStrengthTest.ChildrenHaveManyParents", singleParent, grandParent2);
 
     m_ecdb.SaveChanges();
 
     //Validate Instance exists before deletion
-    ASSERT_TRUE(HasInstance(singleParentHasChild1));
+    ASSERT_TRUE(IsNavigationPropertySet(child1, "Parent1"));
 
     /*
     * Test 1: Delete Child1
@@ -5686,9 +5445,10 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(child1));
-    ASSERT_FALSE(HasInstance(singleParentHasChild1));
+    ASSERT_FALSE(IsNavigationPropertySet(child1, "Parent1"));
 
     ASSERT_TRUE(HasInstance(child2));
+    ASSERT_TRUE(IsNavigationPropertySet(child2, "Parent1"));
 
     /*
     * Test 2: Delete Child2
@@ -5699,7 +5459,7 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(child2));
-    ASSERT_FALSE(HasInstance(singleParentHasChild2));
+    ASSERT_FALSE(IsNavigationPropertySet(child2, "Parent1"));
 
     ASSERT_TRUE(HasInstance(singleParent));
 
@@ -5712,10 +5472,10 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     m_ecdb.SaveChanges();
 
     ASSERT_FALSE(HasInstance(grandParent1));
-    ASSERT_FALSE(HasInstance(grandParent1HasSpouse));
-    ASSERT_FALSE(HasInstance(grandParent2HasSpouse));
-    ASSERT_FALSE(HasInstance(singleParentHasGrandParent1));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    ASSERT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
 
+    ASSERT_FALSE(HasInstance(singleParentHasGrandParent1));
     ASSERT_TRUE(HasInstance(singleParent));
 
     /*

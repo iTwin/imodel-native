@@ -26,59 +26,27 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
-        LOG.errorv("Failed to insert into ECRelationshipClass %s. Use navigation property pointing to this class to create relationships.", classMap.GetClass().GetFullName());
+        BeAssert(false && "Should have been caught before");
         return ECSqlStatus::InvalidECSql;
         }
-    else
-        {
-        DbTable const& table = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
-        if (table.GetType() == DbTable::Type::Virtual)
-            {
 
-            BeAssert(false && "Should have been caught before");
-            return ECSqlStatus::InvalidECSql;
-            }
+    DbTable const& table = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
+    if (table.GetType() == DbTable::Type::Virtual)
+        {
+
+        BeAssert(false && "Should have been caught before");
+        return ECSqlStatus::InvalidECSql;
         }
+
     NativeSqlSnippets insertNativeSqlSnippets;
     ECSqlStatus stat = GenerateNativeSqlSnippets(insertNativeSqlSnippets, ctx, exp, classMap);
     if (!stat.IsSuccess())
         return stat;
 
-     stat = PrepareInsertIntoClass(ctx, insertNativeSqlSnippets, classMap, exp);
+    PrepareClassId(ctx, insertNativeSqlSnippets, classMap);
+    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), insertNativeSqlSnippets, exp);
 
     ctx.PopScope();
-    return stat;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoClass(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap, InsertStatementExp const& exp)
-    {
-    PrepareClassId(ctx, nativeSqlSnippets, classMap);
-    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, exp);
-    return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, ClassMap const& classMap)
-    {
-    BeAssert(classMap.IsRelationshipClassMap() && classMap.GetType() == ClassMap::Type::RelationshipLinkTable);
-    return PrepareInsertIntoLinkTableRelationship(ctx, nativeSqlSnippets, exp, classMap.GetAs<RelationshipClassLinkTableMap>());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassLinkTableMap const& relationshipClassMap)
-    {
-    PrepareClassId(ctx, nativeSqlSnippets, relationshipClassMap);
-    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, exp);
     return ECSqlStatus::Success;
     }
 

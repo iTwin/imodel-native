@@ -19,13 +19,14 @@ struct SchemaWriter final : NonCopyableClass
     private:
         ECDbCR m_ecdb;
         SchemaImportContext& m_ctx;
-        CustomAttributeValidator m_customAttributeValidator;
+        CustomAttributeValidator m_schemaUpgradeCustomAttributeValidator;
         std::set<ECN::ECSchemaId> m_majorChangesAllowedForSchemas;
 
         BentleyStatus ImportSchema(SchemaCompareContext&, ECN::ECSchemaCR);
         BentleyStatus ImportClass(ECN::ECClassCR);
         BentleyStatus ImportEnumeration(ECN::ECEnumerationCR);
         BentleyStatus ImportKindOfQuantity(ECN::KindOfQuantityCR);
+        BentleyStatus ImportPropertyCategory(ECN::PropertyCategoryCR);
         BentleyStatus ImportProperty(ECN::ECPropertyCR, int ordinal);
         BentleyStatus ImportRelationshipClass(ECN::ECRelationshipClassCP);
         BentleyStatus ImportRelationshipConstraint(ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
@@ -34,6 +35,7 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveECPropertyCR);
         BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveArrayECPropertyCR);
         BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyCategoryId(Statement&, int paramIndex, ECN::ECPropertyCR);
 
         BentleyStatus InsertSchemaEntry(ECN::ECSchemaCR);
         BentleyStatus InsertBaseClassEntry(ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
@@ -54,6 +56,7 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus UpdateEnumeration(ECEnumerationChange& enumChanges, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
 
         BentleyStatus UpdateKindOfQuantities(KindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdatePropertyCategories(PropertyCategoryChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
 
         BentleyStatus UpdateProperties(ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
 
@@ -75,8 +78,8 @@ struct SchemaWriter final : NonCopyableClass
     public:
         explicit SchemaWriter(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_ctx(ctx)
             {
-            m_customAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
-            m_customAttributeValidator.Reject("ECDbMap:*");
+            m_schemaUpgradeCustomAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
+            m_schemaUpgradeCustomAttributeValidator.Reject("ECDbMap:*");
             }
 
         BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);

@@ -39,10 +39,12 @@
     | Entity         | yes             | yes                 | yes    | yes             | yes                 | yes             | yes                |
     | Abstract entity| yes             | yes                 | no     | yes             | yes (affects 0 rows) | yes            | yes (affects 0 rows) |
     | Mixin          | yes             | yes                 | no     | no              | no                  | no              | no                 |
-    | Relationship   | yes             | yes                 | yes    | no              | no                  | yes             | yes                |
-    | Abstract relationship | yes      | yes                 | no     | no              | no                  | yes             | yes (affects 0 rows) |
+    | Relationship with navigation property | yes | yes      | no*    | no*             | no*                 | no*             | no*                |
+    | Relationship w/o navigation property  | yes | yes      | yes    | yes             | yes                 | yes             | yes                |
     | Struct         | no              | no                  | no     | no              | no                  | no              | no                 |
     | Custom attribute | no            | no                  | no     | no              | no                  | no              | no                 |
+
+    @b * Use navigation property in order to insert, update or delete a relationship with navigation property.
 
     @section ECSqlECInstanceIdDetails ECInstanceId
     The ECInstanceId is the unique identifier for an ECInstance. In @ref ECSQLOverview you use the
@@ -209,8 +211,13 @@
     @note Both examples <b>as well as the first from ECSQLSamplesJoinsConvenienceSyntax</b> are semantically equivalent.
 
     @subsection ECSQLSamplesInsertRelationships Insert ECRelationship instances
-    As an ECRelationshipClass is an ECClass, inserting ECRelationship instances works like you'd insert a regular ECInstance. You
-    just have to include the special tokens @b SourceECInstanceId, @b SourceECClassId, @b TargetECInstanceId, @b TargetECClassId:
+    
+    If an NavigationECProperty is defined for an ECRelationshipClass, inserting, updating, deleting must be done via the navigation property:
+
+        INSERT INTO stco.Employee(FirstName, LastName, Company) VALUES (?,?,?)  -- Company is a navigation property for the ECRelationshipClass CompanyHasEmployees
+
+    If no NavigationECProperty is defined for an ECRelationshipClass, then you can treat the ECRelationshipClass like an ECClass
+    with the special tokens @b SourceECInstanceId, @b SourceECClassId, @b TargetECInstanceId, @b TargetECClassId:
         
         INSERT INTO stco.HardwareUsedByEmployee (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (1, 61, 2, 65)
 

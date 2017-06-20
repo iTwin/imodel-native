@@ -138,6 +138,16 @@ BentleyStatus SchemaWriter::ImportSchema(SchemaCompareContext& compareCtx, ECN::
             }
         }
 
+    //PropertyCategories must be imported before ECClasses as properties reference PropertyCategories
+    for (PropertyCategoryCP cat : ecSchema.GetPropertyCategories())
+        {
+        if (SUCCESS != ImportPropertyCategory(*cat))
+            {
+            Issues().Report("Failed to import PropertyCategory '%s'.", cat->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+    
     for (ECClassCP ecClass : ecSchema.GetClasses())
         {
         if (SUCCESS != ImportClass(*ecClass))
@@ -466,6 +476,61 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportPropertyCategory(PropertyCategoryCR cat)
+    {
+    if (m_ecdb.Schemas().GetReader().GetPropertyCategoryId(cat).IsValid())
+        return SUCCESS;
+
+    if (!m_ecdb.Schemas().GetReader().GetSchemaId(cat.GetSchema()).IsValid())
+        {
+        Issues().Report("Failed to import PropertyCategory '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", cat.GetName().c_str(), cat.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import PropertyCategory because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_PropertyCategory(Id,SchemaId,Name,DisplayLabel,Description,Priority) VALUES(?,?,?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    PropertyCategoryId catId;
+    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::PropertyCategoryId).GetNextValue(catId))
+        return ERROR;
+
+    const_cast<PropertyCategoryR>(cat).SetId(catId);
+    if (BE_SQLITE_OK != stmt->BindId(1, catId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(2, cat.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(3, cat.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (cat.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, cat.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (!cat.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(5, cat.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    //uint32_t persisted as int64 to not lose unsignedness
+    if (BE_SQLITE_OK != stmt->BindInt64(6, (int64_t) cat.GetPriority()))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -621,7 +686,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
         }
 
     //now insert the actual property
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -658,10 +723,11 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
     const int structClassIdIndex = 11;
     const int extendedTypeIndex = 12;
     const int koqIdIndex = 13;
-    const int arrayMinIndex = 14;
-    const int arrayMaxIndex = 15;
-    const int navRelClassIdIndex = 16;
-    const int navDirIndex = 17;
+    const int catIdIndex = 14;
+    const int arrayMinIndex = 15;
+    const int arrayMaxIndex = 16;
+    const int navRelClassIdIndex = 17;
+    const int navDirIndex = 18;
 
     if (ecProperty.GetIsPrimitive())
         {
@@ -748,6 +814,10 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
     //KOQs are allowed for all property kinds except for nav props (this will be caught be ECObjects already
     //and is checked again within this method)
     if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
+        return ERROR;
+
+    //PropertyCategories are allowed for all property kinds
+    if (SUCCESS != BindPropertyCategoryId(*stmt, catIdIndex, ecProperty))
         return ERROR;
 
     DbResult stat = stmt->Step();
@@ -897,6 +967,22 @@ BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int pa
 
     BeAssert(koq->HasId());
     return stmt.BindId(paramIndex, koq->GetId()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::BindPropertyCategoryId(Statement& stmt, int paramIndex, ECPropertyCR prop)
+    {
+    if (!prop.IsCategoryDefinedLocally() || prop.GetCategory() == nullptr)
+        return SUCCESS;
+
+    PropertyCategoryCP cat = prop.GetCategory();
+    if (SUCCESS != ImportPropertyCategory(*cat))
+        return ERROR;
+
+    BeAssert(cat->HasId());
+    return stmt.BindId(paramIndex, cat->GetId()) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1341,9 +1427,9 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(SchemaPersistenceHelper::Gene
 
         if (change.GetParent()->GetState() != ChangeState::New)
             {
-            if (m_customAttributeValidator.HasAnyRuleForSchema(schemaName.c_str()))
+            if (m_schemaUpgradeCustomAttributeValidator.HasAnyRuleForSchema(schemaName.c_str()))
                 {
-                if (m_customAttributeValidator.Validate(change) == CustomAttributeValidator::Policy::Reject)
+                if (m_schemaUpgradeCustomAttributeValidator.Validate(change) == CustomAttributeValidator::Policy::Reject)
                     {
                     Issues().Report("ECSchema Upgrade failed. Adding or modifying %s CustomAttributes is not supported.", schemaName.c_str());
                     return ERROR;
@@ -2097,6 +2183,46 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(KindOfQuantityChanges& koqCha
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdatePropertyCategories(PropertyCategoryChanges& changes, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
+    {
+    if (!changes.IsValid())
+        return SUCCESS;
+
+    for (size_t i = 0; i < changes.Count(); i++)
+        {
+        PropertyCategoryChange& change = changes.At(i);
+        if (change.GetState() == ChangeState::Deleted)
+            {
+            Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting PropertyCategory from an ECSchema is not supported.",
+                            oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+        else if (change.GetState() == ChangeState::New)
+            {
+            PropertyCategoryCP cat = newSchema.GetPropertyCategoryCP(change.GetId());
+            if (cat == nullptr)
+                {
+                BeAssert(false && "Failed to find property category");
+                return ERROR;
+                }
+
+            return ImportPropertyCategory(*cat);
+            }
+        else if (change.GetState() == ChangeState::Modified)
+            {
+            Issues().Report("ECSchema Upgrade failed. PropertyCategory %s in ECSchema %s: Changing PropertyCategory is not supported.",
+                            change.GetId(), oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  01/2017
 //+---------------+---------------+---------------+---------------+---------------+------

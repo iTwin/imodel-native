@@ -97,12 +97,11 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
     const ECSqlType ecsqlType = assertion.GetECSqlType();
     if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
         {
-        if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
+        if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
             {
             Utf8String notSupportedMessage;
-            notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
+            notSupportedMessage.Sprintf("Cannot run ECSQL INSERT, UPDATE, or DELETE on ECRelationshipClass '%s'. Use the respective navigation property to modify it.",
                                         className.c_str());
-
             return Policy::CreateNotSupported(notSupportedMessage);
             }
 
@@ -115,22 +114,13 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
             return Policy::CreateNotSupported(notSupportedMessage);
             }
 
-        if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
+        if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
             {
-            if (!assertion.GetClassMap().IsMappedToSingleTable())
-                {
-                Utf8String notSupportedMessage;
-                notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",
-                                            className.c_str());
-                return Policy::CreateNotSupported(notSupportedMessage);
-                }
-            else if (assertion.GetClassMap().GetTables()[0]->GetType() == DbTable::Type::Existing)
-                {
-                Utf8String notSupportedMessage;
-                notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
-                                            className.c_str());
-                return Policy::CreateNotSupported(notSupportedMessage);
-                }
+            Utf8String notSupportedMessage;
+            notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
+                                        className.c_str());
+
+            return Policy::CreateNotSupported(notSupportedMessage);
             }
 
         if (ecsqlType == ECSqlType::Insert)
