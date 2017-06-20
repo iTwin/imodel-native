@@ -3094,17 +3094,23 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
         double      uParam;
         DPoint3d    edgePoint;
 
-        // Choose start, middle, or end of edge based on pick location in case of a curved edge...
+        // Choose start, middle, or end of an open edge based on pick location for better curved edge behavior...
         if (edges[iEdge]->GetEdgeLocation(edgePoint, uParam))
             {
-            double  delta = fabs(uRangeE.high-uRangeE.low) * 0.25;
+            PK_EDGE_ask_type_t edgeTypes;
 
-            if (fabs(uParam-uRangeE.high) < delta)
-                uParam = uRangeE.high;
-            else if (fabs(uParam-uRangeE.low) < delta)
-                uParam = uRangeE.low;
-            else
-                uParam = (uRangeE.high+uRangeE.low) * 0.5;
+            // Use pick location for closed or ring edge...
+            if (SUCCESS != PK_EDGE_ask_type(PSolidSubEntity::GetSubEntityTag(*edges[iEdge]), &edgeTypes) || PK_EDGE_type_open_c == edgeTypes.vertex_type)
+                {
+                double  delta = fabs(uRangeE.high-uRangeE.low) * 0.25;
+
+                if (fabs(uParam-uRangeE.high) < delta)
+                    uParam = uRangeE.high;
+                else if (fabs(uParam-uRangeE.low) < delta)
+                    uParam = uRangeE.low;
+                else
+                    uParam = (uRangeE.high+uRangeE.low) * 0.5;
+                }
             }
         else
             {
