@@ -71,30 +71,21 @@ DisplayParamsPtr ReadDisplayParams(Json::Value const& primitiveValue)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
+* @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ReadIndices(MeshR mesh, Json::Value const& primitiveValue)
+BentleyStatus   ReadIndices(bvector<uint32_t>& indices, Json::Value const& primitiveValue, Utf8CP accessorName)
     {
     Json::Value         accessor, bufferView;
-    auto&               mode = primitiveValue["mode"];
-
-    if(!mode.isInt())
-        {
-        BeAssert(false && "mesh data parse error");
-        return ERROR;
-        }
 
     // Indices....
-    if(SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue, "indices") ||
+    if(SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue, accessorName) ||
         bufferView["target"].asInt() != GLTF_ELEMENT_ARRAY_BUFFER)
         return ERROR;
     
-
     size_t              indicesByteLength  = bufferView["byteLength"].asUInt(), 
                         indicesCount       = accessor["count"].asUInt(),
                         bufferByteOffset   = bufferView["byteOffset"].asUInt(),
                         accessorByteOffset = accessor["byteOffset"].asUInt();
-    bvector<uint32_t>   indices;
     void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
 
     switch(accessor["componentType"].asInt())
@@ -131,6 +122,29 @@ BentleyStatus ReadIndices(MeshR mesh, Json::Value const& primitiveValue)
             BeAssert(false && "unrecognized index type");
             return ERROR;
 
+        }
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ReadMeshIndices(MeshR mesh, Json::Value const& primitiveValue)
+    {
+    auto&               mode = primitiveValue["mode"];
+    bvector<uint32_t>   indices;
+
+    if(!mode.isInt())
+        {
+        BeAssert(false && "invalid primitive mode");
+        return ERROR;
+        }
+
+
+    if (SUCCESS != ReadIndices (indices, primitiveValue, "indices"))
+        {
+        BeAssert(false && "indices read error"); 
+        return ERROR;
         }
 
     switch(mode.asInt())
@@ -355,12 +369,11 @@ BentleyStatus ReadVertices(QVertex3dListR vertexList, Json::Value const& primiti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ReadNormals(QPoint3dListR normals, Json::Value const& primitiveValue)
+BentleyStatus ReadNormals(QPoint3dListR normals, Json::Value const& value, Utf8CP accessorName)
     {
     Json::Value         accessor, bufferView;
 
-    if(!primitiveValue.isMember("attributes") ||
-        SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue["attributes"], "NORMAL") ||
+    if(SUCCESS != GetAccessorAndBufferView(accessor, bufferView, value, accessorName) ||
         !accessor.isMember("componentType") || 
         bufferView["target"].asInt() != GLTF_ARRAY_BUFFER)
         {
@@ -393,6 +406,83 @@ BentleyStatus ReadNormals(QPoint3dListR normals, Json::Value const& primitiveVal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ReadParams(bvector<FPoint2d>& params, Json::Value const& value, Utf8CP accessorName)
+    {
+    Json::Value         accessor, bufferView;
+
+    if(SUCCESS != GetAccessorAndBufferView(accessor, bufferView, value, accessorName) ||
+        !accessor.isMember("componentType") || 
+        bufferView["target"].asInt() != GLTF_ARRAY_BUFFER)
+        return ERROR;
+
+    size_t              count               = accessor["count"].asUInt(),
+                        dataSize            = bufferView["byteLength"].asUInt(),
+                        bufferByteOffset    = bufferView["byteOffset"].asUInt(),
+                        accessorByteOffset  = accessor["byteOffset"].asUInt();
+    void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
+
+    switch (accessor["componentType"].asInt())
+        {
+        case GLTF_FLOAT:
+            {
+            BeAssert (dataSize == count * sizeof(FPoint2d));
+            params.resize(count);
+            memcpy (params.data(), pData, count * sizeof(FPoint2d));
+            return SUCCESS;
+            }
+
+        default:
+            BeAssert(false && "Unsupported component type");
+            return ERROR;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ReadColors(bvector<uint16_t>& colors, Json::Value const& primitiveValue)
+    {
+    Json::Value         accessor, bufferView;
+
+    if(!primitiveValue.isMember("attributes") ||
+        SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue["attributes"], "_COLORINDEX") ||
+        !accessor.isMember("componentType"))
+        return;
+        
+    size_t              count               = accessor["count"].asUInt(),
+                        bufferByteOffset    = bufferView["byteOffset"].asUInt(),
+                        accessorByteOffset  = accessor["byteOffset"].asUInt();
+    void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
+
+    switch (accessor["componentType"].asInt())
+        {
+        case GLTF_UNSIGNED_SHORT:
+            {
+            colors.resize(count);
+            memcpy (colors.data(), pData, count * sizeof(uint16_t));
+            break;
+            }
+
+        case GLTF_UNSIGNED_BYTE:
+            {
+            uint8_t const*  pByteData = static_cast<uint8_t const*> (pData);
+            colors.resize(count);
+            for (size_t i=0; i<count; i++)
+                colors[i] = *pByteData++;
+
+            break;
+            }
+
+        default:
+            BeAssert(false && "Unsupported component type");
+            break;
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ReadColorTable(ColorTableR colorTable, Json::Value const& primitiveValue)
     {
     Json::Value colorTableJson = primitiveValue["colorTable"];
@@ -407,6 +497,50 @@ BentleyStatus ReadColorTable(ColorTableR colorTable, Json::Value const& primitiv
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue)
+    {
+    Json::Value   edgesValue = primitiveValue["edges"];
+
+    if (edgesValue.isNull())
+        return nullptr;
+
+    MeshEdgesPtr        meshEdges = new MeshEdges();
+    bvector<uint32_t>   indices;
+    Json::Value const&  silhouettesValue = edgesValue["silhouettes"];
+
+    if (!silhouettesValue.isNull() &&
+        SUCCESS == ReadNormals(meshEdges->m_silhouetteNormals0, silhouettesValue, "normals0") &&
+        SUCCESS == ReadNormals(meshEdges->m_silhouetteNormals1, silhouettesValue, "normals1") &&
+        SUCCESS == ReadIndices(indices, silhouettesValue, "indices"))
+        {
+        meshEdges->m_silhouette.resize(indices.size()/2);
+        memcpy (meshEdges->m_silhouette.data(), indices.data(), indices.size() * sizeof(uint32_t));
+        }
+   
+    Json::Value const&   polylinesValue = edgesValue["polylines"];
+
+    if (polylinesValue.isArray())
+        {
+        for (uint32_t i=0; i<polylinesValue.size(); i++)
+            {
+            Json::Value const&      polylineValue = polylinesValue[i];
+            MeshEdges::Polyline     polyline;
+                                                                                                
+            polyline.m_startDistance = polylineValue["startDistance"].asFloat();
+            polyline.m_rangeCenter.x = polylineValue["rangeCenter"][0].asFloat();
+            polyline.m_rangeCenter.y = polylineValue["rangeCenter"][1].asFloat();
+            polyline.m_rangeCenter.z = polylineValue["rangeCenter"][2].asFloat();
+            if (SUCCESS == ReadIndices(polyline.m_indices, polylineValue, "indices"))
+                meshEdges->m_polylines.push_back(polyline);
+            }
+        }
+    
+    return meshEdges;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featureTable)
@@ -422,7 +556,7 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
 
     DisplayParamsCPtr    displayParams = _CreateDisplayParams(materialValue);
 
-    if(!(displayParams = _CreateDisplayParams(materialValue)).IsValid())
+    if (!(displayParams = _CreateDisplayParams(materialValue)).IsValid())
         return nullptr;
 
 
@@ -443,37 +577,23 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
             return nullptr;
         }
 
-    MeshPtr     mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d());
+    MeshPtr         mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d());
+    MeshEdgesPtr    meshEdges;
 
-    if(SUCCESS != ReadColorTable(mesh->GetColorTableR(), primitiveValue) || 
-       SUCCESS != ReadIndices(*mesh, primitiveValue) ||
+    if(SUCCESS != ReadMeshIndices(*mesh, primitiveValue) ||
        SUCCESS != ReadVertices(mesh->VertsR(), primitiveValue))
         return nullptr;
 
-
     if (!displayParams->IgnoresLighting() &&
-        SUCCESS != ReadNormals(mesh->NormalsR(), primitiveValue))
+        SUCCESS != ReadNormals(mesh->NormalsR(), primitiveValue["attributes"], "NORMAL"))
         return nullptr;
+    
+    ReadColorTable(mesh->GetColorTableR(), primitiveValue);
+    ReadColors(mesh->ColorsR(), primitiveValue);
+    ReadParams(mesh->ParamsR(), primitiveValue["attributes"], "TEXCOORD_0");
+    mesh->GetEdgesR() = ReadMeshEdges(primitiveValue);
 
-#ifdef WIP        
-    switch (primitiveValue["mode"].asUInt())
-        {
-
-    ReadVertexValues(mesh->ParamsR(), primitiveValue, "TEXCOORD_0");
-    ReadVertexBatchIds (batchIds, primitiveValue);
-
-    if (batchIds.size() == mesh->Points().size() && m_batchData["element"].isArray())
-        {
-        mesh->SetValidIdsPresent(true);
-        for (auto& batchId : batchIds)
-            {
-            DgnElementId       entityId;
-
-            if (SUCCESS == DgnElementId::FromString  (entityId, m_batchData["element"][batchId].asCString()))
-                mesh->EntityIdsR().push_back(entityId);
-            }
-        }
-#endif
+    // TBD... Batch ids.
     return mesh;
     }
 
@@ -550,7 +670,6 @@ TileIO::ReadStatus  ReadGltf(Render::Primitives::GeometryCollectionR geometryCol
 struct BatchedModelReader : GltfReader
 {
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -626,8 +745,9 @@ virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
             graphicParams.SetMaterial(m_renderSystem._GetMaterial(materialId, m_model.GetDgnDb()).get());
         }
 
+
     geometryParams.Resolve(m_model.GetDgnDb());
-    switch ((DisplayParams::Type) materialValue["type"].asUInt())
+    switch (materialValue["type"].asUInt())
         {
         case DisplayParams::Type::Mesh:
             return DisplayParams::CreateForMesh(graphicParams, geometryParamsP, true, m_model.GetDgnDb(), m_renderSystem);
@@ -690,18 +810,22 @@ TileIO::ReadStatus  ReadFeatureTable(FeatureTableR featureTable)
 TileIO::ReadStatus  ReadTile(Render::Primitives::GeometryCollectionR geometry)
     {
     char                dgnTileMagic[4];
-    uint32_t            dgnTileLength, dgnTileVersion;
+    uint32_t            dgnTileLength, dgnTileVersion, flags;
     TileIO::ReadStatus  status;
 
     if (! m_buffer.ReadBytes(dgnTileMagic, 4) ||  
         0 != memcmp(dgnTileMagic, s_dgnTileMagic, 4) ||
         !m_buffer.Read(dgnTileVersion) ||  
         dgnTileVersion != s_dgnTileVersion ||
+        !m_buffer.Read(flags) ||
         !m_buffer.Read(dgnTileLength))
         return TileIO::ReadStatus::InvalidHeader;
     
     if (TileIO::ReadStatus::Success != (status = ReadFeatureTable(geometry.Meshes().FeatureTable())))
         return status;
+
+    if (0 != (flags & TileIO::Flags::ContainsCurves))
+        geometry.MarkCurved();
 
     return ReadGltf (geometry);
     }

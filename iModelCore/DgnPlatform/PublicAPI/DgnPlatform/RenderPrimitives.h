@@ -94,6 +94,7 @@ struct DisplayParams : RefCountedBase
 
     enum class Type { Mesh, Linear, Text };
 private:
+    Type                m_type;
     DgnCategoryId       m_categoryId;
     DgnSubCategoryId    m_subCategoryId;
     TexturePtr          m_texture; // meshes only
@@ -119,6 +120,7 @@ private:
     DisplayParams(DisplayParamsCR rhs) = default;
     void Resolve(DgnDbR, System&);
 public:
+    Type GetType() const { return m_type; }
     ColorDef GetFillColorDef() const { return m_fillColor; }
     uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
     ColorDef GetLineColorDef() const { return m_lineColor; }
@@ -166,6 +168,7 @@ public:
         {
         return new DisplayParams(Type::Text, gf, geom, false);
         }
+
 };
 
 //=======================================================================================
@@ -395,7 +398,8 @@ public:
 //! initial range are quantized to that range; vertices outside of it are stored directly,
 //! and used to extend the initial range.
 //! After mesh generation completes, the entire list is requantized to the actual range
-//! if necessary.         
+//! if necessary.         
+
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct QVertex3dList
@@ -509,6 +513,7 @@ public:
     ColorTableR                     GetColorTableR() { return m_colorTable; }
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
     MeshEdgesPtr                    GetEdges() const { return m_edges; }
+    MeshEdgesPtr&                   GetEdgesR() { return m_edges; }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }

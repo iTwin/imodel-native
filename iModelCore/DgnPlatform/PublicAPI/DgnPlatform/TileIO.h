@@ -34,6 +34,12 @@ struct TileIO
         FeatureTableError,
         };
 
+    enum Flags
+        {
+        None            = 0,
+        ContainsCurves  = 0x0001,
+        };
+
     // 3D tiles per the published specification...
     static BentleyStatus Write3dTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
     static ReadStatus Read3dTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem);

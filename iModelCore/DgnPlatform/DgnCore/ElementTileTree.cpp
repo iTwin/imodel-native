@@ -893,11 +893,7 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 
 
 
-#ifdef REALITY_CACHE_SUPPORT
-
-#define POPULATE_ROOT_TILE      // Fow now - easier to debug..
-
-static bool s_useRealityCache = true;
+static bool s_useRealityCache = false;      // Still WIP.
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -1013,84 +1009,6 @@ BentleyStatus Loader::DoGetFromSource()
         
     return TileTree::TileIO::WriteDgnTile (m_tileBytes, geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
     }
-
-
-#else
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Loader::DoGetFromSource()
-    {
-    return IsCanceledOrAbandoned() ? ERROR : SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Loader::_LoadTile()
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-    PSolidKernelManager::StartSession();
-    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
-
-    auto& tile = static_cast<TileR>(*m_tile);
-    RootR root = tile.GetElementRoot();
-
-    auto  system = GetRenderSystem();
-    if (nullptr == system)
-        {
-        // This is checked in _CreateTileTree()...
-        BeAssert(false && "ElementTileTree requires a Render::System");
-        return ERROR;
-        }
-
-    LoadContext loadContext(this);
-    auto geometry = tile.GenerateGeometry(loadContext);
-
-    if (loadContext.WasAborted())
-        return ERROR;
-
-    // No point subdividing empty nodes - improves performance if we don't
-    // Also not much point subdividing nodes containing no curved geometry
-    // NB: We cannot detect either of the above if any elements or geometry were skipped during tile generation.
-    if (geometry.IsComplete())
-        {
-        if (geometry.IsEmpty() || !geometry.ContainsCurves())
-            tile.SetIsLeaf();
-        }
-
-    GetMeshGraphicsArgs             args;
-    bvector<Render::GraphicPtr>     graphics;
-
-    for (auto const& mesh : geometry.Meshes())
-        mesh->GetGraphics (graphics, *system, args, root.GetDgnDb());
-
-    if (!graphics.empty())
-        {
-        GraphicPtr graphic;
-        switch (graphics.size())
-            {
-            case 0:
-                break;
-            case 1:
-                graphic = *graphics.begin();
-                break;
-            default:
-                graphic = system->_CreateGraphicList(std::move(graphics), root.GetDgnDb());
-                break;
-            }
-
-        if (graphic.IsValid())
-            tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
-        }
-
-    tile.SetIsReady();
-    return SUCCESS;
-    }
-#endif
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1824,6 +1742,8 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     bool                    anyContributed = false;
     uint32_t                fillColor = displayParams.GetFillColor();
 
+    
+    BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
     builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {

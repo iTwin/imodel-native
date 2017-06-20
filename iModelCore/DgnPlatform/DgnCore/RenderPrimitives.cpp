@@ -170,7 +170,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams, bool filled)
+DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams, bool filled) : m_type(type)
     {
     m_lineColor = gfParams.GetLineColor();
     m_fillColor = m_lineColor;
@@ -338,6 +338,10 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         {
         TEST_LESS_THAN(HasFillTransparency());
         TEST_LESS_THAN(HasLineTransparency());
+
+        if (nullptr != GetTexture())
+            TEST_LESS_THAN(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses texture).
+
         return false;
         }
 
@@ -547,8 +551,6 @@ uint32_t Mesh::AddVertex(QVertex3dCR vert, QPoint3dCP normal, DPoint2dCP param, 
         m_uvParams.push_back(toFPoint2d(*param));
 
     insertVertexAttribute(m_colors, m_colorTable, fillColor, m_verts);
-    BeAssert(nullptr == param || m_colorTable.IsUniform());
-
     return index;
     }
 
@@ -1555,12 +1557,15 @@ bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
+PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn)
     {
     PolyfaceList                polyfaces;
-    IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
+    IFacetOptionsPtr            facetOptions = facetOptionsIn.Clone();
 
-    if (DoGlyphBoxes(facetOptions))
+    facetOptions->SetNormalsRequired(false);     // No lighting so normals not required.
+
+    IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(*facetOptions);
+    if (DoGlyphBoxes(*facetOptions))
         {
         // ###TODO: Fonts are a freaking mess.
         BeMutexHolder lock(DgnFonts::GetMutex());
@@ -1588,7 +1593,9 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
                 Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform).Multiply (box, box);
 
                 polyfaceBuilder->AddTriangulation (box);
-                }
+                }                                                                                                                              
+
+
             }
         }
     else
@@ -1709,8 +1716,8 @@ bool MeshArgs::Init(MeshCR mesh)
     m_texture = mesh.GetDisplayParams().GetTexture();
     m_material = mesh.GetDisplayParams().GetMaterial();
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
-
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+
     mesh.ToFeatureIndex(m_features);
 
     return true;

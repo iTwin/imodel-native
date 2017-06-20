@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                           
+/*-------------------------------------------------------------------------------------+                                                                                           
 |
 
 |     $Source: DgnCore/TileWriter.cpp $
@@ -1306,7 +1306,7 @@ void AddDefaultScene ()
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
+* @bsimethod                                                    Ray.Bentley     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* attributes16, size_t nAttributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic)
     {
@@ -1331,7 +1331,6 @@ void AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* attributes1
             }
         }
 
-    size_t nBytes = nAttributes * sizeof(uint16_t);
 
     if (GLTF_UNSIGNED_BYTE == componentType)
         {
@@ -1339,26 +1338,14 @@ void AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* attributes1
         for (size_t i=0; i<nAttributes; i++)
             attributes8.push_back(static_cast<uint8_t>(attributes16[i]));
 
-        nBytes /= 2;
+        AddBufferView(bvId.c_str(), attributes8.data(), nAttributes);
+        }
+    else
+        {
+        AddBufferView(bvId.c_str(), attributes16, nAttributes * sizeof(uint16_t));
         }
 
-    auto& bv = m_json["bufferViews"][bvId];
-    bv["buffer"] = "binary_glTF";
-    bv["byteOffset"] = BinaryDataSize();
-    bv["byteLength"] = nBytes;
-    bv["target"] = GLTF_ARRAY_BUFFER;
-
-    if (GLTF_UNSIGNED_BYTE == componentType)
-        AddBinaryData(attributes8.data(), nBytes);
-    else
-        AddBinaryData(attributes16, nBytes);
-
-    auto& acc = m_json["accessors"][accId];
-    acc["bufferView"] = bvId;
-    acc["byteOffset"] = 0;
-    acc["componentType"] = componentType;
-    acc["count"] = nAttributes;
-    acc["type"] = "SCALAR";
+    AddAccessor(componentType, accId, bvId, nAttributes, "SCALAR");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1712,25 +1699,35 @@ static Json::Value CreateDecodeQuantizeValues(double const* min, double const* m
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+void AddAccessor(uint32_t componentType, Utf8StringCR accessorId, Utf8StringCR bufferViewId, size_t count, Utf8CP type)
+    {
+    Json::Value         accessor   = Json::objectValue;
+
+    accessor["componentType"] = componentType;
+    accessor["bufferView"] = bufferViewId;
+    accessor["byteOffset"] = 0;
+    accessor["count"] = count;
+    accessor["type"] = type;
+
+    BeAssert(!m_json["accessors"].isMember(accessorId));
+    m_json["accessors"][accessorId] = accessor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String    AddQuantizedPointsAttribute(QPoint3dCP qPoints, size_t nPoints, QPoint3d::Params params, Utf8StringCR name, Utf8StringCR id) 
     {
     Utf8String          nameId =  name + id,
                         accessorId = Utf8String("acc") + nameId,
                         bufferViewId = Utf8String("bv") + nameId;
-    Json::Value         accessor   = Json::objectValue;
     DRange3d            range = params.GetRange();
 
     AddBufferView(bufferViewId.c_str(), qPoints, nPoints);
-    m_json["bufferViews"][bufferViewId]["target"] = GLTF_ARRAY_BUFFER;
- 
-    accessor["componentType"] = GLTF_UNSIGNED_SHORT;
-    accessor["bufferView"] = bufferViewId;
-    accessor["byteOffset"] = 0;
-    accessor["count"] = nPoints;
-    accessor["type"] = "VEC3";
-    accessor["extensions"]["WEB3D_quantized_attributes"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 3);
+    AddAccessor(GLTF_UNSIGNED_SHORT, accessorId, bufferViewId, nPoints, "VEC3");
 
-    m_json["accessors"][accessorId] = accessor;
+    m_json["bufferViews"][bufferViewId]["target"] = GLTF_ARRAY_BUFFER;
+    m_json["accessors"][accessorId]["extensions"]["WEB3D_quantized_attributes"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 3);
 
     return accessorId;
     }
@@ -1747,20 +1744,28 @@ Utf8String    AddQuantizedParamAttribute(FPoint2d const* params, size_t nParams,
     Utf8String          nameId =  Utf8String(name) + Utf8String(id),
                         accessorId = Utf8String("acc") + nameId,
                         bufferViewId = Utf8String("bv") + nameId;
-    Json::Value         accessor   = Json::objectValue;
     DRange2d            range = qParams.GetParams().GetRange();
 
     AddBufferView(bufferViewId.c_str(), qParams);
+    AddAccessor(GLTF_UNSIGNED_SHORT, accessorId, bufferViewId, nParams, "VEC2");
     m_json["bufferViews"][bufferViewId]["target"] = GLTF_ARRAY_BUFFER;
- 
-    accessor["componentType"] = GLTF_UNSIGNED_SHORT;
-    accessor["bufferView"] = bufferViewId;
-    accessor["byteOffset"] = 0;
-    accessor["count"] = nParams;
-    accessor["type"] = "VEC2";
-    accessor["extensions"]["WEB3D_quantized_attributes"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 2);
+    m_json["accessors"][accessorId]["extensions"]["WEB3D_quantized_attributes"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 2);
 
-    m_json["accessors"][accessorId] = accessor;
+    return accessorId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String    AddParamAttribute(FPoint2d const* params, size_t nParams, Utf8StringCR name, Utf8StringCR id) 
+    {
+    Utf8String          nameId =  Utf8String(name) + Utf8String(id),
+                        accessorId = Utf8String("acc") + nameId,
+                        bufferViewId = Utf8String("bv") + nameId;
+
+    AddBufferView(bufferViewId.c_str(), params, nParams);
+    AddAccessor(GLTF_FLOAT, accessorId, bufferViewId, nParams, "VEC2");
+    m_json["bufferViews"][bufferViewId]["target"] = GLTF_ARRAY_BUFFER;
 
     return accessorId;
     }
@@ -1768,7 +1773,7 @@ Utf8String    AddQuantizedParamAttribute(FPoint2d const* params, size_t nParams,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String AddMeshIndices(Utf8StringCR name, int32_t const* indices, size_t numIndices, Utf8StringCR idStr)
+Utf8String AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t numIndices, Utf8StringCR idStr)
     {
     Utf8String          nameId           = name + idStr,
                         accIndexId       = "acc" + nameId,
@@ -1783,12 +1788,7 @@ Utf8String AddMeshIndices(Utf8StringCR name, int32_t const* indices, size_t numI
             break;
             }
         }
-    m_json["bufferViews"][bvIndexId] = Json::objectValue;
-    m_json["bufferViews"][bvIndexId]["buffer"] = "binary_glTF";
-    m_json["bufferViews"][bvIndexId]["byteOffset"] = BinaryDataSize();
-    m_json["bufferViews"][bvIndexId]["byteLength"] = numIndices * (useShortIndices ? sizeof(uint16_t) : sizeof(uint32_t));
-    m_json["bufferViews"][bvIndexId]["target"] =  GLTF_ELEMENT_ARRAY_BUFFER;
-
+ 
     if (useShortIndices)
         {
         bvector<uint16_t>   shortIndices;
@@ -1798,19 +1798,14 @@ Utf8String AddMeshIndices(Utf8StringCR name, int32_t const* indices, size_t numI
         for (size_t i=0; i<numIndices; i++)
             shortIndices.push_back ((uint16_t) indices[i]);
 
-        AddBinaryData (shortIndices.data(), shortIndices.size()*sizeof(uint16_t));
+        AddBufferView(bvIndexId.c_str(), shortIndices.data(), shortIndices.size());
         }
     else
         {
-        AddBinaryData (indices, numIndices *sizeof(int32_t));
+        AddBufferView(bvIndexId.c_str(), indices, numIndices);
         }
-
-    m_json["accessors"][accIndexId] = Json::objectValue;
-    m_json["accessors"][accIndexId]["bufferView"] = bvIndexId;
-    m_json["accessors"][accIndexId]["byteOffset"] = 0;
-    m_json["accessors"][accIndexId]["componentType"] = useShortIndices ? GLTF_UNSIGNED_SHORT : GLTF_UINT32;
-    m_json["accessors"][accIndexId]["count"] = numIndices;
-    m_json["accessors"][accIndexId]["type"] = "SCALAR";
+    m_json["bufferViews"][bvIndexId]["target"] =  GLTF_ELEMENT_ARRAY_BUFFER;
+    AddAccessor(useShortIndices ? GLTF_UNSIGNED_SHORT : GLTF_UINT32, accIndexId, bvIndexId, numIndices, "SCALAR");
 
     return accIndexId;
     }
@@ -1880,6 +1875,14 @@ virtual BentleyStatus  _CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value AddNormals (QPoint3dCP normals, size_t numNormals, Utf8CP name, Utf8CP id)
+    {
+    return AddQuantizedPointsAttribute(normals, numNormals, QPoint3d::Params::FromNormalizedRange(), name, id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, MeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
     {
     primitiveJson["mode"] = GLTF_TRIANGLES;
@@ -1890,19 +1893,21 @@ virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Me
     bool isTextured = meshMaterial.IsTextured();
     BeAssert (isTextured == (nullptr != meshArgs.m_textureUV));
     if (nullptr != meshArgs.m_textureUV && isTextured)
-        primitiveJson["attributes"]["TEXCOORD_0"] = AddQuantizedParamAttribute (meshArgs.m_textureUV, meshArgs.m_numPoints, "Param", idStr.c_str());
-    else if (meshArgs.m_colors.m_numColors > 1)
+        primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (meshArgs.m_textureUV, meshArgs.m_numPoints, "Param", idStr.c_str());
+    if (meshArgs.m_colors.m_numColors > 1)
         AddColors(primitiveJson, meshArgs.m_colors, meshArgs.m_numPoints, idStr);
+
+    BeAssert (meshMaterial.IgnoresLighting() || nullptr != meshArgs.m_normals);
 
     if (nullptr != meshArgs.m_normals && !meshMaterial.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
         primitiveJson["attributes"]["NORMAL"]  = AddQuantizedPointsAttribute(meshArgs.m_normals, meshArgs.m_numPoints, QPoint3d::Params::FromNormalizedRange(), "Normal", idStr.c_str());
 
-    primitiveJson["indices"] = AddMeshIndices ("Indices", meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr);
+    primitiveJson["indices"] = AddMeshIndices ("Indices", (uint32_t const*) meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr);
     AddMeshPointRange(m_json["accessors"][accPositionId], meshArgs.m_pointParams.GetRange());
 
     return SUCCESS;
     }
-
+                                                                                     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1925,6 +1930,22 @@ void AddTriMesh(Json::Value& primitivesNode, MeshArgs const& meshArgs, MeshCR me
         }
     }
        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value CreatePolyline(FPoint3dCR rangeCenter, float startDistance, uint32_t const* indices, size_t nIndices, Utf8StringCR idStr)
+    {
+    Json::Value     polylineValue;
+
+    polylineValue["rangeCenter"].append(rangeCenter.x);
+    polylineValue["rangeCenter"].append(rangeCenter.y);
+    polylineValue["rangeCenter"].append(rangeCenter.z);
+    polylineValue["startDistance"] = startDistance;
+    polylineValue["indices"] = AddMeshIndices ("Indices", indices, nIndices, idStr);
+    
+    return polylineValue;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2081,7 +2102,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value     CreateColorTable(ColorTableCR colorTable)
+Json::Value CreateColorTable(ColorTableCR colorTable)
     {
     Json::Value     jsonTable = Json::arrayValue;
 
@@ -2094,12 +2115,63 @@ Json::Value     CreateColorTable(ColorTableCR colorTable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value CreateMeshEdges(MeshEdgesCR meshEdges, Utf8StringCR idStr)
+    {
+    Json::Value     edgesValue= Json::objectValue;
+
+    if (!meshEdges.m_visible.empty())
+        edgesValue["visibles"] = AddMeshIndices("visibles", meshEdges.m_visible.front().m_indices, 2 * meshEdges.m_visible.size(), idStr);
+    if (!meshEdges.m_silhouette.empty())
+        {
+        edgesValue["silhouettes"]["indices"]  = AddMeshIndices("silhouettes", meshEdges.m_silhouette.front().m_indices, 2 * meshEdges.m_silhouette.size(), idStr);
+        edgesValue["silhouettes"]["normals0"] = AddNormals (meshEdges.m_silhouetteNormals0.data(), meshEdges.m_silhouetteNormals0.size(), "normals0", idStr.c_str());
+        edgesValue["silhouettes"]["normals1"] = AddNormals (meshEdges.m_silhouetteNormals1.data(), meshEdges.m_silhouetteNormals1.size(), "normals1", idStr.c_str());
+        }
+
+    if (!meshEdges.m_polylines.empty())
+        {
+        size_t          index = 0;
+        Json::Value&    polylinesValue = edgesValue["polylines"];
+
+        for (auto& polyline : meshEdges.m_polylines)
+            polylinesValue.append(CreatePolyline(polyline.m_rangeCenter, polyline.m_startDistance, polyline.m_indices.data(), polyline.m_indices.size(), idStr + Utf8PrintfString("_%d", index++)));
+        }
+
+    return edgesValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, MeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr) override
     {
-    if (SUCCESS != T_Super::_CreateTriMesh (primitiveJson, mesh, meshArgs, meshMaterial, idStr))
-        return ERROR;
+    primitiveJson["mode"] = GLTF_TRIANGLES;
 
+    Utf8String      accPositionId =  AddQuantizedPointsAttribute(meshArgs.m_points, meshArgs.m_numPoints, meshArgs.m_pointParams, "Position", idStr.c_str());
+    primitiveJson["attributes"]["POSITION"] = accPositionId;
+
+    bool isTextured = meshMaterial.IsTextured();
+    if (nullptr != meshArgs.m_textureUV && meshMaterial.IsTextured())
+        primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (meshArgs.m_textureUV, meshArgs.m_numPoints, "Param", idStr.c_str());
+
+    // Note - write the colors to tile cache even if textured - they are required for edges.
+    if (!meshArgs.m_colors.IsUniform())
+        AddColors(primitiveJson, meshArgs.m_colors, meshArgs.m_numPoints, idStr);
+
+    BeAssert (meshMaterial.IgnoresLighting() || nullptr != meshArgs.m_normals);
+
+    if (nullptr != meshArgs.m_normals && !meshMaterial.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
+        primitiveJson["attributes"]["NORMAL"]  = AddQuantizedPointsAttribute(meshArgs.m_normals, meshArgs.m_numPoints, QPoint3d::Params::FromNormalizedRange(), "Normal", idStr.c_str());
+
+    primitiveJson["indices"] = AddMeshIndices ("Indices", (uint32_t const*) meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr);
+    AddMeshPointRange(m_json["accessors"][accPositionId], meshArgs.m_pointParams.GetRange());
+ 
     primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
+
+#ifdef EDGE_SUPPORT
+    if (mesh.GetEdges().IsValid())
+        primitiveJson["edges"] = CreateMeshEdges(*mesh.GetEdges(), idStr);
+#endif
 
     return SUCCESS;
     }
@@ -2109,6 +2181,8 @@ virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Me
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual BentleyStatus  _CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh, MeshMaterial const& meshMaterial, DisplayParamsCR displayParams, Utf8StringCR suffix) override
     {
+    matJson["type"] = (uint8_t) displayParams.GetType();
+
     // GeomParams...
     if (displayParams.GetCategoryId().IsValid())
         matJson["categoryId"] = displayParams.GetCategoryId().GetValue();
@@ -2130,6 +2204,7 @@ virtual BentleyStatus  _CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh
     matJson["lineColor"]  = displayParams.GetLineColor();     // Edges?
     matJson["lineWidth"]  = displayParams.GetLineWidth();
     matJson["linePixels"] = (uint32_t) displayParams.GetLinePixels();     // Edges?
+    
 
     return SUCCESS;
     }
@@ -2160,8 +2235,11 @@ void WriteFeatureTable(FeatureTableCR featureTable)
 BentleyStatus WriteTile(Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
     {
     uint32_t    startPosition = m_buffer.GetSize();
+    uint32_t    flags = geometry.ContainsCurves() ? TileIO::ContainsCurves : TileIO::None;
+
     m_buffer.Append((const uint8_t *) s_dgnTileMagic, 4);
     m_buffer.Append(s_dgnTileVersion);
+    m_buffer.Append(flags);
 
     uint32_t    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);              // Filled in below.
