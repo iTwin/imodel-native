@@ -86,12 +86,12 @@ Utf8String ClassNameExp::GetFullName() const
     {
     Utf8String fullName;
     if (!m_catalogName.empty())
-        fullName.append(m_catalogName).append(".");
+        fullName.append("[").append(m_catalogName).append("].");
 
     if (!m_schemaAlias.empty())
-        fullName.append(m_schemaAlias).append(".");
+        fullName.append("[").append(m_schemaAlias).append("].");
 
-    fullName.append(m_className);
+    fullName.append("[").append(m_className).append("]");
 
     return fullName;
     }

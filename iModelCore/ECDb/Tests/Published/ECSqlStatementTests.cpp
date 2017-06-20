@@ -2130,40 +2130,30 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
 
     {
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ecsql.P SET MyPSA.Id=? WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, psaKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(2, pKey.GetInstanceId()));
-
-    ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(key));
-
-    ASSERT_EQ(pKey.GetInstanceId().GetValue(), key.GetInstanceId().GetValue());
     m_ecdb.AbandonChanges();
     }
 
     {
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ecsql.P SET MyPSA.Id = ? WHERE ECInstanceId = ? "));
     ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(1, (int) psaKey.GetInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
     ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(2, (int) pKey.GetInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
     }
 
     {
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ecsql.P SET MyPSA.Id = ? WHERE ECInstanceId = ?"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, psaKey.GetInstanceId().GetValue()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(2, pKey.GetInstanceId().GetValue()));
-
-    ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(key));
-
-    ASSERT_EQ(pKey.GetInstanceId().GetValue(), key.GetInstanceId().GetValue());
     m_ecdb.AbandonChanges();
     }
 
     {
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ecsql.P SET MyPSA.Id = ? WHERE ECInstanceId = ? "));
 
     Utf8Char psaIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
     psaKey.GetInstanceId().ToString(psaIdStr);
@@ -2172,10 +2162,6 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, psaIdStr, IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(2, pIdStr, IECSqlBinder::MakeCopy::No));
 
-    ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(key));
-
-    ASSERT_EQ(pKey.GetInstanceId().GetValue(), key.GetInstanceId().GetValue());
     m_ecdb.AbandonChanges();
     }
     }
