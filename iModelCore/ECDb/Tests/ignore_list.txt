@@ -54,11 +54,4 @@ JoinedTableTestFixture.RelationshipWithStandAloneClass1
 JoinedTableTestFixture.PolymorphicRelationshipWithStandAloneClass
 JoinedTableTestFixture.DropFKConstraintForSharedColumnForSubClasses
 JoinedTableTestFixture.VerifyONDeleteRestrictWithJoinedTable
-JoinedTableECSqlStatementsTests.PopulateECSql_TestDbWithTestData
-JoinedTableECSqlStatementsTests.UpdateForAbstractBaseClass
-JoinedTableECSqlStatementsTests.DeleteForAbstractBaseClass
-JoinedTableECSqlStatementsTests.PersistSqlForQueryOnAbstractBaseClass
-JoinedTableECSqlStatementsTests.UnionTests
-JoinedTableECSqlStatementsTests.ExceptTests
-JoinedTableECSqlStatementsTests.IntersectTests
 #============================================================================================================================
