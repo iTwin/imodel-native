@@ -67,6 +67,9 @@ ECSchemaValidatorP ECSchemaValidator::GetSingleton()
 
         IECClassValidatorPtr relationshipValidator = new RelationshipValidator();
         ECSchemaValidatorSingleton->AddClassValidator(relationshipValidator);
+
+        IKindOfQuantityValidatorPtr kindOfQuantityValidator = new KindOfQuantityValidator();
+        ECSchemaValidatorSingleton->AddKindOfQuantityValidator(kindOfQuantityValidator);
         }    
 
     return ECSchemaValidatorSingleton;
@@ -88,11 +91,23 @@ ECObjectsStatus ECSchemaValidator::AddValidator(IECSchemaValidatorPtr& validator
 //+---------------+---------------+---------------+---------------+---------------+------
 // static
 ECObjectsStatus ECSchemaValidator::AddClassValidator(IECClassValidatorPtr& validator)
-{
+    {
     ECSchemaValidatorP schemaValidator = GetSingleton();
     schemaValidator->m_classValidators.push_back(validator);
     return ECObjectsStatus::Success;
-}
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+// static
+ECObjectsStatus ECSchemaValidator::AddKindOfQuantityValidator(IKindOfQuantityValidatorPtr& validator)
+    {
+    ECSchemaValidatorP schemaValidator = GetSingleton();
+    schemaValidator->m_koqValidators.push_back(validator);
+    return ECObjectsStatus::Success;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                  02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -112,7 +127,8 @@ bool ECSchemaValidator::Validate(ECSchemaR schema)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
     {
-     for (ECClassCP ecClass : schema.GetClasses())
+    // Clases
+    for (ECClassCP ecClass : schema.GetClasses())
         {
         for (IECClassValidatorPtr classValidator : GetClassValidators())
             {
@@ -128,6 +144,23 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
                 LOG.debugv("Succeeded class validation of class '%s'", ecClass->GetName().c_str());
             }
         }
+
+    // KOQ
+    for (KindOfQuantityCP koq : schema.GetKindOfQuantities())
+        {
+        for (IKindOfQuantityValidatorPtr koqValidator : GetKindOfQuantityValidators())
+            {
+            ECObjectsStatus status = koqValidator->Validate(koq);
+            if (ECObjectsStatus::Success != status)
+                {
+                LOG.errorv("Failed validtion of KindOfQuantity '%s'", koq->GetName().c_str());
+                m_validated = false;
+                }
+            else
+                LOG.debugv("Succeeded validtion of KindOfQuantity '%s'", koq->GetName().c_str());
+            }
+        }
+
     for (IECSchemaValidatorPtr validator : GetValidators())
         {
         ECObjectsStatus status = validator->Validate(schema);
@@ -138,7 +171,7 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
             }
         }
     }
-  
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                  02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -400,5 +433,17 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
         }
 
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Dan.Perlman                  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus KindOfQuantityValidator::Validate(KindOfQuantityCP koq) const
+    {
+    if (strcmp(koq->GetPersistenceUnit().GetUnit()->GetUnitSystem(), "SI") == 0)
+        return ECObjectsStatus::Success;
+
+    LOG.errorv("KindOfQuantity %s has persistence unit of unit system '%s' but must have an SI unit system", koq->GetFullName().c_str(), koq->GetPersistenceUnit().GetUnit()->GetUnitSystem());
+    return ECObjectsStatus::Error;
     }
 END_BENTLEY_ECOBJECT_NAMESPACE
