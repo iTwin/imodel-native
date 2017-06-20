@@ -1,4 +1,4 @@
-@define{@read{@getenv{METASRCPATH}\/BalancedText.g}}
+@define{@read{@getenv{JSMETASRCPATH}\/BalancedText.g}}
 ! At any place in the file, replace [_X_] [_Y_] [_Z_] by x y z:
 
 

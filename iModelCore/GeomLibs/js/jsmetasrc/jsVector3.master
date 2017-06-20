@@ -6,11 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-
+export class DVector3d
+{
 /// <summary>
 /// x,y,z components of a vector.
 /// </summary>
-//def ThisType DVector3d
+
 
 <def name=SEPARATEDFIELDS>
         x$(SEPARATOR)
@@ -24,6 +25,7 @@
 <def name=ThisType>DVector3d</def>
 <def name=ThisShortType>V</def>
 <def name=VectorType>DVector3d</def>
+<def name=PointType>DVector3d</def>
 <def name=SubtractionResultType>DVector3d</def>
 <expandFile>@getenv{JSMETASRCPATH}/jsLinearOps.in</expandFile>
 <expandFile>@getenv{JSMETASRCPATH}/jsEqualsOps.in</expandFile>
@@ -42,7 +44,7 @@ INPUT_STRUCT($(ThisType), other, "second vector for cross product")
     return NEW_BY_ALL_FIELDS
         (
         this.y * other.z - this.z * other.y,
-        this.z * other.x - this.x * other.z 3DONLY(,
+        this.z * other.x - this.x * other.z(3DONLY ,
         this.x * other.y - this.y * other.x)
         );
     }
@@ -83,3 +85,4 @@ INPUT_STRUCT($(ThisType), vectorW, "third vector for cross product")
         ;
     }
 ENDMETHOD
+}

@@ -22,7 +22,7 @@ ENDMETHOD
 ENDOPERATOR
 
 /// <summary>Multiply $(ThisType) on the left by a factor.</summary>
-CLASSMETHOD(public, $(ThisType), Multiply, $(ThisShortType)Scale)
+CLASSMETHOD(public, $(ThisType), Multiply, $(ThisShortType)Scale)(
 INPUT_STRUCT($(ThisType), left, " left operand"), 
 INPUT_BYVALUE(double, factor, "factor"))
     {
@@ -41,7 +41,7 @@ INPUT_STRUCT($(ThisType), right, " right operand"))
 ENDOPERATOR
 
 /// <summary>Multiply a factor by $(ThisType) on the right.</summary>
-CLASSMETHOD(public, $(ThisType), Multiply, Scale$(ThisShortType))
+CLASSMETHOD(public, $(ThisType), Multiply, Scale$(ThisShortType))(
 INPUT_BYVALUE(double, factor, "factor"), 
 INPUT_STRUCT($(ThisType), right, " right operand"))
     {
@@ -59,7 +59,7 @@ INPUT_STRUCT($(ThisType), right, " right operand"))
     }
 ENDOPERATOR
 /// <summary>Add $(ThisType) and $(ThisType).</summary>
-CLASSMETHOD(public, $(ThisType), Add)
+CLASSMETHOD(public, $(ThisType), Add)(
 (
 INPUT_STRUCT($(ThisType), left, " left operand"), 
 INPUT_STRUCT($(ThisType), right, " right operand"))
@@ -79,7 +79,7 @@ INPUT_STRUCT($(ThisType), right, " right operand"))
     }
 ENDOPERATOR
 /// <summary>Subtract $(ThisType) by $(ThisType).</summary>
-CLASSMETHOD(public, $(SubtractionResultType), Subtract (
+CLASSMETHOD(public, $(SubtractionResultType), Subtract) (
 INPUT_STRUCT($(ThisType), left, " left operand"), 
 INPUT_STRUCT($(ThisType), right, " right operand"))
     {

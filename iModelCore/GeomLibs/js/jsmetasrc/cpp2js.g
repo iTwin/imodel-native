@@ -27,37 +27,43 @@ ref class <I>=class $1
 CPPOnly\W(<u>)=
 CSOnly\W(<u>)=$1\S
 
+ARGLIST:\W(\W)\W=()
+ARGLIST:\W(\W<u>\W)\W=\n(\n$1\n)
+
 \IJS_OFF\I<u>\IJS_ON\I=
 !! method name presentation (visibility,resultType,UniqueName,ExtensionForNonOverloadedEnvironment)
-CLASSMETHOD\W(\W<I>\W,\W<u>,\W<I>\W,\W<Balanced>)=${ThisType}.$3$4 \= function
+CLASSMETHOD\W(\W<I>\W,\W<Balanced>,\W<I>,\W<I>\W)\W(<Balanced>)=$1 static $3$4 @ARGLIST{(@{$5})}@RESULTTYPE{$2}
+INSTANCEMETHOD\W(\W<I>\W,\W<I>,\W<I>\W,\W<I>\W)\W(<Balanced>)=$1 $3$4 @ARGLIST{(@{$5})}@RESULTTYPE{$2}
 
-INSTANCEMETHOD\W(\W<I>\W,\W<I>,\W<I>\W,\W<Balanced>)=\
-${ThisType}.prototype.$3$4 \= function
 
 \IINSTANCEOF\W(\W<I>\W,\W<I>\W)=$1 instanceOf $2
 
 !! method name presentation (visibility,resultType,UniqueName)
-CLASSMETHOD\W(\W<I>\W,\W<Balanced>,\W<I>)=${ThisType}.$3 \= function
-INSTANCEMETHOD\W(\W<I>\W,\W<I>\W,\W<Balanced>)=\
-${ThisType}.prototype.$3 \= function
+CLASSMETHOD\W(\W<I>\W,\W<Balanced>,\W<I>)\W(<Balanced>)=$1 static $3 @ARGLIST{(@{$4})}@RESULTTYPE{$2}
+INSTANCEMETHOD\W(\W<I>\W,\W<I>\W,\W<Balanced>)\W(<Balanced>)=$1 $3 @ARGLIST{(@{$4})}@RESULTTYPE{$2}
 
-\WENDMETHOD=\;
+
+RESULTTYPE:\Ivoid\I=
+RESULTTYPE:<u>=\ \:\ $0
+
+!!\WENDMETHOD=\;
+ENDMETHOD=
 
 NEW_BY_ALL_FIELDS=${ThisType}.From
 
 ARGTYPE:<u>=\n\/\* $1 \*\/\ 
-
+ARGSIG:<u>\;\W<I>=\n$2 \: $1
 \Ilong double\I=double
 public value class <I> abstract sealed=public struct $1
 public\: value class <I> abstract sealed=public struct $1
 public\:=
 private\:=
 value class=struct
-\WINPUT_BYVALUE\W(<u>,\W<I>\W,\W\"<u>\"\W)=@ARGTYPE{$1}$2
-\WINPUT_STRUCT\W(<u>,\W<I>\W,\W\"<u>\"\W)=@ARGTYPE{$1}$2
-\WOUTPUT_VALUE\W(<u>,\W<I>\W,\W\"<u>\"\W)=@ARGTYPE{$1}$2
-\WPARAM_BYREF\W(<u>,\W<I>\W,\W\"<u>\"\W)=@ARGTYPE{$1}$2
-\WPARAM_BYREF\W(\WOUTPARAM\W<I>\W,\W<I>\W,\W<I>\W,\W\"<u>\"\W)=@ARGTYPE{$1}$2
+\WINPUT_BYVALUE\W(<u>,\W<I>\W,\W\"<u>\"\W)=@ARGSIG{$1\; $2}
+\WINPUT_STRUCT\W(<u>,\W<I>\W,\W\"<u>\"\W)=@ARGSIG{$1\; $2}
+\WOUTPUT_VALUE\W(<u>,\W<I>\W,\W\"<u>\"\W)=@ARGSIG{$1\; $2}
+\WPARAM_BYREF\W(<u>,\W<I>\W,\W\"<u>\"\W)=@ARGSIG{$1\; $2}
+\WPARAM_BYREF\W(\WOUTPARAM\W<I>\W,\W<I>\W,\W<I>\W,\W\"<u>\"\W)=@ARGSIG{$1\; $2}
 
 READ_WRITE_PROPERTY_FOR_FIELD\W(<u>,\W<I>\W,<u>,\W\"<u>\"\W)=@{\
 \/\/\/ \<summary\> $4\<\/summary\>\n\
@@ -200,3 +206,4 @@ double <I>=var $1
 
 Balanced:(#)=$0
 Balanced:\{#\}=$0
+Balanced:?=?
