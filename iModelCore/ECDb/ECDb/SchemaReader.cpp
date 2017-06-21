@@ -1441,17 +1441,27 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
     if (abstractConstraintClassId.IsValid())
         {
         ECClassCP abstractConstraintClass = GetClass(ctx, abstractConstraintClassId);
-        if (abstractConstraintClass == nullptr || (!abstractConstraintClass->IsEntityClass() && !abstractConstraintClass->IsRelationshipClass()))
+        if (abstractConstraintClass == nullptr)
             {
             BeAssert(false && "Could not load abstract constraint class or it is neither an entity class nor a relationship class");
             return ERROR;
             }
 
-        ECObjectsStatus status = ECObjectsStatus::Success;
-        abstractConstraintClass->IsEntityClass() ? constraint.SetAbstractConstraint(*abstractConstraintClass->GetEntityClassCP())
-                                                : constraint.SetAbstractConstraint(*abstractConstraintClass->GetRelationshipClassCP());
-        if (ECObjectsStatus::Success != status)
+        if (abstractConstraintClass->IsEntityClass())
+            {
+            if (ECObjectsStatus::Success != constraint.SetAbstractConstraint(*abstractConstraintClass->GetEntityClassCP()))
+                return ERROR;
+            }
+        else if (abstractConstraintClass->IsRelationshipClass())
+            {
+            if (ECObjectsStatus::Success != constraint.SetAbstractConstraint(*abstractConstraintClass->GetRelationshipClassCP()))
+                return ERROR;
+            }
+        else
+            {
+            BeAssert(false && "Should have been caught before");
             return ERROR;
+            }
         }
 
     if (SUCCESS != LoadRelationshipConstraintClassesFromDb(constraint, ctx, constraintId))
