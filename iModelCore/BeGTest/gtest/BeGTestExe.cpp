@@ -8,8 +8,8 @@
 #if defined (BENTLEY_WIN32)
     // WIP_BEFILENAME_PORTABILITY - need better way of setting temp directory
     #include <windows.h>
-	#include <stdio.h>
-	#include <assert.h>
+    #include <stdio.h>
+    #include <assert.h>
 #endif
 
 #include <Bentley/BeTest.h>
@@ -509,7 +509,5 @@ int main(int argc, char **argv)
 
     }
 #endif
-    //  Run the tests
     return errors;
-
     }
