@@ -20,24 +20,24 @@
                 "Footprint": {
                     "Coordinates": [
                         {
-                            "Longitude": 24.7828757,
-                            "Latitude": 59.9224887
+                            "Longitude": "24.7828757",
+                            "Latitude": "59.9224887"
                         },
                         {
-                            "Longitude": 25.2544848,
-                            "Latitude": 59.9224887
+                            "Longitude": "25.2544848",
+                            "Latitude": "59.9224887"
                         },
                         {
-                            "Longitude": 25.2544848,
-                            "Latitude": 60.2978389
+                            "Longitude": "25.2544848",
+                            "Latitude": "60.2978389"
                         },
                         {
-                            "Longitude": 24.7828757,
-                            "Latitude": 60.2978389
+                            "Longitude": "24.7828757",
+                            "Latitude": "60.2978389"
                         },
                         {
-                            "Longitude": 24.7828757,
-                            "Latitude": 59.9224887
+                            "Longitude": "24.7828757",
+                            "Latitude": "59.9224887"
                         }
                     ]
                 },
@@ -77,24 +77,24 @@
                 "Footprint": {
                     "Coordinates": [
                         {
-                            "Longitude": 24.7828757,
-                            "Latitude": 59.9224887
+                            "Longitude": "24.7828757",
+                            "Latitude": "59.9224887"
                         },
                         {
-                            "Longitude": 25.2544848,
-                            "Latitude": 59.9224887
+                            "Longitude": "25.2544848",
+                            "Latitude": "59.9224887"
                         },
                         {
-                            "Longitude": 25.2544848,
-                            "Latitude": 60.2978389
+                            "Longitude": "25.2544848",
+                            "Latitude": "60.2978389"
                         },
                         {
-                            "Longitude": 24.7828757,
-                            "Latitude": 60.2978389
+                            "Longitude": "24.7828757",
+                            "Latitude": "60.2978389"
                         },
                         {
-                            "Longitude": 24.7828757,
-                            "Latitude": 59.9224887
+                            "Longitude": "24.7828757",
+                            "Latitude": "59.9224887"
                         }
                     ]
                 },
