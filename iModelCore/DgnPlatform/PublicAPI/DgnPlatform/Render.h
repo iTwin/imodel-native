@@ -2566,6 +2566,7 @@ public:
     virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::System
 #endif
     virtual TargetPtr _CreateTarget(double tileSizeModifier) = 0;
+    virtual TargetPtr _CreateOffscreenTarget(double tileSizeModifier) = 0;
     double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
     Window const* GetWindow() const {return m_window.get();}
 };
@@ -2646,6 +2647,9 @@ struct System
 
     //! Create a render target.
     virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) = 0;
+
+    //! Create an offscreen render target.
+    virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) = 0;
 
     //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
