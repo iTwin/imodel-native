@@ -62,7 +62,6 @@ m_fileDownloadManager(new FileDownloadManager(*this))
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 Arturas.Januska    04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-//static
 void CachingDataSource::Initialize (BeFileNameCR hostAssetsDirectory)
     {
     s_assetDirectory = hostAssetsDirectory;
@@ -84,9 +83,9 @@ CachingDataSource::~CachingDataSource()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 Arturas.Januska    04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-//static
 BeFileNameCR CachingDataSource::GetHostAssetsDirectory ()
     {
+    BeAssert(!s_assetDirectory.empty() && "Call CachingDataSource::Initialize() first.");
     return s_assetDirectory;
     }
 
