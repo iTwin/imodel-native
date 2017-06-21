@@ -366,10 +366,14 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
             {
             minTextureResolution = std::min(minTextureResolution, (double)textureResolution);
             }
-        }   
+        }
+
+
+	DRange3d extractionRange = DRange3d::From(m_extractionArea);
+	double targetResolutionThreshold = sqrt((extractionRange.XLength()*extractionRange.YLength()* m_smGcsRatioToMeter) / 1000000.0);
         
     if (minTextureResolution != DBL_MAX)
-        return minTextureResolution * m_smGcsRatioToMeter;
+        return std::max(targetResolutionThreshold,minTextureResolution) * m_smGcsRatioToMeter;
 
     return DEFAULT_TEXTURE_RESOLUTION * m_smGcsRatioToMeter;
     }
