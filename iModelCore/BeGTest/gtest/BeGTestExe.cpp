@@ -406,19 +406,21 @@ int main(int argc, char **argv)
     Utf8String pathComparison;
     Utf8String umdhPathJoin;
     Utf8String symbolPath;
-    
+    Utf8String gflagsPathJoin;
+
     if (umdh_Use(argc, argv))
         {
         RUN_ALL_TESTS();
-        
+
         check = 1;
         //set _NT_SYMBOL_PATH
-        WString currentDirectory;
-        BeFileName::GetCwd(currentDirectory);
-
+        BeFileName outdirName;
+        hostPtr->GetOutputRoot(outdirName);
+        outdirName.PopDir();
+        WString currentDirectory(outdirName.GetName());
+        printf("%ls   \n", currentDirectory.c_str());
         BeStringUtilities::WCharToUtf8(symbolPath, currentDirectory.c_str());
-        printf("%d\n",WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
-        //printf("Symbols path is   :   %s\n", WinGetEnv("_NT_SYMBOL_PATH"));
+        printf("%d\n", WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
 
         CharCP winSdkDir = WinGetEnv("Win10SdkDir");
         CharCP  defArch = "x64";
@@ -426,22 +428,22 @@ int main(int argc, char **argv)
         bvector<Utf8CP> umdhPath2 = {winSdkDir,"Debuggers\\", defArch,"\\umdh.exe" };
         bvector<Utf8CP> gflagsPath2 = {winSdkDir,"Debuggers\\", defArch,"\\gflags.exe" };
         umdhPathJoin =  BeStringUtilities::Join(umdhPath2);
-        Utf8String gflagsPathJoin =  BeStringUtilities::Join(gflagsPath2);
-        
+        gflagsPathJoin =  BeStringUtilities::Join(gflagsPath2);
+
         WString currentDirectoryExe = currentDirectory ;
         currentDirectoryExe.AppendUtf8("\\");
         currentDirectoryExe.AppendUtf8(argv[0]);
         BeStringUtilities::WCharToUtf8(gflagsSet, currentDirectoryExe.c_str());
-        bvector<Utf8CP> gflags = {gflagsPathJoin.c_str(), " -i ", gflagsSet.c_str(), " +ust"  };
-        Utf8String setGflags =  BeStringUtilities::Join(gflags);
+        bvector<Utf8CP> gflagsEnable = {gflagsPathJoin.c_str(), " -i ", gflagsSet.c_str(), " +ust"  };
+        Utf8String setGflags =  BeStringUtilities::Join(gflagsEnable);
 
         sprintf_s(strCommand, sizeof(strCommand), setGflags.c_str());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        
+
         //first snapshot
-        CharP log1Name = "\\run\\FirstSnapshot.log";
+        CharP log1Name = "\\FirstSnapshot.log";
         currentDirectory.AppendUtf8(log1Name);
-        
+
         BeStringUtilities::WCharToUtf8(pathSnapshot1, currentDirectory.c_str());
 
         bvector<Utf8CP> snapshot1 = {umdhPathJoin.c_str(), " -p:%ld -f:", pathSnapshot1.c_str()  };
@@ -466,10 +468,12 @@ int main(int argc, char **argv)
             {
             RUN_ALL_TESTS();
             }
-        WString currentDirectory2;
-        BeFileName::GetCwd(currentDirectory2);
-        WString currentDirectory3 = currentDirectory2;
-        CharP log2Name = "\\run\\SecondSnapshot.log";
+        BeFileName outdirName;
+        hostPtr->GetOutputRoot(outdirName);
+        outdirName.PopDir();
+        WString currentDirectory2(outdirName.GetName());
+        WString currentDirectory3(outdirName.GetName());
+        CharP log2Name = "\\SecondSnapshot.log";
         CharP logComparisonName = "";
 
         CharCP testName = getTestName(no, args);
@@ -478,17 +482,17 @@ int main(int argc, char **argv)
 
         if (utf8Str.Equals(""))
             {
-            logComparisonName = "\\run\\Comparison.log";
+            logComparisonName = "run\\Comparison.log";
             currentDirectory3.AppendUtf8(logComparisonName);
             }
         else
             {
-            sprintf_s(pathCompComm, sizeof(pathCompComm), "\\run\\%s.log", testName);
+            sprintf_s(pathCompComm, sizeof(pathCompComm), "\\%s.log", testName);
             currentDirectory3.AppendUtf8(pathCompComm);
             }
 
         currentDirectory2.AppendUtf8(log2Name);
-        
+
         BeStringUtilities::WCharToUtf8(pathSnapshot2, currentDirectory2.c_str());
         BeStringUtilities::WCharToUtf8(pathComparison, currentDirectory3.c_str());
 
@@ -498,7 +502,7 @@ int main(int argc, char **argv)
         // For debugging purposes, take terminal snapshot of memory
         sprintf_s(strCommand, sizeof(strCommand), generateSnapshot2.c_str(), GetCurrentProcessId());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        
+
         //printf(strCommand, "\n");
 
         bvector<Utf8CP> snapshotDiff = { umdhPathJoin.c_str(), " -d ",pathSnapshot1.c_str()," ", pathSnapshot2.c_str()," -f:",pathComparison.c_str() };
@@ -506,10 +510,17 @@ int main(int argc, char **argv)
         // Now take a diff of the two dumps
         sprintf_s(strCommand, sizeof(strCommand), generateComparisonLog.c_str());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        
+
         printf(strCommand, "\n");
-        
-        }
+
+
+        bvector<Utf8CP> gflagsDisable = { gflagsPathJoin.c_str(), " -i ", gflagsSet.c_str(), " -ust" };
+        Utf8String disGflags = BeStringUtilities::Join(gflagsDisable);
+
+        sprintf_s(strCommand, sizeof(strCommand), disGflags.c_str());
+        spawnRet = SpawnProcessWin32(strCommand, retCode);
+
+    }
 #endif
     //  Run the tests
     return errors;
