@@ -606,6 +606,27 @@ void Mesh::Features::ToFeatureIndex(FeatureIndex& index) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::Features::SetIndices(bvector<uint32_t>&& indices)
+    {
+    if (indices.empty())
+        {
+        BeAssert(false);
+        m_initialized = false;
+        }
+    else if (1 == indices.size())
+        {
+        m_uniform = indices.front();
+        }
+    else
+        {
+        m_indices = std::move(indices);
+        }
+    m_initialized = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange3d Mesh::GetRange() const

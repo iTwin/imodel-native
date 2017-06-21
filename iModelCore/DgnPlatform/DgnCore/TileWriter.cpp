@@ -2234,6 +2234,21 @@ BentleyStatus  CreateMaterialJson(Json::Value& matJson, MeshCR mesh,  DisplayPar
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddFeatures (MeshCR mesh, Json::Value& primitiveJson, Utf8StringCR idStr)
+    {
+    FeatureIndex    featureIndex;
+
+    mesh.ToFeatureIndex(featureIndex);
+    if(featureIndex.IsEmpty())
+        BeAssert(false && "Empty feature index");
+    else if (featureIndex.IsUniform())
+        primitiveJson["featureID"]  = featureIndex.m_featureID;
+    else
+        primitiveJson["featureIDs"] = AddMeshIndices("featureIDs", featureIndex.m_featureIDs, mesh.Points().size(), idStr, mesh.Points().size());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -2252,6 +2267,7 @@ virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
     if (!mesh.GetColorTable().IsUniform())
         AddMeshUInt16Attributes(primitiveJson, mesh.Colors().data(), mesh.Colors().size(), idStr, "ColorIndex_", "_COLORINDEX");
 
+    AddFeatures (mesh, primitiveJson, idStr);
     AddMeshPointRange(m_json["accessors"][accPositionId], mesh.Verts().GetParams().GetRange());
  
     primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());

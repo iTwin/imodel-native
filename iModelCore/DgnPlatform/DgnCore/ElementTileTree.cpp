@@ -893,7 +893,7 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 
 
 
-static bool s_useRealityCache = false;      // Still WIP.
+static bool s_useRealityCache = true;      // Still WIP.
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017

@@ -445,6 +445,7 @@ private:
 
         void Add(FeatureCR, size_t numVerts);
         void ToFeatureIndex(FeatureIndex& index) const;
+        void SetIndices(bvector<uint32_t>&& indices);
     };
 
     DisplayParamsCPtr               m_displayParams;
@@ -492,6 +493,7 @@ public:
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
     MeshEdgesPtr                    GetEdges() const { return m_edges; }
     MeshEdgesPtr&                   GetEdgesR() { return m_edges; }
+    void                            SetFeatureIndices (bvector<uint32_t>&& indices) { m_features.SetIndices(std::move(indices)); }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }

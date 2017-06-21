@@ -515,6 +515,28 @@ MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus     ReadFeatures(MeshR mesh, Json::Value const& primitiveValue)
+    {
+    bvector <uint32_t>  indices;
+    if (primitiveValue.isMember("featureID"))
+        {
+        indices.push_back(primitiveValue["featureID"].asUInt());
+        }
+    else
+        {
+        if (SUCCESS != ReadIndices(indices, primitiveValue, "featureIDs") || indices.size() != mesh.Points().size())
+            {
+            BeAssert(false && "Missing feature IDs");
+            return ERROR;
+            }
+        }
+    mesh.SetFeatureIndices(std::move(indices));
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featureTable)
     {
     Json::Value     materialName = primitiveValue["material"], materialValue;
@@ -557,6 +579,7 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
 
     ReadColorTable(mesh->GetColorTableR(), primitiveValue);
     ReadColors(mesh->ColorsR(), primitiveValue);
+    ReadFeatures(*mesh, primitiveValue);
 
     switch (primitiveType)
         {
@@ -738,7 +761,6 @@ virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
         if (materialId.IsValid())
             graphicParams.SetMaterial(m_renderSystem._GetMaterial(materialId, m_model.GetDgnDb()).get());
         }
-
 
     geometryParams.Resolve(m_model.GetDgnDb());
     switch (materialValue["type"].asUInt())
