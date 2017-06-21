@@ -12,7 +12,7 @@
 #include <Bentley/ScopedArray.h>
 #include <Bentley/CodePages.h>
 #include <map>
-#if defined(_WIN32) && !defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 #include <Windows.h>
 #endif
 
@@ -1423,14 +1423,16 @@ TEST(BeStringUtilitiesTests, IsValidCodePage)
 //---------------------------------------------------------------------------------------
 TEST(BeStringUtilitiesTests, GetDecimalSeparator)
     {
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-    lconv* obj1 = localeconv();
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    wchar_t formatted[20];
+    GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, L"67.89", 0, formatted, 20);
     WString refrenced_str;
     WStringR decimal_separator = refrenced_str;
     ASSERT_EQ(BentleyStatus::SUCCESS, BeStringUtilities::GetDecimalSeparator(decimal_separator));
-    WString decimalOut;
-    decimalOut.AssignA(obj1->decimal_point);
-    EXPECT_EQ(decimalOut, decimal_separator);
+    Utf8String utf8decimal(decimal_separator);
+    Utf8String utf8str(formatted);
+    ASSERT_TRUE( utf8str.Contains(utf8decimal));
+    
 
 #elif defined (__unix__)
     WString refrenced_str;
