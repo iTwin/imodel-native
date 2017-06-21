@@ -256,7 +256,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
         auto unirlt = dynamic_cast<dgn_TxnTable::UniqueRelationshipLinkTable*>(rlt);
         if (nullptr != unirlt)                  // If this table holds only one relationship, that means that 
             {
-            BeAssert(unirlt->m_ecclass == &relClass);
+            //BeAssert(unirlt->m_ecclass == &relClass);
             return DgnDbStatus::DuplicateName;  // this RLT must be tracking this relationship class
             }
         else
