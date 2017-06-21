@@ -390,10 +390,10 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //  Instance persistence
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        //! Returns true if instance is held by FulPersistence root
+        //! Returns true if instance is held by Full Persistence root
         virtual bool IsInstanceFullyPersisted(ObjectIdCR objectId) = 0;
 
-        //! Returns true if instance is held by FulPersistence root
+        //! Returns true if instance is held by Full Persistence root
         virtual bool IsInstanceFullyPersisted(ECInstanceKeyCR instanceKey) = 0;
 
         virtual BentleyStatus ReadFullyPersistedInstanceKeys(ECInstanceKeyMultiMap& instancesOut) = 0;

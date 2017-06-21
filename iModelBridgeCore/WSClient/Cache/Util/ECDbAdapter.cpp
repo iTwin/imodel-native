@@ -1128,6 +1128,16 @@ BentleyStatus ECDbAdapter::OnBeforeDelete(ECClassCR ecClass, ECInstanceId instan
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::DeleteInstance(ECInstanceKeyCR instanceKey)
+    {
+    ECInstanceKeyMultiMap instances;
+    instances.Insert(instanceKey.GetClassId(), instanceKey.GetInstanceId());
+    return DeleteInstances(instances);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instances)

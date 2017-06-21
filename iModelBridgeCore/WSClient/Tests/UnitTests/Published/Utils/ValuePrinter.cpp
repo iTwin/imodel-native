@@ -20,6 +20,7 @@ std::ostream& operator << (std::ostream &o, ICachingDataSource::Status status)
         TO_VALUE_STRING_PAIR(ICachingDataSource::Status::DependencyNotSynced),
         TO_VALUE_STRING_PAIR(ICachingDataSource::Status::InternalCacheError),
         TO_VALUE_STRING_PAIR(ICachingDataSource::Status::NetworkErrorsOccured),
+        TO_VALUE_STRING_PAIR(ICachingDataSource::Status::SchemaError),
         TO_VALUE_STRING_PAIR(ICachingDataSource::Status::Success)
         };
 

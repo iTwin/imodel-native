@@ -465,9 +465,6 @@
     <ClCompile Include="iModelHubClient\Client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="iModelHubClient\ClientHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="iModelHubClient\CodeAdmin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1055,16 +1052,10 @@
     <ClInclude Include="iModelHubClient\Events\EventManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="iModelHubClient\Error.xliff.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="iModelHubClient\Logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="iModelHubClient\PredownloadManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="iModelHubClient\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BreakHelper.h">
@@ -1080,9 +1071,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Client.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ClientHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\CodeAdmin.h">
@@ -1139,6 +1127,9 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="iModelHubClient\DgnDbServerUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -1186,13 +1177,14 @@
     <None Include="ClientLibCompileOptions.mki" />
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="Azure\Azure.mki" />
-    <None Include="DgnDbServerClient\DgnDbServerClient.mki" />
     <None Include="Ims\Ims.mki" />
     <None Include="ConnectC\ConnectC.mki" />
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCPrewire.mke" />
     <None Include=".hgignore" />
-    <None Include="iModelHubClientPrewire.mke" />
+    <None Include="iModelHubClient\DgnDbServerClient.mki" />
+    <None Include="CWSClientCLibOptions.mki" />
     <None Include="iModelHubClientLib.mke" />
+    <None Include="iModelHubClientPrewire.mke" />
   </ItemGroup>
 </Project>

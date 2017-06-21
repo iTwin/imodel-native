@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/UnitTests/BuildTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -14,13 +14,13 @@
 baseDir = $(_MakeFilePath)
 
 %ifdef BUILD_AGGREGATE_TESTS
-	nameToDefine=BUILD_FOR_AGGREGATE_TESTS=1
+    nameToDefine=BUILD_FOR_AGGREGATE_TESTS=1
     %include cdefapnd.mki
 %endif
 
 %ifdef ENABLE_DGNDBSERVER_UNIT_TESTS
-	nameToDefine = DGNDBSERVER_UNIT_TESTS=1
-	%include cdefapnd.mki
+    nameToDefine = DGNDBSERVER_UNIT_TESTS=1
+    %include cdefapnd.mki
 %endif	
 
 # Compile and Link the unit tests
