@@ -10,6 +10,7 @@
 #include <Bentley/Base64Utilities.h>
 #include <cmath>
 #include <algorithm>
+#include <set>
 #include <rapidjson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC

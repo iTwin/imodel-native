@@ -23,15 +23,3 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 #Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
-
-#============================================================================================================================
-# RelationshipClassEndTableMap does not support INSERT/DELETE using relationship name.
-# Following test must be  updated to use Navigation property and not INSERT INTO rel(..)
-# This must be cleared before merge.
-#----------------------------------------------------------------------------------------------------------------------------
-
-# Tests not adjusted yet
-ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
-ECInstanceInserterTests.InsertInstanceWithOutProvidingSourceTargetClassIds
-ECRelationshipInheritanceTestFixture.RelECClassId
-#============================================================================================================================

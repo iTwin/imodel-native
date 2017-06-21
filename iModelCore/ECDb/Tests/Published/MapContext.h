@@ -109,14 +109,14 @@ struct MapContext final
             private:
                 ClassMap const& m_classMap;
                 Utf8String m_accessString;
-                std::set<Column const*> m_column;
+                bset<Column const*> m_columns;
 
             public:
-                PropertyMap(ClassMap const& classMap, Column const& column, Utf8StringCR accessString) :m_classMap(classMap), m_accessString(accessString) { m_column.insert(&column); }
+                PropertyMap(ClassMap const& classMap, Column const& column, Utf8StringCR accessString) :m_classMap(classMap), m_accessString(accessString) { m_columns.insert(&column); }
                 ClassMap const& GetClassMap() const { return m_classMap; }
-                std::set<Column const*> const& GetColumns() const { return m_column; }
+                bset<Column const*> const& GetColumns() const { return m_columns; }
                 Utf8StringCR GetAccessString() const { return m_accessString; }
-                void AddColumn(Column const& column) { m_column.insert(&column); }
+                void AddColumn(Column const& column) { m_columns.insert(&column); }
             };
 
         struct ClassMap final

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
+#include <set>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
