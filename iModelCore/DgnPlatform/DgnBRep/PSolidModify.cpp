@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidModify.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -284,6 +284,40 @@ BentleyStatus PSolidUtil::ImprintCurves(PK_ENTITY_t targetTag, bvector<PK_CURVE_
     PK_MARK_create(&markTag);
 
     BentleyStatus status = (SUCCESS == PK_CURVE_project((int) toolCurves.size(), &toolCurves.front(), &toolIntervals.front(), 1, &targetTag, &options, &results, &tracking)) ? SUCCESS : ERROR;
+
+    if (SUCCESS == status && extend && tracking.n_track_records > 1)
+        {
+        bvector<PK_EDGE_t> edges;
+
+        for (int iResult = 0; iResult < tracking.n_track_records; ++iResult)
+            {
+            for (int iProduct = 0; iProduct < tracking.track_records[iResult].n_product_entities; ++iProduct)
+                {
+                PK_ENTITY_t entityTag = tracking.track_records[iResult].product_entities[iProduct];
+                PK_CLASS_t  entityClass;
+
+                PK_ENTITY_ask_class(entityTag, &entityClass);
+
+                if (PK_CLASS_edge == entityClass)
+                    edges.push_back(entityTag);
+                }
+            }
+
+        if (edges.size() > 1)
+            {
+            PK_TOPOL_track_r_t tracking2;
+            PK_TOPOL_delete_redundant_2_o_s options2;
+
+            memset(&tracking2, 0, sizeof(tracking2));
+            PK_TOPOL_delete_redundant_2_o_m(options2);
+            options2.max_topol_dimension = PK_TOPOL_dimension_0_c; // Only remove vertices...
+            options2.scope = PK_redundant_merge_in_c;
+
+            PK_TOPOL_delete_redundant_2((int) edges.size(), &edges.front(), &options2, &tracking2);
+
+            PK_TOPOL_track_r_f(&tracking2);
+            }
+        }
 
     // NOTE: I don't think a "feature" should add it's node id to anything but the new edges. PSolidTopoId::AddNodeIdAttributes will resolve the
     //       duplicate face ids after a split and id the new edges. Trying to have the feature "own" a face as per SmartFeatures is problematic 
