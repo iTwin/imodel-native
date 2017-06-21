@@ -2335,16 +2335,50 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     assert(version == 1);
     uint32_t byteLength = *(uint32_t*)(batchTable + 2 * sizeof(uint32_t));
     assert(byteLength == cesiumDataSize);
-    uint32_t batchTableHeaderSize = *(uint32_t*)(batchTable + 3 * sizeof(uint32_t));
-    uint32_t batchTableBinarySize = *(uint32_t*)(batchTable + 4 * sizeof(uint32_t));
 
-    // NEEDS_WORK_SM_STREAMING: in the future, legacy b3dm headers must not be supported/generated
-    uint32_t batchLength = *(uint32_t*)(batchTable + 5 * sizeof(uint32_t));
-    assert(batchLength == 0 || batchLength > 10000000); // Support b3dm-legacy-header
-    uint32_t batchHeaderLength = batchLength > 10000000 ? 20 : 24;
+    uint32_t featureTableJSONByteLength = *(uint32_t*)(batchTable + 3 * sizeof(uint32_t));
+    uint32_t featureTableBinaryByteLength = *(uint32_t*)(batchTable + 4 * sizeof(uint32_t));
+
+    uint32_t batchTableJSONByteLength = *(uint32_t*)(batchTable + 5 * sizeof(uint32_t));
+    uint32_t batchTableBinaryByteLength = *(uint32_t*)(batchTable + 6 * sizeof(uint32_t));
+
+    assert(batchTableJSONByteLength == 0 || batchTableJSONByteLength >= 570425344 || 
+           batchTableBinaryByteLength == 0 || batchTableBinaryByteLength >= 570425344); // Support b3dm-legacy-headers
+
+
+    // From Cesium 3DTiles Web Viewer source Batched3DModel3DTileContent.js :
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------
+    // Legacy header #1: [batchLength] [batchTableByteLength]
+    // Legacy header #2: [batchTableJsonByteLength] [batchTableBinaryByteLength] [batchLength]
+    // Current header: [featureTableJsonByteLength] [featureTableBinaryByteLength] [batchTableJsonByteLength] [batchTableBinaryByteLength]
+    // If the header is in the first legacy format 'batchTableJsonByteLength' will be the start of the JSON string (a quotation mark) or the glTF magic.
+    // Accordingly its first byte will be either 0x22 or 0x67, and so the minimum uint32 expected is 0x22000000 = 570425344 = 570MB. 
+    // It is unlikely that the feature table JSON will exceed this length.
+    // The check for the second legacy format is similar, except it checks 'batchTableBinaryByteLength' instead
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------
+    uint32_t batchLength = 0, 
+             batchHeaderLength = 28;
+    if (batchTableJSONByteLength >= 570425344)
+        {
+        batchLength = featureTableJSONByteLength;
+        batchTableJSONByteLength = featureTableBinaryByteLength;
+        batchTableBinaryByteLength = 0;
+        featureTableJSONByteLength = 0;
+        featureTableBinaryByteLength = 0;
+        batchHeaderLength = 20;
+        }
+    else if (batchTableBinaryByteLength >= 570425344)
+        {
+        batchLength = batchTableJSONByteLength;
+        batchTableJSONByteLength = featureTableJSONByteLength;
+        batchTableBinaryByteLength = featureTableBinaryByteLength;
+        featureTableJSONByteLength = 0;
+        featureTableBinaryByteLength = 0;
+        batchHeaderLength = 24;
+        }
 
     uint32_t gltfHeaderLength = 20;
-    uint32_t gltfOffset = batchHeaderLength + batchTableHeaderSize + batchTableBinarySize;
+    uint32_t gltfOffset = batchHeaderLength + featureTableJSONByteLength + batchTableJSONByteLength;
     uint32_t gltfJsonStartOffset = gltfOffset + gltfHeaderLength;
     uint32_t gltfJsonHeaderSize = *(uint32_t*)(batchTable + gltfOffset + 3 * sizeof(uint32_t));
     uint32_t gltfBinaryStartOffset = gltfJsonStartOffset + gltfJsonHeaderSize;
@@ -2366,6 +2400,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     assert(nodes.size() == 1); // should contain only one node
     auto nodeName = nodes[0].asString();
     auto& meshes = cesiumBatchTableHeader["nodes"][nodeName]["meshes"];
+    if (meshes.isNull()) return;
     assert(meshes.size() == 1); // should contain only one mesh
     auto meshName = meshes[0].asString();
     auto& primitives = cesiumBatchTableHeader["meshes"][meshName]["primitives"];
