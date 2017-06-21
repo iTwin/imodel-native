@@ -118,7 +118,7 @@ ICancellationTokenPtr ct
     auto onBlockProgress = [=] (double bytesTransfered, double bytesTotal)
         {
         if (progressCallback)
-            progressCallback((double) chunkNumber * (double) chunkSize + bytesTransfered, (double) fileSize);
+            progressCallback(chunkNumber * (double) chunkSize + bytesTransfered, (double) fileSize);
         };
 
     Http::Request request(blockUrl, "PUT", m_customHandler);
@@ -136,7 +136,7 @@ ICancellationTokenPtr ct
             return;
             }
 
-        if (chunkNumber + 1 < ceil((double) (fileSize / chunkSize)))
+        if (chunkNumber + 1 < ceil(fileSize / (double) chunkSize)) // Cast is required to get double result
             {
             SendChunkAndContinue(url, blockIds, body, fileSize, chunkSize, chunkNumber + 1, progressCallback, ct)
                 ->Then([=] (const AzureResult& result)
