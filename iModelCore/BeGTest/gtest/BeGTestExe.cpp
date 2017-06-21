@@ -418,9 +418,7 @@ int main(int argc, char **argv)
         hostPtr->GetOutputRoot(outdirName);
         outdirName.PopDir();
         WString currentDirectory(outdirName.GetName());
-        printf("%ls   \n", currentDirectory.c_str());
         BeStringUtilities::WCharToUtf8(symbolPath, currentDirectory.c_str());
-        printf("%d\n", WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
 
         CharCP winSdkDir = WinGetEnv("Win10SdkDir");
         CharCP  defArch = "x64";
@@ -452,8 +450,6 @@ int main(int argc, char **argv)
         // For debugging purposes, take initial snapshot of memory
         sprintf_s(strCommand, sizeof(strCommand), generateSnapshot1.c_str(), GetCurrentProcessId());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        //printf(strCommand, "\n");
-        ///assert (spawnRet);
         }
 #endif
     int errors = 0;
@@ -502,8 +498,6 @@ int main(int argc, char **argv)
         // For debugging purposes, take terminal snapshot of memory
         sprintf_s(strCommand, sizeof(strCommand), generateSnapshot2.c_str(), GetCurrentProcessId());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-
-        //printf(strCommand, "\n");
 
         bvector<Utf8CP> snapshotDiff = { umdhPathJoin.c_str(), " -d ",pathSnapshot1.c_str()," ", pathSnapshot2.c_str()," -f:",pathComparison.c_str() };
         Utf8String generateComparisonLog =  BeStringUtilities::Join(snapshotDiff);
