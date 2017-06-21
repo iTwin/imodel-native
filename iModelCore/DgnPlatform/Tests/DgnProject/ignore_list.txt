@@ -607,31 +607,6 @@ DgnProjectPackageTest.EnforceLinkTableFor11Relationship
 # Following test must be  updated to use Navigation property and not INSERT INTO rel(..)
 # This must be cleared before merge.
 #----------------------------------------------------------------------------------------------------------------------------
-CategoryTests.InsertCategory
-CategoryTests.DeleteCategory
-CategoryTests.UpdateCategory
-CategoryTests.IterateCategories
-CategoryTests.InsertSubCategory
-CategoryTests.SubCategoryInvariants
-CategoryTests.DeleteSubCategory
-CategoryTests.QueryByElementId
-CategoryTests.UpdateSubCategory_VerifyPresistence
-ElementUriTests.Test1
-SqlFunctionsTest.placement_areaxy
-SqlFunctionsTest.placement_angles
-SqlFunctionsTest.DGN_point_min_distance_to_bbox
-SqlFunctionsTest.spatialQueryECSql
-SqlFunctionsTest.spatialQuery
-SqlFunctionsTest.bbox_union
-ElementAspectTests.GenericUniqueAspect_CRUD
 ChangeSummaryTestFixture.ElementChangesFromCurrentTransaction
 ChangeSummaryTestFixture.ElementChangesFromSavedTransactions
-ECInstancesCompatibility.InstancesCompatibilitySeed
-CreateFromInstanceTests.SpatialCategory
-CreateFromInstanceTests.FullyCreateBim
-GetSetCustomHandledProprty.Viewdefinition2d
-FunctionalDomainTests.FunctionalDomainCRUD
-PhysicalMaterialTests.CRUD
-TypeTests.CreateSampleBim
-TypeTests.MimicCellLibraryImport
 #============================================================================================================================

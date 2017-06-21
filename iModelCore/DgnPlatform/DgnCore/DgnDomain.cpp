@@ -139,7 +139,7 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnDomain::IsSchemaImported(DgnDbCR dgndb) const
     {
-    return dgndb.Schemas().ContainsSchema(GetDomainName());
+    return dgndb.Schemas().ContainsSchema(m_domainName);
     }
 
 /*---------------------------------------------------------------------------------**//**
