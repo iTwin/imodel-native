@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFile_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT) || defined (__unix__)
@@ -649,7 +649,38 @@ TEST_F(BeFileTests, Flush)
         status = m_file.Flush();
         EXPECT_TRUE(BeFileStatus::Success != status);
         }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                        Ridha.Malik                06/17
+//---------------------------------------------------------------------------------------
+TEST_F(BeFileTests, DuplicateFileCreation)
+    {
+    while (!m_testData.empty())
+        {
+        BeFileName fileName;
+        CreatePathForTempFile(&fileName, L"Write", m_testData.back());
+        WCharCP filePath = fileName.GetName();
+        m_testData.pop_back();
 
+        PrepareFile(filePath, "", 0, false);
+        //Create file
+        BeFileStatus status = m_file.Create(filePath, true);
+        ASSERT_TRUE(status == BeFileStatus::Success) << "Failed to create file, file: " << filePath;
+        //Try to create duplicate file it should fail
+        status = m_file.Create(filePath, true);
+        ASSERT_TRUE(status == BeFileStatus::FileAlreadyOpened) << "Failed to create file, file all ready opened: " << filePath;
+        EXPECT_TRUE(m_file.IsOpen()) << "Open?";
+        m_file.Close();
+        status=m_file.Open(filePath, BeFileAccess::Read);
+        ASSERT_TRUE(status == BeFileStatus::Success) << "Failed to open file";
+        ASSERT_TRUE(m_file.IsOpen()) << "Open?";
+        //Try to re open file that is already open it sholud return FileAlreadyOpened status
+        status = m_file.Open(filePath, BeFileAccess::Read);
+        ASSERT_TRUE(status == BeFileStatus::FileAlreadyOpened) << "Failed to re open file, file all ready opened";
+        m_file.Close();
+        ASSERT_FALSE(m_file.IsOpen()) << "Open?";
+        CloseFiles();
+        }
+    }
 POP_MSVC_IGNORE
 
 #endif // defined (BENTLEY_WIN32)
