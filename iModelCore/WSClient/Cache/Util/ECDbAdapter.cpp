@@ -65,7 +65,7 @@ ECInstanceFinder& ECDbAdapter::GetECInstanceFinder()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbAdapter::GetECSchema(Utf8StringCR schemaName)
     {
-    return m_ecDb->Schemas().GetSchema(schemaName.c_str());
+    return m_ecDb->Schemas().GetSchema(schemaName);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -854,11 +854,15 @@ ECInstanceKey ECDbAdapter::RelateInstances(ECRelationshipClassCP relClass, ECIns
     Utf8PrintfString key("RelateInstances:%llu", relClass->GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
+        //WIP_NEEDS_REFACTOR Cannot insert into fk relationship. Needs to insert via its nav prop
         return Utf8PrintfString(
             "INSERT INTO %s (SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId) VALUES (?,?,?,?)",
             relClass->GetECSqlName().c_str()
             );
         });
+
+    if (statement == nullptr || !statement->IsPrepared())
+        return ECInstanceKey();
 
     statement->BindId(1, source.GetClassId());
     statement->BindId(2, source.GetInstanceId());
