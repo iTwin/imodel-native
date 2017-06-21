@@ -126,11 +126,11 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
     &s_urlRegistry
     );
 
-const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelHubServices(
-    "iModelHubServices",
-    "https://dev-imodelhubapi.bentley.com",
-    "https://qa-imodelhubapi.bentley.com",
-    "https://imodelhubapi.bentley.com",
+const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelHubApi(
+    "iModelHubApi",
+    nullptr,
+    nullptr,
+    nullptr,
     &s_urlRegistry
     );
 
