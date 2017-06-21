@@ -266,6 +266,28 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
+    Utf8String repositoryId = "IssuePluginV1.1--default";
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
+
+    cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
+    DataSourceCache::DeleteCacheFromDisk(cachePath, StubCacheEnvironemnt());
+
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
 // BIM0200 does not support ECDbMap.01.00 schema, but it is required here for DgnDb0601 version... 
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds_KnownIssue)
     {
