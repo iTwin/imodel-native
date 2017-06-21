@@ -28,10 +28,16 @@ typedef Json::Value const* JsonValueCP;
 struct IJsonLocalState : ILocalState
     {
     public:
-    //! Saves the supplied JSON value as string in the local state
-    virtual void SaveJsonValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) {SaveValue(nameSpace, key, Json::FastWriter().write(value)); }
+     //! Saves the supplied JSON value as string in the local state. Set null to delete.
+    virtual void SaveJsonValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) 
+        {
+        Utf8String valueStr;
+        if (!value.isNull())
+            valueStr = Json::FastWriter().write(value);
+        SaveValue(nameSpace, key, valueStr);
+        }
 
-    //! Parses the stored serialized JSON value and returns it as JSON
+    //! Parses the stored serialized JSON value and returns it as JSON. Returns null if not existing.
     virtual Json::Value GetJsonValue(Utf8CP nameSpace, Utf8CP key) const 
         {
         Json::Value value;
