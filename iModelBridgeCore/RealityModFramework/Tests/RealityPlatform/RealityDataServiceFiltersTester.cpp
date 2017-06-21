@@ -54,7 +54,7 @@ TEST(RealityDataFilterCreator, FilterSpatial)
     footprint.emplace_back(GeoPoint2d::From(-93, 39));
     footprint.emplace_back(GeoPoint2d::From(-92, 39));
 
-	auto expectedFootprint = R"(polygon={"Coordinates": [{"Long": "-92.000000000", "Lat": "39.000000000"},{"Long": "-92.000000000", "Lat": "38.000000000"},{"Long": "-93.000000000", "Lat": "38.000000000"},{"Long": "-93.000000000", "Lat": "39.000000000"},{"Long": "-92.000000000", "Lat": "39.000000000"}]})";
+	auto expectedFootprint = R"(polygon={"Coordinates": [{"Longitude": "-92.000000000", "Latitude": "39.000000000"},{"Longitude": "-92.000000000", "Latitude": "38.000000000"},{"Longitude": "-93.000000000", "Latitude": "38.000000000"},{"Longitude": "-93.000000000", "Latitude": "39.000000000"},{"Longitude": "-92.000000000", "Latitude": "39.000000000"}]})";
 	RDSFilter filter = RealityDataFilterCreator::FilterSpatial(footprint, 1555);
 	EXPECT_STREQ(filter.ToString().c_str(), expectedFootprint);
 	}

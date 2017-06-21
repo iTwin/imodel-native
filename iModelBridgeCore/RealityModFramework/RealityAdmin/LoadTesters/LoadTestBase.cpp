@@ -535,6 +535,8 @@ bool LoadTester::Main(int argc, char* argv[])
                 m_serverType = RealityPlatform::CONNECTServerType::QA;
             else if (strstr(argv[i], "prod"))
                 m_serverType = RealityPlatform::CONNECTServerType::PROD;
+            else if (strstr(argv[i], "perf"))
+                m_serverType = RealityPlatform::CONNECTServerType::PERF;
             else
                 m_serverType = RealityPlatform::CONNECTServerType::DEV;
             }

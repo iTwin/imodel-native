@@ -46,9 +46,11 @@ struct RDSUser : public User
     {
 public:
     AzureHandshake              m_handshake;
+    RealityData&                m_realityData;
+    Utf8String                  m_fileName;
 
-    RDSUser();
-    RDSUser(int id, Stats* stats);
+    // RDSUser();
+    RDSUser(int id, Stats* stats, RealityData& realityData, Utf8String fileName);
     
     bool DoNextBody(UserManager* owner) override;
     

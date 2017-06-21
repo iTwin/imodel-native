@@ -77,14 +77,14 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityContextTest" BentleyBuildMakeFile="RealityAdmin\RealityContextTest\RealityContextTest.mke">
+    <Part Name="GCSLoadTest" BentleyBuildMakeFile="RealityAdmin\LoadTesters\GCSLoadTester\GCSLoadTest.mke">
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <SubPart PartName="LoadTestBase"/>
         <Bindings>
-            <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
+            <Assemblies>Delivery/GCSLoadTest.exe</Assemblies>
         </Bindings>
     </Part>
     
@@ -287,7 +287,7 @@
         <SubPart PartName="ConversionToolsTester"/>
         <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
-        <SubPart PartName="RealityContextTest"/>
+        <SubPart PartName="GCSLoadTest"/>
         <SubPart PartName="RDSLoadTest"/>
         <SubPart PartName="3CSLoadTest"/>
         <SubPart PartName="RealityDataServicePerformanceTests"/>
