@@ -8,7 +8,7 @@
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux)
-#include <unistd.h> 
+#include <unistd.h>
 #endif
 
 #include <stdio.h>
@@ -91,8 +91,9 @@ static bool isImodelExt(BeFileNameCR fn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName iModelBridgeSacAdapter::GetExecutablePath(WCharCP argv0)
     {
+    HMODULE hModule = ::GetModuleHandleW(argv0);
     wchar_t moduleFileName[MAX_PATH];
-    ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
+    ::GetModuleFileNameW(hModule, moduleFileName, _countof(moduleFileName));
     return BeFileName(moduleFileName);
     }
 #elif defined(__linux)
@@ -104,7 +105,7 @@ BeFileName iModelBridgeSacAdapter::GetExecutablePath(WCharCP argv0)
     Utf8PrintfString exelink("/proc/%ld/exe", getpid());
 
     char exepath[PATH_MAX + 1] = {0};
-    
+
     ssize_t linklen = readlink(exelink.c_str(), exepath, _countof(exepath)-1);
 
     if( linklen >= 0 )
@@ -254,7 +255,7 @@ BentleyStatus iModelBridgeSacAdapter::ExtractFromIModel(BeFileName& outFile, BeF
         fprintf(stderr, "*** IModel extraction failed.****\n");
         return BSIERROR;
         }
-    
+
     fwprintf(stdout, L"Extracted %ls\n", outFile.GetName());
     return BSISUCCESS;
     }
@@ -293,7 +294,7 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
         db = bridge.DoCreateDgnDb(dont_care);
         if (!db.IsValid())
             {
-            fwprintf(stderr, L"%ls - creation failed. See %ls for details.\n", inputFileName.GetName(), 
+            fwprintf(stderr, L"%ls - creation failed. See %ls for details.\n", inputFileName.GetName(),
                      bridge._GetParams().GetReportFileName().GetName());
             return BSIERROR;
             }
@@ -313,7 +314,7 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
 
         if (BSISUCCESS != bridge.DoConvertToExistingBim(*db))
             {
-            fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(), 
+            fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(),
                      bridge._GetParams().GetReportFileName().GetName());
             return BSIERROR;
             }
@@ -346,7 +347,7 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
         m_dgndb->CompactFile();
         }
         */
-    
+
     if (wasCreated)
         fwprintf(stdout, L"Created %ls\n", outputFileName.c_str());
     else
@@ -396,7 +397,7 @@ void iModelBridgeSacAdapter::Params::Initialize() const
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
         return;
         }
-        
+
     fprintf(stderr, "Logging.config.xml not specified. Activating default logging using console provider.\n");
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
     NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_TRACE);
@@ -409,7 +410,7 @@ void iModelBridgeSacAdapter::Params::Initialize() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeSacAdapter::Params::PrintUsage()
     {
-    fprintf(stderr, 
+    fprintf(stderr,
 "STAND-ALONE-SPECIFIC CONVERTER OPTIONS:\n"
 "--no-assert-dialogs            (optional) Prevents modal assert dialogs\n"
 "--update[=description]         (optional) Causes the converter to update the output file, rather than re-create it.\n"
@@ -603,7 +604,7 @@ BentleyStatus iModelBridgeSacAdapter::ParseCommandLine(bvector<WString>& unrecog
             return BentleyStatus::SUCCESS;
             }
         }
-    
+
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         iModelBridge::CmdLineArgStatus res = ParseCommandLineArg(bparams, iArg, argc, argv);
@@ -681,7 +682,7 @@ BentleyStatus iModelBridgeSacAdapter::FixInputFileName(iModelBridge::Params& bpa
     BeFileName fixedName = bparams.GetInputFileName();
     if ((BeFileNameStatus::Success != fixedName.BeGetFullPathName()) || !fixedName.DoesPathExist() && fixedName.IsDirectory())
         return ERROR;
-        
+
     bparams.m_inputFileName = fixedName;
     return SUCCESS;
     }

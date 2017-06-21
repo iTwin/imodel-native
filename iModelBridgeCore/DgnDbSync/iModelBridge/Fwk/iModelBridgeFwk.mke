@@ -10,6 +10,7 @@
 appName     = iModelBridgeFwk
 baseDir     = $(_MakeFilePath)
 
+
 o = $(OutputRootDir)Build/$(appName)/
 always:
     ~mkdir $(o)
@@ -20,13 +21,9 @@ iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
 DLM_NAME        =% $(appName)
 CCompPDBName    =% $(appName)
 
-$(o)iModelBridgeFwk.obj: $(baseDir)iModelBridgeFwk.cpp $(baseDir)iModelBridgeFwk.h
+$(o)iModelBridgeFwkMain.obj: $(baseDir)iModelBridgeFwkMain.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h
 
-$(o)Briefcase.obj: $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(baseDir)iModelBridgeFwk.h $(baseDir)DgnDbServerClientUtils.h
-
-$(o)DgnDbServerClientUtils.obj: $(baseDir)DgnDbServerClientUtils.cpp $(BuildContext)PublicApi/WebServices/iModelHub/Client/ClientHelper.h $(baseDir)DgnDbServerClientUtils.h $(DgnDbServerDepends)
-
-objs = $(o)iModelBridgeFwk.obj $(o)Briefcase.obj $(o)DgnDbServerClientUtils.obj
+objs = $(o)iModelBridgeFwkMain.obj
 
 #----------------------------------------------------------------------
 #   Link the executable
@@ -44,8 +41,6 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIeS  + $(ContextSubpartsLibs)iModelHubClient.lib
 LINKER_LIBRARIeS  + $(ContextSubpartsLibs)iModelBridge.lib
-LINKER_LIBRARIeS  + $(ContextSubpartsLibs)WebServicesClient.lib
-LINKER_LIBRARIeS  + $(ContextSubpartsLibs)DgnClientFx.lib
 LINKER_LIBRARIeS  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
 

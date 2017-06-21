@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
-  
+
     <!-- ........................................................................................................................................ -->
     <!-- iModelBridge    The bridge DLL. -->
     <!-- ........................................................................................................................................ -->
@@ -9,12 +9,16 @@
     <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" >
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="PublicAPI" />
+        <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
+      <!-- NEEDS WORK - this subpart dependency is needed only because Briefcase_Initialize must call DgnClientFx::DgnClientFxL10N::Initialize and that is
+                        because WSClient requires it. The whole dependency of WSClient on DgnClientFx must be removed. -->
+      <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)iModelBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)iModelBridge$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-  
+
     <Part Name="PublicApi" BentleyBuildMakeFile="iModelBridge/prewire.mke">
         <Bindings>
             <PublicAPI Domain="iModelBridge" />
@@ -27,7 +31,7 @@
         <Directory SourceName="Delivery/docs" ProductDirectoryName="iModelBridgeDoc" />
       </Bindings>
     </Part>
-  
+
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <!-- iModelBridgeFwk - Loads and runs iModelBridges connected to iModelHub -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -50,11 +54,7 @@
 
     <Part Name="iModelBridgeFwkExe" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwk.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
       <SubPart PartName="PublicAPI"/>
-      <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
       <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
-      <!-- NEEDS WORK - this subpart dependency is needed only because Briefcase_Initialize must call DgnClientFx::DgnClientFxL10N::Initialize and that is 
-                        because WSClient requires it. The whole dependency of WSClient on DgnClientFx must be removed. -->
-      <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>
       <Bindings>
         <Files ProductDirectoryName="Assemblies">Delivery\iModelBridgeFwk.exe</Files>
         <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/iModelBridgeFwk/iModelBridgeFwk.logging.config.xml</Files>
@@ -65,7 +65,7 @@
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <!-- iModelBridgeFwkICSPlugin - a product that installs a plugin into ProjectWise Orchestration Framework/Automation Services -->
     <!-- This plugin invokes iModelBridgeFwk. The plugin is and must be a separate product WITH NO BUILD CHAIN DEPENDENCIES
-           because the plugin must be 32-bit, while iModelBridgeFwk must be 64-bit. The user installs each product separately. 
+           because the plugin must be 32-bit, while iModelBridgeFwk must be 64-bit. The user installs each product separately.
       -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Product Name="iModelBridgeFwkICSPlugin">
@@ -80,8 +80,8 @@
           Ensure that WinX64 pulls these required repos even though only the WinX86 will need them.
       -->
     <Part Name="iModelBridgeFwkICSPluginRequiredRepos" OnlyPlatforms="x64">
-      <RequiredRepository>pas81114Bin</RequiredRepository>
-      <RequiredRepository>orchfrwk81114Bin</RequiredRepository>
+      <RequiredRepository>pas100002Bin</RequiredRepository>
+      <RequiredRepository>orchfrwk100002Bin</RequiredRepository>
     </Part>
 
     <ProductDirectoryList ListName="iModelBridgeFwkICSPluginDirList">
@@ -89,7 +89,7 @@
     </ProductDirectoryList>
 
     <Part Name="iModelBridgeFwkICSPluginConfigBootStrapperExe" BMakeFile="iModelBridge/Fwk/bas/Bootstrapper/iModelBridgeFwkICSPluginConfigBootStrapper.mke" OnlyPlatforms="x86">
-      <RequiredRepository>pas81114Bin</RequiredRepository>
+      <RequiredRepository>pas100002Bin</RequiredRepository>
       <Bindings>
         <Assemblies ProductDirectoryName="iModelBridgeFwkICSPluginBinaries">Delivery/iModelBridgeFwkICSPluginConfigBootStrapper.exe</Assemblies>
       </Bindings>
@@ -101,9 +101,9 @@
         <Assemblies ProductDirectoryName="iModelBridgeFwkICSPluginBinaries">Delivery/iModelBridgeFwkICSPlugin.dll</Assemblies>
       </Bindings>
     </Part>
-  
+
     <!-- ******************************** Documentation ************************************** -->
-  
+
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
         <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
         <SubPart PartName="iModelBridgeLibrary" />
@@ -174,6 +174,7 @@
     <!-- ********************** -->
     <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="iModelBridge-Tests"/>
+        <SubPart PartName="DgnClientFxLibrary-JNI" LibType="Static" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />

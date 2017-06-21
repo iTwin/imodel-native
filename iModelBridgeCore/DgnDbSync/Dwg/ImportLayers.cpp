@@ -192,7 +192,8 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer)
     DgnDbTable::ReplaceInvalidCharacters(name, DgnCategory::GetIllegalCharacters(), '_');
     name.Trim ();
 
-    DgnCode         categoryCode = SpatialCategory::CreateCode (db, name.c_str());
+    DictionaryModelR dictionaryModel = db.GetDictionaryModel ();
+    DgnCode         categoryCode = SpatialCategory::CreateCode (dictionaryModel, name.c_str());
 
     categoryId = DgnCategory::QueryCategoryId (db, categoryCode);
     if (categoryId.IsValid())
@@ -202,7 +203,7 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer)
         }
     else
         {
-        SpatialCategory newCategory (db, name, DgnCategory::Rank::User, Utf8String(layer.GetDescription().c_str()));
+        SpatialCategory newCategory (dictionaryModel, name, DgnCategory::Rank::User, Utf8String(layer.GetDescription().c_str()));
 
         newCategory.Insert (appear, &status);
 
@@ -295,13 +296,14 @@ BentleyStatus   DwgImporter::_ImportLayerSection ()
 void            DwgImporter::InitUncategorizedCategory ()
     {
     static Utf8CP name = "0";
-    DgnCode categoryCode = SpatialCategory::CreateCode (*m_dgndb, name, "");
+    DictionaryModelR dictionaryModel = m_dgndb->GetDictionaryModel ();
+    DgnCode categoryCode = SpatialCategory::CreateCode (dictionaryModel, name);
     m_uncategorizedCategoryId = DgnCategory::QueryCategoryId (*m_dgndb, categoryCode);
 
     if (m_uncategorizedCategoryId.IsValid())
         return;
 
-    SpatialCategory category (*m_dgndb, categoryCode, DgnCategory::Rank::Application);
+    SpatialCategory category (dictionaryModel, name, DgnCategory::Rank::Application);
     if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
         {
         BeAssert(false);

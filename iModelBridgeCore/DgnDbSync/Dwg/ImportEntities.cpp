@@ -2174,7 +2174,7 @@ BentleyStatus   CreateGeometryPart (BuilderInfoR builderInfo, DRange3dR partRang
     
     Utf8StringCR    nameSpace = this->GetPartNamespace ();
     Utf8StringCR    codeValue = builderInfo.GetPartCodeValue (entity, partIndex);
-    DgnCode         partCode = importer.CreateCode (codeValue, nameSpace);
+    DgnCode         partCode = importer.CreateCode (Utf8PrintfString("%s:%s", nameSpace.c_str(), codeValue.c_str()));
 
     // create a new geometry builder:
     GeometryBuilderPtr  geomBuilder = GeometryBuilder::CreateGeometryPart (db, m_createParams.GetModel().Is3d());
@@ -2791,7 +2791,7 @@ BentleyStatus   DwgImporter::CreateElement (ElementImportResults& results, Geome
         {
         // a parent element has been created - set element params for children
         Utf8PrintfString    codeValue("%s-%d", parentCode.GetValue(), results.m_childElements.size() + 1);
-        DgnCode             childCode = this->CreateCode (codeValue, parentCode.GetScope());
+        DgnCode             childCode = this->CreateCode (codeValue);
         elementParams.SetCode (childCode);
         }
 
@@ -2874,8 +2874,8 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     if (nullptr != desiredCode)
         codeValue.assign (desiredCode);
     else
-        codeValue.Sprintf ("%llx", ent.GetObjectId().ToUInt64());
-    params.m_elementCode = this->CreateCode (codeValue, codeNamespace); // *** ? TBD: m_params.GetNamePrefix().append(codeNamespace));
+        codeValue.Sprintf ("%s:%llx", codeNamespace.c_str(), ent.GetObjectId().ToUInt64());
+    params.m_elementCode = this->CreateCode (codeValue); // *** ? TBD: m_params.GetNamePrefix().append(codeNamespace));
 
     return  BSISUCCESS;
     }

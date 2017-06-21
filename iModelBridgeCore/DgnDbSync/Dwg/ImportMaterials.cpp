@@ -367,7 +367,8 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
 
     // create a DGN texture and added to DB:
     DgnDbStatus     status = DgnDbStatus::Success;
-    DgnTexture      texture(DgnTexture::CreateParams(m_importer.GetDgnDb(), utf8Name, imageSource, image.GetWidth(), image.GetHeight()));
+    DictionaryModelR model = m_importer.GetDgnDb().GetDictionaryModel ();
+    DgnTexture      texture(DgnTexture::CreateParams(model, utf8Name, imageSource, image.GetWidth(), image.GetHeight()));
 
     if (texture.Insert(&status).IsNull() || DgnDbStatus::Success != status)
         {
@@ -706,8 +707,10 @@ BentleyStatus   MaterialFactory::Create (DgnMaterialId& idOut)
     {
     this->Convert ();
 
+    DictionaryModelR model = m_importer.GetDgnDb().GetDictionaryModel ();
+
     // create a DGN material
-    DgnMaterial dgnMaterial(DgnMaterial::CreateParams(m_importer.GetDgnDb(), m_paletteName, m_materialName));
+    DgnMaterial dgnMaterial(model, m_paletteName, m_materialName);
 
     // WIP - need a description?
     // Utf8String  description (m_dwgMaterial->GetDescription().c_str());

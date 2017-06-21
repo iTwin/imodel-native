@@ -44,7 +44,7 @@ WString ConverterApp::GetCommonCommandLineOptions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridge::CmdLineArgStatus ConverterApp::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[]) 
+iModelBridge::CmdLineArgStatus ConverterApp::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
     if (0 == wcscmp(argv[iArg], L"--unstableIds"))
         {
@@ -79,7 +79,7 @@ iModelBridge::CmdLineArgStatus ConverterApp::_ParseCommandLineArg(int iArg, int 
 
         BeFileName embedDir;
         BeFileName::FixPathName(embedDir, argValue.c_str());
-        
+
         _GetConverterParams().SetEmbedDir(embedDir);
         return CmdLineArgStatus::Success;
         }
@@ -221,11 +221,11 @@ BentleyStatus ConverterApp::GetEnv(BeFileName& fn, WCharCP envname)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BentleySystems  
+* @bsimethod                                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool GetV8DgnDllsRelativeDir(BentleyApi::BeFileNameR v8DllsRelativeDir, bool& isPowerplatformBased, int argc, WCharCP argv[])
-    {    
-    WChar tmpString[8*MAXFILELENGTH];    
+    {
+    WChar tmpString[8*MAXFILELENGTH];
     int argsNeeded = 0;
     for ( ; argc > 0 && argsNeeded <=2; argc--, argv++)
         {
@@ -237,9 +237,9 @@ static bool GetV8DgnDllsRelativeDir(BentleyApi::BeFileNameR v8DllsRelativeDir, b
 
         BeStringUtilities::Wcsncpy (tmpString, _countof (tmpString), thisArg);
         BeStringUtilities::Wcsupr (tmpString);
-       
+
         if (wcsncmp (tmpString, L"V8DLLSDIR=", 10) == 0)
-            {            
+            {
             v8DllsRelativeDir.assign (thisArg + 10);
             v8DllsRelativeDir.DropQuotes();
             v8DllsRelativeDir.AppendSeparator(v8DllsRelativeDir);
@@ -254,23 +254,23 @@ static bool GetV8DgnDllsRelativeDir(BentleyApi::BeFileNameR v8DllsRelativeDir, b
             }
         }
 
-    return false;
+    return !v8DllsRelativeDir.empty();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
     {
     BeAssert((nullptr != DgnPlatformLib::QueryHost()) && "framework must register the host");
-    
+
     BentleyApi::BeFileName v8DllsRelativeDir;
     bool isPowerplatformBased = false;
     if (GetV8DgnDllsRelativeDir(v8DllsRelativeDir, isPowerplatformBased, argc, argv))
         {
         _GetConverterParams().SetV8SdkRelativeDir(v8DllsRelativeDir, isPowerplatformBased);
         }
-   
+
     Converter::Initialize(_GetParams().GetLibraryDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv);
 
     // Resolve import config file.
@@ -297,7 +297,7 @@ BentleyStatus RootModelConverterApp::_Initialize(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::DetectDrawingsDirs() 
+void RootModelConverterApp::DetectDrawingsDirs()
     {
     if (m_params.GetDrawingsDirs().empty())
         return;
@@ -343,7 +343,7 @@ void RootModelConverterApp::_PrintUsage()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridge::CmdLineArgStatus RootModelConverterApp::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[]) 
+iModelBridge::CmdLineArgStatus RootModelConverterApp::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
     if (argv[iArg] == wcsstr(argv[iArg], L"--name-prefix="))
         {
@@ -367,9 +367,9 @@ iModelBridge::CmdLineArgStatus RootModelConverterApp::_ParseCommandLineArg(int i
         return CmdLineArgStatus::Success;
         }
 
-    if ( (0 == wcsncmp (argv[iArg], L"--DGN", 5)) || (0 == wcsncmp (argv[iArg], L"--dgn", 5)) || 
-            (0 == wcsncmp (argv[iArg], L"--v8i", 5)) || (0 == wcsncmp (argv[iArg], L"--V8I", 5)) || 
-            (0 == wcsncmp (argv[iArg], L"--V8DllsDir", 11)) || 
+    if ( (0 == wcsncmp (argv[iArg], L"--DGN", 5)) || (0 == wcsncmp (argv[iArg], L"--dgn", 5)) ||
+            (0 == wcsncmp (argv[iArg], L"--v8i", 5)) || (0 == wcsncmp (argv[iArg], L"--V8I", 5)) ||
+            (0 == wcsncmp (argv[iArg], L"--V8DllsDir", 11)) ||
             (0 == wcsncmp (argv[iArg],  L"--DebugCfg", 10)))
         {
         // these are handled by the configuration variable reading code.

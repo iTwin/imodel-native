@@ -188,7 +188,8 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
         /// <returns>DgnV8MirrorICSPlugin's window control</returns>
         public override System.Windows.Forms.Control GetWindowsControl (JobDefinition jd)
             {
-            return (System.Windows.Forms.Control)jd.ExtendedProperties[DocumentProcessorGuid];
+			return null;
+            // return (System.Windows.Forms.Control)jd.ExtendedProperties[DocumentProcessorGuid];
             }
 
 

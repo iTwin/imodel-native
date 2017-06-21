@@ -201,8 +201,17 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
             if (!outFile.EndsWith(".bim"))
                 outFile += ".bim";
 
-            string desc = "[" + asContext.JobDefinition.Name + "]";
-            //desc = asContext. ...?
+            DateTime startTime = DateTime.MinValue; // Will get all comments.  Set to the last modified date since the document last push to iModelHub
+            string[] comments =  Utility.GetDocumentComments (asContext, startTime);
+
+            string desc = null;
+            if (0 < comments.Length)
+                {
+                // Formating the comments as a number list.  We may not want to do this.  Makes sense the first time through with lots of comments.  Not so much later when there is only one comment.
+                for (int i = 0; i < comments.Length; i++)
+                    comments[i] = $"{i + 1}. {comments[i]}";
+                desc = String.Join (" ", comments);
+                }
 
             // Generate inputs to the mirror program.
             string rspFileName = jobWorkDir + "\\" + "bridgefwk.rsp";

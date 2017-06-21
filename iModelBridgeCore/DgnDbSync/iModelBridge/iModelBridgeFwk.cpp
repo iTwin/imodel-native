@@ -1,12 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Fwk/iModelBridgeFwk.cpp $
+|     $Source: iModelBridge/iModelBridgeFwk.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Windows.h>
-#include "iModelBridgeFwk.h"
+#if defined(_WIN32)
+#include <windows.h>
+#elif defined(__linux)
+#include <unistd.h>
+#endif
+
+#include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/iModelBridgeSacAdapter.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Logging/bentleylogging.h>
@@ -28,7 +33,6 @@ USING_NAMESPACE_BENTLEY_LOGGING
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 static int s_maxWaitForMutex = 60000;
-static bool s_quietAssertions = true;
 
 #if defined(__unix__)
 
@@ -49,7 +53,7 @@ T_iModelBridge_getInstance iModelBridgeFwk::JobDefArgs::LoadBridge()
 static void setDllSearchPathFor(BentleyApi::BeFileNameCR bridgeDllName)
     {
     BeFileName pathname(BeFileName::FileNameParts::DevAndDir, bridgeDllName);
-    
+
     ::SetDllDirectoryW(pathname.c_str());
 
     WString newPath(L"PATH=");
@@ -190,7 +194,7 @@ void iModelBridgeFwk::InitLogging()
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
         return;
         }
-        
+
     fprintf(stderr, "Logging.config.xml not specified. Activating default logging using console provider.\n");
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
     NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_TRACE);
@@ -207,8 +211,6 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
     fwkAssetsDirRaw.AppendToPath(L"..");
     fwkAssetsDirRaw.AppendToPath(L"..");
     fwkAssetsDirRaw.AppendToPath(L"assets");                                                            // we want:         blah/iModelBridgeFwk/assets
-    BeFileName::FixPathName(m_fwkAssetsDir, fwkAssetsDirRaw.c_str());
-    m_fwkAssetsDir.BeGetFullPathName();
 
     for (int iArg = 1; iArg < argc; ++iArg)
         {
@@ -245,7 +247,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--fwk", 5))
             {
             // Not a fwk argument. We will forward it to the bridge.
-            m_bargs.push_back(argv[iArg]);  // Keep the string alive 
+            m_bargs.push_back(argv[iArg]);  // Keep the string alive
             bargptrs.push_back(m_bargs.back().c_str());
             continue;
             }
@@ -307,12 +309,21 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
-
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-assetsDir="))
+            {
+            BeFileName assetsDir(getArgValueW(argv[iArg]));
+            if (assetsDir.DoesPathExist())
+                fwkAssetsDirRaw = assetsDir;
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
         return BSIERROR;
         }
-    
+
+    BeFileName::FixPathName(m_fwkAssetsDir, fwkAssetsDirRaw.c_str());
+    m_fwkAssetsDir.BeGetFullPathName();
+
     return BSISUCCESS;
     }
 
@@ -458,7 +469,7 @@ void iModelBridgeFwk::SaveNewModelIds()
     if (m_modelsInserted.empty())
         return;
 
-    FILE* fp = _wfopen(GetModelsFileName().c_str(), L"w+");
+    FILE* fp = fopen(GetModelsFileName().GetNameUtf8().c_str(), "w+");
     if (nullptr == fp)
         {
         BeAssert(false);
@@ -466,7 +477,7 @@ void iModelBridgeFwk::SaveNewModelIds()
         }
     for (auto mid : m_modelsInserted)
         {
-        fprintf(fp, "%llu\n", mid.GetValue());
+        fprintf(fp, "%" PRIu64 "\n", mid.GetValue());
         }
     fclose(fp);
     }
@@ -478,12 +489,13 @@ void iModelBridgeFwk::ReadNewModelIds()
     {
     BeAssert(m_modelsInserted.empty());
 
-    FILE* fp = _wfopen(GetModelsFileName().c_str(), L"r");
+    FILE* fp = fopen(GetModelsFileName().GetNameUtf8().c_str(), "r");
     if (nullptr == fp)
         return;
 
     uint64_t mid;
-    while (1 == fscanf(fp, "%llu\n", &mid))
+
+    while (1 == fscanf(fp, "%" SCNu64 "\n", &mid))
         {
         m_modelsInserted.push_back(DgnModelId(mid));
         }
@@ -495,7 +507,7 @@ void iModelBridgeFwk::ReadNewModelIds()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::DeleteNewModelIdsFile()
     {
-    _wunlink(GetModelsFileName().c_str());
+    unlink(GetModelsFileName().GetNameUtf8().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -554,7 +566,7 @@ void iModelBridgeFwk::CleanJobWorkdir()
 //    GetLogger().infov("Deleting existing files [%s/%s]", Utf8String(m_briefcaseName.GetDirectoryName()).c_str(), Utf8String(glob).c_str());
     BeDirectoryIterator::WalkDirsAndMatch(files, m_briefcaseName.GetDirectoryName(), glob.c_str(), false);
     for (auto const& file: files)
-        BeFileName::BeDeleteFile(file); 
+        BeFileName::BeDeleteFile(file);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -583,7 +595,7 @@ BentleyStatus iModelBridgeFwk::AssertPreConditions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::DoInitial()
     {
-    // *** 
+    // ***
 	// ***
 	// *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
 	// *** Talk to Sam Wilson if you need to make a change.
@@ -610,15 +622,15 @@ BentleyStatus iModelBridgeFwk::DoInitial()
 
     if (fileExists)
         {
-        // We have a db, but it's not a briefcase. 
-        // Since I'm in the Initial state, I know that a previous attempt to bootstrap a repository must have failed 
+        // We have a db, but it's not a briefcase.
+        // Since I'm in the Initial state, I know that a previous attempt to bootstrap a repository must have failed
         // while or after creating the local Db. (Otherwise, I'd be in the CreatedLocalDb state.)
         // Since there's a good chance that the local Db is corrupt, just delete it and start over.
         CleanJobWorkdir();
         }
-    
+
     // Maybe we just need to acquire a briefcase for an existing repository.
-    if (BSISUCCESS == Briefcase_AcquireBriefcase())     
+    if (BSISUCCESS == Briefcase_AcquireBriefcase())
         {
         SetState(BootstrappingState::HaveBriefcase);
         return BSISUCCESS;
@@ -627,9 +639,9 @@ BentleyStatus iModelBridgeFwk::DoInitial()
     //  Can't acquire a briefcase
     if (EffectiveServerError::iModelDoesNotExist != m_lastServerError)
         {
-        // Probably some kind of communications failure, or incorrect credentials. 
+        // Probably some kind of communications failure, or incorrect credentials.
         // This is a recoverable error. Stay in Initial state.
-        return BSIERROR; 
+        return BSIERROR;
         }
 
     //  Repository does not exist
@@ -639,12 +651,12 @@ BentleyStatus iModelBridgeFwk::DoInitial()
         return BSIERROR;
         }
 
-    //  
+    //
     //  We need to create a new repository.
-    //  
+    //
 
     //  Initialize the bridge to do the creation.
-    //  Note: iModelBridge::_Initialize will register domains, and some of them may be required. 
+    //  Note: iModelBridge::_Initialize will register domains, and some of them may be required.
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
 
@@ -655,7 +667,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
         // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
         return BSIERROR;
         }
-    
+
     auto rc = m_briefcaseDgnDb->SaveChanges();
     if (BeSQLite::BE_SQLITE_OK != rc)
         {
@@ -669,13 +681,13 @@ BentleyStatus iModelBridgeFwk::DoInitial()
         }
 
     BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
-    
+
     SaveNewModelIds();
     m_modelsInserted.clear();   // *** CLEAR, SO THAT WE TEST WRITE/READ CODE
 
     // Close the DgnDb that converter just created. The next states all start with a filename. Also, we
     // must be sure that all changes are flushed to disk.
-    m_briefcaseDgnDb = nullptr;  
+    m_briefcaseDgnDb = nullptr;
 
     SetState(BootstrappingState::CreatedLocalDb);
 
@@ -756,7 +768,7 @@ BentleyStatus iModelBridgeFwk::DoNewBriefcaseNeedsLocks()
 #endif
     if (m_modelsInserted.empty())
         ReadNewModelIds();
-    
+
 #ifdef DEBUG_BIM_BRIDGE
     BeAssert(check == m_modelsInserted);
 #endif
@@ -788,12 +800,12 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
         BentleyStatus status = BSISUCCESS;
         switch (state)
             {
-            case BootstrappingState::Initial:                   status = DoInitial(); break;           
+            case BootstrappingState::Initial:                   status = DoInitial(); break;
             case BootstrappingState::CreatedLocalDb:            status = DoCreatedLocalDb(); createdNewRepo = true; break;
             case BootstrappingState::CreatedRepository:         status = DoCreatedRepository(); break;
             case BootstrappingState::NewBriefcaseNeedsLocks:    status = DoNewBriefcaseNeedsLocks(); break;
             }
-        
+
         if (BSISUCCESS != status)
             return BSIERROR;
 
@@ -812,7 +824,7 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
-    {      
+    {
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
     params.m_briefcaseName = m_briefcaseName;
     params.SetReportFileName();
@@ -830,7 +842,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::LoadBridge()
-    {      
+    {
     auto getInstance = m_jobEnvArgs.LoadBridge();
     if (nullptr == getInstance)
         return BentleyStatus::ERROR;
@@ -849,8 +861,8 @@ BentleyStatus iModelBridgeFwk::LoadBridge()
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::InitBridge()
-    {      
-    SetBridgeParams(m_bridge->_GetParams()); 
+    {
+    SetBridgeParams(m_bridge->_GetParams());
 
     if (BentleyStatus::SUCCESS != m_bridge->_ParseCommandLine((int)m_bargptrs.size(), m_bargptrs.data()))
         {
@@ -915,14 +927,14 @@ int iModelBridgeFwk::Run0(int argc, WCharCP argv[])
     // The log on this machine may have messages from many bridge jobs.
     LOG.infov("Running bridge [%s] staging dir [%s]", m_jobEnvArgs.m_bridgeLibraryName.c_str(), Utf8String(m_jobEnvArgs.m_stagingDir).c_str());
 
-    // First of all, load the bridge. 
+    // First of all, load the bridge.
     // *** TRICKY: Do not call InitBridge until AFTER we acquire the briefcase (or decide to create a new DgnDb).
     if (BentleyStatus::SUCCESS != LoadBridge())
         return RETURN_STATUS_CONVERTER_ERROR;
 
-    // Initialize the DgnViewLib Host. 
+    // Initialize the DgnViewLib Host.
     iModelBridge::Params params;
-    SetBridgeParams(params); 
+    SetBridgeParams(params);
     iModelBridgeKnownLocationsAdmin::SetAssetsDir(params.GetAssetsDir()); // Note that we set up the host with the assets directory for the *the bridge*
     Dgn::iModelBridgeBimHost host(params.GetRepositoryAdmin(), m_bridge->_SupplySqlangRelPath());
     DgnViewLib::Initialize(host, true);
@@ -930,7 +942,7 @@ int iModelBridgeFwk::Run0(int argc, WCharCP argv[])
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
 
-    // *** 
+    // ***
 	// ***
 	// *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
 	// *** Talk to Sam Wilson if you need to make a change.
@@ -995,12 +1007,12 @@ int iModelBridgeFwk::Run0(int argc, WCharCP argv[])
         Briefcase_ReleaseSharedLocks();
         }
 
-#ifdef COMMENT_OUT 
-    // if we acquire shared locks up front, then we can fail fast if we can't get them. However, we will also 
+#ifdef COMMENT_OUT
+    // if we acquire shared locks up front, then we can fail fast if we can't get them. However, we will also
     // incur a performance penalty, even if there are no updates
     // to any shared models. All in all, it's better to let the briefcase manager detect the need for
     // such locks, along with all other locking requirements, and then try to acquire them at the end.
-    // Failure then will be more expensive -- we'll have to rollback and then retry the entire conversion later -- 
+    // Failure then will be more expensive -- we'll have to rollback and then retry the entire conversion later --
     // but this should be rare for a correctly written bridge that does not try to write to shared models.
     if (RepositoryStatus::Success != acquireSharedLocks(*m_briefcaseDgnDb))
         {
@@ -1018,7 +1030,7 @@ int iModelBridgeFwk::Run0(int argc, WCharCP argv[])
         }
 
     dbres = m_briefcaseDgnDb->SaveChanges();
-    
+
     if (BeSQLite::BE_SQLITE_OK != dbres)
         {
         m_briefcaseDgnDb->AbandonChanges();
@@ -1069,7 +1081,7 @@ void iModelBridgeFwk::RedirectStderr()
     BeFileName::BeDeleteFile(m_stderrFileName.c_str());
 
     //_wfreopen (m_stdoutFileName.c_str(), L"w+", stdout);
-    _wfreopen (m_stderrFileName.c_str(), L"w+", stderr);
+    freopen (m_stderrFileName.GetNameUtf8().c_str(), "w+", stderr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1184,16 +1196,3 @@ static DgnRevisionPtr createRevision(DgnDbR db)
     return revision;
     }
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int wmain (int argc, wchar_t const* argv[])
-    {
-    Dgn::iModelBridgeFwk app;
-
-    if (BentleyApi::BSISUCCESS != app.ParseCommandLine(argc, argv))
-        return 1;
-
-    return app.Run(argc, argv);
-    }

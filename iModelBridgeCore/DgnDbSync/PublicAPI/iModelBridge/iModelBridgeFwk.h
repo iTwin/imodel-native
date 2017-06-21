@@ -1,12 +1,19 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Fwk/iModelBridgeFwk.h $
+|     $Source: PublicAPI/iModelBridge/iModelBridgeFwk.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+
+#ifdef __IMODEL_BRIDGE_BUILD__
+    #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
+#else
+    #define IMODEL_BRIDGE_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 
 #include <iModelBridge/iModelBridge.h>
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -35,7 +42,7 @@ struct iModelBridgeFwk
     //                                                    |
     //                                                   no:
     //                                                    v
-    //                                                  *Initial*     
+    //                                                  *Initial*
     //                                                have briefcase?
     //                                              /               \
     //                                            no:               yes:
@@ -81,7 +88,7 @@ struct iModelBridgeFwk
 
     enum class SyncState
         {
-        Initial = 0,                // Initial state: we may or may not have server revisions to pull or local Txns to push 
+        Initial = 0,                // Initial state: we may or may not have server revisions to pull or local Txns to push
         Pushed = 1                  // PullMergePush succeeded. We still hold all locks.
         // After we release our shared locks, we return to Initial
         };
@@ -196,14 +203,14 @@ protected:
     BentleyStatus InitBridge();
 
 public:
-    iModelBridgeFwk();
-    ~iModelBridgeFwk();
+    IMODEL_BRIDGE_EXPORT iModelBridgeFwk();
+    IMODEL_BRIDGE_EXPORT ~iModelBridgeFwk();
 
     //! wmain should call this first
-    BentleyStatus ParseCommandLine(int argc, WCharCP argv[]);
+    IMODEL_BRIDGE_EXPORT BentleyStatus ParseCommandLine(int argc, WCharCP argv[]);
 
     //! wmain should call this to run the bridge, connected to iModelHub.
-    int Run(int argc, WCharCP argv[]);
+    IMODEL_BRIDGE_EXPORT int Run(int argc, WCharCP argv[]);
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
     bool GetCreateRepositoryIfNecessary() const {return m_jobEnvArgs.m_createRepositoryIfNecessary;}

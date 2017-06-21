@@ -1326,7 +1326,8 @@ Converter::Converter(Params const& params)
         m_addDebugDgnCodes = true;
 
     ParseModelConfig(m_config);
-    Converter::InitializeDwgSettings (this);
+    if (!params.GetIsPowerplatformBased())
+        Converter::InitializeDwgSettings (this);
     }
 
 /*---------------------------------------------------------------------------------**//**

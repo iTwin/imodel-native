@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Fwk/Briefcase.cpp $
+|     $Source: iModelBridge/Briefcase.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "iModelBridgeFwk.h"
+#include <iModelBridge/iModelBridgeFwk.h>
 #include "DgnDbServerClientUtils.h"
 #include <WebServices/iModelHub/Client/Client.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
@@ -82,7 +82,7 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--server", 8))
             {
             // Not a fwk argument. We will forward it to the bridge.
-            m_bargs.push_back(argv[iArg]);  // Keep the string alive 
+            m_bargs.push_back(argv[iArg]);  // Keep the string alive
             bargptrs.push_back(m_bargs.back().c_str());
             continue;
             }
@@ -125,7 +125,7 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
         fwprintf(stderr, L"%ls: unrecognized server argument\n", argv[iArg]);
         return BSIERROR;
         }
-    
+
     return BSISUCCESS;
     }
 
@@ -139,13 +139,13 @@ BentleyStatus iModelBridgeFwk::ServerArgs::Validate(int argc, WCharCP argv[])
         GetLogger().fatal("missing project name");
         return BSIERROR;
         }
-        
+
     if (m_repositoryName.empty())
         {
         GetLogger().fatal("missing repository name");
         return BSIERROR;
         }
-        
+
     if (m_credentials.GetUsername().empty() || m_credentials.GetPassword().empty())
         {
         GetLogger().fatal("missing server username or password");
@@ -250,7 +250,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_CreateRepository()
         GetLogger().info(m_clientUtils->GetLastError().GetMessage().c_str());
         return BSISUCCESS;
         }
-        
+
     GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
     return BSIERROR;
     }
@@ -387,7 +387,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     {
     BeAssert((nullptr != DgnPlatformLib::QueryHost()) && "framework must initialize the host before calling this.");
 
-    // Note that we use the framework's asset directory, which is different from the bridge's assets dir. 
+    // Note that we use the framework's asset directory, which is different from the bridge's assets dir.
     BeFileName assetsDir = m_jobEnvArgs.m_fwkAssetsDir;
 
     // *** TRICKY: We are *adding*  WSClient's sqlang files to the set of sqlang files that were *already registered* for the bridge (by the host)
@@ -396,7 +396,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     auto wsclientSqlangFiles = BeSQLite::L10N::SqlangFiles(wsclientSqlangDir);
     auto bridgeSqlangFiles = T_HOST._SupplySqlangFiles();
     DgnClientFx::DgnClientFxL10N::Initialize(bridgeSqlangFiles, wsclientSqlangFiles);
-    
+
     m_lastServerError = EffectiveServerError::Unknown;
 
     Http::HttpClient::Initialize(assetsDir);
@@ -441,13 +441,13 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireExclusiveLocks()
             continue;
         req.Insert(*model, LockLevel::Exclusive);
         }
-        
+
     if (BSISUCCESS != m_clientUtils->AcquireLocks(req, *db))
         {
         GetLogger().info(m_clientUtils->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
-        
+
     m_modelsInserted.clear();
     return BSISUCCESS;
     }

@@ -983,7 +983,7 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus      ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a none database-resident entity in a desired block (must be a valid block)
     DGNDBSYNC_EXPORT BentleyStatus      ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId, Utf8StringCR desiredCode);
-    DGNDBSYNC_EXPORT DgnCode            CreateCode (Utf8StringCR value, Utf8StringCR nameSpace) const;
+    DGNDBSYNC_EXPORT DgnCode            CreateCode (Utf8StringCR value) const;
     
     };  // DwgImporter
 

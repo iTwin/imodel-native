@@ -162,11 +162,11 @@ BentleyStatus   DwgImporter::InitSheetListModel ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode         DwgImporter::CreateCode (Utf8StringCR value, Utf8StringCR nameSpace) const
+DgnCode         DwgImporter::CreateCode (Utf8StringCR value) const
     {
     auto auth = m_dgndb->CodeSpecs().GetCodeSpec(m_businessKeyCodeSpecId);
     BeDataAssert(auth.IsValid());
-    return auth.IsValid() ? auth->CreateCode(value, nameSpace) : DgnCode();
+    return auth.IsValid() ? auth->CreateCode(value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -9,7 +9,6 @@
 #include <VersionedDgnV8Api/DgnPlatform/LevelTypes.h>
 #include "GeomTestHelper.h"
 
-
 #define _QUOTEME(x) _CRT_WIDE( #x)
 #define TMPNAME(x) _QUOTEME(x)
 
@@ -143,7 +142,24 @@ BentleyStatus   DimensionTests::CreateNote(EditElementHandleR leader, EditElemen
     points.push_back(point);
     return DgnV8Api::NoteCellHeaderHandler::CreateNote(noteElem, leader, *text, *dimStyle, v8editor.m_defaultModel->Is3d(), *v8editor.m_defaultModel, points);
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void verifyview(DgnDbPtr db,BentleyApi::RefCountedCPtr<Sheet::ViewAttachment> viewattachment,double scale , BentleyApi::RefCountedCPtr<DrawingModel> drawingmodel)
+{
+    // Scaled copy ViewAttachment of Drawing model attached to sheet in bim world
+    ASSERT_EQ(scale, viewattachment->GetScale());
+    DgnViewId viewid1 = viewattachment->GetAttachedViewId();
+    ASSERT_TRUE(viewid1.IsValid());
+    BentleyApi::RefCountedCPtr<DrawingViewDefinition> viewdef = db->Elements().Get<DrawingViewDefinition>(viewid1);
+    DgnModelId modeid = viewdef->GetBaseModelId();
+    ASSERT_TRUE(modeid.IsValid());
+    DgnModelCPtr model = db->Models().GetModel(modeid);
+    ASSERT_TRUE(model.IsValid());
+    ASSERT_TRUE(model->IsDrawingModel());
+    ASSERT_TRUE(model->GetModelId() == drawingmodel->GetModelId());
+}
+/*+---------------+---------------+---------------+---------------+---------------+------*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -176,10 +192,12 @@ TEST_F (DimensionTests, Note)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DimensionTests, AnnotationstoSheet)
+TEST_F(DimensionTests, NotetoSheet)
     {
     LineUpFiles(L"AnnotationstoSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
+    DgnV8Api::EditElementHandle noteElem;
+    DgnV8Api::EditElementHandle leader;
     m_wantCleanUp = false;
     if (true)
         {
@@ -190,8 +208,7 @@ TEST_F(DimensionTests, AnnotationstoSheet)
         SetUpStyles(v8editor);
         Bentley::DgnModelP threeDModel = v8editor.m_defaultModel;
         ASSERT_TRUE(threeDModel->Is3d());
-        DgnV8Api::EditElementHandle noteElem;
-        DgnV8Api::EditElementHandle leader;
+
         DgnV8Api::NoteCellHeaderHandler*  m_noteObj;
         ElementRefP         m_oldRef;
         double const EPSILON = 0.000000001;
@@ -262,8 +279,7 @@ TEST_F(DimensionTests, AnnotationstoSheet)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        db->Schemas().CreateClassViewsInDb();
-        countModels(*db, 2, 3); 
+        countModels(*db, 2, 3);
 
         countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 3);
         countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
@@ -279,6 +295,19 @@ TEST_F(DimensionTests, AnnotationstoSheet)
         countElements(*drawingmodel, 3);
         countElementsInModelByClass(*drawingmodel, getBisClassId(*db, "DrawingGraphic"), 3);
 
+        BentleyApi::Bstdcxx::bvector<DgnElementId>idlist;
+        idlist = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingGraphic), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList<DgnElementId>();
+        BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic1 = db->Elements().Get<DrawingGraphic>(idlist[0]);
+        ASSERT_TRUE(Dragraphic1.IsValid());
+        ASSERT_TRUE(Dragraphic1->GetPlacement().GetElementBox().IsEqual(ElementAlignedBox2d(0, 0, 1, 0)));
+
+        BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic2 = db->Elements().Get<DrawingGraphic>(idlist[1]);
+        ASSERT_TRUE(Dragraphic2.IsValid());
+        ASSERT_TRUE(Dragraphic2->GetPlacement().GetElementBox().IsEqual(ElementAlignedBox2d(0.0454, -0.0298, 0.1135, 0.0302), 1.0e1));
+
+        BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic3 = db->Elements().Get<DrawingGraphic>(idlist[2]);
+        ASSERT_TRUE(Dragraphic3.IsValid());
+        ASSERT_TRUE(Dragraphic3->GetPlacement().GetElementBox().IsEqual(ElementAlignedBox2d(0.01, 0, 0.05, 0), 1.0e-10));
         Sheet::ElementCPtr sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
         ASSERT_TRUE(sheet.IsValid());
         Sheet::ModelPtr sheetModel = sheet->GetSub<Sheet::Model>();
@@ -286,5 +315,14 @@ TEST_F(DimensionTests, AnnotationstoSheet)
         //Count elements on sheet 
         countElements(*sheetModel, 4);
         countElementsInModelByClass(*sheetModel, getBisClassId(*db, "ViewAttachment"), 4);
-        }
+        //First Scaled Drawing attacment 
+        idlist = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_ViewAttachment), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList<DgnElementId>();
+        BentleyApi::RefCountedCPtr<Sheet::ViewAttachment> viewattachment1 = db->Elements().Get<Sheet::ViewAttachment>(idlist[0]);
+        ASSERT_TRUE(viewattachment1.IsValid());
+        verifyview(db,viewattachment1, 0.020, drawingmodel);
+        //Second Scaled Drawing attacment 
+        BentleyApi::RefCountedCPtr<Sheet::ViewAttachment> viewattachment2 = db->Elements().Get<Sheet::ViewAttachment>(idlist[1]);
+        ASSERT_TRUE(viewattachment2.IsValid());
+        verifyview(db, viewattachment2, 0.0125, drawingmodel);
+       }
     }

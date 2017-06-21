@@ -34,7 +34,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" >
+  <PropertyGroup Label="UserMacros">
     <OutDir>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8ConverterTests</OutDir>
     <IntDir>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8ConverterTests</IntDir>
     <IntermediateOutputPath>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8ConverterTests</IntermediateOutputPath>
@@ -80,6 +80,7 @@
     <ClCompile Include="RasterTests.cpp" />
     <ClCompile Include="SyncInfoReader.cpp" />
     <ClCompile Include="TagTests.cpp" />
+    <ClCompile Include="TextBlockTests.cpp" />
     <ClCompile Include="V8AttachmentTests.cpp" />
     <ClCompile Include="V8FileEditor.cpp" />
   </ItemGroup>

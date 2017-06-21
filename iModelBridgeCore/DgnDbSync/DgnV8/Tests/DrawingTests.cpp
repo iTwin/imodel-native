@@ -25,7 +25,19 @@ void AddAttachment(BentleyApi::BeFileNameCR attachmentFileName, DgnV8ModelP v8mo
     ASSERT_TRUE(nullptr != attachment);        
     ASSERT_EQ( BentleyApi::SUCCESS, attachment->WriteToModel());
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId FindElementByCodeValue(DgnDbR db, Utf8CP className , Utf8CP codeValue)
+    {
+    DgnClassId classId= db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, className);
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId from " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECClassId=? AND CodeValue=?");
+    stmt->BindId(1, classId);
+    stmt->BindText(2, codeValue, BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnElementId();
+    return stmt->GetValueId<DgnElementId>(0);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -282,18 +294,23 @@ TEST_F(DrawingTests, Sheet_SheetAttachment)
         ASSERT_TRUE(drawingModel.IsValid());
         countElements(*drawingModel, 1);
 
-        BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
-        idlist=db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SheetModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
-        ASSERT_EQ(3,idlist.size());
-        Sheet::ModelPtr sheetmodel1 = db->Models().Get<Sheet::Model>(idlist[0]);
+        auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
+        ASSERT_TRUE(ele1.IsValid());
+        Sheet::ModelPtr sheetmodel1 = ele1->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel1.IsValid());
         countElements(*sheetmodel1, 3);
         countElementsInModelByClass(*sheetmodel1, getBisClassId(*db, "ViewAttachment"), 2);
-        Sheet::ModelPtr sheetmodel2 = db->Models().Get<Sheet::Model>(idlist[1]);
+
+        auto ele2 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet2"));
+        ASSERT_TRUE(ele2.IsValid());
+        Sheet::ModelPtr sheetmodel2 = ele2->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel2.IsValid());
         countElements(*sheetmodel2, 2);
         countElementsInModelByClass(*sheetmodel2, getBisClassId(*db, "ViewAttachment"), 1);
-        Sheet::ModelPtr sheetmodel3 = db->Models().Get<Sheet::Model>(idlist[2]);
+        auto ele3 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet3"));
+        ASSERT_TRUE(ele3.IsValid());
+
+        Sheet::ModelPtr sheetmodel3 = ele3->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel3.IsValid());
         countElements(*sheetmodel3, 1);
         countElementsInModelByClass(*sheetmodel3, getBisClassId(*db, "ViewAttachment"), 0);
@@ -604,10 +621,9 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 6);
         countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 5);
 
-        BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
-        idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SheetModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
-        ASSERT_EQ(2, idlist.size());
-        Sheet::ModelPtr sheetmodel1 = db->Models().Get<Sheet::Model>(idlist[0]);
+        auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
+        ASSERT_TRUE(ele1.IsValid());
+        Sheet::ModelPtr sheetmodel1 = ele1->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel1.IsValid());
         Sheet::ElementCPtr sheet1 = db->Elements().Get<Sheet::Element>(sheetmodel1->GetModeledElementId());
         ASSERT_TRUE(sheet1.IsValid());
@@ -618,7 +634,9 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         //when no relationshipfound the scale should be 1
         ASSERT_EQ(1,sheet1->GetScale());
         countElementsInModelByClass(*sheetmodel1, getBisClassId(*db, "ViewAttachment"), 5);
-        Sheet::ModelPtr sheetmodel2 = db->Models().Get<Sheet::Model>(idlist[1]);
+        auto ele2 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet2"));
+        ASSERT_TRUE(ele2.IsValid());
+        Sheet::ModelPtr sheetmodel2 = ele2->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel2.IsValid());
         Sheet::ElementCPtr sheet2 = db->Elements().Get<Sheet::Element>(sheetmodel2->GetModeledElementId());
         ASSERT_TRUE(sheet2.IsValid());
@@ -766,15 +784,17 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
         ASSERT_TRUE(drawingModel.IsValid());
         countElements(*drawingModel, 1);
 
-        BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
-        idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SheetModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
-        ASSERT_EQ(2, idlist.size());
-        Sheet::ModelPtr sheetmodel1 = db->Models().Get<Sheet::Model>(idlist[0]);
+
+        auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
+        ASSERT_TRUE(ele1.IsValid());
+        Sheet::ModelPtr sheetmodel1 = ele1->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel1.IsValid());
         countElements(*sheetmodel1, 1);
         countElementsInModelByClass(*sheetmodel1, getBisClassId(*db, "ViewAttachment"), 1);
-        Sheet::ModelPtr sheetmodel2 = db->Models().Get<Sheet::Model>(idlist[1]);
-        ASSERT_TRUE(sheetmodel2.IsValid());
+
+        auto ele2 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet2"));
+        ASSERT_TRUE(ele2.IsValid());
+        Sheet::ModelPtr sheetmodel2 = ele2->GetSub<Sheet::Model>();
         countElements(*sheetmodel2, 2);
         countElementsInModelByClass(*sheetmodel2, getBisClassId(*db, "ViewAttachment"), 2);
         }
@@ -824,18 +844,22 @@ TEST_F(DrawingTests, AttachDwg)
         countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 6);
         countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 4);
         // 2 sheets from DWG file and 1 sheet that we created in dgn fle
-        BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
-        idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SheetModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
-        ASSERT_EQ(3, idlist.size());
-        Sheet::ModelPtr sheetmodel1 = db->Models().Get<Sheet::Model>(idlist[0]);
+        auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
+        ASSERT_TRUE(ele1.IsValid());
+        Sheet::ModelPtr sheetmodel1 = ele1->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel1.IsValid());
         countElementsInModelByClass(*sheetmodel1, getBisClassId(*db, "ViewAttachment"), 1);
-        Sheet::ModelPtr sheetmodel2 = db->Models().Get<Sheet::Model>(idlist[1]);
+        auto ele2 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "Layout1"));
+        ASSERT_TRUE(ele2.IsValid());
+        Sheet::ModelPtr sheetmodel2 = ele2->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel2.IsValid());
         countElementsInModelByClass(*sheetmodel2, getBisClassId(*db, "ViewAttachment"), 1);
-        Sheet::ModelPtr sheetmodel3 = db->Models().Get<Sheet::Model>(idlist[2]);
+        auto ele3 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "Layout2"));
+        ASSERT_TRUE(ele3.IsValid());
+        Sheet::ModelPtr sheetmodel3 = ele3->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel3.IsValid());
         countElementsInModelByClass(*sheetmodel3, getBisClassId(*db, "ViewAttachment"), 1);
+        BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
         idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
         ASSERT_EQ(2, idlist.size());
         auto physicalmodel1 = db->Models().GetModel(idlist[0]);
@@ -916,5 +940,212 @@ TEST_F(DrawingTests, AttachNameViewtoSheet)
         ASSERT_TRUE(sheetModel.IsValid());
         countElements(*sheetModel, 1);
         countElementsInModelByClass(*sheetModel, getBisClassId(*db, "ViewAttachment"), 1);
+        }
+    }
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Ridha.Malik                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DrawingTests, MultipleSheets_WithNoAttachedModels)
+    {
+    LineUpFiles(L"MultipleSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
+    DgnV8Api::ElementId eid;
+    if (true)
+       {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::DgnModelStatus modelStatus;
+
+        // Create a SheetModel1 ...
+        Bentley::DgnModelP SheetModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        // Create a SheetModel2 ...
+        Bentley::DgnModelP SheetModel2 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet2", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        // Create a SheetModel3 ...
+        Bentley::DgnModelP SheetModel3 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet3", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.Save();
+        }
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+       {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        countModels(*db, 3, 3);
+        ASSERT_EQ(3 , db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Sheet)).BuildIdList<DgnElementId>().size());
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DrawingTests, Attachments_With2dRootModel)
+    {
+    LineUpFiles(L"Attachments_With2dRootModel.ibim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
+    m_wantCleanUp = false;
+    DgnV8Api::ElementId eid;
+    if (true)
+       {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::DgnModelStatus modelStatus;
+        Bentley::DgnModelP twoDModel = v8editor.m_defaultModel;
+
+        // Create a DrawingModel1 ...
+        Bentley::DgnModelP DrawingModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"drawing1", DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.AddLine(&eid, DrawingModel1);
+        // Create a DrawingModel2 ...
+        Bentley::DgnModelP DrawingModel2 = v8editor.m_file->CreateNewModel(&modelStatus, L"drawing2", DgnV8Api::DgnModelType:: Drawing, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        DgnV8Api::EditElementHandle eeh;
+        v8editor.CreateArc(eeh ,TRUE ,DrawingModel2);
+        // Create a DrawingModel3 ...
+        Bentley::DgnModelP DrawingModel3 = v8editor.m_file->CreateNewModel(&modelStatus, L"drawing3", DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.AddLine(&eid, DrawingModel3);
+        // and attach the 2D drawing1 as a reference to the default 2d rootmodel 
+        DgnV8Api::DgnAttachment* attachment1 = NULL;
+        AddAttachment(m_v8FileName, twoDModel, L"drawing1" ,attachment1);
+        attachment1->SetNestDepth(1);
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment1->WriteToModel());
+        // and attach the 2D drawing1 as a reference to the default 2d rootmodel 
+        DgnV8Api::DgnAttachment* attachment2 = NULL;
+        AddAttachment(m_v8FileName, twoDModel, L"drawing2", attachment2);
+        attachment2->SetNestDepth(1);
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment2->WriteToModel());
+        // and attach the 2D Drawing3 as a reference to the default 2d rootmodel 
+        DgnV8Api::DgnAttachment* attachment3 = NULL;
+        AddAttachment(m_v8FileName, twoDModel, L"drawing3", attachment3);
+        attachment3->SetNestDepth(2);
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment3->WriteToModel());
+        v8editor.Save();
+        }
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+       {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        countModels(*db, 4, 2);
+        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
+        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
+        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
+
+        ASSERT_EQ(4, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+        ASSERT_EQ(4, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+
+        DgnElementCPtr ele= db->Elements().GetElement(FindElementByCodeValue(*db, BIS_CLASS_Drawing, "Test2d"));
+        ASSERT_TRUE(ele.IsValid());
+        auto eleModel = ele->GetSub<DrawingModel>();
+        ASSERT_TRUE(eleModel.IsValid());
+        countElements(*eleModel, 3);
+        //There should be three DrawingGrapic in total maps on on root2dmodel
+        countElementsInModelByClass(*eleModel, getBisClassId(*db, "DrawingGraphic"), 3);
+      }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DrawingTests, Cyclic2dModels)
+    {
+    LineUpFiles(L"cyclic2dModels.ibim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
+    m_wantCleanUp = false;
+    DgnV8Api::ElementId eid;
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::DgnModelStatus modelStatus;
+        Bentley::DgnModelP twoDModel = v8editor.m_defaultModel;
+
+        // Create a DrawingModel1 ...
+        Bentley::DgnModelP DrawingModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"drawing1", DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.AddLine(&eid, DrawingModel1);
+
+        // and attach the 2D rootmodel as a reference to the 2D Drawing1
+        DgnV8Api::DgnAttachment* attachment1 = NULL;
+        AddAttachment(m_v8FileName, DrawingModel1, twoDModel->GetModelName(), attachment1);
+        attachment1->SetNestDepth(1);
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment1->WriteToModel());
+        // and attach the 2D drawing1 as a reference to the 2D rootmodel
+        DgnV8Api::DgnAttachment* attachment2 = NULL;
+        AddAttachment(m_v8FileName, twoDModel, L"Drawing1", attachment2);
+        attachment2->SetNestDepth(1);
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment2->WriteToModel());
+        v8editor.Save();
+        }
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        db->Schemas().CreateClassViewsInDb();
+        countModels(*db, 2, 2);
+        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
+    {
+    LineUpFiles(L"Cyclic2dModels_AttachToSheet.ibim", L"Test2d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
+    DgnV8Api::ElementId eid;
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::DgnModelStatus modelStatus;
+        Bentley::DgnModelP twoDModel = v8editor.m_defaultModel;
+
+        // Create a DrawingModel1 ...
+        Bentley::DgnModelP DrawingModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"drawing1", DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.AddLine(&eid, DrawingModel1);
+        // Create a SheetModel1 ...
+        Bentley::DgnModelP SheetModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        // and attach the 2D rootmodel as a reference to the 2D Drawing1
+        DgnV8Api::DgnAttachment* attachment1 = NULL;
+        AddAttachment(m_v8FileName, DrawingModel1, twoDModel->GetModelName(), attachment1);
+        attachment1->SetNestDepth(1);
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment1->WriteToModel());
+        // and attach the 2D drawing1 as a reference to the 2D rootmodel
+        DgnV8Api::DgnAttachment* attachment2 = NULL;
+        AddAttachment(m_v8FileName, twoDModel, L"Drawing1", attachment2);
+        attachment2->SetNestDepth(1);
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment2->WriteToModel());
+        // and attach the 2D rootmodel as a reference to the sheet
+        DgnV8Api::DgnAttachment* attachment3 = NULL;
+        AddAttachment(m_v8FileName, SheetModel1, twoDModel->GetModelName(), attachment3);
+        attachment3->SetNestDepth(1);
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment3->WriteToModel());
+        v8editor.Save();
+        }
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        countModels(*db, 3, 2);// 2 drawing and 1 sheet
+        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 4);
+        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
+        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 4);
+        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+
+        DgnElementCPtr ele = db->Elements().GetElement(FindElementByCodeValue(*db, BIS_CLASS_Drawing, "Test2d"));
+        ASSERT_TRUE(ele.IsValid());
+        auto eleModel = ele->GetSub<DrawingModel>();
+        ASSERT_TRUE(eleModel.IsValid());
+        countElements(*eleModel, 1);
+        //There should be 1 DrawingGrapic in toatal maps on  on root2dmodel
+        countElementsInModelByClass(*eleModel, getBisClassId(*db, "DrawingGraphic"), 1);
+        auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
+        ASSERT_TRUE(ele1.IsValid());
+        Sheet::ModelPtr sheetmodel1 = ele1->GetSub<Sheet::Model>();
+        countElements(*sheetmodel1, 2);
+        countElementsInModelByClass(*sheetmodel1, getBisClassId(*db, "ViewAttachment"), 2);
         }
     }

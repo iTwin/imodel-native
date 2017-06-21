@@ -4,7 +4,7 @@
 
     <Part Name="DgnDb0601Assemblies" BentleyBuildMakeFile="BimTeleporter/DgnDb0601AssembliesPrewire.mke">
         <SdkSource>DgnClientSdk-Minimal-Winx64-DgnDb</SdkSource>
-        <SubPart PartName="google_v8-Windows" PartFile="google_v8_5_7_wip" Repository="Thirdparty-google_v8_5_7_wip"/>
+        <!-- <SubPart PartName="google_v8-Windows" PartFile="google_v8_5_7_wip" Repository="Thirdparty-google_v8_5_7_wip"/> -->
         <Bindings>
             <Assemblies ProductDirectoryName="DgnDbAssemblies" Required="false">
                 Delivery/*.dll,

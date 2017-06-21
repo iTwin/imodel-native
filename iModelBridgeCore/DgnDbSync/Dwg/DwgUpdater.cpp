@@ -113,7 +113,7 @@ BentleyStatus   DwgUpdater::_OnUpdateLayer (DgnCategoryId& id, DwgDbLayerTableRe
 
         if (!name.EqualsI(categoryCode.GetValue()))
             {
-            categoryCode = DgnCode (categoryCode.GetCodeSpecId(), name, categoryCode.GetScope());
+            categoryCode = DgnCode (categoryCode.GetCodeSpecId(), categoryCode.GetScopeElementId(), name);
             writeEl->SetCode (categoryCode);
             changed = true;
             }
