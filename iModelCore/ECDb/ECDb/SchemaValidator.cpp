@@ -79,7 +79,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
                 continue; 
                 }
 
-            issueReporter.Report("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
+            issueReporter.Report("ECClass '%s' has invalid base class: An abstract class must not have a non-abstract base class.",
                               ecClass.GetFullName());
             return false;
             }
@@ -101,7 +101,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
                 continue;
                 }
 
-            issueReporter.Report("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported.",
+            issueReporter.Report("ECClass '%s' has multiple base classes. Multi-inheritance is not supported. Use mixins instead.",
                           ecClass.GetFullName());
             return false;
             }
