@@ -182,7 +182,7 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(ECSchemaCR schema)
     for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : references)
         {
         ECSchemaCP reference = kvPair.second.get();
-        ECSchemaId referenceId = SchemaPersistenceHelper::GetSchemaId(m_ecdb, reference->GetName().c_str());
+        ECSchemaId referenceId = SchemaPersistenceHelper::GetSchemaId(m_ecdb, reference->GetName().c_str(), SchemaLookupMode::ByName);
         if (!referenceId.IsValid())
             {
             BeAssert(false && "BuildDependencyOrderedSchemaList used by caller should have ensured that all references are already imported");
@@ -1723,7 +1723,7 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(ReferenceChanges& referenceCh
                 return ERROR;
                 }
 
-            ECSchemaId referenceSchemaId = SchemaPersistenceHelper::GetSchemaId(m_ecdb, oldRef.GetName().c_str());
+            ECSchemaId referenceSchemaId = SchemaPersistenceHelper::GetSchemaId(m_ecdb, oldRef.GetName().c_str(), SchemaLookupMode::ByName);
             Statement stmt;
             if (stmt.Prepare(m_ecdb, "DELETE FROM ec_SchemaReference WHERE SchemaId=? AND ReferencedSchemaId=?") != BE_SQLITE_OK)
                 return ERROR;
@@ -1764,7 +1764,7 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(ReferenceChanges& referenceCh
                 return ERROR;
                 }
 
-            ECSchemaId referenceSchemaId = SchemaPersistenceHelper::GetSchemaId(m_ecdb, newRef.GetName().c_str());
+            ECSchemaId referenceSchemaId = m_ecdb.Schemas().GetReader().GetSchemaId(newRef.GetName(), SchemaLookupMode::ByName);
             Statement stmt;
             if (stmt.Prepare(m_ecdb, "INSERT INTO ec_SchemaReference(SchemaId, ReferencedSchemaId) VALUES (?,?)") != BE_SQLITE_OK)
                 return ERROR;
@@ -2493,7 +2493,7 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
             return ERROR;
             }
         
-        if (SchemaPersistenceHelper::ContainsSchemaWithAlias(m_ecdb, schemaChange.GetAlias().GetNew().Value().c_str()))
+        if (m_ecdb.Schemas().GetReader().ContainsSchema(schemaChange.GetAlias().GetNew().Value(), SchemaLookupMode::ByAlias))
             {
             Issues().Report("ECSchema Upgrade failed. ECSchema %s: Alias is already used by another existing ECSchema.",
                                       oldSchema.GetFullSchemaName().c_str());

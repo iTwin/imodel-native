@@ -129,27 +129,32 @@ struct SchemaReader final
         explicit SchemaReader(ECDbCR ecdb) :m_ecdb(ecdb), m_systemSchemaHelper(ecdb) {}
         ~SchemaReader() {}
 
+        bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode) const { return GetSchemaId(schemaNameOrAlias, mode).IsValid(); }
         ECN::ECSchemaCP GetSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECSchemaId GetSchemaId(ECN::ECSchemaCR) const;
+        ECN::ECSchemaId GetSchemaId(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetSchemaId(m_ecdb, schemaNameOrAlias.c_str(), mode); }
+        Utf8String GetSchemaName(ECN::ECSchemaId schemaId) const { return SchemaPersistenceHelper::GetSchemaName(m_ecdb, schemaId); }
 
         ECN::ECClassCP GetClass(ECN::ECClassId) const;
         ECN::ECClassId GetClassId(ECN::ECClassCR) const;
         ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode) const;
 
-        ECN::ECEnumerationCP GetEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
+        ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaName, Utf8StringCR enumName, SchemaLookupMode) const;
         ECN::ECEnumerationId GetEnumerationId(ECN::ECEnumerationCR) const;
 
-        ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
+        ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaName, Utf8StringCR koqName, SchemaLookupMode) const;
         ECN::KindOfQuantityId GetKindOfQuantityId(ECN::KindOfQuantityCR) const;
 
-        ECN::PropertyCategoryCP GetPropertyCategory(Utf8CP schemaName, Utf8CP catName) const;
+        ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaName, Utf8StringCR catName, SchemaLookupMode) const;
         ECN::PropertyCategoryId GetPropertyCategoryId(ECN::PropertyCategoryCR) const;
 
         ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR) const;
+        ECN::ECPropertyId GetPropertyId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, Utf8StringCR propertyName, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetPropertyId(m_ecdb, schemaNameOrAlias.c_str(), className.c_str(), propertyName.c_str(), mode); }
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
 
         ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
+        static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem"}; }
 
         void ClearCache() const;
     };

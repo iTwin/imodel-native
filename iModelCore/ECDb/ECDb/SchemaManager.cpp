@@ -241,7 +241,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
 
         if (schema->HasId())
             {
-            ECSchemaId id = SchemaPersistenceHelper::GetSchemaId(m_ecdb, schema->GetName().c_str());
+            ECSchemaId id = GetReader().GetSchemaId(schema->GetName(), SchemaLookupMode::ByName);
             if (!id.IsValid() || id != schema->GetId())
                 {
                 m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
@@ -321,11 +321,11 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP SchemaManager::GetSchema(Utf8CP schemaName, bool loadSchemaEntities) const
+ECSchemaCP SchemaManager::GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode mode) const
     {
     BeMutexHolder lock(m_mutex);
 
-    const ECSchemaId schemaId = SchemaPersistenceHelper::GetSchemaId(GetECDb(), schemaName);
+    const ECSchemaId schemaId = GetReader().GetSchemaId(schemaNameOrAlias.c_str(), mode);
     if (!schemaId.IsValid())
         return nullptr;
 
@@ -343,16 +343,16 @@ ECSchemaCP SchemaManager::GetSchema(ECSchemaId schemaId, bool loadSchemaEntities
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SchemaManager::ContainsSchema(Utf8CP schemaName)  const
+bool SchemaManager::ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode)  const
     {
-    if (Utf8String::IsNullOrEmpty(schemaName))
+    if (schemaNameOrAlias.empty())
         {
-        BeAssert(false && "schemaName argument to ContainsSchema must not be null or empty string.");
+        BeAssert(false && "schemaNameOrAlias argument to ContainsSchema must not be null or empty string.");
         return false;
         }
 
     BeMutexHolder lock(m_mutex);
-    return SchemaPersistenceHelper::GetSchemaId(m_ecdb, schemaName).IsValid();
+    return GetReader().ContainsSchema(schemaNameOrAlias, mode);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -408,28 +408,28 @@ ECDerivedClassesList const& SchemaManager::GetDerivedClasses(ECClassCR ecClass) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECEnumerationCP SchemaManager::GetEnumeration(Utf8CP schemaName, Utf8CP enumName) const
+ECEnumerationCP SchemaManager::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode) const
     {
     BeMutexHolder lock(m_mutex);
-    return GetReader().GetEnumeration(schemaName, enumName);
+    return GetReader().GetEnumeration(schemaNameOrAlias, enumName, mode);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-KindOfQuantityCP SchemaManager::GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const
+KindOfQuantityCP SchemaManager::GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode) const
     {
     BeMutexHolder lock(m_mutex);
-    return GetReader().GetKindOfQuantity(schemaName, koqName);
+    return GetReader().GetKindOfQuantity(schemaNameOrAlias, koqName, mode);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyCategoryCP SchemaManager::GetPropertyCategory(Utf8CP schemaName, Utf8CP catName) const
+PropertyCategoryCP SchemaManager::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode mode) const
     {
     BeMutexHolder lock(m_mutex);
-    return GetReader().GetPropertyCategory(schemaName, catName);
+    return GetReader().GetPropertyCategory(schemaNameOrAlias, catName, mode);
     }
 
 /*---------------------------------------------------------------------------------------

@@ -217,6 +217,9 @@
     <ClCompile Include="Published\MapContext.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\SchemaPolicyTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">

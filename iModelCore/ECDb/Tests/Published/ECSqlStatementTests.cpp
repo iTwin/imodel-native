@@ -4454,7 +4454,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
     {
     auto importSchema = [] (ECDbCR db, ECN::ECSchemaCR schemaIn)
         {
-        ECN::ECSchemaCP existing = db.Schemas().GetSchema(schemaIn.GetName().c_str());
+        ECN::ECSchemaCP existing = db.Schemas().GetSchema(schemaIn.GetName());
         if (nullptr != existing)
             return;
 
