@@ -340,3 +340,6 @@ DataSourceCacheTests.*
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
+
+ChunkedUploadRequestTests.PerformAsync_FirtResponseNotResumeIncomplete_StopsRequest
+    # bim0200dev, x64, NDEBUG, firebug, random hang
