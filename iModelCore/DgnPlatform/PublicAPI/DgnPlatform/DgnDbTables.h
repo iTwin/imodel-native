@@ -497,10 +497,56 @@ private:
     DbFaceDataDirect m_dbFaceData;
     BeSQLite::DbR m_db;
     Utf8String m_tableName;
-    bool m_isFontMapLoaded;
     T_FontMap m_fontMap;
+    bool m_isFontMapLoaded;
 
 public:
+//__PUBLISH_SECTION_END__
+    static BeMutex& GetMutex();
+
+    // Simplifies common pattern in racey font-related code wherein an object holds a boolean flag indicating
+    // whether or not a member is initialized; if it is not initialized, it does thread-unsafe work and sets the
+    // flag.
+    // In particular, addresses bugs wherein flag is set *before* initialization completes.
+    struct FlagHolder
+    {
+    private:
+        BeMutexHolder   m_lock;
+        bool&           m_flag;
+        bool            m_initialValue;
+    public:
+        FlagHolder(FlagHolder const&) = delete;
+        FlagHolder& operator=(FlagHolder const&) = delete;
+
+        explicit FlagHolder(bool& flag) : m_lock(DgnFonts::GetMutex(), BeMutexHolder::Lock::No), m_flag(flag), m_initialValue(flag)
+            {
+            // Avoid acquiring mutex in common already-initialized case...
+            if (!m_initialValue)
+                {
+                // Double-checked locking...
+                m_lock.lock();
+                m_initialValue = m_flag;
+                if (m_initialValue)
+                    m_lock.unlock();
+                }
+            }
+
+        ~FlagHolder()
+            {
+            if (!m_initialValue)
+                {
+                // Set the flag after all work completed
+                BeAssert(m_lock.owns_lock());
+                BeAssert(!m_flag);
+                m_flag = true;
+                }
+            }
+
+        bool IsSet() { BeAssert(m_lock.owns_lock() || m_initialValue); return m_initialValue; }
+    };
+
+//__PUBLISH_SECTION_START__
+
     DgnFonts(BeSQLite::DbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
     DbFontMapDirect& DbFontMap() {return m_dbFontMap;}

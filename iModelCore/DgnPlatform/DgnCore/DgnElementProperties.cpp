@@ -1742,3 +1742,27 @@ void DgnElement::RemapAutoHandledNavigationproperties(DgnImportContext& importer
             SetPropertyValue(prop->GetName().c_str(), v);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::GetCustomHandledPropertiesAsJson(Json::Value& json) const
+    {
+    AutoHandledPropertiesCollection customprops(*GetElementClass(), GetDgnDb(), ECSqlClassParams::StatementType::Select, true);
+    for (auto i = customprops.begin(); i != customprops.end(); ++i)
+        {
+        Utf8String propName = (*i)->GetName();
+        ECN::ECValue value;
+        if (DgnDbStatus::Success != GetPropertyValue(value, propName.c_str()))
+            continue;
+        Json::Value propJson;
+        // *** WIP "BeGuid"
+        // *** WIP "GeometryStream"
+        // *** WIP "URL"
+        if ((*i)->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsI("Json"))
+            Json::Reader::Parse(value.GetUtf8CP(), propJson);
+        else
+            ECUtils::ConvertECValueToJson(propJson, value);
+        json[propName] = propJson;
+        }
+    }
