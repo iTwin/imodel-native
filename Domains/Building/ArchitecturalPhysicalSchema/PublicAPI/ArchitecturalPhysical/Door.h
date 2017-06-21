@@ -13,6 +13,7 @@ BEGIN_BENTLEY_NAMESPACE
 
 namespace ArchitecturalPhysical {
 
+#ifdef NOT_NOW
 
 	//=======================================================================================
 	// @bsiclass                                    BentleySystems
@@ -110,7 +111,7 @@ namespace ArchitecturalPhysical {
 		{
 		ELEMENTHANDLER_DECLARE_MEMBERS(AP_CLASS_DoorType, DoorType, DoorTypeHandler, Dgn::dgn_ElementHandler::PhysicalType, ARCHITECTURAL_PHYSICAL_EXPORT)
 		};
-
+#endif
 	}
 END_BENTLEY_NAMESPACE
 

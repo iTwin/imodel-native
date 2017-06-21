@@ -3,46 +3,14 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
             <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
             <TrackingEnabled>True</TrackingEnabled>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
-    <ECEnumeration typeName="BeamType_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="BEAM"/>
-        <ECEnumerator value="1" displayLabel="JOIST"/>
-        <ECEnumerator value="2" displayLabel="LINTEL"/>
-        <ECEnumerator value="3" displayLabel="T_BEAM"/>
-        <ECEnumerator value="4" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="5" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="BuildingElementProxy_CompositionType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="COMPLEX"/>
-        <ECEnumerator value="1" displayLabel="ELEMENT"/>
-        <ECEnumerator value="2" displayLabel="PARTIAL"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="BuildingElementProxyType_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="1" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="ColumnType_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="COLUMN"/>
-        <ECEnumerator value="1" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="2" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Covering_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="CEILING"/>
-        <ECEnumerator value="1" displayLabel="FLOORING"/>
-        <ECEnumerator value="2" displayLabel="CLADDING"/>
-        <ECEnumerator value="3" displayLabel="ROOFING"/>
-        <ECEnumerator value="4" displayLabel="INSULATION"/>
-        <ECEnumerator value="5" displayLabel="MEMBRANE"/>
-        <ECEnumerator value="6" displayLabel="SLEEVING"/>
-        <ECEnumerator value="7" displayLabel="WRAPPING"/>
-        <ECEnumerator value="8" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="9" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
     <ECEnumeration typeName="DoorType_ConstructionType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="ALUMINIUM"/>
         <ECEnumerator value="1" displayLabel="HIGH_GRADE_STEEL"/>
@@ -74,28 +42,6 @@
         <ECEnumerator value="16" displayLabel="USERDEFINED"/>
         <ECEnumerator value="17" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
-    <ECEnumeration typeName="MemberType_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="BRACE"/>
-        <ECEnumerator value="1" displayLabel="CHORD"/>
-        <ECEnumerator value="2" displayLabel="COLLAR"/>
-        <ECEnumerator value="3" displayLabel="MEMBER"/>
-        <ECEnumerator value="4" displayLabel="MULLION"/>
-        <ECEnumerator value="5" displayLabel="PLATE"/>
-        <ECEnumerator value="6" displayLabel="POST"/>
-        <ECEnumerator value="7" displayLabel="PURLIN"/>
-        <ECEnumerator value="8" displayLabel="RAFTER"/>
-        <ECEnumerator value="9" displayLabel="STRINGER"/>
-        <ECEnumerator value="10" displayLabel="STRUT"/>
-        <ECEnumerator value="11" displayLabel="STUD"/>
-        <ECEnumerator value="12" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="13" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="PlateType_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="CURTAIN_PANEL"/>
-        <ECEnumerator value="1" displayLabel="SHEET"/>
-        <ECEnumerator value="2" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="3" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
     <ECEnumeration typeName="Railing_PredefinedType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="HANDRAIL"/>
         <ECEnumerator value="1" displayLabel="GUARDRAIL"/>
@@ -104,37 +50,6 @@
         <ECEnumerator value="4" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
     <ECEnumeration typeName="Ramp_ShapeType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="STRAIGHT_RUN_RAMP"/>
-        <ECEnumerator value="1" displayLabel="TWO_STRAIGHT_RUN_RAMP"/>
-        <ECEnumerator value="2" displayLabel="QUARTER_TURN_RAMP"/>
-        <ECEnumerator value="3" displayLabel="TWO_QUARTER_TURN_RAMP"/>
-        <ECEnumerator value="4" displayLabel="HALF_TURN_RAMP"/>
-        <ECEnumerator value="5" displayLabel="SPIRAL_RAMP"/>
-        <ECEnumerator value="6" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="7" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="RampFlightType_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="STRAIGHT"/>
-        <ECEnumerator value="1" displayLabel="SPIRAL"/>
-        <ECEnumerator value="2" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="3" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="ReinforcingBar_BarRole" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="MAIN"/>
-        <ECEnumerator value="1" displayLabel="SHEAR"/>
-        <ECEnumerator value="2" displayLabel="LIGATURE"/>
-        <ECEnumerator value="3" displayLabel="STUD"/>
-        <ECEnumerator value="4" displayLabel="PUNCHING"/>
-        <ECEnumerator value="5" displayLabel="EDGE"/>
-        <ECEnumerator value="6" displayLabel="RING"/>
-        <ECEnumerator value="7" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="8" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="ReinforcingBar_BarSurface" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="PLAIN"/>
-        <ECEnumerator value="1" displayLabel="TEXTURED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Roof_ShapeType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="FLAT_ROOF"/>
         <ECEnumerator value="1" displayLabel="SHED_ROOF"/>
         <ECEnumerator value="2" displayLabel="GABLE_ROOF"/>
@@ -149,14 +64,6 @@
         <ECEnumerator value="11" displayLabel="DOME_ROOF"/>
         <ECEnumerator value="12" displayLabel="FREEFORM"/>
         <ECEnumerator value="13" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Slab_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="FLOOR"/>
-        <ECEnumerator value="1" displayLabel="ROOF"/>
-        <ECEnumerator value="2" displayLabel="LANDING"/>
-        <ECEnumerator value="3" displayLabel="BASESLAB"/>
-        <ECEnumerator value="4" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="5" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
     <ECEnumeration typeName="Stair_ShapeType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="STRAIGHT_RUN_STAIR"/>
@@ -176,23 +83,6 @@
         <ECEnumerator value="14" displayLabel="USERDEFINED"/>
         <ECEnumerator value="15" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
-    <ECEnumeration typeName="StairFlightType_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="STRAIGHT"/>
-        <ECEnumerator value="1" displayLabel="WINDER"/>
-        <ECEnumerator value="2" displayLabel="SPIRAL"/>
-        <ECEnumerator value="3" displayLabel="CURVED"/>
-        <ECEnumerator value="4" displayLabel="FREEFORM"/>
-        <ECEnumerator value="5" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="6" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Tendon_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="STRAND"/>
-        <ECEnumerator value="1" displayLabel="WIRE"/>
-        <ECEnumerator value="2" displayLabel="BAR"/>
-        <ECEnumerator value="3" displayLabel="COATED"/>
-        <ECEnumerator value="4" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="5" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
     <ECEnumeration typeName="WallType_PredefinedType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="STANDARD"/>
         <ECEnumerator value="1" displayLabel="POLYGONAL"/>
@@ -202,221 +92,35 @@
         <ECEnumerator value="5" displayLabel="USERDEFINED"/>
         <ECEnumerator value="6" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
-    <ECEntityClass typeName="ArchitecturalBaseElement" description="(From IFC) Class : IfcBuildingElement" displayLabel="Architectural Base Element" modifier="Abstract">
+    <ECEntityClass typeName="Casework">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="CurtainWall" displayLabel="Curtain Wall">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Door">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="BuildingElementType" description="(From IFC) Class : IfcBuildingElementType" displayLabel="Building ElementType" modifier="Abstract">
-        <BaseClass>bis:PhysicalType</BaseClass>
-        <ECProperty propertyName="Name" typeName="string" description="(From IFC) IfcLabel .OPTIONAL."/>
-        <ECProperty propertyName="Description" typeName="string" description="(From IFC) IfcText .OPTIONAL."/>
-    </ECEntityClass>
-    <ECEntityClass typeName="BeamType" description="(From IFC) Class : IfcBeamType" displayLabel="Beam Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="BeamType_PredefinedType" description="(From IFC) Enumeration : IfcBeamTypeEnum"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="BuildingElementPart" description="(From IFC) Class : IfcBuildingElementPart" displayLabel="Building Element Part">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="BuildingElementProxy" description="(From IFC) Class : IfcBuildingElementProxy" displayLabel="Building Element Proxy">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="CompositionType" typeName="BuildingElementProxy_CompositionType" description="(From IFC) Enumeration : IfcElementCompositionEnum .OPTIONAL."/>
-    </ECEntityClass>
-    <ECEntityClass typeName="BuildingElementProxyType" description="(From IFC) Class : IfcBuildingElementProxyType" displayLabel="Building Element Proxy Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="BuildingElementProxyType_PredefinedType" description="(From IFC) Enumeration : IfcBuildingElementProxyTypeEnum"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="BuildingPhysicalModel" displayLabel="Building Physical Model">
-        <BaseClass>bis:PhysicalModel</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="BuildingTypeDefinitionModel" displayLabel="Building Type Definition Model">
-        <BaseClass>bis:DefinitionModel</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="Casework">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ColumnType" description="(From IFC) Class : IfcColumnType" displayLabel="Column Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="ColumnType_PredefinedType" description="(From IFC) Enumeration : IfcColumnTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="Covering" description="(From IFC) Class : IfcCovering">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Covering_PredefinedType" description="(From IFC) Enumeration : IfcCoveringTypeEnum .OPTIONAL." displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="CoveringType" description="(From IFC) Class : IfcCoveringType" displayLabel="Covering Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Covering_PredefinedType" description="(From IFC) Enumeration : IfcCoveringTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="CurtainWall" description="(From IFC) Class : IfcCurtainWall" displayLabel="Curtain Wall">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="CurtainWallType" description="(From IFC) Class : IfcCurtainWallType" displayLabel="Curtain Wall Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="BuildingElementProxyType_PredefinedType" description="(From IFC) Enumeration : IfcCurtainWallTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="Door" description="(From IFC) Class : IfcDoor">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="OverallHeight" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Overall Height" kindOfQuantity="LENGTH">
+        <ECProperty propertyName="OverallHeight" typeName="double" displayLabel="Overall Height" kindOfQuantity="LENGTH">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
                     <Standard>8</Standard>
                 </ExtendType>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="OverallWidth" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Overall Width" kindOfQuantity="LENGTH">
+        <ECProperty propertyName="OverallWidth" typeName="double" displayLabel="Overall Width" kindOfQuantity="LENGTH">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
                     <Standard>8</Standard>
                 </ExtendType>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="FrameInteriorThickness" typeName="double" description="Thickness of the Frame/Trim on the interior side of the door" displayLabel="Frame Interior Thickness" kindOfQuantity="LENGTH">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameExteriorThickness" typeName="double" description="Thickness of the Frame/Trim on the exterior side of the door" displayLabel="Frame Exterior Thickness" kindOfQuantity="LENGTH">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameDepth" typeName="double" description="This is the dimention of the Frame that usually matches the wall thickness" displayLabel="Frame Depth" kindOfQuantity="LENGTH">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameWidth" typeName="double" description="This is the dimention of the Frame that is parallel to wall" displayLabel="Frame Width" kindOfQuantity="LENGTH">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameThickness" typeName="double" description="This is thickness of the material inside the frame" displayLabel="Frame Thickness">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameFinish" typeName="string" displayLabel="Frame Finish">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameType" typeName="string" displayLabel="Frame Type">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameHeadDetail" typeName="string" displayLabel="Frame Head Detail">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameJambDetail" typeName="string" displayLabel="Frame Jamb Detail">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrameSillDetail" typeName="string" displayLabel="Frame Sill/Threshold Detail">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Width" typeName="double" description="Standard Width of the door" kindOfQuantity="LENGTH">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>200</Standard>
-                    <Name>Door Properties (Door Type)</Name>
-                    <DisplayLabel>Door Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Height" typeName="double" description="Standard height of the door" kindOfQuantity="LENGTH">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>200</Standard>
-                    <Name>Door Properties (Door Type)</Name>
-                    <DisplayLabel>Door Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="PanelThickness" typeName="double" description="Panel Thickness" displayLabel="Panel Thickness" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="FrameNotes" typeName="string" displayLabel="Frame Notes">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="PanelWidth" typeName="double" description="Width of the door leaf" displayLabel="Panel Width" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="Description" typeName="string"/>
-        <ECProperty propertyName="Finish" typeName="string" description="Finish on the door"/>
-        <ECProperty propertyName="FireRating" typeName="double" displayLabel="Fire Rating"/>
-        <ECProperty propertyName="Function" typeName="string"/>
-        <ECProperty propertyName="GlazingMaterial" typeName="string" displayLabel="Glazing Material"/>
-        <ECProperty propertyName="Keynote" typeName="string"/>
-        <ECProperty propertyName="Material" typeName="string"/>
-        <ECProperty propertyName="Phase" typeName="string"/>
-        <ECProperty propertyName="RoughOpeningHeight" typeName="double" description="This is the height of the rough opening" displayLabel="Rough Opening Height" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="RoughOpeningWidth" typeName="double" description="This is the width of the rough opening" displayLabel="Rough Opening Width" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="TypeID" typeName="string" displayLabel="Type ID"/>
-        <ECProperty propertyName="FrameMaterial" typeName="string" displayLabel="Frame Material">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Door Frame Properties (Door Type)</Name>
-                    <DisplayLabel>Door Frame Properties (Door Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="DoorType" description="(From IFC) Class : IfcDoorStyle. Replaced by IfcDoorType since IFC2x4" displayLabel="Door Type">
-        <BaseClass>BuildingElementType</BaseClass>
+        <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -425,260 +129,236 @@
         <ECProperty propertyName="ParameterTakesPrecedence" typeName="boolean" description="(From IFC)" displayLabel="Parameter Takes Precedence"/>
         <ECProperty propertyName="Sizeable" typeName="boolean" description="(From IFC)"/>
     </ECEntityClass>
-    <ECEntityClass typeName="Escalator">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECEntityClass>
     <ECEntityClass typeName="Floor">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="Furniture">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="MemberType" description="(From IFC) Class : IfcMemberType" displayLabel="Member Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="MemberType_PredefinedType" description="(From IFC) Enumeration : IfcMemberTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="PlateType" description="(From IFC) Class : IfcPlateType" displayLabel="Plate Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="PlateType_PredefinedType" description="(From IFC) Enumeration : IfcPlateTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="Railing" description="(From IFC) Class : IfcRailing">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
+    <ECEntityClass typeName="Railing">
+        <BaseClass>bis:PhysicalElement</BaseClass>
         <ECProperty propertyName="PredefinedType" typeName="Railing_PredefinedType" description="(From IFC) Enumeration : IfcRailingTypeEnum .OPTIONAL." displayLabel="Predefined Type"/>
     </ECEntityClass>
-    <ECEntityClass typeName="RailingType" description="(From IFC) Class : IfcRailingType" displayLabel="Railing Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Railing_PredefinedType" description="(From IFC) Enumeration : IfcRailingTypeEnum" displayLabel="Predefined Type"/>
+    <ECEntityClass typeName="Ramp" description="A slopping element that transistions between two elevations">
+        <ECProperty propertyName="BBoxHigh" typeName="point3d" description="The 'high' point of the element-aligned bounding box of the Element." displayLabel="Bounding Box High">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="BBoxLow" typeName="point3d" description="The 'low' point of the element-aligned bounding box of the Element." displayLabel="Bounding Box Low">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Category" typeName="long" description="The Spatial Category used to categorize the 3D Geometric Element">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CodeValue" typeName="string" description="Code is the formal name (business key) for an element. The combination of Code Specification, Code Scope, and the Code value must be unique." displayLabel="Code">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>True</IsNullable>
+                    <IsUnique>False</IsUnique>
+                    <Collation>NoCase</Collation>
+                </PropertyMap>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CodeScope" typeName="string" description="Code Scope identifies the element/name that provides the uniqueness scope for the code value. The combination of Code Specification, Code Scope, and the Code value must be unique." displayLabel="Code Scope">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>False</IsNullable>
+                    <IsUnique>False</IsUnique>
+                    <Collation>NoCase</Collation>
+                </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CodeSpec" typeName="long" description="The Code Specification used to generate and validate the code for the element. The combination of Code Specification, Code Scope, and the Code value must be unique." displayLabel="Code Specification">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FederationGuid" typeName="binary" description="The GUID used to federate this element across repositories." displayLabel="Federation GUID">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>True</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="GeometryStream" typeName="binary" description="Binary stream used to persist the geometry of this Element." displayLabel="Geometry Stream">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="InSpatialIndex" typeName="boolean" description="If true, this element will have an entry in the Spatial Index." displayLabel="In Spatial Index">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="JsonProperties" typeName="string" description="A string property that users and/or applications can use to persist JSON values." displayLabel="JSON Properties">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LastMod" typeName="dateTime" description="The last modified time of the element. This is maintained by the core framework and should not be set directly by applications." displayLabel="Last Modified" readOnly="true">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>0</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Model" typeName="long" description="The Model that contains this element." readOnly="true">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>2</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Origin" typeName="point3d" description="The placement origin of the Element.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Parent" typeName="long" description="The parent element that owns this element.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Pitch" typeName="double" description="The Pitch angle (in degrees) of the orientation of the Element.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Roll" typeName="double" description="The Roll angle (in degrees) of the orientation of the Element.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ShapeType" typeName="Ramp_ShapeType" description="(From IFC) Enumeration : IfcRoofTypeEnum" displayLabel="Shape Type"/>
+        <ECProperty propertyName="TypeDefinition" typeName="long" displayLabel="Type Definition">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="UserLabel" typeName="string" description="An optional name given by the user (as opposed to the formal name stored in the Code value)." displayLabel="User Label">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>True</IsNullable>
+                    <IsUnique>False</IsUnique>
+                    <Collation>NoCase</Collation>
+                </PropertyMap>
+                <CustomHandledProperty xmlns="BisCore.01.00">
+                    <StatementTypes>6</StatementTypes>
+                </CustomHandledProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Yaw" typeName="double" description="The Yaw angle (in degrees) of the orientation of the Element.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
-    <ECEntityClass typeName="Ramp" description="(From IFC) Class : IfcRamp">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="ShapeType" typeName="Ramp_ShapeType" description="(From IFC) Enumeration : IfcRampTypeEnum"/>
+    <ECEntityClass typeName="Roof">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECProperty propertyName="ShapeType" typeName="Ramp_ShapeType" description="(From IFC) Enumeration : IfcRoofTypeEnum" displayLabel="Shape Type"/>
     </ECEntityClass>
-    <ECEntityClass typeName="RampFlight" description="(From IFC) Class : IfcRampFlight" displayLabel="Ramp Flight">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="RampFlightType" description="(From IFC) Class : IfcRampFlightType" displayLabel="Ramp Flight Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="RampFlightType_PredefinedType" description="(From IFC) Enumeration : IfcRampFlightTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="ReinforcingElement" description="(From IFC) Class : IfcReinforcingElement" displayLabel="Reinforcing Element" modifier="Abstract">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="SteelGrade" typeName="string" description="(From IFC) IfcLabel .OPTIONAL." displayLabel="Steel Grade"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="ReinforcingBar" description="(From IFC) Class : IfcReinforcingBar" displayLabel="Reinforcing Bar">
-        <BaseClass>ReinforcingElement</BaseClass>
-        <ECProperty propertyName="NominalDiameter" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Nominal Diameter" kindOfQuantity="DIAMETER">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CrossSectionArea" typeName="double" description="(From IFC) IfcAreaMeasure" displayLabel="Cross Section Area" kindOfQuantity="AREA">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>9</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="BarLength" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." kindOfQuantity="LENGTH_MM">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="BarRole" typeName="ReinforcingBar_BarRole" description="(From IFC) Enumeration : IfcReinforcingBarRoleEnum"/>
-        <ECProperty propertyName="BarSurface" typeName="ReinforcingBar_BarSurface" description="(From IFC) Enumeration : IfcReinforcingBarSurfaceEnum .OPTIONAL."/>
-    </ECEntityClass>
-    <ECEntityClass typeName="ReinforcingMesh" description="(From IFC) Class : IfcReinforcingMesh" displayLabel="Reinforcing Mesh">
-        <BaseClass>ReinforcingElement</BaseClass>
-        <ECProperty propertyName="MeshLength" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Mesh Length" kindOfQuantity="LENGTH_MM">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="MeshWidth" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Mesh Width" kindOfQuantity="LENGTH_MM">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LongitudinalBarNominalDiameter" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Longitudinal Bar Nominal Diameter" kindOfQuantity="DIAMETER">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TransverseBarNominalDiameter" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Transverse Bar Nominal Diameter" kindOfQuantity="DIAMETER">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LongitudinalBarCrossSectionArea" typeName="double" description="(From IFC) IfcAreaMeasure" displayLabel="Longitudinal Bar Cross Section Area" kindOfQuantity="AREA">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>9</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TransverseBarCrossSectionArea" typeName="double" description="(From IFC) IfcAreaMeasure" displayLabel="Transverse Bar Cross Section Area" kindOfQuantity="AREA">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>9</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LongitudinalBarSpacing" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Longitudinal Bar Spacing" kindOfQuantity="LENGTH_MM">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TransverseBarSpacing" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Transverse Bar Spacing" kindOfQuantity="LENGTH_MM">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
-    <ECEntityClass typeName="Roof" description="(From IFC) Class : IfcRoof">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="ShapeType" typeName="Roof_ShapeType" description="(From IFC) Enumeration : IfcRoofTypeEnum" displayLabel="Shape Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="Slab" description="(From IFC) Class : IfcSlab">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Slab_PredefinedType" description="(From IFC) Enumeration : IfcSlabTypeEnum .OPTIONAL." displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="SlabType" description="(From IFC) Class : IfcSlabType" displayLabel="Slab Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Slab_PredefinedType" description="(From IFC) Enumeration : IfcSlabTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="Stair" description="(From IFC) Class : IfcStair">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
+    <ECEntityClass typeName="Stair">
+        <BaseClass>bis:PhysicalElement</BaseClass>
         <ECProperty propertyName="ShapeType" typeName="Stair_ShapeType" description="(From IFC) Enumeration : IfcStairTypeEnum" displayLabel="Shape Type"/>
     </ECEntityClass>
-    <ECEntityClass typeName="StairFlight" description="(From IFC) Class : IfcStairFlight" displayLabel="Stair Flight">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
-        <ECProperty propertyName="NumberOfRiser" typeName="int" description=" .OPTIONAL." displayLabel="Number Of Riser"/>
-        <ECProperty propertyName="NumberOfTreads" typeName="int" description=" .OPTIONAL." displayLabel="Number Of Treads"/>
-        <ECProperty propertyName="RiserHeight" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Riser Height" kindOfQuantity="LENGTH_MM">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TreadLength" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Tread Length" kindOfQuantity="LENGTH_MM">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
-    <ECEntityClass typeName="StairFlightType" description="(From IFC) Class : IfcStairFlightType" displayLabel="Stair Flight Type">
-        <BaseClass>BuildingElementType</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="StairFlightType_PredefinedType" description="(From IFC) Enumeration : IfcStairFlightTypeEnum" displayLabel="Predefined Type"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="Tendon" description="(From IFC) Class : IfcTendon">
-        <BaseClass>ReinforcingElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Tendon_PredefinedType" description="(From IFC) Enumeration : IfcTendonTypeEnum" displayLabel="Predefined Type"/>
-        <ECProperty propertyName="NominalDiameter" typeName="double" description="(From IFC) IfcPositiveLengthMeasure" displayLabel="Nominal Diameter" kindOfQuantity="DIAMETER">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CrossSectionArea" typeName="double" description="(From IFC) IfcAreaMeasure" displayLabel="Cross Section Area" kindOfQuantity="AREA">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>9</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TensionForce" typeName="double" description="(From IFC) IfcForceMeasure .OPTIONAL." displayLabel="Tension Force" kindOfQuantity="FORCE"/>
-        <ECProperty propertyName="PreStress" typeName="double" description="(From IFC) IfcPressureMeasure .OPTIONAL." displayLabel="Pre Stress" kindOfQuantity="PRESSURE"/>
-        <ECProperty propertyName="FrictionCoefficient" typeName="double" description="(From IFC) IfcNormalisedRatioMeasure .OPTIONAL." displayLabel="Friction Coefficient"/>
-        <ECProperty propertyName="AnchorageSlip" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." kindOfQuantity="LENGTH_MM">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="MinCurvatureRadius" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Min Curvature Radius" kindOfQuantity="DIAMETER">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
-    <ECEntityClass typeName="TendonAnchor" description="(From IFC) Class : IfcTendonAnchor" displayLabel="Tendon Anchor">
-        <BaseClass>ReinforcingElement</BaseClass>
+    <ECEntityClass typeName="TransportationMechanism" displayLabel="Transportation Mechanism">
+        <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="Wall" description="Wall">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="LeftGrossArea" typeName="double" description="Gross Area at the left side of the wall" displayLabel="Left Gross Area" kindOfQuantity="AREA_SQ__x002E__M"/>
-        <ECProperty propertyName="CenterGrossArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Center Gross Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="LeftGrossArea" typeName="double" description="Gross Area at the left side of the wall" displayLabel="Left Gross Area" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="CenterGrossArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Center Gross Area" kindOfQuantity="AREA"/>
         <ECProperty propertyName="CenterLength" typeName="double" description="length along the centerline of the wall" displayLabel="Center Length" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="LeftLength" typeName="double" description="length along the left side of the wall" displayLabel="Left Length" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="RightGrossArea" typeName="double" description="Gross Area at the right side of the wall" displayLabel="Right Gross Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="RightGrossArea" typeName="double" description="Gross Area at the right side of the wall" displayLabel="Right Gross Area" kindOfQuantity="AREA"/>
         <ECProperty propertyName="RightLength" typeName="double" description="length along the Right side of the wall" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="CenterNetArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Center Net Area" kindOfQuantity="AREA_SQ__x002E__M"/>
-        <ECProperty propertyName="LeftNetArea" typeName="double" description="Net Area at the left side of the wall" displayLabel="Left Net Area" kindOfQuantity="AREA_SQ__x002E__M"/>
-        <ECProperty propertyName="RightNetArea" typeName="double" description="Net Area at the right side of the wall" displayLabel="Right Net Area" kindOfQuantity="AREA_SQ__x002E__M"/>
+        <ECProperty propertyName="CenterNetArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Center Net Area" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="LeftNetArea" typeName="double" description="Net Area at the left side of the wall" displayLabel="Left Net Area" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="RightNetArea" typeName="double" description="Net Area at the right side of the wall" displayLabel="Right Net Area" kindOfQuantity="AREA"/>
         <ECProperty propertyName="GrossVolume" typeName="double" description="Gross Volume at the of the wall" displayLabel="Gross Volume" kindOfQuantity="VOLUME"/>
         <ECProperty propertyName="NetVolume" typeName="double" description="Net Volume at the of the wall" displayLabel="Net Volume" kindOfQuantity="VOLUME"/>
-        <ECProperty propertyName="FireRating" typeName="double" description="Fire Rating " displayLabel="Fire Rating"/>
-        <ECProperty propertyName="SpaceBounding" typeName="boolean" description="Is the wall a bounding area of a space" displayLabel="Space Bounding"/>
-        <ECProperty propertyName="Keynote" typeName="string"/>
-        <ECProperty propertyName="Phase" typeName="string"/>
-        <ECProperty propertyName="IsExternal" typeName="boolean" description="True is the wall is on the exterior of a building" displayLabel="Is External"/>
-        <ECProperty propertyName="IsBelowGrade" typeName="boolean" description="True is the wall is on the below ground level" displayLabel="Is Below Grade"/>
-        <ECProperty propertyName="AcousticRating" typeName="double" description="Acoustic Rating (STC)" displayLabel="Acoustic Rating (STC)"/>
-        <ECProperty propertyName="StructuralFunction" typeName="string" displayLabel="Structural Function"/>
-        <ECProperty propertyName="HeatTransferCoefficient" typeName="double" displayLabel="Heat Transfer Coefficient (U)"/>
-        <ECProperty propertyName="ThermalResistance" typeName="double" displayLabel="Thermal Resistance (R)"/>
     </ECEntityClass>
-    <ECEntityClass typeName="WallStandardCase" description="(From IFC) Class : IfcWallStandardCase" displayLabel="Standard Wall">
-        <BaseClass>Wall</BaseClass>
+    <ECEntityClass typeName="WallLeaf" description="Wall" displayLabel="Wall Leaf">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
+    <ECRelationshipClass typeName="WallOwnsWallLeafs" displayLabel="Wall Owns Wall Leafs" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true">
+            <Class class="Wall"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true">
+            <Class class="WallLeaf"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="WallType" description="(From IFC) Class : IfcWallType" displayLabel="Wall Type">
-        <BaseClass>BuildingElementType</BaseClass>
+        <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="PredefinedType" typeName="WallType_PredefinedType" description="(From IFC) Enumeration : IfcWallTypeEnum" displayLabel="Predefined Type"/>
     </ECEntityClass>
     <ECEntityClass typeName="Window" description="Window">
-        <BaseClass>ArchitecturalBaseElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="OverallHeight" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Overall Height" kindOfQuantity="LENGTH_MM">
+        <ECProperty propertyName="OverallHeight" typeName="double" displayLabel="Overall Height" kindOfQuantity="LENGTH_MM">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
                     <Standard>8</Standard>
                 </ExtendType>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="OverallWidth" typeName="double" description="(From IFC) IfcPositiveLengthMeasure .OPTIONAL." displayLabel="Overall Width" kindOfQuantity="LENGTH_MM">
+        <ECProperty propertyName="OverallWidth" typeName="double" displayLabel="Overall Width" kindOfQuantity="LENGTH_MM">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
                     <Standard>8</Standard>
@@ -686,53 +366,15 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Description" typeName="string"/>
-        <ECProperty propertyName="Height" typeName="double" description="Standard height of the door" kindOfQuantity="LENGTH">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Window Frame Properties (Window Type)</Name>
-                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Keynote" typeName="string"/>
-        <ECProperty propertyName="RoughOpeningHeight" typeName="double" description="This is the height of the rough opening" displayLabel="Rough Opening Height" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="RoughOpeningWidth" typeName="double" description="This is the width of the rough opening" displayLabel="Rough Opening Width" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="Width" typeName="double" description="Standard Width of the door" kindOfQuantity="LENGTH">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Window Frame Properties (Window Type)</Name>
-                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="TypeID" typeName="string" displayLabel="Type ID"/>
-        <ECProperty propertyName="FrameMaterisl" typeName="string" displayLabel="Frame Materisl">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.03">
-                    <Standard>100</Standard>
-                    <Name>Window Frame Properties (Window Type)</Name>
-                    <DisplayLabel>Window Frame Properties (Window Type)</DisplayLabel>
-                </Category>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FrontOffset" typeName="double" description="Offset into the wall for the window frame" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="TypeDescription" typeName="string" displayLabel="Type Description"/>
-        <ECProperty propertyName="Phase" typeName="string"/>
     </ECEntityClass>
     <ECEntityClass typeName="WindowType" displayLabel="Window Type">
-        <BaseClass>BuildingElementType</BaseClass>
+        <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <KindOfQuantity typeName="AREA" displayLabel="AREA" persistenceUnit="SQ.MM(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="AREA_SQ__x002E__M" displayLabel="AREA_SQ.M" persistenceUnit="SQ.M(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="DIAMETER" displayLabel="DIAMETER" persistenceUnit="MM(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="FORCE" displayLabel="FORCE" persistenceUnit="N(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="AREA" displayLabel="AREA" persistenceUnit="SQ.M(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="LENGTH_MM" displayLabel="LENGTH_MM" persistenceUnit="MM(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="PRESSURE" displayLabel="PRESSURE" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="VOLUME" displayLabel="VOLUME" persistenceUnit="CUB.M(DefaultReal)" relativeError="0.0001"/>
 </ECSchema>

@@ -28,7 +28,7 @@ appSrc              = $(_MakeFilePath)
 appPublicApi        = $(appSrc)PublicAPI/$(appName)/
 MultiCompileDepends = $(_MakeFileSpec) \
                       $(appSrc)BuildingDomainInternal.h \
-                      
+                 
 #                      $(ArchPhysPublicApi)ArchitecturalPhysicalApi.h \
 #                      $(BldgPhysPublicApi)BuildingPhysicalApi.h \
 #                      $(BldgCmnPublicApi)BuildingCommonApi.h \
@@ -66,13 +66,15 @@ $(o)BuildingCommonDomain$(oext) : $(BldgCmnSrc)BuildingCommonDomain.cpp ${MultiC
 
 $(o)BuildingPhysicalDomain$(oext) : $(BldgPhysSrc)BuildingPhysicalDomain.cpp ${MultiCompileDepends} $(BldgPhysPublicApi)BuildingPhysicalDomain.h
 
-$(o)Door$(oext) : $(ArchPhysSrc)Door.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)Door.h
+#$(o)Door$(oext) : $(ArchPhysSrc)Door.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)Door.h
 
-$(o)Window$(oext) : $(ArchPhysSrc)Window.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)Window.h
+#$(o)Window$(oext) : $(ArchPhysSrc)Window.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)Window.h
 
-$(o)Wall$(oext) : $(ArchPhysSrc)Wall.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)wall.h
+#$(o)Wall$(oext) : $(ArchPhysSrc)Wall.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)wall.h
 
 $(o)BuildingPhysicalModel$(oext) : $(BldgPhysSrc)BuildingPhysicalModel.cpp ${MultiCompileDepends} $(BldgPhysPublicApi)BuildingPhysicalModel.h
+
+$(o)BuildingDomainUtilities$(oext) : $(appSrc)BuildingDomainUtilities.cpp ${MultiCompileDepends} $(appPublicApi)BuildingDomainUtilities.h
 
 
 %include MultiCppCompileGo.mki

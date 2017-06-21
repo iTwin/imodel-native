@@ -12,3 +12,4 @@
 #include "ArchitecturalPhysical\ArchitecturalPhysicalApi.h"
 #include "BuildingPhysical\BuildingPhysicalApi.h"
 #include "BuildingCommon\BuildingCommonApi.h"
+#include "BuildingDomainUtilities.h"

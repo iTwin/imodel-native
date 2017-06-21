@@ -14,6 +14,8 @@ targetSchemasDir = $(BuildContext)ECSchemas/Domain/
 $(targetAPIDir)BuildingDomainApi.h : $(_MakeFilePath)PublicApi\BuildingDomain\BuildingDomainApi.h
     $(LinkFirstDepToFirstTarget)
 
+$(targetAPIDir)BuildingDomainUtilities.h : $(_MakeFilePath)PublicApi\BuildingDomain\BuildingDomainUtilities.h
+    $(LinkFirstDepToFirstTarget)
 
 %include $(_MakeFilePath)ArchitecturalPhysicalSchema/ArchitecturalPhysicalSchema.prewire.mki
     

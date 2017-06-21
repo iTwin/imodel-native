@@ -83,7 +83,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SRCROOT)DgnDomains\Building\ArchitecturalPhysicalSchema\publicApi\ArchitecturalPhysical;$(SRCROOT)DgnDomains\Building;$(OUTROOT)Winx64\BuildContexts\buildingDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\buildingDomains\VendorAPI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SRCROOT)DgnDomains\Building\ArchitecturalPhysicalSchema\publicApi\ArchitecturalPhysical;$(SRCROOT)DgnDomains\Building\PublicApi\BuildingDomain;$(SRCROOT)DgnDomains\Building;$(OUTROOT)Winx64\BuildContexts\buildingDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\buildingDomains\VendorAPI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__BUILDING_DOMAIN_BUILD__;BENTLEY_WIN32;</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -120,11 +120,13 @@
     <ClCompile Include="ArchitecturalPhysicalSchema\window.cpp" />
     <ClCompile Include="BuildingCommonSchema\BuildingCommonDomain.cpp" />
     <ClCompile Include="BuildingDomainInternal.cpp" />
+    <ClCompile Include="BuildingDomainUtilities.cpp" />
     <ClCompile Include="BuildingPhysicalSchema\BuildingPhysicalDomain.cpp" />
     <ClCompile Include="BuildingPhysicalSchema\BuildingPhysicalModel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BuildingDomainInternal.h" />
+    <ClInclude Include="publicAPI\BuildingDomain\BuildingDomainUtilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

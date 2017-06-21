@@ -85,7 +85,7 @@
     <NMakeOutput>$(OutRoot)Winx64\Product\BuildingDomainTests\BuildingDomainTests.exe</NMakeOutput>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeOutput>BuildingDomain-Tests.exe</NMakeOutput>
+    <NMakeOutput>BuildingDomainTests.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(OUTROOT)Winx64\BuildContexts\buildingDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\buildingDomains\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>

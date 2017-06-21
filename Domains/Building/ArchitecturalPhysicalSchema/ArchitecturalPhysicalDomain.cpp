@@ -20,13 +20,13 @@ namespace ArchitecturalPhysical
 	//---------------------------------------------------------------------------------------
 	ArchitecturalPhysicalDomain::ArchitecturalPhysicalDomain() : Dgn::DgnDomain(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME, "Bentley Architectural Physical Domain", 1)
 		{
-		RegisterHandler(ArchitecturalBaseElementHandler::GetHandler());
+/*		RegisterHandler(ArchitecturalBaseElementHandler::GetHandler());
 		RegisterHandler(DoorHandler::GetHandler());
 		RegisterHandler(DoorTypeHandler::GetHandler());
 		RegisterHandler(WindowHandler::GetHandler());
 		RegisterHandler(WindowTypeHandler::GetHandler());
 		RegisterHandler(WallHandler::GetHandler());
-		RegisterHandler(WallTypeHandler::GetHandler());
+		RegisterHandler(WallTypeHandler::GetHandler()); */
 		}
 
 
@@ -64,47 +64,21 @@ namespace ArchitecturalPhysical
 
 		}
 
-	//---------------------------------------------------------------------------------------
-	// @bsimethod                                   Bentley.Systems
-	//---------------------------------------------------------------------------------------
-
-	//BuildingPhysical::BuildingPhysicalModelPtr  ArchitecturalPhysicalDomain::CreateBuildingPartionsAndModels(DgnDbPtr db, Utf8StringCR buildingCodeName, Utf8CP description )
-	//	{
-
-	//	if (!db.IsValid())
-	//		return nullptr;
-
-	//	Dgn::SubjectCPtr rootSubject = db->Elements().GetRootSubject();
-
-		// Create the partition and the BuildingPhysicalModel.
-
-	//	Dgn::PhysicalPartitionCPtr partition = Dgn::PhysicalPartition::CreateAndInsert(*rootSubject, buildingCodeName, description );
-	
-	//	if (!partition.IsValid())
-	//		return nullptr;
-
-	//	BuildingPhysical::BuildingPhysicalModelPtr physicalModel = BuildingPhysical::BuildingPhysicalModel::Create(*partition);
-
-	//	if (!physicalModel.IsValid())
-	//		return nullptr;
-
-		//	}
-
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 	void ArchitecturalPhysicalCategory::InsertDomainCategories(Dgn::DgnDbR db)
 		{
-		Dgn::DgnCategoryId    doorCategoryId       = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Doors, Dgn::ColorDef::White());
-		Dgn::DgnSubCategoryId doorFrameCategoryId  = InsertSubCategory(db, doorCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame, Dgn::ColorDef::White());
-		Dgn::DgnSubCategoryId doorWindowCategoryId = InsertSubCategory(db, doorCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel, Dgn::ColorDef::DarkGrey());
+		//Dgn::DgnCategoryId    doorCategoryId       = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Doors, Dgn::ColorDef::White());
+		//Dgn::DgnSubCategoryId doorFrameCategoryId  = InsertSubCategory(db, doorCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame, Dgn::ColorDef::White());
+		//Dgn::DgnSubCategoryId doorWindowCategoryId = InsertSubCategory(db, doorCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel, Dgn::ColorDef::DarkGrey());
 
-		Dgn::DgnCategoryId    windowCategoryId      = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Windows, Dgn::ColorDef::White());
-		Dgn::DgnSubCategoryId windowFrameCategoryId = InsertSubCategory(db, windowCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame, Dgn::ColorDef::White());
-		Dgn::DgnSubCategoryId windowPanelCategoryId = InsertSubCategory(db, windowCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel, Dgn::ColorDef::DarkGrey());
+		//Dgn::DgnCategoryId    windowCategoryId      = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Windows, Dgn::ColorDef::White());
+		//Dgn::DgnSubCategoryId windowFrameCategoryId = InsertSubCategory(db, windowCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame, Dgn::ColorDef::White());
+		//Dgn::DgnSubCategoryId windowPanelCategoryId = InsertSubCategory(db, windowCategoryId, ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel, Dgn::ColorDef::DarkGrey());
 
-		Dgn::DgnCategoryId    wallCategoryId = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Walls, Dgn::ColorDef::White());
+		//Dgn::DgnCategoryId    wallCategoryId = InsertCategory(db, ARCHITECTURAL_PHYSICAL_CATEGORY_Walls, Dgn::ColorDef::White());
 		}
 
 	//---------------------------------------------------------------------------------------
@@ -142,59 +116,59 @@ namespace ArchitecturalPhysical
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
-	Dgn::DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorCategoryId(Dgn::DgnDbR db)
-		{
-		return Dgn::DgnCategory::QueryCategoryId(db, Dgn::SpatialCategory::CreateCode(db.GetDictionaryModel(), ARCHITECTURAL_PHYSICAL_CATEGORY_Doors));
-		}
+	//Dgn::DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorCategoryId(Dgn::DgnDbR db)
+	//	{
+	//	return Dgn::DgnCategory::QueryCategoryId(db, Dgn::SpatialCategory::CreateCode(db.GetDictionaryModel(), ARCHITECTURAL_PHYSICAL_CATEGORY_Doors));
+	//	}
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
-	Dgn::DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorPanelSubCategoryId(Dgn::DgnDbR db)
-		{
-		return Dgn::DgnSubCategory::QuerySubCategoryId(db, Dgn::DgnSubCategory::CreateCode(db, QueryBuildingPhysicalDoorCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel));
-		}
+	//Dgn::DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorPanelSubCategoryId(Dgn::DgnDbR db)
+	//	{
+	//	return Dgn::DgnSubCategory::QuerySubCategoryId(db, Dgn::DgnSubCategory::CreateCode(db, QueryBuildingPhysicalDoorCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel));
+	//	}
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
-	Dgn::DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorFrameSubCategoryId(Dgn::DgnDbR db)
-		{
-		return Dgn::DgnSubCategory::QuerySubCategoryId(db, Dgn::DgnSubCategory::CreateCode(db, QueryBuildingPhysicalDoorCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame));
-		}
+	//Dgn::DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorFrameSubCategoryId(Dgn::DgnDbR db)
+	//	{
+	//	return Dgn::DgnSubCategory::QuerySubCategoryId(db, Dgn::DgnSubCategory::CreateCode(db, QueryBuildingPhysicalDoorCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame));
+	//	}
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
-	Dgn::DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(Dgn::DgnDbR db)
-		{
-		return Dgn::DgnCategory::QueryCategoryId(db, Dgn::SpatialCategory::CreateCode(db.GetDictionaryModel(), ARCHITECTURAL_PHYSICAL_CATEGORY_Windows));
-		}
+	//Dgn::DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(Dgn::DgnDbR db)
+	//	{
+	//	return Dgn::DgnCategory::QueryCategoryId(db, Dgn::SpatialCategory::CreateCode(db.GetDictionaryModel(), ARCHITECTURAL_PHYSICAL_CATEGORY_Windows));
+	//	}
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
-	Dgn::DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowPanelSubCategoryId(Dgn::DgnDbR db)
-		{
-		return Dgn::DgnSubCategory::QuerySubCategoryId(db, Dgn::DgnSubCategory::CreateCode(db, QueryBuildingPhysicalWindowCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel));
-		}
+	//Dgn::DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowPanelSubCategoryId(Dgn::DgnDbR db)
+	//	{
+	//	return Dgn::DgnSubCategory::QuerySubCategoryId(db, Dgn::DgnSubCategory::CreateCode(db, QueryBuildingPhysicalWindowCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Panel));
+	//	}
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
-	Dgn::DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowFrameSubCategoryId(Dgn::DgnDbR db)
-		{
-		Dgn::DgnSubCategoryId windowFrameCategoryId = Dgn::DgnSubCategory::QuerySubCategoryId(db, Dgn::DgnSubCategory::CreateCode(db, QueryBuildingPhysicalWindowCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame));
-		return windowFrameCategoryId;
-		}
+	//Dgn::DgnSubCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowFrameSubCategoryId(Dgn::DgnDbR db)
+	//	{
+	//	Dgn::DgnSubCategoryId windowFrameCategoryId = Dgn::DgnSubCategory::QuerySubCategoryId(db, Dgn::DgnSubCategory::CreateCode(db, QueryBuildingPhysicalWindowCategoryId(db), ARCHITECTURAL_PHYSICAL_SUBCATEGORY_Frame));
+	//	return windowFrameCategoryId;
+	//	}
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
-	Dgn::DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWallCategoryId(Dgn::DgnDbR db)
-		{
-		return Dgn::DgnCategory::QueryCategoryId(db, Dgn::SpatialCategory::CreateCode(db.GetDictionaryModel(), ARCHITECTURAL_PHYSICAL_CATEGORY_Walls));
-		}
+	//Dgn::DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingPhysicalWallCategoryId(Dgn::DgnDbR db)
+	//	{
+	//	return Dgn::DgnCategory::QueryCategoryId(db, Dgn::SpatialCategory::CreateCode(db.GetDictionaryModel(), ARCHITECTURAL_PHYSICAL_CATEGORY_Walls));
+	//	}
 
 
 	//---------------------------------------------------------------------------------------
