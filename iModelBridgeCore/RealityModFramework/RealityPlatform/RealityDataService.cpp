@@ -308,7 +308,11 @@ void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() con
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/EnterpriseStat/");
-    m_httpRequestString.append(m_encodedId);
+    if(!m_encodedId.empty())
+        {
+        Utf8String date = Utf8PrintfString("%d-%d-%d",m_date.GetYear(), m_date.GetMonth(), m_date.GetDay());
+        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date, m_encodedId));
+        }
     }
 
 //=====================================================================================
@@ -485,7 +489,7 @@ RDSFilter RealityDataFilterCreator::FilterBySize(uint64_t minSize, uint64_t maxS
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys)
     {   
-    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToGCSString(area, Utf8PrintfString("%lu", coordSys))));
+    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToRDSString(area, Utf8PrintfString("%lu", coordSys))));
     }
 
 //=====================================================================================

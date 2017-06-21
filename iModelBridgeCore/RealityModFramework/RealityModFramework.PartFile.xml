@@ -77,14 +77,14 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityContextTest" BentleyBuildMakeFile="RealityAdmin\RealityContextTest\RealityContextTest.mke">
+    <Part Name="GCSLoadTest" BentleyBuildMakeFile="RealityAdmin\LoadTesters\GCSLoadTester\GCSLoadTest.mke">
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <SubPart PartName="LoadTestBase"/>
         <Bindings>
-            <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
+            <Assemblies>Delivery/GCSLoadTest.exe</Assemblies>
         </Bindings>
     </Part>
     
@@ -99,7 +99,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="3CSLoadTest" BentleyBuildMakeFile="RealityAdmin\3CSLoadTester\3CSLoadTest.mke">
+    <Part Name="3CSLoadTest" BentleyBuildMakeFile="RealityAdmin\LoadTesters\3CSLoadTester\3CSLoadTest.mke">
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
@@ -287,7 +287,7 @@
         <SubPart PartName="ConversionToolsTester"/>
         <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
-        <SubPart PartName="RealityContextTest"/>
+        <SubPart PartName="GCSLoadTest"/>
         <SubPart PartName="RDSLoadTest"/>
         <SubPart PartName="3CSLoadTest"/>
         <SubPart PartName="RealityDataServicePerformanceTests"/>
@@ -314,6 +314,7 @@
     </Part>
     
     <Part Name="UsageDataExtractor" BMakeFile="RealityDbECPlugin\UsageDataExtractor\UsageDataExtractor.mke" OnlyPlatforms="x64">
+        <SubPart PartName="ConnectClientAPI" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
         <SubPart PartName="RequiredNugets" />
         <!--<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />-->
         <RequiredRepository>BCC-IdentityModel</RequiredRepository>
@@ -384,7 +385,6 @@
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Services.Client</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">System.Spatial</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.Storage</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">BentleyIT.STS.RelyingPartyCommon</NuGetPackage>
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Azure.KeyVault.Core.*</Files> 
             <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Data.Edm.*</Files> 
@@ -392,7 +392,6 @@
             <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Data.Services.Client.*</Files> 
             <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.WindowsAzure.Storage.*</Files> 
             <Files ProductDirectoryName="Assemblies">Delivery/System.Spatial.*</Files>  
-            <Assemblies>Delivery/BentleyIT.STS.RelyingPartyCommon.dll</Assemblies>  
         </Bindings>
     </Part>
     
@@ -730,18 +729,18 @@
         </Bindings>
     </Part>
 
-	<Part Name="RealityFrameworkTestsData" BentleyBuildMakeFile="Tests/prewire.mke">
+    <Part Name="RealityFrameworkTestsData" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
-            <Files SubPartDirectory="TestData/RealityPlatform" ProductDirectoryName="RealityFrameworkTestDataRealityPlatform">Delivery/TestData/RealityPlatform/*xml</Files>
+            <Files SubPartDirectory="TestData/RealityPlatform" ProductDirectoryName="RealityFrameworkTestDataRealityPlatform">Delivery/TestData/RealityPlatform/*</Files>
         </Bindings>
     </Part>
-	
+    
     <!-- Define a gtest program to run the tests -->
     <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModFrameworkTest -dTEST_COLLECTION_PRODUCT=RealityModFramework-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="RealityModFramework-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="BentleyDesktopClient-Api" />
-		<SubPart PartName="RealityFrameworkTestsData"/>
+        <SubPart PartName="RealityFrameworkTestsData"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RealityModFrameworkTest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RealityModFrameworkTest/Assets" />
@@ -753,7 +752,7 @@
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
         <ProductDirectory Name="BentleyDesktopClientApi"        Path=""/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""/>
-		<ProductDirectory Name="RealityFrameworkTestDataRealityPlatform"          Path="TestData/RealityPlatform"/>
+        <ProductDirectory Name="RealityFrameworkTestDataRealityPlatform"          Path="TestData/RealityPlatform"/>
     </ProductDirectoryList>
 
     <Product Name="RealityModFramework-Gtest" >

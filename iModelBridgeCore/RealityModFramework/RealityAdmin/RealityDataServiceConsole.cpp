@@ -661,10 +661,14 @@ void RealityDataConsole::ConfigureServer()
         {
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(str.c_str()).Trim());
         }
-    else if (verifyCertificate)
-        RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
-    else
-        RealityDataService::SetServerComponents(server, version, repo, schema);
+    else 
+        {
+        DisplayInfo("ProjectId not set\n", DisplayOption::Tip);
+        if (verifyCertificate)
+            RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
+        else
+            RealityDataService::SetServerComponents(server, version, repo, schema);
+        }
 
     DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     }
@@ -949,7 +953,7 @@ void RealityDataConsole::Download()
         return;
         }
 
-    RealityDataServiceDownload download = RealityDataServiceDownload(fileName, m_currentNode->node.GetInstanceId());
+    RealityDataServiceDownload download = RealityDataServiceDownload(fileName, m_currentNode->node.GetInstanceId(), statusFunc);
     if (download.IsValidTransfer())
         {
         download.SetProgressCallBack(downloadProgressFunc);
@@ -961,6 +965,8 @@ void RealityDataConsole::Download()
         DisplayInfo("If any files failed to download, they will be listed here: \n");
         DisplayInfo(Utf8PrintfString("%s\n", report));
         }
+    else
+        DisplayInfo("Download could not be completed. Please verify you have access to this RealityData and that it has files to download\n", DisplayOption::Error);
     }
 
 void RealityDataConsole::Upload()
@@ -1272,9 +1278,44 @@ void RealityDataConsole::MassUnlink()
             {
             relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), projectId);
             WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
+            if (relationResponse.body.ContainsI("errorMessage"))
+                DisplayInfo(Utf8PrintfString("unlink RD %s from project %s failed with error:\n%s\n", m_serverNodes[i].GetInstanceId(), projectId, relationResponse.body), DisplayOption::Error);
             }
         }
+    else
+        DisplayInfo("No ProjectId set; or ProjectId set incorrectly. Operation may not work correctly.\n", DisplayOption::Error);
+     
+    DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
+    }
 
+void RealityDataConsole::ForceMassUnlink()
+    {
+    DisplayInfo(Utf8PrintfString("Attempting to unlink all %d entries from all their relationships. Please be extra patient...\n", m_serverNodes.size()), DisplayOption::Tip);
+    
+    RawServerResponse projectResponse = RawServerResponse();
+
+    RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest("");
+    bvector<RealityDataProjectRelationshipPtr> entities;
+
+    Utf8String id;
+    RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete("", "");//dummy
+    RawServerResponse relationResponse = RawServerResponse();
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+
+    for (int i = 0; i < m_serverNodes.size(); ++i)
+        {
+        idReq = RealityDataProjectRelationshipByRealityDataIdRequest(m_serverNodes[i].GetInstanceId());
+        entities = RealityDataService::Request(idReq, projectResponse);
+
+        for(RealityDataProjectRelationshipPtr entity : entities)
+            {
+            relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), entity->GetRelatedId());
+            WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
+            if (relationResponse.body.ContainsI("errorMessage"))
+                DisplayInfo(Utf8PrintfString("unlink RD %s from project %s failed with error:\n%s\n", m_serverNodes[i].GetInstanceId(), entity->GetRelatedId(), relationResponse.body), DisplayOption::Error);
+            }
+        }
+    
     DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
     }
 
@@ -1303,10 +1344,12 @@ void RealityDataConsole::MassDelete()
         m_lastCommand = Command::Quit;
         return;
         }
-    else if (str != str2)
+    else if (str != str2 && str != "force")
         return;
-
-    MassUnlink();
+    else if (str == "force")
+        ForceMassUnlink();
+    else
+        MassUnlink();
 
     DisplayInfo(Utf8PrintfString("Deleting all %d entries. Please be patient...\n", m_serverNodes.size()), DisplayOption::Tip);
 
@@ -1524,7 +1567,7 @@ void RealityDataConsole::CreateRD()
     Choice(m_visibilityOptions, option);
     properties.Insert(RealityDataField::Visibility, option);
 
-    DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
+    DisplayInfo("Please input value for RootDocument (relative path)\n  ?", DisplayOption::Question);
     std::getline(*s_inputSource, input);
     Utf8String rootDoc = Utf8String(input.c_str()).Trim();
     if (rootDoc.EqualsI("Quit"))
@@ -1532,7 +1575,8 @@ void RealityDataConsole::CreateRD()
         m_lastCommand = Command::Quit;
         return;
         }
-    properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
+    rootDoc.ReplaceAll("\\","/");
+    properties.Insert(RealityDataField::RootDocument, rootDoc);
 
     RealityDataCreateRequest createRequest = RealityDataCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
 

@@ -24,6 +24,7 @@ static std::queue<User*> s_inactiveUsers = std::queue<User*>();
 static RPS* s_rps;
 static bool s_keepRunning = true;
 static bool s_startLogging = false;
+static bool s_wrapUp = true;
 static Stats* s_stats;
 
 static int64_t s_statStartTime;
@@ -38,7 +39,7 @@ static int s_sleepBiasMilliseconds = 0;
 //+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String FullInfo::LogError() const
     {
-    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s", id, req.url, req.headers, req.payload, response.responseCode, response.curlCode, response.body);
+    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s\n+----------------------------------------------------------------+\n", id, req.url, req.headers, req.payload, response.responseCode, response.curlCode, response.body);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -53,6 +54,7 @@ RPS::RPS() :requestLog(bmap<int, bmap<int64_t, int>>()){}
 //+---------------+---------------+---------------+---------------+---------------+------*/
 void RPS::AddRequest(int type, int64_t time)
     {
+    time /= 1000; //need seconds, not milliseconds
     std::lock_guard<std::mutex> lock(rpsMutex);
     requestLog[type][time] += 1;
     }
@@ -62,12 +64,11 @@ void RPS::AddRequest(int type, int64_t time)
 //+---------------+---------------+---------------+---------------+---------------+------*/
 double RPS::GetRPS(int type, int64_t time)
     {
-    bmap<int64_t, int> times = requestLog[type];
-
     int64_t amount = 0;
+    time /= 1000; //need seconds, not milliseconds
     //get the average number of requests per second, over ten seconds
     for (int64_t i = (time - 12); i < (time - 2); i++)
-        amount += times[i];
+        amount += requestLog[type][i];
     return amount / 10.0;
     }
 
@@ -89,7 +90,8 @@ void restartUser(UserManager* manager)
     User* user = s_inactiveUsers.front();
     s_inactiveUsers.pop();
 
-    user->DoNext(manager);
+    if(user->DoNext(manager))
+        s_inactiveUsers.push(user);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -106,7 +108,7 @@ void Dispatch(UserManager* manager, int requestBuffer)
     int refreshTimer = 0;
     std::chrono::milliseconds emptyTimer(1000);
 
-    while (s_keepRunning)
+    while (s_keepRunning || s_wrapUp)
         {
         float inactiveUsers = (float)getInnactiveUserSize();
         if (inactiveUsers == 0)
@@ -156,7 +158,7 @@ void Dispatch(UserManager* manager, int requestBuffer)
                     s_sleepBiasMilliseconds -= (int)(stepSeed * deviationFactor);  // Too slow ... decrease sleep bias
                 }
 
-            refreshTimer += s_sleepBiasMilliseconds;
+            refreshTimer += 100;
             std::chrono::milliseconds ms(s_sleepBiasMilliseconds);
             std::this_thread::sleep_for(ms);
 
@@ -281,7 +283,9 @@ void Stats::PrintStats()
 
     std::cout << Utf8PrintfString("Sleep bias (ms): %6d", s_sleepBiasMilliseconds) << std::endl;
 
-    std::cout << "active users: " << m_activeUsers << std::endl << std::endl;
+    std::cout << "active users: " << m_activeUsers << std::endl;
+    
+    std::wcout << "inactive users: " << getInnactiveUserSize() << " (not synched, total may be incorrect)"<< std::endl << std::endl;
 
     std::cout << "Press any key to quit testing" << std::endl;
     }
@@ -332,19 +336,19 @@ void ShowUsage(int argc, char* argv[])
 //* @bsifunction                                    Spencer Mason                   4/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
 User::User() :
-    m_currentOperation(0), m_linked(false)
+    m_currentOperation(0), m_linked(false), m_wrappedUp(false)
     {}
 
 User::User(int id, Stats* stats) :
-    m_currentOperation(0), m_userId(id), m_linked(false),
+    m_currentOperation(0), m_userId(id), m_linked(false), m_wrappedUp(false),
     m_fileName(BeFileName(Utf8PrintfString("%d", m_userId))), m_stats(stats)
     {}
 
-void User::DoNext(UserManager* owner)
+bool User::DoNext(UserManager* owner)
     {
     if(!s_keepRunning)
         return WrapUp(owner);
-    DoNextBody(owner);
+    return DoNextBody(owner);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -380,12 +384,16 @@ void UserManager::Perform()
 
     for (int i = 0; i < std::min(m_userCount, (int)users.size()); ++i)
         {
-        users[i]->DoNext(this);
+        if(users[i]->DoNext(this))
+            {
+            std::lock_guard<std::mutex> lock(inactiveUserMutex);
+
+            s_inactiveUsers.push(users[i]);
+            }
         }
 
     int still_running; /* keep number of running handles */
     int repeats = 0;
-    bool wrapUp = true;
 
     std::cout << "launching requests, it may take a few seconds to receive responses and display results" << std::endl;
 
@@ -408,7 +416,12 @@ void UserManager::Perform()
         if (!numfds)
             {
             repeats++; /* count number of repeated zero numfds */
-            if (repeats > 1)
+            if(repeats > 300) //something went wrong, after 30 seconds, exit
+                {
+                s_keepRunning = false;
+                break;
+                }
+            else if (repeats > 1)
                 std::this_thread::sleep_for(waitTimer); /* sleep 100 milliseconds */
             }
         else
@@ -442,14 +455,13 @@ void UserManager::Perform()
             curl_easy_cleanup(msg->easy_handle);
             }
 
-        if (wrapUp && !s_keepRunning)
+        if (s_wrapUp && !s_keepRunning)
             {
-            wrapUp = false;
             Repopulate();
             }
 
         curl_multi_perform(m_pCurlHandle, &still_running);
-        } while (wrapUp || still_running > 0);
+        } while (s_wrapUp || still_running > 0);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -465,8 +477,20 @@ void UserManager::Repopulate()
     while (s_inactiveUsers.size() > 0)
         {
         user = s_inactiveUsers.front();
-        user->DoNext(this);
         s_inactiveUsers.pop();
+        
+        if (user->DoNext(this))
+            s_inactiveUsers.push(user);
+        }
+    
+    s_wrapUp = false;
+    for (User* rdsUser : users)
+        {
+        if (!rdsUser->m_wrappedUp)
+            {
+            s_wrapUp = true;
+            break;
+            }
         }
     }
 
@@ -483,8 +507,6 @@ bool LoadTester::Main(int argc, char* argv[])
     {
     // Deactivate target requests per hour (run to max)
     s_targetRequestsPerHour = 0;
-
-    SetConsoleTitle("RDS Load Test");
 
     if (argc < 2)
         {
@@ -513,6 +535,8 @@ bool LoadTester::Main(int argc, char* argv[])
                 m_serverType = RealityPlatform::CONNECTServerType::QA;
             else if (strstr(argv[i], "prod"))
                 m_serverType = RealityPlatform::CONNECTServerType::PROD;
+            else if (strstr(argv[i], "perf"))
+                m_serverType = RealityPlatform::CONNECTServerType::PERF;
             else
                 m_serverType = RealityPlatform::CONNECTServerType::DEV;
             }
@@ -557,6 +581,9 @@ bool LoadTester::Main(int argc, char* argv[])
             path = Utf8String(substringPosition);
             }
         }
+
+    if (s_targetRequestsPerHour == 0)
+        s_startLogging = true;
 
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_ultimateStartTime);
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(s_statStartTime);

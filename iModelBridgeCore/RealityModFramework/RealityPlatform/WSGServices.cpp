@@ -103,7 +103,7 @@ WSGRequest& WSGRequest::GetInstance()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-Utf8String CurlConstructor::GetToken()
+Utf8String CurlConstructor::GetToken() const
     {
     if((std::time(nullptr) - m_tokenRefreshTimer) > (59 * 60)) //refresh required every 60 minutes
         RefreshToken();
@@ -113,7 +113,7 @@ Utf8String CurlConstructor::GetToken()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-void CurlConstructor::RefreshToken()
+void CurlConstructor::RefreshToken() const
     {
     m_tokenRefreshTimer = std::time(nullptr);
 
@@ -236,7 +236,7 @@ CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& 
     for (Utf8String header : wsgHeaders)
         headers = curl_slist_append(headers, header.c_str());
     if(response.curlCode != ServerType::Azure)
-        headers = curl_slist_append(headers, m_token.c_str());
+        headers = curl_slist_append(headers, GetToken().c_str());
 
     curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
 

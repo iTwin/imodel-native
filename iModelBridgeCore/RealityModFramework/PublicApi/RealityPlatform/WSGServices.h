@@ -51,6 +51,7 @@ enum class CONNECTServerType
     {
     DEV,
     QA,
+    PERF,
     PROD
     };
 
@@ -469,8 +470,8 @@ struct CurlConstructor
     {
 public:
     //! Gets the CC Token
-    REALITYDATAPLATFORM_EXPORT Utf8String GetToken(); 
-    REALITYDATAPLATFORM_EXPORT void RefreshToken();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetToken() const; 
+    REALITYDATAPLATFORM_EXPORT void RefreshToken() const;
 
     //! user defined path for the .pem file used to authenticate the server
     REALITYDATAPLATFORM_EXPORT BeFileName GetCertificatePath() { return m_certificatePath; }
@@ -486,9 +487,9 @@ protected:
 
     Utf8String          m_proxyUrl;
     Utf8String          m_proxyCreds;
-    Utf8String          m_token;
+    mutable Utf8String          m_token;
     BeFileName          m_certificatePath;
-    time_t              m_tokenRefreshTimer;
+    mutable time_t              m_tokenRefreshTimer;
     };
 
 //=====================================================================================

@@ -449,9 +449,9 @@ Utf8String RealityDataBase::FootprintToRDSString(bvector<GeoPoint2d> footprint, 
     Utf8String filter = "{\"Coordinates\": [";
     for (size_t i = 0; i < footprint.size() - 1; i++)
         {
-        filter.append(Utf8PrintfString("{\"Long\": %3.9f, \"Lat\": %3.9f},", footprint[i].longitude, footprint[i].latitude));
+        filter.append(Utf8PrintfString("{\"Longitude\": \"%3.9f\", \"Latitude\": \"%3.9f\"},", footprint[i].longitude, footprint[i].latitude));
         }
-    filter.append(Utf8PrintfString("{\"Long\": %3.9f, \"Lat\": %3.9f}]}", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
+    filter.append(Utf8PrintfString("{\"Longitude\": \"%3.9f\", \"Latitude\": \"%3.9f\"}]}", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
     
     return filter;
     }
@@ -465,8 +465,8 @@ bvector<GeoPoint2d> RealityDataBase::RDSJSONToFootprint(const Json::Value& footp
     for (Json::Value coordinate : footprintJson["Coordinates"])
         {
         GeoPoint2d pt;
-        pt.longitude = coordinate["Long"].asDouble();
-        pt.latitude = coordinate["Lat"].asDouble();
+        pt.longitude = atof(coordinate["Longitude"].asString().c_str());
+        pt.latitude = atof(coordinate["Latitude"].asString().c_str());
 
         footprint.push_back(pt);
         }
@@ -788,3 +788,6 @@ void RealityDataEnterpriseStat::SetUltimateId(Utf8CP ultimateId) { m_ultimateId 
 
 Utf8StringCR RealityDataEnterpriseStat::GetUltimateSite() const { return m_ultimateSite; }
 void RealityDataEnterpriseStat::SetUltimateSite(Utf8CP ultimateSite) { m_ultimateSite = ultimateSite; }
+
+DateTimeCR RealityDataEnterpriseStat::GetDate() const { return m_date; }
+void RealityDataEnterpriseStat::SetDate(DateTimeCR date) { m_date = date; }

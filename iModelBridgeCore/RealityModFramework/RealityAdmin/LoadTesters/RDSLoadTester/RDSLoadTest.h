@@ -46,11 +46,13 @@ struct RDSUser : public User
     {
 public:
     AzureHandshake              m_handshake;
+    RealityData&                m_realityData;
+    Utf8String                  m_fileName;
 
-    RDSUser();
-    RDSUser(int id, Stats* stats);
+    // RDSUser();
+    RDSUser(int id, Stats* stats, RealityData& realityData, Utf8String fileName);
     
-    void DoNextBody(UserManager* owner) override;
+    bool DoNextBody(UserManager* owner) override;
     
     void ValidatePrevious(int activeUsers) override;
 
@@ -75,7 +77,7 @@ public:
     CURL* DeleteRealityData();
     void ValidateDeleteRealityData(int activeUsers);
 
-    void WrapUp(UserManager* owner) override;
+    bool WrapUp(UserManager* owner) override;
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
