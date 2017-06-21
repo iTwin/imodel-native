@@ -1777,7 +1777,7 @@ Utf8String AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t num
     Utf8String          nameId           = name + idStr,
                         accIndexId       = "acc" + nameId,
                         bvIndexId        = "bv"  + nameId;
-    bool                useShortIndices  = maxIndex > 0xffff;
+    bool                useShortIndices  = maxIndex < 0xffff;
 
  
     if (useShortIndices)
