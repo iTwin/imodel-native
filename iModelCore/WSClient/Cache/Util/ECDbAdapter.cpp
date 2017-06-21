@@ -65,7 +65,7 @@ ECInstanceFinder& ECDbAdapter::GetECInstanceFinder()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbAdapter::GetECSchema(Utf8StringCR schemaName)
     {
-    return m_ecDb->Schemas().GetSchema(schemaName.c_str());
+    return m_ecDb->Schemas().GetSchema(schemaName);
     }
 
 /*--------------------------------------------------------------------------------------+
