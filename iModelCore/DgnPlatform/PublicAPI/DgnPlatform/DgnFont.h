@@ -9,12 +9,60 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
+#include <type_traits>
 
 typedef struct FT_FaceRec_* FT_Face; // Shield users from freetype.h because they have a bad include scheme.
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef bvector<DgnFontPtr> T_DgnFontPtrs;
+
+//=======================================================================================
+//! A handle to an FT_Face, which is a pointer to an FT_FaceRec_ object.
+//! Multiple threads cannot access the same FT_Face simultaneously. Therefore access to
+//! the FT_Face is available only under a mutex.
+//! Use FreeTypeFace::Execute() to access the FT_Face in a thread-safe manner.
+// @bsistruct                                                   Paul.Connelly   06/17
+//=======================================================================================
+struct FreeTypeFace
+{
+private:
+    FT_Face m_face;
+
+    DGNPLATFORM_EXPORT static BeMutex& GetMutex(); // => DgnFonts::GetMutex()
+
+    explicit FreeTypeFace(FT_Face face) : m_face(face) { }
+
+    DGNPLATFORM_EXPORT static void DestroyFace(FT_Face&);
+public:
+    FreeTypeFace(std::nullptr_t) : m_face(nullptr) { } //!< implicitly construct an invalid (null) FreeTypeFace
+    FreeTypeFace() : FreeTypeFace(nullptr) { } //!< implicitly construct an invalid (null) FreeTypeFace
+    FreeTypeFace(FreeTypeFaceCR) = default;
+    FreeTypeFaceR operator=(FreeTypeFaceCR) = default;
+    FreeTypeFaceR operator=(std::nullptr_t) { m_face = nullptr; }
+
+    void Destroy()
+        {
+        BeMutexHolder lock(GetMutex());
+        DestroyFace(m_face);
+        }
+
+    bool IsValid() const { return nullptr != m_face; }
+
+    bool operator==(FreeTypeFaceCR rhs) const { return m_face == rhs.m_face; }
+    bool operator!=(FreeTypeFaceCR rhs) const { return !(*this == rhs); }
+    bool operator<(FreeTypeFaceCR rhs) const { return m_face < rhs.m_face; }
+
+    //! Given some callable object accepting an FT_Face as its argument, execute it in a thread-safe manner.
+    template<typename F> auto Execute(F func) const -> decltype(func(m_face))
+        {
+        BeMutexHolder lock(GetMutex());
+        return func(m_face);
+        }
+
+    //! Create a FreeTypeFace. Check IsValid() to determine if the operation succeeded.
+    DGNPLATFORM_EXPORT static FreeTypeFace CreateAndConfigFace(signed long faceIndex, Utf8CP path, ByteCP buffer, size_t bufferSize, Utf8CP bufferFamilyName);
+};
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     03/2015
@@ -45,7 +93,6 @@ protected:
         Never,
         };
     virtual DoFixup _DoFixup () const = 0;
-        
 };
 
 //=======================================================================================
@@ -167,8 +214,8 @@ private:
     typedef bmap<DgnFontStyle, T_GlyphCache> T_GlyphCacheMap;
     mutable T_GlyphCacheMap m_glyphCache;
 
-    DgnGlyphCP FindGlyphCP(FT_Face, unsigned int /*FT_UInt*/ glyphIndex, DgnFontStyle) const;
-    BentleyStatus ComputeAdvanceWidths(T_DoubleVectorR, FT_Face, uint32_t const* ucs4Chars, size_t numChars) const;
+    DgnGlyphCP FindGlyphCP(FreeTypeFace, unsigned int /*FT_UInt*/ glyphIndex, DgnFontStyle) const;
+    BentleyStatus ComputeAdvanceWidths(T_DoubleVectorR, FreeTypeFace, uint32_t const* ucs4Chars, size_t numChars) const;
 
 public:
     DgnTrueTypeFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::TrueType, name, data) {}
