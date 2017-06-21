@@ -23,7 +23,8 @@ struct RealityModFrameworkTestsUtils
 private:
     static WString s_exePath;
 public:
-    EXPORT_ATTRIBUTE static Utf8String GetJson(WString filename);
+    EXPORT_ATTRIBUTE static Utf8String GetTestDataContent(WString filename);
+    EXPORT_ATTRIBUTE static WString GetTestDataPath(WString filename);
     EXPORT_ATTRIBUTE static WString GetDirectory();
     };
 

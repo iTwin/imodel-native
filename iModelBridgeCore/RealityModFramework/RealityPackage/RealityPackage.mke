@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -75,4 +75,7 @@ $(BuildContext)xsd/RealityPackage.1.0.xsd : $(_MakeFilePath)RealityPackage.1.0.x
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)xsd/RealityPackage.2.0.xsd : $(_MakeFilePath)RealityPackage.2.0.xsd
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)xsd/RealityPackage.2.1.xsd : $(_MakeFilePath)RealityPackage.2.1.xsd
     $(LinkFirstDepToFirstTarget)

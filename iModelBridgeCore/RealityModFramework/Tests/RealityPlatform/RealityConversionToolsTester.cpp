@@ -33,13 +33,9 @@ class RealityConversionTestFixture : public testing::Test
 
 	WCharCP GetDirectory()
 	{
-		WChar exePath[MAX_PATH];
-		GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-		WString exeDir = exePath;
-		size_t pos = exeDir.find_last_of(L"/\\");
-		exeDir = exeDir.substr(0, pos + 1);
-		return exeDir.c_str();
+        BeFileName outDir;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory (outDir);
+		return outDir.c_str();
 	}
     };
 
@@ -386,7 +382,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
 			"Description": "some big description",
 			"ContactInformation": "my contact",
 			"Keywords": "keyword1;keyword2",
-			"Legal": "© OpenStreetMap contributors",
+			"Legal": "ï¿½ OpenStreetMap contributors",
 			"TermsOfUse": "Everyone",
 			"Lineage": "ok",
 			"Provenance": "somewhere"
@@ -404,7 +400,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
 			"Description": null,
 			"ContactInformation": null,
 			"Keywords": null,
-			"Legal": "© OpenStreetMap contributors",
+			"Legal": "ï¿½ OpenStreetMap contributors",
 			"TermsOfUse": null,
 			"Lineage": null,
 			"Provenance": null
@@ -724,7 +720,7 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntityMetadata)
 	ASSERT_STREQ(metadataUnderTest->GetDescription().c_str(), "some big description");
 	ASSERT_STREQ(metadataUnderTest->GetContactInfo().c_str(), "my contact");
 	ASSERT_STREQ(metadataUnderTest->GetKeywords().c_str(), "keyword1;keyword2");
-	ASSERT_STREQ(metadataUnderTest->GetLegal().c_str(), "© OpenStreetMap contributors");
+	ASSERT_STREQ(metadataUnderTest->GetLegal().c_str(), "ï¿½ OpenStreetMap contributors");
 	ASSERT_STREQ(metadataUnderTest->GetTermsOfUse().c_str(), "Everyone");
 	ASSERT_STREQ(metadataUnderTest->GetLineage().c_str(), "ok");
 	ASSERT_STREQ(metadataUnderTest->GetProvenance().c_str(), "somewhere");
@@ -751,7 +747,7 @@ TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrder)
 	WString parseError;
 	
 	Utf8String samplePath(GetDirectory());
-	samplePath.append(".\\TestData\\RealityPlatform\\RealityDataPackageSample.xml");
+	samplePath.append("..\\TestData\\RealityPlatform\\RealityDataPackageSample.xml");
 	BeFileName fileName(samplePath);
 	auto linkFile = RealityConversionTools::PackageFileToDownloadOrder(fileName, &parseError);
 

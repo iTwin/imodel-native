@@ -296,7 +296,7 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
 
     // Streamed.
     bool isStreamed;
-    pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_PREFIX ":" PACKAGE_SOURCE_ATTRIBUTE_Streamed);
+    pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_SOURCE_ATTRIBUTE_Streamed);
     pDataSource->SetStreamed(isStreamed);
 
     // Id.
@@ -416,7 +416,7 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
 
     // Streamed.
     bool isStreamed;
-    pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_PREFIX ":" PACKAGE_SOURCE_ATTRIBUTE_Streamed);
+    pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_SOURCE_ATTRIBUTE_Streamed);
     pDataSource->SetStreamed(isStreamed);
 
     // Id.
@@ -553,20 +553,20 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
 RealityPackageStatus RealityDataSerializer::_WritePackageInfo(BeXmlNodeR node, RealityDataPackageCR package) const 
     { 
     // Optional fields, if empty don't add them to the package.
-    if (!package.GetName().empty())
-        node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
-
-    if (!package.GetCreationDate().ToString().empty())
-        node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
-
     if (!package.GetOrigin().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Origin, package.GetOrigin().c_str());
 
     if (!package.GetRequestingApplication().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_RequestingApplication, package.GetRequestingApplication().c_str());
+    
+    if (!package.GetName().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
 
     if (!package.GetDescription().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Description, package.GetDescription().c_str());
+
+    if (!package.GetCreationDate().ToString().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
 
     if (!package.GetCopyright().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Copyright, package.GetCopyright().c_str());

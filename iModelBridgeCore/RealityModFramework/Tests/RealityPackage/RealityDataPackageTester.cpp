@@ -9,6 +9,8 @@
 
 #include <Bentley/BeTest.h>
 #include <RealityPackage/RealityDataPackage.h>
+#include <Bentley/BeTextFile.h>
+#include "../Common/RealityModFrameworkTestsCommon.h"
 
 USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
@@ -46,6 +48,16 @@ public:
         out.AppendToPath(L"RealityPackage.2.0.xsd");
         return out;
         }  
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                      Remi.Charbonneau                                06/2017
+    //----------------------------------------------------------------------------------------
+    BeFileName GetXsd_2_1()
+        {
+        BeFileName out = GetXsdDirectory();
+        out.AppendToPath(L"RealityPackage.2.1.xsd");
+        return out;
+        }
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -2228,6 +2240,51 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                       Remi.Charbonneau                            06/2017
+//-------------------------------------------------------------------------------------
+TEST_F(PackageTestFixture, Write2_1)
+    {
+    RealityPackageStatus status;
+    WStringP parseError = nullptr;
+
+    auto packageSample = RealityModFrameworkTestsUtils::GetTestDataPath(L"Testdata//RealityPackage//RealityDataPackageSample.xml");
+
+    BeFileName filename(packageSample);
+
+    RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromFile(status, filename, parseError);
+    EXPECT_EQ(parseError, nullptr);
+    ASSERT_EQ(RealityPackageStatus::Success, status);
+
+    BeFileName written;
+    BeTest::GetHost().GetTempDir(written);
+    written.AppendString(L"test.xml");
+    auto statusWrite = pPackage->Write(written);
+    ASSERT_EQ(RealityPackageStatus::Success, statusWrite);
+
+    BeXmlStatus xmlStatus;
+    auto xml = BeXmlDom::CreateAndReadFromFile(xmlStatus, filename.c_str(), nullptr);
+    xmlStatus = xml->SchemaValidate(GetXsd_2_1().c_str());
+
+    EXPECT_EQ(xmlStatus, BeXmlStatus::BEXML_Success);
+
+    BeFileStatus fileStatus;
+    auto input = BeTextFile::Open(fileStatus, filename.c_str(), TextFileOpenType::Read, TextFileOptions::None);
+    auto output = BeTextFile::Open(fileStatus, written.c_str(), TextFileOpenType::Read, TextFileOptions::None);
+
+    WString expectedLine;
+    WString outputLine;
+    while(TextFileReadStatus::Success == input->GetLine(expectedLine))
+        {
+        EXPECT_EQ(output->GetLine(outputLine), TextFileReadStatus::Success);
+        EXPECT_STREQ(expectedLine.c_str(), outputLine.c_str());
+        }
+
+    input->Close();
+    output->Close();
+
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 //TEST_F(PackageTestFixture, CreateAndRead_2_0)
@@ -2428,3 +2485,4 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 //        ASSERT_STREQ(pLeft->GetSource(0).GetType().c_str(), pRight->GetSource(0).GetType().c_str());
 //    }
 //  }
+

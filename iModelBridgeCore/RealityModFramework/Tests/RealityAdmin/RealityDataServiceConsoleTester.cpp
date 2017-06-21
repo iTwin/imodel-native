@@ -25,16 +25,10 @@ class RealityDataServiceConsoleTestFixture : public testing::Test
 public:
     WCharCP GetDirectory()
         {
-        WChar exePath[MAX_PATH];
-        GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-        WString exeDir = exePath;
-        size_t pos = exeDir.find_last_of(L"/\\");
-        exeDir = exeDir.substr(0, pos + 1);
-
-        BeFileName testPath(exeDir);
-        testPath.AppendToPath(L"RealityDataServiceConsoleTestDirectory");
-        return testPath;
+        BeFileName outDir;
+        BeTest::GetHost().GetTempDir (outDir);
+        outDir.AppendToPath(L"RealityDataServiceConsoleTestDirectory");
+        return outDir;
         }
 
     void InitTestDirectory(WCharCP directoryname)

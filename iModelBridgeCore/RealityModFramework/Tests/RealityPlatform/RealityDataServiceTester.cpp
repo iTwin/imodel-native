@@ -817,7 +817,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestLastPage)
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\MultipleRealityData.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\MultipleRealityData.json");
 		}));
 
 	RealityDataPagedRequest requestUT{};
@@ -843,11 +843,11 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestNotLastPage)
         response.curlCode = CURLE_OK;
         if(pagedRequest->GetStartIndex() == 0)
             {
-            response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");
+            response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");
             }
         else
             {
-            response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki2.json");
+            response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki2.json");
             }
         
 		}));
@@ -888,7 +888,7 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestGoodRequest)
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\EnterpriseStat.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\EnterpriseStat.json");
 		}));
 
     DateTime dt = DateTime::GetCurrentTimeUtc();
@@ -945,11 +945,11 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdGoodRequest)
         auto requestString = wsgRequest.GetHttpRequestString();
         if(requestString.Contains("marker=Page2"))
             {
-            response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\ListAllServerResponseSecondPage.xml");    
+            response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\ListAllServerResponseSecondPage.xml");    
             }
         else
             {
-            response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\ListAllServerResponseFirstPage.xml");        
+            response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\ListAllServerResponseFirstPage.xml");        
             }
         
         }));
@@ -983,7 +983,7 @@ TEST_F(RealityDataServiceFixture, RealityDataByIdRequestGoodRequest)
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
-		response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");  
+		response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");  
 		}));
 
 	RealityDataByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a5");
@@ -1007,7 +1007,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestGoodRequest)
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
         
-        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\RealityDataDocument.json");  
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataDocument.json");  
 		}));
 
 	RealityDataDocumentByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a7");
@@ -1116,7 +1116,7 @@ TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestGoodRequest)
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\RealityDataFolder.json");  
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataFolder.json");  
 		}));
 
 	RealityDataFolderByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a7");
@@ -1139,7 +1139,7 @@ TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestGoodR
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\MultipleRealityData.json");  
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\MultipleRealityData.json");  
 		}));
 
 	RealityDataListByOrganizationPagedRequest requestUT("RootID");
@@ -1163,7 +1163,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdR
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\RealityDataRelationship.json");  
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataRelationship.json");  
 		}));
 
 	RealityDataProjectRelationshipByRealityDataIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a6");
@@ -1186,7 +1186,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdP
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\SingleRealityDataRelationship.json");  
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityDataRelationship.json");  
 		}));
 
 	RealityDataProjectRelationshipByRealityDataIdPagedRequest requestUT("RootID");
@@ -1307,7 +1307,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdBadAzureToken)
         response.curlCode = CURLE_OK;
         
         auto requestString = wsgRequest.GetHttpRequestString();
-		response.body = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\ListAllServerResponseSecondPage.xml");  
+		response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\ListAllServerResponseSecondPage.xml");  
 		}));
 
 	AllRealityDataByRootId requestUT("RootID");
