@@ -2369,7 +2369,8 @@ BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP moduleName)
     HMODULE hModule = moduleName ? ::GetModuleHandleW(moduleName->c_str()) : NULL;
     wchar_t moduleFileName[MAX_PATH];
     ::GetModuleFileNameW(hModule, moduleFileName, _countof(moduleFileName));
-    return BeFileName(moduleFileName);
+    BeFileName path(moduleFileName);
+    return path.GetDirectoryName();
     }
 #elif defined(_WIN32) && defined(BENTLEY_WINRT)
 /*---------------------------------------------------------------------------------**//**
@@ -2380,7 +2381,8 @@ BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
     // GetModuleHandle not available under UWP.
     wchar_t moduleFileName[MAX_PATH];
     ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
-    return BeFileName(moduleFileName);
+    BeFileName path(moduleFileName);
+    return path.GetDirectoryName();
     }
 #elif defined(__linux)
 /*---------------------------------------------------------------------------------**//**
