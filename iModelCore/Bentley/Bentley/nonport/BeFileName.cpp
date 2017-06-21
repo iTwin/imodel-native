@@ -2360,7 +2360,7 @@ BeFileName BeFileName::Combine(std::initializer_list<WCharCP> paths) const
     return fullPath;
     }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2369,6 +2369,17 @@ BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP moduleName)
     HMODULE hModule = moduleName ? ::GetModuleHandleW(moduleName->c_str()) : NULL;
     wchar_t moduleFileName[MAX_PATH];
     ::GetModuleFileNameW(hModule, moduleFileName, _countof(moduleFileName));
+    return BeFileName(moduleFileName);
+    }
+#elif defined(_WIN32) && defined(BENTLEY_WINRT)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
+    {
+    // GetModuleHandle not available under UWP.
+    wchar_t moduleFileName[MAX_PATH];
+    ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
     return BeFileName(moduleFileName);
     }
 #elif defined(__linux)
