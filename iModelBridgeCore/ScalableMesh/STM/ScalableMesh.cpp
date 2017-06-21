@@ -2554,7 +2554,8 @@ template <class POINT> void ScalableMesh<POINT>::_SetCurrentlyViewedNodes(const 
 
 template <class POINT> void ScalableMesh<POINT>::SaveEditFiles()
     {        
-    assert(m_scmIndexPtr.GetPtr() != nullptr && m_scmIndexPtr->GetDataStore().IsValid());
+    if (m_scmIndexPtr.GetPtr() == nullptr || !m_scmIndexPtr->GetDataStore().IsValid())
+        return;
 
     if (m_scmIndexPtr->m_isInsertingClips == true)
         return;

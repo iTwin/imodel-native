@@ -505,6 +505,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsLoaded() { return m_isLoaded; }
 
+        bool IsRoot() { return m_isRoot; }
+
         DataSourceAccount *GetDataSourceAccount(void);
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
@@ -628,6 +630,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
             // A group contains at least its ID and the number of nodes within it.
             m_totalSize = 2 * sizeof(size_t);
+
+            m_isRoot = m_ParentGroup == nullptr;
             }
 
         bool DownloadFromID(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize)
@@ -688,13 +692,26 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
 
         void SetOldMasterHeaderData(SQLiteIndexHeader pi_pOldMasterHeader)
             {
+            // Save copy of master header for future reference
+            m_masterHeader = pi_pOldMasterHeader;
+
             // Serialize master header
             m_oldMasterHeader.resize(sizeof(pi_pOldMasterHeader));
             memcpy(m_oldMasterHeader.data(), &pi_pOldMasterHeader, sizeof(pi_pOldMasterHeader));
             }
+
+        bool IsBalanced() const { return m_masterHeader.m_balanced; }
+        uint64_t GetSplitThreshold() const { return m_masterHeader.m_SplitTreshold; }
+        uint64_t GetDepth() const { return m_masterHeader.m_depth; }
+        bool IsTextured() const { return m_masterHeader.m_textured != IndexTexture::None; }
+        uint64_t GetTerrainDepth() const { return m_masterHeader.m_terrainDepth; }
+        double GetResolution() const { return m_masterHeader.m_resolution; }
+        bool IsTerrain() const { return m_masterHeader.m_isTerrain; }
+
     private:
         SMGroupGlobalParameters::Ptr m_parametersPtr;
         bvector<uint8_t> m_oldMasterHeader;
+        SQLiteIndexHeader m_masterHeader;
     };
 
 
@@ -735,7 +752,6 @@ class SMGroupingStrategy
     protected:
         uint32_t m_GroupID = 0;
         std::map<uint32_t, SMNodeGroupPtr> m_OpenGroups;
-        SMIndexMasterHeader<EXTENT> m_oldMasterHeader;
         SMNodeGroupMasterHeader m_GroupMasterHeader;
         GeoCoordinates::BaseGCSCPtr m_sourceGCS;
         GeoCoordinates::BaseGCSCPtr m_destinationGCS;
@@ -743,7 +759,6 @@ class SMGroupingStrategy
 
 template<class EXTENT> void SMGroupingStrategy<EXTENT>::SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader)
     {
-    m_oldMasterHeader = oldMasterHeader;
     m_GroupMasterHeader.SetOldMasterHeaderData(oldMasterHeader);
     }
 
@@ -1066,11 +1081,11 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(SMIndexNodeHeade
         if (pi_pChildGroup->m_tileTreeMap.size() < 10)
             {
             pi_pParentGroup->MergeChild(pi_pChildGroup);
-            for (auto& tile : pi_pChildGroup->m_tileTreeMap)
-                {
-                this->m_GroupMasterHeader.AddNodeToGroup(pi_pParentGroup->GetID(), tile.first, 0);
-                }
-            this->m_GroupMasterHeader.RemoveGroup(pi_pChildGroup->GetID());
+            //for (auto& tile : pi_pChildGroup->m_tileTreeMap)
+            //    {
+            //    this->m_GroupMasterHeader.AddNodeToGroup(pi_pParentGroup->GetID(), tile.first, 0);
+            //    }
+            //this->m_GroupMasterHeader.RemoveGroup(pi_pChildGroup->GetID());
             pi_pChildGroup->m_tileTreeMap.clear();
             }
         else
@@ -1101,6 +1116,19 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
     Json::Value tileSet;
     tileSet["asset"]["version"] = "0.0";
     tileSet["root"] = pi_Group->m_tilesetRootNode;
+
+    if (pi_Group->IsRoot())
+        {
+        // Save master header info in Cesium tileset
+        auto& SMMasterHeader = tileSet["root"]["SMMasterHeader"];
+        SMMasterHeader["Balanced"] = m_GroupMasterHeader.IsBalanced();
+        SMMasterHeader["SplitTreshold"] = m_GroupMasterHeader.GetSplitThreshold();
+        SMMasterHeader["Depth"] = m_GroupMasterHeader.GetDepth();
+        SMMasterHeader["MeshDataDepth"] = m_GroupMasterHeader.GetTerrainDepth();
+        SMMasterHeader["IsTerrain"] = m_GroupMasterHeader.IsTerrain();
+        SMMasterHeader["DataResolution"] = m_GroupMasterHeader.GetResolution();
+        SMMasterHeader["IsTextured"] = m_GroupMasterHeader.IsTextured();
+        }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;
 
