@@ -19,6 +19,7 @@
         <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
         <SubPart PartName="snappy" PartFile="Zlib" Repository="Libsrc-Compress" />
         <SubPart PartName="lzma" PartFile="Zlib" Repository="Libsrc-Compress" />
+        <SubPart PartName="BeJsonCpp"  PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLite$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)</Assemblies>
@@ -95,10 +96,10 @@
         </Bindings>
     </Part>
 
-	<!-- Memory leak testing of BeSQLite tests. Only called on demand -->
-	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=BeSQLite-Gtest -dGTEST_NAME=BeSQLiteTest" OnlyPlatforms="x64">
-		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
-		<SubProduct ProductName="BeSQLite-Gtest" />
+    <!-- Memory leak testing of BeSQLite tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=BeSQLite-Gtest -dGTEST_NAME=BeSQLiteTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="BeSQLite-Gtest" />
     </Part>
 
     <!-- ********************** -->

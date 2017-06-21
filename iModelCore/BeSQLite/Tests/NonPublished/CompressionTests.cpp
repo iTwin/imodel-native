@@ -495,7 +495,7 @@ TEST(CompressionTests, CreateZipFile)
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
     BentleyApi::BeSQLite::BeSQLiteLib::Initialize(tempDir);
-	
+    
     BeFileName  zipFileName;
     BeTest::GetHost().GetTempDir (zipFileName);
     zipFileName.AppendToPath (L"CompressionTests_CreateZipFile.zip");
