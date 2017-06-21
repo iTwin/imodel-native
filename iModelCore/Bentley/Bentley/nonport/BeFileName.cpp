@@ -2364,18 +2364,18 @@ BeFileName BeFileName::Combine(std::initializer_list<WCharCP> paths) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName Desktop::FileSystem::GetExecutableDir()
+BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP moduleName)
     {
+    HMODULE hModule = moduleName ? ::GetModuleHandleW(moduleName->c_str()) : NULL;
     wchar_t moduleFileName[MAX_PATH];
-    ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
-    BeFileName path(moduleFileName);
-    return path.GetDirectoryName();
+    ::GetModuleFileNameW(hModule, moduleFileName, _countof(moduleFileName));
+    return BeFileName(moduleFileName);
     }
 #elif defined(__linux)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName Desktop::FileSystem::GetExecutableDir()
+BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
     {
     Utf8PrintfString exelink("/proc/%ld/exe", getpid());
 
@@ -2422,7 +2422,7 @@ static std::string macBundlePath()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName Desktop::FileSystem::GetExecutableDir()
+BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
     {
     // *** TBD: Fix up argv0 using cwd, etc.
     BeFileName exepath(macBundlePath().c_str(), BentleyCharEncoding::Utf8);
