@@ -39,7 +39,7 @@ public:
     FreeTypeFace() : FreeTypeFace(nullptr) { } //!< implicitly construct an invalid (null) FreeTypeFace
     FreeTypeFace(FreeTypeFaceCR) = default;
     FreeTypeFaceR operator=(FreeTypeFaceCR) = default;
-    FreeTypeFaceR operator=(std::nullptr_t) { m_face = nullptr; return *this;}
+    FreeTypeFaceR operator=(std::nullptr_t) { m_face = nullptr; return *this; }
 
     void Destroy()
         {
