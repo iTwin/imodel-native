@@ -150,6 +150,12 @@ BentleyStatus ReadMeshIndices(MeshR mesh, Json::Value const& primitiveValue)
         return ERROR;
         }
 
+    size_t      triangleVertexCount = 3*(indices.size()/3);
+
+    for(size_t i=0; i < triangleVertexCount; i+= 3)
+        mesh.AddTriangle(Triangle(indices[i], indices[i+1], indices[i+2], false));
+
+
     return SUCCESS;
     }
 

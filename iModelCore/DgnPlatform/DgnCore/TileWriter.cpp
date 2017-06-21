@@ -2174,15 +2174,8 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
 
     primitiveJson["mode"] = GLTF_TRIANGLES;
 
-    Utf8String      accPositionId =  AddQuantizedPointsAttribute(mesh.Points().data(), mesh.Points().size(), mesh.Verts().GetParams(), "Position", idStr.c_str());
-    primitiveJson["attributes"]["POSITION"] = accPositionId;
-
     if (!mesh.Params().empty() && displayParams.IsTextured())
         primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (mesh.Params().data(), mesh.Params().size(), "Param", idStr.c_str());
-
-
-    if (!mesh.GetColorTable().IsUniform())
-        AddMeshUInt16Attributes(primitiveJson, mesh.Colors().data(), mesh.Colors().size(), idStr, "ColorIndex_", "_COLORINDEX");
 
     BeAssert(displayParams.IgnoresLighting() || !mesh.Normals().empty());
 
@@ -2190,9 +2183,6 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
         primitiveJson["attributes"]["NORMAL"]  = AddQuantizedPointsAttribute(mesh.Normals().data(), mesh.Normals().size(), QPoint3d::Params::FromNormalizedRange(), "Normal", idStr.c_str());
 
     primitiveJson["indices"] = AddMeshTriangleIndices ("Indices", mesh.Triangles(), idStr, mesh.Points().size());
-    AddMeshPointRange(m_json["accessors"][accPositionId], mesh.Verts().GetParams().GetRange());
- 
-    primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
 
     if (mesh.GetEdges().IsValid())
         primitiveJson["edges"] = CreateMeshEdges(*mesh.GetEdges(), mesh.Points().size(), idStr);
@@ -2205,20 +2195,8 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CreatePolylines(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr)
     {
-    DisplayParamsCR     displayParams = mesh.GetDisplayParams();
-
     primitiveJson["mode"] = GLTF_LINES;
-
-    Utf8String      accPositionId =  AddQuantizedPointsAttribute(mesh.Points().data(), mesh.Points().size(), mesh.Verts().GetParams(), "Position", idStr.c_str());
-    primitiveJson["attributes"]["POSITION"] = accPositionId;
-
-    if (!mesh.GetColorTable().IsUniform())
-        AddMeshUInt16Attributes(primitiveJson, mesh.Colors().data(), mesh.Colors().size(), idStr, "ColorIndex_", "_COLORINDEX");
-
     primitiveJson["indices"] = AddPolylines(mesh.Polylines(), mesh.Points().size(), "polyline", idStr);
-    AddMeshPointRange(m_json["accessors"][accPositionId], mesh.Verts().GetParams().GetRange());
- 
-    primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
 
     return SUCCESS;
     }
@@ -2267,6 +2245,16 @@ virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
 
     if (SUCCESS != CreateMaterialJson(materialJson, mesh, mesh.GetDisplayParams(), idStr))
         return ERROR;
+
+    Utf8String      accPositionId =  AddQuantizedPointsAttribute(mesh.Points().data(), mesh.Points().size(), mesh.Verts().GetParams(), "Position", idStr.c_str());
+    primitiveJson["attributes"]["POSITION"] = accPositionId;
+
+    if (!mesh.GetColorTable().IsUniform())
+        AddMeshUInt16Attributes(primitiveJson, mesh.Colors().data(), mesh.Colors().size(), idStr, "ColorIndex_", "_COLORINDEX");
+
+    AddMeshPointRange(m_json["accessors"][accPositionId], mesh.Verts().GetParams().GetRange());
+ 
+    primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
 
     if ((!mesh.Triangles().empty() && SUCCESS == CreateTriMesh(primitiveJson, mesh, idStr)) ||
         (!mesh.Polylines().empty() && SUCCESS == CreatePolylines(primitiveJson, mesh, idStr)))
