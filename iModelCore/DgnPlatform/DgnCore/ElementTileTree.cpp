@@ -893,7 +893,7 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 
 
 
-static bool s_useRealityCache = false;      // Still WIP.
+static bool s_useRealityCache = true;      // Still WIP.
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -1743,7 +1743,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     uint32_t                fillColor = displayParams.GetFillColor();
 
     
-    BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
+//  BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
     builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {

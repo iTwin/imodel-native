@@ -1363,7 +1363,6 @@ void AddBatchIds(Json::Value& primitive, FeatureIndex const& featureIndex, size_
 
     for (size_t i=0; i<nVertices; i++)
         batchIds.push_back(featureIndex.IsUniform() ? featureIndex.m_featureID : featureIndex.m_featureIDs[i]);
-        
    
     AddMeshUInt16Attributes(primitive, batchIds.data(), batchIds.size(), idStr, "Batch_", "BATCHID");
     }
@@ -1773,21 +1772,13 @@ Utf8String    AddParamAttribute(FPoint2d const* params, size_t nParams, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t numIndices, Utf8StringCR idStr)
+Utf8String AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t numIndices, Utf8StringCR idStr, size_t maxIndex)
     {
     Utf8String          nameId           = name + idStr,
                         accIndexId       = "acc" + nameId,
                         bvIndexId        = "bv"  + nameId;
-    bool                useShortIndices    = true;
+    bool                useShortIndices  = maxIndex > 0xffff;
 
-    for (size_t i=0; i<numIndices; i++)
-        {
-        if (indices[i] > 0xffff)
-            {
-            useShortIndices = false;
-            break;
-            }
-        }
  
     if (useShortIndices)
         {
@@ -1810,6 +1801,23 @@ Utf8String AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t num
     return accIndexId;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String AddMeshTriangleIndices(Utf8StringCR name, TriangleList const& triangles, Utf8StringCR idStr, size_t maxIndex)
+    {
+    bvector<uint32_t>       indices;
+    
+    indices.reserve(triangles.size() * 3);
+
+    for (auto&  triangle : triangles)
+        {
+        indices.push_back(triangle.m_indices[0]);
+        indices.push_back(triangle.m_indices[1]);
+        indices.push_back(triangle.m_indices[2]);
+        }
+    return AddMeshIndices(name, indices.data(), indices.size(), idStr, maxIndex);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -1844,7 +1852,7 @@ static Json::Value     CreateColorJson(RgbFactorCR color)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus  _CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh, MeshMaterial const& meshMaterial, DisplayParamsCR displayParams, Utf8StringCR suffix) 
+BentleyStatus  CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh, MeshMaterial const& meshMaterial, DisplayParamsCR displayParams, Utf8StringCR suffix) 
     {
 #ifdef NEEDS_WORK
     if (nullptr != displayParams.GetMaterial())
@@ -1883,7 +1891,7 @@ Json::Value AddNormals (QPoint3dCP normals, size_t numNormals, Utf8CP name, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, MeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
+BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, MeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
     {
     primitiveJson["mode"] = GLTF_TRIANGLES;
 
@@ -1902,7 +1910,7 @@ virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Me
     if (nullptr != meshArgs.m_normals && !meshMaterial.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
         primitiveJson["attributes"]["NORMAL"]  = AddQuantizedPointsAttribute(meshArgs.m_normals, meshArgs.m_numPoints, QPoint3d::Params::FromNormalizedRange(), "Normal", idStr.c_str());
 
-    primitiveJson["indices"] = AddMeshIndices ("Indices", (uint32_t const*) meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr);
+    primitiveJson["indices"] = AddMeshIndices ("Indices", (uint32_t const*) meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr, meshArgs.m_numPoints);
     AddMeshPointRange(m_json["accessors"][accPositionId], meshArgs.m_pointParams.GetRange());
 
     return SUCCESS;
@@ -1911,7 +1919,7 @@ virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Me
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddTriMesh(Json::Value& primitivesNode, MeshArgs const& meshArgs, MeshCR mesh, size_t& index)
+virtual void AddTriMesh(Json::Value& primitivesNode, MeshArgs const& meshArgs, MeshCR mesh, size_t& index)
     {
     if (0 == meshArgs.m_numIndices)
         return;
@@ -1921,42 +1929,63 @@ void AddTriMesh(Json::Value& primitivesNode, MeshArgs const& meshArgs, MeshCR me
 
     MeshMaterial meshMaterial(mesh, m_model.Is3d(), idStr, m_model.GetDgnDb());
     
-    if (SUCCESS == _CreateMeshMaterialJson(materialJson, mesh, meshMaterial, mesh.GetDisplayParams(), idStr) &&
-        SUCCESS == _CreateTriMesh(primitiveJson, mesh, meshArgs, meshMaterial, idStr))
+    if (SUCCESS == CreateMeshMaterialJson(materialJson, mesh, meshMaterial, mesh.GetDisplayParams(), idStr) &&
+        SUCCESS == CreateTriMesh(primitiveJson, mesh, meshArgs, meshMaterial, idStr))
         {
         m_json["materials"][meshMaterial.GetName()] = materialJson;
         primitiveJson["material"] = meshMaterial.GetName();
         primitivesNode.append(primitiveJson);
         }
     }
-       
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CreatePolyline(FPoint3dCR rangeCenter, float startDistance, uint32_t const* indices, size_t nIndices, Utf8StringCR idStr)
+void AppendPolylineToBufferView(MeshPolylineCR polyline, bool useShortIndices)
     {
-    Json::Value     polylineValue;
+    m_binaryData.Append(polyline.GetStartDistance());
+    m_binaryData.Append(polyline.GetRangeCenter().x);
+    m_binaryData.Append(polyline.GetRangeCenter().y);
+    m_binaryData.Append(polyline.GetRangeCenter().z);
+    m_binaryData.Append((uint32_t) polyline.GetIndices().size());
+    for (auto& index : polyline.GetIndices())
+        {
+        if (useShortIndices)
+            m_binaryData.Append((uint16_t) index);
+        else
+            m_binaryData.Append(index);
+        }
+    }
 
-    polylineValue["rangeCenter"].append(rangeCenter.x);
-    polylineValue["rangeCenter"].append(rangeCenter.y);
-    polylineValue["rangeCenter"].append(rangeCenter.z);
-    polylineValue["startDistance"] = startDistance;
-    polylineValue["indices"] = AddMeshIndices ("Indices", indices, nIndices, idStr);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value AddPolylines(PolylineList const& polylines, size_t maxIndex, Utf8StringCR name, Utf8StringCR idStr) 
+    {
+    Utf8String          nameId = name + idStr;
+    Utf8String          bufferViewId= "bv_" + nameId;
+    Utf8String          accessorId   = "acc_" + nameId;
+    Json::Value         bufferViewJson;
+    size_t              bufferViewOffset = m_binaryData.size();
+    bool                useShortIndices = maxIndex < 0xffff;
+
+    bufferViewJson["buffer"] = "binary_glTF";
+    bufferViewJson["byteOffset"] = (uint32_t) bufferViewOffset;
+
+    for (auto& polyline : polylines)
+        AppendPolylineToBufferView(polyline, useShortIndices);
     
-    return polylineValue;
+    bufferViewJson["byteLength"] = m_binaryData.size() -  bufferViewOffset;
+    m_json["bufferViews"][bufferViewId] = bufferViewJson;
+
+    AddAccessor(useShortIndices ? GLTF_UNSIGNED_SHORT : GLTF_UINT32, accessorId, bufferViewId, polylines.size(), "PLINE");
+    return accessorId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddPolyline(Json::Value& primitivesNode, PolylineArgs const& polylineArgs, MeshCR mesh, size_t& index)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AddMeshGraphics(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
+virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
     { 
     GetMeshGraphicsArgs         graphicsArgs;
     bvector<Render::GraphicPtr> graphics;
@@ -1964,7 +1993,8 @@ void AddMeshGraphics(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
     mesh.GetGraphics (graphics, m_renderSystem, graphicsArgs, m_model.GetDgnDb());
 
     AddTriMesh(primitivesNode, graphicsArgs.m_meshArgs, mesh, index);
-    AddPolyline(primitivesNode, graphicsArgs.m_polylineArgs, mesh, index);
+//  AddPolyline(primitivesNode, graphicsArgs.m_polylineArgs, mesh, index);
+    return SUCCESS;
     }
  
 /*---------------------------------------------------------------------------------**//**
@@ -1981,7 +2011,7 @@ void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
     size_t          primitiveIndex = 0;
 
     for (auto& mesh : geometry.Meshes())
-        AddMeshGraphics(primitives, *mesh, primitiveIndex);
+        _AddMesh(primitives, *mesh, primitiveIndex);
 
     mesh["primitives"] = primitives;
     meshes[meshName] = mesh;
@@ -2115,27 +2145,22 @@ Json::Value CreateColorTable(ColorTableCR colorTable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CreateMeshEdges(MeshEdgesCR meshEdges, Utf8StringCR idStr)
+Json::Value CreateMeshEdges(MeshEdgesCR meshEdges, size_t maxIndex, Utf8StringCR idStr)
     {
     Json::Value     edgesValue= Json::objectValue;
 
     if (!meshEdges.m_visible.empty())
-        edgesValue["visibles"] = AddMeshIndices("visibles", meshEdges.m_visible.front().m_indices, 2 * meshEdges.m_visible.size(), idStr);
+        edgesValue["visibles"] = AddMeshIndices("visibles", meshEdges.m_visible.front().m_indices, 2 * meshEdges.m_visible.size(), idStr, maxIndex);
+
     if (!meshEdges.m_silhouette.empty())
         {
-        edgesValue["silhouettes"]["indices"]  = AddMeshIndices("silhouettes", meshEdges.m_silhouette.front().m_indices, 2 * meshEdges.m_silhouette.size(), idStr);
+        edgesValue["silhouettes"]["indices"]  = AddMeshIndices("silhouettes", meshEdges.m_silhouette.front().m_indices, 2 * meshEdges.m_silhouette.size(), idStr, maxIndex);
         edgesValue["silhouettes"]["normals0"] = AddNormals (meshEdges.m_silhouetteNormals0.data(), meshEdges.m_silhouetteNormals0.size(), "normals0", idStr.c_str());
         edgesValue["silhouettes"]["normals1"] = AddNormals (meshEdges.m_silhouetteNormals1.data(), meshEdges.m_silhouetteNormals1.size(), "normals1", idStr.c_str());
         }
 
     if (!meshEdges.m_polylines.empty())
-        {
-        size_t          index = 0;
-        Json::Value&    polylinesValue = edgesValue["polylines"];
-
-        for (auto& polyline : meshEdges.m_polylines)
-            polylinesValue.append(CreatePolyline(polyline.m_rangeCenter, polyline.m_startDistance, polyline.m_indices.data(), polyline.m_indices.size(), idStr + Utf8PrintfString("_%d", index++)));
-        }
+        edgesValue["polylines"] = AddPolylines(meshEdges.m_polylines, maxIndex, "polyEdge", idStr);
 
     return edgesValue;
     }
@@ -2143,35 +2168,34 @@ Json::Value CreateMeshEdges(MeshEdgesCR meshEdges, Utf8StringCR idStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, MeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr) override
+BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr)
     {
+    DisplayParamsCR     displayParams = mesh.GetDisplayParams();
+
     primitiveJson["mode"] = GLTF_TRIANGLES;
 
-    Utf8String      accPositionId =  AddQuantizedPointsAttribute(meshArgs.m_points, meshArgs.m_numPoints, meshArgs.m_pointParams, "Position", idStr.c_str());
+    Utf8String      accPositionId =  AddQuantizedPointsAttribute(mesh.Points().data(), mesh.Points().size(), mesh.Verts().GetParams(), "Position", idStr.c_str());
     primitiveJson["attributes"]["POSITION"] = accPositionId;
 
-    bool isTextured = meshMaterial.IsTextured();
-    if (nullptr != meshArgs.m_textureUV && meshMaterial.IsTextured())
-        primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (meshArgs.m_textureUV, meshArgs.m_numPoints, "Param", idStr.c_str());
+    if (!mesh.Params().empty() && displayParams.IsTextured())
+        primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (mesh.Params().data(), mesh.Params().size(), "Param", idStr.c_str());
 
-    // Note - write the colors to tile cache even if textured - they are required for edges.
-    if (!meshArgs.m_colors.IsUniform())
-        AddColors(primitiveJson, meshArgs.m_colors, meshArgs.m_numPoints, idStr);
 
-    BeAssert (meshMaterial.IgnoresLighting() || nullptr != meshArgs.m_normals);
+    if (!mesh.GetColorTable().IsUniform())
+        AddMeshUInt16Attributes(primitiveJson, mesh.Colors().data(), mesh.Colors().size(), idStr, "ColorIndex_", "_COLORINDEX");
 
-    if (nullptr != meshArgs.m_normals && !meshMaterial.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
-        primitiveJson["attributes"]["NORMAL"]  = AddQuantizedPointsAttribute(meshArgs.m_normals, meshArgs.m_numPoints, QPoint3d::Params::FromNormalizedRange(), "Normal", idStr.c_str());
+    BeAssert(displayParams.IgnoresLighting() || !mesh.Normals().empty());
 
-    primitiveJson["indices"] = AddMeshIndices ("Indices", (uint32_t const*) meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr);
-    AddMeshPointRange(m_json["accessors"][accPositionId], meshArgs.m_pointParams.GetRange());
+    if (!mesh.Normals().empty() && !displayParams.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
+        primitiveJson["attributes"]["NORMAL"]  = AddQuantizedPointsAttribute(mesh.Normals().data(), mesh.Normals().size(), QPoint3d::Params::FromNormalizedRange(), "Normal", idStr.c_str());
+
+    primitiveJson["indices"] = AddMeshTriangleIndices ("Indices", mesh.Triangles(), idStr, mesh.Points().size());
+    AddMeshPointRange(m_json["accessors"][accPositionId], mesh.Verts().GetParams().GetRange());
  
     primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
 
-#ifdef EDGE_SUPPORT
     if (mesh.GetEdges().IsValid())
-        primitiveJson["edges"] = CreateMeshEdges(*mesh.GetEdges(), idStr);
-#endif
+        primitiveJson["edges"] = CreateMeshEdges(*mesh.GetEdges(), mesh.Points().size(), idStr);
 
     return SUCCESS;
     }
@@ -2179,7 +2203,30 @@ virtual BentleyStatus _CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Me
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus  _CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh, MeshMaterial const& meshMaterial, DisplayParamsCR displayParams, Utf8StringCR suffix) override
+BentleyStatus CreatePolylines(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr)
+    {
+    DisplayParamsCR     displayParams = mesh.GetDisplayParams();
+
+    primitiveJson["mode"] = GLTF_LINES;
+
+    Utf8String      accPositionId =  AddQuantizedPointsAttribute(mesh.Points().data(), mesh.Points().size(), mesh.Verts().GetParams(), "Position", idStr.c_str());
+    primitiveJson["attributes"]["POSITION"] = accPositionId;
+
+    if (!mesh.GetColorTable().IsUniform())
+        AddMeshUInt16Attributes(primitiveJson, mesh.Colors().data(), mesh.Colors().size(), idStr, "ColorIndex_", "_COLORINDEX");
+
+    primitiveJson["indices"] = AddPolylines(mesh.Polylines(), mesh.Points().size(), "polyline", idStr);
+    AddMeshPointRange(m_json["accessors"][accPositionId], mesh.Verts().GetParams().GetRange());
+ 
+    primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus  CreateMaterialJson(Json::Value& matJson, MeshCR mesh,  DisplayParamsCR displayParams, Utf8StringCR suffix) 
     {
     matJson["type"] = (uint8_t) displayParams.GetType();
 
@@ -2207,6 +2254,32 @@ virtual BentleyStatus  _CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh
     
 
     return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
+    { 
+    Utf8String          idStr(std::to_string(index++).c_str());
+    Json::Value         materialJson = Json::objectValue, primitiveJson = Json::objectValue;
+
+    if (SUCCESS != CreateMaterialJson(materialJson, mesh, mesh.GetDisplayParams(), idStr))
+        return ERROR;
+
+    if ((!mesh.Triangles().empty() && SUCCESS == CreateTriMesh(primitiveJson, mesh, idStr)) ||
+        (!mesh.Polylines().empty() && SUCCESS == CreatePolylines(primitiveJson, mesh, idStr)))
+        {
+        Utf8String  materialName = "Material" + idStr;
+        m_json["materials"][materialName] = materialJson;
+        primitiveJson["material"] = materialName;
+        primitivesNode.append(primitiveJson);
+        
+        return SUCCESS;
+        }
+
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

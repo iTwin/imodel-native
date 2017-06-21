@@ -843,7 +843,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP renderi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
     {
-    Polyline    newPolyline(startDistance, FPoint3d::From(rangeCenter));
+    MeshPolyline    newPolyline(startDistance, FPoint3d::From(rangeCenter));
 
     for (auto& point : points)
         {
@@ -1562,7 +1562,7 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn)
     PolyfaceList                polyfaces;
     IFacetOptionsPtr            facetOptions = facetOptionsIn.Clone();
 
-    facetOptions->SetNormalsRequired(false);     // No lighting so normals not required.
+    //facetOptions->SetNormalsRequired(false);     // No lighting so normals not required.
 
     IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(*facetOptions);
     if (DoGlyphBoxes(*facetOptions))
@@ -1823,7 +1823,7 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh)
         {
         IndexedPolyline indexedPolyline;
 
-        if (indexedPolyline.Init(polyline.m_indices, polyline.m_startDistance, polyline.m_rangeCenter))
+        if (indexedPolyline.Init(polyline.GetIndices(), polyline.GetStartDistance(), polyline.GetRangeCenter()))
             m_polylines.push_back(indexedPolyline);
         }
                                                 
