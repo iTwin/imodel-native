@@ -1152,7 +1152,7 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
 
     //now that we have created a project share folder. We should be able to query if there is a share for this project, using the projectGuid (I believe)
     status = ConnectWebSServiceClientC_CreateRootProjectShareStorage(api, wProjectInstanceId.c_str());   
-    EXPECT_TRUE(status == ERROR_ALREADY_EXISTS);
+    EXPECT_TRUE(status == INSTANCE_ALREADY_EXISTS);
 
     status = ConnectWebServicesClientC_DeleteProject_V4 (api, wProjectInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
