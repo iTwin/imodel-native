@@ -8,6 +8,7 @@
 #pragma once
 
 #include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+#include <DgnGeoCoord\DgnGeoCoord.h>
 #include <Geom/Polyface.h>
 #include <ScalableMesh\IScalableMesh.h>
 
@@ -18,6 +19,7 @@ DCPOINTCLOUDCORE_REF_COUNTED_PTR(ScalableMeshPointsProvider)
 */
 
 USING_NAMESPACE_GROUND_DETECTION
+using namespace Bentley::GeoCoordinates;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -28,22 +30,31 @@ struct ScalableMeshPointsProvider : public IPointsProvider
 {
 public:
 
-    static IPointsProviderPtr CreateFrom(IScalableMeshPtr& smesh, DRange3dCR boundingBoxInUors);
+    static IPointsProviderPtr CreateFrom(IScalableMeshPtr& smesh, 
+                                         DRange3dCR boundingBoxInUors);
 
     double    GetMeterToSRSFactor() const;
     Transform GetRootToNativeTransform() const;
     
     BentleyStatus GetPoints(bvector<DPoint3d>& points, double* resolution, ClipVectorCP clip) const;
 
-private:
-    
-    //static BeCriticalSection s_MRMEshQueryCS;
+    void SetReprojectionInfo(GeoCoordInterpretation geocoordInterpretation,
+                             BaseGCSPtr&            sourceGcs,
+                             BaseGCSPtr&            destinationGcs);    
 
+private:
+        
     IScalableMeshPtr                                                       m_smesh;
     Transform                                                              m_transform;
     mutable RefCountedPtr<ScalableMeshPointsProvider::IPointsProviderIteratorImpl> m_currentIterator;
+
+    GeoCoordInterpretation m_geocoordInterpretation;
+    mutable BaseGCSPtr     m_sourceGcs;
+    mutable BaseGCSPtr     m_destinationGcs;
     
-    ScalableMeshPointsProvider(IScalableMeshPtr& smesh, DRange3dCR boundingBoxInUors);
+    ScalableMeshPointsProvider(IScalableMeshPtr&      smesh, 
+                               DRange3dCR             boundingBoxInUors);
+
     ScalableMeshPointsProvider(ScalableMeshPointsProvider const & object);
 
     ~ScalableMeshPointsProvider();
@@ -95,6 +106,10 @@ struct ScalableMeshPointsProviderCreator : public IPointsProviderCreator
         IScalableMeshPtr  m_smesh;
         bvector<DPoint3d> m_extractionArea;
 
+        GeoCoordInterpretation m_geocoordInterpretation;
+        BaseGCSPtr             m_sourceGcs;
+        BaseGCSPtr             m_destinationGcs;
+
     protected : 
 
         virtual IPointsProviderPtr _CreatePointProvider(DRange3d const& boundingBoxInUors) override;
@@ -108,12 +123,17 @@ struct ScalableMeshPointsProviderCreator : public IPointsProviderCreator
 
         void SetExtractionArea(const bvector<DPoint3d>& area);
 
-        ScalableMeshPointsProviderCreator(IScalableMeshPtr& smesh);        
+        ScalableMeshPointsProviderCreator(IScalableMeshPtr&      smesh, 
+                                          BaseGCSPtr&            sourceGcs,
+                                          BaseGCSPtr&            destinationGcs,
+                                          GeoCoordInterpretation geocoordInterpretation);
 
         virtual ~ScalableMeshPointsProviderCreator();
-
-        static ScalableMeshPointsProviderCreatorPtr Create(IScalableMeshPtr& smesh);
-
+        
+        static ScalableMeshPointsProviderCreatorPtr Create(IScalableMeshPtr&      smesh,                                                            
+                                                           BaseGCSPtr             sourceGcs = BaseGCSPtr(),
+                                                           BaseGCSPtr             destinationGcs = BaseGCSPtr(),
+                                                           GeoCoordInterpretation geocoordInterpretation = GeoCoordInterpretation::Cartesian);      
     };
 
 
