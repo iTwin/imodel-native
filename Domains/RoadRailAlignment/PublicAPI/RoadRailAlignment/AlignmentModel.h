@@ -83,7 +83,7 @@ public:
 
     static HorizontalAlignmentModelPtr Create(CreateParams const& params) { return new HorizontalAlignmentModel(params); }
     static HorizontalAlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<HorizontalAlignmentModel>(id); }
-    static Dgn::DgnModelId QueryBreakDownModelId(AlignmentModelCR model);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnModelId QueryBreakDownModelId(AlignmentModelCR model);
 }; // HorizontalAlignmentModel
 
 //=======================================================================================

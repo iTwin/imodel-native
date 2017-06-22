@@ -68,7 +68,7 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
         BeAssert(false);
         }
 
-    auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment);
+    auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpec.IsValid());
     if (codeSpec.IsValid())
         {
@@ -90,7 +90,7 @@ CodeSpecId RoadRailAlignmentDomain::QueryAlignmentCodeSpecId(DgnDbCR dgndb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode RoadRailAlignmentDomain::CreateCode(DgnDbR dgndb, Utf8StringCR value)
+DgnCode RoadRailAlignmentDomain::CreateCode(DgnModelCR scopeModel, Utf8StringCR value)
     {
-    return CodeSpec::CreateCode(dgndb, BRRA_CODESPEC_Alignment, value);
+    return CodeSpec::CreateCode(BRRA_CODESPEC_Alignment, scopeModel, value);
     }
