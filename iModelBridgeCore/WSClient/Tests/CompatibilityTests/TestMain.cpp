@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+
+#include <WebServices/Client/WSError.h>
 #include "Parser/ArgumentParser.h"
 #include "RepositoryCompatibilityTests.h"
 #include "TestsHost.h"

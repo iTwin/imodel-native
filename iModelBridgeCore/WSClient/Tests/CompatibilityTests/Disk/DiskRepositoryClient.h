@@ -10,8 +10,12 @@
 
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <ECObjects/ECSchema.h>
+#include <BeHttp/HttpRequest.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+USING_NAMESPACE_BENTLEY_HTTP
+USING_NAMESPACE_BENTLEY
 
 #define FBC_NOT_IMPLEMENTED(T) \
     BeAssert(false && "Not implemented!"); \
@@ -60,6 +64,13 @@ struct DiskClient : public IWSClient
             {
             FBC_NOT_IMPLEMENTED(WSRepositoriesResult);
             }
+
+        //! Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
+        virtual void EnableWsgServerHeader
+            (
+            bool enable
+            ) override
+            { }
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -132,7 +143,7 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -156,8 +167,9 @@ struct DiskRepositoryClient : public IWSRepositoryClient
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
+            Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr,
+            RequestOptionsPtr options = nullptr
             ) const override
             {
             FBC_NOT_IMPLEMENTED(WSChangesetResult);
@@ -167,12 +179,25 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {
             FBC_NOT_IMPLEMENTED(WSCreateObjectResult);
             }
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR objectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName (),
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED (WSCreateObjectResult);
+            }
+
 
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
@@ -180,7 +205,7 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             JsonValueCR propertiesJson,
             Utf8StringCR eTag = nullptr,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {
@@ -200,7 +225,7 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Client/ClientInfo.h>
-#include "Device/Device.h"
+#include <Bentley/BeSystemInfo.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -28,9 +28,9 @@ Utf8String applicationProductId,
 IHttpHeaderProviderPtr primaryHeaderProvider
 )
     {
-    Utf8String deviceId = Device::GetDeviceId();
+    Utf8String deviceId = BeSystemInfo::GetDeviceId();
 
-    Utf8String model = Device::GetModelName();
+    Utf8String model = BeSystemInfo::GetMachineName();
     if (!model.empty())
         {
         model += "; ";
@@ -38,8 +38,8 @@ IHttpHeaderProviderPtr primaryHeaderProvider
 
     Utf8PrintfString systemDescription("%s%s %s",
         model.c_str(),
-        Device::GetOSName().c_str(),
-        Device::GetOSVersion().c_str());
+        BeSystemInfo::GetOSName().c_str(),
+        BeSystemInfo::GetOSVersion().c_str());
 
     return std::shared_ptr<ClientInfo>(new ClientInfo(
         applicationName,
@@ -269,7 +269,7 @@ void ClientInfo::FillHttpRequestHeaders(HttpRequestHeaders& headers) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClientInfo::CacheAndroidDeviceId(Utf8String deviceId)
     {
-    Device::CacheAndroidDeviceId(deviceId);
+    BeSystemInfo::CacheAndroidDeviceId(deviceId);
     }
 
 #endif
