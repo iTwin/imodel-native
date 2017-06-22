@@ -5442,7 +5442,8 @@ TEST_F(ECSqlStatementTestFixture, ECInstanceIdConversion)
     instanceId = "0x75BCD15";
     expectedECInstanceId = ECInstanceId(UINT64_C(123456789));
     actualECInstanceId = ECInstanceId();
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with hex formatted number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
+    EXPECT_EQ(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with hex formatted number '" << instanceId << "' is expected to be supported by ECInstanceId::FromString";
+    EXPECT_TRUE(actualECInstanceId == ECInstanceId(UINT64_C(0x75BCD15)));
 
     instanceId = "i-12345";
     EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId starting with i- '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
