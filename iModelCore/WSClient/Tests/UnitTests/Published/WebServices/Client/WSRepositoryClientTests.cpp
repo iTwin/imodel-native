@@ -912,12 +912,31 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1SkipTokenSuppliedAndSen
     EXPECT_EQ("", result.GetValue().GetSkipToken());
     }
 
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2AndHttpResponseHasSkipTokenButItWasNotSent_DoesNotAddSkipTokenToResponse)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24SkipTokenSuppliedAndSentBack_IgnoresSkipTokens)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
     GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
+        return StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV1(),
+        {{"SkipToken", "ServerSkipToken"}, {"Content-Type", "application/json"}});
+        });
+
+    auto result = client->SendQueryRequest(StubWSQuery(), nullptr, "SomeSkipToken")->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue().IsFinal());
+    EXPECT_EQ("", result.GetValue().GetSkipToken());
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25AndHttpResponseHasSkipTokenButItWasNotSent_DoesNotAddSkipTokenToResponse)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV2(), {{"SkipToken", "ServerSkipToken"}}));
 
     auto result = client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->GetResult();
@@ -926,12 +945,12 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2AndHttpResponseHasSkipT
     EXPECT_EQ("", result.GetValue().GetSkipToken());
     }
 
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApi2SkipTokenEmpty_DoesNotSendSkipToken)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApi25SkipTokenEmpty_DoesNotSendSkipToken)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
     GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
@@ -941,12 +960,12 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApi2SkipTokenEmpty_DoesNotSe
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->GetResult();
     }
 
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2SkipTokenSupplied_SendsSkipToken)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25SkipTokenSupplied_SendsSkipToken)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
     GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ("SomeSkipToken", request.GetHeaders().GetValue("SkipToken"));
@@ -956,12 +975,12 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2SkipTokenSupplied_Sends
     client->SendQueryRequest(StubWSQuery(), nullptr, "SomeSkipToken")->GetResult();
     }
 
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2AndHttpResponseHasSkipToken_AddsSkipTokenToResponse)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25AndHttpResponseHasSkipToken_AddsSkipTokenToResponse)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
     GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV2(), {{"SkipToken", "ServerSkipToken"}}));
 
     auto result = client->SendQueryRequest(StubWSQuery(), nullptr, "SomeSkipToken")->GetResult();

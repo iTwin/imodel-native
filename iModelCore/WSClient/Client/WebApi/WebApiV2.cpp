@@ -473,13 +473,17 @@ ICancellationTokenPtr ct
     Utf8String url = GetUrl(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
     HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
+    bool requestHasSkipToken = false;
+    if (GetMaxWebApiVersion() >= BeVersion(2, 5) && !skipToken.empty())
+        {
+        request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
+        requestHasSkipToken = true;
+        }
+
     request.GetHeaders().SetIfNoneMatch(eTag);
-    request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
-
-    bool requestHasSkipToken = !skipToken.empty();
 
     return request.PerformAsync()->Then<WSObjectsResult>([this, requestHasSkipToken] (HttpResponse& httpResponse)
         {

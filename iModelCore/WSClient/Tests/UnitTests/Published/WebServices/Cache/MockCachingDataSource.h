@@ -63,6 +63,7 @@ struct MockCachingDataSource : public ICachingDataSource
             void(IWSRepositoryClientPtr client));
         MOCK_METHOD0(CancelAllTasks,
             AsyncTaskPtr<void>());
+        MOCK_METHOD1(EnableSkipTokens,void(bool));
         MOCK_METHOD1(UpdateSchemas,
             AsyncTaskPtr<Result>(ICancellationTokenPtr ct));
 
