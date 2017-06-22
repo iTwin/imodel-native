@@ -61,7 +61,7 @@ struct FileSystem
 /** @{ */
     //! Get the directory from which the executing program was launched. This is a full path. It does not include the name of the executable program itself.
     //! @note This function is not implemented for mobile apps. Use DgnPlatformLib::Host::GetKnownLocations for a portable way to identify known locations.
-    BENTLEYDLL_EXPORT static BeFileName GetExecutableDir();
+    BENTLEYDLL_EXPORT static BeFileName GetExecutableDir(BeFileNameCP moduleName = nullptr);
 /** @} */
 };
 
