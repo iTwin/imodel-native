@@ -171,7 +171,6 @@ struct SchemaImportContext final
         ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
         void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
         bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
-
     SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
     SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
     };

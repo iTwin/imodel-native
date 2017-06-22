@@ -161,14 +161,26 @@ std::unique_ptr<RelationshipClassEndTableMap::Partition> RelationshipClassEndTab
     }
 
 //************************ RelationshipClassEndTableMap::PartitionView**********************************
+std::vector<RelationshipClassEndTableMap::Partition const*>  RelationshipClassEndTableMap::PartitionView::GetPhysicalPartitions() const
+    {
+    std::vector<Partition const*> physcialPartitions;
+    for (DbTable const* table : GetTables(true))
+        {
+        for (auto const* part : GetPartitions(*table, true))
+            if (part->CanQuery())
+                physcialPartitions.push_back(part);
+        }
+
+    return physcialPartitions;
+    }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOtherEndTables()
+std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOtherEndTables(RelationshipClassEndTableMap const& relationMap)
     {
-    ECRelationshipEnd otherEnd = m_relationshipMap.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
-    ECRelationshipConstraintCR otherEndConstraint = ECRelationshipEnd::ECRelationshipEnd_Source ? m_relationshipMap.GetRelationshipClass().GetSource() : m_relationshipMap.GetRelationshipClass().GetTarget();
-    ECDbCR ecdb = m_relationshipMap.GetECDb();
+    ECRelationshipEnd otherEnd = relationMap.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
+    ECRelationshipConstraintCR otherEndConstraint = ECRelationshipEnd::ECRelationshipEnd_Source ? relationMap.GetRelationshipClass().GetSource() : relationMap.GetRelationshipClass().GetTarget();
+    ECDbCR ecdb = relationMap.GetECDb();
     DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
     std::vector<DbTable const*> list;
     std::vector<DbTable const*> nvlist;
@@ -185,7 +197,7 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
             "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined " AND [T].[Type] != " SQLVAL_DbTable_Type_Overflow);
             
         PRECONDITION(stmt != nullptr, list);
-        stmt->BindId(1, m_relationshipMap.GetClass().GetId());
+        stmt->BindId(1, relationMap.GetClass().GetId());
         stmt->BindInt(2, Enum::ToInt(otherEnd));
         while (stmt->Step() == BE_SQLITE_ROW)
             {
@@ -214,7 +226,7 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
             "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined " AND [T].[Type] != " SQLVAL_DbTable_Type_Overflow);
 
         PRECONDITION(stmt != nullptr, list);
-        stmt->BindId(1, m_relationshipMap.GetClass().GetId());
+        stmt->BindId(1, relationMap.GetClass().GetId());
         stmt->BindInt(2, Enum::ToInt(otherEnd));
         while (stmt->Step() == BE_SQLITE_ROW)
             {
@@ -237,6 +249,7 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
 
     return list;
     }
+
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
@@ -332,7 +345,7 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::Load()
 
     ECDbCR ecdb = m_relationshipMap.GetECDb();
     DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
-    const std::vector<DbTable const*> primaryTables = GetOtherEndTables();
+    const std::vector<DbTable const*> primaryTables = GetOtherEndTables(m_relationshipMap);
     CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
     PRECONDITION(stmt != nullptr, ERROR);
 

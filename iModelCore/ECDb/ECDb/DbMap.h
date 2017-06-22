@@ -49,7 +49,8 @@ struct DbMap final : NonCopyableClass
         
         static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
 
-        static BentleyStatus ValidateDbMappings(ECDb const&, bool failOnError);
+        BentleyStatus ValidateClassMap(SchemaImportContext& ctx, ClassMapCR classMap) const;
+        BentleyStatus ValidateDbMappings(SchemaImportContext& ctx, bool failOnError) const;
 
     public:
         explicit DbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_lightweightCache(ecdb) {}

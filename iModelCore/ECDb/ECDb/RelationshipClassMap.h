@@ -113,7 +113,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             struct ComparePartition { bool operator()(std::unique_ptr<Partition> const& lhs, std::unique_ptr<Partition> const& rhs) const { return lhs->GetHashCode() < rhs->GetHashCode(); } };
             std::map <DbTableId, std::set <std::unique_ptr<Partition>, ComparePartition>> m_partitionMap;
             bool m_loadedPartitions;
-            std::vector<DbTable const*> GetOtherEndTables();
+            
             BentleyStatus InsertPartition(std::unique_ptr<Partition> partition, bool assertAndFailOnDuplicatePartition);
             BentleyStatus ResurrectPartition(std::vector<DbTable const*> const& tables, DbColumn const& navId, DbColumn const& navRelECClassId);
             BentleyStatus Load();
@@ -127,18 +127,8 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             const std::vector<Partition const*> GetPartitions(bool skipVirtualPartition) const;
             const std::vector<Partition const*> GetPartitions(DbTable const& toEnd, bool skipVirtualPartition) const;
             static std::unique_ptr< PartitionView> Create(RelationshipClassEndTableMap const& relationMap);
-            std::vector<Partition const*>  GetPhysicalPartitions() const
-                {
-                std::vector<Partition const*> physcialPartitions;
-                for (DbTable const* table : GetTables(true))
-                    {
-                    for (auto const* part : GetPartitions(*table, true))
-                        if (part->CanQuery())
-                            physcialPartitions.push_back(part);
-                    }
-
-                return physcialPartitions;
-                }
+            std::vector<Partition const*>  GetPhysicalPartitions() const;
+            static std::vector<DbTable const*> GetOtherEndTables(RelationshipClassEndTableMap const&);
         };
 
     private:
@@ -150,7 +140,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         RelationshipClassEndTableMap const* GetBaseClassMap(SchemaImportContext * ctx = nullptr) const;
         ClassMappingStatus MapSubClass(RelationshipClassEndTableMap const& baseClassMap);
-
     public:
         ~RelationshipClassEndTableMap() {}
         ECN::ECRelationshipEnd GetForeignEnd() const;
@@ -190,7 +179,6 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         static Utf8String DetermineConstraintECInstanceIdColumnName(LinkTableMappingType const&, ECN::ECRelationshipEnd);
         static Utf8String DetermineConstraintECClassIdColumnName(LinkTableMappingType const&, ECN::ECRelationshipEnd);
         static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
-
     public:
         ~RelationshipClassLinkTableMap() {}
     };
