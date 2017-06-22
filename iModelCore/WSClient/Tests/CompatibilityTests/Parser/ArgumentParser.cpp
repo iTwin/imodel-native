@@ -6,8 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ArgumentParser.h"
+#pragma once
 
+#include <WebServices/Client/WSError.h>
+#include "ArgumentParser.h"
 #include <Bentley/Base64Utilities.h>
 
 /*--------------------------------------------------------------------------------------+

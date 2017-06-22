@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#include <Bentley/BeThread.h>
 #include "TestsHelper.h"
 
 ClientInfoPtr StubValidClientInfo()
