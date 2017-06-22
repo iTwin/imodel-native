@@ -1413,6 +1413,26 @@ void Tile::Invalidate(DirtyRangesCR dirty)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::WaitForAllLoadsFor(uint32_t milliseconds)
+    {
+    auto condition = [&](BeConditionVariable&) { return 0 == m_activeLoads.size(); };
+    ConditionVariablePredicate<decltype(condition)> pred(condition);
+    m_cv.WaitOnCondition(&pred, milliseconds);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::CancelAllTileLoads()
+    {
+    BeMutexHolder lock(m_cv.GetMutex());
+    for (auto& load : m_activeLoads)
+        load->SetCanceled();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::CancelTileLoad(TileCR tile)

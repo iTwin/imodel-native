@@ -180,6 +180,10 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
     DrawSkyBox(context);
 
+    uint32_t waitForAllLoadsMillis = 0;
+    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
+        waitForAllLoadsMillis = std::chrono::duration_cast<std::chrono::milliseconds>(context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now()).count();
+
     if (!m_allRootsLoaded)
         {
         // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
@@ -189,7 +193,6 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
         // Create as many tile trees as we can within the allotted time...
         bool timedOut = false;
 
-        // ###TODO_ELEMENT_TILE: There are various timeout settings on the UpdatePlan. Honor them.
         for (auto modelId : GetViewedModels())
             {
             auto iter = m_roots.find(modelId);
@@ -221,7 +224,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
     // Always draw all the tile trees we currently have...
     // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
-    if (!context.GetUpdatePlan().WantWait())
+    if (0 == waitForAllLoadsMillis)
         {
         for (auto pair : m_roots)
             if (nullptr != pair.second)
@@ -235,13 +238,15 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
                 pair.second->SelectTiles(context);
 
         // Wait for requests to complete
+        // Note we are ignoring any time spent creating tile trees above...
         context.m_requests.RequestMissing();
         for (auto pair : m_roots)
             {
             if (nullptr != pair.second)
                 {
-                // ###TODO_ELEMENT_TILE: Honor timeout...
-                pair.second->WaitForAllLoads();
+                uint32_t waitMillis = static_cast<uint32_t>(waitForAllLoadsMillis / static_cast<double>(m_roots.size()));
+                pair.second->WaitForAllLoadsFor(waitMillis);
+                pair.second->CancelAllTileLoads();
                 pair.second->DrawInView(context);
                 }
             }

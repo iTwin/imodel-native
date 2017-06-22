@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+ // may wish to adjust to reduce level of detail...
 |
 |     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
@@ -322,6 +322,8 @@ public:
     void DoneTileLoad(TileLoadStatePtr) const;
     void CancelTileLoad(TileCR tile);
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
+    void WaitForAllLoadsFor(uint32_t milliseconds);
+    void CancelAllTileLoads();
     bool IsHttp() const {return m_isHttp;}
     bool IsPickable() const {return m_pickable;}
     void SetPickable(bool pickable) {m_pickable = pickable;}
