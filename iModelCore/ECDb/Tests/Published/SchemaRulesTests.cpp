@@ -85,7 +85,7 @@ TEST_F(SchemaRulesTestFixture, Casing)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, SchemaAlias)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem ("<ECSchema schemaName='TestSchema' alias='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"
@@ -103,16 +103,16 @@ TEST_F(SchemaRulesTestFixture, SchemaAlias)
                       "  </ECEntityClass>"
                       "</ECSchema>"))) << "Alias must not be empty";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem({"<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::ImportSchemas({SchemaItem("<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                  "  <ECEntityClass typeName='TestClass1' >"
                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                  "  </ECEntityClass>"
-                                 "</ECSchema>",
-                        "<ECSchema schemaName='Schema2' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                 "</ECSchema>"),
+                        SchemaItem("<ECSchema schemaName='Schema2' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                         "  <ECEntityClass typeName='TestClass2' >"
                         "    <ECProperty propertyName='TestProperty' typeName='string' />"
                         "  </ECEntityClass>"
-                        "</ECSchema>"}))) << "Two schemas with same alias is not supported.";
+                        "</ECSchema>")})) << "Two schemas with same alias is not supported.";
 
 
     {
@@ -122,7 +122,7 @@ TEST_F(SchemaRulesTestFixture, SchemaAlias)
                                                                                            "  </ECEntityClass>"
                                                                                            "</ECSchema>")));
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(m_ecdb, SchemaItem("<ECSchema schemaName='Schema2' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem("<ECSchema schemaName='Schema2' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                  "  <ECEntityClass typeName='TestClass2' >"
                                                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                                                  "  </ECEntityClass>"

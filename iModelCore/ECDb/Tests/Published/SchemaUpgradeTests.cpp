@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/SchemaUpdateTests.cpp $
+|  $Source: Tests/Published/SchemaUpgradeTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,7 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct SchemaUpdateTestFixture : public SchemaImportTestFixture
+struct SchemaUpgradeTestFixture : public SchemaImportTestFixture
     {
     std::vector<Utf8String> m_updatedDbs;
     protected:
@@ -57,9 +57,9 @@ struct SchemaUpdateTestFixture : public SchemaImportTestFixture
             assertMessageFull.append(assertMessage);
             SchemaItem schemaItem(schemaXml);
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, ImportSchema(ecdb, schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(ecdb, schemaItem)) << assertMessageFull.c_str();
             else
-                ASSERT_EQ(ERROR, ImportSchema(ecdb, schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(ERROR, TestHelper::ImportSchema(ecdb, schemaItem)) << assertMessageFull.c_str();
 
             if (expectedToSucceed)
                 m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
@@ -74,9 +74,9 @@ struct SchemaUpdateTestFixture : public SchemaImportTestFixture
             assertMessageFull.assign("[Changeset-merging compatible schema import] ").append(assertMessage);
 
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, ImportSchema(restrictedECDb, schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(restrictedECDb, schemaItem)) << assertMessageFull.c_str();
             else
-                ASSERT_EQ(ERROR, ImportSchema(restrictedECDb, schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(ERROR, TestHelper::ImportSchema(restrictedECDb, schemaItem)) << assertMessageFull.c_str();
 
             if (expectedToSucceed)
                 m_updatedDbs.push_back((Utf8String) restrictedECDb.GetDbFileName());
@@ -177,7 +177,7 @@ void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECSchemaAttributes)
+TEST_F(SchemaUpgradeTestFixture, UpdateECSchemaAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -191,7 +191,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECSchemaAttributes)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     //Verify Schema attributes upgraded successfully
     ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -214,7 +214,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECSchemaAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECClassAttributes)
+TEST_F(SchemaUpgradeTestFixture, UpdateECClassAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -230,7 +230,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECClassAttributes)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' />"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     //Verify Schema and Class attributes upgraded successfully
     ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -269,7 +269,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECClassAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECPropertyAttributes)
+TEST_F(SchemaUpgradeTestFixture, UpdateECPropertyAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -289,7 +289,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECPropertyAttributes)
         "       <ECProperty propertyName='TestProperty' displayLabel='Modified Test Property' description='this is modified property' typeName='string' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     //Verify Schema, Class and property attributes upgraded successfully
     ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -339,7 +339,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECPropertyAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdatingECDbMapCAIsNotSupported)
+TEST_F(SchemaUpgradeTestFixture, UpdatingECDbMapCAIsNotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -373,13 +373,13 @@ TEST_F(SchemaUpdateTestFixture, UpdatingECDbMapCAIsNotSupported)
         "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ClassModifier)
+TEST_F(SchemaUpgradeTestFixture, ClassModifier)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -469,8 +469,7 @@ TEST_F(SchemaUpdateTestFixture, ClassModifier)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (6, 't6')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L2, S2) VALUES (7, 't7')");
@@ -483,7 +482,7 @@ TEST_F(SchemaUpdateTestFixture, ClassModifier)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECClassModifierToAbstract)
+TEST_F(SchemaUpgradeTestFixture, UpdateECClassModifierToAbstract)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -541,13 +540,13 @@ TEST_F(SchemaUpdateTestFixture, UpdateECClassModifierToAbstract)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyECClassModifierFromAbstract)
+TEST_F(SchemaUpgradeTestFixture, ModifyECClassModifierFromAbstract)
     {
     SchemaItem schemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -592,7 +591,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyECClassModifierFromAbstract)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteProperty_OwnTable)
+TEST_F(SchemaUpgradeTestFixture, DeleteProperty_OwnTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -634,7 +633,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperty_OwnTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteProperties_TPH)
+TEST_F(SchemaUpgradeTestFixture, DeleteProperties_TPH)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -721,8 +720,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperties_TPH)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     //Make sure ECClass definition is updated correctly
     ASSERT_PROPERTIES_STRICT(m_ecdb, "TestSchema:Koo -> L1, S1, +D1");
@@ -752,7 +750,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperties_TPH)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteProperties_JoinedTable)
+TEST_F(SchemaUpgradeTestFixture, DeleteProperties_JoinedTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -839,8 +837,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperties_JoinedTable)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     //Make sure ECClass definition is updated correctly
     ASSERT_PROPERTIES_STRICT(m_ecdb, "TestSchema:Koo -> L1, S1, +D1");
@@ -870,7 +867,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteProperties_JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
+TEST_F(SchemaUpgradeTestFixture, AddDeleteVirtualColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -913,7 +910,7 @@ TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteOverriddenProperties)
+TEST_F(SchemaUpgradeTestFixture, DeleteOverriddenProperties)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -966,7 +963,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteOverriddenProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateCAProperties)
+TEST_F(SchemaUpgradeTestFixture, UpdateCAProperties)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1076,7 +1073,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateCAProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewEntityClass)
+TEST_F(SchemaUpgradeTestFixture, AddNewEntityClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1135,7 +1132,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewEntityClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewSubClassForBaseWithTPH)
+TEST_F(SchemaUpgradeTestFixture, AddNewSubClassForBaseWithTPH)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1175,7 +1172,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewSubClassForBaseWithTPH)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(restrictedECDb, schemaWithNewSubClass)) << "Adding new Class to TPH is expected to succeed";
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(restrictedECDb, schemaWithNewSubClass)) << "Adding new Class to TPH is expected to succeed";
 
     SchemaItem schemaWithNewSubClassWithNewProperty(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1195,13 +1192,13 @@ TEST_F(SchemaUpdateTestFixture, AddNewSubClassForBaseWithTPH)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(restrictedECDb, schemaWithNewSubClassWithNewProperty)) << "Adding new column to TPH is expected to succeed until strict mode is enforced";
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(restrictedECDb, schemaWithNewSubClassWithNewProperty)) << "Adding new column to TPH is expected to succeed until strict mode is enforced";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
+TEST_F(SchemaUpgradeTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1258,7 +1255,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(restrictedECDb, schemaWithNewSubClassWithProperty)) << "Adding new Class with new property to TPH+ShareColumns is expected to fail";
+    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(restrictedECDb, schemaWithNewSubClassWithProperty)) << "Adding new Class with new property to TPH+ShareColumns is expected to fail";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1303,7 +1300,7 @@ auto assertSelectSql = [](ECDbCR ecdb, Utf8CP sql, int expectedColumnCount, int 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                         1/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
+TEST_F(SchemaUpgradeTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -1501,7 +1498,7 @@ TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewClassModifyAllExistingAttributes)
+TEST_F(SchemaUpgradeTestFixture, AddNewClassModifyAllExistingAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1601,7 +1598,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewClassModifyAllExistingAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewECDbMapCANotSupported)
+TEST_F(SchemaUpgradeTestFixture, AddNewECDbMapCANotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1643,7 +1640,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewECDbMapCANotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                          04/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AppendNewCA)
+TEST_F(SchemaUpgradeTestFixture, AppendNewCA)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1745,7 +1742,7 @@ TEST_F(SchemaUpdateTestFixture, AppendNewCA)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewCA)
+TEST_F(SchemaUpgradeTestFixture, AddNewCA)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1828,7 +1825,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewCA)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewECProperty)
+TEST_F(SchemaUpgradeTestFixture, AddNewECProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1887,7 +1884,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewECProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddECPropertyToBaseClass)
+TEST_F(SchemaUpgradeTestFixture, AddECPropertyToBaseClass)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1940,7 +1937,7 @@ TEST_F(SchemaUpdateTestFixture, AddECPropertyToBaseClass)
         "</ECSchema>");
 
     //do schema update
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, modifiedSchema));
+    ASSERT_EQ(SUCCESS, ImportSchema(modifiedSchema));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Sub(BaseProp1,Prop1,Prop2) VALUES ('Instance2 BaseProp1', 'Instance2 Prop1', 'Instance2 Prop2')"));
     ECInstanceKey row2;
@@ -1976,7 +1973,7 @@ TEST_F(SchemaUpdateTestFixture, AddECPropertyToBaseClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Add_Delete_ECProperty_ShareColumns)
+TEST_F(SchemaUpgradeTestFixture, Add_Delete_ECProperty_ShareColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2050,7 +2047,7 @@ TEST_F(SchemaUpdateTestFixture, Add_Delete_ECProperty_ShareColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewPropertyModifyAllExistingAttributes)
+TEST_F(SchemaUpgradeTestFixture, AddNewPropertyModifyAllExistingAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2146,7 +2143,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewPropertyModifyAllExistingAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewCAOnProperty)
+TEST_F(SchemaUpgradeTestFixture, AddNewCAOnProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2246,7 +2243,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewCAOnProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflow)
+TEST_F(SchemaUpgradeTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflow)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2299,7 +2296,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddProperty)
+TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2378,7 +2375,7 @@ TEST_F(SchemaUpdateTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddProperty)
+TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2461,7 +2458,7 @@ TEST_F(SchemaUpdateTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_Ad
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
+TEST_F(SchemaUpgradeTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2480,7 +2477,7 @@ TEST_F(SchemaUpdateTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
         "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Schema upgrade with lower minor version not allowed";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Schema upgrade with lower minor version not allowed";
 
     //Verify newly added property must not exist at this point
     ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -2500,7 +2497,7 @@ TEST_F(SchemaUpdateTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
         "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem1)) << "import edited schema with higher minor version with some changes";
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem1)) << "import edited schema with higher minor version with some changes";
 
     //Verify newly added property must exist after third schema import
     testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -2530,20 +2527,16 @@ TEST_F(SchemaUpdateTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateMultipleSchemasInDb)
+TEST_F(SchemaUpgradeTestFixture, UpdateMultipleSchemasInDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updateStartupCompanyschema.ecdb", BeFileName(L"DSCacheSchema.01.00.ecschema.xml")));
-    ECSchemaReadContextPtr schemaContext = nullptr;
-    ECSchemaPtr ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));
-    ASSERT_TRUE(ecSchema != nullptr);
-    BentleyStatus schemaStatus = m_ecdb.Schemas().ImportSchemas(schemaContext->GetCache().GetSchemas());
-    ASSERT_EQ(ERROR, schemaStatus);
+    ASSERT_EQ(SUCCESS, SetupECDb("updateStartupCompanyschema.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.ecschema.xml")));
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem::CreateForFile("DSCacheSchema.01.03.ecschema.xml")));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMajorVersion)
+TEST_F(SchemaUpgradeTestFixture, DowngradeSchemaMajorVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2557,13 +2550,13 @@ TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMajorVersion)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Cannot Downgrade schema Major Version";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot Downgrade schema Major Version";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMiddleVersion)
+TEST_F(SchemaUpgradeTestFixture, DowngradeSchemaMiddleVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2577,13 +2570,13 @@ TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMiddleVersion)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Cannot Downgrade schema middle Version";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot Downgrade schema middle Version";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMinorVersion)
+TEST_F(SchemaUpgradeTestFixture, DowngradeSchemaMinorVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2597,13 +2590,13 @@ TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMinorVersion)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Cannot Downgrade schema Minor Version";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot Downgrade schema Minor Version";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UnsettingSchemaAlias)
+TEST_F(SchemaUpgradeTestFixture, UnsettingSchemaAlias)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2617,13 +2610,13 @@ TEST_F(SchemaUpdateTestFixture, UnsettingSchemaAlias)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Schema alias can't be set to empty";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Schema alias can't be set to empty";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, InvalidValueForSchemaAlias)
+TEST_F(SchemaUpgradeTestFixture, InvalidValueForSchemaAlias)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2636,20 +2629,20 @@ TEST_F(SchemaUpdateTestFixture, InvalidValueForSchemaAlias)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, schemaItem1));
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaItem1));
 
     //Try Upgrading to already existing alias
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "can't upgrade another schema with same alias already exists";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "can't upgrade another schema with same alias already exists";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, MajorVersionChange_WithoutMajorVersionIncremented)
+TEST_F(SchemaUpgradeTestFixture, MajorVersionChange_WithoutMajorVersionIncremented)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2667,7 +2660,7 @@ TEST_F(SchemaUpdateTestFixture, MajorVersionChange_WithoutMajorVersionIncremente
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, MajorVersionChange)) << "Major Version change without Major Version incremented is expected to be not supported";
+    ASSERT_EQ(ERROR, ImportSchema(MajorVersionChange)) << "Major Version change without Major Version incremented is expected to be not supported";
 
     SchemaItem decrementedMajorVersion(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2678,13 +2671,13 @@ TEST_F(SchemaUpdateTestFixture, MajorVersionChange_WithoutMajorVersionIncremente
         "       <ECProperty propertyName='L' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, decrementedMajorVersion)) << "Schema Update with ECSchema Major Version decremented is expected to be not supported";
+    ASSERT_EQ(ERROR, ImportSchema(decrementedMajorVersion)) << "Schema Update with ECSchema Major Version decremented is expected to be not supported";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_ECDbMapCANotSupported)
+TEST_F(SchemaUpgradeTestFixture, Delete_ECDbMapCANotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2720,7 +2713,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_ECDbMapCANotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_ECEntityClass_OwnTable)
+TEST_F(SchemaUpgradeTestFixture, Delete_ECEntityClass_OwnTable)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -2760,7 +2753,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_ECEntityClass_OwnTable)
         "       <ECProperty propertyName='L' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteFoo)) << "Delete class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete class should be successful";
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
@@ -2787,7 +2780,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_ECEntityClass_OwnTable)
         "       <ECProperty propertyName='L' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addFoo)) << "Add class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Add class should be successful";
 
     ASSERT_TRUE(m_ecdb.TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -2815,7 +2808,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_ECEntityClass_OwnTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH)
+TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -2874,7 +2867,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH)
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteFoo)) << "Delete class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete class should be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -2899,8 +2892,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteGoo)) << "Deleting Class with ECDbMap CA is expected to be supported";
-    m_ecdb.SaveChanges();
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Deleting Class with ECDbMap CA is expected to be supported";
     //Following should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
 
@@ -2921,7 +2913,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH)
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addGoo)) << "Add New Class with ECDbMap CA Should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with ECDbMap CA Should be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -2961,7 +2953,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH)
         "       <ECProperty propertyName='FL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addFoo)) << "Adding new derived class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived class should be successful";
 
     //should exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
@@ -2986,7 +2978,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
+TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3055,7 +3047,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteFoo)) << "Delete derived class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete derived class should be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -3081,7 +3073,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteGoo)) << "Delete class containing ECDbMap CA should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete class containing ECDbMap CA should be successful";
 
     //Following should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
@@ -3107,7 +3099,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addGoo)) << "Add New Class with ECDbMap CA is expected to be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with ECDbMap CA is expected to be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -3153,7 +3145,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addFoo)) << "New derived entity class is expected to be supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "New derived entity class is expected to be supported";
 
     //Table should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
@@ -3180,7 +3172,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBeforeOverflow)
+TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBeforeOverflow)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3248,7 +3240,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBef
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteFoo)) << "Delete derived class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete derived class should be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -3274,7 +3266,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBef
         "<ECSchema schemaName='TestSchema' alias='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteGoo)) << "Delete class containing ECDbMap CA should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete class containing ECDbMap CA should be successful";
 
     //Following should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
@@ -3300,7 +3292,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBef
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addGoo)) << "Add New Class with ECDbMap CA (TPH, SharedColumns, MaxSharedColumnsBeforeOverflow) is expected to be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with ECDbMap CA (TPH, SharedColumns, MaxSharedColumnsBeforeOverflow) is expected to be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -3347,7 +3339,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBef
         "       <ECProperty propertyName='FI1' typeName='int' />"//Extra column to verify that sharedcolumn count should be incremented
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addFoo)) << "New derived entity class is expected to be supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "New derived entity class is expected to be supported";
 
     //Table should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
@@ -3375,7 +3367,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBef
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable)
+TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3451,7 +3443,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable)
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteFoo)) << "Delete a class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete a class should be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -3486,7 +3478,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable)
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteGoo)) << "Delete Derived ECClass is supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete Derived ECClass is supported";
 
     //Following should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
@@ -3508,14 +3500,13 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubClass is expected to be supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubClass is expected to be supported";
 
     //Parent should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Parent"));
 
     //Add Parent ===================================================================================================
-    m_ecdb.SaveChanges();
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -3562,7 +3553,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable)
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addGoo)) << "Add New Class with JoinedTablePerDirectSubClass on Parent is expected to be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with JoinedTablePerDirectSubClass on Parent is expected to be successful";
 
     //Following should exist
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
@@ -3607,7 +3598,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable)
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addFoo)) << "Adding new derived Entity class is supported now";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived Entity class is supported now";
 
     //Table should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
@@ -3636,7 +3627,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
+TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3722,7 +3713,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteFoo)) << "Delete a class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete a class should be successful";
 
     //Following should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
@@ -3766,7 +3757,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteGoo)) << "Delete Derived ECClass is supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete Derived ECClass is supported";
 
     //Following should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
@@ -3788,14 +3779,13 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubClass,SharedColumnForSubClasses is expected to be supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubClass,SharedColumnForSubClasses is expected to be supported";
 
     //Parent should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Parent"));
 
     //Add Parent ===================================================================================================
-    m_ecdb.SaveChanges();
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -3850,7 +3840,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addGoo)) << "Add New Class with JoinedTablePerDirectSubClass,SharedColumnForSubClasses on Parent is expected to be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with JoinedTablePerDirectSubClass,SharedColumnForSubClasses on Parent is expected to be successful";
 
     //Following should exist
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
@@ -3899,7 +3889,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addFoo)) << "Adding new derived Entity class is supported now";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived Entity class is supported now";
 
     //Table should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
@@ -3930,7 +3920,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColumnsBeforeOverflow)
+TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColumnsBeforeOverflow)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -4014,7 +4004,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedCo
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteFoo)) << "Delete a class should be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete a class should be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
@@ -4053,7 +4043,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedCo
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteGoo)) << "Delete Derived ECClass is supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete Derived ECClass is supported";
 
     //Following should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
@@ -4075,14 +4065,13 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedCo
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow is expected to be supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow is expected to be supported";
 
     //Parent should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Parent"));
 
     //Add Parent ===================================================================================================
-    m_ecdb.SaveChanges();
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -4137,7 +4126,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedCo
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addGoo)) << "Add New Class with JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow on Parent is expected to be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow on Parent is expected to be successful";
 
     //Following should exist
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
@@ -4187,7 +4176,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedCo
         "       <ECProperty propertyName='FI1' typeName='int' />"//Extra column to verify that sharedcolumn count should be incremented
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, addFoo)) << "Adding new derived Entity class is supported";
+    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived Entity class is supported";
 
     //Table should not exist
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
@@ -4218,7 +4207,7 @@ TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteSubclassOfRelationshipConstraintConstraint)
+TEST_F(SchemaUpgradeTestFixture, DeleteSubclassOfRelationshipConstraintConstraint)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4284,7 +4273,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteSubclassOfRelationshipConstraintConstraint
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteConcreteImplementationOfAbstractConstraintClass)
+TEST_F(SchemaUpgradeTestFixture, DeleteConcreteImplementationOfAbstractConstraintClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4384,7 +4373,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteConcreteImplementationOfAbstractConstraint
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteECRelationships)
+TEST_F(SchemaUpgradeTestFixture, DeleteECRelationships)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4465,7 +4454,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteECRelationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteECStructClassUnsupported)
+TEST_F(SchemaUpgradeTestFixture, DeleteECStructClassUnsupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4477,7 +4466,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteECStructClassUnsupported)
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>"))) << "Deleting ECStructClass is expected to be not supported";
@@ -4486,7 +4475,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteECStructClassUnsupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_DbIndexChanges)
+TEST_F(SchemaUpgradeTestFixture, UpdateECDbMapCA_DbIndexChanges)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4631,10 +4620,191 @@ TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_DbIndexChanges)
     AssertSchemaUpdate(schemaWithIndexDeleted, filePath, {false, false}, "Deleting DbIndex");
     }
 
+
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                   Krischan.Eberle                     06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddNavigationProperty)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    %s
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                        %s
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>            
+                </ECSchema>)xml";
+
+    Utf8String schemaV1Xml;
+    schemaV1Xml.Sprintf(schemaTemplate, "", "");
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_addnavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
+
+    //now add nav prop (logical FK)
+    Utf8String schemaV2Xml;
+    schemaV2Xml.Sprintf(schemaTemplate, "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (w/o ForeignKeyConstraint) is added because it would change the mapping type from link table to logical FK";
+    m_ecdb.AbandonChanges();
+
+    //now add nav prop (physical FK)
+    schemaV2Xml.Sprintf(schemaTemplate, R"xml(<ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>)xml",
+                        R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>)xml");
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (with ForeignKeyConstraint) is added because it would change the mapping type from link table to physical FK";
+    m_ecdb.AbandonChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, DeleteNavigationProperty)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                        %s
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>            
+                </ECSchema>)xml";
+
+    Utf8String schemaV1Xml;
+    schemaV1Xml.Sprintf(schemaTemplate,"1.0", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_deletenavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
+
+    //now delete nav prop (logical FK)
+    Utf8String schemaV2Xml;
+    schemaV2Xml.Sprintf(schemaTemplate,"2.0", "");
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (w/o ForeignKeyConstraint) is deleted because it would change the mapping type logical FK to link table";
+    m_ecdb.AbandonChanges();
+
+    //now delete nav prop (physical FK)
+    schemaV1Xml.Sprintf(schemaTemplate,"1.0", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>)xml");
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_deletenavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (with ForeignKeyConstraint) is deleted because it would change the mapping type from physical FK to link table";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                   Krischan.Eberle                     06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddForeignKeyConstraint)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   %s
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                        <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                            %s
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>            
+                </ECSchema>)xml";
+
+    Utf8String schemaV1Xml;
+    schemaV1Xml.Sprintf(schemaTemplate, "", "");
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_addforeignkeyconstraint.ecdb", SchemaItem(schemaV1Xml.c_str()))) << "Schema import with " << schemaV1Xml.c_str();
+
+    //now add FKConstraint CA
+    Utf8String schemaV2Xml;
+    schemaV2Xml.Sprintf(schemaTemplate, R"xml(<ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>)xml",
+                        R"xml(<ForeignKeyConstraint xmlns="ECDbMap.02.00"/>)xml");
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a ForeignKeyConstraint is added";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                   Krischan.Eberle                     06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddLinkTableRelationshipMap)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   %s
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <ECCustomAttributes>
+                            %s
+                            </ECCustomAttributes>
+                            <Source multiplicity="%s" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>            
+                </ECSchema>)xml";
+
+    for (Utf8CP parentMultiplicity : {"(0..1)", {"(0..*)"}})
+        {
+        Utf8String schemaV1Xml;
+        schemaV1Xml.Sprintf(schemaTemplate, "", "", parentMultiplicity);
+        ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_addlinktablerelationshipmap.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with parent multiplicity " << parentMultiplicity << ": " << schemaV1Xml.c_str();
+
+        //now add LinkTableRelationshipMap CA
+        Utf8String schemaV2Xml;
+        schemaV2Xml.Sprintf(schemaTemplate, R"xml(<ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>)xml",
+                            R"xml(<LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>)xml", parentMultiplicity);
+
+        ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a LinkTableRelationshipMap CA is added for a rel with parent multiplicity " << parentMultiplicity;
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, Add_Class_NavigationProperty_RelationshipClass)
+TEST_F(SchemaUpgradeTestFixture, Add_Class_NavigationProperty_RelationshipClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4689,38 +4859,12 @@ TEST_F(SchemaUpdateTestFixture, Add_Class_NavigationProperty_RelationshipClass)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     05/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteNavigationProperty)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEntityClass typeName='A'>"
-        "        <ECProperty propertyName='PA' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B'>"
-        "        <ECProperty propertyName='PB' typeName='int' />"
-        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
-        "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='AHasB' strength='Embedding' modifier='Sealed'>"
-        "      <Source cardinality='(0,1)' polymorphic='False'>"
-        "          <Class class ='A' />"
-        "      </Source>"
-        "      <Target cardinality='(0,N)' polymorphic='False'>"
-        "          <Class class ='B' />"
-        "      </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ValidateModifingAddingDeletingBaseClassNotSupported)
+TEST_F(SchemaUpgradeTestFixture, ValidateModifingAddingDeletingBaseClassNotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4742,7 +4886,7 @@ TEST_F(SchemaUpdateTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppor
         "   <ECEntityClass typeName='Sub' modifier='None' >"
         "   </ECEntityClass >"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, schemaWithDeletedBaseClass)) << "Deleting Base Class not allowed";
+    ASSERT_EQ(ERROR, ImportSchema(schemaWithDeletedBaseClass)) << "Deleting Base Class not allowed";
 
     SchemaItem schemaWithModifedBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4753,7 +4897,7 @@ TEST_F(SchemaUpdateTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppor
         "       <BaseClass>TestClass0</BaseClass>"
         "   </ECEntityClass >"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, schemaWithModifedBaseClass)) << "Modifying Base Class not allowed";
+    ASSERT_EQ(ERROR, ImportSchema(schemaWithModifedBaseClass)) << "Modifying Base Class not allowed";
 
     SchemaItem schemaWithNewBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4765,13 +4909,13 @@ TEST_F(SchemaUpdateTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppor
         "       <BaseClass>TestClass0</BaseClass>"
         "   </ECEntityClass >"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, schemaWithNewBaseClass)) << "Adding new Base Class not allowed";
+    ASSERT_EQ(ERROR, ImportSchema(schemaWithNewBaseClass)) << "Adding new Base Class not allowed";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteExistingECEnumeration)
+TEST_F(SchemaUpgradeTestFixture, DeleteExistingECEnumeration)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4787,13 +4931,13 @@ TEST_F(SchemaUpdateTestFixture, DeleteExistingECEnumeration)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Deletion of ECEnumeration is not suppported";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Deletion of ECEnumeration is not suppported";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyExistingECEnumeration)
+TEST_F(SchemaUpgradeTestFixture, ModifyExistingECEnumeration)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4813,13 +4957,13 @@ TEST_F(SchemaUpdateTestFixture, ModifyExistingECEnumeration)
         "   <ECEnumerator value = '1' displayLabel = 'bat' />"
         " </ECEnumeration>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyIsEntityClass)
+TEST_F(SchemaUpgradeTestFixture, ModifyIsEntityClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4834,13 +4978,13 @@ TEST_F(SchemaUpdateTestFixture, ModifyIsEntityClass)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECStructClass typeName='TestClass' modifier='None' />"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Changing ECClass::IsEntityClass is not supported";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Changing ECClass::IsEntityClass is not supported";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyIsStructClass)
+TEST_F(SchemaUpgradeTestFixture, ModifyIsStructClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4855,13 +4999,13 @@ TEST_F(SchemaUpdateTestFixture, ModifyIsStructClass)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Changing ECClass::IsStructClass is not supported";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Changing ECClass::IsStructClass is not supported";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyIsCustomAttributeClass)
+TEST_F(SchemaUpgradeTestFixture, ModifyIsCustomAttributeClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4876,13 +5020,13 @@ TEST_F(SchemaUpdateTestFixture, ModifyIsCustomAttributeClass)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Changing ECClass::IsCustomAttributeClass is not supported";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Changing ECClass::IsCustomAttributeClass is not supported";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyIsRelationshipClass)
+TEST_F(SchemaUpgradeTestFixture, ModifyIsRelationshipClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4908,13 +5052,13 @@ TEST_F(SchemaUpdateTestFixture, ModifyIsRelationshipClass)
         "   <ECEntityClass typeName='A' modifier='None' />"
         "   <ECCustomAttributeClass typeName='RelClass' />"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Changing ECClass::IsRelationshipClass is not supported";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Changing ECClass::IsRelationshipClass is not supported";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
+TEST_F(SchemaUpgradeTestFixture, ModifyRelationship)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4949,7 +5093,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, schemaWithDifferentCardinality)) << "changing Relationship Cardinality not allowed";
+    ASSERT_EQ(ERROR, ImportSchema(schemaWithDifferentCardinality)) << "changing Relationship Cardinality not allowed";
 
     sp.Cancel();
 
@@ -4970,7 +5114,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, schemaWithDifferentTargetCardinality)) << "changing Relationship Cardinality not allowed";
+    ASSERT_EQ(ERROR, ImportSchema(schemaWithDifferentTargetCardinality)) << "changing Relationship Cardinality not allowed";
     sp.Cancel();
 
     sp.Begin();
@@ -4991,7 +5135,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, differentSourceConstraintClass));
+    ASSERT_EQ(ERROR, ImportSchema(differentSourceConstraintClass));
     sp.Cancel();
 
     sp.Begin();
@@ -5012,7 +5156,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, differentTargetConstraintClass));
+    ASSERT_EQ(ERROR, ImportSchema(differentTargetConstraintClass));
     sp.Cancel();
 
     sp.Begin();
@@ -5032,7 +5176,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, nonPolymorphicSource));
+    ASSERT_EQ(ERROR, ImportSchema(nonPolymorphicSource));
     sp.Cancel();
 
     sp.Begin();
@@ -5052,7 +5196,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, nonPolymorphicTarget));
+    ASSERT_EQ(ERROR, ImportSchema(nonPolymorphicTarget));
     sp.Cancel();
 
     sp.Begin();
@@ -5072,7 +5216,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, schemaWithDifferentStrength)) << "changing relationship Strength not allowed";
+    ASSERT_EQ(ERROR, ImportSchema(schemaWithDifferentStrength)) << "changing relationship Strength not allowed";
     sp.Cancel();
 
     sp.Begin();
@@ -5092,14 +5236,14 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, schemaWithDifferentStrengthDirection)) << "changing relationship Strength Direction not allowed";
+    ASSERT_EQ(ERROR, ImportSchema(schemaWithDifferentStrengthDirection)) << "changing relationship Strength Direction not allowed";
     sp.Cancel();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyRelationshipConstrainsRoleLabel)
+TEST_F(SchemaUpgradeTestFixture, ModifyRelationshipConstrainsRoleLabel)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5160,8 +5304,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationshipConstrainsRoleLabel)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, modifySourceRoleLabel)) << "Modifying Source constraint class RoleLabel is expected to be successful";
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(SUCCESS, ImportSchema(modifySourceRoleLabel)) << "Modifying Source constraint class RoleLabel is expected to be successful";
 
     SchemaItem modifyTargetRoleLabel(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5191,8 +5334,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationshipConstrainsRoleLabel)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, modifyTargetRoleLabel)) << "Modifying Target Constraint class Role Label is expected to be successful";
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(SUCCESS, ImportSchema(modifyTargetRoleLabel)) << "Modifying Target Constraint class Role Label is expected to be successful";
 
     SchemaItem modifyBothRoleLabels(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5222,13 +5364,13 @@ TEST_F(SchemaUpdateTestFixture, ModifyRelationshipConstrainsRoleLabel)
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, modifyBothRoleLabels)) << "Modifying both source and target class RoleLabels simultaneously is expected to be successful";
+    ASSERT_EQ(SUCCESS, ImportSchema(modifyBothRoleLabels)) << "Modifying both source and target class RoleLabels simultaneously is expected to be successful";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyECProperties)
+TEST_F(SchemaUpgradeTestFixture, ModifyECProperties)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5390,7 +5532,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyECProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyNavigationProperty)
+TEST_F(SchemaUpgradeTestFixture, ModifyNavigationProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5449,13 +5591,13 @@ TEST_F(SchemaUpdateTestFixture, ModifyNavigationProperty)
         "      </Target>"
         "   </ECRelationshipClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, modifiedRelNameInNavProperty)) << "Changing relationship Class Name for a Navigation property is not supported";
+    ASSERT_EQ(ERROR, ImportSchema(modifiedRelNameInNavProperty)) << "Changing relationship Class Name for a Navigation property is not supported";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnly)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropToReadOnly)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5494,7 +5636,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnly)
         "       <ECProperty propertyName='P2' typeName='string' readOnly='true' />"//readOnly='true' after update
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, schemaItem2)) << "Modifying readonly Flag is expected to succeed";
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaItem2)) << "Modifying readonly Flag is expected to succeed";
 
     /*-------------------After 2nd Schema Import--------------------------
     ReadWriteProp -> ReadWrite
@@ -5544,7 +5686,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnly)
         "       <ECProperty propertyName='P2' typeName='string' readOnly='false' />"//readOnly='false' after update
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, schemaItem3)) << "Modifying readonly Flag is expected to succeed";
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaItem3)) << "Modifying readonly Flag is expected to succeed";
 
     /*-------------------After 3rd Schema Import--------------------------
     ReadWriteProp -> ReadWrite
@@ -5579,7 +5721,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnly)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5605,13 +5747,13 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
         "       <ECProperty propertyName='P2' typeName='string' readOnly='true' />"//readOnly='true' after update
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, schemaItem2)) << "Modifying readonly Flag is expected to succeed";
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaItem2)) << "Modifying readonly Flag is expected to succeed";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyCustomAttributePropertyValues)
+TEST_F(SchemaUpgradeTestFixture, ModifyCustomAttributePropertyValues)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5704,7 +5846,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyCustomAttributePropertyValues)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteECCustomAttributeClass)
+TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5727,7 +5869,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteECCustomAttributeClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteCustomAttribute)
+TEST_F(SchemaUpgradeTestFixture, DeleteCustomAttribute)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5771,12 +5913,11 @@ TEST_F(SchemaUpdateTestFixture, DeleteCustomAttribute)
         "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteCAFromSchema));
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteCAFromSchema));
     IECInstancePtr schemaCA = m_ecdb.Schemas().GetSchema("TestSchema")->GetCustomAttribute("DynamicSchema");
     ASSERT_TRUE(schemaCA == nullptr);
 
     //Delete CA from Class
-    m_ecdb.SaveChanges();
     SchemaItem deleteCAFromClass(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -5790,12 +5931,11 @@ TEST_F(SchemaUpdateTestFixture, DeleteCustomAttribute)
         "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteCAFromClass));
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteCAFromClass));
     IECInstancePtr classCA = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
     ASSERT_TRUE(classCA == nullptr);
 
     //Delete CA from property
-    m_ecdb.SaveChanges();
     SchemaItem deleteCAFromProperty(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -5804,7 +5944,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteCustomAttribute)
         "       <ECProperty propertyName='prop' typeName='boolean' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, deleteCAFromProperty));
+    ASSERT_EQ(SUCCESS, ImportSchema(deleteCAFromProperty));
     int caCount = 0;
     for (IECInstancePtr ca : m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("prop")->GetCustomAttributes(true))
         {
@@ -5817,7 +5957,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteCustomAttribute)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ChangesToExisitingTable)
+TEST_F(SchemaUpgradeTestFixture, ChangesToExisitingTable)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingTableUpdate.ecdb"));
 
@@ -5844,7 +5984,7 @@ TEST_F(SchemaUpdateTestFixture, ChangesToExisitingTable)
         "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, schemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaItem));
 
     // Modify and add new existing table and relate it to another one
     m_ecdb.ExecuteSql("CREATE TABLE test_Title(Id INTEGER PRIMARY KEY, Name TEXT);");
@@ -5893,7 +6033,7 @@ TEST_F(SchemaUpdateTestFixture, ChangesToExisitingTable)
         "        </Target>"
         "    </ECRelationshipClass>'"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     ECSqlStatement stmt;
     stmt.Prepare(m_ecdb, "SELECT E.Name EmployeeName, T.Name EmployeeTitle FROM ts.Employee E JOIN ts.Title T USING ts.EmployeeHasTitle ORDER BY E.ECInstanceId");
@@ -5920,7 +6060,7 @@ TEST_F(SchemaUpdateTestFixture, ChangesToExisitingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteCAInstanceWithoutProperty)
+TEST_F(SchemaUpgradeTestFixture, DeleteCAInstanceWithoutProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5983,7 +6123,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteCAInstanceWithoutProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
+TEST_F(SchemaUpgradeTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6050,7 +6190,7 @@ TEST_F(SchemaUpdateTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6101,7 +6241,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6135,7 +6275,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateKindOfQuantity)
+TEST_F(SchemaUpgradeTestFixture, UpdateKindOfQuantity)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6192,7 +6332,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateKindOfQuantity)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteKindOfQuantityFromECSchema)
+TEST_F(SchemaUpgradeTestFixture, DeleteKindOfQuantityFromECSchema)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6227,7 +6367,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteKindOfQuantityFromECSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyECArrayProperty_KOQToKOQ)
+TEST_F(SchemaUpgradeTestFixture, ModifyECArrayProperty_KOQToKOQ)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6293,7 +6433,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyECArrayProperty_KOQToKOQ)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, RemoveKindOfQuantityFromECArrayProperty)
+TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6344,7 +6484,7 @@ TEST_F(SchemaUpdateTestFixture, RemoveKindOfQuantityFromECArrayProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, RemoveKindOfQuantityFromECProperty)
+TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6395,7 +6535,7 @@ TEST_F(SchemaUpdateTestFixture, RemoveKindOfQuantityFromECProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6424,7 +6564,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_EnumToPrimitive)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropertyType_EnumToPrimitive)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6480,7 +6620,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_EnumToPrimitive)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_EnumToEnum)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropertyType_EnumToEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6557,7 +6697,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_EnumToEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6613,7 +6753,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
+TEST_F(SchemaUpgradeTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6663,7 +6803,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     2/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, ModifyEnumType_IntToString)
+TEST_F(SchemaUpgradeTestFixture, ModifyEnumType_IntToString)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6701,7 +6841,7 @@ TEST_F(SchemaUpdateTestFixture, ModifyEnumType_IntToString)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, RemoveExistingEnum)
+TEST_F(SchemaUpgradeTestFixture, RemoveExistingEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6752,7 +6892,7 @@ TEST_F(SchemaUpdateTestFixture, RemoveExistingEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewRelationship)
+TEST_F(SchemaUpgradeTestFixture, AddNewRelationship)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6842,7 +6982,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewDerivedEndTableRelationship)
+TEST_F(SchemaUpgradeTestFixture, AddNewDerivedEndTableRelationship)
     {
     SchemaItem schemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -6983,7 +7123,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewDerivedEndTableRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddNewDerivedLinkTableRelationship)
+TEST_F(SchemaUpgradeTestFixture, AddNewDerivedLinkTableRelationship)
     {
     SchemaItem schemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -7259,7 +7399,7 @@ TEST_F(SchemaUpdateTestFixture, AddNewDerivedLinkTableRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddMaxSharedColumnsBeforeOverflow)
+TEST_F(SchemaUpgradeTestFixture, AddMaxSharedColumnsBeforeOverflow)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7320,7 +7460,7 @@ TEST_F(SchemaUpdateTestFixture, AddMaxSharedColumnsBeforeOverflow)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
+TEST_F(SchemaUpgradeTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7382,7 +7522,7 @@ TEST_F(SchemaUpdateTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddingECEnumerationIntegerType)
+TEST_F(SchemaUpgradeTestFixture, AddingECEnumerationIntegerType)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7405,7 +7545,7 @@ TEST_F(SchemaUpdateTestFixture, AddingECEnumerationIntegerType)
         "   <ECEnumerator value = '3' displayLabel = 'dll' />"
         " </ECEnumeration>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     ECEnumerationCP updatedEnum = m_ecdb.Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
     ASSERT_TRUE(updatedEnum != nullptr);
@@ -7431,7 +7571,7 @@ TEST_F(SchemaUpdateTestFixture, AddingECEnumerationIntegerType)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, AddingECEnumerationStringType)
+TEST_F(SchemaUpgradeTestFixture, AddingECEnumerationStringType)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7454,7 +7594,7 @@ TEST_F(SchemaUpdateTestFixture, AddingECEnumerationStringType)
         "   <ECEnumerator value = 't3' displayLabel = 'dll' />"
         " </ECEnumeration>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     ECEnumerationCP updatedEnum = m_ecdb.Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
     ASSERT_TRUE(updatedEnum != nullptr);
@@ -7479,7 +7619,7 @@ TEST_F(SchemaUpdateTestFixture, AddingECEnumerationStringType)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpdateEnumerators)
+TEST_F(SchemaUpgradeTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpdateEnumerators)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7502,7 +7642,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpdat
         "   <ECEnumerator value = '13' displayLabel = 'dll1' />"
         " </ECEnumeration>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     ECEnumerationCP updatedEnum = m_ecdb.Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
     ASSERT_TRUE(updatedEnum != nullptr);
@@ -7528,7 +7668,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpdat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationFromUnStrictToStrict)
+TEST_F(SchemaUpgradeTestFixture, UpdateECEnumerationFromUnStrictToStrict)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7551,12 +7691,12 @@ TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationFromUnStrictToStrict)
         "   <ECEnumerator value = '13' displayLabel = 'dll1' />"
         " </ECEnumeration>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Cannot change IsStrict from false to true";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot change IsStrict from false to true";
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationStrictEnumAddDeleteEnumerators)
+TEST_F(SchemaUpgradeTestFixture, UpdateECEnumerationStrictEnumAddDeleteEnumerators)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7579,7 +7719,7 @@ TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationStrictEnumAddDeleteEnumerator
         "   <ECEnumerator value = '13' displayLabel = 'dll1' />"
         " </ECEnumeration>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(m_ecdb, editedSchemaItem)) << "Cannot change Strict Enum (Only Adding new properties allowed";
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot change Strict Enum (Only Adding new properties allowed";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

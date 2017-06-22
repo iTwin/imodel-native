@@ -148,9 +148,6 @@
     <ClCompile Include="Published\FSRTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\InstanceCRUDTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\JoinedTableTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -175,9 +172,6 @@
     <ClCompile Include="Published\ProfileTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\RandomECInstanceGenerator.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\RelationshipTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -185,9 +179,6 @@
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\SchemaRulesTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\SchemaUpdateTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\ThreadSafetyTests.cpp">
@@ -215,6 +206,12 @@
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\MapContext.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaPolicyTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaUpgradeTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
@@ -277,9 +274,6 @@
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h">
-      <Filter>Published</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\RandomECInstanceGenerator.h">
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECSqlExecutionFrameworkHelper.h">

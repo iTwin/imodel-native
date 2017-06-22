@@ -39,7 +39,7 @@ struct JsonInserterTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertJsonCppJSON)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -107,7 +107,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertRapidJson)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertUsingRapidJson.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertUsingRapidJson.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -170,7 +170,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertPartialPointJson)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertPartialPointJson.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertPartialPointJson.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
@@ -211,7 +211,7 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgradetest.ecdb", BeFileName(L"DSCacheSchema.01.03.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgradetest.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.03.ecschema.xml")));
 
     IECClassLocaterR classLocater = m_ecdb.GetClassLocater();
     ECClassCP rootClass = classLocater.LocateClass("DSCacheSchema", "Root");

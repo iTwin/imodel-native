@@ -39,7 +39,7 @@ struct ECSqlRangeTreeTests : SchemaImportTestFixture
         //create rtree before importing the schema
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE demo_rtree USING rtree(ECInstanceId,minX,maxX,minY,maxY);"));
 
-        ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
             "<ECSchema schemaName=\"RangeTreeTest\" alias=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
             "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
             "  <ECEntityClass typeName=\"DemoRTree\" >"
@@ -59,8 +59,6 @@ struct ECSqlRangeTreeTests : SchemaImportTestFixture
             "       <ECProperty propertyName='Name' typeName='string' />"
             "  </ECEntityClass>"
             "</ECSchema>")));
-
-        m_ecdb.SaveChanges();
 
         //populate with data (sample data taken from https://www.sqlite.org/rtree.html)
         ECSqlStatement stmt;

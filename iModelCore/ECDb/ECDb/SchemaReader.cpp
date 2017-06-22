@@ -49,11 +49,11 @@ ECSchemaId SchemaReader::GetSchemaId(ECSchemaCR ecSchema) const
     {
     if (ecSchema.HasId())
         {
-        BeAssert(ecSchema.GetId() == SchemaPersistenceHelper::GetSchemaId(m_ecdb, ecSchema.GetName().c_str()));
+        BeAssert(ecSchema.GetId() == SchemaPersistenceHelper::GetSchemaId(m_ecdb, ecSchema.GetName().c_str(), SchemaLookupMode::ByName));
         return ecSchema.GetId();
         }
 
-    const ECSchemaId schemaId = SchemaPersistenceHelper::GetSchemaId(m_ecdb, ecSchema.GetName().c_str());
+    const ECSchemaId schemaId = SchemaPersistenceHelper::GetSchemaId(m_ecdb, ecSchema.GetName().c_str(), SchemaLookupMode::ByName);
     if (schemaId.IsValid())
         {
         //it is possible that the schema was already imported before, but the given C++ object comes from another source.
@@ -67,9 +67,9 @@ ECSchemaId SchemaReader::GetSchemaId(ECSchemaCR ecSchema) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECEnumerationCP SchemaReader::GetEnumeration(Utf8CP schemaName, Utf8CP enumName) const
+ECEnumerationCP SchemaReader::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode schemaLookupMode) const
     {
-    ECEnumerationId enumId = SchemaPersistenceHelper::GetEnumerationId(m_ecdb, schemaName, enumName);
+    ECEnumerationId enumId = SchemaPersistenceHelper::GetEnumerationId(m_ecdb, schemaNameOrAlias.c_str(), enumName.c_str(), schemaLookupMode);
     if (!enumId.IsValid())
         return nullptr;
 
@@ -92,11 +92,11 @@ ECEnumerationId SchemaReader::GetEnumerationId(ECEnumerationCR ecEnum) const
     {
     if (ecEnum.HasId()) //This is unsafe but since we do not delete ecenum any class that hasId does exist in db
         {
-        BeAssert(ecEnum.GetId() == SchemaPersistenceHelper::GetEnumerationId(m_ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str()));
+        BeAssert(ecEnum.GetId() == SchemaPersistenceHelper::GetEnumerationId(m_ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str(), SchemaLookupMode::ByName));
         return ecEnum.GetId();
         }
 
-    const ECEnumerationId id = SchemaPersistenceHelper::GetEnumerationId(m_ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str());
+    const ECEnumerationId id = SchemaPersistenceHelper::GetEnumerationId(m_ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str(), SchemaLookupMode::ByName);
     if (id.IsValid())
         {
         //it is possible that the ECEnumeration was already imported before, but the given C++ object comes from another source.
@@ -111,9 +111,9 @@ ECEnumerationId SchemaReader::GetEnumerationId(ECEnumerationCR ecEnum) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-KindOfQuantityCP SchemaReader::GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const
+KindOfQuantityCP SchemaReader::GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode schemaLookupMode) const
     {
-    KindOfQuantityId koqId = SchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, schemaName, koqName);
+    KindOfQuantityId koqId = SchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, schemaNameOrAlias.c_str(), koqName.c_str(), schemaLookupMode);
     if (!koqId.IsValid())
         return nullptr;
 
@@ -136,11 +136,11 @@ KindOfQuantityId SchemaReader::GetKindOfQuantityId(KindOfQuantityCR koq) const
     {
     if (koq.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
         {
-        BeAssert(koq.GetId() == SchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str()));
+        BeAssert(koq.GetId() == SchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str(), SchemaLookupMode::ByName));
         return koq.GetId();
         }
 
-    const KindOfQuantityId id = SchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str());
+    const KindOfQuantityId id = SchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str(), SchemaLookupMode::ByName);
     if (id.IsValid())
         {
         //it is possible that the KOQ was already imported before, but the given C++ object comes from another source.
@@ -154,9 +154,9 @@ KindOfQuantityId SchemaReader::GetKindOfQuantityId(KindOfQuantityCR koq) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyCategoryCP SchemaReader::GetPropertyCategory(Utf8CP schemaName, Utf8CP catName) const
+PropertyCategoryCP SchemaReader::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode schemaLookupMode) const
     {
-    PropertyCategoryId catId = SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, schemaName, catName);
+    PropertyCategoryId catId = SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, schemaNameOrAlias.c_str(), catName.c_str(), schemaLookupMode);
     if (!catId.IsValid())
         return nullptr;
 
@@ -179,11 +179,11 @@ PropertyCategoryId SchemaReader::GetPropertyCategoryId(PropertyCategoryCR cat) c
     {
     if (cat.HasId()) //This is unsafe but since we do not delete PropertyCategory any class that hasId does exist in db
         {
-        BeAssert(cat.GetId() == SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, cat.GetSchema().GetName().c_str(), cat.GetName().c_str()));
+        BeAssert(cat.GetId() == SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, cat.GetSchema().GetName().c_str(), cat.GetName().c_str(), SchemaLookupMode::ByName));
         return cat.GetId();
         }
 
-    const PropertyCategoryId id = SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, cat.GetSchema().GetName().c_str(), cat.GetName().c_str());
+    const PropertyCategoryId id = SchemaPersistenceHelper::GetPropertyCategoryId(m_ecdb, cat.GetSchema().GetName().c_str(), cat.GetName().c_str(), SchemaLookupMode::ByName);
     if (id.IsValid())
         {
         //it is possible that the PropertyCategory was already imported before, but the given C++ object comes from another source.
@@ -201,7 +201,7 @@ ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
     {
     if (prop.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
         {
-        BeAssert(prop.GetId() == SchemaPersistenceHelper::GetPropertyId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str()));
+        BeAssert(prop.GetId() == SchemaPersistenceHelper::GetPropertyId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str(), SchemaLookupMode::ByName));
         return prop.GetId();
         }
 
@@ -214,7 +214,7 @@ ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
         propId = SchemaPersistenceHelper::GetPropertyId(m_ecdb, prop.GetClass().GetId(), prop.GetName().c_str());
         }
     else
-        propId = SchemaPersistenceHelper::GetPropertyId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str());
+        propId = SchemaPersistenceHelper::GetPropertyId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str(), SchemaLookupMode::ByName);
 
     if (propId.IsValid())
         {
@@ -1533,7 +1533,7 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
     if (ecClass.GetSchema().HasId())
         {
         //If the ECSchema already has an id, we can run a faster SQL to get the class id
-        BeAssert(ecClass.GetSchema().GetId() == SchemaPersistenceHelper::GetSchemaId(m_ecdb, ecClass.GetSchema().GetName().c_str()));
+        BeAssert(ecClass.GetSchema().GetId() == SchemaPersistenceHelper::GetSchemaId(m_ecdb, ecClass.GetSchema().GetName().c_str(), SchemaLookupMode::ByName));
         classId = SchemaPersistenceHelper::GetClassId(m_ecdb, ecClass.GetSchema().GetId(), ecClass.GetName().c_str());
         }
     else

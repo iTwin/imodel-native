@@ -17,8 +17,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct SchemaPolicy : NonCopyableClass
     {
-    friend struct SchemaPolicies;
-
     enum class Type
         {
         NoAdditionalRootEntityClasses = 1,
@@ -26,18 +24,17 @@ struct SchemaPolicy : NonCopyableClass
         NoAdditionalForeignKeyConstraints = 4
         };
 
-    typedef bset<Utf8String, CompareIUtf8Ascii> Exceptions;
-
-    private:
+    protected:
         Type m_type;
         ECN::ECSchemaId m_optingInSchemaId;
-        Exceptions m_exceptions;
-        static std::unique_ptr<SchemaPolicy> Create(Type, ECN::ECSchemaId optingInSchemaId);
+        bset<ECN::ECSchemaId> m_schemaExceptions;
+        bset<ECN::ECClassId> m_classExceptions;
 
-    protected:
         SchemaPolicy(Type type, ECN::ECSchemaId optingInSchemaId) : m_type(type), m_optingInSchemaId(optingInSchemaId) {}
 
-        Exceptions const& GetExceptions() const { return m_exceptions; }
+        bool IsException(ECN::ECClassCR candidateClass) const;
+
+        static BentleyStatus RetrieveExceptions(bvector<bvector<Utf8String>>&, ECN::IECInstanceCR policyCA, Utf8CP exceptionsPropName);
 
     public:
         virtual ~SchemaPolicy() {}
@@ -57,10 +54,10 @@ struct SchemaPolicy : NonCopyableClass
 struct NoAdditionalRootEntityClassesPolicy final : SchemaPolicy
     {
     private:
-        bool IsException(ECN::ECClassCR ecClass) const { return GetExceptions().find(ecClass.GetFullName()) != GetExceptions().end(); }
+        explicit NoAdditionalRootEntityClassesPolicy(ECN::ECSchemaId optingInSchemaId) : SchemaPolicy(Type::NoAdditionalRootEntityClasses, optingInSchemaId) {}
 
     public:
-        explicit NoAdditionalRootEntityClassesPolicy(ECN::ECSchemaId optingInSchemaId) : SchemaPolicy(Type::NoAdditionalRootEntityClasses, optingInSchemaId) {}
+        static std::unique_ptr<SchemaPolicy> Create(ECDbCR, ECN::ECSchemaId optingInSchemaId, ECN::IECInstanceCR policyCA, std::vector<ECN::ECSchemaId> const& systemSchemaExceptions);
         ~NoAdditionalRootEntityClassesPolicy() {}
 
         BentleyStatus Evaluate(ECDbCR, ECN::ECClassCR) const;
@@ -72,10 +69,10 @@ struct NoAdditionalRootEntityClassesPolicy final : SchemaPolicy
 struct NoAdditionalLinkTablesPolicy final : SchemaPolicy
     {
     private:
-        bool IsException(ECN::ECRelationshipClassCR relClass) const { return GetExceptions().find(relClass.GetFullName()) != GetExceptions().end(); }
+        explicit NoAdditionalLinkTablesPolicy(ECN::ECSchemaId optingInSchemaId) : SchemaPolicy(Type::NoAdditionalLinkTables, optingInSchemaId) {}
 
     public:
-        explicit NoAdditionalLinkTablesPolicy(ECN::ECSchemaId optingInSchemaId) : SchemaPolicy(Type::NoAdditionalLinkTables, optingInSchemaId) {}
+        static std::unique_ptr<SchemaPolicy> Create(ECDbCR, ECN::ECSchemaId optingInSchemaId, ECN::IECInstanceCR policyCA, std::vector<ECN::ECSchemaId> const& systemSchemaExceptions);
         ~NoAdditionalLinkTablesPolicy() {}
 
         BentleyStatus Evaluate(ECDbCR, ECN::ECRelationshipClassCR) const;
@@ -87,16 +84,17 @@ struct NoAdditionalLinkTablesPolicy final : SchemaPolicy
 struct NoAdditionalForeignKeyConstraintsPolicy final : SchemaPolicy
     {
     private:
-        bool IsException(ECN::NavigationECPropertyCR navProp) const
-            {
-            Utf8String searchString(navProp.GetClass().GetFullName());
-            searchString.append(".").append(navProp.GetName());
+        bset<ECN::ECPropertyId> m_propertyExceptions;
 
-            return GetExceptions().find(searchString) != GetExceptions().end(); 
-            }
+        explicit NoAdditionalForeignKeyConstraintsPolicy(ECN::ECSchemaId optingInSchemaId) : SchemaPolicy(Type::NoAdditionalForeignKeyConstraints, optingInSchemaId) {}
+
+        using SchemaPolicy::IsException;
+        bool IsException(ECN::NavigationECPropertyCR navProp) const;
+
+        BentleyStatus ReadExceptionsFromCA(ECDbCR ecdb, ECN::IECInstanceCR ca);
 
     public:
-        explicit NoAdditionalForeignKeyConstraintsPolicy(ECN::ECSchemaId optingInSchemaId) : SchemaPolicy(Type::NoAdditionalForeignKeyConstraints, optingInSchemaId) {}
+        static std::unique_ptr<SchemaPolicy> Create(ECDbCR, ECN::ECSchemaId optingInSchemaId, ECN::IECInstanceCR policyCA, std::vector<ECN::ECSchemaId> const& systemSchemaExceptions);
         ~NoAdditionalForeignKeyConstraintsPolicy() {}
 
         BentleyStatus Evaluate(ECDbCR, ECN::NavigationECPropertyCR) const;
@@ -110,7 +108,9 @@ struct SchemaPolicies final
     private:
         std::map<SchemaPolicy::Type, std::unique_ptr<SchemaPolicy>> m_optedInPolicies;
 
-        BentleyStatus ReadPolicy(ECDbCR, ECN::ECSchemaCR, SchemaPolicy::Type);
+        BentleyStatus ReadPolicy(ECDbCR, ECN::ECSchemaCR, SchemaPolicy::Type, std::vector<ECN::ECSchemaId> const& systemSchemaExceptions);
+
+        static std::vector<ECN::ECSchemaId> GetSystemSchemaExceptions(ECDbCR ecdb);
 
     public:
         SchemaPolicies() {}

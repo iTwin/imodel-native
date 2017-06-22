@@ -1015,8 +1015,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbMetaSchemaECSqlTestFixture, VerifyQueries)
     {
-    SetupECDb("ecdbmetaschematests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(m_ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbmetaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
     AssertSchemaDefs();
     }
 
@@ -1025,8 +1024,7 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, VerifyQueries)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMetaSchemaECSqlTestFixture, ECClassId)
     {
-    SetupECDb("metaschematests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(m_ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("metaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from meta.ECSchemaDef WHERE ECClassId IS NOT NULL"));

@@ -146,8 +146,8 @@ struct ToBoolStrSqlFunction : ScalarFunction
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     PowSqlFunction func;
     ASSERT_EQ(0, m_ecdb.AddFunction(func));
@@ -164,8 +164,8 @@ TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     Utf8CP ecsql = "SELECT I,POW(I,2) FROM ecsql.P";
 
@@ -185,8 +185,8 @@ TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
 TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
     {
     const int perClassRowCount = 3;
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, perClassRowCount));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(perClassRowCount));
 
     //insert one more test row which has a NULL column
         {
@@ -271,8 +271,8 @@ TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     ToBoolStrSqlFunction func;
     ASSERT_EQ(0, m_ecdb.AddFunction(func));
@@ -294,8 +294,8 @@ TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     //insert one more test row which has a NULL column
         {
@@ -354,8 +354,8 @@ TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
  TEST_F (ECSqlStatementTestFixture, AggregateFunction)
      {
-     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-     ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+     ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
      SumOfSquares func;
      ECSqlStatement stmt;
@@ -438,7 +438,7 @@ struct DateFromStringFunction : ScalarFunction, ScalarFunction::IScalar
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, DateECSqlFunction)
     {
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"));
 
     DateTime dt(2015, 3, 24);
     Utf8String dtStr = dt.ToString();
@@ -538,7 +538,7 @@ struct GeometryTypeECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GeometryECSqlFunction)
     {
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"));
 
     IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
     Utf8CP expectedGeomTypeStr = GeometryTypeECSqlFunction::GeometryTypeToString(line->GetGeometryType());

@@ -637,10 +637,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
                 {
                 NavigationPropertyMap & navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
                 if (MapNavigationProperty(ctx, navPropMap) != ClassMappingStatus::Success)
-                    {
-                    BeAssert(false);
                     return ERROR;
-                    }
                 }
 
             //! ECSchema update added new property for which we need to save property map

@@ -939,9 +939,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
 TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JoinedTablePerDirectSubclass.ecdb"));
-
-    SchemaItem baseTestSchema(
-        "<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='Base' modifier='Abstract'>"
@@ -957,10 +955,11 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
         "         <BaseClass>Base</BaseClass>"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>"))) << "MapStrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to succeed";
 
-    SchemaItem secondTestItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "    <ECSchemaReference name='ReferredSchema' version='01.00' prefix='rs' />"
@@ -972,15 +971,8 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
         "         <BaseClass>rs:Sub1</BaseClass>"
         "        <ECProperty propertyName='P11' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>"))) << "MapStrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to be honored from base Class of Referred schema";
 
-    BeFileName filePath(m_ecdb.GetDbFileName());
-
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, baseTestSchema)) << "MapStrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to succeed";
-
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
-
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, secondTestItem)) << "MapStrategy Option JoinedTablePerDirectSubclass (applied to subclasses) is expected to be honored from base Class of Referred schema";
 
     bmap<Utf8String, Utf8String> expectedTableLayouts;
     expectedTableLayouts["rs_Base"] = "p0";
@@ -2653,57 +2645,105 @@ TEST_F(JoinedTableTestFixture, VerifyONDeleteRestrictWithJoinedTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 struct JoinedTableECSqlStatementsTests : DbMappingTestFixture
     {
-    void ImportSchemaWithCA(ECSchemaPtr& ecSchema, Utf8CP className);
-
+protected:
     void SetUpECSqlStatementTestsDb();
-
     void SetUpNestedStructArrayDb();
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void JoinedTableECSqlStatementsTests::ImportSchemaWithCA(ECSchemaPtr& ecSchema, Utf8CP className)
-    {
-    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
-    readContext->AddSchemaLocater(m_ecdb.GetSchemaLocater());
-    SchemaKey ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
-    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestWriteCompatible);
-    ASSERT_TRUE(ecdbmapSchema.IsValid());
-    readContext->AddSchema(*ecSchema);
-    ecSchema->AddReferencedSchema(*ecdbmapSchema);
-
-    ECClassP personClass = ecSchema->GetClassP(className);
-    ASSERT_TRUE(personClass != nullptr);
-
-    ECClassCP ca = ecdbmapSchema->GetClassCP("ClassMap");
-    EXPECT_TRUE(ca != nullptr);
-    auto customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-    EXPECT_TRUE(customAttribute != nullptr);
-    ASSERT_TRUE(customAttribute->SetValue("MapStrategy", ECValue("TablePerHierarchy")) == ECObjectsStatus::Success);
-    ASSERT_TRUE(personClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-
-    ca = ecdbmapSchema->GetClassCP("JoinedTablePerDirectSubclass");
-    EXPECT_TRUE(ca != nullptr);
-    customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-    EXPECT_TRUE(customAttribute != nullptr);
-    ASSERT_TRUE(personClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-
-    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Muhammad Hassan                  02/16
-//+---------------+---------------+---------------+---------------+---------------+------
 void JoinedTableECSqlStatementsTests::SetUpECSqlStatementTestsDb()
     {
-    SetupECDb("JoinedTableECSqlStatementTests.ecdb");
-
-    ECSchemaReadContextPtr context = nullptr;
-    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ASSERT_TRUE(schemaPtr != NULL);
-
-    ImportSchemaWithCA(schemaPtr, "Person");
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableECSqlStatementTests.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="ECSqlStatementTests" alias="ECST" version="01.00" displayLabel="ECSqlStatementTests DataBase" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+    <ECStructClass typeName="ContactDetails" modifier="None">
+        <ECProperty propertyName="ContactType" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Notes" typeName="string" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="Name" modifier="None">
+        <ECProperty propertyName="FirstName" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="LastName" typeName="string" readOnly="false"/>
+    </ECStructClass>
+    <ECEntityClass typeName="Person" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Phone" typeName="long" readOnly="false"/>
+        <ECProperty propertyName="City" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Country" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Address" typeName="string" readOnly="false"/>
+        <ECStructProperty propertyName="PersonName" typeName="Name" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Customer" modifier="None">
+        <BaseClass>Person</BaseClass>
+        <ECProperty propertyName="ContactTitle" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Company" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="IsRegular" typeName="boolean" readOnly="false"/>
+        <ECStructArrayProperty propertyName="ContactDetails" typeName="ContactDetails" readOnly="false" minOccurs="3" maxOccurs="3"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Order" modifier="None">
+        <ECProperty propertyName="OrderDate" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="ReleaseDate" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="ShipCity" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="ShipPostalCode" typeName="string" readOnly="false"/>
+        <ECNavigationProperty propertyName="Customer" relationshipName="CustomerHasOrder" direction="Backward"/>
+        <ECNavigationProperty propertyName="Employee" relationshipName="EmployeeHasOrder" direction="Backward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CustomerHasOrder" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has filed">
+            <Class class="Customer"/>
+        </Source>
+        <Target multiplicity="(1..*)" polymorphic="true" roleLabel="ordered by">
+            <Class class="Order"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Employee" modifier="None">
+        <BaseClass>Person</BaseClass>
+        <ECProperty propertyName="IsContractual" typeName="boolean" readOnly="false"/>
+        <ECStructArrayProperty propertyName="ContactDetails" typeName="ContactDetails" readOnly="false" minOccurs="3" maxOccurs="3"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="EmployeeHasOrder" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" roleLabel="processes" polymorphic="true">
+            <Class class="Employee"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is processed by" polymorphic="true">
+            <Class class="Order"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Product" modifier="None">
+        <ECProperty propertyName="ProductName" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="UnitPrice" typeName="double" readOnly="false"/>
+        <ECProperty propertyName="ProductAvailable" typeName="boolean" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Supplier" modifier="None">
+        <ECProperty propertyName="CompanyName" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="ContactName" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="ContactTitle" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Address" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="City" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Country" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Phone" typeName="long" readOnly="false"/>
+        <ECNavigationProperty propertyName="Product" relationshipName="ProductHasSupplier" direction="Backward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ProductHasSupplier" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" roleLabel="has" polymorphic="true">
+            <Class class="Product"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="belongs to" polymorphic="true">
+            <Class class="Supplier"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Shipper" modifier="None">
+        <ECProperty propertyName="CompanyName" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Phone" typeName="long" readOnly="false"/>
+    </ECEntityClass>
+    </ECSchema>
+    )xml")));
 
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
     }
@@ -2713,13 +2753,93 @@ void JoinedTableECSqlStatementsTests::SetUpECSqlStatementTestsDb()
 //+---------------+---------------+---------------+---------------+---------------+------
 void JoinedTableECSqlStatementsTests::SetUpNestedStructArrayDb()
     {
-    SetupECDb("JoinedTableECSqlStatementTests.ecdb");
-
-    ECSchemaReadContextPtr context = nullptr;
-    ECSchemaPtr schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(schemaPtr != NULL);
-
-    ImportSchemaWithCA(schemaPtr, "ClassA");
+    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableECSqlStatementTests.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="NestedStructArrayTest" alias="nsat" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+    <ECEntityClass typeName="ClassA" modifier="None">
+		<ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECStructClass typeName="S4" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="S3" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S4ARRAY" typeName="S4" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="S2" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S3ARRAY" typeName="S3" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="S1" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S2ARRAY" typeName="S2" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECEntityClass typeName="DerivedA" modifier="None">
+        <BaseClass>ClassA</BaseClass>
+		<ECProperty propertyName="PropDerivedA" typeName="int" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BaseHasDerivedA" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="holds">
+            <Class class="ClassA"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="held by">
+            <Class class="DerivedA"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ClassP" modifier="None">
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DerivedB" modifier="None">
+        <BaseClass>ClassA</BaseClass>
+		<ECProperty propertyName="PropDerivedB" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DoubleDerivedB" modifier="None">
+        <BaseClass>DerivedB</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedB" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DoubleDerivedA" modifier="None">
+        <BaseClass>DerivedB</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedA" typeName="int" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="DerivedBHasChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="holds">
+            <Class class="DerivedB"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="held by">
+            <Class class="DoubleDerivedA"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="DoubleDerivedC" modifier="None">
+        <BaseClass>DerivedA</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedC" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    </ECSchema>)xml")));
 
     NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(m_ecdb, true);
     }

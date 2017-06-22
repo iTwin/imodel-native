@@ -1,7 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-InstanceCRUDTests.*     # No need to run with the build, used by testing after build for verifying CRUD operations.
 ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run with build.
 
 #----------------------------------------------------------------------------------------
@@ -16,10 +15,14 @@ RelationshipMappingTestFixture.AddDerivedClassOfConstraintOn1sideOf1NRelationshi
 RelationshipMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
 
 #TFS 520654
-SchemaUpdateTestFixture.UpdateECDbMapCA_DbIndexChanges
-SchemaUpdateTestFixture.RemoveKindOfQuantityFromECProperty
-SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
+SchemaUpgradeTestFixture.UpdateECDbMapCA_DbIndexChanges
+SchemaUpgradeTestFixture.RemoveKindOfQuantityFromECProperty
+SchemaUpgradeTestFixture.RemoveKindOfQuantityFromECArrayProperty
 
 #Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
+
+#TFS 718009
+SchemaUpgradeTestFixture.DeleteNavigationProperty
+
 

@@ -108,7 +108,7 @@ TEST_F(ChangeSummaryTestFixture, InvalidSummary)
     // Test2: Change to ec_ tables - should cause an error creating a change summary
     tracker.Restart();
 
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "</ECSchema>")));
@@ -694,7 +694,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 

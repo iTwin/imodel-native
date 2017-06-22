@@ -1215,7 +1215,7 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
 
     Utf8String fileName(fileNameNoExt);
     fileName.append(".ecdb");
-    return CloneECDb(m_ecdb, fileName.c_str(), seedPath, params) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    return CloneECDb(fileName.c_str(), seedPath, params) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------

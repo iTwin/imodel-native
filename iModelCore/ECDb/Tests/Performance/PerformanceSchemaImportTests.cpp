@@ -223,15 +223,15 @@ TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ImportSimpleSchema.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
-    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.70.ecschema.xml"));
-    ASSERT_TRUE(schemaptr != nullptr);
+    ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Simple" alias="s" version="01.00" displayLabel="Basic Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="None"/>
+        </ECSchema>)xml")));
 
     StopWatch timer(true);
-    BentleyStatus stat = m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
     timer.Stop();
-    ASSERT_EQ(SUCCESS, stat);
-
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), -1, "Simple Schema Import Test with NO CustomAttribute and Reference Schemas");
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Simple Schema Import Test with just a single class w/o props");
     }
 
 //---------------------------------------------------------------------------------------

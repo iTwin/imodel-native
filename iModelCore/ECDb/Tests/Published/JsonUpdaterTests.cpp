@@ -280,7 +280,7 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
                                                                   "   <ECProperty propertyName='Location' typeName='Bentley.Geometry.Common.IGeometry'/>"
                                                                   "   </ECEntityClass>"
                                                                   "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb( 3));
 
     ECClassCP spatialClass = m_ecdb.Schemas().GetClass("Test", "SpatialLocation");
     ASSERT_TRUE(nullptr != spatialClass);
