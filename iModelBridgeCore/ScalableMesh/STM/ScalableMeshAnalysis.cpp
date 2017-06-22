@@ -233,7 +233,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     double progress = 0.0; // progress value between 0 and 1
     bool userAborted(false);
 
-    const int nSeconds = 0.5; // check progress every nSeconds
+    const float nSeconds = 0.5; // check progress every nSeconds
     clock_t timer = clock();
 
     std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
@@ -448,7 +448,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     double progress = 0.0;
     double progressStep = 1.0 / (m_xSize+1);
     bool userAborted(false);
-    const int nSeconds = 0.5; // check progress every nSeconds
+    const float nSeconds = 0.5; // check progress every nSeconds
     clock_t timer = clock();
 
     std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
@@ -622,5 +622,9 @@ void ScalableMeshAnalysis::_SetMaxThreadNumber(int num)
     m_ThreadNumber = num;
     }
 
+void ScalableMeshAnalysis::_SetUnitToMeter(double val)
+    {
+    m_unit2meter = val;
+    }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
