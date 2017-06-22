@@ -836,7 +836,7 @@ void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequ
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : m_marker("")
+AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : RealityDataDocumentContentByIdRequest(rootId), m_marker("")
     {
     m_validRequestString = false; 
     m_handshakeRequest = nullptr;
