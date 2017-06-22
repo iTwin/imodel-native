@@ -39,15 +39,19 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	BuildingPhysical::BuildingPhysicalModelPtr BuildingDomainUtilities::CreateBuildingPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbPtr db)
+	BuildingPhysical::BuildingPhysicalModelPtr BuildingDomainUtilities::CreateBuildingPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbPtr db, Dgn::SubjectCPtr parentSubject)
 		{
-		Dgn::SubjectCPtr rootSubject = db->Elements().GetRootSubject();
+
+		if (!parentSubject.IsValid())
+			{
+			parentSubject = db->Elements().GetRootSubject();
+			}
 
 		// Create the partition and the BuildingPhysicalModel.   
 
 		Utf8String phyModelCode = BuildPhysicalModelCode(modelCodeName);
 
-		Dgn::PhysicalPartitionCPtr partition = Dgn::PhysicalPartition::CreateAndInsert(*rootSubject, phyModelCode);
+		Dgn::PhysicalPartitionCPtr partition = Dgn::PhysicalPartition::CreateAndInsert(*parentSubject, phyModelCode);
 
 		if (!partition.IsValid())
 			return nullptr;
@@ -134,6 +138,28 @@ namespace BuildingDomain
 		}
 
 
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	ECN::ECSchemaCP BuildingDomainUtilities::InsertSuppliedSchema(ECN::ECSchemaPtr suppliedDynamicSchema, BuildingPhysical::BuildingPhysicalModelPtr model)
+		{
+		bvector<ECN::ECSchemaCP> schemas;
+
+		ECN::ECSchemaCP a = &(*suppliedDynamicSchema);
+
+		schemas.push_back(a);
+
+		if (Dgn::SchemaStatus::Success != model->GetDgnDb().ImportSchemas(schemas))
+			return nullptr;
+
+		model->GetDgnDb().SaveChanges();
+
+		UpdateSchemaNameInModel(suppliedDynamicSchema->GetName(), model);
+
+		return  model->GetDgnDb().Schemas().GetSchema(suppliedDynamicSchema->GetName().c_str());
+		}
+
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
@@ -169,30 +195,17 @@ namespace BuildingDomain
 
 		ECN::ECSchemaPtr dynSchema;
 
-		if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(dynSchema, schemaName, "BLDGDYN", 1, 1, 0))
+		Utf8String alias;
+
+		alias.Sprintf("BLDG%d", rand());
+		
+		if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(dynSchema, schemaName, alias, 1, 1, 0))
 			return nullptr;
 
 		ECN::ECSchemaCP bisSchema = db.Schemas().GetSchema(BIS_ECSCHEMA_NAME);
 
 		if (nullptr == bisSchema)
 			return nullptr;
-
-
-		//ECN::ECClassCP baseClass = bisSchema->GetClassCP(BIS_CLASS_PhysicalElement);
-
-		//if (nullptr == baseClass)
-		//	return nullptr;
-
-		
-		////	auto context = ECN::ECSchemaReadContext::CreateContext(false);
-
-		//	//	ECN::SchemaKeyCR key = baseClass->GetSchema().GetSchemaKey();
-
-		//	//	ECN::SchemaKey k(key);
-
-		//ECN::ECSchemaCR baseSchema = baseClass->GetSchema();// context->LocateSchema(k, ECN::SchemaMatchType::Identical);
-
-		//														//		 physicalModel.GetDgnDb().Schemas().LocateSchema( k,ECN::SchemaMatchType::Latest, *context);
 
 		if (ECN::ECObjectsStatus::Success != dynSchema->AddReferencedSchema((ECN::ECSchemaR)(*bisSchema)))
 			return nullptr;
@@ -218,16 +231,24 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	BentleyStatus BuildingDomainUtilities::CreateBuildingModels(Utf8StringCR modelCodeName, Dgn::DgnDbPtr db)
+	BentleyStatus BuildingDomainUtilities::CreateBuildingModels(Utf8StringCR modelCodeName, Dgn::DgnDbPtr db, Dgn::SubjectCPtr parentSubject, bool createDynamicSchema, ECN::ECSchemaPtr suppliedDynamicSchema)
 		{
 
-		BuildingPhysical::BuildingPhysicalModelPtr physicalModel = CreateBuildingPhyicalModel(modelCodeName, db);
+		BuildingPhysical::BuildingPhysicalModelPtr physicalModel = CreateBuildingPhyicalModel(modelCodeName, db, parentSubject);
 
 		if (!physicalModel.IsValid())
 			return BentleyStatus::ERROR;
 
-		if ( nullptr == CreateBuildingDynamicSchema(modelCodeName, physicalModel) )
-			return BentleyStatus::ERROR;
+		if (createDynamicSchema && !suppliedDynamicSchema.IsValid())
+			{
+			if (nullptr == CreateBuildingDynamicSchema(modelCodeName, physicalModel))
+				return BentleyStatus::ERROR;
+			}
+		else if (suppliedDynamicSchema.IsValid())
+			{
+			if (nullptr == InsertSuppliedSchema(suppliedDynamicSchema, physicalModel) )
+				return BentleyStatus::ERROR;
+			}
 
 		BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = CreateBuildingTypeDefinitionModel(modelCodeName, db);
 

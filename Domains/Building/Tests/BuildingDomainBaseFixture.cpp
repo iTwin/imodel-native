@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomainBaseFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools\KnownDesktopLocationsAdmin.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <BuildingDomain\BuildingDomainApi.h>
 
@@ -90,7 +90,7 @@ ViewManager& BuildingDomainTestsHost::_SupplyViewManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewLib::Host::IKnownLocationsAdmin& BuildingDomainTestsHost::_SupplyIKnownLocationsAdmin()
     {
-    return *new WindowsKnownLocationsAdmin();
+    return *new KnownDesktopLocationsAdmin();
     }
 
 

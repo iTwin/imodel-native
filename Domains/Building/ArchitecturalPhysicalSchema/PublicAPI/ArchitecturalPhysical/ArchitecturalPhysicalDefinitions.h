@@ -50,13 +50,22 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with ARCHITECTURAL_PHYSICAL_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
+#define AP_CLASS_Casework                                   "Casework"
+#define AP_CLASS_CurtianWall                                "CurtianWall"
 #define AP_CLASS_Door                                       "Door"
 #define AP_CLASS_DoorType                                   "DoorType"
+#define AP_CLASS_Floor                                      "Floor"
+#define AP_CLASS_Furniture                                  "Furniture"
+#define AP_CLASS_Railing                                    "Railing"
+#define AP_CLASS_Ramp                                       "Ramp"
+#define AP_CLASS_Stair                                      "Stair"
+#define AP_Class_TransportationMechanism                    "TransportationMechanism"
+#define AP_CLASS_Wall                                       "Wall"
+#define AP_CLASS_WallLeaf                                   "WallLeaf"
+#define AP_CLASS_WallType                                   "WallType"
 #define AP_CLASS_Window                                     "Window"
 #define AP_CLASS_WindowType                                 "WindowType"
-#define AP_CLASS_Wall                                       "Wall"
-#define AP_CLASS_WallType                                   "WallType"
-#define AP_CLASS_ArchitecturalBaseElement                   "ArchitecturalBaseElement"
+#define AP_Class_WallOwnsWallLeafs                          "WallOwnsWallLeafs"
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with PLANNING_SCHEMA macro for use in ECSql)
