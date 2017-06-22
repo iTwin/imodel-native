@@ -127,7 +127,6 @@ struct ClassMap : RefCountedBase
         ClassMappingStatus MapProperties(ClassMappingContext&);
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
-        virtual BentleyStatus _ValidateMapping() const;
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         BentleyStatus MapSystemColumns();

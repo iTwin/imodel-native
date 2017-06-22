@@ -93,18 +93,6 @@ bool ClassMap::IsMixin() const
     return false;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                           07/2012
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_ValidateMapping() const
-    {
-    if (GetPropertyMaps().Size() == 0)
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013

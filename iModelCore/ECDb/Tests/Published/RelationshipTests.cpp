@@ -3770,11 +3770,12 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRel
         "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "  <ECEntityClass typeName='ITEM' >"
         "    <ECProperty propertyName='op_ITEM_prop' typeName='string' />"
+        "        <ECNavigationProperty propertyName='UNIT' relationshipName='UNIT_HAS_ITEM' direction='Backward' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='UNIT' >"
         "    <ECProperty propertyName='op_UNIT_prop' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='UNIT_HAS_ITEM' strength='referencing' strengthDirection='forward'>"
+        "  <ECRelationshipClass typeName='UNIT_HAS_ITEM' strength='referencing' strengthDirection='forward'  modifier='Sealed'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class='UNIT' />"
         "    </Source>"
@@ -3786,40 +3787,34 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRel
 
     ECClassCP unit = m_ecdb.Schemas().GetClass("OpenPlant", "UNIT");
     ECClassCP item = m_ecdb.Schemas().GetClass("OpenPlant", "ITEM");
-
+    m_ecdb.SaveChanges();
     Savepoint sp(m_ecdb, "CRUD operations");
     //Insert Statements
     {
     //relationship between UNIT and ITEM
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
-
-    Utf8String ecsql;
-    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(101, 'itemString1',201)"));
     }
 
     //Select Statements
     {
     Utf8String ecsql;
     ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
-
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
     ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
     }
 
     //Delete Statements
     {
-    Utf8String ecsql;
-    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 101"));
     //Verify Deletion
+
+    Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
     }
     sp.Cancel();
 
-    m_ecdb.SaveChanges();
     ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
         "<?xml version = '1.0' encoding = 'utf-8'?>"
         "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -3833,23 +3828,16 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRel
     item = m_ecdb.Schemas().GetClass("OpenPlant", "ITEM");
     unit = m_ecdb.Schemas().GetClass("OpenPlant", "UNIT");
     ECClassCP unit_3D = m_ecdb.Schemas().GetClass("OpenPlant_3D", "UNIT_3D");
-
     //Insert Statements
     {
     Utf8String ecsql;
     //relationship between UNIT and ITEM
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
-
-    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(101, 'itemString1',201)"));
 
     //relationship between UNIT_3D(new derived Class) and ITEM
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(301, 'unitString2', 'unit3dString2')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(102, 'itemString2')"));
-
-    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402, 301, %llu, 102, %llu)", unit_3D->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(102, 'itemString2',301)"));
     }
 
     //Select Statements
@@ -3866,14 +3854,13 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRel
 
     //Delete Statements
     {
-    Utf8String ecsql;
-    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    Utf8String ecsql = "UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 101";
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
 
-    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND SourceECClassId=%s", unit_3D->GetId().ToString().c_str());
+    ecsql = "UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 102";
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
