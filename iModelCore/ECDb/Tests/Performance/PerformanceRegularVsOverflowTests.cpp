@@ -863,12 +863,11 @@ void PerformanceRegularVsOverflowTestFixture::SetUpTestDb(Utf8String seedDbName,
     if (!seedFilePath.DoesPathExist())
         {
         SetupECDb(seedDbName.c_str(), SchemaItem(schemaXml));
-        ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, s_initialInstanceCount));
-        m_ecdb.SaveChanges();
+        ASSERT_EQ(SUCCESS, PopulateECDb(s_initialInstanceCount));
         m_ecdb.CloseDb();
         }
 
-    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(m_ecdb, destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -932,7 +931,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
         m_ecdb.CloseDb();
         }
 
-    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(m_ecdb, seedDbName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(seedDbName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }
 
 /*---------------------------------------------------------------------------------**//**

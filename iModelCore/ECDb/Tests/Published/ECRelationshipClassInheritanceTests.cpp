@@ -1885,7 +1885,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
                "    </Target>"
                "  </ECRelationshipClass>"
                "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     ECInstanceKey a, b;
     {

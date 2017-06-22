@@ -115,7 +115,7 @@ TEST_F(JsonReaderTests, ReadInstanceAlongWithRelatedInstances)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, JsonValueStruct)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
 
     ECSchemaCP startupSchema = m_ecdb.Schemas().GetSchema("StartupCompany");
     ECClassCP anglesStructClass = startupSchema->GetClassCP("AnglesStruct");
@@ -191,7 +191,7 @@ TEST_F(JsonReaderTests, JsonValueStruct)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, PartialPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);

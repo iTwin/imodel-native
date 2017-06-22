@@ -154,8 +154,8 @@ void ECSqlTestFrameworkFixture::RunTest(ECSqlTestDataset const& dataset, ECSqlAs
 //virtual
 void ECSqlSelectTestFramework::SetUp()
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, PerClassRowCount));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlselecttests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(PerClassRowCount));
     }
 
 
@@ -179,8 +179,8 @@ void ECSqlSelectTestFramework::RunTest(ECSqlTestDataset const& dataset)
 //virtual
 void ECSqlNonSelectTestFrameworkFixture::SetUp()
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnonselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, PerClassRowCount));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnonselecttests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(PerClassRowCount));
     }
 
 //---------------------------------------------------------------------------------------

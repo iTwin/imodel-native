@@ -595,7 +595,7 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(ECDbR ecdb, Utf8String destFileNa
         m_ecdb.SaveChanges();
         m_ecsqlTestItems.clear();
         }
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

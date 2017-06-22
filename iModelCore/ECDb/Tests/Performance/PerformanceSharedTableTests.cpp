@@ -115,7 +115,7 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                 m_ecdb.SaveChanges();
                 }
 
-            return CloneECDb(m_ecdb, "sharedTableperformance.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            return CloneECDb("sharedTableperformance.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
             }
 
 

@@ -151,8 +151,8 @@ struct ThreadSafetyTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, AllThreadsShareDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), Db::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml"), Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     Utf8CP ecsql = "SELECT Name, NumberOfEmployees FROM stco.Company";
 
@@ -196,8 +196,8 @@ TEST_F(ThreadSafetyTests, AllThreadsShareDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_ECSQL)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
 
@@ -247,8 +247,8 @@ TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_ECSQL)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_SQL)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb( 3));
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
 

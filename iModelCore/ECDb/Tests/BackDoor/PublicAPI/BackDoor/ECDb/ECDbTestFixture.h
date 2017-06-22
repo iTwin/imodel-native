@@ -16,12 +16,27 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 struct SchemaItem final
     {
-    std::vector<Utf8String> m_schemaXmlList;
+    public:
+        enum class Type
+            {
+            String,
+            File
+            };
 
-    explicit SchemaItem(Utf8CP schemaXml) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
-    explicit SchemaItem(std::vector<Utf8String> const& schemaXmlList) : m_schemaXmlList(schemaXmlList) {}
+    private:
+        Type m_type;
+        Utf8String m_xmlStringOrFileName;
 
-    Utf8String ToString() const;
+        SchemaItem(Type type, Utf8StringCR xmlStringOrFileName) : m_type(type), m_xmlStringOrFileName(xmlStringOrFileName) {}
+
+    public:
+        explicit SchemaItem(Utf8StringCR xmlString) : SchemaItem(Type::String, xmlString) {}
+        static SchemaItem CreateForFile(Utf8StringCR schemaFileName) { return SchemaItem(Type::File, schemaFileName); }
+
+        Type GetType() const { return m_type; }
+        Utf8StringCR GetXmlString() const { BeAssert(m_type == Type::String);  return m_xmlStringOrFileName; }
+        BeFileName GetFileName() const { BeAssert(m_type == Type::File); return BeFileName(m_xmlStringOrFileName.c_str(), true); }
+        Utf8StringCR ToString() const { return m_xmlStringOrFileName; }
     };
 
 //=======================================================================================    
@@ -38,7 +53,9 @@ struct TestHelper
 
     public:
         static BentleyStatus ImportSchema(SchemaItem const&, Utf8CP fileName = nullptr);
-        static BentleyStatus ImportSchema(ECDbCR, SchemaItem const&);
+        static BentleyStatus ImportSchema(ECDbR, SchemaItem const&);
+        static BentleyStatus ImportSchemas(std::vector<SchemaItem> const&, Utf8CP fileName = nullptr);
+        static BentleyStatus ImportSchemas(ECDbR, std::vector<SchemaItem> const&);
 
         //!logs the issues if there are any
         static bool HasDataCorruptingMappingIssues(ECDbCR);
@@ -50,7 +67,9 @@ struct TestHelper
         static DbResult ExecuteInsertECSql(ECInstanceKey&, ECDbCR, Utf8CP ecsql);
     };
 
-//=======================================================================================    
+//=======================================================================================
+//! All non-static methods operate on ECDb held by the test fixture. The test fixture's ECDb
+//! is created by using SetupECDb.
 // @bsiclass                                                 Carole.MacDonald     09/2015
 //=======================================================================================    
 struct ECDbTestFixture : public ::testing::Test
@@ -58,30 +77,52 @@ struct ECDbTestFixture : public ::testing::Test
 private:
     friend struct TestHelper;
 
+    struct SeedECDbManager final : NonCopyableClass
+        {
+    private:
+        bmap<BeFileName, BeFileName> m_seedFilePathsBySchemaFileName;
+
+    public:
+        bool TryGet(BeFileName& seedPath, BeFileNameCR schemaFileName) const
+            {
+            auto it = m_seedFilePathsBySchemaFileName.find(schemaFileName);
+            if (it == m_seedFilePathsBySchemaFileName.end())
+                return false;
+
+            seedPath = it->second;
+            return true;
+            }
+
+        BeFileNameCR Add(BeFileNameCR schemaFileName, BeFileNameCR seedPath) 
+            { 
+            BeAssert(m_seedFilePathsBySchemaFileName.find(schemaFileName) == m_seedFilePathsBySchemaFileName.end());
+            auto ret = m_seedFilePathsBySchemaFileName.insert(bpair<BeFileName, BeFileName>(schemaFileName, seedPath));
+            //return the inserted seed path
+            return ret.first->second;
+            }
+
+        };
+
     static bool s_isInitialized;
-    static bmap<BeFileName, Utf8String> s_seedECDbs;
+    static SeedECDbManager* s_seedECDbManager;
+
+    static SeedECDbManager& SeedECDbs();
 
 protected:
     ECDb m_ecdb;
 
     DbResult SetupECDb(Utf8CP ecdbFileName);
-    BentleyStatus SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-    BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult ReopenECDb();
-
+    DbResult CloneECDb(Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) { return CloneECDb(m_ecdb, cloneFileName, seedFilePath, openParams); }
     static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-    static BentleyStatus PopulateECDb(ECDbR, ECN::ECSchemaCR, int instanceCountPerClass);
-    static BentleyStatus PopulateECDb(ECDbR, int instanceCountPerClass);
+    BentleyStatus PopulateECDb(ECN::ECSchemaCR, int instanceCountPerClass);
+    BentleyStatus PopulateECDb(int instanceCountPerClass);
 
-    static BentleyStatus ImportSchema(ECDbCR, SchemaItem const&);
-    static BentleyStatus ImportSchema(ECDbCR, BeFileNameCR schemaXmlFilePath);
-
+    BentleyStatus ImportSchema(SchemaItem const& schema) { EXPECT_TRUE(m_ecdb.IsDbOpen()); return TestHelper::ImportSchema(m_ecdb, schema); }
+    BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas) { EXPECT_TRUE(m_ecdb.IsDbOpen()); return TestHelper::ImportSchemas(m_ecdb, schemas); }
 
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
-
-    static BentleyStatus ReadECSchemaFromString(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
-    ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr& ctx, BeFileNameCR schemaFileName) const { return ReadECSchemaFromDisk(ctx, m_ecdb, schemaFileName); }
-    static ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr&, ECDbCR, BeFileNameCR schemaFileName);
 
 public:
     ECDbTestFixture() : ::testing::Test() {}
@@ -96,6 +137,7 @@ public:
 
     static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
     static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName = nullptr);
+    static BentleyStatus ReadECSchema(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

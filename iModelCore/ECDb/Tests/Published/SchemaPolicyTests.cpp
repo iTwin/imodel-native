@@ -18,8 +18,8 @@ struct SchemaPolicyTestFixture : DbMappingTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
-        {R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(ERROR, TestHelper::ImportSchemas({SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -29,18 +29,17 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="ClassB" modifier="None" >
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"})));
+        </ECSchema>)xml")}));
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
-        {R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(ERROR, TestHelper::ImportSchemas({SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -54,9 +53,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="ClassB" modifier="None" >
                 <ECProperty propertyName="P1" typeName="string" />
@@ -66,11 +64,12 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"})));
+        </ECSchema>)xml")}));
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies1.ecdb", SchemaItem(
-        {R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies1.ecdb"));
+    ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -84,23 +83,22 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="ClassB" modifier="None" >
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"})));
-
+        </ECSchema>)xml")}));
     ASSERT_TRUE(m_ecdb.TableExists("master_ClassA"));
     ASSERT_TRUE(m_ecdb.TableExists("s1_ClassB"));
     }
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies2.ecdb", SchemaItem(
-        {R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies2.ecdb"));
+    ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -110,9 +108,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="OptingInSchema" version="01.00" alias="master"/>
             <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
@@ -177,7 +174,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 </Target>
            </ECRelationshipClass>
 
-        </ECSchema>)xml"})));
+        </ECSchema>)xml")}));
 
     ASSERT_TRUE(m_ecdb.TableExists("master_MasterA"));
     ASSERT_TRUE(m_ecdb.TableExists("s1_ClassB"));
@@ -200,7 +197,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
             </ECEntityClass>
         </ECSchema>)xml")));
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
@@ -212,9 +209,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml")));
-    m_ecdb.SaveChanges();
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="SchemaBeforeOptingInSchemaIsImported" version="01.00" alias="pre"/>
@@ -231,8 +227,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
             </ECEntityClass>
         </ECSchema>)xml")));
 
-    m_ecdb.SaveChanges();
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="S2A" modifier="None" >
@@ -240,7 +235,6 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P20" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml")));
-    m_ecdb.AbandonChanges();
     }
 
     {
@@ -253,7 +247,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
             </ECEntityClass>
         </ECSchema>)xml")));
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
@@ -265,11 +259,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml")));
-    m_ecdb.SaveChanges();
-
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="SchemaBeforeOptingInSchemaIsImported" alias="pre" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="PreA" modifier="None" >
@@ -278,10 +270,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P3" typeName="string" />
             </ECEntityClass>
         </ECSchema>)xml"))) << "Adding a property to an existing class should not violate with the policy";
-    m_ecdb.SaveChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="SchemaBeforeOptingInSchemaIsImported" alias="pre" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="PreA" modifier="None" >
@@ -302,8 +293,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
-        {R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(ERROR, TestHelper::ImportSchemas({SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
                 <ECProperty propertyName="P1" typeName="string" />
@@ -313,17 +303,15 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
                 <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.01.00"/>
             </ECCustomAttributes>
-        </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="Core" version="01.00" alias="core"/>
               <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
@@ -334,11 +322,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                     <Class class="core:CoreB"/>
                 </Target>
            </ECRelationshipClass>
-        </ECSchema>)xml"})));
+        </ECSchema>)xml")}));
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
-        {
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        ASSERT_EQ(ERROR, TestHelper::ImportSchemas({SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
                 <ECProperty propertyName="P1" typeName="string" />
@@ -348,8 +334,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-            </ECSchema>)xml",
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -359,9 +345,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                     </Exceptions>
                 </NoAdditionalLinkTables>
             </ECCustomAttributes>
-            </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="Core" version="01.00" alias="core"/>
               <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
@@ -380,11 +365,12 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                     <Class class="core:CoreB"/>
                 </Target>
                </ECRelationshipClass>
-        </ECSchema>)xml"})));
+        </ECSchema>)xml")}));
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies1.ecdb", SchemaItem(
-        {R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies1.ecdb"));
+    ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
                 <ECProperty propertyName="P1" typeName="string" />
@@ -394,9 +380,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-            </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -406,9 +391,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                     </Exceptions>
                 </NoAdditionalLinkTables>
             </ECCustomAttributes>
-            </ECSchema>)xml",
-
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="Core" version="01.00" alias="core"/>
            <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
@@ -419,7 +403,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                     <Class class="core:CoreB"/>
                 </Target>
            </ECRelationshipClass>
-          </ECSchema>)xml"})));
+          </ECSchema>)xml")}));
 
     ASSERT_TRUE(m_ecdb.TableExists("core_CoreA"));
     ASSERT_TRUE(m_ecdb.TableExists("core_CoreB"));
@@ -446,7 +430,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
            </ECRelationshipClass>
             </ECSchema>)xml")));
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -454,7 +438,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
             </ECCustomAttributes>
             </ECSchema>)xml")));
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
@@ -529,7 +513,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
     }
 
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies3.ecdb", SchemaItem({
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies3.ecdb"));
+        ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
@@ -540,17 +525,16 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-            </ECSchema>)xml",
-
-                                                                        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            </ECSchema>)xml"),
+            SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
                 <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.01.00"/>
             </ECCustomAttributes>
-            </ECSchema>)xml"})));
+            </ECSchema>)xml")}));
 
-        ASSERT_EQ(ERROR, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1" >
                 <ECSchemaReference name="Core" version="01.00" alias="core"/>
@@ -564,7 +548,6 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                 </Target>
                 </ECRelationshipClass>       
             </ECSchema>)xml")));
-        m_ecdb.AbandonChanges();
         }
 
         {
@@ -581,7 +564,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
             </ECEntityClass>
             </ECSchema>)xml")));
 
-        ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
@@ -589,11 +572,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                 <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.01.00"/>
             </ECCustomAttributes>
             </ECSchema>)xml")));
-        m_ecdb.SaveChanges();
-
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-        ASSERT_EQ(ERROR, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
@@ -616,7 +597,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
         }
 
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies4.ecdb", SchemaItem({
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies4.ecdb"));
+        ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECEntityClass typeName="CoreA" modifier="None" >
@@ -627,9 +609,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
               </ECEntityClass>
-            </ECSchema>)xml",
-
-            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            </ECSchema>)xml"),
+            SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core2" alias="core2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="Core" version="01.00" alias="core"/>
               <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
@@ -640,9 +621,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
                   <Class class="core:CoreB"/>
                 </Target>
               </ECRelationshipClass>
-            </ECSchema>)xml"})));
+            </ECSchema>)xml")}));
 
-        ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -650,10 +631,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
             </ECCustomAttributes>
             </ECSchema>)xml")));
 
-        m_ecdb.SaveChanges();
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-        ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core2" alias="core2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
               <ECSchemaReference name="Core" version="01.00" alias="core"/>
               <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
@@ -675,8 +655,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
 TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints)
     {
         {
-            ASSERT_EQ(SUCCESS, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb", SchemaItem(
-                {R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb"));
+            ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
+                R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
                 <ECProperty propertyName="P1" typeName="string" />
@@ -686,17 +667,16 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml",
-
-            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        </ECSchema>)xml"),
+           SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
                 <NoAdditionalForeignKeyConstraints xmlns="ECDbSchemaPolicies.01.00"/>
             </ECCustomAttributes>
-        </ECSchema>)xml"})));
+        </ECSchema>)xml")}));
 
-        ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
               <ECSchemaReference name="Core" version="01.00" alias="core"/>
@@ -714,7 +694,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints
              </ECRelationshipClass>
           </ECSchema>)xml"))) << "Excepted to succeed as nav prop doesn't have ForeignKeyConstraint";
 
-        ASSERT_EQ(ERROR, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Schema2" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
               <ECSchemaReference name="Core" version="01.00" alias="core"/>
@@ -738,8 +718,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints
           }
 
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb", SchemaItem(
-            {R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb"));
+        ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
+            R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
                 <ECProperty propertyName="P1" typeName="string" />
@@ -749,9 +730,8 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints
                 <ECProperty propertyName="P1" typeName="string" />
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml",
-
-            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        </ECSchema>)xml"),
+            SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
             <ECCustomAttributes>
@@ -761,9 +741,9 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints
                     </Exceptions>
                 </NoAdditionalForeignKeyConstraints>
             </ECCustomAttributes>
-        </ECSchema>)xml"})));
+        </ECSchema>)xml")}));
 
-        ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
               <ECSchemaReference name="Core" version="01.00" alias="core"/>
@@ -781,7 +761,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints
              </ECRelationshipClass>
           </ECSchema>)xml"))) << "Excepted to succeed as nav prop doesn't have ForeignKeyConstraint";
 
-        ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
               <ECSchemaReference name="Core" version="01.00" alias="core"/>
@@ -803,7 +783,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints
              </ECRelationshipClass>
           </ECSchema>)xml"))) << "Excepted to succeed as ForeignKeyConstraint is on exception list";
 
-        ASSERT_EQ(ERROR, TestHelper::ImportSchema(m_ecdb, SchemaItem(
+        ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Schema3" alias="s3" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
               <ECSchemaReference name="Core" version="01.00" alias="core"/>
@@ -889,7 +869,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_ExceptionTests)
         {
         Utf8String coreSchemaXml;
         coreSchemaXml.Sprintf(coreSchemaXmlTemplate, rootEntityException, linkTableException, fkException);
-        return TestHelper::ImportSchema(SchemaItem({coreSchemaXml, Utf8String(testSchemaXml)}));
+        return TestHelper::ImportSchemas({SchemaItem(coreSchemaXml), SchemaItem(Utf8String(testSchemaXml))});
         };
 
     ASSERT_EQ(SUCCESS, assertImport("Schema1:Foo","Schema1:Rel","Schema1:Child.Parent"));

@@ -117,7 +117,7 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
                 m_ecdb.CloseDb();
                 }
 
-            return CloneECDb(m_ecdb, "performance_joinedTable.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            return CloneECDb("performance_joinedTable.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
             }
 
 

@@ -1560,7 +1560,7 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd3)
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')"));
     ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)"));
 
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
                                                        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
                                                        "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
@@ -3698,7 +3698,7 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRel
     sp.Cancel();
 
     m_ecdb.SaveChanges();
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version = '1.0' encoding = 'utf-8'?>"
         "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
@@ -3820,7 +3820,7 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRel
     sp.Cancel();
 
     m_ecdb.SaveChanges();
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version = '1.0' encoding = 'utf-8'?>"
         "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
@@ -3949,7 +3949,7 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintsForNNRelation
     sp.Cancel();
 
     m_ecdb.SaveChanges();
-    ASSERT_EQ(SUCCESS, ImportSchema(m_ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version = '1.0' encoding = 'utf-8'?>"
         "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
@@ -4130,14 +4130,12 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
     }
 
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                       08/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, DiegoRelationshipTest)
     {
-        ASSERT_EQ(SUCCESS, SetupECDb("diegorelationshiptest.ecdb", SchemaItem({
-            R"xml(
+    ASSERT_EQ(SUCCESS, SetupECDb("diegorelationshiptest.ecdb", SchemaItem(R"xml(
             <ECSchema schemaName="DiegoSchema1" alias="ds1" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                 <ECEntityClass typeName="CivilModel">
@@ -4160,8 +4158,9 @@ TEST_F(RelationshipMappingTestFixture, DiegoRelationshipTest)
                         <Class class="DataSetModel"/>
                     </Target>
                 </ECRelationshipClass>
-            </ECSchema>)xml",
-            R"xml(
+            </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(
             <ECSchema schemaName="DiegoSchema2" alias="ds2" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="DiegoSchema1" version="01.00" alias="ds1"/>
                 <ECEntityClass typeName="GeometricModel">
@@ -4169,34 +4168,34 @@ TEST_F(RelationshipMappingTestFixture, DiegoRelationshipTest)
                     <ECProperty propertyName="Name" typeName="string"/>
                  </ECEntityClass>
             </ECSchema>
-            )xml"})));
+            )xml")));
 
-        ECClassCP civilModelClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "CivilModel");
-        ASSERT_TRUE(civilModelClass != nullptr);
-        ECClassCP datasetModelClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "DataSetModel");
-        ASSERT_TRUE(datasetModelClass != nullptr);
-        ECClassCP relClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "CivilModelHasDataSetModel");
-        ASSERT_TRUE(relClass != nullptr);
-        ECClassCP geometricModelClass = m_ecdb.Schemas().GetClass("DiegoSchema2", "GeometricModel");
-        ASSERT_TRUE(geometricModelClass != nullptr);
+    ECClassCP civilModelClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "CivilModel");
+    ASSERT_TRUE(civilModelClass != nullptr);
+    ECClassCP datasetModelClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "DataSetModel");
+    ASSERT_TRUE(datasetModelClass != nullptr);
+    ECClassCP relClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "CivilModelHasDataSetModel");
+    ASSERT_TRUE(relClass != nullptr);
+    ECClassCP geometricModelClass = m_ecdb.Schemas().GetClass("DiegoSchema2", "GeometricModel");
+    ASSERT_TRUE(geometricModelClass != nullptr);
 
-        IECInstancePtr civilModel1 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
-        IECInstancePtr civilModel2 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
+    IECInstancePtr civilModel1 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
+    IECInstancePtr civilModel2 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
 
-        ECInstanceInserter civilModelInserter(m_ecdb, *civilModelClass, nullptr);
-        ASSERT_TRUE(civilModelInserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(*civilModel1));
-        ECInstanceKey civilModel2Key;
-        ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(civilModel2Key, *civilModel2));
+    ECInstanceInserter civilModelInserter(m_ecdb, *civilModelClass, nullptr);
+    ASSERT_TRUE(civilModelInserter.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(*civilModel1));
+    ECInstanceKey civilModel2Key;
+    ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(civilModel2Key, *civilModel2));
 
-        IECInstancePtr geometricModel = ECDbTestUtility::CreateArbitraryECInstance(*geometricModelClass);
-        ECValue navPropValue(civilModel2Key.GetInstanceId());
-        ASSERT_EQ(ECObjectsStatus::Success, geometricModel->SetValue("CivilModel", navPropValue));
+    IECInstancePtr geometricModel = ECDbTestUtility::CreateArbitraryECInstance(*geometricModelClass);
+    ECValue navPropValue(civilModel2Key.GetInstanceId());
+    ASSERT_EQ(ECObjectsStatus::Success, geometricModel->SetValue("CivilModel", navPropValue));
 
-        ECInstanceInserter geometricModelInserter(m_ecdb, *geometricModelClass, nullptr);
-        ASSERT_TRUE(geometricModelInserter.IsValid());
-        ASSERT_EQ(BE_SQLITE_OK, geometricModelInserter.Insert(*geometricModel));
-        }
+    ECInstanceInserter geometricModelInserter(m_ecdb, *geometricModelClass, nullptr);
+    ASSERT_TRUE(geometricModelInserter.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, geometricModelInserter.Insert(*geometricModel));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Zaighum                  02/16

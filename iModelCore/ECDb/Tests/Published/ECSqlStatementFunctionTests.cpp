@@ -27,8 +27,8 @@ struct ExpectedResult
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 5));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, PopulateECDb( 5));
     std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},
             {"SELECT ANY(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
@@ -108,7 +108,7 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("builtinfunctiontests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(SUCCESS, SetupECDb("builtinfunctiontests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     
     {
@@ -174,7 +174,7 @@ TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     auto getIntScalar = [] (ECDbCR ecdb, Utf8CP ecsql)
         {
@@ -253,8 +253,8 @@ TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Base64Functions)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("base64functions.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, 3));
+    ASSERT_EQ(SUCCESS, SetupECDb("base64functions.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(SUCCESS, PopulateECDb( 3));
 
     BeGuid guid(true);
     void const* expectedBlob = &guid;
@@ -408,9 +408,9 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
     const int perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, PopulateECDb(m_ecdb, perClassRowCount));
+    ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 
     bvector<ECInstanceId> allIds;
     {

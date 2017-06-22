@@ -62,22 +62,22 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
     m_ecdb.CloseDb();
 
     BeFileName seedFilePath = BuildECDbPath("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb");
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlInsertInstances(m_ecdb, true, 1000001);
     ASSERT_GE(m_insertTime, 0.0) << "ECSQL Insert test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "readTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("readTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)));
     ECSqlReadInstances(m_ecdb, false);
     ASSERT_GE(m_selectTime, 0.0) << "ECSQL SELECT test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "updateTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("updateTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlUpdateInstances(m_ecdb, true);
     ASSERT_GE(m_updateTime, 0.0) << "ECSQL UPDATE test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "DeleteTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("DeleteTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlDeleteInstances(m_ecdb);
     ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
     m_ecdb.CloseDb();
@@ -135,22 +135,22 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
     m_ecdb.CloseDb();
 
     BeFileName seedFilePath = BuildECDbPath("CRUDPerformance_SharedTableForSubClasses.ecdb");
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlInsertInstances(m_ecdb, true, 1000001);
     ASSERT_GE(m_insertTime, 0.0) << "ECSQL Insert test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "readTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("readTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)));
     ECSqlReadInstances(m_ecdb, false);
     ASSERT_GE(m_selectTime, 0.0) << "ECSQL SELECT test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "updateTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("updateTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlUpdateInstances(m_ecdb, true);
     ASSERT_GE(m_updateTime, 0.0) << "ECSQL UPDATE test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "DeleteTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("DeleteTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlDeleteInstances(m_ecdb);
     ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
     m_ecdb.CloseDb();
@@ -195,22 +195,22 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses)
     m_ecdb.CloseDb();
 
     BeFileName seedFilePath = BuildECDbPath("CRUDPerformance_DefaultClasses.ecdb");
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("insertTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlInsertInstances(m_ecdb, true, 1000001);
     ASSERT_GE(m_insertTime, 0.0) << "ECSQL Insert test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "readTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("readTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)));
     ECSqlReadInstances(m_ecdb, false);
     ASSERT_GE(m_selectTime, 0.0) << "ECSQL SELECT test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "updateTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("updateTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlUpdateInstances(m_ecdb, true);
     ASSERT_GE(m_updateTime, 0.0) << "ECSQL UPDATE test failed";
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, "DeleteTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb("DeleteTestDb.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ECSqlDeleteInstances(m_ecdb);
     ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
     m_ecdb.CloseDb();

@@ -1431,7 +1431,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(SchemaPersistenceHelper::Gene
                 {
                 if (m_schemaUpgradeCustomAttributeValidator.Validate(change) == CustomAttributeValidator::Policy::Reject)
                     {
-                    Issues().Report("ECSchema Upgrade failed. Adding or modifying %s CustomAttributes is not supported.", schemaName.c_str());
+                    Issues().Report("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported.", schemaName.c_str());
                     return ERROR;
                     }
                 }
