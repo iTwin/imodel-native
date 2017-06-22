@@ -2898,7 +2898,6 @@ bool DPoint2d::AlmostEqual (DPoint2d const & dataB) const
 bool DVec2d::AlmostEqual (DVec2d const & dataB) const
     {return almostEqual (x, y, dataB.x, dataB.y);}
 
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      01/2015
 +--------------------------------------------------------------------------------------*/
@@ -2920,6 +2919,7 @@ bool DPoint3d::AlmostEqual (bvector<DPoint3d> const &left, bvector<DPoint3d> con
             if (!left[i].AlmostEqual (right[i], tolerance))
                 return false;
         }
+    
     return true;
     }
 
@@ -2944,8 +2944,8 @@ bool DPoint3d::AlmostEqualXY (bvector<DPoint3d> const &left, bvector<DPoint3d> c
             if (!left[i].AlmostEqualXY (right[i], tolerance))
                 return false;
         }
+    
     return true;
-
     }
 
 /*--------------------------------------------------------------------------------**//**
