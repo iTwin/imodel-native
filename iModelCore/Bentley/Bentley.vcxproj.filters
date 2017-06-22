@@ -395,6 +395,9 @@
     <ClCompile Include="Bentley\nonport\BeSystemInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Bentley\nonport\BeSystemInfoIos.mm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Bentley\nonport\BeTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

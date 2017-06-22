@@ -107,9 +107,18 @@ $(o)sha1$(oext)                 : $(bentleyDir)sha1.cpp ${MultiCompileDepends}
 %endif
 
 %include Tasks/Tasks.mki
-
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   iOS-Specific
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM)=="iOS"
+
+$(o)BeSystemInfoIos$(oext)         : $(nonportDir)BeSystemInfoIos.mm $(BentleyAPISrc)BeSystemInfo.h ${MultiCompileDepends}
+
+objs + $(o)BeSystemInfoIos$(oext)
+%endif
 
 %undef MultiCompileDepends
 
