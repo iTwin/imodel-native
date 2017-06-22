@@ -191,7 +191,7 @@ TEST_F(BuildingDomainTestFixture, AddClassesToDynamicSchema)
 
 	newClass->CreatePrimitiveProperty(myProp, DYNAMIC_PROPERTY_NAME);
 
-	ASSERT_TRUE(Dgn::SchemaStatus::Success == BuildingDomain::BuildingDomainUtilities::UpdateSchemaInDb(db, schema));
+	ASSERT_TRUE(Dgn::SchemaStatus::Success == BuildingDomain::BuildingDomainUtilities::UpdateSchemaInDb(*db, *schema));
 
 	ECN::ECSchemaCP updatedSchema = BuildingDomain::BuildingDomainUtilities::GetBuildingDynamicSchema(buildingModel);
 
@@ -240,7 +240,7 @@ TEST_F(BuildingDomainTestFixture, AddClassesToSuppliedSchema)
 
 	newClass->CreatePrimitiveProperty(myProp, DYNAMIC_PROPERTY_NAME);
 
-	ASSERT_TRUE(Dgn::SchemaStatus::Success == BuildingDomain::BuildingDomainUtilities::UpdateSchemaInDb(db, schema));
+	ASSERT_TRUE(Dgn::SchemaStatus::Success == BuildingDomain::BuildingDomainUtilities::UpdateSchemaInDb(*db, *schema));
 
 	ECN::ECSchemaCP updatedSchema = BuildingDomain::BuildingDomainUtilities::GetBuildingDynamicSchema(buildingModel);
 
