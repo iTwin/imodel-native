@@ -554,8 +554,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     //    };
 
     if (m_pSubNodeNoSplit != nullptr)
-        {
-        assert(GetNumberOfSubNodesOnSplit() == 1);
+        {        
         if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS, progress)) return false;
         loadChildExtentHelper(this, this->m_pSubNodeNoSplit.GetPtr());
         //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
