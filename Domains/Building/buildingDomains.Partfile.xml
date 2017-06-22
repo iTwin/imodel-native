@@ -3,7 +3,8 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <Part Name="BuildingDomains" >
-        <SubProduct ProductName="BuildingDomainTests"/>
+        <!--SubProduct ProductName="BuildingDomainTests"/-->
+        <SubPart PartName="RunBuildingDomainTests"/>
     </Part>
 
     
@@ -70,7 +71,7 @@
     </Product>
 
     
-    <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BuildingDomainTests/BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BuildingDomainTests\Assemblies\  -dGTEST_NAME=BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="BuildingDomainTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingDomainTests.log</Files>

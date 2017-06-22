@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ArchitecturalPhysical" alias="ArchPhys" version="01.00.00" description="Architectural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
-    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
-    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
             <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
@@ -82,15 +82,6 @@
         <ECEnumerator value="13" displayLabel="TWO_CURVED_RUN_STAIR"/>
         <ECEnumerator value="14" displayLabel="USERDEFINED"/>
         <ECEnumerator value="15" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="WallType_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="STANDARD"/>
-        <ECEnumerator value="1" displayLabel="POLYGONAL"/>
-        <ECEnumerator value="2" displayLabel="SHEAR"/>
-        <ECEnumerator value="3" displayLabel="ELEMENTEDWALL"/>
-        <ECEnumerator value="4" displayLabel="PLUMBINGWALL"/>
-        <ECEnumerator value="5" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="6" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
     <ECEntityClass typeName="Casework">
         <BaseClass>bis:PhysicalElement</BaseClass>
@@ -310,25 +301,24 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="LeftGrossArea" typeName="double" description="Gross Area at the left side of the wall" displayLabel="Left Gross Area" kindOfQuantity="AREA"/>
-        <ECProperty propertyName="CenterGrossArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Center Gross Area" kindOfQuantity="AREA"/>
-        <ECProperty propertyName="CenterLength" typeName="double" description="length along the centerline of the wall" displayLabel="Center Length" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="LeftLength" typeName="double" description="length along the left side of the wall" displayLabel="Left Length" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="RightGrossArea" typeName="double" description="Gross Area at the right side of the wall" displayLabel="Right Gross Area" kindOfQuantity="AREA"/>
-        <ECProperty propertyName="RightLength" typeName="double" description="length along the Right side of the wall" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="CenterNetArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Center Net Area" kindOfQuantity="AREA"/>
-        <ECProperty propertyName="LeftNetArea" typeName="double" description="Net Area at the left side of the wall" displayLabel="Left Net Area" kindOfQuantity="AREA"/>
-        <ECProperty propertyName="RightNetArea" typeName="double" description="Net Area at the right side of the wall" displayLabel="Right Net Area" kindOfQuantity="AREA"/>
         <ECProperty propertyName="GrossVolume" typeName="double" description="Gross Volume at the of the wall" displayLabel="Gross Volume" kindOfQuantity="VOLUME"/>
         <ECProperty propertyName="NetVolume" typeName="double" description="Net Volume at the of the wall" displayLabel="Net Volume" kindOfQuantity="VOLUME"/>
+        <ECProperty propertyName="GrossSideArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Gross Side Area" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="Length" typeName="double" description="length along the centerline of the wall" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="NetSideArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Net Side Area" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="GrossFootprintArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Gross Footprint Area" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="NetFootprintArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Net Footprint Area" kindOfQuantity="AREA"/>
     </ECEntityClass>
     <ECEntityClass typeName="WallLeaf" description="Wall" displayLabel="Wall Leaf">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Length" typeName="double" description="length along the centerline of the wall" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="LENGTH"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="WallOwnsWallLeafs" displayLabel="Wall Owns Wall Leafs" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
@@ -344,7 +334,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="PredefinedType" typeName="WallType_PredefinedType" description="(From IFC) Enumeration : IfcWallTypeEnum" displayLabel="Predefined Type"/>
     </ECEntityClass>
     <ECEntityClass typeName="Window" description="Window">
         <BaseClass>bis:PhysicalElement</BaseClass>
