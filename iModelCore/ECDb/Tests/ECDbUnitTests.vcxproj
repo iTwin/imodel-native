@@ -83,7 +83,7 @@
     <ClCompile Include="Published\SchemaManagerTests.cpp" />
     <ClCompile Include="Published\SchemaPolicyTests.cpp" />
     <ClCompile Include="Published\SchemaRulesTests.cpp" />
-    <ClCompile Include="Published\SchemaUpdateTests.cpp" />
+    <ClCompile Include="Published\SchemaUpgradeTests.cpp" />
     <ClCompile Include="Published\ThreadSafetyTests.cpp" />
   </ItemGroup>
   <ItemGroup>

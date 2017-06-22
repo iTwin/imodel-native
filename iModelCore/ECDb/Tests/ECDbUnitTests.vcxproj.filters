@@ -181,9 +181,6 @@
     <ClCompile Include="Published\SchemaRulesTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SchemaUpdateTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ThreadSafetyTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -212,6 +209,9 @@
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\SchemaPolicyTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaUpgradeTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
