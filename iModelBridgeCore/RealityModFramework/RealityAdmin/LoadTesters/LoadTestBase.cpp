@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
+#include <CCApi/CCPublic.h>
 
 #include <Bentley/BeFile.h>
 #include <RealityPlatform/RealityConversionTools.h>
@@ -612,3 +613,70 @@ void LoadTester::SetupStaticClasses(Stats* stats, RPS* rps)
     }
 
 void LoadTester::SetupInactiveUsers(std::queue<User*>& inactiveUsers) { s_inactiveUsers = inactiveUsers; }
+
+Utf8String LoadTester::MakeBuddiCall(WString service, int region)
+    {
+    CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+    CallStatus status = APIERR_SUCCESS;
+
+    bool installed;
+    status = CCApi_IsInstalled(api, &installed);
+    if (!installed)
+        {
+        std::cout << "Connection client does not seem to be installed\n" << std::endl;
+        return "";
+        }
+    bool running = false;
+    status = CCApi_IsRunning(api, &running);
+    if (status != APIERR_SUCCESS || !running)
+        {
+        std::cout << "Connection client does not seem to be running\n" << std::endl;
+        return "";
+        }
+    bool loggedIn = false;
+    status = CCApi_IsLoggedIn(api, &loggedIn);
+    if (status != APIERR_SUCCESS || !loggedIn)
+        {
+        std::cout << "Connection client does not seem to be logged in\n" << std::endl;
+        return "";
+        }
+    bool acceptedEula = false;
+    status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
+    if (status != APIERR_SUCCESS || !acceptedEula)
+        {
+        std::cout << "Connection client user does not seem to have accepted EULA\n" << std::endl;
+        return "";
+        }
+    bool sessionActive = false;
+    status = CCApi_IsUserSessionActive(api, &sessionActive);
+    if (status != APIERR_SUCCESS || !sessionActive)
+        {
+        std::cout << "Connection client does not seem to have an active session\n" << std::endl;
+        return "";
+        }
+
+    wchar_t* buddiUrl;
+    UINT32 strlen = 0;
+
+    if (region > 100)
+        {
+        CCApi_GetBuddiRegionUrl(api, service.c_str(), region, NULL, &strlen);
+        strlen += 1;
+        buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
+        CCApi_GetBuddiRegionUrl(api, service.c_str(), region, buddiUrl, &strlen);
+        }
+    else
+        {
+        CCApi_GetBuddiUrl(api, service.c_str(), NULL, &strlen);
+        strlen += 1;
+        buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
+        CCApi_GetBuddiUrl(api, service.c_str(), buddiUrl, &strlen);
+        }
+
+    char* charServer = new char[strlen];
+    wcstombs(charServer, buddiUrl, strlen);
+
+    CCApi_FreeApi(api);
+
+    return Utf8String(charServer);
+    }
