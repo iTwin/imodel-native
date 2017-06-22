@@ -31,14 +31,10 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
     auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *vertAlignVecPtr);
-    ASSERT_TRUE(verticalAlignmPtr->Insert().IsValid());
+    ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
 
-    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->SetHorizontal(*horizAlignmPtr));
-    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->SetMainVertical(*verticalAlignmPtr));
-    ASSERT_TRUE(alignmentPtr->Update().IsValid());
-
-    ASSERT_EQ(horizAlignmPtr->GetElementId(), alignmentPtr->GetHorizontal()->GetElementId());
-    ASSERT_EQ(verticalAlignmPtr->GetElementId(), alignmentPtr->GetMainVertical()->GetElementId());
+    ASSERT_EQ(horizAlignmPtr->GetElementId(), alignmentPtr->QueryHorizontal()->GetElementId());
+    ASSERT_EQ(verticalAlignmPtr->GetElementId(), alignmentPtr->QueryMainVertical()->GetElementId());
 
     auto verticalIds = alignmentPtr->QueryVerticalAlignmentIds();
     ASSERT_EQ(1, verticalIds.size());
@@ -49,6 +45,14 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_TRUE(alignmentPairPtr != nullptr);
     ASSERT_DOUBLE_EQ(150.0, alignmentPairPtr->LengthXY());
     ASSERT_TRUE(alignmentPairPtr->VerticalCurveVector().IsValid());
+
+    // Delete-cascade
+    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->Delete());
+    
+    ASSERT_TRUE(projectPtr->Elements().GetElement(alignmentPtr->GetElementId()).IsNull());
+    ASSERT_TRUE(projectPtr->Elements().GetElement(horizAlignmPtr->GetElementId()).IsNull());
+    ASSERT_TRUE(projectPtr->Elements().GetElement(verticalAlignmPtr->GetElementId()).IsNull());
+    ASSERT_TRUE(projectPtr->Models().GetModel(verticalModelPtr->GetModelId()).IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -77,8 +81,8 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->InsertWithMainPair(*alignPairPtr).IsValid());
 
-    ASSERT_TRUE(alignmentPtr->GetHorizontal()->GetElementId().IsValid());
-    ASSERT_TRUE(alignmentPtr->GetMainVertical()->GetElementId().IsValid());
+    ASSERT_TRUE(alignmentPtr->QueryHorizontal()->GetElementId().IsValid());
+    ASSERT_TRUE(alignmentPtr->QueryMainVertical()->GetElementId().IsValid());
 
     auto verticalIds = alignmentPtr->QueryVerticalAlignmentIds();
     ASSERT_EQ(1, verticalIds.size());

@@ -28,7 +28,130 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Alignment::_GetLength() const
     {
-    return GetHorizontal()->GetGeometry().Length();
+    return QueryHorizontal()->GetGeometry().Length();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::_OnDelete() const
+    {
+    DgnDbStatus retVal = DgnDbStatus::Success;
+    auto horizontalCPtr = QueryHorizontal();
+    if (horizontalCPtr.IsValid())
+        {
+        if (DgnDbStatus::Success != (retVal = horizontalCPtr->Delete()))
+            return retVal;
+        }
+
+    auto subModelId = QueryVerticalAlignmentSubModelId();
+    if (subModelId.IsValid())
+        {
+        auto subModelPtr = VerticalAlignmentModel::GetForEdit(GetDgnDb(), subModelId);
+        if (DgnDbStatus::Success != (retVal = subModelPtr->Delete()))
+            return retVal;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId Alignment::QueryVerticalAlignmentSubModelId() const
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_VerticalAlignmentModel) " WHERE ModeledElement.Id = ?");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, GetElementId());
+    if (DbResult::BE_SQLITE_ROW != stmt.Step())
+        return DgnModelId();
+
+    return stmt.GetValueId<DgnModelId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HorizontalAlignmentCPtr Alignment::QueryHorizontal() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToHorizontal) " WHERE SourceECInstanceId = ?");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return nullptr;
+
+    return HorizontalAlignment::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+VerticalAlignmentCPtr Alignment::QueryMainVertical() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " WHERE SourceECInstanceId = ?");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+
+    DgnElementId verticalId;
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return nullptr;
+
+    return VerticalAlignment::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::SetHorizontal(AlignmentCR alignment, HorizontalAlignmentCR vertical)
+    {
+    auto stmtDelPtr = alignment.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToHorizontal) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtDelPtr.IsValid());
+
+    stmtDelPtr->BindId(1, alignment.GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
+        {
+        if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteLinkTableRelationship(
+            ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
+            return DgnDbStatus::BadElement;
+        }
+
+    ECInstanceKey insKey;
+    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
+        *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentRefersToHorizontal)->GetRelationshipClassCP(),
+        ECInstanceId(alignment.GetElementId().GetValue()), ECInstanceId(vertical.GetElementId().GetValue())))
+        return DgnDbStatus::BadElement;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::SetMainVertical(AlignmentCR alignment, VerticalAlignmentCR vertical)
+    {
+    auto stmtDelPtr = alignment.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtDelPtr.IsValid());
+
+    stmtDelPtr->BindId(1, alignment.GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
+        {
+        if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteLinkTableRelationship(
+            ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
+            return DgnDbStatus::BadElement;
+        }
+     
+    ECInstanceKey insKey;
+    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
+        *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentRefersToMainVertical)->GetRelationshipClassCP(),
+        ECInstanceId(alignment.GetElementId().GetValue()), ECInstanceId(vertical.GetElementId().GetValue())))
+        return DgnDbStatus::BadElement;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,8 +216,6 @@ AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDb
         if (horizAlignmPtr->Insert(stat).IsNull())
             return nullptr;
 
-        SetHorizontal(*horizAlignmPtr);
-
         if (alignmentPair.VerticalCurveVector().IsValid())
             {
             auto verticalModelPtr = VerticalAlignmentModel::Create(VerticalAlignmentModel::CreateParams(GetDgnDb(), GetElementId()));
@@ -103,13 +224,9 @@ AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDb
                 return nullptr;
 
             auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *alignmentPair.VerticalCurveVector());
-            if (verticalAlignmPtr->Insert(stat).IsNull())
+            if (verticalAlignmPtr->InsertAsMainVertical(stat).IsNull())
                 return nullptr;
-
-            SetMainVertical(*verticalAlignmPtr);
             }
-
-        retVal = Update(stat);
         }
 
     return retVal;
@@ -126,50 +243,52 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
     if (alignmentPair.HorizontalCurveVector().IsNull())
         return nullptr;
 
-    HorizontalAlignmentPtr horizAlignmPtr = dynamic_cast<HorizontalAlignmentP>(GetHorizontal()->CopyForEdit().get());
-    horizAlignmPtr->SetGeometry(*alignmentPair.HorizontalCurveVector());
-    if (horizAlignmPtr->Update(stat).IsNull())
-        return nullptr;
-
-    auto vertAlignmCPtr = GetMainVertical();
-
-    // Updated geometry has a vertical
-    if (alignmentPair.VerticalCurveVector().IsValid())
+    auto retVal = Update(stat);
+    if (retVal.IsValid())
         {
-        // Main vertical exists... update it
-        if (vertAlignmCPtr.IsValid())
+        HorizontalAlignmentPtr horizAlignmPtr = dynamic_cast<HorizontalAlignmentP>(QueryHorizontal()->CopyForEdit().get());
+        horizAlignmPtr->SetGeometry(*alignmentPair.HorizontalCurveVector());
+        if (horizAlignmPtr->Update(stat).IsNull())
+            return nullptr;
+
+        auto vertAlignmCPtr = QueryMainVertical();
+
+        // Updated geometry has a vertical
+        if (alignmentPair.VerticalCurveVector().IsValid())
             {
-            VerticalAlignmentPtr vertAlignmPtr = dynamic_cast<VerticalAlignmentP>(vertAlignmCPtr->CopyForEdit().get());
-            vertAlignmPtr->SetGeometry(*alignmentPair.VerticalCurveVector());
-            if (vertAlignmPtr->Update(stat).IsNull())
-                return nullptr;
+            // Main vertical exists... update it
+            if (vertAlignmCPtr.IsValid())
+                {
+                VerticalAlignmentPtr vertAlignmPtr = dynamic_cast<VerticalAlignmentP>(vertAlignmCPtr->CopyForEdit().get());
+                vertAlignmPtr->SetGeometry(*alignmentPair.VerticalCurveVector());
+                if (vertAlignmPtr->Update(stat).IsNull())
+                    return nullptr;
+                }
+            // Main vertical doesn't exist... add it
+            else
+                {
+                // TODO: check if vertical model breakdown exists.. if it does, reuse it
+                auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(GetDgnDb(), VerticalAlignmentModel::QueryClassId(GetDgnDb()),
+                    GetElementId()));
+
+                if (DgnDbStatus::Success != verticalModelPtr->Insert())
+                    return nullptr;
+
+                auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *alignmentPair.VerticalCurveVector());
+                if (verticalAlignmPtr->InsertAsMainVertical(stat).IsNull())
+                    return nullptr;
+                }
             }
-        // Main vertical doesn't exist... add it
+        // Updated geometry doesn't have a vertical
         else
             {
-            // TODO: check if vertical model breakdown exists.. if it does, reuse it
-            auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(GetDgnDb(), VerticalAlignmentModel::QueryClassId(GetDgnDb()),
-                GetElementId()));
-
-            if (DgnDbStatus::Success != verticalModelPtr->Insert())
-                return nullptr;
-
-            auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *alignmentPair.VerticalCurveVector());
-            if (verticalAlignmPtr->Insert(stat).IsNull())
-                return nullptr;
-
-            SetMainVertical(*verticalAlignmPtr);
+            // Main vertical exists... delete it
+            if (vertAlignmCPtr.IsValid())
+                *stat = vertAlignmCPtr->Delete();
             }
         }
-    // Updated geometry doesn't have a vertical
-    else
-        {
-        // Main vertical exists... delete it
-        if (vertAlignmCPtr.IsValid())
-            *stat = vertAlignmCPtr->Delete();
-        }
 
-    return Update(stat);
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -177,7 +296,7 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Alignment::GenerateAprox3dGeom()
     {
-    auto horizAlignmentCPtr = HorizontalAlignment::Get(GetDgnDb(), GetHorizontalId());
+    auto horizAlignmentCPtr = QueryHorizontal();
     if (horizAlignmentCPtr.IsNull())
         return DgnDbStatus::MissingId;
 
@@ -191,41 +310,6 @@ DgnDbStatus Alignment::GenerateAprox3dGeom()
         return DgnDbStatus::NoGeometry;
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-HorizontalAlignmentCPtr Alignment::GetHorizontal() const 
-    { 
-    return HorizontalAlignment::Get(GetDgnDb(), GetHorizontalId()); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-VerticalAlignmentCPtr Alignment::GetMainVertical() const 
-    { 
-    return VerticalAlignment::Get(GetDgnDb(), GetMainVerticalId()); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Alignment::SetHorizontal(HorizontalAlignmentCR horizontal)
-    { 
-    return SetPropertyValue("Horizontal", ECValue(horizontal.GetElementId())); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Alignment::SetMainVertical(VerticalAlignmentCR vertical)
-    { 
-    if (vertical.GetModel()->GetModeledElementId() != GetElementId())
-        return DgnDbStatus::InvalidId;
-
-    return SetPropertyValue("MainVertical", ECValue(vertical.GetElementId())); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -324,6 +408,18 @@ DgnDbStatus HorizontalAlignment::GenerateElementGeom()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+HorizontalAlignmentCPtr HorizontalAlignment::Insert(DgnDbStatus* stat)
+    {
+    auto retVal = GetDgnDb().Elements().Insert<HorizontalAlignment>(*this, stat);
+    if (retVal.IsValid() && m_alignmentId.IsValid())
+        Alignment::SetHorizontal(*Alignment::Get(GetDgnDb(), m_alignmentId), *retVal);
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalAlignmentPtr VerticalAlignment::Create(VerticalAlignmentModelCR breakDownModel, CurveVectorR verticalGeometry)
@@ -385,4 +481,16 @@ DgnDbStatus VerticalAlignment::GenerateElementGeom()
         return DgnDbStatus::NoGeometry;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+VerticalAlignmentCPtr VerticalAlignment::InsertAsMainVertical(Dgn::DgnDbStatus* stat)
+    {
+    auto retValPtr = Insert(stat);
+    DgnDbStatus status = Alignment::SetMainVertical(GetAlignment(), *retValPtr);
+    BeAssert(DgnDbStatus::Success == status);
+
+    return retValPtr;
     }

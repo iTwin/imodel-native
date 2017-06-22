@@ -15,8 +15,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Horizontal" relationshipName="AlignmentRefersToHorizontal" direction="Forward"/>
-        <ECNavigationProperty propertyName="MainVertical" relationshipName="AlignmentRefersToMainVertical" direction="Forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="HorizontalAlignmentsPortion">
         <BaseClass>bis:SpatialLocationPortion</BaseClass>
@@ -66,7 +64,8 @@
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+    <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="is main horizontal for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
@@ -74,7 +73,8 @@
             <Class class="HorizontalAlignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+    <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>

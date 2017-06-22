@@ -30,24 +30,25 @@ protected:
     virtual double _GetStartValue() const override { return 0.0; }
     virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const override final { return *this; }
 
+    virtual Dgn::DgnDbStatus _OnDelete() const override;
+
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(Alignment)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(Alignment)
     ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentModelCR model);
 
     AlignmentModelPtr GetAlignmentModel() const { return dynamic_cast<AlignmentModelP>(GetModel().get()); }
-    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr GetHorizontal() const;
-    ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr GetMainVertical() const;
+    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr QueryHorizontal() const;
+    ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr QueryMainVertical() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryVerticalAlignmentIds() const;
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnModelId QueryVerticalAlignmentSubModelId() const;
     ROADRAILALIGNMENT_EXPORT AlignmentPairPtr QueryMainPair() const;
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateAprox3dGeom();
 
-    Dgn::DgnElementId GetHorizontalId() const { return GetPropertyValueId<Dgn::DgnElementId>("Horizontal"); }
-    Dgn::DgnElementId GetMainVerticalId() const { return GetPropertyValueId<Dgn::DgnElementId>("MainVertical"); }
-    ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus SetHorizontal(HorizontalAlignmentCR horizontal);
-    ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus SetMainVertical(VerticalAlignmentCR vertical);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetHorizontal(AlignmentCR alignment, HorizontalAlignmentCR vertical);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetMainVertical(AlignmentCR alignment, VerticalAlignmentCR vertical);
 }; // Alignment
 
 //=======================================================================================
@@ -92,12 +93,15 @@ protected:
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignment)
-    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(HorizontalAlignment)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(HorizontalAlignment)
     ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentPtr Create(AlignmentCR alignment, CurveVectorR horizontalGeometry);
 
     ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const;
     ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateElementGeom();
+
+    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr Insert(Dgn::DgnDbStatus* stat = nullptr);
+    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr Update(Dgn::DgnDbStatus* stat = nullptr) { return GetDgnDb().Elements().Update<HorizontalAlignment>(*this, stat); }
 }; // HorizontalAlignment
 
 //=======================================================================================
@@ -120,6 +124,8 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(VerticalAlignment)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(VerticalAlignment)
     ROADRAILALIGNMENT_EXPORT static VerticalAlignmentPtr Create(VerticalAlignmentModelCR model, CurveVectorR verticalGeometry);
+
+    ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr InsertAsMainVertical(Dgn::DgnDbStatus* stat = nullptr);
 
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetGeometry() const;
     ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
