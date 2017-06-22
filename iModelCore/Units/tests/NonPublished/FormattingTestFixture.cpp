@@ -1,0 +1,421 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: tests/NonPublished/FormattingTestFixture.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+#if defined (BENTLEY_WIN32)
+#include <windows.h>
+#include <iostream>
+#endif
+#include "UnitsTests.h"
+#include <Formatting/FormattingApi.h>
+#include <Units/UnitRegistry.h>
+#include <Units/UnitTypes.h>
+#include <Units/Quantity.h>
+#include <Units/Units.h>
+#include "FormattingTestFixture.h"
+
+using namespace BentleyApi::Formatting;
+BEGIN_BENTLEY_FORMATTEST_NAMESPACE
+
+static void* testFile = nullptr;
+/*=================================================================================**//**
+* @bsiclass                                     		David Fox-Rabinovitz 06/2017
++===============+===============+===============+===============+===============+======*/
+void FormattingTestFixture::SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
+    {
+    LOG.infov("Signature Test%02d  >%s<================", tstN, txt);
+    FormattingScannerCursor curs1 = FormattingScannerCursor(txt, -1);
+    Utf8CP sig = curs1.GetSignature(true, true);
+    LOG.infov("Original Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
+    sig = curs1.GetReversedSignature(true, true);
+    Utf8String rpat = curs1.ReversedPattern();
+    LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
+    LOG.infov("Restored Signature Test%02d  >%s< Signature >%s< Pattern >%s< ", tstN, txt, curs1.ReversedSignature().c_str(), rpat.c_str());
+
+    Utf8String cols = curs1.CollapseSpaces(true);
+    sig = curs1.GetSignature(true, true);
+    Utf8CP pat = curs1.GetPattern(false, true);
+
+    if (hexDump)
+        {
+        Utf8String hd = Utils::HexDump(cols.c_str(), 30);
+        LOG.infov(u8"CollapsedHEX: %s", hd.c_str());
+        }
+    LOG.infov("   Collapsed%02d >%s< (len %d)", tstN, cols.c_str(), cols.length());
+    LOG.infov("   Collapsed Signature%02d >%s< (src %d  sig %d) pattern: [%s]", tstN, sig, strlen(txt), strlen(sig), pat);
+    LOG.info("=========");
+    }
+  
+void FormattingTestFixture::ShowSignature(Utf8CP txt, int tstN)
+    {
+    FormattingScannerCursor curs = FormattingScannerCursor(txt, -1);
+    Utf8CP sig = curs.GetSignature(true, true);
+    Utf8CP pat = curs.GetPattern(false, false);
+    LOG.infov("Signature Test%02d  >%s< Signature >%s< Pattern >%s<", tstN, txt, sig, pat);
+    sig = curs.GetReversedSignature(true, true);
+    pat = curs.GetPattern(false, false);
+    LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< Pattern >%s<", tstN, txt, sig, pat);
+    }
+
+void FormattingTestFixture::ShowHexDump(Utf8String str, int len)
+    {
+    Utf8String hd = Utils::HexDump(str.c_str(), 30);
+    LOG.infov(u8"COL: %s", hd.c_str());
+    }
+
+void FormattingTestFixture::ShowHexDump(Utf8CP str, int len)
+    {
+    Utf8String hd = Utils::HexDump(str, 30);
+    LOG.infov(u8"COL: %s", hd.c_str());
+    }
+
+void FormattingTestFixture::ShowFUS(Utf8CP koq)
+    {
+    FormatUnitSet fus = FormatUnitSet(koq);
+    if (fus.HasProblem())
+        LOG.infov("Invalid KOQ: >%s<", koq);
+    else
+        LOG.infov("KOQ: >%s<  Normilized: >%s< WithAlias: >%s< ", koq, fus.ToText(false).c_str(), fus.ToText(true).c_str());
+    Utf8String strA = fus.ToJsonString(true);
+    Utf8String strN = fus.ToJsonString(false);
+    LOG.infov("JSON: >%s<   (aliased) >%s<", strN.c_str(), strA.c_str());
+    }
+
+void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
+    {
+    FormatUnitSet fus = FormatUnitSet(fusText);
+    EXPECT_STREQ (norm, fus.ToText(false).c_str());
+    EXPECT_STREQ (aliased, fus.ToText(true).c_str());
+    }
+
+void FormattingTestFixture::TestFUG(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
+    {
+    FormatUnitGroup fug = FormatUnitGroup(fusText);
+    EXPECT_STREQ (norm, fug.ToText(false).c_str());
+    EXPECT_STREQ (aliased, fug.ToText(true).c_str());
+    }
+
+void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space)
+    {
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+    if (nullptr == unit)
+        {
+        LOG.infov("Invalid UOM: >%s<", uom);
+        return;
+        }
+    BEU::Quantity const q = BEU::Quantity(dval, *unit);
+    FormatUnitSet fus = FormatUnitSet(fusFormat, fusUnit);
+    if (fus.HasProblem())
+        {
+        LOG.infov("Invalid Formatting Set: >%s< or unit: >%s<", fus.GetProblemDescription().c_str());
+        return;
+        }
+
+    Utf8String fmtQ = fus.FormatQuantity(q, space);
+    LOG.infov("===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
+    Json::Value jval = fus.FormatQuantityJson(q, true);
+    Utf8String jsonQ = jval.ToString();
+    LOG.infov("JSON: %s", jsonQ.c_str());
+    FormatUnitSet deFUS = StdFormatSet::DefaultFUS(q);
+    LOG.infov("Default FUS JSON: %s", deFUS.ToJsonString(true).c_str());
+    }
+
+void FormattingTestFixture::ShowQuantityS(Utf8CP descr)
+    {
+    size_t bufL = 256;
+    Utf8P buf = (Utf8P)alloca(bufL);
+    bvector<Utf8CP> parts;
+
+    size_t partN = ExtractArgs(descr, buf, bufL, &parts, ';');
+    if (partN < 5)
+        LOG.infov("Invalid input string for ShowQunatity (%d args)", partN);
+    else
+        {
+        double dval = atof(parts[0]);
+        Utf8CP uom = parts[1];
+        Utf8CP fusUnit = parts[2];
+        Utf8CP fusFormat = parts[3];
+        Utf8CP space = parts[4];
+        ShowQuantity(dval, uom, fusUnit, fusFormat, space);
+        }
+    }
+
+NumericAccumulator* FormattingTestFixture::NumericAccState(NumericAccumulator* nacc, Utf8CP txt)
+    {
+    if (nullptr == nacc)
+    return nacc;
+    while (nacc->CanTakeNext(txt))
+    {
+    LOG.infov("Added[%d] %c  state %s", nacc->GetByteCount(), *txt, Utils::AccumulatorStateName(nacc->AddSymbol((size_t)*txt)).c_str());
+    ++txt;
+    }
+    nacc->SetComplete();
+    return nacc;
+    }
+
+void FormattingTestFixture::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space)
+    {
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+    BEU::Quantity q = BEU::Quantity(dval, *unit);
+    FormatUnitSet fus = FormatUnitSet(fusDesc);
+    LOG.infov("Testing FUS->Q  %s", fus.FormatQuantity(q, space).c_str());
+    }
+
+int FormattingTestFixture::FindLastDividerPos(Utf8CP txt, Utf8Char div)
+    {
+    int pos = -1;
+    int i = 0;
+    if (nullptr == txt)
+        return pos;
+    while ('\0' != *txt)
+        {
+        if (*txt == div)
+            pos = i;
+        i++;
+        txt++;
+        }
+    return pos;
+    }
+
+size_t FormattingTestFixture::FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8Char div)
+    {
+    if (nullptr == pos || nullptr == txt || *txt == '\0')
+        return 0;
+    int i = 0;
+    pos->clear();
+    while ('\0' != *txt)
+        {
+        if (*txt == div)
+            pos->push_back(i);
+        i++;
+        txt++;
+        }
+    return pos->size();
+    }
+
+bool FormattingTestFixture::OpenTestData()
+    {
+#if defined (BENTLEY_WIN32)
+    char buf[MAX_PATH + 128];
+    memset(buf, 0, sizeof(buf));
+    GetModuleFileName(NULL, buf, MAX_PATH);
+    if (strlen(buf) > 1)
+        {
+        int pos = FindLastDividerPos(buf, '\\');
+        LOG.infov("Work Directory: |%s| last %d", buf, FindLastDividerPos(buf, '\\'));
+        if (strlen(buf) > 0)
+            {
+            strcpy(&buf[pos + 1], "UnitTestSource.txt");
+            LOG.infov("TestFileName: |%s|", buf);
+            FILE* in = fopen(buf, "r");
+            testFile = in;
+            if (nullptr != in)
+                return true;
+            }
+        }
+#endif
+    return false;
+    }
+
+void FormattingTestFixture::CloseTestData()
+    {
+    if (nullptr != testFile)
+        {
+        FILE* in = (FILE*)testFile;
+        fclose(in);
+        testFile = nullptr;
+        }
+    }
+
+bool FormattingTestFixture::IsDataAvailalbe()
+    {
+    if (nullptr != testFile)
+        {
+        FILE* in = (FILE*)testFile;
+        return (feof(in)) ? false : true;
+        }
+    return false;
+    }
+
+bool FormattingTestFixture::GetNextLine(Utf8P buf, int bufLen)
+    {
+#if defined (BENTLEY_WIN32)
+    if (nullptr != testFile)
+        {
+        FILE* in = (FILE*)testFile;
+        if (nullptr != buf && bufLen > 0)
+            *buf = '\0';
+        if (feof(in))
+            return false;
+        fgets(buf, bufLen, in);
+        for (size_t i = strlen(buf); i >= 0; --i)
+            {
+            if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r' || buf[i] == '\f')
+                buf[i] = '\0';
+            else
+                break;
+            }
+        return true;
+        }
+#endif
+    return false;
+    }
+
+bool FormattingTestFixture::GetNextInstruction(Utf8P buf, int bufLen, Utf8P com, int comLen)
+    {
+#if defined (BENTLEY_WIN32)
+    if (nullptr != testFile)
+        {
+        FILE* in = (FILE*)testFile;
+        if (nullptr != buf && bufLen > 0)
+            *buf = '\0';
+        if (nullptr != com && comLen > 0)
+            *com = '\0';
+        if (feof(in))
+            {
+            CloseTestData();
+            return false;
+            }
+        int locL = 256;
+        Utf8P loc = (Utf8P)alloca(locL);
+        fgets(loc, locL, in);
+        for (size_t i = strlen(loc); i >= 0; --i)
+            {
+            if (loc[i] == '\0' || loc[i] == '\n' || loc[i] == '\r' || loc[i] == '\f')
+                loc[i] = '\0';
+            else
+                break;
+            }
+        int pos = FindLastDividerPos(loc, ':');
+
+        if (pos > 0)  // there is a command
+            {
+            size_t tl = strlen(loc + pos + 1);
+            if (tl > bufLen - 1)
+                tl = bufLen - 1;
+            memcpy(buf, loc + pos + 1, tl);
+            buf[tl] = '\0';
+            if (comLen - 1 < pos)
+                pos = comLen - 1;
+            memcpy(com, loc, pos);
+            com[pos] = '\0';
+            }
+        else
+            {
+            size_t tl = strlen(loc);
+            if (tl > bufLen - 1)
+                tl = bufLen - 1;
+            memcpy(buf, loc, tl);
+            buf[tl] = '\0';
+            }
+        return true;
+        }
+#endif
+    return false;
+    }
+
+size_t FormattingTestFixture::CopyTextSecure(Utf8P dest, size_t destSize, Utf8CP src)
+    {
+    if (nullptr == dest || destSize == 0)
+        return 0;
+    *dest = '\0';
+    if (nullptr == src || *src == '\0')
+        return 0;
+    size_t len = strlen(src);
+    if (len > destSize - 1)
+        len = destSize - 1;
+    memcpy(dest, src, len);
+    dest[len] = '\0';
+    return len;
+    }
+
+size_t FormattingTestFixture::ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, bvector<Utf8CP>* parts, Utf8Char div)
+    {
+    size_t descL = (nullptr == desc) ? 0 : strlen(desc) + 1;
+    if (descL > bufL - 1)
+        descL = bufL - 1;
+    if (nullptr == buf || bufL < 2)
+        return 0;
+    CopyTextSecure(buf, bufL, desc);
+
+    for (size_t i = descL; i >= 0; --i)
+        {
+        if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r' || buf[i] == '\f')
+            buf[i] = '\0';
+        else
+            break;
+        }
+    bvector<int> posV;
+    parts->push_back(buf);  // first part or the whole string
+    Utf8P ptr = buf;
+    size_t partN = FindDividerPos(buf, &posV, div);
+    int indx;
+    for (int i = 0; i < partN; ++i)
+        {
+        indx = posV[i];
+        buf[indx] = '\0';
+        ptr = buf + indx + 1;
+        parts->push_back(ptr);
+        }
+    return parts->size();
+    }
+
+size_t FormattingTestFixture::GetNextArguments(Utf8P buf, int bufLen, bvector<Utf8CP>* parts, Utf8Char div)
+    {
+#if defined (BENTLEY_WIN32)
+    if (nullptr == parts)
+        return 0;
+    parts->clear();
+    if (nullptr == buf || bufLen < 2 || nullptr == testFile)
+        return 0;
+
+    FILE* in = (FILE*)testFile;
+    if (feof(in))
+        return 0;
+
+    bvector<int> posV;
+    int locL = 256;
+    wchar_t* locW = (wchar_t*)alloca(locL);
+    *locW = 0;
+    fgetws(locW, locL, in);
+    Utf8String str8;
+    BeStringUtilities::WCharToUtf8(str8, locW, -1);
+    Utf8P loc = (Utf8P)alloca(locL);
+    *loc = 0;
+    //fgets(loc, locL, in);
+    strcpy(loc, str8.c_str());
+
+    for (size_t i = strlen(loc); i >= 0; --i)
+        {
+        if (loc[i] == '\0' || loc[i] == '\n' || loc[i] == '\r' || loc[i] == '\f')
+            loc[i] = '\0';
+        else
+            break;
+        }
+    CopyTextSecure(buf, bufLen, loc);
+
+    parts->push_back(buf);  // first part or the whole string
+    Utf8P ptr = buf;
+    size_t partN = FindDividerPos(loc, &posV, div);
+    int indx;
+    for (int i = 0; i < partN; ++i)
+        {
+        indx = posV[i];
+        buf[indx] = '\0';
+        ptr = buf + indx + 1;
+        parts->push_back(ptr);
+        }
+    return parts->size();
+#else
+    return 0;
+#endif
+    }
+
+
+END_BENTLEY_FORMATTEST_NAMESPACE
+
+//FormattingTestFixture::

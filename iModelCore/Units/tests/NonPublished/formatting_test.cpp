@@ -14,153 +14,73 @@
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
 #include <Units/Units.h>
+#include "FormattingTestFixture.h"
 
 //#define FORMAT_DEBUG_PRINT
 
-//using namespace BentleyApi::Units;
-//USING_BENTLEY_FORMATTING;
 using namespace BentleyApi::Formatting;
-#define BEGIN_BENTLEY_FORMATTEST_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace FormatTests {
-#define END_BENTLEY_FORMATTEST_NAMESPACE   } }
-#define USING_BENTLEY_FORMATTEST using namespace BENTLEY_NAMESPACE_NAME::FormatTests;
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
-
-#undef LOG
-//#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
-#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
-
-struct FormattingTestFixture
-    {
-private:
-        Utf8CP m_text;
-
-public: 
-    static void SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
-    {
-    LOG.infov("Signature Test%02d  >%s<================", tstN, txt);
-    FormattingScannerCursor curs1 = FormattingScannerCursor(txt, -1);
-    Utf8CP sig = curs1.GetSignature(true, true);
-    LOG.infov("Original Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
-    sig = curs1.GetReversedSignature(true, true);
-    Utf8String rpat = curs1.ReversedPattern();
-    LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< ", tstN, txt, sig);
-    LOG.infov("Restored Signature Test%02d  >%s< Signature >%s< Pattern >%s< ", tstN, txt, curs1.ReversedSignature().c_str(), rpat.c_str());
-
-    Utf8String cols = curs1.CollapseSpaces(true);
-    sig = curs1.GetSignature(true, true);
-    Utf8CP pat = curs1.GetPattern(false, true);
-
-    if (hexDump)
-        {
-        Utf8String hd = Utils::HexDump(cols.c_str(), 30);
-        LOG.infov(u8"CollapsedHEX: %s", hd.c_str());
-        }
-    LOG.infov("   Collapsed%02d >%s< (len %d)", tstN, cols.c_str(), cols.length());
-    LOG.infov("   Collapsed Signature%02d >%s< (src %d  sig %d) pattern: [%s]", tstN, sig, strlen(txt), strlen(sig), pat);
-    LOG.info("=========");
-    }
-
-    static void ShowSignature(Utf8CP txt, int tstN)
-        {
-        FormattingScannerCursor curs = FormattingScannerCursor(txt, -1);
-        Utf8CP sig = curs.GetSignature(true, true);
-        Utf8CP pat = curs.GetPattern(false,false);
-        LOG.infov("Signature Test%02d  >%s< Signature >%s< Pattern >%s<", tstN, txt, sig, pat);
-        sig = curs.GetReversedSignature(true, true);
-        pat = curs.GetPattern(false, false);
-        LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< Pattern >%s<", tstN, txt, sig, pat);
-        }
-
-    static void ShowHexDump(Utf8String str, int len)
-    {
-    Utf8String hd = Utils::HexDump(str.c_str(), 30);
-    LOG.infov(u8"COL: %s", hd.c_str());
-    }
-
-    static void ShowHexDump(Utf8CP str, int len)
-        {
-        Utf8String hd = Utils::HexDump(str, 30);
-        LOG.infov(u8"COL: %s", hd.c_str());
-        }
-
-    static void ShowFUS(Utf8CP koq)
-        {
-        FormatUnitSet fus = FormatUnitSet(koq);
-        if (fus.HasProblem())
-            LOG.infov("Invalid KOQ: >%s<", koq);
-        else
-            LOG.infov("KOQ: >%s<  Normilized: >%s< WithAlias: >%s< ", koq, fus.ToText(false).c_str(), fus.ToText(true).c_str());
-        Utf8String strA = fus.ToJsonString(true);
-        Utf8String strN = fus.ToJsonString(false);
-        LOG.infov("JSON: >%s<   (aliased) >%s<", strN.c_str(), strA.c_str());
-        }
-
-    static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
-        {
-        FormatUnitSet fus = FormatUnitSet(fusText);
-        EXPECT_STREQ (norm, fus.ToText(false).c_str());
-        EXPECT_STREQ (aliased, fus.ToText(true).c_str());
-        }
-
-    static void TestFUG(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
-        {
-        FormatUnitGroup fug = FormatUnitGroup(fusText);
-        EXPECT_STREQ (norm, fug.ToText(false).c_str());
-        EXPECT_STREQ (aliased, fug.ToText(true).c_str());
-        }
-
-    static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space)
-        {
-        BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
-        if (nullptr == unit)
-            {
-            LOG.infov("Invalid UOM: >%s<", uom);
-            return;
-            }
-        BEU::Quantity const q = BEU::Quantity(dval, *unit);
-        FormatUnitSet fus = FormatUnitSet(fusFormat, fusUnit);
-        if (fus.HasProblem())
-            {
-            LOG.infov("Invalid Formatting Set: >%s< or unit: >%s<", fus.GetProblemDescription().c_str());
-            return;
-            }
-
-        Utf8String fmtQ = fus.FormatQuantity(q, space);
-        LOG.infov("===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
-        Json::Value jval = fus.FormatQuantityJson(q, true);
-        Utf8String jsonQ = jval.ToString();
-        LOG.infov("JSON: %s", jsonQ.c_str());
-        FormatUnitSet deFUS = StdFormatSet::DefaultFUS(q);
-        LOG.infov("Default FUS JSON: %s", deFUS.ToJsonString(true).c_str());
-        }
-
-    static NumericAccumulator* NumericAccState(NumericAccumulator* nacc, Utf8CP txt)
-        {
-        while ('\0' != *txt)
-            {
-            LOG.infov("Added[%d] %c  state %s", nacc->GetByteCount(), *txt, Utils::AccumulatorStateName(nacc->AddSymbol((size_t)*txt)).c_str());
-            ++txt;
-            }
-        nacc->SetComplete();
-        return nacc;
-        }
-
-    static void TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space)
-        {
-        BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
-        BEU::Quantity q = BEU::Quantity(dval, *unit);
-        FormatUnitSet fus = FormatUnitSet(fusDesc);
-        LOG.infov("Testing FUS->Q  %s", fus.FormatQuantity(q, space).c_str());
-        //EXPECT_STREQ ("74 15/32FT", fusYF.FormatQuantity(len, nullptr).c_str());
-        }
-
-    };
 
 TEST(FormattingTest, Preliminary)
     {
     LOG.infov("================  Formatting Log ===========================");
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
     //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
+
+    //BeFileName bfn = BeFileName("E:\\Bim0200Dev\\out\\Winx64\\Product\\Units - Gtest\\UnitTry.txt", false);
+    //Utf8String fnam = Utf8String("E:\\Bim0200Dev\\out\\Winx64\\Product\\Units - Gtest\\UnitTry.txt");
+    //FormattingTestData::FileHexDump(fnam);
+
+    if (FormattingTestFixture::OpenTestData())
+        {
+        LOG.infov("================  Reading Data File ===========================");
+        int len = 256;
+        //int n = 0;
+        Utf8P buf = (Utf8P)alloca(len+2);
+        //Utf8P com = (Utf8P)alloca(len + 2);
+        bvector<Utf8CP> parts;
+        size_t narg = FormattingTestFixture::GetNextArguments(buf, len, &parts, '@');
+        int linN = 1000;
+        bool keepGoing = true;
+        while (FormattingTestFixture::IsDataAvailalbe() && keepGoing)
+            {
+            switch (narg)
+                {
+                case 0:
+                    LOG.info("Empty");
+                    break;
+                case 1:
+                    LOG.infov("Single: |%s|", parts[0]);
+                    if (BeStringUtilities::Stricmp(parts[0], "stop") == 0)
+                        {
+                        keepGoing = false;
+                        LOG.info("!!!!!!!!!!!Processing Stopped by STOP command!!!!!!!!");
+                        }
+                    break;
+                case 2:
+                    LOG.infov("Command: |%s| arg: |%s| ", parts[0], parts[1]);
+                    if(BeStringUtilities::Stricmp(parts[0], "Pattern") == 0)
+                      FormattingTestFixture::SignaturePattrenCollapsing(parts[1], linN++, false);
+                    else if (BeStringUtilities::Stricmp(parts[0], "ShowQ") == 0)
+                      FormattingTestFixture::ShowQuantityS(parts[1]);
+                    break;
+                case 3:
+                    LOG.infov("Command: |%s| arg: |%s| expect: |%s|", parts[0], parts[1], parts[2]);
+                    break;
+                default:
+                    for (int k = 0; k < narg; k++)
+                        {
+                        LOG.infov("Arg[%d]: |%s|", k, parts[k]);
+                        }
+                    break;
+                }
+            narg = FormattingTestFixture::GetNextArguments(buf, len, &parts, '@');
+            }
+        LOG.infov("================  Data File Processing Complete  ========================");
+        }
+    else
+        LOG.info("Test Data File is not available");
+
     NumericFormatSpec numFmt = NumericFormatSpec();
     //LOG.infov("UNI: |%s|", uni);
     //LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
@@ -203,7 +123,7 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4)", "_");
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4u)", "_");
 
-    FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_");
+    FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_MM");
     if (nacc.HasProblem())
         LOG.infov("NumAcc problem (%s)", nacc.GetProblemDescription().c_str());
     else
@@ -226,9 +146,9 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::ShowSignature(u8"135°11'30-1/4\" S", 201);
     FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);
+    //FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);
                                                     //   012345678912345678901234567901234
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"135° 11' 30¼\" S", 11, false);
+    /*FormattingTestFixture::SignaturePattrenCollapsing(u8"135° 11' 30¼\" S", 11, false);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30¼\" S ", 12, false);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 ¼\" S ", 13, false);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-¼\" S ", 14, false);
@@ -240,9 +160,12 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3-1/2 IN", 20, false);
     FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3.5IN", 21, false);
     FormattingTestFixture::SignaturePattrenCollapsing("  15_mm", 22, false);
-
+    FormattingTestFixture::SignaturePattrenCollapsing("125.43 ARC_DEG", 23, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("125.43ARC_DEG", 24, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("1.3RAD", 24, false);*/
     //FormattingTestFixture::ShowFUS("MM");
     //FormattingTestFixture::ShowFUS("MM|fract8");
+
     FormattingTestFixture::ShowFUS("MM|fract8|");
     FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
     //FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal|");
@@ -256,6 +179,7 @@ TEST(FormattingTest, Preliminary)
     //LOG.infov("TONNE_PER_HR-System  %s", sysN);
 
     }
+
 
 TEST(FormattingTest, PhysValues)
     {

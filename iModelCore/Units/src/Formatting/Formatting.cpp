@@ -1334,9 +1334,7 @@ void StdFormatSet::StdInit()
     AddFormat("Fractional16U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 16), "fract16u");
     AddFormat("Fractional32U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 32), "fract32u");
     AddFormat("Fractional128U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 128), "fract128u");
-
-    
-    
+  
     CompositeValueSpecP cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE", "ARC_SECOND", nullptr);
     cvs->SetUnitLabels("\xC2\xB0", u8"'", u8"\"");
     AddFormat("AngleDMS", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits,0), cvs, "dms");
@@ -1404,7 +1402,6 @@ NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
         }
     return nullptr;
     }
-
 
 bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
     {

@@ -1002,6 +1002,7 @@ POP_MSVC_IGNORE
 FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit)
     {
     m_formatSpec = format;
+    m_unitName = Utf8String(unit->GetName());
     m_unit = unit;
     if (nullptr == m_formatSpec)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
@@ -1026,6 +1027,8 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
         m_unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
         if (nullptr == m_unit)
             m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+        else
+            m_unitName = unitName;
         }
     }
 
@@ -1090,6 +1093,8 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
         {
         if (nullptr == m_unit)
             m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+        else
+            m_unitName = Utf8String(m_unit->GetName());
         }
     }
 
@@ -1111,6 +1116,12 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
 bool FormatUnitSet::IsComparable(BEU::QuantityCR qty)
     {
     return Utils::AreUnitsComparable(qty.GetUnit(), m_unit);
+    }
+
+BEU::UnitCP FormatUnitSet::ResetUnit()
+    {
+    m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+    return m_unit;
     }
 
 //----------------------------------------------------------------------------------------

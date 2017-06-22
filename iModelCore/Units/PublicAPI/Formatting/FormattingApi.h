@@ -32,7 +32,8 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
-
+DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
 
 struct FactorPower
     {
@@ -231,6 +232,100 @@ public:
     };
 
 //=======================================================================================
+// @bsiclass                                                    David.Fox-Rabinovitz  06/2017
+//=======================================================================================
+struct UnitProxy
+    {
+private:
+    BEU::UnitCP mutable m_unit;
+    Utf8String m_unitName;
+    Utf8String m_unitLabel;
+
+public:
+    void Clear() { m_unit = nullptr; m_unitName = Utf8String((Utf8CP)nullptr); m_unitLabel = Utf8String((Utf8CP)nullptr); }
+    UnitProxy():m_unit(nullptr), m_unitName((Utf8CP)nullptr), m_unitLabel((Utf8CP)nullptr){}       
+    UNITS_EXPORT UnitProxy(Utf8CP name, Utf8CP label = nullptr);
+    UnitProxy(UnitProxyCR other)
+        {
+        m_unit = other.m_unit;
+        m_unitName = Utf8String(other.m_unitName.c_str());
+        m_unitLabel = Utf8String(other.m_unitLabel.c_str());
+        }
+    void Copy(UnitProxyCP other)
+        {
+        if (nullptr == other)
+            Clear();
+        else
+            {
+            m_unit = other->m_unit;
+            m_unitName = Utf8String(other->m_unitName.c_str());
+            m_unitLabel = Utf8String(other->m_unitLabel.c_str());
+            }
+        }
+    UNITS_EXPORT bool Reset() const;
+    UNITS_EXPORT bool SetName(Utf8CP name);
+    UNITS_EXPORT bool SetUnit(BEU::UnitCP unit);
+    Utf8CP GetLabel() const { return m_unitLabel.c_str(); }
+    Utf8CP SetLabel(Utf8CP lab) { m_unitLabel = Utf8String(lab);  return m_unitLabel.c_str(); }
+    Utf8CP GetName() const { return m_unitName.c_str(); }
+    BEU::UnitCP GetUnit() const { return m_unit; }
+    };
+
+
+//=======================================================================================
+// @bsiclass                                                    David.Fox-Rabinovitz  06/2017
+//=======================================================================================
+struct UnitProxySet
+{
+private:
+    bvector<UnitProxy> m_proxys;
+    BEU::UnitRegistry* m_unitReg = &BEU::UnitRegistry::Instance();
+
+    void Validate() const
+        {
+        BEU::UnitRegistry* reg = &BEU::UnitRegistry::Instance();
+        if (m_unitReg != reg) // there is a new instance
+            for (int i = 0; i < m_proxys.size(); m_proxys[i++].Reset());
+        } 
+    UNITS_EXPORT bool IsConsistent();
+    size_t UnitCount() { size_t n = 0; while (IsIndexCorrect(n) && (nullptr != m_proxys[n].GetUnit())); return n; }
+    size_t GetSize() const { return m_proxys.size(); }
+    UnitProxyCP GetProxy(size_t indx) const { return (indx < m_proxys.size()) ? &m_proxys[indx] : nullptr; }
+
+public:
+    UnitProxySet(int size)
+        {
+        m_proxys.resize(size);
+        m_proxys.insert(m_proxys.begin(), size, UnitProxy());
+        }
+    UnitProxySet (UnitProxySetCP other)
+        {
+        m_proxys.resize(other->GetSize());
+        for (size_t i = 0; i < m_proxys.size(); i++)
+            {
+            m_proxys[i].Copy(other->GetProxy(i));
+            }
+        }
+    void Copy(UnitProxySetCR other)
+        {
+        m_proxys.resize(other.GetSize());
+        for (size_t i = 0; i < m_proxys.size(); i++)
+            {
+            m_proxys[i].Copy(other.GetProxy(i));
+            }
+        }
+
+    bool IsIndexCorrect(size_t indx) const { return indx < m_proxys.size(); }
+    void Clear() { for (int i = 0; IsIndexCorrect(i); m_proxys[i++].Clear()); m_unitReg = &BEU::UnitRegistry::Instance(); }
+    BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
+    Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return (indx < m_proxys.size()) ? m_proxys[indx].GetName() : subst; }
+    Utf8CP GetUnitLabel(size_t indx) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : nullptr; }
+    Utf8CP SetUnitLabel(size_t indx, Utf8CP unitLabel) { return IsIndexCorrect(indx) ? m_proxys[indx].SetLabel(unitLabel) : nullptr; }
+    bool SetUnit(size_t indx, BEU::UnitCP unitP) { return IsIndexCorrect(indx) ?  m_proxys[indx].SetUnit(unitP) : false; }
+    bool SetUnitName(size_t indx, Utf8CP unitName) { return IsIndexCorrect(indx) ? m_proxys[indx].SetName(unitName) : false; }
+};
+
+//=======================================================================================
 // We recognize combined numbers (combo-numbers) that represent some quantity as a sum of 
 //   subquantities expressed in lesser UOM's. For example, a given length could be representes
 //    as a sum of M + Y + F + I where M- is a number of miles, Y - a number of yards, 
@@ -256,7 +351,8 @@ protected:
     static const size_t  indxInput  = 4;
     static const size_t  indxLimit  = 5;   
     size_t m_ratio[indxSub];
-    BEU::UnitCP m_units[indxLimit];
+    //BEU::UnitCP m_units[indxLimit];
+    UnitProxySet m_unitProx = UnitProxySet(indxLimit);
     Utf8CP m_unitLabel[indxLimit];
     FormatProblemDetail m_problem;
     CompositeSpecType m_type;
@@ -265,12 +361,13 @@ protected:
 
     void SetUnitLabel(int index, Utf8CP label);
     size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
+    size_t UnitRatio(size_t uppIndx, size_t lowIndx);
     void ResetType() { m_type = CompositeSpecType::Undefined; }
     void Init();
-    BEU::UnitCP SetInputUnit(BEU::UnitCP inputUnit) {return m_units[indxInput] = inputUnit; }
+    bool SetInputUnit(BEU::UnitCP inputUnit) {return m_unitProx.SetUnit(indxInput, inputUnit); }
     void SetUnitRatios();
-    bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit);
-    Utf8CP GetUnitName(size_t indx, Utf8CP substitute) const { return (nullptr == m_units[indx]) ? substitute : m_units[indx]->GetName(); }
+    bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit=nullptr, Utf8CP MinorUnit = nullptr, Utf8CP SubUnit = nullptr);
+    Utf8CP GetUnitName(size_t indx, Utf8CP substitute) const { return m_unitProx.GetUnitName(indx, substitute); }
     Utf8String GetEffectiveLabel(size_t indx, Utf8CP substitute) const { return Utils::IsNameNullOrEmpty(m_unitLabel[indx]) ? GetUnitName(indx, substitute) : m_unitLabel[indx]; }
     //size_t GetRightmostRatioIndex();
     BEU::UnitCP GetSmallestUnit() const;
@@ -371,6 +468,7 @@ struct FormatUnitSet
     {
     private:
         NamedFormatSpecCP m_formatSpec;
+        Utf8String  m_unitName;
         BEU::UnitCP m_unit;
         FormatProblemDetail m_problem;
 
@@ -381,12 +479,14 @@ struct FormatUnitSet
         FormatUnitSet(FormatUnitSetCR other)
             {
             m_formatSpec = other.m_formatSpec;
+            m_unitName = other.m_unitName;
             m_unit = other.m_unit;
             m_problem = FormatProblemDetail(other.m_problem);
             }
         FormatUnitSet(FormatUnitSetCP other)
             {
             m_formatSpec = other->m_formatSpec;
+            m_unitName = other->m_unitName;
             m_unit = other->m_unit;
             m_problem = FormatProblemDetail(other->m_problem);
             }
@@ -396,12 +496,14 @@ struct FormatUnitSet
         bool HasProblem() const { return m_problem.IsProblem(); }
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
+        Utf8String GetUnitName() { return m_unitName; }
         UNITS_EXPORT Utf8String ToText(bool useAlias) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
         UNITS_EXPORT bool IsComparable(BEU::QuantityCR qty);
         UNITS_EXPORT Json::Value ToJson(bool useAlias) const;
         UNITS_EXPORT Utf8String ToJsonString(bool useAlias) const;
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
+        UNITS_EXPORT BEU::UnitCP ResetUnit();
     };
 
 struct FormatUnitGroup

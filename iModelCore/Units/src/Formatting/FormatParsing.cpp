@@ -53,9 +53,9 @@ size_t FormattingScannerCursor::TrueIndex(size_t index, size_t wordSize)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength, CharCP div) :m_dividers(div)
+FormattingScannerCursor::FormattingScannerCursor(Utf8CP utf8Text, int scanLength, Utf8CP div) :m_dividers(div)
     {
-    m_text = utf8Text;
+    m_text = Utf8String(utf8Text);  // we make a copy of the original string
     Rewind();
     //m_unicodeConst = new UnicodeConstant();
     m_totalScanLength = Utils::TextLength(utf8Text);
@@ -437,6 +437,7 @@ Utf8CP FormattingScannerCursor::GetSignature(bool refresh, bool compress)
 
 size_t FormattingScannerCursor::SetSections()
     {
+
     return 0;
     }
 
@@ -974,7 +975,7 @@ AccumulatorState NumericAccumulator::AddSymbol(size_t symb)
         else
             m_stat = AccumulatorState::RejectedSymbol;
 
-        if(m_stat != AccumulatorState::RejectedSymbol)
+        if (m_stat != AccumulatorState::RejectedSymbol)
             m_bytes++;
         return m_stat;
     }
@@ -1038,6 +1039,74 @@ Utf8String NumericAccumulator::ToText()
 
 //===================================================
 //
+// UnitProxy Methods
+//
+//===================================================
+
+UnitProxy::UnitProxy(Utf8CP name, Utf8CP label)
+    {
+    m_unitLabel = nullptr;
+    m_unitName = nullptr;
+    m_unit = BEU::UnitRegistry::Instance().LookupUnit(name);
+    if (nullptr != m_unit)
+        {
+        m_unitName = Utf8String(name);
+        if (!Utf8String::IsNullOrEmpty(label))
+            m_unitLabel = Utf8String(label);
+        }
+    }
+
+bool UnitProxy::SetName(Utf8CP name)
+    {
+    m_unit = BEU::UnitRegistry::Instance().LookupUnit(name);
+    if (nullptr != m_unit)
+        {
+        m_unitName = Utf8String(name);
+        return true;
+        }
+    return false;
+    }
+
+bool UnitProxy::SetUnit(BEU::UnitCP unit)
+    {
+    if (nullptr != unit)
+        {
+        m_unit = unit;
+        m_unitName = Utf8String(unit->GetName());
+        return true;
+        }
+    return false;
+    }
+
+bool UnitProxy::Reset() const
+    {
+    if (m_unitName.empty())
+        return false;
+    m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+    return !(nullptr == m_unit);
+    }
+
+bool UnitProxySet::IsConsistent()
+    {
+    BEU::UnitCP un1;
+    BEU::UnitCP un2;
+    bool consist = true;
+    Validate();
+    if (UnitCount() < 2)
+        return true;
+    for (int i = 0, j = 1; j < m_proxys.size() && consist; i++, j++)
+        {
+        un1 = m_proxys[i].GetUnit();
+        un2 = m_proxys[j].GetUnit();
+        if (nullptr != un2)
+            if (un1->GetPhenomenon() != un2->GetPhenomenon())
+                consist = false;
+        }
+    return consist;
+    }
+
+//===================================================
+//
 // FormattingCursorSection Methods
 //
 //===================================================
@@ -1046,7 +1115,7 @@ Utf8String NumericAccumulator::ToText()
 //    if (byteLen == 0)
 //        byteLen = Utils::NumberOfUtf8Bytes(symb);
 //
-//    AccumulatorState stat = m_numAcc.AddSymbol(symb);
+//    AccumulatorState stat = m_numAcc.AddSymbol(symb);  // we always are prepared for detecting a numeric sequence
 //    switch (m_type)
 //        {
 //        case CursorSectionType::Numeric:
@@ -1055,10 +1124,9 @@ Utf8String NumericAccumulator::ToText()
 //            break;
 //        case CursorSectionType::Undefined:
 //        default:
-//            if(stat != AccumulatorState::)
-//            m_type = CursorSectionType::Numeric;
+//            if(m_numAcc.IsNumeric())
+//              m_type = CursorSectionType::Numeric;
 //            break;
-//
 //        }
 //    if (AccumulatorState::RejectedSymbol == stat)  // process non-numeric symbol
 //        {

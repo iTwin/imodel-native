@@ -75,11 +75,16 @@ struct NumericAccumulator
         bool HasProblem() { return m_problem.IsProblem(); }
         bool HasFailed() { return AccumulatorState::Failure == m_stat; }
         bool IsComplete() { return AccumulatorState::Complete == m_stat; }
+        bool HasRejected() { return AccumulatorState::RejectedSymbol == m_stat; }
+        bool IsNumeric() { return (AccumulatorState::Init == m_stat || AccumulatorState::Integer == m_stat || 
+                                   AccumulatorState::Fraction == m_stat || AccumulatorState::Exponent == m_stat); }
         size_t GetByteCount() { return m_bytes; }
         FormatProblemCode const GetProblemCode() { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         UNITS_EXPORT  AccumulatorState SetComplete();
         UNITS_EXPORT Utf8String ToText();
+        bool CanTakeNext(Utf8CP txt) { return (!HasRejected() && '\0' != *txt); }
+            
     };
 
 struct FormattingDividers
@@ -176,7 +181,7 @@ struct FormattingCursorSection
     {
 private:
         size_t m_start;      // start index
-        size_t m_len;        // logical length of the section
+        size_t m_symbCount;  // logical length of the section
         size_t m_byteCount;  // the actual - byte - length of the section 
         NumericAccumulator m_numAcc;
         CursorSectionType m_type;
@@ -184,7 +189,7 @@ private:
 
         CursorSectionState TrySymbol(Utf8Char symb)
             {
-            if (m_symbol == FormatConstant::EndOfLine() && m_len == 0 && symb != FormatConstant::EndOfLine())
+            if (m_symbol == FormatConstant::EndOfLine() && m_symbCount == 0 && symb != FormatConstant::EndOfLine())
                 {
                 m_symbol = symb;
                 return CursorSectionState::Success;
@@ -199,7 +204,7 @@ public:
     FormattingCursorSection(size_t start)
         {
         m_start = start;
-        m_len = 0;
+        m_symbCount = 0;
         m_byteCount = 0;
         m_symbol = FormatConstant::EndOfLine();
         m_type = CursorSectionType::Undefined;
@@ -207,7 +212,7 @@ public:
 
     Utf8Char GetSymbol() { return m_symbol; }
     size_t GetStart() { return m_start; }
-    size_t GetLength() { return m_len; }
+    size_t GetSymbCount() { return m_symbCount; }
     double GetReal() { return m_numAcc.GetReal(); }
     double GetInteger() { return m_numAcc.GetInteger(); }
     bool IsNumber() { return m_symbol == FormatConstant::NumberSymbol(); }
@@ -265,7 +270,7 @@ private:
     Utf8Char GetPrecedingByte() { return (m_cursorPosition > 0) ? m_text.c_str()[--m_cursorPosition] : 0; }
 public:
 
-    UNITS_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength, CharCP div = nullptr);
+    UNITS_EXPORT FormattingScannerCursor(Utf8CP utf8Text, int scanLength, Utf8CP div = nullptr);
     UNITS_EXPORT FormattingScannerCursor(FormattingScannerCursorCR other);
 
     UNITS_EXPORT size_t HeadBitCount(unsigned char c);
