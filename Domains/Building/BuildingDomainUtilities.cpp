@@ -43,7 +43,7 @@ namespace BuildingDomain
 		{
 		Dgn::SubjectCPtr rootSubject = db->Elements().GetRootSubject();
 
-		// Create the partition and the BuildingPhysicalModel.   
+		// Create the partition and the BuildingPhysicalModel.
 
 		Utf8String phyModelCode = BuildPhysicalModelCode(modelCodeName);
 
@@ -183,7 +183,7 @@ namespace BuildingDomain
 		//if (nullptr == baseClass)
 		//	return nullptr;
 
-		
+
 		////	auto context = ECN::ECSchemaReadContext::CreateContext(false);
 
 		//	//	ECN::SchemaKeyCR key = baseClass->GetSchema().GetSchemaKey();
@@ -301,7 +301,7 @@ namespace BuildingDomain
 		return modelCodeName + "Dynamic";
 		}
 
-	
+
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
@@ -335,15 +335,15 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	Dgn::SchemaStatus  BuildingDomainUtilities::UpdateSchemaInDb(Dgn::DgnDbPtr db, ECN::ECSchemaPtr updatedSchema)
+	Dgn::SchemaStatus  BuildingDomainUtilities::UpdateSchemaInDb(Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema)
 		{
 		bvector<ECN::ECSchemaCP> schemas;
 
-		ECN::ECSchemaCP b = &(*updatedSchema);
+		ECN::ECSchemaCP b = &updatedSchema;
 
 		schemas.push_back(b);
 
-		return db->ImportSchemas(schemas);
+		return db.ImportSchemas(schemas);
 		}
 
 	//---------------------------------------------------------------------------------------
@@ -426,4 +426,3 @@ END_BENTLEY_NAMESPACE
 
 
 
- 

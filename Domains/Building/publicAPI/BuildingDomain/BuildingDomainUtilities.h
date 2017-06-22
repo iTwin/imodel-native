@@ -47,7 +47,7 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       GetSchemaNameFromModel            (BuildingPhysical::BuildingPhysicalModelCPtr model);
 		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    UpdateSchemaNameInModel           (Utf8StringCR schemaName, BuildingPhysical::BuildingPhysicalModelPtr model);
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaPtr                                 GetUpdateableSchema               (BuildingPhysical::BuildingPhysicalModelCPtr model);
-		BUILDING_DOMAIN_EXPORT static Dgn::SchemaStatus                                UpdateSchemaInDb                  (Dgn::DgnDbPtr db, ECN::ECSchemaPtr updatedSchema);
+		BUILDING_DOMAIN_EXPORT static Dgn::SchemaStatus                                UpdateSchemaInDb                  (Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema);
 		BUILDING_DOMAIN_EXPORT static ECN::ECEntityClassP                              CreatePhysicalElementEntityClass  (Dgn::DgnDbPtr db, ECN::ECSchemaPtr, Utf8StringCR     className);
 		BUILDING_DOMAIN_EXPORT static Dgn::PhysicalElementPtr                          CreatePhysicalElement             (Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model);
 
