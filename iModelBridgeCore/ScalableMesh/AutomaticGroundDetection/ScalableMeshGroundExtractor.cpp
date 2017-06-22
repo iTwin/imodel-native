@@ -98,7 +98,12 @@ StatusInt IScalableMeshGroundExtractor::SetDestinationGcs(GeoCoordinates::BaseGC
 StatusInt IScalableMeshGroundExtractor::SetExtractionArea(const bvector<DPoint3d>& area)
     {
     return _SetExtractionArea(area);
-    }        
+    }  
+
+StatusInt IScalableMeshGroundExtractor::SetLimitTextureResolution(bool limitTextureResolution)
+{
+	return _SetLimitTextureResolution(limitTextureResolution);
+}
 
 StatusInt IScalableMeshGroundExtractor::SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer)
     {
@@ -248,6 +253,7 @@ ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrai
     {
     m_scalableMesh = scalableMesh;
     m_smTerrainPath = smTerrainPath;
+	m_limitTextureResolution = false;
 
     const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());
     m_smGcsRatioToMeter = gcs.GetUnit().GetRatioToBase();
@@ -366,10 +372,15 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
             {
             minTextureResolution = std::min(minTextureResolution, (double)textureResolution);
             }
-        }   
+        }
+
+
+	DRange3d extractionRange = DRange3d::From(m_extractionArea);
+	double targetResolutionThreshold = sqrt((extractionRange.XLength()*extractionRange.YLength()* m_smGcsRatioToMeter) / 1000000.0);
         
     if (minTextureResolution != DBL_MAX)
-        return minTextureResolution * m_smGcsRatioToMeter;
+        return  m_limitTextureResolution ? std::max(targetResolutionThreshold,minTextureResolution) * m_smGcsRatioToMeter
+		: minTextureResolution * m_smGcsRatioToMeter;
 
     return DEFAULT_TEXTURE_RESOLUTION * m_smGcsRatioToMeter;
     }
@@ -679,6 +690,12 @@ StatusInt ScalableMeshGroundExtractor::_SetDestinationGcs(GeoCoordinates::BaseGC
     {
     m_destinationGcs = destinationGcs;
     return SUCCESS;
+    }
+
+StatusInt ScalableMeshGroundExtractor::_SetLimitTextureResolution(bool limitTextureResolution)
+    {
+	m_limitTextureResolution = limitTextureResolution;
+	return SUCCESS;
     }
 
 StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area) 
