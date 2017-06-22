@@ -33,6 +33,10 @@ public:
             SASTokenAdmin*                m_sasTokenAdmin;
             SSLCertificateAdmin*          m_sslCertificateAdmin;
 
+#ifdef VANCOUVER_API
+			STMAdmin*    m_stmAdmin; 
+#endif
+
             bmap<WString, IScalableMesh*>* m_smPaths;
           
             //! Supply the ScalableTerrainModelAdmin for this session. This method is guaranteed to be called once from ScalableTerrainModelAdmin::Host::Initialize and never again.
@@ -44,6 +48,9 @@ public:
 
             BENTLEY_SM_EXPORT virtual SSLCertificateAdmin& _SupplySSLCertificateAdmin();
 
+#ifdef VANCOUVER_API
+			BENTLEY_SM_EXPORT virtual STMAdmin& _SupplySTMAdmin();
+#endif
         public:
             Host()
                 {
@@ -54,7 +61,9 @@ public:
             WsgTokenAdmin&          GetWsgTokenAdmin()                  { return *m_wsgTokenAdmin; }
             SASTokenAdmin&          GetSASTokenAdmin()                  { return *m_sasTokenAdmin; }
             SSLCertificateAdmin&    GetSSLCertificateAdmin()            { return *m_sslCertificateAdmin; }
-            
+#ifdef VANCOUVER_API
+			STMAdmin&    GetSTMAdmin() { return *m_stmAdmin; }
+#endif           
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized () {return 0 != m_scalableTerrainModelAdmin;}
 
