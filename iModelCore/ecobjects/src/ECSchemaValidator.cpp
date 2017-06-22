@@ -269,7 +269,7 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
     entityDerivesFromSpecifiedClass = true;
     if (!foundValidRelationshipConstraint)
         {
-        LOG.errorv("Entity class '%s' derives from '%s' so it must be in a non-polymorphic relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
+        LOG.errorv("Entity class '%s' derives from '%s' so it must be a non-polymorphic target constraint in a relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
         return ECObjectsStatus::Error;
         }
 
