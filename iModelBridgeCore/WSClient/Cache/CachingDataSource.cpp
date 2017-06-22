@@ -79,6 +79,24 @@ AsyncTaskPtr<void> CachingDataSource::CancelAllTasks()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CachingDataSource::EnableSkipTokens(bool enable)
+    {
+    m_enableSkipTokens = enable;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CachingDataSource::GetInitialSkipToken() const
+    {
+    if (!m_enableSkipTokens)
+        return "";
+    return WSRepositoryClient::InitialSkipToken;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICancellationTokenPtr CachingDataSource::CreateCancellationToken(ICancellationTokenPtr ct)
@@ -867,7 +885,7 @@ ICancellationTokenPtr ct
         }
     ct = CreateCancellationToken(ct);
 
-    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
+    return CacheObjects(responseKey, query, origin, GetInitialSkipToken(), 0, ct)
         ->Then<ObjectsResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -899,7 +917,7 @@ ICancellationTokenPtr ct
     {
     ct = CreateCancellationToken(ct);
 
-    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
+    return CacheObjects(responseKey, query, origin, GetInitialSkipToken(), 0, ct)
         ->Then<KeysResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -958,7 +976,7 @@ ICancellationTokenPtr ct
             return;
             }
 
-        CacheObjects(responseKey, *query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
+        CacheObjects(responseKey, *query, origin, GetInitialSkipToken(), 0, ct)
             ->Then([=] (DataOriginResult result)
             {
             *finalResult = result;
