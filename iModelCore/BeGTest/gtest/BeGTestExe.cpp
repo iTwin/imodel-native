@@ -478,7 +478,7 @@ int main(int argc, char **argv)
 
         if (utf8Str.Equals(""))
             {
-            logComparisonName = "run\\Comparison.log";
+            logComparisonName = "\\Comparison.log";
             currentDirectory3.AppendUtf8(logComparisonName);
             }
         else
