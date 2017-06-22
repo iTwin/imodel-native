@@ -100,7 +100,7 @@
         <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="owns N LinearlyReferencedLocations">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N LinearlyReferencedLocations">
             <Class class="LinearlyReferencedAtLocation"/>
         </Target>
     </ECRelationshipClass>
@@ -109,7 +109,7 @@
         <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="owns N LinearlyReferencedLocations">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N LinearlyReferencedLocations">
             <Class class="LinearlyReferencedFromToLocation"/>
         </Target>
     </ECRelationshipClass>
