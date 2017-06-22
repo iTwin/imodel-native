@@ -2212,14 +2212,18 @@ ECSchemaCP ECClass::_GetContainerSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
     {
-    size_t nProperties = m_propertyList.size();
-    if (includeBaseClasses)
-        {
-        for (const ECClassP& baseClass: m_baseClasses)
-            nProperties += baseClass->GetPropertyCount (true);
-        }
+    if (!includeBaseClasses || !HasBaseClasses())
+        return m_propertyList.size();
 
-    return nProperties;
+    size_t propCount = 0;
+    for (const auto& prop : m_propertyList)
+        if (nullptr == prop->GetBaseProperty())
+            ++propCount;
+
+    for (const auto& baseClass : m_baseClasses)
+        propCount += baseClass->GetPropertyCount(true);
+
+    return propCount;
     }
     
 /*---------------------------------------------------------------------------------**//**

@@ -101,6 +101,32 @@ TEST_F(ClassTest, GetPropertyCount)
     TestPropertyCount(*derivedClass, 2, 8);
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                                    Colin.Kerr		06/2017
+//+---------------+---------------+---------------+---------------+---------------+------///
+TEST_F(ClassTest, GetPropertyCount_WithOverrides)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+
+    ECEntityClassP baseClass, derivedClass, derivedClass1;
+    schema->CreateEntityClass(baseClass, "Banana");
+    schema->CreateEntityClass(derivedClass, "DerivedBanana");
+    derivedClass->AddBaseClass(*baseClass);
+    schema->CreateEntityClass(derivedClass1, "SuperDerivedBanana");
+    derivedClass1->AddBaseClass(*derivedClass);
+
+    PrimitiveECPropertyP prop1, baseProp, derivedPropOverride, derived1PropOverride;
+    baseClass->CreatePrimitiveProperty(prop1, "Prop1", PrimitiveType::PRIMITIVETYPE_Integer);
+    baseClass->CreatePrimitiveProperty(baseProp, "Property", PrimitiveType::PRIMITIVETYPE_Double);
+    derivedClass->CreatePrimitiveProperty(derivedPropOverride, "Property", PrimitiveType::PRIMITIVETYPE_Double);
+    derivedClass1->CreatePrimitiveProperty(derived1PropOverride, "Property", PrimitiveType::PRIMITIVETYPE_Double);
+
+    TestPropertyCount(*baseClass, 2, 2);
+    TestPropertyCount(*derivedClass, 1, 2);
+    TestPropertyCount(*derivedClass1, 1, 2);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
