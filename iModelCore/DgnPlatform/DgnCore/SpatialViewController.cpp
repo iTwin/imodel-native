@@ -184,10 +184,12 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
         {
         // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
         auto const& plan = context.GetUpdatePlan().GetQuery();
-        uint64_t endTime = plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
+        uint64_t endTime = !context.GetUpdatePlan().WantWait() && plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
 
         // Create as many tile trees as we can within the allotted time...
         bool timedOut = false;
+
+        // ###TODO_ELEMENT_TILE: There are various timeout settings on the UpdatePlan. Honor them.
         for (auto modelId : GetViewedModels())
             {
             auto iter = m_roots.find(modelId);
@@ -219,9 +221,31 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
     // Always draw all the tile trees we currently have...
     // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
-    for (auto pair : m_roots)
-        if (nullptr != pair.second)
-            pair.second->DrawInView(context);
+    if (!context.GetUpdatePlan().WantWait())
+        {
+        for (auto pair : m_roots)
+            if (nullptr != pair.second)
+                pair.second->DrawInView(context);
+        }
+    else
+        {
+        // Enqueue any requests for missing tiles...
+        for (auto pair : m_roots)
+            if (nullptr != pair.second)
+                pair.second->SelectTiles(context);
+
+        // Wait for requests to complete
+        context.m_requests.RequestMissing();
+        for (auto pair : m_roots)
+            {
+            if (nullptr != pair.second)
+                {
+                // ###TODO_ELEMENT_TILE: Honor timeout...
+                pair.second->WaitForAllLoads();
+                pair.second->DrawInView(context);
+                }
+            }
+        }
 
     //DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
 

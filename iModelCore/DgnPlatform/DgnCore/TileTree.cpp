@@ -859,17 +859,8 @@ void Root::DrawInView(SceneContextR context)
         return;
         }
 
-    InvalidateDamagedTiles();
-
-    auto now = BeTimePoint::Now();
-    DrawArgs args(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
-
-    bvector<TileCPtr> selectedTiles;
-    GetRootTile()->_SelectTiles(selectedTiles, args);
-
-#if defined(DEBUG_TILE_DEPTHS)
-    bmap<int, uint32_t> debugMap;
-#endif
+    DrawArgs args = CreateDrawArgs(context);
+    bvector<TileCPtr> selectedTiles = SelectTiles(args);
 
     std::sort(selectedTiles.begin(), selectedTiles.end(), [&](TileCPtr const& lhs, TileCPtr const& rhs)
         {
@@ -880,28 +871,48 @@ void Root::DrawInView(SceneContextR context)
         {
         BeAssert(!selectedTile->IsRegionCulled(args));
         selectedTile->_DrawGraphics(args);
-
-#if defined(DEBUG_TILE_DEPTHS)
-        auto iter = debugMap.find(selectedTile->GetDepth());
-        if (iter == debugMap.end())
-            debugMap[selectedTile->GetDepth()] = 1;
-        else
-            iter->second += 1;
-#endif
         }
 
     DEBUG_PRINTF("Selected %u tiles", static_cast<uint32_t>(selectedTiles.size()));
 
-#if defined(DEBUG_TILE_DEPTHS)
-    for (auto const& kvp : debugMap)
-        {
-        DEBUG_PRINTF("%u @ %d", kvp.second, kvp.first);
-        }
-#endif
-
-    //DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
-
     args.DrawGraphics();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawArgs Root::CreateDrawArgs(SceneContextR context)
+    {
+    auto now = BeTimePoint::Now();
+    return DrawArgs(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<TileCPtr> Root::SelectTiles(SceneContextR context)
+    {
+    DrawArgs args = CreateDrawArgs(context);
+    return SelectTiles(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<TileCPtr> Root::SelectTiles(DrawArgsR args)
+    {
+    bvector<TileCPtr> selectedTiles;
+    if (!GetRootTile().IsValid())
+        {
+        BeAssert(false);
+        return selectedTiles;
+        }
+
+    InvalidateDamagedTiles();
+
+    GetRootTile()->_SelectTiles(selectedTiles, args);
+
+    return selectedTiles;
     }
 
 /*---------------------------------------------------------------------------------**//**

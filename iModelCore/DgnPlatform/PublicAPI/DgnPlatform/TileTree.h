@@ -308,10 +308,14 @@ protected:
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
 
     void InvalidateDamagedTiles();
-
+    bvector<TileCPtr> SelectTiles(DrawArgsR args);
+    DrawArgs CreateDrawArgs(SceneContextR context);
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys);
     void RequestTiles(MissingNodesCR);
+
+    //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
+    bvector<TileCPtr> SelectTiles(SceneContextR context);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
     void StartTileLoad(TileLoadStatePtr) const;
