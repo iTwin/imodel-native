@@ -19,6 +19,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <CloudDataSource/DataSourceManager.h>
 #include <ImagePP/all/h/ImageppLib.h>
 
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
@@ -66,6 +67,14 @@ SSLCertificateAdmin& ScalableMeshLib::Host::_SupplySSLCertificateAdmin()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Elenie.Godzaridis                     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
+    {
+    return *new STMAdmin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RegisterPODImportPlugin();
@@ -78,6 +87,7 @@ void ScalableMeshLib::Host::Initialize()
     m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
     m_sasTokenAdmin = &_SupplySASTokenAdmin();
     m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
+	m_stmAdmin = &_SupplySTMAdmin();
     m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
     RegisterPODImportPlugin();
@@ -229,5 +239,7 @@ ScalableMeshLib::Host& ScalableMeshLib::GetHost()
     {
     return *t_scalableTerrainModelHost;
     }
+
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
