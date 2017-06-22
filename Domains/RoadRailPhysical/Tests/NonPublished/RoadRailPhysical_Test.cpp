@@ -14,7 +14,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
-    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
+    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
 
     // Create Horizontal 
@@ -43,7 +43,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     auto travelwayDefModelPtr = projectPtr->Models().Get<TravelwayDefinitionModel>(travelwayDefModelId);
     auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*travelwayDefModelPtr, "2 lane");
 
-    CrossSectionPortionBreakDownModelPtr breakDownModelPtr;
+    TypicalSectionPortionBreakDownModelPtr breakDownModelPtr;
     ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());
 
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/RoadRailPhysical/CrossSection.h $
+|     $Source: PublicAPI/RoadRailPhysical/TypicalSection.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,42 +14,42 @@
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 //=======================================================================================
-//! Base class for CrossSection Elements.
+//! Base class for TypicalSection Elements.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionPortionDefinitionElement : Dgn::DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionElement : Dgn::DefinitionElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionPortionDefinitionElement, Dgn::DefinitionElement);
-friend struct CrossSectionPortionDefinitionElementHandler;
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionElement, Dgn::DefinitionElement);
+friend struct TypicalSectionPortionElementHandler;
 
 protected:
     //! @private
-    explicit CrossSectionPortionDefinitionElement(CreateParams const& params);
+    explicit TypicalSectionPortionElement(CreateParams const& params);
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CrossSectionPortionDefinitionElement)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(CrossSectionPortionDefinitionElement)
-}; // CrossSectionPortionDefinitionElement
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPortionElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionPortionElement)
+}; // TypicalSectionPortionElement
 
 //=======================================================================================
-//! Model for CrossSection elements
+//! Model for TypicalSection elements
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionDefinitionModel : Dgn::DefinitionModel
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionModel : Dgn::DefinitionModel
 {
-DGNMODEL_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionDefinitionModel, Dgn::DefinitionModel);
-friend struct CrossSectionDefinitionModelHandler;
+DGNMODEL_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionModel, Dgn::DefinitionModel);
+friend struct TypicalSectionModelHandler;
 
 public:
     struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(CrossSectionDefinitionModel::T_Super::CreateParams);
+    DEFINE_T_SUPER(TypicalSectionModel::T_Super::CreateParams);
 
-    //! Parameters to create a new instance of an CrossSectionDefinitionModel.
+    //! Parameters to create a new instance of an TypicalSectionModel.
     //! @param[in] dgndb The DgnDb for the new DgnModel
     //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
     CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId)
-        : T_Super(dgndb, CrossSectionDefinitionModel::QueryClassId(dgndb), modeledElementId)
+        : T_Super(dgndb, TypicalSectionModel::QueryClassId(dgndb), modeledElementId)
         {}
 
     //! @private
@@ -58,54 +58,54 @@ public:
     }; // CreateParams
 
 protected:
-    explicit CrossSectionDefinitionModel(CreateParams const& params) : T_Super(params) { }
+    explicit TypicalSectionModel(CreateParams const& params) : T_Super(params) { }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CrossSectionDefinitionModel)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionModel)
 
-    static CrossSectionDefinitionModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< CrossSectionDefinitionModel >(id); }    
-    static CrossSectionDefinitionModelPtr Create(CreateParams const& params) { return new CrossSectionDefinitionModel(params); }
-}; // CrossSectionDefinitionModel
+    static TypicalSectionModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< TypicalSectionModel >(id); }    
+    static TypicalSectionModelPtr Create(CreateParams const& params) { return new TypicalSectionModel(params); }
+}; // TypicalSectionModel
 
 //=======================================================================================
-//! CrossSection Elements.
+//! TypicalSection Elements.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionPortionDefinition : CrossSectionPortionDefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortion : TypicalSectionPortionElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionPortionDefinition, CrossSectionPortionDefinitionElement);
-friend struct CrossSectionPortionDefinitionHandler;
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortion, TypicalSectionPortionElement);
+friend struct TypicalSectionPortionHandler;
 
 protected:
     //! @private
-    explicit CrossSectionPortionDefinition(CreateParams const& params);
+    explicit TypicalSectionPortion(CreateParams const& params);
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CrossSectionPortionDefinition)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(CrossSectionPortionDefinition)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPortion)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TypicalSectionPortion)
 
-    static CrossSectionPortionDefinitionPtr Create(CrossSectionDefinitionModelCR model, Utf8CP label);
-}; // CrossSectionPortionDefinition
+    static TypicalSectionPortionPtr Create(TypicalSectionModelCR model, Utf8CP label);
+}; // TypicalSectionPortion
 
 //=======================================================================================
-//! Model breaking-down a CrossSectionPortion elements
+//! Model breaking-down a TypicalSectionPortion elements
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionPortionBreakDownModel : Dgn::DefinitionModel
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionBreakDownModel : Dgn::DefinitionModel
 {
-DGNMODEL_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionPortionBreakDownModel, Dgn::DefinitionModel);
-friend struct CrossSectionPortionBreakDownModelHandler;
+DGNMODEL_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionBreakDownModel, Dgn::DefinitionModel);
+friend struct TypicalSectionPortionBreakDownModelHandler;
 
 public:
     struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(CrossSectionPortionBreakDownModel::T_Super::CreateParams);
+    DEFINE_T_SUPER(TypicalSectionPortionBreakDownModel::T_Super::CreateParams);
 
-    //! Parameters to create a new instance of an CrossSectionPortionBreakDownModel.
+    //! Parameters to create a new instance of an TypicalSectionPortionBreakDownModel.
     //! @param[in] dgndb The DgnDb for the new DgnModel
     //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
     CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId)
-        : T_Super(dgndb, CrossSectionPortionBreakDownModel::QueryClassId(dgndb), modeledElementId)
+        : T_Super(dgndb, TypicalSectionPortionBreakDownModel::QueryClassId(dgndb), modeledElementId)
         {}
 
     //! @private
@@ -114,14 +114,14 @@ public:
     }; // CreateParams
 
 protected:
-    explicit CrossSectionPortionBreakDownModel(CreateParams const& params) : T_Super(params) { }
+    explicit TypicalSectionPortionBreakDownModel(CreateParams const& params) : T_Super(params) { }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CrossSectionPortionBreakDownModel)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPortionBreakDownModel)
 
-    static CrossSectionPortionBreakDownModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< CrossSectionPortionBreakDownModel >(id); }
-    static CrossSectionPortionBreakDownModelPtr Create(CreateParams const& params) { return new CrossSectionPortionBreakDownModel(params); }
-}; // CrossSectionPortionBreakDownModel
+    static TypicalSectionPortionBreakDownModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< TypicalSectionPortionBreakDownModel >(id); }
+    static TypicalSectionPortionBreakDownModelPtr Create(CreateParams const& params) { return new TypicalSectionPortionBreakDownModel(params); }
+}; // TypicalSectionPortionBreakDownModel
 
 //=======================================================================================
 //! Model for Travelway Definition elements
@@ -163,9 +163,9 @@ public:
 //! Base class for Travelway Definition Elements.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElement : CrossSectionPortionDefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElement : TypicalSectionPortionElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, CrossSectionPortionDefinitionElement);
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, TypicalSectionPortionElement);
 friend struct TravelwayDefinitionElementHandler;
 
 protected:
@@ -199,7 +199,7 @@ public:
 
     ROADRAILPHYSICAL_EXPORT static RoadTravelwayDefinitionPtr Create(TravelwayDefinitionModelCR model, Utf8StringCR code);
 
-    ROADRAILPHYSICAL_EXPORT RoadTravelwayDefinitionCPtr Insert(CrossSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
+    ROADRAILPHYSICAL_EXPORT RoadTravelwayDefinitionCPtr Insert(TypicalSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
 }; // RoadTravelwayDefinition
 
 //=======================================================================================
@@ -242,9 +242,9 @@ public:
 //! Base class for Travelway Definition Elements.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE EndConditionDefinition : CrossSectionPortionDefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE EndConditionDefinition : TypicalSectionPortionElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_EndConditionDefinition, CrossSectionPortionDefinitionElement);
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_EndConditionDefinition, TypicalSectionPortionElement);
 friend struct EndConditionDefinitionHandler;
 
 protected:
@@ -260,70 +260,27 @@ public:
 
     ROADRAILPHYSICAL_EXPORT static EndConditionDefinitionPtr Create(EndConditionDefinitionModelCR model, Utf8StringCR code);
 
-    ROADRAILPHYSICAL_EXPORT EndConditionDefinitionCPtr Insert(CrossSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
+    ROADRAILPHYSICAL_EXPORT EndConditionDefinitionCPtr Insert(TypicalSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
 }; // EndConditionDefinition
 
-//=======================================================================================
-//! Base class for CrossSection Elements.
-//! @ingroup GROUP_RoadRailPhysical
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionElement : Dgn::DefinitionElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionElement, Dgn::DefinitionElement);
-    friend struct CrossSectionElementHandler;
-
-protected:
-    //! @private
-    explicit CrossSectionElement(CreateParams const& params);
-
-public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CrossSectionElement)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(CrossSectionElement)
-}; // CrossSectionElement
-
-//=======================================================================================
-//! Definition class for Road CrossSection Elements.
-//! @ingroup GROUP_RoadRailPhysical
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadCrossSection : CrossSectionElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadCrossSection, CrossSectionElement);
-    friend struct RoadCrossSectionHandler;
-
-protected:
-    //! @private
-    explicit RoadCrossSection(CreateParams const& params);
-
-public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadCrossSection)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(RoadCrossSection)
-
-    ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
-
-    ROADRAILPHYSICAL_EXPORT static RoadCrossSectionPtr Create(CrossSectionDefinitionModelCR model, Utf8StringCR code);
-
-    //ROADRAILPHYSICAL_EXPORT RoadCrossSectionCPtr Insert(CrossSectionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
-}; // RoadCrossSection
-
 
 //=================================================================================
-//! ElementHandler for CrossSection Elements
+//! ElementHandler for TypicalSection Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionPortionDefinitionElementHandler : Dgn::dgn_ElementHandler::Definition
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionElementHandler : Dgn::dgn_ElementHandler::Definition
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionPortionDefinitionElement, CrossSectionPortionDefinitionElement, CrossSectionPortionDefinitionElementHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
-}; // CrossSectionPortionDefinitionElementHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionElement, TypicalSectionPortionElement, TypicalSectionPortionElementHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionPortionElementHandler
 
 //=================================================================================
-//! ElementHandler for CrossSection Elements
+//! ElementHandler for TypicalSection Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionPortionDefinitionHandler : CrossSectionPortionDefinitionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionHandler : TypicalSectionPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionPortionDefinition, CrossSectionPortionDefinition, CrossSectionPortionDefinitionHandler, CrossSectionPortionDefinitionElementHandler, ROADRAILPHYSICAL_EXPORT)
-}; // CrossSectionPortionDefinitionElementHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortion, TypicalSectionPortion, TypicalSectionPortionHandler, TypicalSectionPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionPortionElementHandler
 
 //=======================================================================================
 //! The ModelHandler for TravelwayDefinitionModel
@@ -334,16 +291,16 @@ struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionModelHandler : Dgn::dgn_ModelH
 }; // TravelwayDefinitionModelHandler
 
 //=================================================================================
-//! ElementHandler for CrossSection Elements
+//! ElementHandler for TypicalSection Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElementHandler : CrossSectionPortionDefinitionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElementHandler : TypicalSectionPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, TravelwayDefinitionElement, TravelwayDefinitionElementHandler, CrossSectionPortionDefinitionElementHandler, ROADRAILPHYSICAL_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, TravelwayDefinitionElement, TravelwayDefinitionElementHandler, TypicalSectionPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // TravelwayDefinitionElementHandler
 
 //=================================================================================
-//! ElementHandler for CrossSection Elements
+//! ElementHandler for TypicalSection Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoadTravelwayDefinitionHandler : TravelwayDefinitionElementHandler
@@ -360,46 +317,28 @@ struct EXPORT_VTABLE_ATTRIBUTE EndConditionDefinitionModelHandler : Dgn::dgn_Mod
 }; // EndConditionDefinitionModelHandler
 
 //=================================================================================
-//! ElementHandler for CrossSection Elements
+//! ElementHandler for TypicalSection Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE EndConditionDefinitionHandler : CrossSectionPortionDefinitionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE EndConditionDefinitionHandler : TypicalSectionPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_EndConditionDefinition, EndConditionDefinition, EndConditionDefinitionHandler, CrossSectionPortionDefinitionElementHandler, ROADRAILPHYSICAL_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_EndConditionDefinition, EndConditionDefinition, EndConditionDefinitionHandler, TypicalSectionPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // EndConditionDefinitionHandler
 
 //=======================================================================================
-//! The ModelHandler for CrossSectionBreakDownModel
+//! The ModelHandler for TypicalSectionBreakDownModel
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionDefinitionModelHandler : Dgn::dgn_ModelHandler::Definition
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionModelHandler : Dgn::dgn_ModelHandler::Definition
 {
-    MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionDefinitionModel, CrossSectionDefinitionModel, CrossSectionDefinitionModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
-}; // CrossSectionDefinitionModelHandler
+    MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionModel, TypicalSectionModel, TypicalSectionModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionModelHandler
 
 //=======================================================================================
-//! The ModelHandler for CrossSectionPortionBreakDownModel
+//! The ModelHandler for TypicalSectionPortionBreakDownModel
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionPortionBreakDownModelHandler : Dgn::dgn_ModelHandler::Definition
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionBreakDownModelHandler : Dgn::dgn_ModelHandler::Definition
 {
-    MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionPortionBreakDownModel, CrossSectionPortionBreakDownModel, CrossSectionPortionBreakDownModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
-}; // CrossSectionPortionBreakDownModelHandler
-
-//=================================================================================
-//! ElementHandler for CrossSection Elements
-//! @ingroup GROUP_RoadRailPhysical
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CrossSectionElementHandler : Dgn::dgn_ElementHandler::Definition
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_CrossSectionElement, CrossSectionElement, CrossSectionElementHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
-}; // CrossSectionElementHandler
-
-//=================================================================================
-//! ElementHandler for Road CrossSection Elements
-//! @ingroup GROUP_RoadRailPhysical
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadCrossSectionHandler : Dgn::dgn_ElementHandler::Definition
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadCrossSection, RoadCrossSection, RoadCrossSectionHandler, CrossSectionElementHandler, ROADRAILPHYSICAL_EXPORT)
-}; // RoadCrossSectionHandler
+    MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionBreakDownModel, TypicalSectionPortionBreakDownModel, TypicalSectionPortionBreakDownModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionPortionBreakDownModelHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

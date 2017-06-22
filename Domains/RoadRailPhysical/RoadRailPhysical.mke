@@ -43,7 +43,7 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
-$(o)CrossSection$(oext) : $(_MakeFilePath)CrossSection.cpp ${MultiCompileDepends} $(appPublicApi)CrossSection.h
+$(o)TypicalSection$(oext) : $(_MakeFilePath)TypicalSection.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSection.h
 
 $(o)ElementAspects$(oext) : $(_MakeFilePath)ElementAspects.cpp ${MultiCompileDepends} $(appPublicApi)ElementAspects.h
 
