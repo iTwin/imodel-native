@@ -289,6 +289,19 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds)
     }
 
 // BIM0200 does not support ECDbMap.01.00 schema, but it is required here for DgnDb0601 version... 
+// Requires not importing ECDbMap with lower version and skipping Views / Contents schemas because those contain "Id" property.
+/* Requires such change in FeatureTracking schema:
+<ClassMap xmlns="ECDbMap.01.00">
+    <MapStrategy>
+        <Strategy>SharedTable</Strategy>
+        <AppliesToSubclasses>True</AppliesToSubclasses>
+    </MapStrategy>
+</ClassMap>
+->
+<ClassMap xmlns="ECDbMap.02.00">
+    <MapStrategy>TablePerHierarchy</MapStrategy>
+</ClassMap>
+*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
