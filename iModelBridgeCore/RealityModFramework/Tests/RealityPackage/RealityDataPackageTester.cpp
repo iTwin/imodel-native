@@ -9,6 +9,9 @@
 
 #include <Bentley/BeTest.h>
 #include <RealityPackage/RealityDataPackage.h>
+#include <RealityPackage/WMSSource.h>
+#include <RealityPackage/OsmSource.h>
+#include <RealityPackage/RealityDataSource.h>
 #include <Bentley/BeTextFile.h>
 #include "../Common/RealityModFrameworkTestsCommon.h"
 
@@ -2282,6 +2285,145 @@ TEST_F(PackageTestFixture, Write2_1)
     input->Close();
     output->Close();
 
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST(WMSSource, BasicTest)
+    {
+    DRange2d bbox = DRange2d::From(0, 0, 100, 100);
+    auto settings = WmsMapSettings::Create("https://myuri.com", bbox, "2.1", "1Layer", "csType", "csLabel");
+
+    EXPECT_STREQ(settings->GetUri().c_str(), "https://myuri.com");
+
+    auto boundingBox = settings->GetBBox();
+    EXPECT_TRUE(boundingBox.IsEqual(bbox));
+
+    EXPECT_EQ(settings->GetMetaWidth(), 10);
+    EXPECT_EQ(settings->GetMetaHeight(), 10);
+    EXPECT_STREQ(settings->GetVersion().c_str(), "2.1");
+    EXPECT_STREQ(settings->GetLayers().c_str(), "1Layer");
+    EXPECT_STREQ(settings->GetStyles().c_str(), "");
+    EXPECT_STREQ(settings->GetCoordSysType().c_str(), "csType");
+    EXPECT_STREQ(settings->GetCoordSysLabel().c_str(), "csLabel");
+    EXPECT_STREQ(settings->GetFormat().c_str(), "image/png");
+    EXPECT_STREQ(settings->GetVendorSpecific().c_str(), "");
+    EXPECT_TRUE(settings->IsTransparent());
+
+    settings->SetUri("http://seconduri.com");
+    EXPECT_STREQ(settings->GetUri().c_str(), "http://seconduri.com");
+
+    settings->SetMetaWidth(20);
+    EXPECT_EQ(settings->GetMetaWidth(), 20);
+
+    settings->SetMetaHeight(20);
+    EXPECT_EQ(settings->GetMetaHeight(), 20);
+
+    settings->SetVersion("99.99");
+    EXPECT_STREQ(settings->GetVersion().c_str(), "99.99");
+
+    settings->SetLayers("secondLayers");
+    EXPECT_STREQ(settings->GetLayers().c_str(), "secondLayers");
+
+    settings->SetStyles("SuperStyle");
+    EXPECT_STREQ(settings->GetStyles().c_str(), "SuperStyle");
+
+    settings->SetCoordSysType("second CSTYPE");
+    EXPECT_STREQ(settings->GetCoordSysType().c_str(), "second CSTYPE");
+
+    settings->SetCoordSysLabel("secondLABEL");
+    EXPECT_STREQ(settings->GetCoordSysLabel().c_str(), "secondLABEL");
+
+    settings->SetFormat("image/bmp");
+    EXPECT_STREQ(settings->GetFormat().c_str(), "image/bmp");
+
+    settings->SetVendorSpecific("Specific");
+    EXPECT_STREQ(settings->GetVendorSpecific().c_str(), "Specific");
+
+    settings->SetTransparency(false);
+    EXPECT_FALSE(settings->IsTransparent());
+
+    Utf8String settingsString;
+    settings->ToXml(settingsString);
+
+    settingsString.insert(0, "<test>");
+    settingsString.append("</test>");
+
+    auto secondSettings = WmsMapSettings::CreateFromXml(settingsString.c_str());
+
+    ASSERT_TRUE(secondSettings != nullptr);
+
+    EXPECT_STREQ(secondSettings->GetUri().c_str(), "http://seconduri.com");
+
+    // The Meta height/width are not read/written to XML, they also don't appear in the xsd, so we ignore them
+    // EXPECT_EQ(secondSettings->GetMetaWidth(), 20);
+    // EXPECT_EQ(secondSettings->GetMetaHeight(), 20);
+
+    EXPECT_STREQ(secondSettings->GetVersion().c_str(), "99.99");
+    EXPECT_STREQ(secondSettings->GetLayers().c_str(), "secondLayers");
+    EXPECT_STREQ(secondSettings->GetStyles().c_str(), "SuperStyle");
+    EXPECT_STREQ(secondSettings->GetCoordSysType().c_str(), "second CSTYPE");
+    EXPECT_STREQ(secondSettings->GetCoordSysLabel().c_str(), "secondLABEL");
+    EXPECT_STREQ(secondSettings->GetFormat().c_str(), "image/bmp");
+    EXPECT_STREQ(secondSettings->GetVendorSpecific().c_str(), "Specific");
+    EXPECT_FALSE(secondSettings->IsTransparent());
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST(WMSDataSource, BasicTest)
+    {
+    auto uri = Uri::Create("http://www.myserver.com/", "file1.txt");
+    WmsDataSourcePtr source = WmsDataSource::Create(*uri);
+    
+    EXPECT_STREQ(source->GetUri().ToString().c_str(), "http://www.myserver.com/#file1.txt");
+
+    DRange2d bbox = DRange2d::From(0, 0, 100, 100);
+    auto settings = WmsMapSettings::Create("https://myuri.com", bbox, "2.1", "1Layer", "csType", "csLabel");
+
+    Utf8String settingsString;
+    settings->ToXml(settingsString);
+    source->SetMapSettings(settingsString.c_str());
+
+    EXPECT_STREQ(source->GetMapSettings().c_str(), settingsString.c_str());
+    }
+
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST(OSMResource, BasicTest)
+    {
+    auto bbox = DRange2d::From(0, 1, 100, 101);
+    auto osmResource = OsmResource::Create(bbox);
+
+    EXPECT_EQ(osmResource->GetAlternateUrlList().size(), 0);
+
+    auto urlList = bvector<Utf8String>();
+    urlList.emplace_back("https://firsturl.com");
+    urlList.emplace_back("https://secondurl.com");
+
+    osmResource->SetAlternateUrlList(urlList);
+
+    auto resultUrlList = osmResource->GetAlternateUrlList();
+    EXPECT_EQ(resultUrlList.size(), 2);
+    EXPECT_STREQ(resultUrlList[0].c_str(), "https://firsturl.com*[bbox=0,1,100,101]");
+    EXPECT_STREQ(resultUrlList[1].c_str(), "https://secondurl.com*[bbox=0,1,100,101]");
+
+    Utf8String osmXml;
+    osmResource->ToXml(osmXml);
+
+    osmXml.insert(0, "<test>");
+    osmXml.append("</test>");
+
+    auto secondOsmresource = OsmResource::CreateFromXml(osmXml.c_str());
+
+    resultUrlList = secondOsmresource->GetAlternateUrlList();
+    EXPECT_EQ(resultUrlList.size(), 2);
+    EXPECT_STREQ(resultUrlList[0].c_str(), "https://firsturl.com*[bbox=0,1,100,101]");
+    EXPECT_STREQ(resultUrlList[1].c_str(), "https://secondurl.com*[bbox=0,1,100,101]");
     }
 
 //-------------------------------------------------------------------------------------

@@ -8,6 +8,7 @@
 
 #include <RealityPackage/OsmSource.h>
 #include <BeXml/BeXml.h>
+#include <regex>
 
 // Xml Fragment Tags
 #define OSMSOURCE_PREFIX                        "osm"
@@ -49,7 +50,10 @@ OsmResourcePtr OsmResource::CreateFromXml(Utf8CP xmlFragment)
     if (NULL == pRootNode)
         return 0;
 
-    OsmResourcePtr pOsmResource = OsmResource::Create(DRange2d::NullRange());
+    
+
+    Utf8String bboxString = "";
+    bvector<Utf8String> urlList = bvector<Utf8String>();
 
     // Alternate url list.
      BeXmlNodeP pChildNode = pRootNode->SelectSingleNode(OSMSOURCE_ELEMENT_AlternateUrl);
@@ -58,15 +62,63 @@ OsmResourcePtr OsmResource::CreateFromXml(Utf8CP xmlFragment)
         BeXmlDom::IterableNodeSet urlNodes;
         pChildNode->SelectChildNodes(urlNodes, OSMSOURCE_ELEMENT_Url);
 
-        Utf8String url;
-        bvector<Utf8String> urlList = bvector<Utf8String>();
+        std::regex starRegEx("([^\\*]+?)(?:\\*)([\\S]*)");
+        // [0] = https://secondurl.com*[bbox=0,0,100,100]
+        // [1] = https://secondurl.com
+        // [2] = [bbox=0,0,100,100]
+        std::cmatch matches;
+
+        Utf8String url;        
         for (BeXmlNodeP const& pUrlNode : urlNodes)
             {
             pUrlNode->GetContent(url);
-            urlList.push_back(url.c_str());
+
+            std::regex_match(url.c_str(), matches, starRegEx);
+            BeAssert(3 == matches.size());
+
+            if(bboxString.empty())
+                {
+                bboxString = matches[2].str().c_str();
+                }
+            else
+                {
+                // All bounding box string should be exactly the same;
+                BeAssert(bboxString.Equals(matches[2].str().c_str()));
+                }
+            
+            
+            urlList.push_back(matches[1].str().c_str());
             }
 
+        
+
+        }
+
+    OsmResourcePtr pOsmResource = nullptr;
+    if(!urlList.empty())
+        {
+        size_t pos = bboxString.find("=");
+        size_t posComma = bboxString.find(",");
+        size_t posNextComma = bboxString.find(",", posComma + 1);
+
+        double minX = atof(bboxString.substr(pos + 1, posComma - pos).c_str());
+        double minY = atof(bboxString.substr(posComma + 1, posNextComma - posComma).c_str());
+
+        posComma = posNextComma;
+        posNextComma = bboxString.find(",", posComma + 1);
+        double maxX = atof(bboxString.substr(posComma + 1, posNextComma - posComma).c_str());
+
+        posComma = posNextComma;
+        posNextComma = bboxString.find(",", posComma + 1);
+        double maxY = atof(bboxString.substr(posComma + 1, posNextComma - posComma).c_str());
+
+
+        pOsmResource = OsmResource::Create(DRange2d::From(minX, minY, maxX, maxY));
         pOsmResource->SetAlternateUrlList(urlList);
+        }
+    else
+        {
+        pOsmResource = OsmResource::Create(DRange2d::NullRange());
         }
 
     return pOsmResource;
