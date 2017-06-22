@@ -133,6 +133,19 @@ struct IConditionVariablePredicate
 };
 
 //=======================================================================================
+//! Wraps a callable object inside an IConditionVariablePredicate.
+// @bsistruct                                                   Paul.Connelly   06/17
+//=======================================================================================
+template<typename T> struct ConditionVariablePredicate : IConditionVariablePredicate
+{
+    T   m_predicate;
+
+    explicit ConditionVariablePredicate(T predicate) : m_predicate(predicate) { }
+
+    virtual bool _TestCondition(struct BeConditionVariable& cv) override { return m_predicate(cv); }
+};
+
+//=======================================================================================
 //! A synchronization primitive that can be used to block a thread, or multiple threads at the same time, until:
 //! 1) a notification is received from another thread, 2) a timeout expires, or 3) a spurious wakeup occurs.
 //! @see std::condition_variable_any
