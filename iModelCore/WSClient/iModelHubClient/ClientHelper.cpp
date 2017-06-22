@@ -111,7 +111,7 @@ ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr, We
     UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, m_localState);
     
     m_signinMgr = managerPtr;
-    Utf8String host; // WIP_MERGE_Algirdas - = UrlProvider::Urls::iModelHubServices.Get();
+    Utf8String host = UrlProvider::Urls::iModelHubApi.Get();
 
     AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(host);
     ClientPtr client = Client::Create(m_clientInfo, authHandler);
