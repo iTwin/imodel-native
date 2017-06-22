@@ -18,6 +18,7 @@
     <ClCompile Include="BackDoor\ECDbTestFixture.cpp" />
     <ClCompile Include="BackDoor\ECDbTests.cpp" />
     <ClCompile Include="BackDoor\SchemaImportTestFixture.cpp" />
+    <ClCompile Include="BackDoor\TestHelper.cpp" />
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
@@ -91,6 +92,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestFixture.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\SchemaImportTestFixture.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestHelper.h" />
     <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h" />
     <ClInclude Include="Performance\PerformanceOverflowTablesResearchTestFixture.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />

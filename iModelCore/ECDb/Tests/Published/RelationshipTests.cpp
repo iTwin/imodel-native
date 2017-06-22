@@ -449,7 +449,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                   </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-    ASSERT_EQ(3, (int) RetrieveIndicesForTable(m_ecdb, "ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+    ASSERT_EQ(3, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
     AssertIndex(m_ecdb, "ix_ts50_B_fk_ts50_RelBase_target", false, "ts50_B", {"AId"}, "([AId] IS NOT NULL)");
     AssertIndex(m_ecdb, "ix_ts50_B_ARelECClassId", false, "ts50_B", {"ARelECClassId"}, "([ARelECClassId] IS NOT NULL)");
@@ -498,7 +498,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    ASSERT_EQ(3, (int) RetrieveIndicesForTable(m_ecdb, "ts5_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+    ASSERT_EQ(3, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts5_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
     AssertIndex(m_ecdb, "ix_ts5_B_fk_ts5_RelBase_target", false, "ts5_B", {"AId"}, "([AId] IS NOT NULL)");
     AssertIndex(m_ecdb, "ix_ts5_B_ARelECClassId", false, "ts5_B", {"ARelECClassId"}, "([ARelECClassId] IS NOT NULL)");
@@ -549,7 +549,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    ASSERT_EQ(3, (int) RetrieveIndicesForTable(m_ecdb, "ts6_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+    ASSERT_EQ(3, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts6_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
     AssertIndex(m_ecdb, "ix_ts6_B_AInstanceRelECClassId", false, "ts6_B", {"AInstanceRelECClassId"});
     AssertIndex(m_ecdb, "ix_ts6_B_fk_ts6_RelBase_target", false, "ts6_B", {"AInstanceId"});
@@ -608,7 +608,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    ASSERT_EQ(9, (int) RetrieveIndicesForTable(m_ecdb, "ts7_RelBase").size());
+    ASSERT_EQ(9, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts7_RelBase").size());
 
 
 
@@ -667,7 +667,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                   </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-    ASSERT_EQ(3, (int) RetrieveIndicesForTable(m_ecdb, "ts8_B").size());
+    ASSERT_EQ(3, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts8_B").size());
 
     ECClassId b1ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "B1");
     ECClassId b11ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "B11");
@@ -734,11 +734,11 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
     //ARelB must not have a unique index on source and target as it as AllowDuplicateRelationship set to true.
     //ARelC must not have the unique index either, as AllowDuplicateRelationship is applied to subclasses
-    std::vector<IndexInfo> indexes = RetrieveIndicesForTable(m_ecdb, "ts9_ARelB");
-    ASSERT_EQ(3, (int) indexes.size()) << "Indexes on ts9_ARelB";
-    ASSERT_STREQ("ix_ts9_ARelB_ecclassid", indexes[0].m_name.c_str());
-    ASSERT_STREQ("ix_ts9_ARelB_source", indexes[1].m_name.c_str());
-    ASSERT_STREQ("ix_ts9_ARelB_target", indexes[2].m_name.c_str());
+    std::vector<Utf8String> indexNames = TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts9_ARelB");
+    ASSERT_EQ(3, (int) indexNames.size()) << "Indexes on ts9_ARelB";
+    ASSERT_STREQ("ix_ts9_ARelB_ecclassid", indexNames[0].c_str());
+    ASSERT_STREQ("ix_ts9_ARelB_source", indexNames[1].c_str());
+    ASSERT_STREQ("ix_ts9_ARelB_target", indexNames[2].c_str());
     }
 
 

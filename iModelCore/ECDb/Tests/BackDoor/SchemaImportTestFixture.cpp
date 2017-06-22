@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/SchemaImportTestFixture.h"
+#include "PublicAPI/BackDoor/ECDb/TestHelper.h"
 #include <Bentley/DateTime.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -87,34 +88,7 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
     ASSERT_STRCASEEQ(expectedDdl.c_str(), actualDdl.c_str());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-std::vector<SchemaImportTestFixture::IndexInfo> SchemaImportTestFixture::RetrieveIndicesForTable(ECDbCR ecdb, Utf8CP tableName)
-    {
-    std::vector<SchemaImportTestFixture::IndexInfo> indices;
 
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT name, sql FROM sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name"))
-        {
-        BeAssert(false && "Preparation failed");
-        return indices;
-        }
-
-    if (BE_SQLITE_OK != stmt.BindText(1, tableName, Statement::MakeCopy::No))
-        {
-        BeAssert(false && "Preparation failed");
-        return indices;
-        }
-
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        indices.push_back(SchemaImportTestFixture::IndexInfo(stmt.GetValueText(0), tableName, stmt.GetValueText(1)));
-        }
-
-    return indices;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
@@ -208,53 +182,6 @@ ColumnInfo::List DbMappingTestFixture::GetColumnInfos(ECDbCR ecdb, PropertyAcces
     return colInfos;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                 05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-bool operator==(ColumnInfo::List const& lhs, ColumnInfo::List const& rhs)
-    {
-    if (lhs.size() != rhs.size())
-        return false;
-
-    for (size_t i = 0; i < lhs.size(); i++)
-        {
-        if (lhs[i] != rhs[i])
-            return false;
-        }
-
-    return true;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                 05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-bool operator!=(ColumnInfo::List const& lhs, ColumnInfo::List const& rhs) { return !(lhs == rhs); }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                 05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-void PrintTo(ColumnInfo::List const& colInfos, std::ostream* os)
-    {
-    *os << "[";
-    bool isFirstItem = true;
-    for (ColumnInfo const& colInfo : colInfos)
-        {
-        if (!isFirstItem)
-            *os << ",";
-
-        *os << colInfo.ToString().c_str();
-        isFirstItem = false;
-        }
-    *os << "]";
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                 05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-void PrintTo(ColumnInfo const& colInfo, std::ostream* os)
-    {
-    *os << colInfo.ToString().c_str();
-    }
 
 END_ECDBUNITTESTS_NAMESPACE
 

@@ -214,6 +214,9 @@
     <ClCompile Include="Published\SchemaUpgradeTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="BackDoor\TestHelper.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">
@@ -290,6 +293,9 @@
     </ClInclude>
     <ClInclude Include="Published\MapContext.h">
       <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestHelper.h">
+      <Filter>BackDoor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

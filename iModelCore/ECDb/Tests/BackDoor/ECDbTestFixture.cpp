@@ -6,165 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
+#include "PublicAPI/BackDoor/ECDb/TestHelper.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-//************************************************************************************
-// TestHelper
-//************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus TestHelper::ImportSchema(SchemaItem const& schema, Utf8CP fileName /*= nullptr*/)
-    {
-    ECDb ecdb;
-    if (BE_SQLITE_OK != ECDbTestFixture::CreateECDb(ecdb, fileName))
-        return ERROR;
-
-    return ImportSchema(ecdb, schema);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus TestHelper::ImportSchemas(std::vector<SchemaItem> const& schemas, Utf8CP fileName /*= nullptr*/)
-    {
-    ECDb ecdb;
-    if (BE_SQLITE_OK != ECDbTestFixture::CreateECDb(ecdb, fileName))
-        return ERROR;
-
-    return ImportSchemas(ecdb, schemas);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TestHelper::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> const& schemas)
-    {
-    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
-    for (SchemaItem const& schema : schemas)
-        {
-        if (SUCCESS != ECDbTestFixture::ReadECSchema(context, ecdb, schema))
-            return ERROR;
-        }
-
-    Savepoint sp(ecdb, "ECSchema Import");
-    if (SUCCESS == ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
-        {
-        sp.Commit();
-        return !HasDataCorruptingMappingIssues(ecdb) ? SUCCESS : ERROR;
-        }
-
-    sp.Cancel();
-    return ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  07/15
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus TestHelper::ImportSchema(ECDbR ecdb, SchemaItem const& testItem)
-    {
-    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
-    if (SUCCESS != ECDbTestFixture::ReadECSchema(context, ecdb, testItem))
-        return ERROR;
-
-    Savepoint sp(ecdb, "ECSchema Import");
-    if (SUCCESS == ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
-        {
-        sp.Commit();
-        return !HasDataCorruptingMappingIssues(ecdb) ? SUCCESS : ERROR;
-        }
-
-    sp.Cancel();
-    return ERROR;
-    }
-
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                       02/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool TestHelper::HasDataCorruptingMappingIssues(ECDbCR ecdb)
-    {
-    EXPECT_TRUE(ecdb.IsDbOpen());
-
-    if (!ecdb.IsDbOpen())
-        return true;
-
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, SchemaManager::GetValidateDbMappingSql()))
-        {
-        EXPECT_TRUE(false) << ecdb.GetLastError().c_str();
-        return true;
-        }
-
-    bool hasError = false;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        hasError = true;
-        LOG.errorv("ECClass '%s:%s' with invalid mapping: %s. Table name: %s - %s", stmt.GetValueText(0),
-                   stmt.GetValueText(2), stmt.GetValueText(5), stmt.GetValueText(3), stmt.GetValueText(6));
-        }
-
-    return hasError;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                     12/16
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8String TestHelper::RetrieveDdl(ECDbCR ecdb, Utf8CP entityName, Utf8CP entityType)
-    {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE AND type=? COLLATE NOCASE");
-    if (stmt == nullptr)
-        return Utf8String();
-
-    if (BE_SQLITE_OK != stmt->BindText(1, entityName, Statement::MakeCopy::No))
-        return Utf8String();
-
-    if (BE_SQLITE_OK != stmt->BindText(2, entityType, Statement::MakeCopy::No))
-        return Utf8String();
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return Utf8String();
-
-    return Utf8String(stmt->GetValueText(0));
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                     03/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-DbResult TestHelper::ExecuteNonSelectECSql(ECDbCR ecdb, Utf8CP ecsql)
-    {
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
-        return BE_SQLITE_ERROR;
-
-    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
-    return stmt.Step();
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                     03/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-DbResult TestHelper::TestHelper::ExecuteInsertECSql(ECInstanceKey& key, ECDbCR ecdb, Utf8CP ecsql)
-    {
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
-        return BE_SQLITE_ERROR;
-
-    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
-    return stmt.Step(key);
-    }
-
 
 //************************************************************************************
 // ECDbTestFixture
@@ -422,6 +268,24 @@ BentleyStatus ECDbTestFixture::PopulateECDb(ECSchemaCR schema, int instanceCount
     }
 
 
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbTestFixture::ImportSchema(SchemaItem const& schema)
+    {
+    EXPECT_TRUE(m_ecdb.IsDbOpen()); 
+    return TestHelper::ImportSchema(m_ecdb, schema);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbTestFixture::ImportSchemas(std::vector<SchemaItem> const& schemas)
+    {
+    EXPECT_TRUE(m_ecdb.IsDbOpen()); 
+    return TestHelper::ImportSchemas(m_ecdb, schemas);
+    }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     02/17

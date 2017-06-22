@@ -39,33 +39,6 @@ struct SchemaItem final
         Utf8StringCR ToString() const { return m_xmlStringOrFileName; }
     };
 
-//=======================================================================================    
-//! Provides testing methods that can be used in the ATPs to test certain aspects of the ECDb APIs
-//! using the ASSERT_ macros.
-//! Their return values are compatible with the ASSERT_ macros.
-// @bsiclass                                                 Krischan.Eberle     06/2017
-//=======================================================================================    
-struct TestHelper
-    {
-    private:
-        TestHelper();
-        ~TestHelper();
-
-    public:
-        static BentleyStatus ImportSchema(SchemaItem const&, Utf8CP fileName = nullptr);
-        static BentleyStatus ImportSchema(ECDbR, SchemaItem const&);
-        static BentleyStatus ImportSchemas(std::vector<SchemaItem> const&, Utf8CP fileName = nullptr);
-        static BentleyStatus ImportSchemas(ECDbR, std::vector<SchemaItem> const&);
-
-        //!logs the issues if there are any
-        static bool HasDataCorruptingMappingIssues(ECDbCR);
-
-        static Utf8String RetrieveDdl(ECDbCR, Utf8CP entityName, Utf8CP entityType = "table");
-
-        static ECSqlStatus PrepareECSql(ECDbCR ecdb, Utf8CP ecsql) { ECSqlStatement stmt;  return stmt.Prepare(ecdb, ecsql); }
-        static DbResult ExecuteNonSelectECSql(ECDbCR, Utf8CP ecsql);
-        static DbResult ExecuteInsertECSql(ECInstanceKey&, ECDbCR, Utf8CP ecsql);
-    };
 
 //=======================================================================================
 //! All non-static methods operate on ECDb held by the test fixture. The test fixture's ECDb
@@ -75,8 +48,6 @@ struct TestHelper
 struct ECDbTestFixture : public ::testing::Test
     {
 private:
-    friend struct TestHelper;
-
     struct SeedECDbManager final : NonCopyableClass
         {
     private:
@@ -119,16 +90,16 @@ protected:
     BentleyStatus PopulateECDb(ECN::ECSchemaCR, int instanceCountPerClass);
     BentleyStatus PopulateECDb(int instanceCountPerClass);
 
-    BentleyStatus ImportSchema(SchemaItem const& schema) { EXPECT_TRUE(m_ecdb.IsDbOpen()); return TestHelper::ImportSchema(m_ecdb, schema); }
-    BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas) { EXPECT_TRUE(m_ecdb.IsDbOpen()); return TestHelper::ImportSchemas(m_ecdb, schemas); }
+    BentleyStatus ImportSchema(SchemaItem const&);
+    BentleyStatus ImportSchemas(std::vector<SchemaItem> const&);
 
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
 
 public:
     ECDbTestFixture() : ::testing::Test() {}
-    virtual ~ECDbTestFixture () {}
+    virtual ~ECDbTestFixture() {}
     void SetUp() override { Initialize(); }
-    void TearDown () override {}
+    void TearDown() override {}
 
     //! Initializes the test environment by setting up the schema read context and search dirs etc.
     //! Gets implicitly called when calling SetupECDb, too. Tests that don't use

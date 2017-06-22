@@ -7125,108 +7125,6 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
     AssertIndex(m_ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
 
 
-
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest5.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Base' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Code' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <Name>ix_sub1_aid</Name>"
-        "                       <Properties>"
-        "                          <string>AId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='AId' typeName='long' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub2' modifier='None'>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1_1' modifier='None'>"
-        "        <BaseClass>Sub1</BaseClass>"
-        "        <ECProperty propertyName='Cost' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
-
-    AssertIndex(m_ecdb, "ix_sub1_aid", false, "ts5_Base", {"ps1"});
-
-
-
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest6.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Base' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Code' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>True</IsUnique>"
-        "                       <Name>uix_sub1_aid</Name>"
-        "                       <Properties>"
-        "                          <string>AId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='AId' typeName='long' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub2' modifier='None'>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub3' modifier='None'>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='Name2' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub11' modifier='None'>"
-        "        <BaseClass>Sub1</BaseClass>"
-        "        <ECProperty propertyName='Cost' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>"))) << "Unique indices on shared columns are supported.";
-
-    ECClassId sub1ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Sub1");
-    ECClassId sub11ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Sub11");
-    indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
-    AssertIndex(m_ecdb, "uix_sub1_aid", true, "ts6_Base", {"ps1"}, indexWhereClause.c_str());
-
-
-
-
     ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest7.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -7478,11 +7376,166 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
     AssertIndex(m_ecdb, "ix_dgnelement_model_id_code", false, "ts9_DgnElement", {"ModelId","Code"});
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, IndexesOnSharedColumns)
+    {
+        {
+            ASSERT_EQ(SUCCESS, SetupECDb("indexonsharedcolumns1.ecdb", SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+        <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+        <ECEntityClass typeName="Base" modifier="None">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00"/>
+                <DbIndexList xmlns="ECDbMap.02.00">
+                        <Indexes>
+                        <DbIndex>
+                            <Name>ix_base_prop2</Name>
+                            <Properties>
+                                <string>Prop2</string>
+                            </Properties>
+                        </DbIndex>
+                        </Indexes>
+                </DbIndexList>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Prop1" typeName="string" />
+            <ECProperty propertyName="Prop2" typeName="int" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub1" modifier="None">
+            <ECCustomAttributes>
+                <DbIndexList xmlns="ECDbMap.02.00">
+                        <Indexes>
+                        <DbIndex>
+                            <Name>ix_sub1_Prop1</Name>
+                            <Properties>
+                                <string>Sub_Prop1</string>
+                            </Properties>
+                        </DbIndex>
+                        <DbIndex>
+                            <Name>uix_sub1_Prop2</Name>
+                            <IsUnique>true</IsUnique>
+                            <Properties>
+                                <string>Sub_Prop2</string>
+                            </Properties>
+                        </DbIndex>
+                        </Indexes>
+                </DbIndexList>
+            </ECCustomAttributes>
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="Sub_Prop1" typeName="long" />
+            <ECProperty propertyName="Sub_Prop2" typeName="long" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub1_1" modifier="None">
+            <BaseClass>Sub1</BaseClass>
+            <ECProperty propertyName="Sub1_1_Prop1" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml")));
+
+        ECClassId baseClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Base");
+        ASSERT_TRUE(baseClassId.IsValid());
+
+        Utf8CP expectedIndexName = "ix_Base_Prop2";
+        ASSERT_STRCASEEQ(IndexInfo(expectedIndexName, false, "ts_Base", "ps2").ToDdl().c_str(),TestHelper::RetrieveIndexDdl(m_ecdb, expectedIndexName).c_str());
+        expectedIndexName = "ix_Sub1_Prop1";
+        ASSERT_STRCASEEQ(IndexInfo(expectedIndexName, false, "ts_Base", "ps3").ToDdl().c_str(), TestHelper::RetrieveIndexDdl(m_ecdb, expectedIndexName).c_str());
+        expectedIndexName = "uix_Sub1_Prop2";
+        ASSERT_STRCASEEQ(IndexInfo(expectedIndexName, true, "ts_Base", "ps4", IndexInfo::WhereClause(baseClassId, true)).ToDdl().c_str(),
+                        TestHelper::RetrieveIndexDdl(m_ecdb, expectedIndexName).c_str());
+        }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("indexonsharedcolumns2.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns="ECDbMap.02.00">
+                              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Code" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub1" modifier="None">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                   <DbIndex>
+                                       <IsUnique>True</IsUnique>
+                                       <Name>uix_sub1_aid</Name>
+                                       <Properties>
+                                          <string>AId</string>
+                                       </Properties>
+                                   </DbIndex>
+                                 </Indexes>
+                            </DbIndexList>
+                        </ECCustomAttributes>
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="AId" typeName="long" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub2" modifier="None">
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub3" modifier="None">
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="Name2" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub11" modifier="None">
+                        <BaseClass>Sub1</BaseClass>
+                        <ECProperty propertyName="Cost" typeName="double" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Unique indices on shared columns are supported.";
+
+            ECClassId sub1ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Sub1");
+            ECClassId sub11ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Sub11");
+            ASSERT_TRUE(TestHelper::IndexExists(m_ecdb, IndexInfo("uix_sub1_aid", true, "ts_Base", "ps1", IndexInfo::WhereClause({sub1ClassId, sub11ClassId}))));
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("indexonsharedcolumns3.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" modifier="None">
+                        <ECProperty propertyName="Code" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                         <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+                              <Class class="Parent"/>
+                         </Source>
+                         <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="Child"/>
+                         </Target>
+                     </ECRelationshipClass>   
+                </ECSchema>)xml"))) << "Logical FK";
+
+            std::vector<Utf8String> indexes = TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts_Child");
+            ASSERT_EQ(1, indexes.size()) << "Only expected index on ts_Child is the one on ECClassId";
+            ASSERT_STRCASEEQ("ix_ts_Child_ecclassid", indexes[0].c_str()) << "Only expected index on ts_Child is the one on ECClassId";
+            }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Majd.Uddin                         03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DbMappingTestFixture, PartialIndex)
+TEST_F(DbMappingTestFixture, IndexWithWhereIsNotNull)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
             "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
