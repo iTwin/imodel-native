@@ -235,7 +235,7 @@ BentleyStatus TileLoader::DoSaveToDb()
     stmt->BindBlob(2, m_tileBytes.GetData(), (int) m_tileBytes.GetSize(), Statement::MakeCopy::No);
     stmt->BindInt64(3, (int64_t) m_tileBytes.GetSize());
     stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
-    stmt->BindInt64(6, m_expirationDate);
+    stmt->BindInt64(5, m_expirationDate);
 
     rc = stmt->Step();
     if (BE_SQLITE_DONE != rc)
