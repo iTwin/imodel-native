@@ -115,19 +115,12 @@ void BuildingDomainBaseFixture::SetUp_CreateNewDgnDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildingDomainBaseFixture::SetUp()
     {
-    BeFileName tmpDir;
-    BeTest::GetHost().GetTempDir(tmpDir);
+    //BeFileName tmpDir;
+    //BeTest::GetHost().GetTempDir(tmpDir);
 
-    m_seedDgnDbFileName = tmpDir;
-    m_seedDgnDbFileName.AppendToPath(L"testSeed.bim");
+    //m_seedDgnDbFileName = tmpDir;
+    //m_seedDgnDbFileName.AppendToPath(L"testSeed.bim");
 
-    /*static bool s_isSeedCreated;
-    if (!s_isSeedCreated)
-        {
-        BeFileName::CreateNewDirectory(tmpDir.c_str());
-        SetUp_CreateNewDgnDb();
-        s_isSeedCreated = true;
-        }*/
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -143,7 +136,7 @@ void BuildingDomainBaseFixture::TearDown()
 void BuildingDomainBaseFixture::SetUpTestCase()
     {
     DgnViewLib::Initialize(m_host, true); // this initializes the DgnDb libraries
-    BeFileName::EmptyDirectory(GetOutputDir().c_str());
+ //   BeFileName::EmptyDirectory(GetOutputDir().c_str());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -152,57 +145,57 @@ void BuildingDomainBaseFixture::SetUpTestCase()
 //-----------------------------------------------------------------------------------------
 void BuildingDomainBaseFixture::TearDownTestCase()
     {
-    BeFileName::EmptyDirectory(GetOutputDir().c_str());
+//    BeFileName::EmptyDirectory(GetOutputDir().c_str());
     m_host.Terminate(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName BuildingDomainBaseFixture::GetOutputDir()
-    {
-    BentleyApi::BeFileName filepath;
-    BentleyApi::BeTest::GetHost().GetOutputRoot(filepath);
-    return filepath;
-    }
+//BeFileName BuildingDomainBaseFixture::GetOutputDir()
+//    {
+//    BentleyApi::BeFileName filepath;
+//    BentleyApi::BeTest::GetHost().GetOutputRoot(filepath);
+//    return filepath;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName BuildingDomainBaseFixture::GetOutputFileName(WCharCP filename)
-    {
-    BentleyApi::BeFileName filepath = GetOutputDir();
-    filepath.AppendToPath(filename);
-    return filepath;
-    }
+//BeFileName BuildingDomainBaseFixture::GetOutputFileName(WCharCP filename)
+//    {
+//    BentleyApi::BeFileName filepath = GetOutputDir();
+//    filepath.AppendToPath(filename);
+//    return filepath;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BuildingDomainBaseFixture::GetWriteableCopyOfTestData(BeFileNameR cpPath, WCharCP testFileName)
-    {
-    BeFileName srcFileName;
-    BentleyApi::BeTest::GetHost().GetDocumentsRoot(srcFileName);
-    srcFileName.AppendToPath(testFileName);
-
-    cpPath = GetOutputFileName(testFileName);
-
-    BeFileName dirName = cpPath.GetDirectoryName();
-    BeFileName::CreateNewDirectory(cpPath.GetDirectoryName().c_str());
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(srcFileName, cpPath));
-    }
+//void BuildingDomainBaseFixture::GetWriteableCopyOfTestData(BeFileNameR cpPath, WCharCP testFileName)
+//    {
+//    BeFileName srcFileName;
+//    BentleyApi::BeTest::GetHost().GetDocumentsRoot(srcFileName);
+//    srcFileName.AppendToPath(testFileName);
+//
+//    cpPath = GetOutputFileName(testFileName);
+//
+//    BeFileName dirName = cpPath.GetDirectoryName();
+//    BeFileName::CreateNewDirectory(cpPath.GetDirectoryName().c_str());
+//    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(srcFileName, cpPath));
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BuildingDomainBaseFixture::GetWriteableCopyOfSeed(BeFileNameR cpPath, WCharCP cpName)
-    {
-    BeFileName seedDbName = m_seedDgnDbFileName;
-    cpPath = BeFileName(seedDbName.GetDirectoryName());
-    cpPath.AppendToPath(cpName);
-    BeFileName::CreateNewDirectory(cpPath.GetDirectoryName().c_str());
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedDbName, cpPath));
-    }
+//void BuildingDomainBaseFixture::GetWriteableCopyOfSeed(BeFileNameR cpPath, WCharCP cpName)
+//    {
+//    BeFileName seedDbName = m_seedDgnDbFileName;
+//    cpPath = BeFileName(seedDbName.GetDirectoryName());
+//    cpPath.AppendToPath(cpName);
+//    BeFileName::CreateNewDirectory(cpPath.GetDirectoryName().c_str());
+//    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedDbName, cpPath));
+//    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,13 +224,19 @@ DgnDbPtr BuildingDomainTestFixture::CreateDgnDb()
 	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
 	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
 
+	BeFileName tmpDir;
+	BeTest::GetHost().GetTempDir(tmpDir);
+
+	tmpDir.CreateNewDirectory(tmpDir.c_str());
+
+	m_workingBimFile = tmpDir;
+	m_workingBimFile.AppendToPath(L"BuildingDomain.bim");
+
 	//This should create a DGN db with building domain.
 
-	BeFileName bimFileName;
-	bimFileName.assign(L"BuildingDomain.bim");
 	CreateDgnDbParams createProjectParams;
 	createProjectParams.SetRootSubjectName("DomainTestFile");
-	Dgn::DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, bimFileName, createProjectParams);
+	Dgn::DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, m_workingBimFile, createProjectParams);
 
 	return db;
 	}
@@ -253,6 +252,11 @@ DgnDbPtr BuildingDomainTestFixture::OpenDgnDb()
 	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
 	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
 
+	BeFileName tmpDir;
+	BeTest::GetHost().GetTempDir(tmpDir);
+
+	m_workingBimFile = tmpDir;
+	m_workingBimFile.AppendToPath(L"BuildingDomain.bim");
 
 	// Initialize parameters needed to create a DgnDb
 	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, Dgn::SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly);
@@ -260,10 +264,8 @@ DgnDbPtr BuildingDomainTestFixture::OpenDgnDb()
 	// Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
 	BeSQLite::DbResult openStatus;
 
-	BeFileName bimFileName;
-	bimFileName.assign(L"BuildingDomain.bim");
 
-	Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&openStatus, bimFileName, openParams);
+	Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&openStatus, m_workingBimFile, openParams);
 
 	return db;
 	}
@@ -271,19 +273,19 @@ DgnDbPtr BuildingDomainTestFixture::OpenDgnDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BuildingDomainTestFixture::GetWorkingDb(DgnDbPtr& db, BeFileNameR revitFile,  WCharCP rvtFileName)
-    {
-    GetWriteableCopyOfTestData(revitFile, rvtFileName);
-
-    WString testName(BeTest::GetNameOfCurrentTest(), BentleyCharEncoding::Utf8);
-    BeFileName outputFileName = GetOutputFileName(testName.c_str());
-
-    WChar args[] = {L"BuildingDomain"};
-//    BentleyStatus status = m_bridge._Initialize(1, (WCharCP*) &args);
-//    ASSERT_EQ(BentleyStatus::SUCCESS, status);
-
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetRootSubjectName("DomainTestFile");
-    db = DgnDb::CreateDgnDb(nullptr, outputFileName, createProjectParams);
-    ASSERT_EQ(true, db.IsValid());
-    }
+//void BuildingDomainTestFixture::GetWorkingDb(DgnDbPtr& db, BeFileNameR revitFile,  WCharCP rvtFileName)
+//    {
+//    GetWriteableCopyOfTestData(revitFile, rvtFileName);
+//
+//    WString testName(BeTest::GetNameOfCurrentTest(), BentleyCharEncoding::Utf8);
+//    BeFileName outputFileName = GetOutputFileName(testName.c_str());
+//
+//    WChar args[] = {L"BuildingDomain"};
+////    BentleyStatus status = m_bridge._Initialize(1, (WCharCP*) &args);
+////    ASSERT_EQ(BentleyStatus::SUCCESS, status);
+//
+//    CreateDgnDbParams createProjectParams;
+//    createProjectParams.SetRootSubjectName("DomainTestFile");
+//    db = DgnDb::CreateDgnDb(nullptr, outputFileName, createProjectParams);
+//    ASSERT_EQ(true, db.IsValid());
+//    }

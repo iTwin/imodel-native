@@ -15,17 +15,19 @@
 #define WINDOW_CODE_VALUE     "W-001"
 #define WALL_CODE_VALUE       "WA-001"
 #define WALL_LEAF_CODE_VALUE  "WL-001"
+#define DYNAMIC_CODE_VALUE    "DYN-001"
 
-#define DYNAMIC_CLASS_NAME    "MyRevitClass"
-#define DYNAMIC_PROPERTY_NAME "MyStringProp"
-#define DOUBLE_TEST_VALUE     900.00
-#define INT_TEST_VALUE        58
-#define STRING_TEST_VALUE     "This is a test string"
-#define MODEL_TEST_NAME       "SampleModel"
-#define MODEL_TEST_NAME1      "SampleModelAAA"
-#define MODEL_TEST_NAME2      "SampleModelBBB"
-#define MODEL_TEST_NAME3      "SampleModelCCC"
-#define DYNAMIC_SCHEMA_NAME   "SampleDynamic"
+#define DYNAMIC_CLASS_NAME           "MyRevitClass"
+#define DYNAMIC_ASPECT_CLASS_NAME    "MyRevitAspectClass"
+#define DYNAMIC_PROPERTY_NAME        "MyStringProp"
+#define DOUBLE_TEST_VALUE            900.00
+#define INT_TEST_VALUE               58
+#define STRING_TEST_VALUE            "This is a test string"
+#define MODEL_TEST_NAME              "SampleModel"
+#define MODEL_TEST_NAME1             "SampleModelAAA"
+#define MODEL_TEST_NAME2             "SampleModelBBB"
+#define MODEL_TEST_NAME3             "SampleModelCCC"
+#define DYNAMIC_SCHEMA_NAME          "SampleDynamic"
 
 
 #define OVERALL_WIDTH         "OverallWidth"
@@ -566,5 +568,158 @@ TEST_F(BuildingDomainTestFixture, WallOwnsWallLeafsTests)
 
 	ASSERT_TRUE(children.Contains(queriedWallLeaf->GetElementId()));
 
+	}
+
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(BuildingDomainTestFixture, AddAspectClassesToDynamicSchema)
+	{
+	DgnDbPtr db = OpenDgnDb();
+
+	ASSERT_TRUE(db.IsValid());
+
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+
+	ASSERT_TRUE(buildingModel.IsValid());
+
+	ECN::ECSchemaPtr schema = BuildingDomain::BuildingDomainUtilities::GetUpdateableSchema(buildingModel);
+
+	ASSERT_TRUE(schema.IsValid());
+
+	ECN::ECEntityClassP newClass = BuildingDomain::BuildingDomainUtilities::CreateUniqueAspetClass(db, schema, DYNAMIC_ASPECT_CLASS_NAME);
+
+	ASSERT_TRUE(nullptr != newClass);
+
+	ECN::PrimitiveECPropertyP myProp;
+
+	newClass->CreatePrimitiveProperty(myProp, DYNAMIC_PROPERTY_NAME);
+
+	ASSERT_TRUE(Dgn::SchemaStatus::Success == BuildingDomain::BuildingDomainUtilities::UpdateSchemaInDb(*db, *schema));
+
+	ECN::ECSchemaCP updatedSchema = BuildingDomain::BuildingDomainUtilities::GetBuildingDynamicSchema(buildingModel);
+
+	ASSERT_TRUE(nullptr != updatedSchema);
+
+	ECN::ECClassCP foundClass = updatedSchema->GetClassCP(DYNAMIC_ASPECT_CLASS_NAME);
+
+	ASSERT_TRUE(nullptr != foundClass);
+
+	ASSERT_TRUE(foundClass->GetName() == DYNAMIC_ASPECT_CLASS_NAME);
+
+	ECN::ECPropertyP prop = foundClass->GetPropertyP(DYNAMIC_PROPERTY_NAME);
+
+	ASSERT_TRUE(nullptr != prop);
+
+	ASSERT_TRUE(prop->GetName() == DYNAMIC_PROPERTY_NAME);
+
+	ASSERT_TRUE(prop->GetTypeName() == "string");
 
 	}
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(BuildingDomainTestFixture, DynamicClassInstancing)
+	{
+	DgnDbPtr db = OpenDgnDb();
+
+	ASSERT_TRUE(db.IsValid());
+
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+
+	ASSERT_TRUE(buildingModel.IsValid());
+
+	Utf8String schemaName = BuildingDomain::BuildingDomainUtilities::GetSchemaNameFromModel(buildingModel);
+
+	Dgn::PhysicalElementPtr element = BuildingDomain::BuildingDomainUtilities::CreatePhysicalElement(schemaName, DYNAMIC_CLASS_NAME, *buildingModel);
+
+	ASSERT_TRUE(element.IsValid());
+
+	Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_ARCHITECTURAL_PHYSICAL_AUTHORITY, *buildingModel, DYNAMIC_CODE_VALUE);
+
+	ASSERT_TRUE(Dgn::DgnDbStatus::Success == element->SetCode(code));
+
+	ASSERT_TRUE(Dgn::DgnDbStatus::Success == element->SetPropertyValue(DYNAMIC_PROPERTY_NAME, STRING_TEST_VALUE));
+
+	Dgn::DgnDbStatus status;
+
+	Dgn::DgnElementCPtr testElement = element->Insert(&status);
+
+	ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+	Dgn::PhysicalElementPtr queriedElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::PhysicalElement>(*buildingModel,testElement->GetElementId());
+
+	ASSERT_TRUE(queriedElement.IsValid());
+
+	ECN::ECValue propVal;
+	double testValue;
+
+	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_PROPERTY_NAME));
+	Utf8String testString = propVal.GetUtf8CP();
+	ASSERT_TRUE(testString == STRING_TEST_VALUE);
+
+	}
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(BuildingDomainTestFixture, AddingAspectsTests)
+	{
+	DgnDbPtr db = OpenDgnDb();
+
+	ASSERT_TRUE(db.IsValid());
+
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+
+	ASSERT_TRUE(buildingModel.IsValid());
+
+	Dgn::PhysicalElementPtr dynamicInstance = BuildingDomain::BuildingDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*buildingModel, DYNAMIC_CODE_VALUE);
+
+	ASSERT_TRUE(dynamicInstance.IsValid());
+
+	Utf8String schemaName = BuildingDomain::BuildingDomainUtilities::GetSchemaNameFromModel(buildingModel);
+
+	ECN::IECInstancePtr aspect = BuildingDomain::BuildingDomainUtilities::AddAspect(*buildingModel, dynamicInstance, schemaName.c_str(), DYNAMIC_ASPECT_CLASS_NAME);
+
+	ASSERT_TRUE(aspect.IsValid());
+
+	ECN::ECValue stringValue;
+
+	stringValue.SetUtf8CP(STRING_TEST_VALUE);
+	ASSERT_TRUE(ECN::ECObjectsStatus::Success == aspect->SetValue(DYNAMIC_PROPERTY_NAME, stringValue));
+
+	Dgn::DgnElementCPtr element = dynamicInstance->Update();
+
+	ASSERT_TRUE(element.IsValid());
+
+	// Read back the data to make sure it was persisted correctly. 
+
+	Dgn::PhysicalElementPtr queriedInstance = BuildingDomain::BuildingDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*buildingModel, DYNAMIC_CODE_VALUE);
+
+	ASSERT_TRUE(queriedInstance.IsValid());
+
+	ECN::ECClassCP aspectClassP = buildingModel->GetDgnDb().GetClassLocater().LocateClass(schemaName.c_str(), DYNAMIC_ASPECT_CLASS_NAME);
+
+	ASSERT_TRUE(nullptr != aspectClassP);
+
+	ECN::IECInstanceCP asp = Dgn::DgnElement::GenericUniqueAspect::GetAspect(*queriedInstance, *aspectClassP);
+
+	ASSERT_TRUE(nullptr != asp);
+
+	ECN::ECValue value;
+
+	ASSERT_TRUE ( ECN::ECObjectsStatus::Success == asp->GetValue(value, DYNAMIC_PROPERTY_NAME) );
+
+	Utf8String testString = value.GetUtf8CP();
+
+	ASSERT_TRUE(testString == STRING_TEST_VALUE);
+
+
+	}
+
+

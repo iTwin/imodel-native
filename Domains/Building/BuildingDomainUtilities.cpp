@@ -211,21 +211,7 @@ namespace BuildingDomain
 		if (ECN::ECObjectsStatus::Success != dynSchema->AddReferencedSchema((ECN::ECSchemaR)(*bisSchema)))
 			return nullptr;
 
-		bvector<ECN::ECSchemaCP> schemas;
-
-		ECN::ECSchemaCP a = &(*dynSchema);
-
-		schemas.push_back(a);
-
-		if (Dgn::SchemaStatus::Success != db.ImportSchemas(schemas))
-			return nullptr;
-
-		db.SaveChanges();
-
-		UpdateSchemaNameInModel(schemaName, model);
-
-		return db.Schemas().GetSchema(schemaName.c_str());
-
+		return InsertSuppliedSchema(dynSchema, model);
 		}
 
 	//---------------------------------------------------------------------------------------
@@ -368,18 +354,28 @@ namespace BuildingDomain
 		return db.ImportSchemas(schemas);
 		}
 
+
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	ECN::ECEntityClassP   BuildingDomainUtilities::CreatePhysicalElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className)
+	ECN::ECClassCP   BuildingDomainUtilities::GetExistingECClass(Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR  className)
 		{
-		ECN::ECSchemaCP bisSchema = db->Schemas().GetSchema(BIS_ECSCHEMA_NAME);
+		ECN::ECSchemaCP schema = db->Schemas().GetSchema(schemaName.c_str());
 
-		if (nullptr == bisSchema)
+		if (nullptr == schema)
 			return nullptr;
 
-		ECN::ECClassCP baseClass = bisSchema->GetClassCP(BIS_CLASS_PhysicalElement);
+		return schema->GetClassCP(className.c_str());
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	ECN::ECEntityClassP   BuildingDomainUtilities::CreatePhysicalTypeEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className)
+		{
+		ECN::ECClassCP baseClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalType);
 
 		if (nullptr == baseClass)
 			return nullptr;
@@ -398,6 +394,93 @@ namespace BuildingDomain
 		return newClass;
 
 		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	ECN::ECEntityClassP   BuildingDomainUtilities::CreatePhysicalElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className)
+		{
+		ECN::ECClassCP baseClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
+
+		if (nullptr == baseClass)
+			return nullptr;
+
+		ECN::ECEntityClassP newClass;
+
+		if (ECN::ECObjectsStatus::Success != schema->CreateEntityClass(newClass, className))
+			return nullptr;
+
+		if (ECN::ECObjectsStatus::Success != newClass->AddBaseClass(*baseClass))
+			{
+			schema->DeleteClass(*newClass);
+			return nullptr;
+			}
+
+		return newClass;
+
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	ECN::ECEntityClassP   BuildingDomainUtilities::CreateUniqueAspetClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className)
+		{
+		ECN::ECClassCP baseClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect);
+
+		if (nullptr == baseClass)
+			return nullptr;
+
+		ECN::ECEntityClassP newClass;
+
+		if (ECN::ECObjectsStatus::Success != schema->CreateEntityClass(newClass, className))
+			return nullptr;
+
+		if (ECN::ECObjectsStatus::Success != newClass->AddBaseClass(*baseClass))
+			{
+			schema->DeleteClass(*newClass);
+			return nullptr;
+			}
+
+		// Allow with the class there is now a rule that there must be a relationship with this class as a constraint. A automatic
+		// relationship is created with the name PhysicalElementOwnsUniqueAspectXXXX where XXXX is the name of the Aspect class.
+
+		ECN::ECClassCP physicalElementClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
+
+		Utf8String relationshipName;
+
+		relationshipName.Sprintf("PhysicalElementOwnsUniqueAspect%s", className.c_str());
+
+		ECN::ECRelationshipClassP newRelationshipClass;
+
+		if (ECN::ECObjectsStatus::Success != schema->CreateRelationshipClass( newRelationshipClass, relationshipName, *(physicalElementClass->GetEntityClassCP()), "Physical Element", *newClass, "Unique Aspect"))
+			{
+			schema->DeleteClass(*newClass);
+			return nullptr;
+			}
+
+		newRelationshipClass->SetStrength(ECN::StrengthType::Embedding);
+		newRelationshipClass->SetStrengthDirection(ECN::ECRelatedInstanceDirection::Forward);
+		newRelationshipClass->SetClassModifier(ECN::ECClassModifier::None);
+		newRelationshipClass->GetSource().SetIsPolymorphic(true);
+		newRelationshipClass->GetTarget().SetIsPolymorphic(false);
+		newRelationshipClass->GetSource().SetMultiplicity (ECN::RelationshipMultiplicity::OneOne());
+		newRelationshipClass->GetTarget().SetMultiplicity (ECN::RelationshipMultiplicity::ZeroOne());
+
+		ECN::ECClassCP baseRelationshipClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect); 
+
+		if (ECN::ECObjectsStatus::Success != newRelationshipClass->AddBaseClass(*baseRelationshipClass))
+			{
+			schema->DeleteClass(*newClass);
+			schema->DeleteClass(*newRelationshipClass);
+			return nullptr;
+			}
+
+		return newClass;
+
+		}
+
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
@@ -440,6 +523,95 @@ namespace BuildingDomain
 		return buildingElement;
 
 		}
+
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	Dgn::PhysicalTypePtr  BuildingDomainUtilities::CreatePhysicalTypeElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::DefinitionModelCR model)
+		{
+
+		Dgn::DgnDbR db = model.GetDgnDb();
+		Dgn::DgnModelId modelId = model.GetModelId();
+
+		// Find the class
+
+		ECN::ECClassCP buildingClass = db.GetClassLocater().LocateClass(schemaName.c_str(), className.c_str());
+
+		if (nullptr == buildingClass)
+			return nullptr;
+
+		ECN::ECClassId classId = buildingClass->GetId();
+
+		Dgn::ElementHandlerP elmHandler = Dgn::dgn_ElementHandler::Element::FindHandler(db, classId);
+		if (NULL == elmHandler)
+			return nullptr;
+
+		Dgn::PhysicalType::CreateParams(db, model.GetModelId(), classId);
+
+		Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, className.c_str());
+
+		Dgn::GeometricElement3d::CreateParams params(db, modelId, classId, categoryId);
+
+		Dgn::DgnElementPtr element = elmHandler->Create(params);
+
+		Dgn::PhysicalTypePtr buildingElement = dynamic_pointer_cast<Dgn::PhysicalType>(element);
+
+		//auto geomSource = buildingElement->ToGeometrySourceP();
+
+		//if (nullptr == geomSource)
+		//	return nullptr;
+
+	//	geomSource->SetCategoryId(categoryId);
+
+		return buildingElement;
+
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	ECN::IECInstancePtr   BuildingDomainUtilities::AddAspect(Dgn::PhysicalModelCR model, Dgn::PhysicalElementPtr element, Utf8StringCR schemaName, Utf8StringCR className)
+		{
+
+		// Find the class
+
+		ECN::ECClassCP aspectClassP = model.GetDgnDb().GetClassLocater().LocateClass(schemaName.c_str(), className.c_str());
+
+		if (nullptr == aspectClassP)
+			return nullptr;
+
+		// If the element is already persisted and has the Aspect class, you can't add another
+
+		if (element->GetElementId().IsValid())
+			{
+			ECN::IECInstanceCP instance = Dgn::DgnElement::GenericUniqueAspect::GetAspect (*element, *aspectClassP);
+
+			if (nullptr != instance)
+				return nullptr;
+			}
+
+		ECN::StandaloneECEnablerPtr enabler = aspectClassP->GetDefaultStandaloneEnabler();
+
+		if (!enabler.IsValid())
+			return nullptr;
+
+		ECN::IECInstancePtr instance = enabler->CreateInstance().get();
+		if (!instance.IsValid())
+			return nullptr;
+
+		Dgn::DgnDbStatus status = Dgn::DgnElement::GenericUniqueAspect::SetAspect (*element, *instance);
+
+		if (Dgn::DgnDbStatus::Success != status)
+			return nullptr;
+
+		return instance;
+
+
+		}
+
 
 
     }

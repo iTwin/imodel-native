@@ -49,7 +49,17 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaPtr                                 GetUpdateableSchema               (BuildingPhysical::BuildingPhysicalModelCPtr model);
 		BUILDING_DOMAIN_EXPORT static Dgn::SchemaStatus                                UpdateSchemaInDb                  (Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema);
 		BUILDING_DOMAIN_EXPORT static ECN::ECEntityClassP                              CreatePhysicalElementEntityClass  (Dgn::DgnDbPtr db, ECN::ECSchemaPtr, Utf8StringCR     className);
+		BUILDING_DOMAIN_EXPORT static ECN::ECEntityClassP                              CreatePhysicalTypeEntityClass     (Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className);
+		BUILDING_DOMAIN_EXPORT static ECN::ECEntityClassP                              CreateUniqueAspetClass            (Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className);
+		BUILDING_DOMAIN_EXPORT static ECN::IECInstancePtr                              AddAspect                         (Dgn::PhysicalModelCR model, Dgn::PhysicalElementPtr element, Utf8StringCR schemaName, Utf8StringCR className);
+
+
+		BUILDING_DOMAIN_EXPORT static ECN::ECClassCP                                   GetExistingECClass                (Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR  className);
+
+
 		BUILDING_DOMAIN_EXPORT static Dgn::PhysicalElementPtr                          CreatePhysicalElement             (Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model);
+		BUILDING_DOMAIN_EXPORT static Dgn::PhysicalTypePtr                             CreatePhysicalTypeElement         (Utf8StringCR schemaName, Utf8StringCR className, Dgn::DefinitionModelCR model);
+
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaCP                                  InsertSuppliedSchema              (ECN::ECSchemaPtr suppliedDynamicSchema, BuildingPhysical::BuildingPhysicalModelPtr model);
 
 		                       static Dgn::DgnCode                                     CreateCode(Dgn::PhysicalModelCR model, Utf8StringCR codeValue) { return Dgn::CodeSpec::CreateCode(BENTLEY_ARCHITECTURAL_PHYSICAL_AUTHORITY, model, codeValue); }

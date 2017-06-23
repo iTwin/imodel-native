@@ -40,8 +40,11 @@ class BuildingDomainBaseFixture : public testing::Test
     private:
         static BuildingDomainTestsHost m_host;
 
-        BeFileName m_seedDgnDbFileName;
-    public:
+	protected:
+
+        BeFileName m_workingBimFile;
+
+	public:
 
         /// <summary>
         /// Sets up create new DGN database. This function deletes the old seed and recreates them
@@ -71,28 +74,28 @@ class BuildingDomainBaseFixture : public testing::Test
         /// Gets the output dir from the output directory defined in BeTest host.
         /// </summary>
         /// <returns></returns>
-        static BeFileName GetOutputDir();
+    //    static BeFileName GetOutputDir();
 
         /// <summary>
         /// Gets the name of the output file.
         /// </summary>
         /// <param name="filename">The filename.</param>
         /// <returns></returns>
-        BeFileName GetOutputFileName(WCharCP filename);
+     //   BeFileName GetOutputFileName(WCharCP filename);
 
         /// <summary>
         /// Copies the test data from prouct output to the temp working directory.
         /// </summary>
         /// <param name="cpPath">copied file.</param>
         /// <param name="cpName">Name of the file to copy.</param>
-        void GetWriteableCopyOfTestData(BeFileNameR cpPath, WCharCP name);
+       // void GetWriteableCopyOfTestData(BeFileNameR cpPath, WCharCP name);
 
         /// <summary>
         /// Copies an empty dgndb file to the temp working directory.
         /// </summary>
         /// <param name="cpPath">copied file.</param>
         /// <param name="cpName">Name of the file to copy.</param>
-        void GetWriteableCopyOfSeed(BeFileNameR cpPath, WCharCP cpName);
+       // void GetWriteableCopyOfSeed(BeFileNameR cpPath, WCharCP cpName);
 
 
 
@@ -124,7 +127,7 @@ class BuildingDomainTestFixture : public BuildingDomainBaseFixture
     virtual void TearDown();
 
 
-    void    GetWorkingDb(DgnDbPtr& db, BeFileNameR revitFile, WCharCP rvtFileName);
+  //  void    GetWorkingDb(DgnDbPtr& db, BeFileNameR revitFile, WCharCP rvtFileName);
 
 	DgnDbPtr CreateDgnDb();
 	DgnDbPtr OpenDgnDb();
