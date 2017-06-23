@@ -62,11 +62,8 @@ void TestsHost::SetupTestEnvironment()
 
 static BeFileName getSqlangFile ()
     {
-    BeFileName frameworkSqlangFile;
-    BeTest::GetHost ().GetFrameworkSqlangFiles (frameworkSqlangFile);
-
-    BeFileName wsClientSqlangFile = frameworkSqlangFile.GetDirectoryName ();
-    wsClientSqlangFile.AppendToPath (L"WSClient_test.sqlang.db3");
+    BeFileName wsClientSqlangFile = s_pathProvider->GetAssetsRootDirectory ();
+    wsClientSqlangFile.AppendToPath (L"sqlang\\platform\\WSClient_test.sqlang.db3");
 
     return wsClientSqlangFile;
     }
