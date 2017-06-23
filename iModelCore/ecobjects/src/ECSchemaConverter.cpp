@@ -118,6 +118,7 @@ static Utf8CP const MIXED_UNIT_SYSTEM               = "Mixed_UnitSystem";
 static Utf8CP const SI_UNIT_SYSTEM                  = "SI_UnitSystem";
 static Utf8CP const US_UNIT_SYSTEM                  = "US_UnitSystem";
 static Utf8CP const PROPERTY_PRIORITY               = "PropertyPriority";
+static Utf8CP const CATEGORY                        = "Category";
 
 
 struct UnitSpecification
@@ -178,6 +179,9 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
 
         IECCustomAttributeConverterPtr priorityConv = new PropertyPriorityConverter();
         ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, PROPERTY_PRIORITY, priorityConv);
+
+        IECCustomAttributeConverterPtr categoryConv = new CategoryConverter();
+        ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, CATEGORY, categoryConv);
 
         IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
         ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
@@ -295,7 +299,7 @@ static Utf8CP s_oldStandardSchemaNames[] =
 bool IsCustomAttributeFromOldStandardSchemas(IECInstanceR customAttribute)
     {
     // Skip these for now... Once the conversions are added remove this check
-    bvector<Utf8CP> oldCAs = { "HideProperty", "Category", "DisplayOptions" };
+    bvector<Utf8CP> oldCAs = { "HideProperty", "DisplayOptions" };
     for (auto oldCA : oldCAs)
         if (0 == customAttribute.GetClass().GetName().CompareTo(oldCA))
             return false;
@@ -1272,6 +1276,71 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
 
     // Attempt to remove the old referenced schema. If it fails that means it is still in use, so don't fail conversion.
     schema.RemoveUnusedSchemaReferences();
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
+    if (prop == nullptr)
+        {
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.warningv("Found Category custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+        container.RemoveCustomAttribute(BECA_SCHEMANAME, CATEGORY);
+        container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, CATEGORY);
+        return ECObjectsStatus::Success;
+        }
+
+    ECValue existingName;
+    ECObjectsStatus status = instance.GetValue(existingName, "Name");
+    if (ECObjectsStatus::Success != status || existingName.IsNull())
+        {
+        LOG.warningv("Found a Category custom attribute on an the ECProperty, '%s.%s', but it did not contain a Name value. Dropping custom attribute....",
+            prop->GetClass().GetFullName(), prop->GetName().c_str());
+        
+        // TODO: Support standard categories
+        return ECObjectsStatus::Success;
+        }
+
+    Utf8String newName = existingName.GetUtf8CP();
+    PropertyCategoryP newPropCategory = schema.GetPropertyCategoryP(newName.c_str());
+    if (nullptr != newPropCategory)
+        {
+        ECValue value;
+        if (ECObjectsStatus::Success == instance.GetValue(value, "DisplayLabel") && !value.IsNull() && value.IsString() &&
+            !newPropCategory->GetDisplayLabel().Equals(value.GetUtf8CP()))
+            LOG.warningv("Found a Category custom attribute on '%s.%s' with a name that matches an existing category '%s' but the attributes of the existing category and the custom attribute done match, using the existing category anyway.",
+                         prop->GetClass().GetFullName(), prop->GetName().c_str(), newName.c_str());
+        // TODO: Do we need to handle this better?
+        }
+    else
+        {
+        if (ECObjectsStatus::Success != (status = schema.CreatePropertyCategory(newPropCategory, newName.c_str())))
+            {
+            LOG.errorv("Failed to create PropertyCategory, %s, from the category defined on property %s.%s because it conflicts with an existing type name within the schema '%s'.",
+                       newName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
+            return status;
+            }
+
+        ECValue value;
+        if (ECObjectsStatus::Success == instance.GetValue(value, "DisplayLabel") && !value.IsNull() && value.IsString())
+            status = newPropCategory->SetDisplayLabel(value.GetUtf8CP());
+        if (ECObjectsStatus::Success == instance.GetValue(value, "Description") && !value.IsNull() && value.IsString())
+            status = newPropCategory->SetDescription(value.GetUtf8CP());
+        if (ECObjectsStatus::Success == instance.GetValue(value, "Priority") && !value.IsNull() && value.IsInteger())
+            status = newPropCategory->SetPriority((uint32_t)value.GetInteger());
+        }
+
+    status = prop->SetCategory(newPropCategory);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    container.RemoveCustomAttribute(BECA_SCHEMANAME, CATEGORY);
+    container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, CATEGORY);
 
     return status;
     }

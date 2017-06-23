@@ -2189,6 +2189,144 @@ TEST_F(StandardCustomAttributeConversionTests, DropAllOldCustomAttributesWithout
     EXPECT_FALSE(relClassAfterConv->IsDefinedLocal(*caClass));
     }
 
+void propertyCategoryHasSameValuesAsCategoryCA (IECInstanceCP categoryCA, PropertyCategoryCP propertyCategory)
+    {
+    ECValue value;
+    categoryCA->GetValue(value, "Name");
+    EXPECT_STREQ(value.GetUtf8CP(), propertyCategory->GetName().c_str()) << "Category 'Name' doesn't match converted PropertyCategory.Name";
+    categoryCA->GetValue(value, "DisplayLabel");
+    EXPECT_STREQ(value.GetUtf8CP(), propertyCategory->GetDisplayLabel().c_str()) << "Category 'DisplayLabel' doesn't match converted PropertyCategory.DisplayLabel";
+    categoryCA->GetValue(value, "Description");
+    EXPECT_STREQ(value.GetUtf8CP(), propertyCategory->GetDescription().c_str()) << "Category 'Description' doesn't match converted PropertyCategory.Description";
+    categoryCA->GetValue(value, "Priority");
+    EXPECT_EQ(value.GetInteger(), propertyCategory->GetPriority()) << "Category 'Priority' doesn't match converted PropertyCategory.Priority";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_NoConflicts)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana</Name>
+                                <DisplayLabel>Banana Info</DisplayLabel>
+                                <Description>Banana Properties</Description>
+                                <Priority>1</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Apple</Name>
+                                <DisplayLabel>Apple Info</DisplayLabel>
+                                <Description>Apple Properties</Description>
+                                <Priority>42</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP aClass = schema->GetClassCP("A");
+    ASSERT_TRUE(nullptr != aClass);
+    ECPropertyCP a1Prop = aClass->GetPropertyP("A1");
+    ASSERT_TRUE(nullptr != a1Prop);
+    IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    ECPropertyCP a2Prop = aClass->GetPropertyP("A2");
+    ASSERT_TRUE(nullptr != a2Prop);
+    IECInstancePtr appleCatCA = a2Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP aConvClass = schema->GetClassCP("A");
+    EXPECT_TRUE(nullptr != aConvClass);
+
+    EXPECT_EQ(2, schema->GetPropertyCategoryCount());
+
+    PropertyCategoryCP bCat = schema->GetPropertyCategoryCP("Banana");
+    ASSERT_NE(nullptr, bCat);
+    PropertyCategoryCP aCat = schema->GetPropertyCategoryCP("Apple");
+    ASSERT_NE(nullptr, aCat);
+
+    propertyCategoryHasSameValuesAsCategoryCA(bananaCatCA.get(), bCat);
+    propertyCategoryHasSameValuesAsCategoryCA(appleCatCA.get(), aCat);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_Conflicts)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana</Name>
+                                <DisplayLabel>Banana Info</DisplayLabel>
+                                <Description>Banana Properties</Description>
+                                <Priority>1</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana</Name>
+                                <DisplayLabel>Apple Info</DisplayLabel>
+                                <Description>Apple Properties</Description>
+                                <Priority>42</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP aClass = schema->GetClassCP("A");
+    ASSERT_TRUE(nullptr != aClass);
+    ECPropertyCP a1Prop = aClass->GetPropertyP("A1");
+    ASSERT_TRUE(nullptr != a1Prop);
+    IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    ECPropertyCP a2Prop = aClass->GetPropertyP("A2");
+    ASSERT_TRUE(nullptr != a2Prop);
+    IECInstancePtr appleCatCA = a2Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP aConvClass = schema->GetClassCP("A");
+    EXPECT_TRUE(nullptr != aConvClass);
+
+    EXPECT_EQ(1, schema->GetPropertyCategoryCount()) << "Expected categories to be merged because their names were the same";
+
+    PropertyCategoryCP bCat = schema->GetPropertyCategoryCP("Banana");
+    ASSERT_NE(nullptr, bCat);
+
+    propertyCategoryHasSameValuesAsCategoryCA(bananaCatCA.get(), bCat);
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                 06/2017
 //+---------------+---------------+---------------+---------------+---------------+------

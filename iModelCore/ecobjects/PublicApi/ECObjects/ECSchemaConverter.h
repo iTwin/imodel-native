@@ -215,6 +215,15 @@ struct PropertyPriorityConverter : IECCustomAttributeConverter
     ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
     };
 
+//---------------------------------------------------------------------------------------
+// Removes ECA:Category custom attributes from the schema
+// @bsiclass                                   Caleb.Shafer                 06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct CategoryConverter : IECCustomAttributeConverter
+    {
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    };
+
 //+===============+===============+===============+===============+===============+======
 //@bsiclass
 //+===============+===============+===============+===============+===============+======
