@@ -318,8 +318,8 @@ public:
     bool IsIndexCorrect(size_t indx) const { return indx < m_proxys.size(); }
     void Clear() { for (int i = 0; IsIndexCorrect(i); m_proxys[i++].Clear()); m_unitReg = &BEU::UnitRegistry::Instance(); }
     BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
-    Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return (indx < m_proxys.size()) ? m_proxys[indx].GetName() : subst; }
-    Utf8CP GetUnitLabel(size_t indx) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : nullptr; }
+    Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return  IsIndexCorrect(indx) ? m_proxys[indx].GetName() : subst; }
+    Utf8CP GetUnitLabel(size_t indx, Utf8CP subst = nullptr) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : subst; }
     Utf8CP SetUnitLabel(size_t indx, Utf8CP unitLabel) { return IsIndexCorrect(indx) ? m_proxys[indx].SetLabel(unitLabel) : nullptr; }
     bool SetUnit(size_t indx, BEU::UnitCP unitP) { return IsIndexCorrect(indx) ?  m_proxys[indx].SetUnit(unitP) : false; }
     bool SetUnitName(size_t indx, Utf8CP unitName) { return IsIndexCorrect(indx) ? m_proxys[indx].SetName(unitName) : false; }
@@ -353,7 +353,7 @@ protected:
     size_t m_ratio[indxSub];
     //BEU::UnitCP m_units[indxLimit];
     UnitProxySet m_unitProx = UnitProxySet(indxLimit);
-    Utf8CP m_unitLabel[indxLimit];
+    //Utf8CP m_unitLabel[indxLimit];
     FormatProblemDetail m_problem;
     CompositeSpecType m_type;
     bool m_includeZero;
@@ -368,7 +368,10 @@ protected:
     void SetUnitRatios();
     bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit=nullptr, Utf8CP MinorUnit = nullptr, Utf8CP SubUnit = nullptr);
     Utf8CP GetUnitName(size_t indx, Utf8CP substitute) const { return m_unitProx.GetUnitName(indx, substitute); }
-    Utf8String GetEffectiveLabel(size_t indx, Utf8CP substitute) const { return Utils::IsNameNullOrEmpty(m_unitLabel[indx]) ? GetUnitName(indx, substitute) : m_unitLabel[indx]; }
+    Utf8String GetEffectiveLabel(size_t indx, Utf8CP substitute) const 
+        { 
+        return  m_unitProx.GetUnitLabel(indx, m_unitProx.GetUnitName(indx));
+        }
     //size_t GetRightmostRatioIndex();
     BEU::UnitCP GetSmallestUnit() const;
 public:

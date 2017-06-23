@@ -113,7 +113,7 @@ void CompositeValueSpec::SetUnitRatios()
 void CompositeValueSpec::SetUnitLabel(int index, Utf8CP label)
     {
     if (indxMajor <= index && index < indxLimit)
-        m_unitLabel[index] = label;
+        m_unitProx.SetUnitLabel(index, label);   // m_unitLabel[index] = label;
     }
 
 //---------------------------------------------------------------------------------------
@@ -121,10 +121,10 @@ void CompositeValueSpec::SetUnitLabel(int index, Utf8CP label)
 //---------------------------------------------------------------------------------------
 void CompositeValueSpec::SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab, Utf8CP MinorLab, Utf8CP SubLab)
 {
-    m_unitLabel[indxMajor] = MajorLab;
-    m_unitLabel[indxMiddle] = MiddleLab;
-    m_unitLabel[indxMinor] = MinorLab;
-    m_unitLabel[indxSub] = SubLab;
+    m_unitProx.SetUnitLabel(indxMajor,MajorLab);
+    m_unitProx.SetUnitLabel(indxMiddle,MiddleLab);
+    m_unitProx.SetUnitLabel(indxMinor,MinorLab);
+    m_unitProx.SetUnitLabel(indxSub,SubLab);
 }
 
 
@@ -217,7 +217,7 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCP other)
     m_unitProx.Copy(other->m_unitProx);
     //memcpy(m_units, other->m_units, sizeof(m_units));
     memcpy(m_ratio, other->m_ratio, sizeof(m_ratio));
-    memcpy(m_unitLabel, other->m_unitLabel, sizeof(m_unitLabel));
+   // memcpy(m_unitLabel, other->m_unitLabel, sizeof(m_unitLabel));
     m_problem = other->m_problem;
     m_type = other->m_type;
     m_includeZero = other->m_includeZero;
@@ -233,7 +233,7 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     m_unitProx.Copy(other.m_unitProx);
     //memcpy(m_units, other.m_units, sizeof(m_units));
     memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
-    memcpy(m_unitLabel, other.m_unitLabel, sizeof(m_unitLabel));
+    //memcpy(m_unitLabel, other.m_unitLabel, sizeof(m_unitLabel));
     m_problem = other.m_problem;
     m_type = other.m_type;
     m_includeZero = other.m_includeZero;

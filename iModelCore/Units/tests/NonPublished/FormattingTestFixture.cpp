@@ -20,6 +20,7 @@
 
 using namespace BentleyApi::Formatting;
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
+//#define USE_TEST_FILE
 
 static void* testFile = nullptr;
 /*=================================================================================**//**
@@ -267,7 +268,7 @@ bool FormattingTestFixture::GetNextLine(Utf8P buf, int bufLen)
 
 bool FormattingTestFixture::GetNextInstruction(Utf8P buf, int bufLen, Utf8P com, int comLen)
     {
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) && defined (USE_TEST_FILE)
     if (nullptr != testFile)
         {
         FILE* in = (FILE*)testFile;
