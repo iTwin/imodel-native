@@ -35,7 +35,7 @@ DEFINE_REF_COUNTED_PTR(GeomPartBuilder);
 typedef bvector<TilePtr>    TileList;
 typedef bvector<TileP>      TilePList;
 
-//#define TILECACHE_DEBUG
+#define TILECACHE_DEBUG
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
@@ -53,9 +53,6 @@ private:
 
     folly::Future<BentleyStatus> _GetFromSource() override;
     BentleyStatus _LoadTile() override;
-
-    folly::Future<BentleyStatus> _ReadFromDb() override { return ERROR; }
-    folly::Future<BentleyStatus> _SaveToDb() override { return SUCCESS; }
 
     BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
     BentleyStatus DoGetFromSource();

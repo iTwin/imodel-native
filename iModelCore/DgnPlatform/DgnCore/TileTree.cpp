@@ -143,6 +143,7 @@ BentleyStatus TileLoader::DoReadFromDb()
 
     if (true)
         {
+        StopWatch   stopWatch(true);
         RealityData::Cache::AccessLock lock(*cache); // block writes to cache Db while we're reading
 
         enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4};
@@ -175,6 +176,7 @@ BentleyStatus TileLoader::DoReadFromDb()
                 BeAssert(false);
                 }
             }
+        THREADLOG.debugv ("DoReadFromDB: %f Seconds", stopWatch.GetCurrentSeconds());
         }
 
     // ###TODO: Why? if (m_loads != nullptr)
