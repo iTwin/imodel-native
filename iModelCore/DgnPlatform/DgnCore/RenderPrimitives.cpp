@@ -170,7 +170,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams, bool filled)
+DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams, bool filled) : m_type(type)
     {
     m_lineColor = gfParams.GetLineColor();
     m_fillColor = m_lineColor;
@@ -232,6 +232,32 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
             m_fillColor = m_lineColor;
             break;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part, DisplayParamsCR inst)
+    {
+    if (part.GetType() == inst.GetType())
+        return &inst;
+
+    // We initially create the instance params via CreateForMesh(), because we don't know what type(s) of geometry the part will contain.
+    // Need to fix it up for linear/text
+    BeAssert(Type::Mesh == inst.GetType());
+    DisplayParamsPtr clone(new DisplayParams(part));
+    clone->m_fillColor = clone->m_lineColor = inst.m_lineColor;
+    clone->m_categoryId = inst.m_categoryId;
+    clone->m_subCategoryId = inst.m_subCategoryId;
+    clone->m_class = inst.m_class;
+
+    if (Type::Linear == clone->GetType())
+        {
+        clone->m_width = inst.m_width;
+        clone->m_linePixels = inst.m_linePixels;
+        }
+
+    return clone.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,6 +344,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     if (&rhs == this)
         return false;
 
+    TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
     TEST_LESS_THAN(GetMaterialId());
@@ -338,6 +365,10 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         {
         TEST_LESS_THAN(HasFillTransparency());
         TEST_LESS_THAN(HasLineTransparency());
+
+        if (nullptr != GetTexture())
+            TEST_LESS_THAN(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses texture).
+
         return false;
         }
 
@@ -358,6 +389,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     if (&rhs == this)
         return true;
 
+    TEST_EQUAL(GetType());
     TEST_EQUAL(IgnoresLighting());
     TEST_EQUAL(GetLineWidth());
     TEST_EQUAL(GetMaterialId().GetValueUnchecked());
@@ -547,8 +579,6 @@ uint32_t Mesh::AddVertex(QVertex3dCR vert, QPoint3dCP normal, DPoint2dCP param, 
         m_uvParams.push_back(toFPoint2d(*param));
 
     insertVertexAttribute(m_colors, m_colorTable, fillColor, m_verts);
-    BeAssert(nullptr == param || m_colorTable.IsUniform());
-
     return index;
     }
 
@@ -1240,7 +1270,6 @@ GeometryPtr Geometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR rang
     return SolidKernelGeometry::Create(solid, tf, range, entityId, params, db);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1555,12 +1584,15 @@ bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
+PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn)
     {
     PolyfaceList                polyfaces;
-    IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
+    IFacetOptionsPtr            facetOptions = facetOptionsIn.Clone();
 
-    if (DoGlyphBoxes(facetOptions))
+    facetOptions->SetNormalsRequired(false);     // No lighting so normals not required.
+
+    IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(*facetOptions);
+    if (DoGlyphBoxes(*facetOptions))
         {
         // ###TODO: Fonts are a freaking mess.
         BeMutexHolder lock(DgnFonts::GetMutex());
@@ -1588,7 +1620,9 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
                 Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform).Multiply (box, box);
 
                 polyfaceBuilder->AddTriangulation (box);
-                }
+                }                                                                                                                              
+
+
             }
         }
     else
@@ -1709,8 +1743,8 @@ bool MeshArgs::Init(MeshCR mesh)
     m_texture = mesh.GetDisplayParams().GetTexture();
     m_material = mesh.GetDisplayParams().GetMaterial();
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
-
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+
     mesh.ToFeatureIndex(m_features);
 
     return true;
@@ -2437,5 +2471,16 @@ void QVertex3dList::Requantize()
         m_qpoints.Add(DPoint3d::From(fpt));
 
     m_fpoints.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void QVertex3dList::Init(DRange3dCR range, QPoint3dCP qPoints, size_t nPoints)
+    {
+    m_range = range;
+    m_qpoints.resize(nPoints);
+    m_qpoints.SetParams(QPoint3d::Params(range));
+    memcpy (m_qpoints.data(), qPoints, nPoints * sizeof(QPoint3d));
     }
 

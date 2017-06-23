@@ -914,6 +914,14 @@ BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
             return ERROR;
         }
 
+    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
+        {
+        auto waitFor = context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now();
+        m_root->SelectTiles(context);
+        m_root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
+        m_root->CancelAllTileLoads();
+        }
+
     m_root->DrawInView(context);
     return SUCCESS;
     }
@@ -953,6 +961,14 @@ BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
         auto model = GetViewedModel();
         if (nullptr == model || nullptr == (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())))
             return ERROR;
+        }
+
+    if (context.GetUpdatePlan().WantWait())
+        {
+        // ###TODO_ELEMENT_TILE: Honor timeout...
+        m_root->SelectTiles(context);
+        m_root->WaitForAllLoads();
+        m_root->CancelAllTileLoads();
         }
 
     m_root->DrawInView(context);

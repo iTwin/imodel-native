@@ -197,7 +197,7 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
-    bool RenderFrame(Render::Task::Priority priority, TileTree::TileRequestsR requests);
+    bool RenderFrame(Render::Task::Priority priority, UpdatePlan const& plan, TileTree::TileRequestsR requests);
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
@@ -559,6 +559,7 @@ struct OffscreenViewport : DgnViewport
     BSIRect _GetViewRect() const override {return m_rect;}
     void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetViewRect(rect);}
     DGNVIEW_EXPORT OffscreenViewport();
+    DGNVIEW_EXPORT explicit OffscreenViewport(double tileSizeModifier);
 };
 
 //=======================================================================================

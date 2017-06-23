@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+ // may wish to adjust to reduce level of detail...
 |
 |     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
@@ -102,6 +102,7 @@ struct StreamBuffer : ByteStream
     void SetPos(uint32_t pos) {m_currPos=pos;}
     uint32_t GetPos() const {return m_currPos;}
     DGNPLATFORM_EXPORT bool ReadBytes(void* buf, uint32_t size);
+    template<typename T> bool Read (T& buf) { return ReadBytes(&buf, sizeof(buf)); }
 
     StreamBuffer() {}
     StreamBuffer(ByteStream const& other) : ByteStream(other) {}
@@ -307,16 +308,22 @@ protected:
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
 
     void InvalidateDamagedTiles();
-
+    bvector<TileCPtr> SelectTiles(DrawArgsR args);
+    DrawArgs CreateDrawArgs(SceneContextR context);
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys);
     void RequestTiles(MissingNodesCR);
+
+    //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
+    bvector<TileCPtr> SelectTiles(SceneContextR context);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
     void StartTileLoad(TileLoadStatePtr) const;
     void DoneTileLoad(TileLoadStatePtr) const;
     void CancelTileLoad(TileCR tile);
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
+    void WaitForAllLoadsFor(uint32_t milliseconds);
+    void CancelAllTileLoads();
     bool IsHttp() const {return m_isHttp;}
     bool IsPickable() const {return m_pickable;}
     void SetPickable(bool pickable) {m_pickable = pickable;}

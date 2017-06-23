@@ -1,4 +1,4 @@
-/*------------------------------------------------------------------------]--------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
@@ -1729,6 +1729,7 @@ namespace Quantization
             }
 
         Params const& GetParams() const { return m_params; }
+        void SetParams(Params const& params) { m_params = params; }
 
         //! Quantize the specified point and add it to this list
         void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
@@ -1760,6 +1761,7 @@ namespace Quantization
         static DPoint ToDPoint(FPoint const& fpt) { return T::ToDPoint(fpt); }
         static FPoint ToFPoint(FPoint const& fpt) { return fpt; }
         static DPoint ToDPoint(DPoint const& dpt) { return dpt; }
+
     };
 }
 
@@ -1804,7 +1806,7 @@ struct QPoint3d
 
         DPoint3dCR GetOrigin() const { return origin; }
         DPoint3dCR GetScale() const { return scale; }
-        DRange3d GetRange() const { return DRange3d::From (origin.x, origin.y, origin.z, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y, origin.z + Quantization::RangeScale() * scale.z); }
+        DRange3d GetRange() const { return DRange3d::From (origin, QPoint3d((uint16_t) Quantization::RangeScale(), (uint16_t)Quantization::RangeScale(), (uint16_t)Quantization::RangeScale()).Unquantize(*this)); }
 
     };
 
@@ -1884,9 +1886,9 @@ struct QPoint2d
             scale.y = Quantization::ComputeScale(diagonal.y);
             }
 
-    DPoint2dCR GetOrigin() const { return origin; }
-    DPoint2dCR GetScale() const { return scale; }
-    DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
+        DPoint2dCR GetOrigin() const { return origin; }
+        DPoint2dCR GetScale() const { return scale; }
+        DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
@@ -1919,11 +1921,56 @@ struct QPoint2d
         }
 };
 
+//=======================================================================================
+//! Represents a scalar value quantized within some known range to a 16-bit integer.
+//! This is a lossy compression technique.
+// @bsistruct                                                   Paul.Connelly   06/17
+//=======================================================================================
+struct QPoint1d
+{
+    struct Params
+    {
+        double  origin;
+        double  scale;
+
+        Params() : Params(DRange1d::NullRange()) { }
+        explicit Params(DRange1d range) : origin(range.low), scale(range.IsNull() ? 0.0 : Quantization::ComputeScale(range.high - range.low)) { }
+
+        double GetOrigin() const { return origin; }
+        double GetScale() const { return scale; }
+        DRange1d GetRange() const { return DRange1d::From(origin, origin + Quantization::RangeScale() * scale); }
+    };
+
+    using T_Range = DRange1d;
+    using T_DPoint = double;
+    using T_DVec = double;
+    using T_FPoint = float;
+
+    static float ToFPoint(double dx) { return static_cast<float>(dx); }
+    static double ToDPoint(float fx) { return fx; }
+
+    uint16_t    x;
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+
+    QPoint1d() { }
+    QPoint1d(double x, DRange1d range) : QPoint1d(x, Params(range)) { }
+    QPoint1d(float x, DRange1d range) : QPoint1d(ToDPoint(x), Params(range)) { }
+    QPoint1d(float x, ParamsCR params) : QPoint1d(ToDPoint(x), params) { }
+    QPoint1d(double x, ParamsCR params) : x(Quantization::Quantize(x, params.origin, params.scale)) { }
+
+    double Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+    float Unquantize32(ParamsCR params) const { return ToFPoint(Unquantize(params)); }
+    double UnquantizeAsVector(ParamsCR params) const { return Quantization::Unquantize(x, params.origin, params.scale); }
+};
+
+typedef Quantization::QPointList<QPoint1d> QPoint1dList;
 typedef Quantization::QPointList<QPoint2d> QPoint2dList;
 typedef Quantization::QPointList<QPoint3d> QPoint3dList;
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint3dList)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint1dList)
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint2dList)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint3dList)
 
 //=======================================================================================
 //! Describes the type of fill associated with a mesh.
@@ -2350,7 +2397,7 @@ public:
 
         return found;
         }
-
+    
     uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
@@ -2363,6 +2410,12 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
+
+    // Used by tile reader...
+    void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
+    bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
+
+
 };
 
 //=======================================================================================
@@ -2513,6 +2566,7 @@ public:
     virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::System
 #endif
     virtual TargetPtr _CreateTarget(double tileSizeModifier) = 0;
+    virtual TargetPtr _CreateOffscreenTarget(double tileSizeModifier) = 0;
     double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
     Window const* GetWindow() const {return m_window.get();}
 };
@@ -2593,6 +2647,9 @@ struct System
 
     //! Create a render target.
     virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) = 0;
+
+    //! Create an offscreen render target.
+    virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) = 0;
 
     //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;

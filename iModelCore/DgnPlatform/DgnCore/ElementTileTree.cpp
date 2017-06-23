@@ -37,9 +37,6 @@ typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     Thread
 
 class   ParasolidException {};
 
-//#define REALITY_CACHE_SUPPORT
-
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      10/2015
@@ -880,7 +877,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
-    : T_Super("", tile, loads, "", renderSys)
+    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys)
     {
     //
     }
@@ -896,9 +893,37 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 
 
 
-#ifdef REALITY_CACHE_SUPPORT
+static bool s_useRealityCache = false;      // Still WIP.
 
-#define POPULATE_ROOT_TILE      // Fow now - easier to debug..
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
+    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+#endif
+
+    auto& tile = static_cast<TileR>(*m_tile);
+    RootR root = tile.GetElementRoot();
+
+    auto  system = GetRenderSystem();
+    if (nullptr == system)
+        {
+        // This is checked in _CreateTileTree()...
+        BeAssert(false && "ElementTileTree requires a Render::System");
+        return ERROR;
+        }
+
+    LoadContext loadContext(this);
+    geometry = tile.GenerateGeometry(loadContext);
+
+    return loadContext.WasAborted() ? ERROR : SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -906,11 +931,18 @@ BentleyStatus Loader::_LoadTile()
     { 
     TileR   tile = static_cast<TileR> (*m_tile);
     RootR   root = tile.GetElementRoot();
-
     Render::Primitives::GeometryCollection geometry;
 
-    if (SUCCESS != TileTree::TileIO::ReadTile (geometry, m_tileBytes, *root.GetModel()))
-        return ERROR;
+    if (!s_useRealityCache)
+        {
+        if (SUCCESS != LoadGeometryFromModel(geometry))
+            return ERROR;
+        }
+    else
+        {
+        if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
+            return ERROR;
+        }
 
     // No point subdividing empty nodes - improves performance if we don't
     // Also not much point subdividing nodes containing no curved geometry
@@ -927,96 +959,6 @@ BentleyStatus Loader::_LoadTile()
         // This is checked in _CreateTileTree()...
         BeAssert(false && "ElementTileTree requires a Render::System");
         return ERROR;
-        }
-
-    GetMeshGraphicsArgs             args;
-    bvector<Render::GraphicPtr>     graphics;
-
-    for (auto const& mesh : geometry.Meshes())
-        mesh->GetGraphics (graphics, *system, args, root.GetDgnDb());
-
-    tile.SetIsReady();
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Loader::DoGetFromSource()
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-    PSolidKernelManager::StartSession();
-    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
-
-    auto& tile = static_cast<TileR>(*m_tile);
-    RootR root = tile.GetElementRoot();
-
-    auto  system = GetRenderSystem();
-    if (nullptr == system)
-        {
-        // This is checked in _CreateTileTree()...
-        BeAssert(false && "ElementTileTree requires a Render::System");
-        return ERROR;
-        }
-
-    LoadContext loadContext(this);
-    auto geometry = tile.GenerateGeometry(loadContext);
-
-    if (loadContext.WasAborted())
-        return ERROR;
-        
-    return TileTree::TileIO::WriteTile (m_tileBytes, geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
-    }
-
-
-#else
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Loader::DoGetFromSource()
-    {
-    return IsCanceledOrAbandoned() ? ERROR : SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Loader::_LoadTile()
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-    PSolidKernelManager::StartSession();
-    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
-
-    auto& tile = static_cast<TileR>(*m_tile);
-    RootR root = tile.GetElementRoot();
-
-    auto  system = GetRenderSystem();
-    if (nullptr == system)
-        {
-        // This is checked in _CreateTileTree()...
-        BeAssert(false && "ElementTileTree requires a Render::System");
-        return ERROR;
-        }
-
-    LoadContext loadContext(this);
-    auto geometry = tile.GenerateGeometry(loadContext);
-
-    if (loadContext.WasAborted())
-        return ERROR;
-
-    // No point subdividing empty nodes - improves performance if we don't
-    // Also not much point subdividing nodes containing no curved geometry
-    // NB: We cannot detect either of the above if any elements or geometry were skipped during tile generation.
-    if (geometry.IsComplete())
-        {
-        if (geometry.IsEmpty() || !geometry.ContainsCurves())
-            tile.SetIsLeaf();
         }
 
     GetMeshGraphicsArgs             args;
@@ -1047,7 +989,26 @@ BentleyStatus Loader::_LoadTile()
     tile.SetIsReady();
     return SUCCESS;
     }
-#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Loader::DoGetFromSource()
+    {
+    if (!s_useRealityCache)
+        return IsCanceledOrAbandoned() ? ERROR : SUCCESS;
+      
+    TileR   tile = static_cast<TileR> (*m_tile);
+    RootR   root = tile.GetElementRoot();
+    Render::Primitives::GeometryCollection geometry;
+
+    if (SUCCESS != LoadGeometryFromModel(geometry))
+        return ERROR;
+
+    m_saveToCache = true;
+        
+    return TileTree::TileIO::WriteDgnTile (m_tileBytes, geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1058,6 +1019,7 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
+    CreateCache(model.GetName().c_str(), 1024*1024*1024, false); // 1 GB
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1607,11 +1569,13 @@ private:
 
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
-    void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained);
+    void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained) { AddPolyface(polyfaces, geom, geom.GetDisplayParams(), rangePixels, isContained); }
+    void AddPolyface(Polyface& polyface, GeometryR, DisplayParamsCR ,double rangePixels, bool isContained);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
-    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained);
+    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained) { AddStrokes(strokes, geom, geom.GetDisplayParams(), rangePixels, isContained); }
+    void AddStrokes(StrokesR, GeometryR, DisplayParamsCR, double rangePixels, bool isContained);
     Strokes ClipStrokes(StrokesCR strokes) const;
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
@@ -1705,7 +1669,6 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
 
     // Get the polyfaces and strokes with no transform applied
     PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr);
-    facetOptions->SetNormalsRequired(false);
     StrokesList strokes = part.GetStrokes(*facetOptions, nullptr);
 
     // For each instance, transform the polyfaces and add them to the mesh
@@ -1717,13 +1680,15 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
         for (auto& polyface : polyfaces)
             {
             polyface.Transform(instanceTransform);
-            AddPolyface(polyface, const_cast<GeometryR>(*instance), rangePixels, true);
+            DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*polyface.m_displayParams, instance->GetDisplayParams());
+            AddPolyface(polyface, const_cast<GeometryR>(*instance), *params, rangePixels, true);
             }
 
         for (auto& strokeList : strokes)
             {
             strokeList.Transform(instanceTransform);
-            AddStrokes(strokeList, *const_cast<GeometryP>(instance), rangePixels, true);
+            DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*strokeList.m_displayParams, instance->GetDisplayParams());
+            AddStrokes(strokeList, *const_cast<GeometryP>(instance), *params, rangePixels, true);
             }
         }
     }
@@ -1757,14 +1722,12 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
     {
     PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
-    if (nullptr == polyface || 0 == polyface->GetPointCount())
+    if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
         return;
 
-    // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
-    DisplayParamsCR displayParams = geom.GetDisplayParams();
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.IsTextured();
 
@@ -1780,6 +1743,8 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     bool                    anyContributed = false;
     uint32_t                fillColor = displayParams.GetFillColor();
 
+    
+    BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
     builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {
@@ -1893,7 +1858,7 @@ void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
     {
     if (m_loadContext.WasAborted())
         return;
@@ -1908,8 +1873,6 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
-    // NB: The strokes are shared amongst many instances, each of which may have its own display params. Use the params from the instance.
-    DisplayParamsCR displayParams = geom.GetDisplayParams();
     MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
     MeshBuilderR builder = GetMeshBuilder(key);
 
