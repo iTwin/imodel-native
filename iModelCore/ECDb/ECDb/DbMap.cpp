@@ -11,6 +11,11 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+#ifdef INVOKE_RULE
+#undef INVOKE_RULE
+#endif
+#define INVOKE_RULE(x) {if (IsError(x)) return m_status;}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -778,205 +783,9 @@ BentleyStatus DbMap::ValidateClassMap(SchemaImportContext& ctx, ClassMapCR class
             }
         }
 
-    int nDataProperties = 0;
-    int nSystemProperties = 0;
-    for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
-        {
-        if (propertyMap->IsData())
-            nDataProperties++;
-        else if (propertyMap->IsSystem())
-            nSystemProperties++;
-        }
 
-    ECPropertyIterableCR properties = classMap.GetClass().GetProperties();
-    const size_t nPropertyCount = std::distance(properties.begin(), properties.end());
-    if (nDataProperties != nPropertyCount)
-        {
-        Issues().Report("Map Validation failed for class '%s'. Not all properties of class are mapped.", classMap.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (classMap.IsRelationshipClassMap())
-        {
-        if (nSystemProperties != 6)
-            {
-            Issues().Report("Map Validation failed for class '%s'. Relationship classmaps must have six property maps.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_ECInstanceId) == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. Relationship map must have '" ECDBSYS_PROP_ECInstanceId "' property map.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_ECClassId) == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. Relationship map must have '" ECDBSYS_PROP_ECClassId "' property map.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECInstanceId) == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. Relationship map must have '" ECDBSYS_PROP_SourceECInstanceId "' property map.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECClassId) == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. Relationship map must have '" ECDBSYS_PROP_SourceECClassId "' property map.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECInstanceId) == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. Relationship map must have '" ECDBSYS_PROP_TargetECInstanceId "' property map.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECClassId) == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. Relationship map must have '" ECDBSYS_PROP_TargetECClassId "' property map.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-        }
-    else
-        {
-        if (nSystemProperties != 2)
-            {
-            Issues().Report("Map Validation failed for class '%s'. Entity classmaps must have two property maps.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_ECInstanceId) == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. ClassMap must have '" ECDBSYS_PROP_ECInstanceId "' property map.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_ECClassId) == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. ClassMap must have '" ECDBSYS_PROP_ECClassId "' property map.", classMap.GetClass().GetFullName());
-            return ERROR;
-            }
-        }
     
-    std::vector<NavigationPropertyMap const*> navigationPropertyMaps;
-    std::map<DbColumn const*, PropertyMap const*> singleColumnPropertyMaps;
-    SearchPropertyMapVisitor propertyMapVisitor(PropertyMap::Type::All,/* recurseIntoCompoundPropertyMaps =  */true);
-    classMap.GetPropertyMaps().AcceptVisitor(propertyMapVisitor);
-    for (PropertyMap const* propertyMap : propertyMapVisitor.Results())
-        {
-        if (Enum::Contains(PropertyMap::Type::SingleColumnData, propertyMap->GetType()))
-            {
-            DbColumn const& column = propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
-            auto itor = singleColumnPropertyMaps.find(&column);
-            if (itor == singleColumnPropertyMaps.end())
-                singleColumnPropertyMaps[&column] = propertyMap;
-            else
-                {
-                Issues().Report("Map Validation failed for class '%s'. Cannot map Column [%s].[%s] to property '%s' as it already mapped to '%s'. ",
-                           classMap.GetClass().GetFullName(),
-                           column.GetTable().GetName().c_str(),
-                           column.GetName().c_str(),
-                           propertyMap->GetAccessString().c_str(),
-                           itor->second->GetAccessString().c_str());
 
-                return ERROR;
-                }
-            }
-        else if (propertyMap->GetType() == PropertyMap::Type::Navigation)
-            {
-            navigationPropertyMaps.push_back(&propertyMap->GetAs<NavigationPropertyMap>());
-            }
-        else if (Enum::Contains(PropertyMap::Type::System, propertyMap->GetType()))
-            {
-            if (propertyMap->GetAs<SystemPropertyMap>().GetDataPropertyMaps().empty())
-                {
-                Issues().Report("Map Validation failed for class '%s'. System property '%s' is not mapped to any column",
-                           classMap.GetClass().GetFullName(),
-                           propertyMap->GetAccessString().c_str());
-
-                return ERROR;
-                }
-            }
-        }
-
-    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-        {
-        RelationshipClassEndTableMap const& relMap = classMap.GetAs<RelationshipClassEndTableMap>();
-        const auto otherEndTables = RelationshipClassEndTableMap::PartitionView::GetOtherEndTables(relMap);
-        if (otherEndTables.size() > 1)
-            {
-            Utf8String tableStr;
-            for (DbTable const* table : otherEndTables)
-                {
-                if (table != otherEndTables.front())
-                    tableStr.append(", ");
-
-                tableStr.append("[").append(table->GetName().c_str()).append("]");
-                }
-
-            Issues().Report("Map Validation failed for class '%s'. EndTable relationship map evaluation resulted in more than one primary tables (%s)", relMap.GetClass().GetFullName(), tableStr.c_str());
-            return ERROR;
-            }
-
-        if (relMap.GetTables().size() != 1 || relMap.GetTables().front()->GetType() != DbTable::Type::Virtual)
-            {
-            Issues().Report("Map Validation failed for class '%s'. EndTable relationship map must be to single virtual table.", relMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (relMap.GetPropertyMaps().Size() != 6)
-            {
-            Issues().Report("Map Validation failed for class '%s'. EndTable relationship map must be have exactly six property maps.", relMap.GetClass().GetFullName());
-            return ERROR;
-            }
-
-        if (relMap.GetConstraintMap(relMap.GetForeignEnd()).GetECClassIdPropMap() == nullptr
-            || relMap.GetConstraintMap(relMap.GetForeignEnd()).GetECInstanceIdPropMap() == nullptr
-            || relMap.GetConstraintMap(relMap.GetReferencedEnd()).GetECClassIdPropMap() == nullptr
-            || relMap.GetConstraintMap(relMap.GetReferencedEnd()).GetECInstanceIdPropMap() == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. EndTable relationship map constraint maps are not set correctly", relMap.GetClass().GetFullName());
-            return ERROR;
-            }
-        }
-
-    if (classMap.GetType() == ClassMap::Type::RelationshipLinkTable)
-        {
-        RelationshipClassLinkTableMap const& relMap = classMap.GetAs<RelationshipClassLinkTableMap>();
-        const auto sourceTables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(relMap.GetDbMap(), ctx, relMap.GetRelationshipClass().GetSource(), true);
-        if (sourceTables.size() > 1)
-            {
-            Utf8String tableStr;
-            for (DbTable const* table : sourceTables)
-                tableStr.append("[").append(table->GetName().c_str()).append("], ");
-
-            Issues().Report("Map Validation failed for class '%s'. LinkTable relationship map evaluation resulted in more than one source tables (%s)", relMap.GetClass().GetFullName(), tableStr.c_str());
-            return ERROR;
-            }
-
-        const auto targetTables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(relMap.GetDbMap(), ctx, relMap.GetRelationshipClass().GetTarget(), true);
-        if (targetTables.size() > 1)
-            {
-            Utf8String tableStr;
-            for (DbTable const* table : targetTables)
-                tableStr.append("[").append(table->GetName().c_str()).append("], ");
-
-            Issues().Report("Map Validation failed for class '%s'. LinkTable relationship map evaluation resulted in more than one target tables (%s)", relMap.GetClass().GetFullName(), tableStr.c_str());
-            return ERROR;
-            }
-
-        if (relMap.GetConstraintMap(ECRelationshipEnd_Source).GetECClassIdPropMap() == nullptr
-            || relMap.GetConstraintMap(ECRelationshipEnd_Source).GetECInstanceIdPropMap() == nullptr
-            || relMap.GetConstraintMap(ECRelationshipEnd_Target).GetECClassIdPropMap() == nullptr
-            || relMap.GetConstraintMap(ECRelationshipEnd_Target).GetECInstanceIdPropMap() == nullptr)
-            {
-            Issues().Report("Map Validation failed for class '%s'. LinkTable relationship map constraint maps are not set correctly", relMap.GetClass().GetFullName());
-            return ERROR;
-            }
-        }
     return SUCCESS;
     }
 
@@ -987,71 +796,10 @@ BentleyStatus DbMap::ValidateClassMap(SchemaImportContext& ctx, ClassMapCR class
 //static
 BentleyStatus DbMap::ValidateDbMappings(SchemaImportContext& ctx, bool failOnError) const
     {
-    NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidDbMappings");
-    const NativeLogging::SEVERITY diagSeverity = NativeLogging::LOG_INFO;
-
-    Utf8CP ecdbFileName = GetECDb().GetDbFileName();
-
     PERFLOG_START("ECDb", "ValidateDbMappings");
-
-    //Load all relationship so they can get validated
-    Statement relStmt;
-    relStmt.Prepare(GetECDb(), "SELECT DISTINCT RelationshipClassId FROM ec_RelationshipConstraint");
-    while (relStmt.Step() == BE_SQLITE_ROW)
-        {
-        if (ECClassCP ecClass = GetECDb().Schemas().GetClass(relStmt.GetValueId<ECClassId>(0)))
-            GetClassMap(*ecClass);
-        }
-
-#if 1 //WORKS
-    std::vector<ClassMapCP> loadedClassMaps;
-    for (bpair<ECN::ECClassId, ClassMapPtr> const& entry : m_classMapDictionary)
-        {
-        loadedClassMaps.push_back(entry.second.get());
-        }
-
-    for (ClassMapCP classMap : loadedClassMaps)
-        {
-        if (ValidateClassMap(ctx, *classMap) != SUCCESS)
-            return ERROR;
-        }
-#else //LOOP never runs
-    for (bpair<ECN::ECClassId, ClassMapPtr> const& entry : m_classMapDictionary)
-        {     
-        if (ValidateClassMap(ctx, *entry.second) != SUCCESS)
-            return ERROR;
-        }
-#endif
-
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), SQL_ValidateDbMapping))
-        {
-        LOG.errorv("Preparing db mapping validation SQL failed: %s", GetECDb().GetLastError().c_str());
-        BeAssert(false);
-        return ERROR;
-        }
-
-    bool hasIssues = false;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        hasIssues = true;
-        Utf8CP schemaName = stmt.GetValueText(0);
-        Utf8CP schemaAlias = stmt.GetValueText(1);
-        Utf8CP className = stmt.GetValueText(2);
-        Utf8CP tableName = stmt.GetValueText(3);
-        const int issueType = stmt.GetValueInt(4);
-        Utf8CP issueTypeDesc = stmt.GetValueText(5);
-        Utf8CP issue = stmt.GetValueText(6);
-        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,%s,%d,%s,\"%s\"",
-                             ecdbFileName, schemaName, schemaAlias,
-                             className, tableName, issueType, issueTypeDesc, issue);
-
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("ECClass with invalid DB mapping resulting in data corruption: %s:%s - Issue type: %s - Table: %s - Corrupted mapping: %s",
-                     schemaName, className, issueTypeDesc, tableName, issue);
-        }
-
+    BentleyStatus status = Validator(*this, ctx).CheckAndReportIssues(true, Validator::Filter::InMemory, Validator::Filter::InMemory);
     PERFLOG_FINISH("ECDb", "ValidateDbMappings");
-    if (hasIssues && failOnError)
+    if (status == ERROR && failOnError)
         return ERROR;
 
     return SUCCESS;
@@ -1066,6 +814,573 @@ void DbMap::ClearCache() const
     m_dbSchema.Reset();
     m_lightweightCache.Reset();
     }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbSchema(DbSchema const& dbschema, Filter filter) const
+    {
+    std::vector<DbTable const*> tables;
+    if (filter == Filter::All)
+        {
+        CachedStatementPtr stmt = dbschema.GetECDb().GetCachedStatement("SELECT Id FROM ec_Table");
+        PRECONDITION(stmt != nullptr, ERROR);
+        while (stmt->Step() == BE_SQLITE_ROW)
+            {
+            DbTable const* table = dbschema.FindTable(stmt->GetValueId<DbTableId>(0));
+            PRECONDITION(table != nullptr, ERROR);
+            tables.push_back(table);
+            }
+        }
+    else
+        tables = dbschema.GetCachedTables();
+
+    INVOKE_RULE(CheckDbTables(tables));
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbMap(DbMap  const& map, Filter filter) const
+    {
+    INVOKE_RULE(CheckMapCount(map));
+    std::vector<ClassMap const*> classMaps;
+    if (filter == Filter::All)
+        {
+        CachedStatementPtr stmt = map.GetECDb().GetCachedStatement("SELECT Id FROM ec_Class");
+        PRECONDITION(stmt != nullptr, ERROR);
+        while (stmt->Step() == BE_SQLITE_ROW)
+            {
+            ECClassCP ecClass = map.GetECDb().Schemas().GetClass(stmt->GetValueId<ECClassId>(0));
+            PRECONDITION(ecClass != nullptr, ERROR);
+            ClassMap const* classMap = map.GetClassMap(*ecClass);
+            PRECONDITION(classMap != nullptr, ERROR);
+            classMaps.push_back(classMap);
+            }
+        }
+    else
+        {
+        Statement relStmt;
+        relStmt.Prepare(map.GetECDb(), "SELECT DISTINCT RelationshipClassId FROM ec_RelationshipConstraint");
+        while (relStmt.Step() == BE_SQLITE_ROW)
+            {
+            if (ECClassCP ecClass = map.GetECDb().Schemas().GetClass(relStmt.GetValueId<ECClassId>(0)))
+                PRECONDITION(map.GetClassMap(*ecClass) != nullptr, ERROR);
+            }
+
+        for (auto const& entry : map.m_classMapDictionary)
+            classMaps.push_back(entry.second.get());
+        }
+
+    for (ClassMapCP classMap : classMaps)
+        INVOKE_RULE(CheckClassMap(*classMap));
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckMapCount(DbMap  const& map) const
+    {
+    CachedStatementPtr stmt0 = map.GetECDb().GetCachedStatement("SELECT COUNT(Id) FROM ec_Class");
+    CachedStatementPtr stmt1 = map.GetECDb().GetCachedStatement("SELECT COUNT(ClassId) FROM ec_ClassMap");
+    PRECONDITION(stmt0->Step() == BE_SQLITE_ROW, ERROR);
+    PRECONDITION(stmt1->Step() == BE_SQLITE_ROW, ERROR);
+    if (stmt0->GetValueInt(0) != stmt1->GetValueInt(0))
+        return Error("Rows in ec_Class(rows = %d) table is not same as in ec_ClassMa p(rows = %d).", stmt0->GetValueInt(0), stmt1->GetValueInt(0));
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbIndexes(DbSchema const& dbSchemas) const
+    {
+    for (auto const& index : dbSchemas.GetIndexes())
+        INVOKE_RULE(CheckDbIndex(*index));
+
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbTables(std::vector<DbTable const*> const& tables) const
+    {
+    for (DbTable const* table : tables)
+        INVOKE_RULE(CheckDbTable(*table));
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbTable(DbTable const& table) const
+    {
+    if (table.GetType() != DbTable::Type::Existing ||
+        table.GetType() != DbTable::Type::Joined ||
+        table.GetType() != DbTable::Type::Overflow ||
+        table.GetType() != DbTable::Type::Primary ||
+        table.GetType() != DbTable::Type::Virtual)
+        {
+        return Error("DbTable '%s' has a unsupported value for DbTable::Type.", table.GetName().c_str());
+        }
+
+    if (table.GetType() != DbTable::Type::Virtual)
+        {
+        if (!m_map.GetECDb().TableExists(table.GetName().c_str()))
+            return Error("DbTable '%s' is of type none-virtual and must exist in db.", table.GetName().c_str());
+        }
+
+    if (table.GetColumns().size() == 0)
+        {
+        return Error("DbTable '%s' has no columns.", table.GetName().c_str());
+        }
+
+    bvector<Utf8String> columns;
+    m_map.GetECDb().GetColumns(columns, table.GetName().c_str());
+    bset<Utf8String, CompareIUtf8Ascii> existingColumns(columns.begin(), columns.end());
+    size_t nPhysicalColumns = 0;
+    for (DbColumn const* column : table.GetColumns())
+        {
+        if (!column->IsVirtual() && table.GetType() != DbTable::Type::Virtual)
+            {
+            if (existingColumns.find(column->GetName()) == existingColumns.end())
+                return Error("DbTable '%s' has column '%s' which is not present in underlaying db.", table.GetName().c_str(), column->GetName().c_str());
+
+            nPhysicalColumns++;
+            }
+
+        INVOKE_RULE(CheckDbColumn(*column));
+        }
+
+    if (table.FindFirst(DbColumn::Kind::ECInstanceId) == nullptr)
+        {
+            return Error("DbTable '%s'must have ECInstanceId type column.", table.GetName().c_str());
+        }
+
+    if (table.FindFirst(DbColumn::Kind::ECClassId) == nullptr)
+        {
+        return Error("DbTable '%s'must have ECClassId type column.", table.GetName().c_str());
+        }
+
+    if (table.GetType() != DbTable::Type::Existing && table.GetType() != DbTable::Type::Virtual)
+        {
+        if (nPhysicalColumns != columns.size())
+            return Error("DbTable '%s'has column list that is is not identical to one in underlaying db.", table.GetName().c_str());
+        }
+
+    if (table.GetType() != DbTable::Type::Existing && table.GetType() != DbTable::Type::Virtual)
+        {
+        if (nPhysicalColumns != columns.size())
+            return Error("DbTable '%s'has column list that is is not identical to one in underlaying db.", table.GetName().c_str());
+        }
+
+    if (table.GetType() == DbTable::Type::Existing)
+        {
+        if (table.GetLinkNode().GetParent() != nullptr)
+            return Error("DbTable '%s'is of type 'Existing' and therefore it must not have parent table.", table.GetName().c_str());
+        }
+
+    if (table.GetType() == DbTable::Type::Virtual)
+        {
+        if (table.GetLinkNode().GetParent() != nullptr)
+            return Error("DbTable '%s'is of type 'Virtual' and therefore it must not have parent table.", table.GetName().c_str());
+
+        if (!table.GetLinkNode().GetChildren().empty())
+            return Error("DbTable '%s'is of type 'Virtual' and therefore it must not have any child tables.", table.GetName().c_str());
+        }
+
+    if (table.GetType() == DbTable::Type::Primary)
+        {
+        if (table.GetLinkNode().GetParent() != nullptr)
+            return Error("DbTable '%s'is of type 'Primary' and therefore it must not have parent table.", table.GetName().c_str());
+        }
+
+    if (table.GetType() == DbTable::Type::Joined)
+        {
+        if (table.GetLinkNode().GetParent() == nullptr)
+            return Error("DbTable '%s'is of type 'Joined' and therefore it must have parent table.", table.GetName().c_str());
+
+        if (table.GetLinkNode().GetChildren().size() > 1)
+            return Error("DbTable '%s'is of type 'Joined' and therefore it must not have more than one child table.", table.GetName().c_str());
+        }
+
+    if (table.GetType() == DbTable::Type::Overflow)
+        {
+        if (table.GetLinkNode().GetParent() == nullptr)
+            return Error("DbTable '%s'is of type 'Overflow' and therefore it must have parent table.", table.GetName().c_str());
+
+        if (!table.GetLinkNode().GetChildren().empty())
+            return Error("DbTable '%s'is of type 'Virtual' and therefore it must not have any child tables.", table.GetName().c_str());
+        }
+
+    INVOKE_RULE(CheckDbConstraints(table));
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbConstraints(DbTable const& table) const
+    {
+    for (DbConstraint const* constraint : table.GetConstraints())
+        INVOKE_RULE(CheckDbConstraint(*constraint));
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbTriggers(DbTable const& table) const
+    {
+    for (DbTrigger const* trigger : table.GetTriggers())
+        INVOKE_RULE(CheckDbTrigger(*trigger));
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbConstraint(DbConstraint const& constraint) const
+    {
+    if (constraint.GetType() == DbConstraint::Type::ForeignKey)
+        return CheckForeignKeyDbConstraint(static_cast<ForeignKeyDbConstraint const&> (constraint));
+
+    return CheckPrimaryKeyDbConstraint(static_cast<PrimaryKeyDbConstraint const&> (constraint));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckClassMap(ClassMap const& classMap) const
+    {
+    if (classMap.GetType() == ClassMap::Type::NotMapped)
+        return CheckNotMappedClassMap(classMap.GetAs<NotMappedClassMap>());
+
+    if (classMap.GetType() != ClassMap::Type::Class || classMap.GetType() == ClassMap::Type::RelationshipEndTable || classMap.GetType() == ClassMap::Type::RelationshipLinkTable)
+        return Error("Map Validation Rule Failed : Map for ECClass '%s' has unsupported value for  ClassMap::Type.", classMap.GetClass().GetFullName());
+
+    if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_ECInstanceId) == nullptr)
+        return Error("ECClass '%s' map must have '" ECDBSYS_PROP_ECInstanceId "' property map.", classMap.GetClass().GetFullName());
+
+    if (classMap.GetPropertyMaps().Find(ECDBSYS_PROP_ECClassId) == nullptr)
+        return Error("ECClass '%s' map must have '" ECDBSYS_PROP_ECClassId "' property map.", classMap.GetClass().GetFullName());
+
+
+    INVOKE_RULE(CheckIfAllPropertiesAreMapped(classMap));
+    INVOKE_RULE(CheckPropertyMaps(classMap.GetPropertyMaps()));
+    if (classMap.IsRelationshipClassMap())
+        INVOKE_RULE(CheckRelationshipClassMap(classMap.GetAs<RelationshipClassMap>()));
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckRelationshipClassMap(RelationshipClassMap const& rel) const
+    {
+    if (rel.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECInstanceId) == nullptr)
+        return Error("Relationship '%s' map must have '" ECDBSYS_PROP_SourceECInstanceId "' property map.", rel.GetClass().GetFullName());
+
+    if (rel.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECClassId) == nullptr)
+        return Error("Relationship '%s' map must have '" ECDBSYS_PROP_SourceECClassId "' property map.", rel.GetClass().GetFullName());
+
+    if (rel.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECInstanceId) == nullptr)
+        return Error("Relationship '%s' map must have '" ECDBSYS_PROP_TargetECInstanceId "' property map.", rel.GetClass().GetFullName());
+
+    if (rel.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECClassId) == nullptr)
+        return Error("Relationship '%s' map must have '" ECDBSYS_PROP_TargetECClassId "' property map.", rel.GetClass().GetFullName());
+
+    if (rel.GetType() == ClassMap::Type::RelationshipEndTable)
+        return CheckRelationshipClassEndTableMap(rel.GetAs<RelationshipClassEndTableMap>());
+
+    return CheckRelationshipClassLinkTableMap(rel.GetAs<RelationshipClassLinkTableMap>());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckNotMappedClassMap(NotMappedClassMap const& classMap) const
+    {
+    if (classMap.GetPropertyMaps().Size() != 0)
+        return Error("Class '%s' is not mapped and must have no property map.", classMap.GetClass().GetFullName());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbTrigger(DbTrigger const& trigger) const { return SUCCESS; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbColumn(DbColumn const&) const { return SUCCESS; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckDbIndex(DbIndex const& index) const
+    { 
+    return SUCCESS; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckForeignKeyDbConstraint(ForeignKeyDbConstraint const& constraint) const
+    {
+    if (constraint.GetFkColumns().empty())
+        return Error("DbTable '%s' has ForeignKey constraint that has no column specified in it.", constraint.GetTable().GetName().c_str());
+
+    if (constraint.GetReferencedTableColumns().empty())
+        return Error("DbTable '%s' has Referenced side that has no column specified in it.", constraint.GetTable().GetName().c_str());
+
+    if (constraint.GetFkColumns().size() != constraint.GetReferencedTableColumns().size())
+        return Error("DbTable '%s' has ForeignKey constraint that has different number of columns in ForeignKey and Referenced side.", constraint.GetTable().GetName().c_str());
+    
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckPrimaryKeyDbConstraint(PrimaryKeyDbConstraint const& constraint) const
+    {
+    if (constraint.GetColumns().empty())
+        return Error("DbTable '%s' has primary key constraint that has no column specified in it.", constraint.GetTable().GetName().c_str());
+
+    if (constraint.GetColumns().size() != 1)
+        return Error("DbTable '%s' has primary key constraint has more than one column which is yet not supported in ECDb.", constraint.GetTable().GetName().c_str());
+
+    if (constraint.GetColumns().front()->GetType() != DbColumn::Type::Integer)
+        return Error("DbTable '%s' has primary key that has type other then Integer.", constraint.GetTable().GetName().c_str());
+    
+    if (constraint.GetColumns().front() != constraint.GetTable().FindFirst(DbColumn::Kind::ECInstanceId))
+        return Error("DbTable '%s' has primary key that is other then the ECInstanceId.", constraint.GetTable().GetName().c_str());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckPropertyMap(PropertyMap const&) const { return SUCCESS; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckIfAllPropertiesAreMapped(ClassMap const& classmap) const
+    {
+    int nDataProperties = 0;
+    int nSystemProperties = 0;
+    for (PropertyMap const* propertyMap : classmap.GetPropertyMaps())
+        {
+        if (propertyMap->IsData())
+            nDataProperties++;
+        else if (propertyMap->IsSystem())
+            nSystemProperties++;
+        }
+
+    ECPropertyIterableCR properties = classmap.GetClass().GetProperties();
+    const size_t nPropertyCount = std::distance(properties.begin(), properties.end());
+    if (nDataProperties != nPropertyCount)
+        {
+        return Error("ECClass'%s' properties are not all mapped. Some are left out.", classmap.GetClass().GetFullName());
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckPropertyMaps(PropertyMapContainer const& container) const
+    {
+    std::map<DbColumn const*, PropertyMap const*> singleColumnPropertyMaps;
+    SearchPropertyMapVisitor propertyMapVisitor(PropertyMap::Type::All,/* recurseIntoCompoundPropertyMaps =  */true);
+    container.AcceptVisitor(propertyMapVisitor);
+    for (PropertyMap const* propertyMap : propertyMapVisitor.Results())
+        {
+        if (propertyMap->GetParent() == nullptr)
+            {
+            INVOKE_RULE(CheckPropertyMap(*propertyMap));
+            }
+
+        if (Enum::Contains(PropertyMap::Type::SingleColumnData, propertyMap->GetType()))
+            {
+            DbColumn const& column = propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
+            auto itor = singleColumnPropertyMaps.find(&column);
+            if (itor == singleColumnPropertyMaps.end())
+                singleColumnPropertyMaps[&column] = propertyMap;
+            else
+                {
+                INVOKE_RULE(Error("ECClass '%s', cannot map Column [%s].[%s] to property '%s' as it already mapped to  property'%s'. ",
+                                propertyMap->GetClassMap().GetClass().GetFullName(),
+                                column.GetTable().GetName().c_str(),
+                                column.GetName().c_str(),
+                                propertyMap->GetAccessString().c_str(),
+                                itor->second->GetAccessString().c_str()));
+                }
+            }
+        else if (Enum::Contains(PropertyMap::Type::System, propertyMap->GetType()))
+            {
+            if (propertyMap->GetAs<SystemPropertyMap>().GetDataPropertyMaps().empty())
+                {
+                INVOKE_RULE(Error("ECClass '%s', system property '%s' is not mapped to any column",
+                                  propertyMap->GetClassMap().GetClass().GetFullName(),
+                                propertyMap->GetAccessString().c_str()));
+                }
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckRelationshipClassEndTableMap(RelationshipClassEndTableMap const& relMap) const
+    { 
+    const auto otherEndTables = RelationshipClassEndTableMap::PartitionView::GetOtherEndTables(relMap);
+    if (otherEndTables.size() > 1)
+        {
+        Utf8String tableStr;
+        for (DbTable const* table : otherEndTables)
+            {
+            if (table != otherEndTables.front())
+                tableStr.append(", ");
+
+            tableStr.append("[").append(table->GetName().c_str()).append("]");
+            }
+
+        return Error("RelationshipClassEndTableMap for ECClass '%s' map evaluation resulted in more than one primary tables (%s).", relMap.GetClass().GetFullName(), tableStr.c_str());
+        }
+
+    if (relMap.GetTables().size() != 1 || relMap.GetTables().front()->GetType() != DbTable::Type::Virtual)
+        {
+        return Error("RelationshipClassEndTableMap for ECClass '%s' must be map to single virtual table.", relMap.GetClass().GetFullName());
+        }
+
+    if (relMap.GetPropertyMaps().Size() != 6)
+        {
+        return Error("RelationshipClassEndTableMap for ECClass '%s'  must be have exactly six property maps.", relMap.GetClass().GetFullName());
+        }
+
+    if (relMap.GetConstraintMap(relMap.GetForeignEnd()).GetECClassIdPropMap() == nullptr
+        || relMap.GetConstraintMap(relMap.GetForeignEnd()).GetECInstanceIdPropMap() == nullptr
+        || relMap.GetConstraintMap(relMap.GetReferencedEnd()).GetECClassIdPropMap() == nullptr
+        || relMap.GetConstraintMap(relMap.GetReferencedEnd()).GetECInstanceIdPropMap() == nullptr)
+        {
+        return Error("RelationshipClassEndTableMap for ECClass '%s' has invalid constraint maps.", relMap.GetClass().GetFullName());
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckRelationshipClassLinkTableMap(RelationshipClassLinkTableMap const& relMap) const
+    { 
+    const auto sourceTables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(relMap.GetDbMap(), m_schemaImportContext, relMap.GetRelationshipClass().GetSource(), true);
+    if (sourceTables.size() > 1)
+        {
+        Utf8String tableStr;
+        for (DbTable const* table : sourceTables)
+            tableStr.append("[").append(table->GetName().c_str()).append("], ");
+
+        return Error("RelationshipClassLinkTableMap for ECClass '%s' map evaluation resulted in more than one source tables (%s)", relMap.GetClass().GetFullName(), tableStr.c_str());
+        }
+
+    const auto targetTables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(relMap.GetDbMap(), m_schemaImportContext, relMap.GetRelationshipClass().GetTarget(), true);
+    if (targetTables.size() > 1)
+        {
+        Utf8String tableStr;
+        for (DbTable const* table : targetTables)
+            tableStr.append("[").append(table->GetName().c_str()).append("], ");
+
+        return Error("RelationshipClassLinkTableMap for ECClass '%s'  map evaluation resulted in more than one target tables (%s)", relMap.GetClass().GetFullName(), tableStr.c_str());
+        }
+
+    if (relMap.GetConstraintMap(ECRelationshipEnd_Source).GetECClassIdPropMap() == nullptr
+        || relMap.GetConstraintMap(ECRelationshipEnd_Source).GetECInstanceIdPropMap() == nullptr
+        || relMap.GetConstraintMap(ECRelationshipEnd_Target).GetECClassIdPropMap() == nullptr
+        || relMap.GetConstraintMap(ECRelationshipEnd_Target).GetECInstanceIdPropMap() == nullptr)
+        {
+        return Error("RelationshipClassLinkTableMap for ECClass '%s'  has invalid constraint maps.", relMap.GetClass().GetFullName());
+        }
+
+    return SUCCESS; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::Error(Utf8CP format, ...) const
+    {
+    Utf8String msg;
+    va_list args;
+    va_start(args, format);
+    msg.VSprintf(format, args);
+    va_end(args);
+    m_errors.push_back(msg);
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DbMap::Validator::IsError(BentleyStatus st) const
+    {
+    if (st == SUCCESS)
+        return false;
+
+    m_status = st;
+    return m_onErrorFail;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::ReportIssues() const
+    {
+    for (Utf8StringCR message : m_errors)
+        {
+        m_map.Issues().Report("ECDB_MAP_VALIDATION_ERROR: %s", message.c_str());
+        }
+
+    return m_status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::Validator::CheckAndReportIssues(bool onErrorFail, Filter classMapFilter , Filter tableFilter ) const
+    {
+    m_status = SUCCESS;
+    m_errors.clear();
+    m_onErrorFail = onErrorFail;
+
+    CheckDbSchema(m_map.GetDbSchema(), tableFilter);
+    if (m_onErrorFail && m_status == ERROR)
+        return ReportIssues();
+
+    CheckDbMap(m_map, classMapFilter);
+    if (m_onErrorFail && m_status == ERROR)
+        return ReportIssues();
+
+    return ReportIssues();
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
