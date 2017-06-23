@@ -156,7 +156,6 @@ BentleyStatus TileLoader::DoReadFromDb()
 
     if (true)
         {
-        StopWatch   stopWatch(true);
         RealityData::Cache::AccessLock lock(*cache); // block writes to cache Db while we're reading
 
         enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4};
@@ -211,7 +210,6 @@ BentleyStatus TileLoader::DoReadFromDb()
                 BeAssert(false);
                 }
             }
-        THREADLOG.debugv ("DoReadFromDB: %f Seconds", stopWatch.GetCurrentSeconds());
         }
 
     // ###TODO: Why? if (m_loads != nullptr)
@@ -297,7 +295,6 @@ BentleyStatus TileLoader::DoSaveToDb()
         return ERROR;
         }
 
-    // Try update existing row...
     uint64_t rowId = stmt->GetValueInt64(0);
 
     // Compress and write blob.
@@ -308,6 +305,7 @@ BentleyStatus TileLoader::DoSaveToDb()
         return ERROR;
         }
 
+    // Try update existing row...
     rc = cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
