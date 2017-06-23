@@ -1218,7 +1218,10 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
 ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(NavigationPropertyMap& navPropMap)
     {
     BeAssert(!navPropMap.IsComplete());
-
+    if (navPropMap.GetClassMap().GetClass().GetFullName () == Utf8String("BridgePhysical:Bridge"))
+        {
+        printf("");
+        }
     //nav prop only supported if going from foreign end (where FK column is persisted) to referenced end
     NavigationECPropertyCP navigationProperty = navPropMap.GetProperty().GetAsNavigationProperty();
     if (m_relationshipMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
@@ -1259,7 +1262,11 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
             PRECONDITION(id != nullptr && classId != nullptr, ClassMappingStatus::Error);
             if (!columnFactory.IsColumnInUse(*id) && !columnFactory.IsColumnInUse(*classId))
                 {
+                
                 if (navPropMap.SetMembers(*id, *classId, m_relationshipMap.GetClass().GetId()) != SUCCESS)
+                    return ClassMappingStatus::Error;
+                
+                if (!columnFactory.MarkNavPropertyMapColumnUsed(navPropMap))
                     return ClassMappingStatus::Error;
 
                 return ClassMappingStatus::Success;

@@ -135,6 +135,13 @@ struct ClassMapColumnFactory : NonCopyableClass
         ~ClassMapColumnFactory() {};
         bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
         bool IsColumnInUse(DbColumn const& column) const;
+        bool MarkNavPropertyMapColumnUsed(NavigationPropertyMap const& map) const
+            {
+            PRECONDITION(map.IsComplete(), false);
+            GetColumnMaps()->Insert(map.GetIdPropertyMap());
+            GetColumnMaps()->Insert(map.GetRelECClassIdPropertyMap());
+            return true;
+            }
         void ReserveSharedColumns(Utf8StringCR propertyName) const;
         void ReserveSharedColumns(uint32_t columnsRequired) const;
         void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }
