@@ -32,6 +32,8 @@ USING_NAMESPACE_BENTLEY_DPTEST
 
 BEGIN_UNNAMED_NAMESPACE
 
+typedef Dgn::dgn_TxnTable::ElementDep::DepRelData T_DepRelData;
+
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
@@ -156,9 +158,17 @@ void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> const& rels, ECInstanceKey eid)
+static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> const& rels, ECInstanceKey relid)
     {
-    return std::find(rels.begin(), rels.end(), eid.GetInstanceId());
+    return std::find(rels.begin(), rels.end(), relid.GetInstanceId());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+static bvector<T_DepRelData>::const_iterator findRelId(bvector<T_DepRelData> const& rels, ECInstanceKey relid)
+    {
+    return std::find_if(rels.begin(), rels.end(), [&](T_DepRelData const& dep) {return dep.m_relKey == relid;});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -407,6 +417,33 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
         ASSERT_EQ( rels.size() , 1);
         auto i2_1   = findRelId(rels, g.r2_1);      ASSERT_NE(i2_1  , rels.end());
         }
+
+    //  ----------------
+    //  delete e31 =>
+    //  ----------------
+    //     X->e31-X
+    //    /        \
+    // e99          ->e2-o->e1
+    //    \        /
+    //     o->e3-o
+    //
+    // (The little "o"s represent the ECRelationships and the X's represent the deleted relationships.)
+    ASSERT_EQ(DgnDbStatus::Success, g.e31->Delete());
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    if (true)
+        {
+        ASSERT_EQ( 0, TestElementDrivesElementHandler::GetHandler().m_relIds.size() );
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_deletedRels;
+        ASSERT_EQ( rels.size() , 2 );
+        auto i99_31 = findRelId(rels, g.r99_31);       ASSERT_NE(i99_31  , rels.end());
+        auto i31_2  = findRelId(rels, g.r31_2);        ASSERT_NE(i31_2  , rels.end());
+
+        ASSERT_LT(i99_31, i31_2);
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
