@@ -35,7 +35,7 @@ DEFINE_REF_COUNTED_PTR(GeomPartBuilder);
 typedef bvector<TilePtr>    TileList;
 typedef bvector<TileP>      TilePList;
 
-#define TILECACHE_DEBUG
+//#define TILECACHE_DEBUG
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16

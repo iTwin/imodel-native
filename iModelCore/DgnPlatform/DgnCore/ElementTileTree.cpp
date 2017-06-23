@@ -1014,7 +1014,7 @@ BentleyStatus Loader::_LoadTile()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
+* @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::DoGetFromSource()
     {
@@ -1028,12 +1028,17 @@ BentleyStatus Loader::DoGetFromSource()
     if (SUCCESS != LoadGeometryFromModel(geometry))
         return ERROR;
 
+
+    ByteStream      uncompressed;
+    if (SUCCESS != TileTree::TileIO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter()))    // TBD -- Avoid round trip through m_tileBytes when loading from elements.
+        return ERROR;
+
+    
+    SnappyToBlob    toBlob;
+
     m_saveToCache = true;
 
-    StopWatch      stopWatch(true);
-    auto    status = TileTree::TileIO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
-
-    return status;
+    return SUCCESS;
     }
 
 
