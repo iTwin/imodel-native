@@ -98,3 +98,6 @@ LimitingTaskQueueTests.Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEven
     #            ntdll.dll!TppWorkerThread()  
     #            kernel32.dll!BaseThreadInitThunk()  
     #            ntdll.dll!RtlUserThreadStart()  
+
+WorkerThreadTests.Push_NoParentTask_PrioritySetToNormal
+    # bim0200, x64, NDEBUG, firebug, random hang
