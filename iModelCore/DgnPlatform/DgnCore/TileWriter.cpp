@@ -2310,7 +2310,7 @@ void WriteFeatureTable(FeatureTableCR featureTable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WriteTile(Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
+BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
     {
     uint32_t    startPosition = m_buffer.GetSize();
     uint32_t    flags = geometry.ContainsCurves() ? TileIO::ContainsCurves : TileIO::None;
@@ -2318,6 +2318,7 @@ BentleyStatus WriteTile(Render::Primitives::GeometryCollectionCR geometry, DPoin
     m_buffer.Append((const uint8_t *) s_dgnTileMagic, 4);
     m_buffer.Append(s_dgnTileVersion);
     m_buffer.Append(flags);
+    m_buffer.Append(contentRange);
 
     uint32_t    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);              // Filled in below.
@@ -2346,9 +2347,9 @@ BentleyStatus TileIO::Write3dTile(StreamBufferR streamBuffer, Render::Primitives
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileIO::WriteDgnTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid)
+BentleyStatus TileIO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid)
     {
-    return TileWriter::DgnCacheTileWriter(streamBuffer, model).WriteTile(geometry, centroid);
+    return TileWriter::DgnCacheTileWriter(streamBuffer, model).WriteTile(contentRange, geometry, centroid);
     }
 
 

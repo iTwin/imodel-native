@@ -823,7 +823,7 @@ TileIO::ReadStatus  ReadFeatureTable(FeatureTableR featureTable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus  ReadTile(Render::Primitives::GeometryCollectionR geometry)
+TileIO::ReadStatus  ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry)
     {
     char                dgnTileMagic[4];
     uint32_t            dgnTileLength, dgnTileVersion, flags;
@@ -834,6 +834,7 @@ TileIO::ReadStatus  ReadTile(Render::Primitives::GeometryCollectionR geometry)
         !m_buffer.Read(dgnTileVersion) ||  
         dgnTileVersion != s_dgnTileVersion ||
         !m_buffer.Read(flags) ||
+        !m_buffer.Read(contentRange) || 
         !m_buffer.Read(dgnTileLength))
         return TileIO::ReadStatus::InvalidHeader;
     
@@ -853,7 +854,7 @@ END_TILEREADER_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus TileIO::ReadDgnTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem)
+TileIO::ReadStatus TileIO::ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem)
     {
-    return TileReader::DgnCacheTileReader(streamBuffer, model, renderSystem).ReadTile(geometry);
+    return TileReader::DgnCacheTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry);
     }

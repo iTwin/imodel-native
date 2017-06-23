@@ -80,6 +80,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(TileRequests)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileCache)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DirtyRanges)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
 
@@ -87,6 +88,22 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
 DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
 DEFINE_REF_COUNTED_PTR(TileLoader)
+DEFINE_REF_COUNTED_PTR(TileCache)
+
+
+//=======================================================================================
+// Manage the creation and cleanup of the local TileCache used by TileData
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct TileCache : RealityData::Cache
+{
+    uint64_t m_allowedSize;
+    BentleyStatus _Prepare() const override;
+    BentleyStatus _Cleanup() const override;
+    TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
+};
+
+
 
 typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
 

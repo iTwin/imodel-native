@@ -14,23 +14,6 @@ USING_NAMESPACE_TILETREE
 
 #define TABLE_NAME_TileTree "TileTree2"   // Added 'ContentType' and 'Expires'.
 
-BEGIN_UNNAMED_NAMESPACE
-
-//=======================================================================================
-// Manage the creation and cleanup of the local TileCache used by TileData
-// @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
-struct TileCache : RealityData::Cache
-{
-    uint64_t m_allowedSize;
-    BentleyStatus _Prepare() const override;
-    BentleyStatus _Cleanup() const override;
-    TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
-};
-
-DEFINE_REF_COUNTED_PTR(TileCache)
-
-END_UNNAMED_NAMESPACE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016                                        
@@ -830,7 +813,8 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 
     double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
     DPoint3d center = args.GetTileCenter(*this);
-    
+
+#define LIMIT_MIN_PIXEL_SIZE    
 #if defined(LIMIT_MIN_PIXEL_SIZE)
     constexpr double s_minPixelSizeAtPoint = 1.0E-3;
     double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
