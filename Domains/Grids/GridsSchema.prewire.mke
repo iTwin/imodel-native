@@ -1,0 +1,11 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Grids/GridsSchema.prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)ECSchemas/Domain/Grids.01.00.ecschema.xml : $(_MakeFilePath)Grids.01.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

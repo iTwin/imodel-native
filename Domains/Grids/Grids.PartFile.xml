@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+    
+
+    <Part Name="GridsSchema" BentleyBuildMakeFile="Grids/GridsSchema.prewire.mke">
+      <Bindings>
+        <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/Grids*.xml</Files>
+      </Bindings>
+    </Part>
+    
+    <Part Name="ConstraintModelSchema" BentleyBuildMakeFile="ConstraintModel/ConstraintModelSchema.prewire.mke">
+        <Bindings>
+             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/ConstraintModel*.xml</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke">
+      <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="ConstraintModel"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)GridElements$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)GridElements$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+
+    <Part Name="GridHandlers" BentleyBuildMakeFile="Grids/Handlers/GridHandlers.mke">
+      <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="GridElements"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)GridHandlers$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)GridHandlers$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+
+    <Part Name="Grids" >
+      <SubPart PartName="GridsDomain"/>
+      <SubPart PartName="GridElements"/>
+      <SubPart PartName="GridHandlers"/>
+    </Part>
+
+    <Part Name="GridsDomain" BentleyBuildMakeFile="Grids/Domain/GridsDomain.mke">
+      <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="GridHandlers"/>
+      <SubPart PartName="BeJsonCpp" Repository="libsrc-jsoncpp" PartFile="BeJsonCpp"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)GridsDomain$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)GridsDomain$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+    
+    <Part Name="ConstraintModel" BentleyBuildMakeFile="ConstraintModel/ConstraintModel.mke">
+      <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+      <SubPart PartName="BuildingUtils"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)ConstraintModel$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)ConstraintModel$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+    
+    <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke">
+      <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+      <SubPart PartName="RoadRailPhysical"  PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
+      <SubPart PartName="BuildingUnits"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+    
+    <Part Name="BuildingUnits" BentleyBuildMakeFile="Units/BuildingUnits.mke">
+        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+        <Bindings>
+        <Libs>Delivery/$(libprefix)BuildingUnits$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+    
+</BuildContext>

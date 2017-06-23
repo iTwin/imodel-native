@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+|
+|     $Source: Grids/Grids.01.00.ecschema.xml $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
+======================================================================================= -->
+<ECSchema schemaName="Grids" nameSpacePrefix="grids" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
+
+
+
+    <ECRelationshipClass typeName="GridPortionIntersectsGridSurface" strength="referencing">
+      <ECCustomAttributes>
+        <ClassMap xmlns="ECDbMap.02.00">
+          <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+        </ClassMap>
+        <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+          <SourceECInstanceIdColumn>GridPortion</SourceECInstanceIdColumn>
+          <TargetECInstanceIdColumn>GridSurface</TargetECInstanceIdColumn>
+        </LinkTableRelationshipMap>
+      </ECCustomAttributes>
+      <Source cardinality="(1,1)" polymorphic="true">
+        <Class class="GridPortion"/>
+      </Source>
+      <Target cardinality="(1,1)" polymorphic="true">
+        <Class class="GridSurface"/>
+      </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GridSurfaceCreatesGridCurve" strength="referencing">
+      <BaseClass>bis:ElementDrivesElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00"/>
+      </ECCustomAttributes>
+      <Source cardinality="(0,N)" polymorphic="true">
+        <Class class="GridSurface"/>
+      </Source>
+      <Target cardinality="(0,N)" polymorphic="true">
+        <Class class="GridCurve"/>
+      </Target>
+      <ECProperty propertyName="IsBaseSurface" typeName="boolean" description="whether the surface is the base on which others are imprinted"/>
+    </ECRelationshipClass>
+  
+  
+    <ECEntityClass typeName="IntersectionCurve">
+      <BaseClass>bis:SpatialLocationElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="GridCurve">
+      <BaseClass>IntersectionCurve</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+  
+    <ECEntityClass typeName="GridLine">
+      <BaseClass>GridCurve</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="GridSpline">
+      <BaseClass>GridCurve</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="GridArc">
+      <BaseClass>GridCurve</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="DrivingSurface">
+      <BaseClass>bis:SpatialLocationElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="GridSurface">
+      <BaseClass>DrivingSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+
+    <ECEntityClass typeName="GridPlaneSurface">
+      <BaseClass>GridSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="GridArcSurface">
+      <BaseClass>GridSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SurfaceSet">
+      <BaseClass>bis:SpatialLocationPortion</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+
+    <ECEntityClass typeName="GridPortion">
+      <BaseClass>SurfaceSet</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="OrthogonalGridPortion">
+      <BaseClass>GridPortion</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="RadialGridPortion">
+      <BaseClass>GridPortion</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SketchGridPortion">
+      <BaseClass>GridPortion</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+</ECSchema>
