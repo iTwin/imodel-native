@@ -50,9 +50,6 @@ BentleyStatus    GetAccessorAndBufferView(Json::Value& accessor, Json::Value& bu
         !(bufferView = m_bufferViews[bufferViewAccessorValue.asCString()]).isObject())
         return ERROR;
 
-    if(bufferView["buffer"].asString() != "binary_glTF")
-        return ERROR;
-
     return SUCCESS;
     }
 
@@ -73,22 +70,35 @@ DisplayParamsPtr ReadDisplayParams(Json::Value const& primitiveValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ReadIndices(bvector<uint32_t>& indices, Json::Value const& primitiveValue, Utf8CP accessorName)
+BentleyStatus GetBufferView (void const*& pData, size_t& count, size_t& byteLength, uint32_t& type, Json::Value& accessor, Json::Value const& primitiveValue, Utf8CP accessorName)
     {
-    Json::Value         accessor, bufferView;
+    Json::Value     bufferView;
 
-    // Indices....
-    if(SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue, accessorName) ||
-        bufferView["target"].asInt() != GLTF_ELEMENT_ARRAY_BUFFER)
+    if(SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue, accessorName))
         return ERROR;
     
-    size_t              indicesByteLength  = bufferView["byteLength"].asUInt(), 
-                        indicesCount       = accessor["count"].asUInt(),
-                        bufferByteOffset   = bufferView["byteOffset"].asUInt(),
-                        accessorByteOffset = accessor["byteOffset"].asUInt();
-    void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
+    byteLength  = bufferView["byteLength"].asUInt();
+    count       = accessor["count"].asUInt();
+    pData = m_binaryData + bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
+    type = accessor["componentType"].asUInt();
 
-    switch(accessor["componentType"].asInt())
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ReadIndices(bvector<uint32_t>& indices, Json::Value const& primitiveValue, Utf8CP accessorName)
+    {
+    void const*     pData;
+    size_t          indicesCount, indicesByteLength;
+    uint32_t        type;
+    Json::Value     accessor;
+
+    if (SUCCESS != GetBufferView (pData, indicesCount, indicesByteLength, type, accessor, primitiveValue, accessorName))
+        return ERROR;
+
+    switch(type)
         {
         case  GLTF_UNSIGNED_SHORT:
             {
@@ -102,6 +112,7 @@ BentleyStatus   ReadIndices(bvector<uint32_t>& indices, Json::Value const& primi
         
             for(auto const& pEnd = pIndex + indicesCount; pIndex < pEnd; )
                 indices.push_back(*pIndex++);
+
             break;
             }
 
@@ -115,7 +126,7 @@ BentleyStatus   ReadIndices(bvector<uint32_t>& indices, Json::Value const& primi
 
             indices.resize(indicesCount);
 
-            memcpy(indices.data(), pData, indicesCount);
+            memcpy(indices.data(), pData, indicesByteLength);
             break;
             }
         default:
@@ -131,91 +142,45 @@ BentleyStatus   ReadIndices(bvector<uint32_t>& indices, Json::Value const& primi
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ReadMeshIndices(MeshR mesh, Json::Value const& primitiveValue)
     {
-    auto&               mode = primitiveValue["mode"];
     bvector<uint32_t>   indices;
-
-    if(!mode.isInt())
-        {
-        BeAssert(false && "invalid primitive mode");
-        return ERROR;
-        }
-
 
     if (SUCCESS != ReadIndices (indices, primitiveValue, "indices"))
         {
-        BeAssert(false && "indices read error"); 
+        BeAssert(false && "indices read error");
         return ERROR;
         }
 
-    switch(mode.asInt())
-        {
-#ifdef WIP_POLYLINES
-        case GLTF_LINES:
-            {
-            size_t          lineVertexCount = 2*(indices.size()/2);
-            TilePolyline    polyline;
+    size_t      triangleVertexCount = 3*(indices.size()/3);
 
-            for(size_t i=0; i<lineVertexCount; i+= 2)
-                {
-                uint32_t    index = indices[i];
+    for(size_t i=0; i < triangleVertexCount; i+= 3)
+        mesh.AddTriangle(Triangle(indices[i], indices[i+1], indices[i+2], false));
 
-                if(!polyline.GetIndices().empty() && index != polyline.GetIndices().back())
-                    {
-                    mesh.AddPolyline(polyline);
-                    polyline.Clear();
-                    }
-                else
-                    {
-                    polyline.AddIndex(indices[i]);
-                    polyline.AddIndex(indices[i+1]);
-                    }
-                }
-            break;
-            }
-#endif
-        
-        case GLTF_TRIANGLES:
-            {
-            size_t      triangleVertexCount = 3*(indices.size()/3);
 
-            for(size_t i=0; i < triangleVertexCount; i+= 3)
-                mesh.AddTriangle(Triangle(indices[i], indices[i+1], indices[i+2], false));
-
-            break;
-            }
-    
-        default:
-            BeAssert(false && "invalid mesh mode");
-            break;
-        }
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ReadVertexAttributes(bvector<double>& values, Json::Value const& primitiveValue, size_t nComponents, char const* attributeName)
+BentleyStatus ReadVertexAttributes(bvector<double>& values, Json::Value const& primitiveValue, size_t nComponents, char const* accessorName)
     {
-    Json::Value         accessor, bufferView;
+    void const*     pData;
+    size_t          count, byteLength;
+    uint32_t        type;
+    Json::Value     accessor;
 
-    if(!primitiveValue.isMember("attributes") ||
-        SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue["attributes"], attributeName) ||
-        !accessor.isMember("componentType") ||
-        bufferView["target"].asInt() != GLTF_ARRAY_BUFFER)
+    if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, primitiveValue, accessorName))
         return ERROR;
-        
-    size_t              count               = accessor["count"].asUInt(),
-                        dataSize            = bufferView["byteLength"].asUInt(),
-                        bufferByteOffset    = bufferView["byteOffset"].asUInt(),
-                        accessorByteOffset  = accessor["byteOffset"].asUInt(),
-                        nValues             = count * nComponents;
-    void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
 
-    switch (accessor["componentType"].asInt())
+    size_t   nValues             = count * nComponents;
+
+
+
+    switch (type)
         {
         case GLTF_UNSIGNED_SHORT:
             {
-            if(nValues * sizeof(uint16_t) != dataSize)    
+            if(nValues * sizeof(uint16_t) != byteLength)    
                 {
                 BeAssert(false && "Error reading vertex attribute");
                 return ERROR;
@@ -250,7 +215,7 @@ BentleyStatus ReadVertexAttributes(bvector<double>& values, Json::Value const& p
 
         case GLTF_FLOAT:
             {
-            if(nValues * sizeof(float) != dataSize)    
+            if(nValues * sizeof(float) != byteLength)    
                 {
                 BeAssert(false && "Error reading vertex attribute");
                 return ERROR;
@@ -275,30 +240,23 @@ BentleyStatus ReadVertexAttributes(bvector<double>& values, Json::Value const& p
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json::Value const& primitiveValue)
     {
-    Json::Value         accessor, bufferView;
+    void const*     pData;
+    size_t          count, byteLength;
+    uint32_t        type;
+    Json::Value     accessor;
 
-    if(!primitiveValue.isMember("attributes") ||
-        SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue["attributes"], "BATCHID") ||
-        bufferView["target"].asInt() != GLTF_ARRAY_BUFFER ||
-        accessor["componentType"] != GLTF_UNSIGNED_SHORT)
-        {
+    if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, primitiveValue["attributes"], "BATCHID") ||
+        type != GLTF_UNSIGNED_SHORT)
         return ERROR;
-        }
 
-    size_t              count               = accessor["count"].asUInt(),
-                        dataSize            = bufferView["byteLength"].asUInt(),
-                        bufferByteOffset    = bufferView["byteOffset"].asUInt(),
-                        accessorByteOffset  = accessor["byteOffset"].asUInt();
-    void const*         pData =(m_binaryData + bufferByteOffset + accessorByteOffset);
-
-    if (dataSize != count * sizeof(uint16_t))
+    if (byteLength != count * sizeof(uint16_t))
         {
         BeAssert(false && "Invalid batch id size");
         return ERROR;
         }
 
     batchIds.resize (count);
-    memcpy (batchIds.data(), pData, dataSize);
+    memcpy (batchIds.data(), pData, byteLength);
     return SUCCESS;
     }
 
@@ -316,23 +274,15 @@ virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ReadVertices(QVertex3dListR vertexList, Json::Value const& primitiveValue)
     {
-    Json::Value         accessor, bufferView;
+    void const*     pData;
+    size_t          count, byteLength;
+    uint32_t        type;
+    Json::Value     accessor;
 
-    if(!primitiveValue.isMember("attributes") ||
-        SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue["attributes"], "POSITION") ||
-        !accessor.isMember("componentType") || 
-        bufferView["target"].asInt() != GLTF_ARRAY_BUFFER)
-        {
-        BeAssert(false);
+    if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, primitiveValue["attributes"], "POSITION"))
         return ERROR;
-        }
-        
-    size_t              count               = accessor["count"].asUInt(),
-                        dataSize            = bufferView["byteLength"].asUInt(),
-                        bufferByteOffset    = bufferView["byteOffset"].asUInt(),
-                        accessorByteOffset  = accessor["byteOffset"].asUInt(),
-                        nValues             = count * 3;
-    void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
+
+    size_t              nValues             = count * 3;
 
     switch (accessor["componentType"].asInt())
         {
@@ -340,7 +290,7 @@ BentleyStatus ReadVertices(QVertex3dListR vertexList, Json::Value const& primiti
             {
             Json::Value     extensions, quantized, min, max;
 
-            if(nValues * sizeof(uint16_t) != dataSize)    
+            if(nValues * sizeof(uint16_t) != byteLength)    
                 {
                 BeAssert(false && "Error reading vertex attribute");
                 return ERROR;
@@ -371,23 +321,15 @@ BentleyStatus ReadVertices(QVertex3dListR vertexList, Json::Value const& primiti
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ReadNormals(QPoint3dListR normals, Json::Value const& value, Utf8CP accessorName)
     {
-    Json::Value         accessor, bufferView;
+    void const*     pData;
+    size_t          count, byteLength;
+    uint32_t        type;
+    Json::Value     accessor;
 
-    if(SUCCESS != GetAccessorAndBufferView(accessor, bufferView, value, accessorName) ||
-        !accessor.isMember("componentType") || 
-        bufferView["target"].asInt() != GLTF_ARRAY_BUFFER)
-        {
-        BeAssert(false);
+    if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, value, accessorName))
         return ERROR;
-        }
         
-    size_t              count               = accessor["count"].asUInt(),
-                        dataSize            = bufferView["byteLength"].asUInt(),
-                        bufferByteOffset    = bufferView["byteOffset"].asUInt(),
-                        accessorByteOffset  = accessor["byteOffset"].asUInt();
-    void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
-
-    switch (accessor["componentType"].asInt())
+     switch (type)
         {
         case GLTF_UNSIGNED_SHORT:
             {
@@ -408,24 +350,19 @@ BentleyStatus ReadNormals(QPoint3dListR normals, Json::Value const& value, Utf8C
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ReadParams(bvector<FPoint2d>& params, Json::Value const& value, Utf8CP accessorName)
     {
-    Json::Value         accessor, bufferView;
+    void const*     pData;
+    size_t          count, byteLength;
+    uint32_t        type;
+    Json::Value     accessor;
 
-    if(SUCCESS != GetAccessorAndBufferView(accessor, bufferView, value, accessorName) ||
-        !accessor.isMember("componentType") || 
-        bufferView["target"].asInt() != GLTF_ARRAY_BUFFER)
+    if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, value, accessorName))
         return ERROR;
-
-    size_t              count               = accessor["count"].asUInt(),
-                        dataSize            = bufferView["byteLength"].asUInt(),
-                        bufferByteOffset    = bufferView["byteOffset"].asUInt(),
-                        accessorByteOffset  = accessor["byteOffset"].asUInt();
-    void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
 
     switch (accessor["componentType"].asInt())
         {
         case GLTF_FLOAT:
             {
-            BeAssert (dataSize == count * sizeof(FPoint2d));
+            BeAssert (byteLength == count * sizeof(FPoint2d));
             params.resize(count);
             memcpy (params.data(), pData, count * sizeof(FPoint2d));
             return SUCCESS;
@@ -442,19 +379,15 @@ BentleyStatus ReadParams(bvector<FPoint2d>& params, Json::Value const& value, Ut
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ReadColors(bvector<uint16_t>& colors, Json::Value const& primitiveValue)
     {
-    Json::Value         accessor, bufferView;
+    void const*     pData;
+    size_t          count, byteLength;
+    uint32_t        type;
+    Json::Value     accessor;
 
-    if(!primitiveValue.isMember("attributes") ||
-        SUCCESS != GetAccessorAndBufferView(accessor, bufferView, primitiveValue["attributes"], "_COLORINDEX") ||
-        !accessor.isMember("componentType"))
+    if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, primitiveValue["attributes"], "_COLORINDEX"))
         return;
-        
-    size_t              count               = accessor["count"].asUInt(),
-                        bufferByteOffset    = bufferView["byteOffset"].asUInt(),
-                        accessorByteOffset  = accessor["byteOffset"].asUInt();
-    void const*         pData = m_binaryData + bufferByteOffset + accessorByteOffset;
 
-    switch (accessor["componentType"].asInt())
+    switch (type)
         {
         case GLTF_UNSIGNED_SHORT:
             {
@@ -499,6 +432,61 @@ BentleyStatus ReadColorTable(ColorTableR colorTable, Json::Value const& primitiv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+void    CopyAndIncrement(void* out, void const*& in, size_t size)
+    {
+    memcpy (out, in, size);
+    in = (uint8_t const*) in + size;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value, Utf8CP name)
+    {
+    void const*     pData;
+    size_t          count, byteLength;
+    uint32_t        type;
+    Json::Value     accessor;
+
+    if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, value, name))
+        return ERROR;
+
+    for (size_t i=0; i<count; i++)
+        {
+        uint32_t                nIndices = 0;
+        bvector<uint32_t>       indices;
+        float                   startDistance;
+        FPoint3d                rangeCenter;
+
+        CopyAndIncrement(&startDistance, pData, sizeof(startDistance));
+        CopyAndIncrement(&rangeCenter, pData, sizeof(rangeCenter));
+        CopyAndIncrement(&nIndices, pData, sizeof(nIndices));
+
+        indices.resize(nIndices);
+        if (GLTF_UNSIGNED_SHORT == type)
+            {
+            for (size_t j=0; j<nIndices; j++)
+                {
+                uint16_t    index;
+
+                CopyAndIncrement(&index, pData, sizeof(index));
+                indices[j] = index;
+                }
+            }
+        else
+            {
+            CopyAndIncrement(indices.data(), pData, nIndices * sizeof(uint32_t));
+            }
+
+        polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
+        }
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue)
     {
     Json::Value   edgesValue = primitiveValue["edges"];
@@ -519,28 +507,34 @@ MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue)
         memcpy (meshEdges->m_silhouette.data(), indices.data(), indices.size() * sizeof(uint32_t));
         }
    
-    Json::Value const&   polylinesValue = edgesValue["polylines"];
+    ReadPolylines(meshEdges->m_polylines, edgesValue, "polylines");
 
-    if (polylinesValue.isArray())
-        {
-        for (uint32_t i=0; i<polylinesValue.size(); i++)
-            {
-            Json::Value const&      polylineValue = polylinesValue[i];
-            MeshEdges::Polyline     polyline;
-                                                                                                
-            polyline.m_startDistance = polylineValue["startDistance"].asFloat();
-            polyline.m_rangeCenter.x = polylineValue["rangeCenter"][0].asFloat();
-            polyline.m_rangeCenter.y = polylineValue["rangeCenter"][1].asFloat();
-            polyline.m_rangeCenter.z = polylineValue["rangeCenter"][2].asFloat();
-            if (SUCCESS == ReadIndices(polyline.m_indices, polylineValue, "indices"))
-                meshEdges->m_polylines.push_back(polyline);
-            }
-        }
-    
     return meshEdges;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus     ReadFeatures(MeshR mesh, Json::Value const& primitiveValue)
+    {
+    bvector <uint32_t>  indices;
+    if (primitiveValue.isMember("featureID"))
+        {
+        indices.push_back(primitiveValue["featureID"].asUInt());
+        }
+    else
+        {
+        if (SUCCESS != ReadIndices(indices, primitiveValue, "featureIDs") || indices.size() != mesh.Points().size())
+            {
+            BeAssert(false && "Missing feature IDs");
+            return ERROR;
+            }
+        }
+    mesh.SetFeatureIndices(std::move(indices));
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featureTable)
@@ -580,18 +574,40 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
     MeshPtr         mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d());
     MeshEdgesPtr    meshEdges;
 
-    if(SUCCESS != ReadMeshIndices(*mesh, primitiveValue) ||
-       SUCCESS != ReadVertices(mesh->VertsR(), primitiveValue))
+    if(SUCCESS != ReadVertices(mesh->VertsR(), primitiveValue))
         return nullptr;
 
-    if (!displayParams->IgnoresLighting() &&
-        SUCCESS != ReadNormals(mesh->NormalsR(), primitiveValue["attributes"], "NORMAL"))
-        return nullptr;
-    
     ReadColorTable(mesh->GetColorTableR(), primitiveValue);
     ReadColors(mesh->ColorsR(), primitiveValue);
-    ReadParams(mesh->ParamsR(), primitiveValue["attributes"], "TEXCOORD_0");
-    mesh->GetEdgesR() = ReadMeshEdges(primitiveValue);
+    ReadFeatures(*mesh, primitiveValue);
+
+    switch (primitiveType)
+        {
+        case Mesh::PrimitiveType::Mesh:
+            {
+            if (SUCCESS != ReadMeshIndices(*mesh, primitiveValue))
+                return nullptr;
+
+            if (!displayParams->IgnoresLighting() &&
+                SUCCESS != ReadNormals(mesh->NormalsR(), primitiveValue["attributes"], "NORMAL"))
+                return nullptr;
+    
+            ReadParams(mesh->ParamsR(), primitiveValue["attributes"], "TEXCOORD_0");
+            mesh->GetEdgesR() = ReadMeshEdges(primitiveValue);
+            break;
+            }
+
+        case Mesh::PrimitiveType::Polyline:
+            {
+            if (SUCCESS != ReadPolylines(mesh->PolylinesR(), primitiveValue, "indices"))
+                {
+                BeAssert(false);
+                return nullptr;
+                }
+            break;
+            }
+        }
+
 
     // TBD... Batch ids.
     return mesh;
@@ -732,6 +748,7 @@ virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
 
     graphicParams.SetFillColor(ColorDef(materialValue["fillColor"].asUInt()));
     graphicParams.SetLineColor(ColorDef(materialValue["lineColor"].asUInt()));
+    graphicParams.SetLinePixels((LinePixels) materialValue["linePixels"].asUInt());
     graphicParams.SetWidth(materialValue["lineWidth"].asUInt());
 
     // TBD.  FillFlags.
@@ -744,7 +761,6 @@ virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
         if (materialId.IsValid())
             graphicParams.SetMaterial(m_renderSystem._GetMaterial(materialId, m_model.GetDgnDb()).get());
         }
-
 
     geometryParams.Resolve(m_model.GetDgnDb());
     switch (materialValue["type"].asUInt())

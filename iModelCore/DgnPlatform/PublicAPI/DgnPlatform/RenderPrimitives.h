@@ -23,7 +23,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshPart);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Triangle);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Polyline);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Mesh);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMergeKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilder);
@@ -48,13 +47,13 @@ DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
 
-typedef bvector<MeshInstance>       MeshInstanceList;
-typedef bvector<MeshPartPtr>        MeshPartList;
-typedef bvector<Triangle>           TriangleList;
-typedef bvector<Polyline>           PolylineList;
-typedef bvector<Polyface>           PolyfaceList;
-typedef bvector<Strokes>            StrokesList;
-typedef bmap<double, PolyfaceList>  PolyfaceMap;
+typedef bvector<MeshInstance>           MeshInstanceList;
+typedef bvector<MeshPartPtr>            MeshPartList;
+typedef bvector<Triangle>               TriangleList;
+typedef bvector<Polyface>               PolyfaceList;
+typedef bvector<Strokes>                StrokesList;
+typedef bvector<Render::MeshPolyline>   PolylineList;
+typedef bmap<double, PolyfaceList>      PolyfaceMap;
 
 //=======================================================================================
 //! Specifies under what circumstances a GeometryAccumulator should generate normals.
@@ -320,28 +319,6 @@ struct Triangle
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct Polyline
-{
-private:
-    bvector<uint32_t>   m_indices;
-    float               m_startDistance;
-    FPoint3d            m_rangeCenter;
-
-public:
-    Polyline () : m_startDistance(0.0) { }
-    Polyline (float startDistance, FPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
-    bvector<uint32_t> const& GetIndices() const { return m_indices; }
-    bvector<uint32_t>& GetIndices() { return m_indices; }
-    float GetStartDistance() const { return m_startDistance; }
-    FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
-
-    void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
-    void Clear() { m_indices.clear(); }
-};
-
-//=======================================================================================
 //! Represents a possibly-quantized position. Used during mesh generation.
 //! See QVertex3dList.
 // @bsistruct                                                   Paul.Connelly   05/17
@@ -468,6 +445,7 @@ private:
 
         void Add(FeatureCR, size_t numVerts);
         void ToFeatureIndex(FeatureIndex& index) const;
+        void SetIndices(bvector<uint32_t>&& indices);
     };
 
     DisplayParamsCPtr               m_displayParams;
@@ -500,6 +478,7 @@ public:
     DisplayParamsCR                 GetDisplayParams() const { return *m_displayParams; } //!< The mesh symbology
     TriangleList const&             Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
     PolylineList const&             Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
+    PolylineList&                   PolylinesR() { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
     QPoint3dListCR                  Points() const { return m_verts.GetQuantizedPoints(); } //!< Position vertex attribute array
     QVertex3dListCR                 Verts() const { return m_verts; }
     QVertex3dListR                  VertsR() { return m_verts; }
@@ -514,6 +493,7 @@ public:
     void                            ToFeatureIndex(FeatureIndex& index) const { m_features.ToFeatureIndex(index); }
     MeshEdgesPtr                    GetEdges() const { return m_edges; }
     MeshEdgesPtr&                   GetEdgesR() { return m_edges; }
+    void                            SetFeatureIndices (bvector<uint32_t>&& indices) { m_features.SetIndices(std::move(indices)); }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }
@@ -525,7 +505,7 @@ public:
     void Close() { m_verts.Requantize(); }
 
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
-    void AddPolyline(PolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
+    void AddPolyline(MeshPolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
     uint32_t AddVertex(QVertex3dCR vertex, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
     void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db) const;
 };
@@ -947,7 +927,7 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
         m_startDistance = 0.0;
         }
 
-    bool Init(PolylineCR line) { return Init(line.GetIndices(), line.GetStartDistance(), line.GetRangeCenter()); }
+    bool Init(MeshPolylineCR line) { return Init(line.GetIndices(), line.GetStartDistance(), line.GetRangeCenter()); }
         
     bool Init (bvector<uint32_t> const& indices, double startDistance, FPoint3dCR rangeCenter)
         {

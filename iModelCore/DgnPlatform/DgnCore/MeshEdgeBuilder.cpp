@@ -218,17 +218,18 @@ void CalculateEdgeVisibility(DRange3dCR tileRange)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain, MeshBuilder::Polyface const& builderPolyface, bmap<uint32_t, uint32_t> const& inverseVertexIndexMap) const
     {
-    MeshEdges::Polyline     polyline;
-    double                  startDistance = 0.0;
-    DRange3d                range = DRange3d::NullRange();
-    DPoint3dCP              polyfacePoints = builderPolyface.m_polyface.GetPointCP();
-    int32_t const*          chainIndices = chain.GetIndexCP();
+    float               startDistance = 0.0;
+    FPoint3d            rangeCenter;
+    bvector<uint32_t>   indices;
+    DRange3d            range = DRange3d::NullRange();
+    DPoint3dCP          polyfacePoints = builderPolyface.m_polyface.GetPointCP();
+    int32_t const*      chainIndices = chain.GetIndexCP();
 
     for (size_t i=0; i<chain.GetIndexCount(); i++)
         if (0 != chainIndices[i])
             range.Extend(polyfacePoints[chainIndices[i]-1]);
 
-    polyline.m_rangeCenter = FPoint3d::From (range.LocalToGlobal(.5, .5, .5));
+   rangeCenter = FPoint3d::From (range.LocalToGlobal(.5, .5, .5));
 
     for (size_t i=0; i<chain.GetIndexCount(); i++)
         {
@@ -240,22 +241,22 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
         if (builderIndex == inverseVertexIndexMap.end())
             {
             // This vertex is outside the tile (or perhaps decimated?)
-            if (!polyline.m_indices.empty())
+            if (!indices.empty())
                 {
-                edges.m_polylines.push_back(polyline);
-                polyline.m_indices.clear();
+                edges.m_polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
+                indices.clear();
                 }
            }
         else
             {
-            if (polyline.m_indices.empty())
-                polyline.m_startDistance = startDistance;
+            if (indices.empty())
+                startDistance = startDistance;
 
-            polyline.m_indices.push_back(builderIndex->second);
+            indices.push_back(builderIndex->second);
             }
         }
-    if (polyline.m_indices.size() > 1)
-        edges.m_polylines.push_back(polyline);
+    if (indices.size() > 1)
+        edges.m_polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
     }
 
 /*---------------------------------------------------------------------------------**//**

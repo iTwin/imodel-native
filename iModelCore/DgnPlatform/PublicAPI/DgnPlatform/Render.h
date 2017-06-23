@@ -2068,24 +2068,38 @@ struct  MeshEdge
 
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct MeshPolyline
+{
+private:
+    bvector<uint32_t>   m_indices;
+    float               m_startDistance;
+    FPoint3d            m_rangeCenter;
+
+public:
+    MeshPolyline () : m_startDistance(0.0) { }
+    MeshPolyline (float startDistance, FPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+    MeshPolyline (float startDistance, FPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+    bvector<uint32_t> const& GetIndices() const { return m_indices; }
+    bvector<uint32_t>& GetIndices() { return m_indices; }
+    float GetStartDistance() const { return m_startDistance; }
+    FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
+    
+
+    void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
+    void Clear() { m_indices.clear(); }
+};
+
+
+//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
 //=======================================================================================
 struct MeshEdges : RefCountedBase
 {
-    
-    struct Polyline
-        {
-        bvector<uint32_t>       m_indices;
-        FPoint3d                m_rangeCenter;
-        float                   m_startDistance;
-
-        Polyline (bvector<uint32_t>&& indices, FPoint3dCR rangeCenter, float startDistance);
-        Polyline() { }
-        };
-
     bvector<MeshEdge>           m_visible;
     bvector<MeshEdge>           m_silhouette;
-    bvector<Polyline>           m_polylines;
+    bvector<MeshPolyline>       m_polylines;
     QPoint3dList                m_silhouetteNormals0 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
     QPoint3dList                m_silhouetteNormals1 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
 
