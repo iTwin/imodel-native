@@ -12,8 +12,8 @@
 
 USING_NAMESPACE_TILETREE
 
-#define TABLE_NAME_TileTree "TileTree2"   // Added 'ContentType' and 'Expires'.
-
+#define TABLE_NAME_TileTree "TileTree3" // Moved 'Created' to a separate table
+#define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime"
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016                                        
@@ -167,7 +167,7 @@ BentleyStatus TileLoader::DoReadFromDb()
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
         uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
-        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
+        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?"))
             {
             stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
             stmt->BindInt64(2, rowId);
@@ -225,7 +225,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     // "INSERT OR REPLACE" so we can update old data that we failed to load.
     CachedStatementPtr stmt;
-    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,ContentType,Created,Expires) VALUES (?,?,?,?,?,?)");
+    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,ContentType,Expires) VALUES (?,?,?,?,?)");
 
     BeAssert(rc == BE_SQLITE_OK);
     BeAssert(stmt.IsValid());
@@ -235,7 +235,6 @@ BentleyStatus TileLoader::DoSaveToDb()
     stmt->BindBlob(2, m_tileBytes.GetData(), (int) m_tileBytes.GetSize(), Statement::MakeCopy::No);
     stmt->BindInt64(3, (int64_t) m_tileBytes.GetSize());
     stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
-    stmt->BindInt64(5, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     stmt->BindInt64(6, m_expirationDate);
 
     rc = stmt->Step();
@@ -243,6 +242,40 @@ BentleyStatus TileLoader::DoSaveToDb()
         {
         BeAssert(false);
         return ERROR;
+        }
+
+    // Write the tile creation time into separate table so that when we update it on next use of this tile, sqlite doesn't have to copy the potentially-huge data column
+    // We don't know if we did an INSERT or UPDATE above...
+    rc = cache->GetDb().GetCachedStatement(stmt, "SELECT ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?");
+    BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
+
+    stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    // Try update existing row...
+    uint64_t rowId = stmt->GetValueInt64(0);
+    rc = cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?");
+    BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
+
+    stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindInt64(2, rowId);
+    if (BE_SQLITE_OK != stmt->Step())
+        {
+        // We must have done an INSERT on tile tree table...
+        rc = cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TileTreeCreateTime " (Created) VALUES (?)");
+        BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
+
+        stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        rc = stmt->Step();
+        if (BE_SQLITE_OK != rc)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -346,9 +379,16 @@ folly::Future<ByteStream> FileDataQuery::Perform()
 BentleyStatus TileCache::_Prepare() const 
     {
     if (m_db.TableExists(TABLE_NAME_TileTree))
+        {
+        BeAssert(m_db.TableExists(TABLE_NAME_TileTreeCreateTime));
         return SUCCESS;
+        }
         
-    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree, "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Created BIGINT,Expires BIGINT") ? SUCCESS : ERROR;
+    if (BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "Created BIGINT"))
+        return ERROR;
+
+    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
+        "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Expires BIGINT") ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,7 +414,9 @@ BentleyStatus TileCache::_Cleanup() const
     uint64_t garbageSize = sum - (m_allowedSize * .95); // 5% slack to avoid purging often
 
     CachedStatementPtr selectStatement;
-    m_db.GetCachedStatement(selectStatement, "SELECT DataSize,Created FROM " TABLE_NAME_TileTree " ORDER BY Created ASC");
+    constexpr Utf8CP selectSql = "SELECT DataSize,Created FROM " TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON ROWID ORDER BY Created ASC";
+    m_db.GetCachedStatement(selectStatement, selectSql);
+    BeAssert(selectStatement.IsValid());
 
     uint64_t runningSum=0;
     while (runningSum < garbageSize)
@@ -393,7 +435,10 @@ BentleyStatus TileCache::_Cleanup() const
     BeAssert(creationDate > 0);
 
     CachedStatementPtr deleteStatement;
-    m_db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TileTree " WHERE Created <= ?");
+    constexpr Utf8CP deleteSql = "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID IN (SELECT ROWID FROM " TABLE_NAME_TileTreeCreateTime " WHERE Created <= ?)";
+    m_db.GetCachedStatement(deleteStatement, deleteSql);
+    BeAssert(deleteStatement.IsValid());
+
     deleteStatement->BindInt64(1, creationDate);
 
     return BE_SQLITE_DONE == deleteStatement->Step() ? SUCCESS : ERROR;
