@@ -422,12 +422,12 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     //  delete e31 =>
     //  ----------------
     //     X->e31-X
-    //    /        \
+    //    /        \     *
     // e99          ->e2-o->e1
     //    \        /
     //     o->e3-o
     //
-    // (The little "o"s represent the ECRelationships and the X's represent the deleted relationships.)
+    // (The little "o"s represent the ECRelationships and the X's represent the deleted relationships. * marks a handler that should be fired.)
     ASSERT_EQ(DgnDbStatus::Success, g.e31->Delete());
 
     monitor.Clear();
@@ -435,15 +435,26 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
     if (true)
         {
-        ASSERT_EQ( 0, TestElementDrivesElementHandler::GetHandler().m_relIds.size() );
-        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_deletedRels;
-        ASSERT_EQ( rels.size() , 2 );
-        auto i99_31 = findRelId(rels, g.r99_31);       ASSERT_NE(i99_31  , rels.end());
-        auto i31_2  = findRelId(rels, g.r31_2);        ASSERT_NE(i31_2  , rels.end());
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() , 1);
+        auto i2_1   = findRelId(rels, g.r2_1);               ASSERT_NE(i2_1, rels.end());
+
+        auto const& deletedRels = TestElementDrivesElementHandler::GetHandler().m_deletedRels;
+        ASSERT_EQ( deletedRels.size() , 2 );
+        auto i99_31 = findRelId(deletedRels, g.r99_31);       ASSERT_NE(i99_31, deletedRels.end());
+        auto i31_2  = findRelId(deletedRels, g.r31_2);        ASSERT_NE(i31_2, deletedRels.end());
 
         ASSERT_LT(i99_31, i31_2);
         }
 
+    // Make sure deletedRels was cleared. To check that, make some change, and verify that only the
+    // change comes through, not the prior deletions.
+    TwiddleTime(g.e1);
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    ASSERT_EQ( 0, TestElementDrivesElementHandler::GetHandler().m_deletedRels.size() );
+    ASSERT_EQ( 1, TestElementDrivesElementHandler::GetHandler().m_relIds.size() );
     }
 
 /*---------------------------------------------------------------------------------**//**

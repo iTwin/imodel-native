@@ -660,7 +660,6 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder_OneGraph(Edge c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElementDependencyGraph::InvokeHandlersForDeletedRelationships() 
     {
-    // *** NEEDS WORK: Somehow, we should sort the deleted rels by the model of the their (former) source elements
     for (auto const& reldata : m_txnMgr.ElementDependencies().m_deletedRels)
         {
         auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_txnMgr.GetDgnDb(), DgnClassId(reldata.m_relKey.GetClassId()));
@@ -676,6 +675,8 @@ void DgnElementDependencyGraph::InvokeHandlersForDeletedRelationships()
         else
             handler->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata); 
         }
+
+    m_txnMgr.ElementDependencies().m_deletedRels.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -854,6 +855,15 @@ void DgnElementDependencyGraph::DiscoverEdges()
 
     while (elementDrivesElement.StepSelectWhereRelationshipInDirectChanges(directlyChanged) == BE_SQLITE_ROW)
         queue.AddEdge(directlyChanged);
+
+    // Find and schedule the EDEs whose inputs are the outputs of deleted rels. 
+    for (auto deletedEdge : m_txnMgr.ElementDependencies().m_deletedRels)
+        {
+        Edge affected;
+        elementDrivesElement.BindSelectByRoot(deletedEdge.m_target);
+        while (elementDrivesElement.StepSelectByRoot(affected) == BE_SQLITE_ROW)
+            queue.AddEdge(affected);
+        }
 
     //  Find edges reachable from the initial set found above.
     Edge currEdge;
