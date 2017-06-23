@@ -408,10 +408,13 @@ public:
 struct TileLoader : RefCountedBase, NonCopyableClass
 {
 protected:
-    Utf8String m_resourceName;  // full file or URL name
-    TilePtr m_tile;             // tile to load, cannot be null.
-    TileLoadStatePtr m_loads;
-    Dgn::Render::SystemP m_renderSys;
+    Utf8String                  m_resourceName;  // full file or URL name
+    TilePtr                     m_tile;             // tile to load, cannot be null.
+    TileLoadStatePtr            m_loads;
+    Dgn::Render::SystemP        m_renderSys;
+    BeSQLite::SnappyFromBlob    m_snappyFrom;
+    BeSQLite::SnappyToBlob      m_snappyTo;
+
 
 
     // Cacheable information

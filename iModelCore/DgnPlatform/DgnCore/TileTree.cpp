@@ -15,6 +15,19 @@ USING_NAMESPACE_TILETREE
 #define TABLE_NAME_TileTree "TileTree3" // Moved 'Created' to a separate table
 #define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime"
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
+struct CacheBlobHeader
+{
+    enum {DB_Signature06 = 0x0600};
+    uint32_t m_signature;    // write this so we can detect errors on read
+    uint32_t m_size;
+
+    CacheBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size=size;}
+    CacheBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
+};
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016                                        
 //----------------------------------------------------------------------------------------
@@ -159,7 +172,29 @@ BentleyStatus TileLoader::DoReadFromDb()
         if (BE_SQLITE_ROW != stmt->Step())
             return ERROR;
 
-        m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(Column::Data), stmt->GetValueInt(Column::DataSize));
+        if (ZIP_SUCCESS != m_snappyFrom.Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", stmt->GetValueInt64(Column::Rowid)))
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        CacheBlobHeader     header(m_snappyFrom);
+        uint32_t            sizeRead;
+
+        if ((CacheBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        m_tileBytes.Resize(header.m_size);
+        m_snappyFrom.ReadAndFinish(m_tileBytes.GetDataP(), header.m_size, sizeRead);
+
+        if (sizeRead != header.m_size)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
         m_tileBytes.SetPos(0);
         m_contentType = stmt->GetValueText(Column::ContentType);
         m_expirationDate = stmt->GetValueInt64(Column::Expires);
@@ -232,8 +267,14 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     stmt->ClearBindings();
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
-    stmt->BindBlob(2, m_tileBytes.GetData(), (int) m_tileBytes.GetSize(), Statement::MakeCopy::No);
-    stmt->BindInt64(3, (int64_t) m_tileBytes.GetSize());
+    m_snappyTo.Init();
+    CacheBlobHeader header(m_tileBytes.GetSize());
+    m_snappyTo.Write((Byte const*) &header, sizeof(header));
+    m_snappyTo.Write(m_tileBytes.GetData(), (int) m_tileBytes.GetSize());
+    uint32_t zipSize = m_snappyTo.GetCompressedSize();
+
+    stmt->BindZeroBlob(2, zipSize); // more than one chunk in geom stream
+    stmt->BindInt64(3, (int64_t) zipSize);
     stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
     stmt->BindInt64(5, m_expirationDate);
 
@@ -258,6 +299,15 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     // Try update existing row...
     uint64_t rowId = stmt->GetValueInt64(0);
+
+    // Compress and write blob.
+    StatusInt status = m_snappyTo.SaveToRow( cache->GetDb(), TABLE_NAME_TileTree, "Data", rowId);
+    if (SUCCESS != status)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     rc = cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
