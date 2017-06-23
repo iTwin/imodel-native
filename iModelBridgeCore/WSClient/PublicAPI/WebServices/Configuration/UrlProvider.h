@@ -84,6 +84,9 @@ struct UrlProvider
 
         WSCLIENT_EXPORT static void Uninitialize();
 
+        //! Gets last cached environment in local store.
+        WSCLIENT_EXPORT static Json::Value UrlProvider::GetCachedEnvironment(IJsonLocalState* localState);
+
         //! Should be used with all requests to provided URLs!
         //! Returns handler that will configure requests depending on environment.
         //! Will setup certificate validation appropriately.
