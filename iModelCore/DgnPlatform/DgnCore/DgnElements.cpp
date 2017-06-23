@@ -993,7 +993,21 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
     m_stmts.GetPreparedStatement(stmt, *m_dgndb.GetDbFile(), sql);
     return stmt;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime DgnElements::GetLastModifiedTime() const
+    {
+    constexpr Utf8CP ecsql = "SELECT MAX(LastMod) FROM " BIS_SCHEMA(BIS_CLASS_Element);
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
+    if (BE_SQLITE_ROW == stmt->Step())
+        return stmt->GetValueDateTime(0);
+
+    BeAssert(false && "Empty element table?!");
+    return DateTime();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
