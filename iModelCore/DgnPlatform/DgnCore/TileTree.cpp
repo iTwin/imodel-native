@@ -313,7 +313,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     stmt->BindInt64(2, rowId);
-    if (BE_SQLITE_OK != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         {
         // We must have done an INSERT on tile tree table...
         rc = cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TileTreeCreateTime " (Created) VALUES (?)");
@@ -321,7 +321,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 
         stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         rc = stmt->Step();
-        if (BE_SQLITE_OK != rc)
+        if (BE_SQLITE_DONE != rc)
             {
             BeAssert(false);
             return ERROR;
