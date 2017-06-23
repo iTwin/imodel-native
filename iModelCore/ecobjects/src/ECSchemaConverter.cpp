@@ -299,7 +299,7 @@ static Utf8CP s_oldStandardSchemaNames[] =
 bool IsCustomAttributeFromOldStandardSchemas(IECInstanceR customAttribute)
     {
     // Skip these for now... Once the conversions are added remove this check
-    bvector<Utf8CP> oldCAs = { "HideProperty", "DisplayOptions" };
+    bvector<Utf8CP> oldCAs = { "HideProperty", "DisplayOptions", "CalculatedECPropertySpecification" };
     for (auto oldCA : oldCAs)
         if (0 == customAttribute.GetClass().GetName().CompareTo(oldCA))
             return false;
