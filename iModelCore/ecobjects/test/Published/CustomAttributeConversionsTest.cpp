@@ -2591,6 +2591,440 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityInherited_
     }
     }
 
+void verifyHidden(ECPropertyCP ecProperty)
+    {
+    IECInstancePtr hiddenPropertyCA = ecProperty->GetCustomAttribute("CoreCustomAttributes", "HiddenProperty");
+    EXPECT_TRUE(hiddenPropertyCA.IsValid()) << "Expected to find the 'HiddenProperty' Custom Attribute on " <<
+        ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    ECValue value;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenPropertyCA->GetValue(value, "Show"))
+        << "Failed to get the 'Show' value for " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    EXPECT_TRUE(value.IsNull() || !value.GetBoolean()) <<
+        "Expected 'HiddenProperty.Show' CA value on " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str() <<
+        " to be unset or set to false to be considered hidden";
+    }
+
+void verifyShown(ECPropertyCP ecProperty)
+    {
+    IECInstancePtr hiddenPropertyCA = ecProperty->GetCustomAttribute("CoreCustomAttributes", "HiddenProperty");
+    EXPECT_TRUE(hiddenPropertyCA.IsValid()) << "Expected to find the 'HiddenProperty' Custom Attribute on " <<
+        ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    ECValue value;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenPropertyCA->GetValue(value, "Show"))
+        << "Failed to get the 'Show' value for " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    EXPECT_TRUE(!value.IsNull() || value.GetBoolean()) <<
+        "Expected 'HiddenProperty.Show' CA value on " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str() <<
+        " to be set to true to be considered shown";
+    }
+
+void verifySchemaReferencesOnlyCoreCAs(ECSchemaCP convertedSchema)
+    {
+    EXPECT_EQ(1, convertedSchema->GetReferencedSchemas().size()) << "Expected only one schema reference";
+    EXPECT_STREQ("CoreCustomAttributes", convertedSchema->GetReferencedSchemas().begin()->second->GetName().c_str()) <<
+        "The only referenced schema does not have the correct name.";
+    }
+
+void verifyHiddenPropertyAppliedCorrectly(ECSchemaCP convertedSchema)
+    {
+    verifySchemaReferencesOnlyCoreCAs(convertedSchema);
+
+    for (auto ecClass : convertedSchema->GetClasses())
+        {
+        for (auto ecProperty : ecClass->GetProperties(false))
+            {
+            if (ecProperty->GetDescription().Equals("Hide"))
+                verifyHidden(ecProperty);
+            else if (ecProperty->GetDescription().Equals("Show"))
+                verifyShown(ecProperty);
+            else
+                EXPECT_TRUE(false) << "The property " << ecClass->GetFullName() << "." << ecProperty->GetName().c_str() << " does not specify 'Hide' or a 'Show' property its description";
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, HidePropertyCustomAttribute)
+    {
+    // Property description defines if we expect the property to be shown or hidden
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                                <If3D>true</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A3" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A4" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                                <If3D>true</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A5" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If>some expression</If>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A6" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+                <ECClass typeName="B" isDomainClass="true">
+                    <BaseClass>A</BaseClass>
+                    <ECProperty propertyName="A1" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A3" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A6" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+                <ECRelationshipClass typeName="ARelB" isDomainClass="true" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(1,1)" polymorphic="true">
+                        <Class class="A"/>
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic="true">
+                        <Class class="B"/>
+                    </Target>
+                    <ECProperty propertyName="AB1" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EDitorCustomAttributes.01.03"/>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECRelationshipClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+
+    verifyHiddenPropertyAppliedCorrectly(schema.get());
+    }
+
+void verifyHiddenSchemaAppliedCorrectly(Utf8CP schemaXml)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+
+    IECInstancePtr hiddenSchemaCA = schema->GetCustomAttribute("CoreCustomAttributes", "HiddenSchema");
+    if (schema->GetDescription().Equals("Hide"))
+        {
+        verifySchemaReferencesOnlyCoreCAs(schema.get());
+        ASSERT_TRUE(hiddenSchemaCA.IsValid()) << schema->GetName().c_str() << " expected to be hidden but 'HiddenSchema' CA not found";
+        ECValue showClassesValue;
+        ASSERT_EQ(ECObjectsStatus::Success, hiddenSchemaCA->GetValue(showClassesValue, "ShowClasses"));
+        EXPECT_TRUE(showClassesValue.IsNull() || !showClassesValue.GetBoolean()) <<
+            "Schema should be hidden based on the legacy DisplayOptions CA, we lack the information to ever set 'ShowClasses' to true so it should be unset or set to false";
+        }
+    else if (schema->GetDescription().Equals("Show"))
+        {
+        EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+        EXPECT_FALSE(hiddenSchemaCA.IsValid()) << schema->GetName().c_str() << " expected to be shown but 'HiddenSchema' CA found";
+        }
+    else
+        EXPECT_TRUE(false) << schema->GetName().c_str() << " schema does not specify 'Hide' or 'Show' in its description";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, DisplayOptionsCustomAttribute_AppliedToSchema)
+    {
+    // Schema description defines if we expect the property to be shown or hidden
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <Hidden>true</Hidden>
+                    <HideInstances>true</HideInstances>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml);
+
+    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <Hidden>true</Hidden>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml2);
+
+    Utf8CP schemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>true</HideInstances>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml3);
+
+    // This is imperfect but follows how presentation rules handles the legacy CA.
+    Utf8CP schemaXml4 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>true</HideInstances>
+                    <Hidden>false</Hidden>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml4);
+
+    // This is imperfect but follows how presentation rules handles the legacy CA.
+    Utf8CP schemaXml5 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>false</HideInstances>
+                    <Hidden>true</Hidden>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml5);
+
+    Utf8CP schemaXml6 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Show">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>false</HideInstances>
+                    <Hidden>false</Hidden>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml6);
+
+    // Hide related is ignored by presentation rules so we ignore it during conversion.
+    Utf8CP schemaXml7 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Show">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>false</HideInstances>
+                    <Hidden>false</Hidden>
+                    <HideRelated>true</HideRelated>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml7);
+
+    Utf8CP schemaXml8 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Show">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml8);
+    }
+
+void verifyClassHidden(ECClassCP ecClass)
+    {
+    IECInstancePtr hiddenClassCA = ecClass->GetCustomAttribute("CoreCustomAttributes", "HiddenClass");
+    ASSERT_TRUE(hiddenClassCA.IsValid()) << ecClass->GetName().c_str() << " should be hidden but does not have the 'HiddenClass' CA";
+    ECValue showValue;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenClassCA->GetValue(showValue, "Show"));
+    EXPECT_TRUE(showValue.IsNull() || !showValue.GetBoolean()) << "Expected class '" << ecClass->GetName().c_str() <<
+        "' to be hidden but the HiddenClass.Show value was set to true.";
+    }
+
+void verifyClassNotHidden(ECClassCP ecClass)
+    {
+    IECInstancePtr hiddenClassCA = ecClass->GetCustomAttribute("CoreCustomAttributes", "HiddenClass");
+    if (hiddenClassCA.IsNull() || !hiddenClassCA.IsValid())
+        return;
+
+    ECValue showValue;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenClassCA->GetValue(showValue, "Show"));
+    EXPECT_TRUE(!showValue.IsNull() && showValue.GetBoolean()) << "Expected class '" << ecClass->GetName().c_str() <<
+        "' to be shown but the HiddenClass.Show value was not set or set to false.";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, DisplayOptionsCustomAttribute_AppliedToClass)
+    {
+    // Class description defines if we expect the property to be shown or hidden
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECClass typeName="A" isDomainClass="true" description="Hide">
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <Hidden>true</Hidden>
+                        <HideInstances>true</HideInstances>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+            <ECClass typeName="B" isDomainClass="true" description="Show">
+                <BaseClass>A</BaseClass>
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <Hidden>false</Hidden>
+                        <HideInstances>false</HideInstances>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+            <ECClass typeName="C" isDomainClass="true" description="Show">
+                <BaseClass>A</BaseClass>
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <Hidden>false</Hidden>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+            <ECClass typeName="D" isDomainClass="true" description="Show">
+                <BaseClass>A</BaseClass>
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <HideInstances>false</HideInstances>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+            <ECClass typeName="E" isDomainClass="true" description="Hide">
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <Hidden>true</Hidden>
+                        <HideInstances>true</HideInstances>
+                        <HideRelated>false</HideRelated>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+        </ECSchema>
+    )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    verifySchemaReferencesOnlyCoreCAs(schema.get());
+
+    for (const auto& ecClass : schema->GetClasses())
+        {
+        if (ecClass->GetDescription().Equals("Hide"))
+            verifyClassHidden(ecClass);
+        else if (ecClass->GetDescription().Equals("Show"))
+            verifyClassNotHidden(ecClass);
+        else
+            EXPECT_TRUE(false) << ecClass->GetName().c_str() <<
+            " class must specify 'Hide' or 'Show' in its description to identify it as a class that should be hidden or shown";
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                 06/2017
 //+---------------+---------------+---------------+---------------+---------------+------

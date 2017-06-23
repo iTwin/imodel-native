@@ -8,6 +8,7 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECSchema.h>
+#include <ECObjects/ECContext.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=====================================================================================
@@ -42,6 +43,7 @@ private:
     bool m_convertedOK = true;
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
     bvector<Utf8String> m_schemaReferencesToRemove;
+    ECSchemaReadContextPtr m_schemaContext;
 
     void ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName);
     void ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource);
@@ -109,6 +111,7 @@ public:
     ECOBJECTS_EXPORT static void FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECClassP>& rootClasses);
 
     static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
+    static ECSchemaReadContextR GetStandardSchemaReadContext() { return *GetSingleton()->m_schemaContext; }
     };
 
 //+===============+===============+===============+===============+===============+======
@@ -253,6 +256,22 @@ public:
 
     ECObjectsStatus AddPropertyMapping(Utf8CP oldPropertyName, Utf8CP newPropertyName);
     Utf8String GetPropertyMapping(Utf8CP oldPropertyName);
+    };
+
+struct HidePropertyConverter : IECCustomAttributeConverter
+    {
+    public:
+        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    };
+
+struct DisplayOptionsConverter : IECCustomAttributeConverter
+    {
+    private:
+        ECObjectsStatus ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance);
+        ECObjectsStatus ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance);
+
+    public:
+        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
     };
 
 //+===============+===============+===============+===============+===============+======

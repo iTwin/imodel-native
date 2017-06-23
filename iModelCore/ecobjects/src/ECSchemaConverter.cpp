@@ -105,6 +105,7 @@ ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, St
 
 static Utf8CP const  STANDARDVALUES_CUSTOMATTRIBUTE = "StandardValues";
 static Utf8CP const  BECA_SCHEMANAME = "EditorCustomAttributes";
+static Utf8CP const  BSCA_SCHEMANAME = "Bentley_Standard_CustomAttributes";
 
 static Utf8CP const  UNIT_ATTRIBUTES                = "Unit_Attributes";
 static Utf8CP const  KOQ_NAME                       = "KindOfQuantityName";
@@ -119,6 +120,18 @@ static Utf8CP const SI_UNIT_SYSTEM                  = "SI_UnitSystem";
 static Utf8CP const US_UNIT_SYSTEM                  = "US_UnitSystem";
 static Utf8CP const PROPERTY_PRIORITY               = "PropertyPriority";
 static Utf8CP const CATEGORY                        = "Category";
+static Utf8CP const HIDE_PROPERTY                   = "HideProperty";
+static Utf8CP const IF2D                            = "If2D";
+static Utf8CP const IF3D                            = "If3D";
+static Utf8CP const DISPLAY_OPTIONS                 = "DisplayOptions";
+static Utf8CP const HIDDEN                          = "Hidden";
+static Utf8CP const HIDE_INSTANCES                  = "HideInstances";
+
+static Utf8CP const CORE_CUSTOMATTRIBUTES           = "CoreCustomAttributes";
+static Utf8CP const HIDDEN_PROPERTY                 = "HiddenProperty";
+static Utf8CP const SHOW                            = "Show";
+static Utf8CP const HIDDEN_SCHEMA                   = "HiddenSchema";
+static Utf8CP const HIDDEN_CLASS                    = "HiddenClass";
 
 
 struct UnitSpecification
@@ -174,8 +187,10 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
     if (nullptr == ECSchemaConverterSingleton)
         {
         ECSchemaConverterSingleton = new ECSchemaConverter();
+        ECSchemaConverterSingleton->m_schemaContext = ECSchemaReadContext::CreateContext();
+
         IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
-        ECSchemaConverterSingleton->AddConverter("EditorCustomAttributes", "StandardValues", scConv);
+        ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE, scConv);
 
         IECCustomAttributeConverterPtr priorityConv = new PropertyPriorityConverter();
         ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, PROPERTY_PRIORITY, priorityConv);
@@ -184,7 +199,7 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
         ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, CATEGORY, categoryConv);
 
         IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
-        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
+        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS, unitSchemaConv);
 
         IECCustomAttributeConverterPtr unitSystemConv = new UnitSystemConverter();
         ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, IS_UNIT_SYSTEM, unitSystemConv);
@@ -193,10 +208,10 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
         ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, US_UNIT_SYSTEM, unitSystemConv);
 
         IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
-        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
-        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecificationAttr", unitPropConv);
+        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, UNIT_SPECIFICATION, unitPropConv);
+        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, "UnitSpecificationAttr", unitPropConv);
 
-        ECSchemaConverterSingleton->AddSchemaReferenceToRemove("Unit_Attributes");
+        ECSchemaConverterSingleton->AddSchemaReferenceToRemove(UNIT_ATTRIBUTES);
 
         // Iterates over the Custom Attributes classes that will be converted. This converter basically
         // handles Custom Attributes that moved into a new schema but with no content change.
@@ -206,6 +221,11 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
             {
             ECSchemaConverterSingleton->AddConverter(classMapping.first, standardClassConverter);
             }
+
+        IECCustomAttributeConverterPtr hideProp = new HidePropertyConverter();
+        ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, HIDE_PROPERTY, hideProp);
+        IECCustomAttributeConverterPtr displayOpt = new DisplayOptionsConverter();
+        ECSchemaConverterSingleton->AddConverter(BSCA_SCHEMANAME, DISPLAY_OPTIONS, displayOpt);
         }
 
     return ECSchemaConverterSingleton;
@@ -1014,7 +1034,6 @@ Utf8String CustomAttributeReplacement::GetPropertyMapping(Utf8CP oldPropertyName
 
 bmap<Utf8String, CustomAttributeReplacement> StandardCustomAttributeReferencesConverter::s_entries = bmap<Utf8String, CustomAttributeReplacement>();
 bool StandardCustomAttributeReferencesConverter::s_isInitialized = false;
-ECSchemaReadContextPtr schemaContext = NULL;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1032,11 +1051,8 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
         }
     auto mapping = it->second;
 
-    if (schemaContext == NULL)
-        schemaContext = ECSchemaReadContext::CreateContext();
-
     SchemaKey key(mapping.GetNewSchemaName().c_str(), 1, 0);
-    auto customAttributeSchema = ECSchema::LocateSchema(key, *schemaContext);
+    auto customAttributeSchema = ECSchema::LocateSchema(key, ECSchemaConverter::GetStandardSchemaReadContext());
 
     ECClassP customAttributeClass = customAttributeSchema->GetClassP(mapping.GetNewCustomAttributeName().c_str());
     IECInstancePtr targetAttributeInstance = customAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1069,9 +1085,6 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
         LOG.errorv("Couldn't remove the CustomAttribute %s from %s", sourceCustomAttributeClass->GetName().c_str(), GetContainerName(container).c_str());
         return ECObjectsStatus::Error;
         }
-
-    // Attempt to remove the old referenced schema. If it fails that means it is still in use, so don't fail conversion.
-    schema.RemoveUnusedSchemaReferences();
 
     return status;
     }
@@ -1274,9 +1287,6 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
         return ECObjectsStatus::Error;
         }
 
-    // Attempt to remove the old referenced schema. If it fails that means it is still in use, so don't fail conversion.
-    schema.RemoveUnusedSchemaReferences();
-
     return status;
     }
 
@@ -1343,6 +1353,101 @@ ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeC
     container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, CATEGORY);
 
     return status;
+    }
+
+bool getBoolValue(IECInstanceR instance, Utf8CP accessString, bool defaultValue)
+    {
+    ECValue ecValue;
+    if (ECObjectsStatus::Success != instance.GetValue(ecValue, accessString))
+        return defaultValue;
+
+    return ecValue.IsNull() ? defaultValue : ecValue.GetBoolean();
+    }
+
+ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
+    if (prop == nullptr)
+        {
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.warningv("Found HideProperty custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+        container.RemoveCustomAttribute(BECA_SCHEMANAME, HIDE_PROPERTY);
+        container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, HIDE_PROPERTY);
+        return ECObjectsStatus::Success;
+        }
+
+    // Property should be shown if either of the legacy properties is set to false
+    bool if2d = getBoolValue(instance, IF2D, true);
+    bool if3d = getBoolValue(instance, IF3D, true);
+    bool showProp = !if2d && !if3d;
+
+    SchemaKey key(CORE_CUSTOMATTRIBUTES, 1, 0, 0);
+    auto customAttributeSchema = ECSchema::LocateSchema(key, ECSchemaConverter::GetStandardSchemaReadContext());
+    IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
+    
+    ECValue value(showProp);
+    hiddenProperty->SetValue(SHOW, value);
+
+    container.RemoveCustomAttribute(instance.GetClass());
+    container.RemoveSupplementedCustomAttribute(instance.GetClass());
+
+    schema.AddReferencedSchema(*customAttributeSchema);
+    container.SetCustomAttribute(*hiddenProperty);
+
+    return ECObjectsStatus::Success;
+    }
+
+ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance)
+    {
+    bool hideSchema = getBoolValue(instance, HIDDEN, false) || getBoolValue(instance, HIDE_INSTANCES, false);
+    if (hideSchema)
+        {
+        SchemaKey key(CORE_CUSTOMATTRIBUTES, 1, 0, 0);
+        auto customAttributeSchema = ECSchema::LocateSchema(key, ECSchemaConverter::GetStandardSchemaReadContext());
+        IECInstancePtr hiddenSchema = customAttributeSchema->GetClassCP(HIDDEN_SCHEMA)->GetDefaultStandaloneEnabler()->CreateInstance();
+        schema.AddReferencedSchema(*customAttributeSchema);
+        schema.SetCustomAttribute(*hiddenSchema);
+        }
+    schema.RemoveCustomAttribute(instance.GetClass());
+    schema.RemoveSupplementedCustomAttribute(instance.GetClass());
+    return ECObjectsStatus::Success;
+    }
+
+ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance)
+    {
+    bool hideClass = getBoolValue(instance, HIDDEN, false) || getBoolValue(instance, HIDE_INSTANCES, false);
+
+    SchemaKey key(CORE_CUSTOMATTRIBUTES, 1, 0, 0);
+    auto customAttributeSchema = ECSchema::LocateSchema(key, ECSchemaConverter::GetStandardSchemaReadContext());
+    IECInstancePtr hiddenClass = customAttributeSchema->GetClassCP(HIDDEN_CLASS)->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue show(!hideClass);
+    hiddenClass->SetValue(SHOW, show);
+
+    schema.AddReferencedSchema(*customAttributeSchema);
+    ecClass.SetCustomAttribute(*hiddenClass);
+
+
+    ecClass.RemoveCustomAttribute(instance.GetClass());
+    ecClass.RemoveSupplementedCustomAttribute(instance.GetClass());
+    return ECObjectsStatus::Success;
+
+    }
+
+ECObjectsStatus DisplayOptionsConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    ECClassP ecClass = dynamic_cast<ECClassP> (&container);
+    if (nullptr != ecClass)
+        return ConvertClassDisplayOptions(schema, *ecClass, instance);
+
+    ECSchemaP ecSchema = dynamic_cast<ECSchemaP> (&container);
+    if (nullptr != ecSchema)
+        return ConvertSchemaDisplayOptions(schema, instance);
+
+    Utf8String fullName = schema.GetFullSchemaName();
+    LOG.warningv("Found DisplayOptions custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+    container.RemoveCustomAttribute(BSCA_SCHEMANAME, DISPLAY_OPTIONS);
+    container.RemoveSupplementedCustomAttribute(BSCA_SCHEMANAME, DISPLAY_OPTIONS);
+    return ECObjectsStatus::Success;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
