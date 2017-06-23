@@ -5300,7 +5300,8 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
         "      <Class class = 'Goo' />"
         "    </Target>"
         "   <ECProperty propertyName='relProp' typeName='int' />"
-        "</ECRelationshipClass>")));
+        "</ECRelationshipClass>"
+        "</ECSchema>")));
     }
 
     /*---------------------------------------------

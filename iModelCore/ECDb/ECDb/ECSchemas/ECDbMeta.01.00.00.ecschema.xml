@@ -117,6 +117,7 @@
         <ECProperty propertyName="DisplayLabel" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="IsReadonly" typeName="boolean"/>
+        <ECProperty propertyName="Priority" typeName="int"/>
         <ECProperty propertyName="Ordinal" typeName="int" description="Position of the ECProperty in its ECClass"/>
         <ECProperty propertyName="Kind" typeName="ECPropertyKind"/>
         <ECProperty propertyName="PrimitiveType" typeName="PrimitiveType" description="ECPropertyKind::Primitive: data type. ECPropertyKind::PrimitiveArray: data type of array elements."/>

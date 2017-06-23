@@ -6173,7 +6173,7 @@ TEST_F(SchemaUpgradeTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
 
         PrimitiveECPropertyCP foo_homepage = foo->GetPropertyP("Homepage")->GetAsPrimitiveProperty();
         ASSERT_TRUE(foo_homepage != nullptr);
-        ASSERT_TRUE(foo_homepage->GetExtendedTypeName() == "URL");
+        ASSERT_STREQ("URL", foo_homepage->GetExtendedTypeName().c_str());
 
         PrimitiveArrayECPropertyCP foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsPrimitiveArrayProperty();
         ASSERT_TRUE(foo_alternativeLengths != nullptr);
@@ -6181,7 +6181,7 @@ TEST_F(SchemaUpgradeTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
 
         PrimitiveArrayECPropertyCP foo_favorites = foo->GetPropertyP("Favorites")->GetAsPrimitiveArrayProperty();
         ASSERT_TRUE(foo_favorites != nullptr);
-        ASSERT_TRUE(foo_favorites->GetExtendedTypeName() == "URL");
+        ASSERT_STREQ("URL", foo_favorites->GetExtendedTypeName().c_str());
 
         m_ecdb.CloseDb();
         }
@@ -6418,9 +6418,9 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECArrayProperty_KOQToKOQ)
         ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
-        PrimitiveArrayECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveArrayProperty();
+        ECPropertyCP foo_length = foo->GetPropertyP("Length");
         ASSERT_TRUE(foo_length != nullptr);
-        PrimitiveArrayECPropertyCP foo_width = foo->GetPropertyP("Width")->GetAsPrimitiveArrayProperty();
+        ECPropertyCP foo_width = foo->GetPropertyP("Width");
         ASSERT_TRUE(foo_width != nullptr);
 
         ASSERT_TRUE(foo_length->GetKindOfQuantity() == KindOfQuantity2);
@@ -6438,8 +6438,8 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <KindOfQuantity typeName='KindOfQuantity1' description='MyKindOfQuantity'"
-        "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>"
@@ -6455,7 +6455,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
     ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
 
-    ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetAsPrimitiveArrayProperty()->GetKindOfQuantity());
+    ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetKindOfQuantity());
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
@@ -6463,8 +6463,8 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <KindOfQuantity typeName='KindOfQuantity1' description='MyKindOfQuantity'"
-        "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
@@ -6476,7 +6476,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
 
     //Verifying the property no longer has KOQ
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    PrimitiveArrayECPropertyCP foo_length = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveArrayProperty();
+    ECPropertyCP foo_length = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length");
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
     }
@@ -6489,11 +6489,11 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <KindOfQuantity typeName='KindOfQuantity1' description='MyKindOfQuantity'"
-        "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
         "    <ECEntityClass typeName='Foo' >"
-        "        <ECProperty propertyName='Length' typeName='double' kindOfQuantity = 'MyKindOfQuantity'/>"
+        "        <ECProperty propertyName='Length' typeName='double' kindOfQuantity='MyKindOfQuantity'/>"
         "    </ECEntityClass>"
         "</ECSchema>");
 
@@ -6506,7 +6506,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
     ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
 
-    ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetAsPrimitiveProperty()->GetKindOfQuantity());
+    ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetKindOfQuantity());
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
@@ -6514,8 +6514,8 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <KindOfQuantity typeName='KindOfQuantity1' description='MyKindOfQuantity'"
-        "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECProperty propertyName='Length' typeName='double' />"
@@ -6527,7 +6527,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
 
     //Verifying the property no longer has KOQ
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    PrimitiveECPropertyCP foo_length = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveProperty();
+    ECPropertyCP foo_length = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length");
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
     }

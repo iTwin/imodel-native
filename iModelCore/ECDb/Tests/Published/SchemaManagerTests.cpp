@@ -852,6 +852,76 @@ TEST_F(SchemaManagerTests, GetMixin)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, GetPropertyPriority)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("GetPropertyPriority.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECStructClass typeName="MyStruct">
+                <ECProperty propertyName="MinusFiveHundred" typeName="string" priority="-500"/>
+            </ECStructClass>
+            <ECEntityClass typeName="Parent" modifier="None" />
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="None" typeName="string" />
+                <ECProperty propertyName="Zero" typeName="string" priority="0" />
+                <ECProperty propertyName="Ten" typeName="string" priority="10" />
+                <ECProperty propertyName="MinusTen" typeName="string" priority="-10" />
+                <ECStructProperty propertyName="MinusTwentyStruct" typeName="MyStruct" priority="-20" />
+                <ECArrayProperty propertyName="MinusTenArray" typeName="string" priority="-10" />
+                <ECStructArrayProperty propertyName="HundredStructArray" typeName="MyStruct" priority="100" />
+                <ECNavigationProperty propertyName="MinusOneNavProp" relationshipName="Rel" direction="Backward" priority="-1"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="FooSub" modifier="None" >
+                <BaseClass>Foo</BaseClass>
+                <ECProperty propertyName="Ten" typeName="string"/>
+                <ECArrayProperty propertyName="MinusTenArray" typeName="string" priority="-11" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                <Source multiplicity="(0..1)" polymorphic="true" roleLabel="refers to">
+                    <Class class="Parent"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="Foo"/>
+                </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_TRUE(fooClass != nullptr);
+    EXPECT_FALSE(fooClass->GetPropertyP("None")->IsPriorityLocallyDefined());
+    EXPECT_EQ(0, fooClass->GetPropertyP("None")->GetPriority());
+    EXPECT_TRUE(fooClass->GetPropertyP("Zero")->IsPriorityLocallyDefined());
+    EXPECT_EQ(0, fooClass->GetPropertyP("Zero")->GetPriority());
+    EXPECT_TRUE(fooClass->GetPropertyP("Ten")->IsPriorityLocallyDefined());
+    EXPECT_EQ(10, fooClass->GetPropertyP("Ten")->GetPriority());
+    EXPECT_TRUE(fooClass->GetPropertyP("MinusTen")->IsPriorityLocallyDefined());
+    EXPECT_EQ(-10, fooClass->GetPropertyP("MinusTen")->GetPriority());
+    EXPECT_TRUE(fooClass->GetPropertyP("MinusTwentyStruct")->IsPriorityLocallyDefined());
+    EXPECT_EQ(-20, fooClass->GetPropertyP("MinusTwentyStruct")->GetPriority());
+    EXPECT_TRUE(fooClass->GetPropertyP("MinusTenArray")->IsPriorityLocallyDefined());
+    EXPECT_EQ(-10, fooClass->GetPropertyP("MinusTenArray")->GetPriority());
+    EXPECT_TRUE(fooClass->GetPropertyP("HundredStructArray")->IsPriorityLocallyDefined());
+    EXPECT_EQ(100, fooClass->GetPropertyP("HundredStructArray")->GetPriority());
+    EXPECT_TRUE(fooClass->GetPropertyP("MinusOneNavProp")->IsPriorityLocallyDefined());
+    EXPECT_EQ(-1, fooClass->GetPropertyP("MinusOneNavProp")->GetPriority());
+
+    ECClassCP myStruct = m_ecdb.Schemas().GetClass("TestSchema", "MyStruct");
+    ASSERT_TRUE(myStruct != nullptr);
+    EXPECT_TRUE(myStruct->GetPropertyP("MinusFiveHundred")->IsPriorityLocallyDefined());
+    EXPECT_EQ(-500, myStruct->GetPropertyP("MinusFiveHundred")->GetPriority());
+
+    ECClassCP fooSubClass = m_ecdb.Schemas().GetClass("TestSchema", "FooSub");
+    ASSERT_TRUE(fooSubClass != nullptr);
+    EXPECT_TRUE(fooSubClass->GetPropertyP("MinusTen")->IsPriorityLocallyDefined()) << "Inherited property. As not overridden the priority is still considered locally defined";
+    EXPECT_EQ(-10, fooSubClass->GetPropertyP("MinusTen")->GetPriority()) << "Inherited property. As not overridden the priority is still considered locally defined";
+    EXPECT_FALSE(fooSubClass->GetPropertyP("Ten")->IsPriorityLocallyDefined()) << "Overridden property without specifying priority again";
+    EXPECT_EQ(10, fooSubClass->GetPropertyP("Ten")->GetPriority()) << "Overridden property without specifying priority again";
+    EXPECT_TRUE(fooSubClass->GetPropertyP("MinusTenArray")->IsPriorityLocallyDefined()) << "Overridden property with specifying new priority";
+    EXPECT_EQ(-11, fooSubClass->GetPropertyP("MinusTenArray")->GetPriority()) << "Overridden property with specifying new priority";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetEnumeration)
@@ -999,9 +1069,7 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
 
     ECPropertyCP prop = classWithKoq->GetPropertyP("Length");
     ASSERT_TRUE(prop != nullptr);
-    PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
-    ASSERT_TRUE(primProp != nullptr);
-    koq = primProp->GetKindOfQuantity();
+    koq = prop->GetKindOfQuantity();
     ASSERT_TRUE(koq != nullptr);
     assertKoq(*koq);
     }

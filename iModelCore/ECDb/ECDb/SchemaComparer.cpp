@@ -445,6 +445,15 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
     if (!a.GetInvariantDescription().EqualsIAscii(b.GetInvariantDescription()))
         change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
 
+    PrimitiveECPropertyCP aPrimProp = a.GetAsPrimitiveProperty();
+    PrimitiveECPropertyCP bPrimProp = b.GetAsPrimitiveProperty();
+    NavigationECPropertyCP aNavProp = a.GetAsNavigationProperty();
+    NavigationECPropertyCP bNavProp = b.GetAsNavigationProperty();
+    ArrayECPropertyCP aArrayProp = a.GetAsArrayProperty();
+    ArrayECPropertyCP bArrayProp = b.GetAsArrayProperty();
+    PrimitiveArrayECPropertyCP aPrimArrayProp = a.GetAsPrimitiveArrayProperty();
+    PrimitiveArrayECPropertyCP bPrimArrayProp = b.GetAsPrimitiveArrayProperty();
+
     if (a.GetIsPrimitive() != b.GetIsPrimitive())
         change.IsPrimitive().SetValue(a.GetIsPrimitive(), b.GetIsPrimitive());
 
@@ -463,12 +472,16 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
     if (a.GetIsReadOnly() != b.GetIsReadOnly())
         change.IsReadonly().SetValue(a.GetIsReadOnly(), b.GetIsReadOnly());
 
+    if (a.GetPriority() != b.GetPriority())
+        change.GetPriority().SetValue(a.GetPriority(), b.GetPriority());
+
     //if (a.GetMaximumValue() != b.GetMaximumValue())
     //    change.GetMaximumValue().SetValue(a.GetMaximumValue(), b.GetMaximumValue());
 
     //if (a.GetMinimumValue() != b.GetMinimumValue())
     //    change.GetMinimumValue().SetValue(a.GetMinimumValue(), b.GetMinimumValue());
 
+    // KOQ
     KindOfQuantityCP aKoq = a.GetKindOfQuantity();
     KindOfQuantityCP bKoq = b.GetKindOfQuantity();
     if (aKoq != nullptr && bKoq != nullptr)
@@ -481,6 +494,7 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
     else if (aKoq == nullptr && bKoq != nullptr)
         change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
 
+    // PropertyCategory
     PropertyCategoryCP aCat = a.GetCategory();
     PropertyCategoryCP bCat = b.GetCategory();
     if (aCat != nullptr && bCat != nullptr)
@@ -493,89 +507,94 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
     else if (aCat == nullptr && bCat != nullptr)
         change.GetCategory().SetValue(ValueId::New, bCat->GetFullName());
 
-    auto aNavigation = a.GetAsNavigationProperty();
-    auto bNavigation = b.GetAsNavigationProperty();
-    if (aNavigation && bNavigation)
-        {
-        if (aNavigation->GetDirection() != bNavigation->GetDirection())
-            change.GetNavigation().Direction().SetValue(aNavigation->GetDirection(), bNavigation->GetDirection());
+    //ECEnumeration
+    ECEnumerationCP aEnum = nullptr, bEnum = nullptr;
+    if (aPrimProp != nullptr)
+        aEnum = aPrimProp->GetEnumeration();
+    else if (aPrimArrayProp != nullptr)
+        aEnum = aPrimArrayProp->GetEnumeration();
 
-        if (aNavigation->GetRelationshipClass() && bNavigation->GetRelationshipClass())
-            change.GetNavigation().GetRelationshipClassName().SetValue(
-                Utf8String(aNavigation->GetRelationshipClass()->GetFullName()),
-                Utf8String(bNavigation->GetRelationshipClass()->GetFullName()));
-        else if (aNavigation->GetRelationshipClass() && !bNavigation->GetRelationshipClass())
-            change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::Deleted, aNavigation->GetRelationshipClass()->GetFullName());
-        else if (!aNavigation->GetRelationshipClass() && bNavigation->GetRelationshipClass())
-            change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::New, bNavigation->GetRelationshipClass()->GetFullName());
-        }
-    else if (aNavigation && !bNavigation)
+    if (bPrimProp != nullptr)
+        bEnum = bPrimProp->GetEnumeration();
+    else if (bPrimArrayProp != nullptr)
+        bEnum = bPrimArrayProp->GetEnumeration();
+
+    if (aEnum != bEnum)
         {
-        change.GetNavigation().Direction().SetValue(ValueId::Deleted, aNavigation->GetDirection());
-        change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::Deleted, aNavigation->GetRelationshipClass()->GetFullName());
+        if (aEnum != nullptr && bEnum == nullptr)
+            change.GetEnumeration().SetValue(ValueId::Deleted, aEnum->GetFullName());
+        else if (aEnum == nullptr && bEnum != nullptr)
+            change.GetEnumeration().SetValue(ValueId::New, bEnum->GetFullName());
+        else
+            change.GetEnumeration().SetValue(aEnum->GetFullName(), bEnum->GetFullName());
         }
-    else if(!aNavigation && bNavigation)
+
+    //ExtendedType
+    Utf8StringCP aExtendedType = nullptr, bExtendedType = nullptr;
+    if (aPrimProp != nullptr && aPrimProp->HasExtendedType())
+        aExtendedType = &aPrimProp->GetExtendedTypeName();
+    else if (aPrimArrayProp != nullptr && aPrimArrayProp->HasExtendedType())
+        aExtendedType = &aPrimArrayProp->GetExtendedTypeName();
+
+    if (bPrimProp != nullptr && bPrimProp->HasExtendedType())
+        bExtendedType = &bPrimProp->GetExtendedTypeName();
+    else if (bPrimArrayProp != nullptr && bPrimArrayProp->HasExtendedType())
+        bExtendedType = &bPrimArrayProp->GetExtendedTypeName();
+
+    if (aExtendedType != nullptr && bExtendedType != nullptr)
         {
-        change.GetNavigation().Direction().SetValue(ValueId::New, aNavigation->GetDirection());
-        change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::New, aNavigation->GetRelationshipClass()->GetFullName());
+        if (!aExtendedType->EqualsIAscii(*bExtendedType))
+            change.GetExtendedTypeName().SetValue(*aExtendedType, *bExtendedType);
+        }
+    else if (aExtendedType != nullptr && bExtendedType == nullptr)
+        change.GetExtendedTypeName().SetValue(ValueId::Deleted, *aExtendedType);
+    else if (aExtendedType == nullptr && bExtendedType != nullptr)
+        change.GetExtendedTypeName().SetValue(ValueId::New, *bExtendedType);
+
+    // Nav prop
+    if (aNavProp != nullptr && bNavProp != nullptr)
+        {
+        if (aNavProp->GetDirection() != bNavProp->GetDirection())
+            change.GetNavigation().Direction().SetValue(aNavProp->GetDirection(), bNavProp->GetDirection());
+
+        if (aNavProp->GetRelationshipClass() != nullptr && bNavProp->GetRelationshipClass() != nullptr)
+            change.GetNavigation().GetRelationshipClassName().SetValue(Utf8String(aNavProp->GetRelationshipClass()->GetFullName()),
+                                                                       Utf8String(bNavProp->GetRelationshipClass()->GetFullName()));
+        else if (aNavProp->GetRelationshipClass() == nullptr && bNavProp->GetRelationshipClass() == nullptr)
+            change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::Deleted, aNavProp->GetRelationshipClass()->GetFullName());
+        else if (aNavProp->GetRelationshipClass() == nullptr && bNavProp->GetRelationshipClass() != nullptr)
+            change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::New, bNavProp->GetRelationshipClass()->GetFullName());
+        }
+    else if (aNavProp != nullptr && bNavProp == nullptr)
+        {
+        change.GetNavigation().Direction().SetValue(ValueId::Deleted, aNavProp->GetDirection());
+        change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::Deleted, aNavProp->GetRelationshipClass()->GetFullName());
+        }
+    else if(aNavProp == nullptr && bNavProp != nullptr)
+        {
+        change.GetNavigation().Direction().SetValue(ValueId::New, bNavProp->GetDirection());
+        change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::New, bNavProp->GetRelationshipClass()->GetFullName());
         }
    
-    auto aPrimitive = a.GetAsPrimitiveProperty();
-    auto bPrimitive = b.GetAsPrimitiveProperty();
-    if (aPrimitive && bPrimitive)
+    
+    //Array
+    if (aArrayProp != nullptr && bArrayProp != nullptr)
         {
-        auto aEnum = aPrimitive->GetEnumeration();
-        auto bEnum = bPrimitive->GetEnumeration();
-        if (aEnum != bEnum)
-            {
-            if (aEnum && !bEnum)
-                change.GetEnumeration().SetValue(ValueId::Deleted, aEnum->GetFullName());
-            else if (!aEnum && bEnum)
-                change.GetEnumeration().SetValue(ValueId::New, bEnum->GetFullName());
-            else
-                change.GetEnumeration().SetValue(aEnum->GetFullName(), bEnum->GetFullName());
-            }
-        }
+        if (aArrayProp->GetStoredMaxOccurs() != bArrayProp->GetStoredMaxOccurs())
+            change.GetArray().MaxOccurs().SetValue(aArrayProp->GetStoredMaxOccurs(), bArrayProp->GetStoredMaxOccurs());
 
-    ArrayECPropertyCP aArray = a.GetAsArrayProperty();
-    ArrayECPropertyCP bArray = b.GetAsArrayProperty();
-    if (aArray != nullptr && bArray != nullptr)
-        {
-        if (aArray->GetStoredMaxOccurs() != bArray->GetStoredMaxOccurs())
-            change.GetArray().MaxOccurs().SetValue(aArray->GetStoredMaxOccurs(), bArray->GetStoredMaxOccurs());
-
-        if (aArray->GetMinOccurs() != bArray->GetMinOccurs())
-            change.GetArray().MinOccurs().SetValue(aArray->GetMinOccurs(), bArray->GetMinOccurs());
+        if (aArrayProp->GetMinOccurs() != bArrayProp->GetMinOccurs())
+            change.GetArray().MinOccurs().SetValue(aArrayProp->GetMinOccurs(), bArrayProp->GetMinOccurs());
         }
-    else if (aArray != nullptr && bArray == nullptr)
+    else if (aArrayProp != nullptr && bArrayProp == nullptr)
         {
-        change.GetArray().MaxOccurs().SetValue(ValueId::Deleted, aArray->GetStoredMaxOccurs());
-        change.GetArray().MinOccurs().SetValue(ValueId::Deleted, aArray->GetMinOccurs());
+        change.GetArray().MaxOccurs().SetValue(ValueId::Deleted, aArrayProp->GetStoredMaxOccurs());
+        change.GetArray().MinOccurs().SetValue(ValueId::Deleted, aArrayProp->GetMinOccurs());
         }
-    else if (aArray == nullptr && bArray != nullptr)
+    else if (aArrayProp == nullptr && bArrayProp != nullptr)
         {
-        change.GetArray().MaxOccurs().SetValue(ValueId::New, bArray->GetStoredMaxOccurs());
-        change.GetArray().MinOccurs().SetValue(ValueId::New, bArray->GetMinOccurs());
-        }
-
-    bool aIsExtendedType = a.GetIsPrimitive() || a.GetIsPrimitiveArray();
-    bool bIsExtendedType = b.GetIsPrimitive() || b.GetIsPrimitiveArray();
-    if (aIsExtendedType && bIsExtendedType)
-        {
-        Utf8String aExtendedTypeName = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetExtendedTypeName() : a.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
-        Utf8String bExtendedTypeName = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetExtendedTypeName() : b.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
-        if (!aExtendedTypeName.EqualsIAscii(bExtendedTypeName))
-            change.GetExtendedTypeName().SetValue(aExtendedTypeName, bExtendedTypeName);
-        }
-    else if (aIsExtendedType && !bIsExtendedType)
-        {
-        Utf8String aExtendedTypeName = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetExtendedTypeName() : a.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
-        change.GetExtendedTypeName().SetValue(ValueId::Deleted, aExtendedTypeName);
-        }
-    else if (!aIsExtendedType && bIsExtendedType)
-        {
-        Utf8String bExtendedTypeName = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetExtendedTypeName() : b.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
-        change.GetExtendedTypeName().SetValue(ValueId::New, bExtendedTypeName);
+        change.GetArray().MaxOccurs().SetValue(ValueId::New, bArrayProp->GetStoredMaxOccurs());
+        change.GetArray().MinOccurs().SetValue(ValueId::New, bArrayProp->GetMinOccurs());
         }
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
@@ -1388,6 +1407,13 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPro
     propertyChange.GetDescription().SetValue(appendType, v.GetInvariantDescription());
     propertyChange.GetTypeName().SetValue(appendType, v.GetTypeName());
 
+    propertyChange.IsReadonly().SetValue(appendType, v.GetIsReadOnly());
+    if (v.IsPriorityLocallyDefined())
+        propertyChange.GetPriority().SetValue(appendType, v.GetPriority());
+
+    if (v.GetKindOfQuantity() != nullptr)
+        propertyChange.GetKindOfQuantity().SetValue(appendType, v.GetKindOfQuantity()->GetFullName());
+
     if (v.GetCategory() != nullptr)
         propertyChange.GetCategory().SetValue(appendType, v.GetCategory()->GetFullName());
 
@@ -1405,11 +1431,9 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPro
         auto primitiveProp = v.GetAsPrimitiveProperty();
   
         propertyChange.GetExtendedTypeName().SetValue(appendType, primitiveProp->GetExtendedTypeName());
-        if (primitiveProp->GetEnumeration())
-            propertyChange.GetEnumeration().SetValue(appendType, primitiveProp->GetEnumeration()->GetFullName());
 
-        if (primitiveProp->GetKindOfQuantity())
-            propertyChange.GetKindOfQuantity().SetValue(appendType, primitiveProp->GetKindOfQuantity()->GetFullName());
+        if (primitiveProp->GetEnumeration() != nullptr)
+            propertyChange.GetEnumeration().SetValue(appendType, primitiveProp->GetEnumeration()->GetFullName());
         }
     else if (v.GetIsStruct())
         {
@@ -1422,10 +1446,11 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPro
     else if (v.GetIsPrimitiveArray())
         {
         propertyChange.IsPrimitiveArray().SetValue(appendType, true);
-        auto primitivePropArray = v.GetAsPrimitiveArrayProperty();
+        PrimitiveArrayECPropertyCP primitivePropArray = v.GetAsPrimitiveArrayProperty();
         propertyChange.GetExtendedTypeName().SetValue(appendType, primitivePropArray->GetExtendedTypeName());
-        if (primitivePropArray->GetKindOfQuantity())
-            propertyChange.GetKindOfQuantity().SetValue(appendType, primitivePropArray->GetKindOfQuantity()->GetFullName());
+
+        if (primitivePropArray->GetEnumeration() != nullptr)
+            propertyChange.GetEnumeration().SetValue(appendType, primitivePropArray->GetEnumeration()->GetFullName());
         }
     else
         return ERROR;
@@ -1618,8 +1643,6 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::CustomAttributes: return "CustomAttributes";
             case SystemId::Description: return "Description";
             case SystemId::Direction: return "Direction";
-            case SystemId::PropertyValue: return "PropertyValue";
-            case SystemId::PropertyValues: return "PropertyValues";
             case SystemId::DisplayLabel: return "DisplayLabel";
             case SystemId::Enumeration: return "Enumeration";
             case SystemId::Enumerations: return "Enumerations";
@@ -1652,7 +1675,13 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Navigation: return "Navigation";
             case SystemId::Properties: return "Properties";
             case SystemId::Property: return "Property";
+            case SystemId::PropertyCategories: return "PropertyCategories";
+            case SystemId::PropertyCategory: return "PropertyCategory";
+            case SystemId::PropertyCategoryPriority: return "PropertyCategoryPriority";
+            case SystemId::PropertyPriority: return "PropertyPriority";
             case SystemId::PropertyType: return "PropertyType";
+            case SystemId::PropertyValue: return "PropertyValue";
+            case SystemId::PropertyValues: return "PropertyValues";
             case SystemId::Reference: return "Reference";
             case SystemId::References: return "References";
             case SystemId::Relationship: return "Relationship";

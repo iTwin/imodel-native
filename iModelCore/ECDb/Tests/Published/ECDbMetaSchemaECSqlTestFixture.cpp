@@ -795,6 +795,12 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
+        if (colName.EqualsI("Priority"))
+            {
+            ASSERT_EQ(expectedProp.GetPriority(), val.GetInt()) << "ECPropertyDef.Priority for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            continue;
+            }
+
         if (colName.EqualsI("Ordinal"))
             {
             int actualOrdinal = val.GetInt();

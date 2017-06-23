@@ -101,6 +101,7 @@ enum class SystemId
     PropertyCategories,
     PropertyCategory,
     PropertyCategoryPriority,
+    PropertyPriority,
     PropertyType,
     PropertyValue,
     PropertyValues,
@@ -1190,6 +1191,7 @@ struct ECPropertyChange final :ECObjectChange
         NavigationChange& GetNavigation() { return Get<NavigationChange>(SystemId::Navigation); }
         StringChange& GetExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
         BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
+        Int32Change& GetPriority() { return Get<Int32Change>(SystemId::PropertyPriority); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
         StringChange& GetKindOfQuantity() { return Get<StringChange>(SystemId::KindOfQuantity); }
         StringChange& GetEnumeration() { return Get<StringChange>(SystemId::Enumeration); }

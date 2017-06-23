@@ -959,6 +959,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             Utf8String m_displayLabel;
             Utf8String m_description;
             bool m_isReadonly = false;
+            Nullable<int64_t> m_priority;
             Nullable<int> m_primType;
             ECClassId m_structClassId;
             Utf8String m_extendedTypeName;
@@ -979,18 +980,19 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             const int displayLabelIx = 3;
             const int descrIx = 4;
             const int isReadonlyIx = 5;
-            const int primTypeIx = 6;
-            const int enumIdIx = 7;
-            const int structClassIdIx = 8;
-            const int extendedTypeIx = 9;
-            const int koqIdIx = 10;
-            const int catIdIx = 11;
-            const int minOccursIx = 12;
-            const int maxOccursIx = 13;
-            const int navRelationshipClassId = 14;
-            const int navPropDirectionIx = 15;
+            const int priorityIx = 6;
+            const int primTypeIx = 7;
+            const int enumIdIx = 8;
+            const int structClassIdIx = 9;
+            const int extendedTypeIx = 10;
+            const int koqIdIx = 11;
+            const int catIdIx = 12;
+            const int minOccursIx = 13;
+            const int maxOccursIx = 14;
+            const int navRelationshipClassId = 15;
+            const int navPropDirectionIx = 16;
 
-            CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,"
+            CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
                                                               "PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
                                                               "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
                                                               "FROM ec_Property WHERE ClassId=? ORDER BY Ordinal");
@@ -1016,6 +1018,10 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
                 if (!stmt->IsColumnNull(isReadonlyIx))
                     rowInfo.m_isReadonly = stmt->GetValueBoolean(isReadonlyIx);
+
+                //uint32_t are persisted as int64 to not lose unsigned-ness
+                if (!stmt->IsColumnNull(priorityIx))
+                    rowInfo.m_priority = stmt->GetValueInt64(priorityIx);
 
                 if (!stmt->IsColumnNull(primTypeIx))
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
@@ -1276,6 +1282,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
         BeAssert(prop != nullptr);
         prop->SetId(rowInfo.m_id);
         prop->SetIsReadOnly(rowInfo.m_isReadonly);
+
+        if (!rowInfo.m_priority.IsNull())
+            prop->SetPriority((int32_t) rowInfo.m_priority.Value());
 
         if (!rowInfo.m_description.empty())
             prop->SetDescription(rowInfo.m_description);

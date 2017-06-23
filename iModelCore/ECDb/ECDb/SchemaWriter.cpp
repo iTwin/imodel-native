@@ -686,7 +686,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
         }
 
     //now insert the actual property
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Priority,Ordinal,Kind,PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -714,20 +714,26 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
     if (BE_SQLITE_OK != stmt->BindBoolean(6, ecProperty.GetIsReadOnly()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(7, ordinal))
+    if (ecProperty.IsPriorityLocallyDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) ecProperty.GetPriority()))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindInt(8, ordinal))
         return ERROR;
 
-    const int kindIndex = 8;
-    const int primitiveTypeIndex = 9;
-    const int enumIdIndex = 10;
-    const int structClassIdIndex = 11;
-    const int extendedTypeIndex = 12;
-    const int koqIdIndex = 13;
-    const int catIdIndex = 14;
-    const int arrayMinIndex = 15;
-    const int arrayMaxIndex = 16;
-    const int navRelClassIdIndex = 17;
-    const int navDirIndex = 18;
+    const int kindIndex = 9;
+    const int primitiveTypeIndex = 10;
+    const int enumIdIndex = 11;
+    const int structClassIdIndex = 12;
+    const int extendedTypeIndex = 13;
+    const int koqIdIndex = 14;
+    const int catIdIndex = 15;
+    const int arrayMinIndex = 16;
+    const int arrayMaxIndex = 17;
+    const int navRelClassIdIndex = 18;
+    const int navDirIndex = 19;
 
     if (ecProperty.GetIsPrimitive())
         {
@@ -1258,10 +1264,14 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
         sqlUpdateBuilder.AddSetExp("IsReadonly", propertyChange.IsReadonly().GetNew().Value());
         }
 
+    if (propertyChange.GetPriority().IsValid())
+        {
+        sqlUpdateBuilder.AddSetExp("Priority", propertyChange.GetPriority().GetNew().Value());
+        }
+
     if (propertyChange.GetEnumeration().IsValid())
         {
-        auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty();
-        if (newPrimitiveProperty == nullptr)
+        if (!newProperty.GetIsPrimitive() && !newProperty.GetIsPrimitiveArray())
             {
             BeAssert(false);
             return ERROR;
@@ -1269,25 +1279,18 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
         if (propertyChange.GetEnumeration().GetNew().IsNull())
             { 
-            sqlUpdateBuilder.AddSetExp("PrimitiveType", (int)newPrimitiveProperty->GetType()); //set to null;
+            PrimitiveType newPrimType = newProperty.GetIsPrimitive() ? newProperty.GetAsPrimitiveProperty()->GetType() : newProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+            sqlUpdateBuilder.AddSetExp("PrimitiveType", (int) newPrimType);
             sqlUpdateBuilder.AddSetToNull("EnumerationId"); //set to null;
             }
         else
             {
-            auto oldPrimitiveProperty = oldProperty.GetAsPrimitiveProperty();
-            if (oldPrimitiveProperty == nullptr)
-                {
-                Issues().Report("ECSchema Upgrade failed. ECProperty %s.%s: Only Primitive property can be coverted to ECEnumeration",
-                                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-                return ERROR;
-                }
-
-            ECEnumerationCP enumCP = newPrimitiveProperty->GetEnumeration();
+            ECEnumerationCP enumCP = newProperty.GetIsPrimitive() ? newProperty.GetAsPrimitiveProperty()->GetEnumeration() : newProperty.GetAsPrimitiveArrayProperty()->GetEnumeration();
             ECEnumerationId id = m_ecdb.Schemas().GetReader().GetEnumerationId(*enumCP);
             if (!id.IsValid())
                 return ERROR;
 
-            sqlUpdateBuilder.AddSetToNull("PrimitiveType"); //SET TO NULL
+            sqlUpdateBuilder.AddSetToNull("PrimitiveType");
             sqlUpdateBuilder.AddSetExp("EnumerationId", id.GetValue());
             }
         }
@@ -1295,21 +1298,10 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
     if (propertyChange.GetKindOfQuantity().IsValid())
         {
         if (propertyChange.GetKindOfQuantity().GetState() == ChangeState::Deleted)
-            {
-            sqlUpdateBuilder.AddSetToNull("KindOfQuantityId"); //set to null;
-            }
+            sqlUpdateBuilder.AddSetToNull("KindOfQuantityId");
         else
             {
-            KindOfQuantityCP koqCP = nullptr;
-            if (auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty())
-                {
-                koqCP = newPrimitiveProperty->GetKindOfQuantity();
-                }
-            else if (auto newPrimitivePropertyArray = newProperty.GetAsPrimitiveArrayProperty())
-                {
-                koqCP = newPrimitivePropertyArray->GetKindOfQuantity();
-                }
-
+            KindOfQuantityCP koqCP = newProperty.GetKindOfQuantity();
             if (koqCP == nullptr)
                 {
                 BeAssert(false);
@@ -1324,6 +1316,28 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
             }
         }
 
+    if (propertyChange.GetCategory().IsValid())
+        {
+        if (propertyChange.GetCategory().GetState() == ChangeState::Deleted)
+            {
+            sqlUpdateBuilder.AddSetToNull("CategoryId"); //set to null;
+            }
+        else
+            {
+            PropertyCategoryCP cat = newProperty.GetCategory();
+            if (cat == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            PropertyCategoryId id = m_ecdb.Schemas().GetReader().GetPropertyCategoryId(*cat);
+            if (!id.IsValid())
+                return ERROR;
+
+            sqlUpdateBuilder.AddSetExp("CategoryId", id.GetValue());
+            }
+        }
 
     sqlUpdateBuilder.AddWhereExp("Id", propertyId.GetValue());
     if (sqlUpdateBuilder.IsValid())
