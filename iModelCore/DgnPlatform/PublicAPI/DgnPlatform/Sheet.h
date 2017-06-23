@@ -48,7 +48,7 @@ public:
     DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
 
     //! Draw border graphics (static, called during update)
-    DGNPLATFORM_EXPORT static void DrawBorder(ViewContextR viewContext, DPoint2dCR size);
+    DGNPLATFORM_EXPORT static Render::GraphicPtr CreateBorder(ViewContextR viewContext, DPoint2dCR size);
 
     //! Get the sheet size.
     DPoint2d GetSheetSize() const;
@@ -328,6 +328,7 @@ protected:
     void _LoadState() override;
     BentleyStatus _CreateScene(SceneContextR) override;
     FitComplete _ComputeFitRange(FitContextR context) override;
+    void _DrawDecorations(DecorateContextR context) override;
 
     void DrawBorder(ViewContextR context) const;
     Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
