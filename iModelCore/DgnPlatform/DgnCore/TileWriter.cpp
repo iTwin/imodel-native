@@ -2060,7 +2060,6 @@ BentleyStatus WriteGltf(Render::Primitives::GeometryCollectionCR geometry, DPoin
     WriteLength(startPosition, lengthDataPosition);
     m_buffer.Append(m_binaryData.data(), m_binaryData.size());
 
-#define DEBUG_TO_GLB
 #ifdef DEBUG_TO_GLB
     std::FILE* outputFile = fopen("d:\\tmp\\test.glb","wb");
     fwrite(m_buffer.GetDataP() + startPosition, 1, m_buffer.GetSize() - startPosition, outputFile);
