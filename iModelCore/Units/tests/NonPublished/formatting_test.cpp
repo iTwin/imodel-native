@@ -20,6 +20,8 @@
 
 using namespace BentleyApi::Formatting;
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
+static UnitProxySetCP upx = nullptr;
+static int repc = 0;
 
 TEST(FormattingTest, Preliminary)
     {
@@ -76,10 +78,31 @@ TEST(FormattingTest, Preliminary)
                 }
             narg = FormattingTestFixture::GetNextArguments(buf, len, &parts, '@');
             }
-        LOG.infov("================  Data File Processing Complete  ========================");
+        LOG.info("================  Data File Processing Complete  ========================");
         }
     else
         LOG.info("Test Data File is not available");
+
+   
+   
+    if(nullptr == upx)
+        { 
+        upx = new UnitProxySet(4);
+        upx->SetUnitName(0, "FT");
+        upx->SetUnitName(1, "IN");
+        upx->SetUnitName(2, "CUB.M");
+        LOG.info("Init UPX");
+        }
+    repc++;
+    BEU::UnitCP upFT = upx->GetUnit(0);
+    BEU::UnitCP upIN = upx->GetUnit(1);
+    BEU::UnitCP upCM = upx->GetUnit(2);
+    BEU::UnitCP upFT1 = BEU::UnitRegistry::Instance().LookupUnit("FT");
+    Utf8CP nameFT = (nullptr == upFT) ? "xxx" : upFT->GetName();
+    Utf8CP nameIN = (nullptr == upIN) ? "xxx" : upIN->GetName();
+    Utf8CP nameCM = (nullptr == upCM) ? "xxx" : upCM->GetName();
+    LOG.infov("%s %s %s  Reset:%d", nameFT, nameIN, nameCM, upx->GetResetCount());
+    LOG.infov("Compare address %x %x repet %d", upFT, upFT1, repc);
 
     NumericFormatSpec numFmt = NumericFormatSpec();
     //LOG.infov("UNI: |%s|", uni);

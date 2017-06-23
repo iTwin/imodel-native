@@ -1105,6 +1105,25 @@ bool UnitProxySet::IsConsistent()
     return consist;
     }
 
+int UnitProxySet::Validate() const
+    {
+    BEU::UnitRegistry* reg = &BEU::UnitRegistry::Instance();
+    if (m_unitReg == reg) // there is a new instance
+        return m_resetCount;
+    for (int i = 0; i < m_proxys.size(); m_proxys[i++].Reset());
+    return m_resetCount++;
+    }
+
+size_t UnitProxySet::UnitCount()
+    {
+    for (size_t n = 0; IsIndexCorrect(n); ++n)
+        {
+        if (nullptr == m_proxys[n].GetUnit())
+            return n;
+        }
+    return 0;
+    }
+
 //===================================================
 //
 // FormattingCursorSection Methods

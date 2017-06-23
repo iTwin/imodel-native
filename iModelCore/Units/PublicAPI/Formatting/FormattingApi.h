@@ -278,29 +278,26 @@ public:
 struct UnitProxySet
 {
 private:
-    bvector<UnitProxy> m_proxys;
+    bvector<UnitProxy> mutable m_proxys;
     BEU::UnitRegistry* m_unitReg = &BEU::UnitRegistry::Instance();
+    int mutable m_resetCount;
 
-    void Validate() const
-        {
-        BEU::UnitRegistry* reg = &BEU::UnitRegistry::Instance();
-        if (m_unitReg != reg) // there is a new instance
-            for (int i = 0; i < m_proxys.size(); m_proxys[i++].Reset());
-        } 
-    UNITS_EXPORT bool IsConsistent();
-    size_t UnitCount() { size_t n = 0; while (IsIndexCorrect(n) && (nullptr != m_proxys[n].GetUnit())); return n; }
+    UNITS_EXPORT int Validate() const;
+    bool IsConsistent();
+    UNITS_EXPORT size_t UnitCount();
     size_t GetSize() const { return m_proxys.size(); }
-    UnitProxyCP GetProxy(size_t indx) const { return (indx < m_proxys.size()) ? &m_proxys[indx] : nullptr; }
 
 public:
     UnitProxySet(int size)
         {
         m_proxys.resize(size);
         m_proxys.insert(m_proxys.begin(), size, UnitProxy());
+        m_resetCount = 0;
         }
     UnitProxySet (UnitProxySetCP other)
         {
         m_proxys.resize(other->GetSize());
+        m_resetCount = 0;
         for (size_t i = 0; i < m_proxys.size(); i++)
             {
             m_proxys[i].Copy(other->GetProxy(i));
@@ -309,20 +306,22 @@ public:
     void Copy(UnitProxySetCR other)
         {
         m_proxys.resize(other.GetSize());
+        m_resetCount = 0;
         for (size_t i = 0; i < m_proxys.size(); i++)
             {
             m_proxys[i].Copy(other.GetProxy(i));
             }
         }
-
+    int GetResetCount() const { return m_resetCount; }
     bool IsIndexCorrect(size_t indx) const { return indx < m_proxys.size(); }
+    UnitProxyCP GetProxy(size_t indx) const { return (indx < m_proxys.size()) ? &m_proxys[indx] : nullptr; }
     void Clear() { for (int i = 0; IsIndexCorrect(i); m_proxys[i++].Clear()); m_unitReg = &BEU::UnitRegistry::Instance(); }
     BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
     Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return  IsIndexCorrect(indx) ? m_proxys[indx].GetName() : subst; }
     Utf8CP GetUnitLabel(size_t indx, Utf8CP subst = nullptr) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : subst; }
     Utf8CP SetUnitLabel(size_t indx, Utf8CP unitLabel) { return IsIndexCorrect(indx) ? m_proxys[indx].SetLabel(unitLabel) : nullptr; }
     bool SetUnit(size_t indx, BEU::UnitCP unitP) { return IsIndexCorrect(indx) ?  m_proxys[indx].SetUnit(unitP) : false; }
-    bool SetUnitName(size_t indx, Utf8CP unitName) { return IsIndexCorrect(indx) ? m_proxys[indx].SetName(unitName) : false; }
+    bool SetUnitName(size_t indx, Utf8CP unitName) const { return IsIndexCorrect(indx) ? m_proxys[indx].SetName(unitName) : false; }
 };
 
 //=======================================================================================
