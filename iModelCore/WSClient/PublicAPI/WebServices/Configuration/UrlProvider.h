@@ -86,7 +86,7 @@ struct UrlProvider
 
         //! Gets last cached environment in local store.
         //! @param localState - custom local state for caching URLs
-        WSCLIENT_EXPORT static Json::Value UrlProvider::GetCachedEnvironment(IJsonLocalState* localState);
+        WSCLIENT_EXPORT static Json::Value GetCachedEnvironment(IJsonLocalState* localState);
 
         //! Should be used with all requests to provided URLs!
         //! Returns handler that will configure requests depending on environment.
