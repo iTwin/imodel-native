@@ -661,7 +661,7 @@ Render::GraphicPtr Sheet::Model::CreateBorder(ViewContextR context, DPoint2dCR s
 
     // Make sure drop shadow displays behind border...
     int32_t priority = Render::Target::GetMinDisplayPriority();
-    border->AddShape2d(7, points, true, Render::Target::DepthFromDisplayPriority(priority));
+    border->AddShape2d(7, points, true, static_cast<double>(priority));
 
     return border->Finish();
     }
