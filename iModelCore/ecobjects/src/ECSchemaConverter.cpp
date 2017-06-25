@@ -209,7 +209,7 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
 
         IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
         ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, UNIT_SPECIFICATION, unitPropConv);
-        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, "UnitSpecificationAttr", unitPropConv);
+        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION, unitPropConv);
 
         ECSchemaConverterSingleton->AddSchemaReferenceToRemove(UNIT_ATTRIBUTES);
 
@@ -901,6 +901,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
 
     newKOQ = schema.GetKindOfQuantityP(newKOQName.c_str());
     ECObjectsStatus status;
+    bool updatePresentationUnits = false;
     if (nullptr != newKOQ)
         {
         if (!Units::Unit::AreEqual(newKOQ->GetPersistenceUnit().GetUnit(), newUnit))
@@ -921,9 +922,22 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                                validatedKoqName.GetName().c_str(), oldUnit.GetName(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
                     return status;
                     }
-                newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
-                newKOQ->SetRelativeError(1e-4);
+
+                // Need to set the newKOQ to the baseProperty KoQ's persistence unit if one exists
+                if (!prop->IsKindOfQuantityDefinedLocally() && nullptr != prop->GetKindOfQuantity())
+                    {
+                    KindOfQuantityCP basePropKoQ = prop->GetKindOfQuantity();
+                    newKOQ->SetPersistenceUnit(basePropKoQ->GetPersistenceUnit());
+                    newKOQ->SetRelativeError(basePropKoQ->GetRelativeError());
+                    newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
+                    }
+                else
+                    {
+                    newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
+                    newKOQ->SetRelativeError(1e-4);
+                    }
                 }
+            updatePresentationUnits = true;
             }
         }
     else
@@ -936,6 +950,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
             }
         newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
         newKOQ->SetRelativeError(1e-4);
+        updatePresentationUnits = true;
         }
 
 
@@ -943,7 +958,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     Utf8String oldFormatString;
     if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
         {
-        if (!newKOQ->HasPresentationUnits())
+        if (updatePresentationUnits)
             {
             Units::UnitCP newDisplayUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldDisplayUnit.GetName());
             if (nullptr == newUnit)
