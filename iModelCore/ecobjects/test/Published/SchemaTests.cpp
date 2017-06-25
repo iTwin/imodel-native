@@ -766,9 +766,8 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     kindOfQuantity->SetPersistenceUnit("CM");
     kindOfQuantity->SetRelativeError(10e-3);
     kindOfQuantity->SetDefaultPresentationUnit("FT");
-    auto& altPresUnits = kindOfQuantity->GetPresentationUnitListR();
-    altPresUnits.push_back("IN");
-    altPresUnits.push_back("MILLIINCH");
+    kindOfQuantity->AddPresentationUnit("IN");
+    kindOfQuantity->AddPresentationUnit("MILLIINCH");
 
     WString fullSchemaName;
     fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
@@ -821,9 +820,8 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     kindOfQuantity->SetPersistenceUnit("CM");
     kindOfQuantity->SetRelativeError(10e-3);
     kindOfQuantity->SetDefaultPresentationUnit("FT");
-    auto& altPresUnits = kindOfQuantity->GetPresentationUnitListR();
-    altPresUnits.push_back("IN");
-    altPresUnits.push_back("MILLIINCH");
+    kindOfQuantity->AddPresentationUnit("IN");
+    kindOfQuantity->AddPresentationUnit("MILLIINCH");
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity2, "OverrideKindOfQuantity"));
     kindOfQuantity2->SetDescription("Kind of a Description here");
@@ -831,9 +829,8 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     kindOfQuantity2->SetPersistenceUnit("CM");
     kindOfQuantity2->SetRelativeError(10e-4);
     kindOfQuantity2->SetDefaultPresentationUnit("FT");
-    auto& altPresUnits2 = kindOfQuantity->GetPresentationUnitListR();
-    altPresUnits2.push_back("IN");
-    altPresUnits2.push_back("MILLIINCH");
+    kindOfQuantity2->AddPresentationUnit("IN");
+    kindOfQuantity2->AddPresentationUnit("MILLIINCH");
 
     schema->CreateEntityClass(parentEntityClass, "ParentEntity");
     parentEntityClass->SetClassModifier(ECClassModifier::Abstract);

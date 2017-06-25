@@ -17,6 +17,50 @@ struct KindOfQuantityTest : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityTest, Test)
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+
+    {
+    KindOfQuantityP kindOfQuantity;
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDescription("Kind of a Description here"));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDisplayLabel("best quantity of all times"));
+    EXPECT_TRUE(kindOfQuantity->SetPersistenceUnit("CM"));
+    kindOfQuantity->SetRelativeError(10e-3);
+    EXPECT_TRUE(kindOfQuantity->SetDefaultPresentationUnit("FT"));
+    EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("IN"));
+    EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("MILLIINCH"));
+    }
+
+    {
+    KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
+    ASSERT_NE(nullptr, koq);
+    EXPECT_STREQ("FT", koq->GetDefaultPresentationUnit().GetUnit()->GetName());
+    auto presUnitList = koq->GetPresentationUnitList();
+    EXPECT_EQ(3, presUnitList.size());
+    EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName());
+    EXPECT_STREQ("IN", presUnitList.at(1).GetUnit()->GetName());
+    EXPECT_STREQ("MILLIINCH", presUnitList.at(2).GetUnit()->GetName());
+
+    koq->RemovePresentationUnit("IN");
+    }
+    {
+    KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
+    ASSERT_NE(nullptr, koq);
+    auto presUnitList = koq->GetPresentationUnitList();
+    EXPECT_EQ(2, presUnitList.size());
+    EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName());
+    EXPECT_STREQ("MILLIINCH", presUnitList.at(1).GetUnit()->GetName());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityTest, TestEmptyOrMissingName)
     {
     {
@@ -274,9 +318,8 @@ TEST_F(KindOfQuantityTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingString)
     kindOfQuantity->SetPersistenceUnit("CM");
     kindOfQuantity->SetRelativeError(10e-3);
     kindOfQuantity->SetDefaultPresentationUnit("FT");
-    auto& altPresUnits = kindOfQuantity->GetPresentationUnitListR();
-    altPresUnits.push_back("IN");
-    altPresUnits.push_back("MILLIINCH");
+    kindOfQuantity->AddPresentationUnit("IN");
+    kindOfQuantity->AddPresentationUnit("MILLIINCH");
 
     ECEntityClassP entityClass;
     ASSERT_TRUE(schema->CreateEntityClass(entityClass, "EntityClass") == ECObjectsStatus::Success);

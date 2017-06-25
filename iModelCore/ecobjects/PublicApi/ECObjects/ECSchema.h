@@ -1958,10 +1958,14 @@ struct KindOfQuantity : NonCopyableClass
         //! Gets the default presentation Unit of this KindOfQuantity.
         Formatting::FormatUnitSet GetDefaultPresentationUnit() const { return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS; };
 
+        //! Adds the FormatUnitSet to the list of presentation Units.
+        //! @param[in]  value  The new FormatUnitSet to add to the list of presentation units
+        //! @return ECObjectsStatus::InvalidFormatUnitSet if there is a problem detected, otherwise ECObjectsStatus::Success.
+        ECOBJECTS_EXPORT bool AddPresentationUnit(Formatting::FormatUnitSet value);
+        //! Removes the specified presentation Unit from this KindOfQuantity
+        ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSet value);
         //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
         bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const { return m_presentationFUS; }
-        //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
-        bvector<Formatting::FormatUnitSet>& GetPresentationUnitListR() { return m_presentationFUS; }
         //! Returns true if one or more presentation units exist
         bool HasPresentationUnits() const { return m_presentationFUS.size() > 0; }
 

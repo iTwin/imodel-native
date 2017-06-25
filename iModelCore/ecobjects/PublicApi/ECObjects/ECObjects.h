@@ -177,6 +177,7 @@ enum class ECObjectsStatus
     InvalidPrimitiveOverrride,
     UnableToSetMixinCustomAttribute,
     KindOfQuantityNotCompatible,
+    InvalidFormatUnitSet,
     };
 
 //! Result status for deserializing an ECSchema from Xml

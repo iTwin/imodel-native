@@ -131,6 +131,28 @@ Utf8StringCR KindOfQuantity::GetDescription() const
     return GetSchema().GetLocalizedStrings().GetKindOfQuantityDescription(*this, m_description); 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool KindOfQuantity::AddPresentationUnit(Formatting::FormatUnitSet presentationFUS)
+    {
+    if (presentationFUS.HasProblem())
+        return false;
+
+    m_presentationFUS.push_back(presentationFUS);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSet presentationFUS)
+    {
+    for (auto itor = m_presentationFUS.begin(); itor != m_presentationFUS.end(); itor++)
+        if (Units::Unit::AreEqual(itor->GetUnit(), presentationFUS.GetUnit()))
+            m_presentationFUS.erase(itor);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
