@@ -765,4 +765,175 @@ TEST_F(ClassTest, TestPropertyEnumerationType)
     EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, classB->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) << "The property did not have the expected primitive type";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                        Colin.Kerr                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_NoExclusions)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECEntityClassP baseClass;
+    schema->CreateEntityClass(baseClass, "BaseClass");
+    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass("NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    baseClass->SetCustomAttribute(*notSubClassable);
+
+    ECEntityClassP localDerivedClass;
+    schema->CreateEntityClass(localDerivedClass, "LocalDerivedClass");
+    EXPECT_EQ(ECObjectsStatus::Success, localDerivedClass->AddBaseClass(*baseClass)) << "Failed to add local base class";
+
+    ECSchemaPtr refingSchema;
+    ECSchema::CreateSchema(refingSchema, "RefingSchema", "RS", 4, 2, 2);
+    refingSchema->AddReferencedSchema(*schema);
+
+    ECEntityClassP remoteDerivedClass;
+    refingSchema->CreateEntityClass(remoteDerivedClass, "RemoteDerivedClass");
+    EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, remoteDerivedClass->AddBaseClass(*baseClass)) << "Should not have been able to add base class because of 'NotSubclassableInReferencingSchemas' CA";
+
+    ECEntityClassP remoteDerivedDerivedClass;
+    refingSchema->CreateEntityClass(remoteDerivedDerivedClass, "RemoteDerivedDerivedClass");
+    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedDerivedClass->AddBaseClass(*localDerivedClass)) << 
+        "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA applied to base class of applied base class";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                        Colin.Kerr                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_WithExclusions)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECEntityClassP baseClass;
+    schema->CreateEntityClass(baseClass, "BaseClass");
+    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass("NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue exclusion0("RefingSchema:RemoteDerivedClass");
+    notSubClassable->AddArrayElements("Exceptions", 2);
+    ASSERT_EQ(ECObjectsStatus::Success, notSubClassable->SetValue("Exceptions", exclusion0, 0));
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    baseClass->SetCustomAttribute(*notSubClassable);
+
+    ECEntityClassP localDerivedClass;
+    schema->CreateEntityClass(localDerivedClass, "LocalDerivedClass");
+    EXPECT_EQ(ECObjectsStatus::Success, localDerivedClass->AddBaseClass(*baseClass)) << "Failed to add local base class";
+
+    ECSchemaPtr refingSchema;
+    ECSchema::CreateSchema(refingSchema, "RefingSchema", "RS", 4, 2, 2);
+    refingSchema->AddReferencedSchema(*schema);
+
+    ECEntityClassP remoteDerivedClass;
+    refingSchema->CreateEntityClass(remoteDerivedClass, "RemoteDerivedClass");
+    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedClass->AddBaseClass(*baseClass)) << 
+        "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA includes exclusion for this class.";
+
+    ECEntityClassP remoteDerivedClass2;
+    refingSchema->CreateEntityClass(remoteDerivedClass2, "RemoteDerivedClass2");
+    EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, remoteDerivedClass2->AddBaseClass(*baseClass)) << 
+        "Should not have been able to add base class because 'NotSubclassableInReferencingSchemas' CA does not include an exclusion for this class";
+
+    ECValue exclusion1("RefingSchema:RemoteDerivedClass2");
+    ASSERT_EQ(ECObjectsStatus::Success, notSubClassable->SetValue("Exceptions", exclusion1, 1));
+
+    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedClass2->AddBaseClass(*baseClass)) <<
+        "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA includes exclusion for this class.";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                        Colin.Kerr                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_NoExclusions)
+    {
+    Utf8CP baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+                <ECEntityClass typeName="BaseClass">
+                    <ECCustomAttributes>
+                        <NotSubClassableInReferencingSchemas xmlns="CoreCustomAttributes.01.00"/>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                <ECEntityClass typeName="LocalDerivedClass">
+                    <BaseClass>BaseClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+    
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    Utf8CP badRefSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="RefingSchema" alias="RS" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="1.00.00" alias="ts"/>
+                <ECEntityClass typeName="RemoteDerivedClass">
+                    <BaseClass>ts:BaseClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+
+    ECSchemaPtr refingSchema;
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(refingSchema, badRefSchemaXml, *context));
+    ASSERT_TRUE(!refingSchema.IsValid());
+
+    Utf8CP goodRefSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="RefingSchema" alias="RS" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="1.00.00" alias="ts"/>
+                <ECEntityClass typeName="RemoteDerivedClass">
+                    <BaseClass>ts:LocalDerivedClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refingSchema, goodRefSchemaXml, *context));
+    ASSERT_TRUE(refingSchema.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                        Colin.Kerr                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_WithExclusions)
+    {
+    Utf8CP baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+                <ECEntityClass typeName="BaseClass">
+                    <ECCustomAttributes>
+                        <NotSubClassableInReferencingSchemas xmlns="CoreCustomAttributes.01.00">
+                            <Exceptions>
+                                <string></string>
+                                <string>RefingSchema:RemoteDerivedClass</string>
+                            </Exceptions>
+                        </NotSubClassableInReferencingSchemas>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                <ECEntityClass typeName="LocalDerivedClass">
+                    <BaseClass>BaseClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    Utf8CP goodRefSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="RefingSchema" alias="RS" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="1.00.00" alias="ts"/>
+                <ECEntityClass typeName="RemoteDerivedClass">
+                    <BaseClass>ts:BaseClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+
+    ECSchemaPtr refingSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refingSchema, goodRefSchemaXml, *context));
+    ASSERT_TRUE(refingSchema.IsValid());
+
+    Utf8CP badRefSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="RefingSchema" alias="RS" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="1.00.00" alias="ts"/>
+                <ECEntityClass typeName="RemoteDerivedClass2">
+                    <BaseClass>ts:BaseClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(refingSchema, badRefSchemaXml, *context));
+    ASSERT_TRUE(!refingSchema.IsValid());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

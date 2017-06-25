@@ -1336,6 +1336,39 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         {
         if (!ECSchema::IsSchemaReferenced(this->GetSchema(), baseClass.GetSchema()))
             return ECObjectsStatus::SchemaNotFound;
+
+        IECInstancePtr notSubClassableCA = baseClass.GetCustomAttributeLocal("CoreCustomAttributes", "NotSubclassableInReferencingSchemas");
+        if (notSubClassableCA.IsValid())
+            {
+            bool exceptionFound = false;
+            uint32_t exceptionsIndex;
+            notSubClassableCA->GetEnabler().GetPropertyIndex(exceptionsIndex, "Exceptions");
+            ECValue exceptionsArray;
+            if (ECObjectsStatus::Success == notSubClassableCA->GetValue(exceptionsArray, exceptionsIndex))
+                {
+                GetFullName(); // Call to ensure m_fullName is cached.
+                ArrayInfo arrayInfo = exceptionsArray.GetArrayInfo();
+                for (uint32_t i = 0; i < arrayInfo.GetCount(); ++i)
+                    {
+                    ECValue exception;
+                    if (ECObjectsStatus::Success != notSubClassableCA->GetValue(exception, exceptionsIndex, i) || exception.IsNull())
+                        continue;
+
+                    if (m_fullName.EqualsIAscii(exception.GetUtf8CP()))
+                        {
+                        exceptionFound = true;
+                        break;
+                        }
+                    }
+                }
+
+            if (!exceptionFound)
+                {
+                LOG.errorv("Cannot add class '%s' as a base class to '%s' because the base class has the 'NotSubclassableInReferencingSchema' CA, this class is in a referencing schema and is not listed as an exception",
+                    baseClass.GetFullName(), GetFullName());
+                return ECObjectsStatus::BaseClassUnacceptable;
+                }
+            }
         }
 
     if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || baseClass.TraverseBaseClasses(&CheckBaseClassCycles, true, this))

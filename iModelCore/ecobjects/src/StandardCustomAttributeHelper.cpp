@@ -313,6 +313,15 @@ ECClassCP CoreCustomAttributeHelper::GetClass(Utf8CP attributeName)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                       Colin.Kerr                   06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSchemaPtr CoreCustomAttributeHelper::GetSchema()
+    {
+    return CoreCustomAttributesSchemaHolder::GetSchema();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
