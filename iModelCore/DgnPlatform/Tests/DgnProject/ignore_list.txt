@@ -33,14 +33,6 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 #TFS 630732
 DgnECNavigatorTest.GetElementInfo
 
-ChangeSummaryTestFixture.ElementChildRelationshipChanges
-    # bim0200, x86, NDEBUG
-    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
-    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(633): error:       Expected: 3
-    # To be equal to: instance.MakeValueIterator().QueryCount()
-    #       Which is: 2
-    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (213 ms)
-
 # UniqueRelationshipLinkTable::_UpdateSummary function needs to find out whether relationship link table
 # contains ECClassId column or not
 TransactionManagerTests.TestRelationshipLinkTableTracking
@@ -607,3 +599,13 @@ DgnProjectPackageTest.EnforceLinkTableFor11Relationship
 ChangeSummaryTestFixture.ElementChangesFromCurrentTransaction
 ChangeSummaryTestFixture.ElementChangesFromSavedTransactions
 #============================================================================================================================
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # bim0200, x86, NDEBUG
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(633): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (213 ms)
+
+	

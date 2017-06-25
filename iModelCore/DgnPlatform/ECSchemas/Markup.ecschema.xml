@@ -6,18 +6,6 @@
     <ECEntityClass typeName="MarkupExternalLink">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
-            <DbIndexList xmlns="ECDbMap.2.0">
-                <Indexes>
-                    <DbIndex>
-                        <!-- Index for looking up MarkupExternalLink by the LinkedElementId -->
-                        <Name>ix_markup_MarkupExternalLink_LinkedElementId</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>LinkedElementId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </DbIndexList>
         </ECCustomAttributes>
         <BaseClass>bis:LinkElement</BaseClass>
         <ECProperty propertyName="LinkedElementId" typeName="long">
