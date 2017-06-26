@@ -30,6 +30,7 @@
     <ClCompile Include="Published\BeIdTest.cpp" />
     <ClCompile Include="Published\BeNumerical_Test.cpp" />
     <ClCompile Include="Published\BeStringUtilities_tests.cpp" />
+    <ClCompile Include="Published\BeSystemInfo_Tests.cpp" />
     <ClCompile Include="Published\BeTextFile_Test.cpp" />
     <ClCompile Include="Published\BeThread_Tests.cpp" />
     <ClCompile Include="Published\BeTimeUtilities_test.cpp" />
@@ -73,6 +74,7 @@
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Published\bunique_ptr_test.h" />
+    <ClInclude Include="Published\BeSystemInfo_Tests.h" />
     <ClInclude Include="Published\DateTimeTestDataset.h" />
     <ClInclude Include="Published\DateTimeTestHelpers.h" />
     <ClInclude Include="Published\DirectoryObserverTests.h" />

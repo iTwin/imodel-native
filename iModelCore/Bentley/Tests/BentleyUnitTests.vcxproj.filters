@@ -69,6 +69,9 @@
     <ClCompile Include="Published\BeStringUtilities_tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\BeSystemInfo_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
     <ClCompile Include="Published\BeTextFile_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -140,6 +143,9 @@
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="Published\bunique_ptr_test.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\BeSystemInfo_Tests.h">
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="Published\shared_mutex.h">

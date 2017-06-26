@@ -136,6 +136,7 @@
     <ClCompile Include="Bentley\nonport\BeJStringUtilities.cpp" />
     <ClCompile Include="Bentley\nonport\BeStringUtilities.cpp" />
     <ClCompile Include="Bentley\nonport\BeSystemInfo.cpp" />
+    <ClCompile Include="Bentley\nonport\BeSystemInfoIos.mm" />
     <ClCompile Include="Bentley\nonport\BeTest.cpp" />
     <ClCompile Include="Bentley\nonport\BeTextFile.cpp" />
     <ClCompile Include="Bentley\nonport\BeThread.cpp" />
