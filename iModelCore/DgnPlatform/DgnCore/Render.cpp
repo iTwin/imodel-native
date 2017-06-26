@@ -889,6 +889,7 @@ bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d
     return true;
     }
 
+#if !defined(NDEBUG)
 /*---------------------------------------------------------------------------------**//**
 * This lives here because (1) annoying out-of-sync headers on rebuild and (2) want to
 * catch the actual delta when assertion triggered. Only used in non-optimized builds.
@@ -910,9 +911,6 @@ void OctEncodedNormal::VerifyEncoded(uint16_t val, DVec3dCR in)
     DVec3d out = enc.Decode();
     bool vecEqual = in.IsEqual(out, 0.05);
     BeAssert(vecEqual);
-
-    //auto roundtripped = OctEncodedNormal::From(out);
-    //bool encEqual = roundtripped == enc;
-    //BeAssert(encEqual);
     }
+#endif
 

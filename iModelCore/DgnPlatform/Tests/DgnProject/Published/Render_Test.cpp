@@ -110,7 +110,7 @@ struct FakeVertexKey : VertexKey
 {
     explicit FakeVertexKey(QVertex3dCR vert)
         {
-        m_normal = QPoint3d(0,1,0);
+        m_normal = OctEncodedNormal::From(DVec3d::From(0.0, 1.0, 0.0));
         m_feature = Feature();
         m_position = vert;
         m_normalValid = true;

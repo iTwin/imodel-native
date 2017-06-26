@@ -54,20 +54,6 @@ BentleyStatus    GetAccessorAndBufferView(Json::Value& accessor, Json::Value& bu
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsPtr ReadDisplayParams(Json::Value const& primitiveValue)
-    {
-    auto&       material = primitiveValue["material"];
-
-    if (!material.isObject())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GetBufferView (void const*& pData, size_t& count, size_t& byteLength, uint32_t& type, Json::Value& accessor, Json::Value const& primitiveValue, Utf8CP accessorName)
@@ -574,10 +560,8 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
         }
 
     DisplayParamsCPtr    displayParams = _CreateDisplayParams(materialValue);
-
-    if (!(displayParams = _CreateDisplayParams(materialValue)).IsValid())
+    if (displayParams.IsNull())
         return nullptr;
-
 
     Mesh::PrimitiveType primitiveType;
 
@@ -756,6 +740,7 @@ struct DgnCacheTileReader : GltfReader
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue) override
     {
+    // ###TODO: Use a DisplayParamsCache?
     GradientSymbPtr     gradient;
 
     if (materialValue.isMember("gradient"))
