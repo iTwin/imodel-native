@@ -234,6 +234,15 @@ void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, IJsonLocal
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value UrlProvider::GetCachedEnvironment(IJsonLocalState* localState)
+    {
+    BeAssert (nullptr != localState);
+    return localState->GetJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UrlProvider::Uninitialize()

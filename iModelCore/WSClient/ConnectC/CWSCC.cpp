@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "CWSCCInternal.h"
-#include "DgnClientFx/Device.h"
+#include <Bentley/BeSystemInfo.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Initializer.
@@ -513,12 +513,14 @@ void* securityStoreInitializer
         SecureStore::Initialize(securityStoreInitializer);
 
 #if defined (__ANDROID__)
-    // Ideally, DgnClientFx::Device::GetDeviceId() would return a proper id (MEID, most likely) for android.
+    // Ideally, Bentley::BeSystemInfo::GetDeviceId() would return a proper id (MEID, most likely) for android.
     // However, it doesn't right now and most people are setting it using this
     // "CacheAndroidDeviceId()" everywhere (not sure why we can't just set the string (deviceId = "TEST_DEVICE_ID"),
     //  we will follow suit here. We need to supply something on connect calls.
     // NOTE: there looks like there is code on the interwebs to retrieve the IMEI\MEID from an android phone.
     // That should replace this dummy value at some point.
+    // IMPORTANT: If you are using DgnClientFx library together with WSClient, please do not set this value,
+    // because it will be set by DgnClientFx to real device id.
     ClientInfo::CacheAndroidDeviceId("TEST_DEVICE_ID");
     
 #endif

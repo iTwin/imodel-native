@@ -9,13 +9,13 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Licensing/FeatureTracking.h>
 #include <Bentley/Base64Utilities.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 
 #ifndef BENTLEY_WINRT
 #include <openssl/evp.h>
 #endif
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 
 static IHttpHandlerPtr s_httpHandler;
 static bool s_featureTrackingInitialized = false;

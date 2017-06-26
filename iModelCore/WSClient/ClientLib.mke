@@ -38,18 +38,6 @@ always:
 %include MultiCppCompileGo.mki
 WSClientObjectList = $(MultiCompileObjectList)
 
-# WIP this is an MM file and must be compiled separately, but is technically part of client.mki
-%if $(TARGET_PLATFORM)=="iOS"
-
-    CCPchOpts =
-    CPchOpts =
-
-    $(o)DeviceIos$(oext) : $(ClientSourceDirectory)Client/Device/DeviceIos.mm $(ClientSourceDirectory)Client/Device/Device.h
-
-    WSClientObjectList + $(o)DeviceIos$(oext)
-
-%endif
-
 #--------------------------------------------------------------------------------------
 #   Link the library
 #--------------------------------------------------------------------------------------

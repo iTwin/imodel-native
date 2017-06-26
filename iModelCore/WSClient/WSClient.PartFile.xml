@@ -198,6 +198,7 @@
 
     <Part Name="iModelHubClient-Library-Android" BentleyBuildMakeFile="iModelHubClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>
@@ -478,8 +479,8 @@
         <SubPart PartName="UnitTests-Published"/>
 
         <!-- Ensure that builds, run manually if needed -->
-        <!-- <SubPart PartName="WSClientIntegrationTests" /> -->
-        <!-- <SubPart PartName="WSClientCompatibilityTestTool" /> -->
+        <SubPart PartName="WSClientIntegrationTests" />
+        <SubPart PartName="WSClientCompatibilityTestTool" />
     </Part>
 
     <!-- Define a gtest program to run the tests. 
@@ -488,7 +489,15 @@
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        
+        <!-- WIP to silence build warnings. -->
+        <Directories DirectoryListName="WSClient-Tests-Dirs"/>
     </Product>
+
+    <!-- WIP to silence build warnings. -->
+    <ProductDirectoryList ListName="WSClient-Tests-Dirs">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
+    </ProductDirectoryList>
 
     <Part Name="Gtest" DeferType="BuildUnitTests" 
         BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" 
@@ -645,6 +654,7 @@
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
           <Files ProductDirectoryName="Gtest-NativeAssemblies">
                 Delivery/WSClientIntegrationTests.exe
@@ -657,30 +667,29 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
     <Part Name="WSClientCompatibilityTestTool" OnlyPlatforms="x64" >
+        <SubPart PartName="WSClientLibrarySubParts" />
         <SubProduct ProductName="WSClientCompatibilityTestTool" />
     </Part>
     
     <Product Name="WSClientCompatibilityTestTool" SaveProduct="true">
+        <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WSClientCompatibilityTests" />
         <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
     </Product>
-
+    
     <ProductDirectoryList ListName="WSClientCompatibilityTestToolDirList" >
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="Libs"                               Deliver="false"/>
-        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
-
-        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
-
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assets" Path="Assets"/>
+        <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+        
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
+        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
+        <ProductDirectory Name="ecschemas"                          Path=""/>
         <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
         <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
         <ProductDirectory Name="geomnativeassemblies"               Path=""/>
@@ -688,39 +697,34 @@
         <ProductDirectory Name="BeCurlAssemblies"                   Path=""/>
         <ProductDirectory Name="BeOpenSSLAssemblies"                Path=""/>
         <ProductDirectory Name="http"                               Path="http"/>
-
-        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
-        <ProductDirectory Name="ecschemas"                          Path=""/>
-
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
         <ProductDirectory Name="WSClientAssemblies"                 Path=""/>
         <ProductDirectory Name="WSClientCompatibilityTests"         Path=""/>
-
-        <ProductDirectory Name="sqlang"                             Path="sqlang/platform"/>
-
-        <!-- TODO: Remove dependency on SDK -->
-        <ProductDirectory Name="CordovaLibs"                        Path=""/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Path=""/>
-        <ProductDirectory Name="MobileDgnNativeAssemblies"          Path=""/>
-        <ProductDirectory Name="PPNativeAssemblies"                 Path=""/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies"          Path=""/>
-        <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false"/>
-        <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false" LibType="static"/>
-        <ProductDirectory Name="DgnPlatformFont"                    Deliver="false"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts"         Deliver="false"/>
-        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
-        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false"/>
-        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false"/>
-        <ProductDirectory Name="MobileDgnJavaScript"                Deliver="false"/>
-        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Deliver="false"/>
-        <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false"/>
-        <ProductDirectory Name="StdThemes"                          Deliver="false"/>
+        
+        <!-- WIP to silence build warnings. -->
+        <ProductDirectory Name="WSClientTestAssets" Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList" Deliver="false"/>
     </ProductDirectoryList>
 
-    <Part Name="WSClientCompatibilityTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x64" >
+    <Part Name="WSClientCompatibilityTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x64" >
+        <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="ConnectWebServicesClientC" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="WSClientCompatibilityTests">
                 Delivery/WSClientCompatibilityTests$(exeext)

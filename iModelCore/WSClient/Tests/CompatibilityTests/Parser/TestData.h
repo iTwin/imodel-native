@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <WebServices/Client/WSError.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 

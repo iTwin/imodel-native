@@ -12,4 +12,4 @@
 
 #define LOGGER_NAMESPACE_WSCCTESTS "WSCCTests"
 
-#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_WSCCTESTS))
+#define LOG (*NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_WSCCTESTS))
