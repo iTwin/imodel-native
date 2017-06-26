@@ -51,8 +51,9 @@ struct TraceFeature : RefCountedBase
         TraceFeature* m_parent;
         bvector<TraceFeaturePtr> m_children;
         bool m_isHidden = false;
-
+        bool m_isEnclosed = false;
         double m_currentVolume = 0;
+        double m_volumeToProcess = 0;
 
         TraceFeature(DrainageTracer& tracer, TraceFeature* parent) : m_tracer(tracer), m_parent(parent)
             {
@@ -66,6 +67,8 @@ struct TraceFeature : RefCountedBase
             m_children = from.m_children;
             m_isHidden = from.m_isHidden;
             m_currentVolume = from.m_currentVolume;
+            m_volumeToProcess = from.m_volumeToProcess;
+            m_isEnclosed = from.m_isEnclosed;
             }
 
         void SetError(WCharCP message = L"")
@@ -73,7 +76,26 @@ struct TraceFeature : RefCountedBase
             m_errorMessage = message;
             m_errorStatus = DTM_ERROR;
             }
+
+        TraceFeatureP CreateAndAddEdge(bvector<TraceFeaturePtr>& newFeatures, long pnt1, long pnt2, DPoint3dCR pt, double m_lastAngle);
+
     public:
+
+        void AddVolumeToProcess(double vol)
+            {
+            m_volumeToProcess += vol;
+            }
+
+        void ClearVolumeToProcess()
+            {
+            m_volumeToProcess = 0;
+            }
+
+        double GetVolumeToProcess() const
+            {
+            return m_volumeToProcess;
+            }
+
         bool IsFinished() const
             {
             return m_finished || m_errorStatus != DTM_SUCCESS;
@@ -86,6 +108,16 @@ struct TraceFeature : RefCountedBase
         double CurrentVolume() const
             {
             return m_currentVolume;
+            }
+
+        void SetEnclosed()
+            {
+            m_isEnclosed = true;
+            }
+
+        bool GetEnclosed() const
+            {
+            return m_isEnclosed;
             }
 
         virtual void Process(bvector<TraceFeaturePtr>& newFeatures) abstract;
@@ -104,6 +136,11 @@ struct TraceFeature : RefCountedBase
                 if (child->m_parent == this)
                     child->HideChildren();
                 }
+            }
+
+        const TraceFeatureP GetParent() const
+            {
+            return m_parent;
             }
 
         const bvector<TraceFeaturePtr>& GetChildren() const
@@ -130,12 +167,14 @@ struct TraceFeature : RefCountedBase
             if (DTM_SUCCESS == m_errorStatus)
                 GetNewWaterVolumes(vol, newWaterVolume);
             }
+
         virtual void GetNewWaterVolumes(double totalVolume, bvector<WaterVolumeInfo>& newWaterVolume)
             {
             double vol = totalVolume / m_children.size();
             for (auto&& child : m_children)
                 {
                 newWaterVolume.push_back(WaterVolumeInfo(child.get(), vol));
+                child->AddVolumeToProcess(vol);
                 }
             }
 
@@ -248,6 +287,14 @@ struct TraceOnEdge: public TraceFeature
             {
             return m_points;
             }
+        long GetPointNum() const
+            {
+            return pnt1;
+            }
+        long GetPointNum2() const
+            {
+            return pnt2;
+            }
         void ProcessZSlopeTriangle(bvector<TraceFeaturePtr>& newFeatures);
         void ProcessZSlopeLine(bvector<TraceFeaturePtr>& newFeatures);
         virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
@@ -279,10 +326,7 @@ struct TraceOnPoint : public TraceFeature
         double m_lastAngle;
         bool m_onHullPoint = false;
 
-        TraceOnPoint(DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle) : TraceFeature(tracer, &parent), m_pt(startPoint), m_lastAngle(lastAngle), m_ptNum(startPtNum)
-            {
-            m_points.push_back(startPoint);
-            }
+        TraceOnPoint(DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle, long prevPtNum);
         TraceOnPoint(TraceOnPointCR from, DrainageTracer& newTracer) : TraceFeature(from, newTracer)
             {
             m_points = from.m_points;
@@ -294,13 +338,17 @@ struct TraceOnPoint : public TraceFeature
             }
         void ProcessZSlope(bvector<TraceFeaturePtr>& newFeatures, long descentPnt1, long descentPnt2);
     public:
+        long GetPointNum() const
+            {
+            return m_ptNum;
+            }
         virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
         virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
             {
             if (m_points.size() != 1 && !m_onHullPoint)   // One point we can ignore.
                 loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
             }
-        static TraceOnPoint* GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle = -99);
+        static TraceOnPoint* GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle = -99, long m_prevPnt = -1);
         virtual TraceFeaturePtr Clone(DrainageTracerR tracer) const override
             {
             return new TraceOnPoint(*this, tracer);
@@ -326,14 +374,23 @@ struct PondExitInfo
 struct TracePond : public TraceFeature
     {
     protected:
+        struct ExitPointInfo
+            {
+            long ptNum;
+            TracePondExitP exit;
+            ExitPointInfo(long ptNum, TracePondExitP exit) : ptNum(ptNum), exit(exit)
+                {
+                }
+            };
         bvector<bvector<DPoint3d>> m_points;
-        bvector<long> m_exitPoints;
+        bvector<ExitPointInfo> m_exitPoints;
         double m_depth;
         DPoint3d m_pt;
         long m_ptNum;
         double m_maxVolume = -1;
         PondAnalysisPtr m_pondAnalysis;
         bool m_allFull = false;
+        TracePondP m_topLevelPond = nullptr;
 
         TracePond(DrainageTracer& tracer, TraceFeature& parent, DPoint3dCR pt, long ptNum) : TraceFeature(tracer, &parent), m_pt(pt), m_ptNum(ptNum)
             { }
@@ -343,10 +400,15 @@ struct TracePond : public TraceFeature
         double GetVolumeAtElevation(double z);
         void ProcessPondExits(bvector<TraceFeaturePtr>& newFeatures, bool ignorePondDepth = false);
 
+        virtual void RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable) override;
     public:
         DPoint3dCR GetLowPoint() const
             {
             return m_pt;
+            }
+        void SetTopLevelPond(TracePondR pond)
+            {
+            m_topLevelPond = &pond;
             }
         long GetLowPointNumber() const
             {
@@ -367,15 +429,18 @@ struct TracePond : public TraceFeature
 
         bool HasExitPoint(long pnt) const
             {
-            for (auto exitPnt : m_exitPoints)
+            for (auto&& exitPnt : m_exitPoints)
                 {
-                if (exitPnt == pnt)
+                if (exitPnt.ptNum == pnt)
                     return true;
                 }
             return false;
             }
 
-        bvector<TracePondExitP> GetPondExits();
+        bvector<ExitPointInfo>&  GetPondExits()
+            {
+            return m_exitPoints;
+            }
 
 
         bool IsFull()
@@ -401,49 +466,88 @@ struct TracePond : public TraceFeature
 struct TracePondExit : public TraceFeature
     {
     private:
+        struct ExitInfo
+            {
+            long priorPnt;
+            long nextPnt;
+            TracePond* pond;
+
+            ExitInfo(long priorPnt, long nextPnt, TracePondP pond) : priorPnt(priorPnt), nextPnt(nextPnt), pond(pond)
+                {
+                }
+            };
+
         bvector<DPoint3d> m_points;
         DPoint3d m_exitPt;
         long m_exitPnt;
-        long m_priorPnt;
-        long m_nextPnt;
+        bvector<ExitInfo> m_exits;
+        bvector<TracePondP> m_ponds;
         long m_prevPtNum = -1;
         double m_lastAngle;
         bool m_calculated = false;
         long m_numExitFlows = 1; // This will always start with 1 the flow which created it.
-        bvector<TracePond*> m_ponds;
+        bool m_allEnclosed = false;
         bool m_hasProcessedDeadPond = false;
         bool m_onHullPoint = false;
-
-        TracePondExit(DrainageTracer& tracer, TraceFeature& parent, long exitPnt, long priorPnt, long nextPnt, DPoint3dCR exitPoint) : TraceFeature(tracer, &parent), m_exitPnt(exitPnt), m_priorPnt(priorPnt), m_nextPnt(nextPnt), m_exitPt(exitPoint)
+        bool m_allPondsFull = false;
+        bool m_processedInitialPondFlows = false;
+        TracePondP m_enclosingPond = nullptr;
+        struct FlowInfo
             {
-            m_points.push_back(exitPoint);
+            long pt;
+            TraceFeatureP child;
+            TraceFeatureP thePond = nullptr;
+            bool isNowPond = false;
+
+            FlowInfo(long pt, TraceFeatureP child) : pt(pt), child(child)
+                {
+                }
+            };
+        bvector<FlowInfo> m_flows;
+
+        TracePondExit(DrainageTracer& tracer, TraceFeature& parent, long exitPnt,  DPoint3dCR exitPoint) : TraceFeature(tracer, &parent), m_exitPt(exitPoint), m_exitPnt(exitPnt)
+            {
             }
         TracePondExit(TracePondExitCR from, DrainageTracer& newTracer) : TraceFeature(from, newTracer)
             {
             m_points = from.m_points;
             m_exitPt = from.m_exitPt;
             m_exitPnt = from.m_exitPnt;
-            m_priorPnt = from.m_priorPnt;
-            m_nextPnt = from.m_nextPnt;
             m_prevPtNum = from.m_prevPtNum;
             m_lastAngle = from.m_lastAngle;
             m_calculated = from.m_calculated;
             m_numExitFlows = from.m_numExitFlows;
             m_ponds = from.m_ponds;
+            m_exits = from.m_exits;
             m_hasProcessedDeadPond = from.m_hasProcessedDeadPond;
             m_onHullPoint = from.m_onHullPoint;
+            m_allPondsFull = from.m_allPondsFull;
+            m_enclosingPond = from.m_enclosingPond;
+            m_allEnclosed = from.m_allEnclosed;
+            m_flows = from.m_flows;
+            m_processedInitialPondFlows = from.m_processedInitialPondFlows;
             }
         virtual void GetNewWaterVolumes(double totalVol, bvector<TraceFeature::WaterVolumeInfo>& newWaterVolume) override;
+        void GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long priorPnt, long nextPnt);
 
     public:
         void Process(bvector<TraceFeaturePtr>& newFeatures, bool ignoreFalseLow);
-        void ProcessDeadPond(bvector<TraceFeaturePtr>& newFeatures);
+        TracePondP ProcessDeadPond(bvector<TraceFeaturePtr>& newFeatures);
+        void CheckIsCalculated();
+
         void RecoverInnerPonds();
         void HideInnerPonds();
-        void SetHasProcessedDeadPond()
+        void SetHasProcessedDeadPond(TracePondR enclosingPond)
             {
+            SetEnclosed();
+            m_enclosingPond = &enclosingPond;
             m_hasProcessedDeadPond = true;
             }
+        TracePondP GetEnclosedPond()
+            {
+            return m_enclosingPond;
+            }
+
 
         virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
         virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override
@@ -451,7 +555,15 @@ struct TracePondExit : public TraceFeature
             loadFunction(DTMFeatureType::LowPoint, 0, 0, &m_exitPt, 1, args);
 
             if (!m_onHullPoint)
-                loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
+                {
+                DPoint3d points[2];
+                points[0] = m_exitPt;
+                for (auto&& pt : m_points)
+                    {
+                    points[1] = pt;
+                    loadFunction(DTMFeatureType::DescentTrace, 0, 0, points, 2, args);
+                    }
+                }
             }
 
         long GetExitPoint() const
@@ -459,15 +571,13 @@ struct TracePondExit : public TraceFeature
             return m_exitPnt;
             }
 
-        void AddPond(TracePond& pond)
-            {
-            // Only 1 other exit at the moment.
-            m_ponds.push_back(&pond);
-            }
+        void CheckFullPond(TracePond& pond);
+
+        void AddPond(TracePond& pond, const PondExitInfo& pei);
 
         bool IsDeadPond() const
             {
-            return m_numExitFlows == m_ponds.size();
+            return m_allEnclosed;// m_numExitFlows == m_ponds.size();
             }
 
         bool IsCalculated() const
@@ -475,26 +585,22 @@ struct TracePondExit : public TraceFeature
             return m_calculated;
             }
 
-        bvector<TracePond*>& GetPonds()
+        bvector<TracePondP>& GetPonds()
             {
             return m_ponds;
             }
 
-        static TracePondExitPtr Create(DrainageTracer& tracer, TraceFeature& parent, long exitPnt, long priorPnt, long nextPnt, DPoint3dCR exitPoint)
+        static TracePondExitPtr Create(DrainageTracer& tracer, TraceFeature& parent, long exitPnt, DPoint3dCR exitPoint)
             {
-            return new TracePondExit(tracer, parent, exitPnt, priorPnt, nextPnt, exitPoint);
+            return new TracePondExit(tracer, parent, exitPnt, exitPoint);
             }
         virtual TraceFeaturePtr Clone(DrainageTracerR tracer) const override
             {
             return new TracePondExit(*this, tracer);
             }
 
-        virtual void RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable) override
-            {
-            __super::RemapFeatures(featureRemapTable);
-            for (auto& pond : m_ponds)
-                pond = dynamic_cast<TracePondP>(featureRemapTable[pond]);
-            }
+        virtual void RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable) override;
+
 
     };
 #ifdef __BENTLEYTMDRAINAGE_BUILD__
@@ -535,14 +641,8 @@ struct TracePondEdge: public TracePond
         long m_ptNum1, m_ptNum2;
         bvector<bvector<DPoint3d>> m_sumpLines;
 
-        TracePondEdge(DrainageTracer& tracer, TraceFeature& parent, long ptNum1, long ptNum2, DPoint3dCR pt) : TracePond(tracer, parent, pt, ptNum1), m_ptNum1(ptNum1), m_ptNum2(ptNum2)
-            {}
-        TracePondEdge(TracePondEdgeCR from, DrainageTracer& newTracer) : TracePond(from, newTracer)
-            {
-            m_ptNum1 = from.m_ptNum1;
-            m_ptNum2 = from.m_ptNum2;
-            m_sumpLines = from.m_sumpLines;
-            }
+        TracePondEdge(DrainageTracer& tracer, TraceFeature& parent, long ptNum1, long ptNum2, DPoint3dCR pt);
+        TracePondEdge(TracePondEdgeCR from, DrainageTracer& newTracer);
 
     protected:
         virtual void GetExitInfo(bvector<PondExitInfo>& exits) override;
@@ -654,15 +754,13 @@ struct DrainageTracer : RefCounted<IRefCounted>
         BC_DTM_OBJ* m_dtmObj;
         bool m_ascentTrace = false;
         double m_falseLowDepth = 0;
-        double m_pondElevationTolerance = 0.3;
-        double m_pondVolumeTolerance = 0.01;
+        double m_pondElevationTolerance = 0.01;
+        double m_pondVolumeTolerance = 0.3;
         ZeroSlopeTraceOption m_zeroSlopeOption = ZeroSlopeTraceOption::TraceLastAngle;
+        bool m_dtmHasVoids;
 
     private:
-        DrainageTracer(BcDTMR dtm) : m_dtm(dtm), m_dtmObj(dtm.GetTinHandle())
-            {
-            m_pointList.resize(m_dtmObj->numPoints);
-            }
+        DrainageTracer(BcDTMR dtm);
         DrainageTracer(DrainageTracerCR from);
         BENTLEYDTMDRAINAGE_EXPORT virtual ~DrainageTracer();
     public:
@@ -716,6 +814,11 @@ struct DrainageTracer : RefCounted<IRefCounted>
         char* GetPointList()
             {
             return m_pointList.data();
+            }
+
+        bool DTMHasVoids() const
+            {
+            return m_dtmHasVoids;
             }
 
         BENTLEYDTMDRAINAGE_EXPORT int DoTrace(DPoint3dCR startPt);
@@ -1166,7 +1269,6 @@ struct PondAnalysis : RefCountedBase
         double GetVolumeOfTrianglesOnSide(double elevation);
 
         bvector<DPoint3d > GetPolygonAtElevation(double elevation, TPtrList& list);
-        bvector<bvector<DPoint3d>> GetPolygonAtElevation(double elevation);
         bvector<bvector<DPoint3d>> GetPolygonAtElevation();
         void SwapExit(long ptNum, ExpandingPondInfo& epi);
         void AddTriangleToValues(long p1, long p2, long p3, double elevation);
@@ -1199,7 +1301,8 @@ private:
                 m_analysis.SaveBoundaryList();
                 }
             };
-    public:
+
+        void RemoveEmptyStartPoints();
 
         bool FixLowPts(long& startPoint, double z);
         void GetLowestPoint(long& outLowPtNum, double& outLowZ);
@@ -1211,6 +1314,7 @@ private:
         void CreateInitialTPtr();
         void GetType();
 
+    public:
         void FindBoundaryForVolume(bool& gotTargetVolume, double targetVolume = -1e90, double lowestExitPntZ = -1e90);
 
         bvector<DPoint3d> GetOuterBoundary();
@@ -1232,6 +1336,11 @@ private:
         double GetCurrentVolume()
             {
             return m_totalVol;
+            }
+
+        bool DTMHasVoids() const
+            {
+            return m_tracer.DTMHasVoids();
             }
 
         PondAnalysisPtr Clone(DrainageTracerR newTracer) const

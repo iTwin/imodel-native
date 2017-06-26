@@ -6,7 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject(BC_DTM_OBJ *dtmP, DTMDrainageTables *drainageTablesP,int trgPoint1,int trgPoint2,int trgPoint3,bool testForVoids, bool& voidTriangle,int& flowDirection ) ;
 int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject(BC_DTM_OBJ *dtmP, DTMDrainageTables *drainageTablesP,int trgPoint1,int trgPoint2,int trgPoint3,bool& voidTriangle,int& flowDirection ) ;
+int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject( BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,int trgPoint1,int trgPoint2,int trgPoint3,bool testForVoids, bool &voidTriangle,double& slope,double& descentAngle,double& ascentAngle) ;
 int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject( BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,int trgPoint1,int trgPoint2,int trgPoint3,bool &voidTriangle,double& slope,double& descentAngle,double& ascentAngle) ;
 int bcdtmDrainage_calculateIntersectOfRadialWithTinLineDtmObject(BC_DTM_OBJ *dtmP,double sRadX,double sRadY,double eRadX,double eRadY,long dtmPnt1,long dtmPnt2,double *xP,double *yP,double *zP,long *intPntP) ;
 int bcdtmDrainage_intersectCordLines(double X1,double Y1,double X2,double Y2,double X3,double Y3,double X4,double Y4,double *X5,double *Y5) ;

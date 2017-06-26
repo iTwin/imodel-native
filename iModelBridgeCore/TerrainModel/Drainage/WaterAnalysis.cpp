@@ -23,6 +23,54 @@ int bcdtmDrainage_traceMaximumDescentDtmObjectOld(BC_DTM_OBJ *dtmP, DTMDrainageT
 const bool checkVolumes = false;
 
 //----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+bool IsOnHull(BC_DTM_OBJ* dtmP, long ptNum, bool checkVoidAndIslands)
+    {
+    bool value = nodeAddrP(dtmP, ptNum)->hPtr != dtmP->nullPnt;
+
+    if (!value && checkVoidAndIslands)
+        value = bcdtmList_testForPointOnAnIslandOrVoidHullDtmObject(dtmP, ptNum) != 0;
+    return value;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+bool isLineOnVoidOrHole(BC_DTM_OBJ* dtmP, long pnt1, long pnt2)
+    {
+    if (bcdtmList_testForVoidOrHoleHullLineDtmObject(dtmP, pnt1, pnt2) != 0)
+        return true;
+    return bcdtmList_testForVoidOrHoleHullLineDtmObject(dtmP, pnt2, pnt1) != 0;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+bool isLineOnHullOrVoidOrHole(BC_DTM_OBJ* dtmP, long pnt1, long pnt2)
+    {
+    if (nodeAddrP(dtmP, pnt1)->hPtr == pnt2 || nodeAddrP(dtmP, pnt2)->hPtr == pnt1)
+        return true;
+    return isLineOnVoidOrHole(dtmP, pnt1, pnt2);
+    }
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+template<class T, class I> I eraseSwapAndPop(T& container, I it)
+    {
+    if (it + 1 == container.end())
+        {
+        container.pop_back();
+        }
+    else
+        {
+        std::swap(*it, container.back());
+        container.pop_back();
+        }
+    return it;
+    }
+
+//----------------------------------------------------------------------------------------*
 // @bsistruct                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 struct DtmSumpLinesPtr
@@ -288,24 +336,6 @@ bvector<DPoint3d > PondAnalysis::GetPolygonAtElevation(double elevation, TPtrLis
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-bvector<bvector<DPoint3d>> PondAnalysis::GetPolygonAtElevation(double elevation)
-    {
-    bvector<bvector<DPoint3d>> boundaries;
-    // OK This works for two point island boundary but not 1.
-    for (auto&& startInfo : m_startPoints)
-        {
-        auto list = startInfo.tPtr;
-        SetCurrentIndex(startInfo.index);
-        auto points = GetPolygonAtElevation(elevation, list);
-        if (!points.empty())
-            boundaries.push_back(points);
-        }
-    return boundaries;
-    }
-
-//----------------------------------------------------------------------------------------*
-// @bsimethod                                                    Daryl.Holmwood  06/17
-// +---------------+---------------+---------------+---------------+---------------+------*
 bvector<bvector<DPoint3d>> PondAnalysis::GetPolygonAtElevation()
     {
     bvector<bvector<DPoint3d>> boundaries;
@@ -318,7 +348,7 @@ bvector<bvector<DPoint3d>> PondAnalysis::GetPolygonAtElevation()
         SetCurrentIndex(startInfo.index);
         double elevation = outerExitZ;
         if (startInfo.m_hasFinished)
-            pointAddrP(dtmP, startInfo.m_exitPoints.front().exitPoint)->z;
+            elevation = pointAddrP(dtmP, startInfo.m_exitPoints.front().exitPoint)->z;
 
         auto points = GetPolygonAtElevation(elevation, list);
         if (!points.empty())
@@ -343,7 +373,7 @@ void PondAnalysis::SwapExit(long ptNum, ExpandingPondInfo& epi)
         if (it->exitPoint == ptNum)
             {
             epi.m_exitPoints.push_back(*it);
-            it = currentEpi->m_exitPoints.erase(it);
+            it = eraseSwapAndPop(currentEpi->m_exitPoints, it);
             }
         }
     }
@@ -623,19 +653,26 @@ template<class T> bool PondAnalysis::ExpandPolygon(T& helper, double testZ)
         }
 
     if (removedIsland)
-        {
-        bvector<ExpandingPondInfo> newSP;
-
-        for (auto&& sp : m_startPoints)
-            {
-            if (!sp.tPtr.empty())
-                newSP.push_back(sp);
-            }
-        std::swap(newSP, m_startPoints);
-        }
+        RemoveEmptyStartPoints();
     if (hasSplit)
         FindOuterBoundary();
     return hasExpanded;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsistruct                                                    Daryl.Holmwood  06/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void PondAnalysis::RemoveEmptyStartPoints()
+    {
+    for (auto it = m_startPoints.begin(); it != m_startPoints.end();)
+        {
+        if (!it->tPtr.empty())
+            {
+            it++;
+            }
+        else
+            it = eraseSwapAndPop(m_startPoints, it);
+        }
     }
 
 //----------------------------------------------------------------------------------------*
@@ -652,7 +689,7 @@ struct RemoveAtElevation
     bool func(BC_DTM_OBJ* dtmP, bvector<long>::iterator sp, bvector<long>::iterator np, TPtrList& list, double testZ)
         {
         bool removePoint = false;
-        if (nodeAddrP(dtmP, *np)->hPtr == dtmP->nullPnt)
+        if (!IsOnHull(dtmP, *np, m_analysis.DTMHasVoids()))
             {
             const double npZ = pointAddrP(dtmP, *np)->z;
 
@@ -667,7 +704,7 @@ struct RemoveAtElevation
 
                     m_analysis.IsSumpOrExit(isSump, isExit, sp, np, list);
 
-                    if (!isExit)
+                    if (!isExit && !isSump)
                         removePoint = true;
                     }
                 }
@@ -691,7 +728,7 @@ bool PondAnalysis::ExpandPolygon(double testZ)
 void PondAnalysis::IsSump(long prevPnt, long pnt, long nextPnt, bool& isSump, bool& isExit)
     {
     // Todo Ascent.
-    if (nodeAddrP(dtmP, pnt)->hPtr != dtmP->nullPnt)    // hullPtr.
+    if (IsOnHull(dtmP, pnt, DTMHasVoids()))
         {
         isExit = true;
         isSump = false;
@@ -735,7 +772,6 @@ void PondAnalysis::IsSump(long prevPnt, long pnt, long nextPnt, bool& isSump, bo
 // +---------------+---------------+---------------+---------------+---------------+------*
 void PondAnalysis::IsSumpOrExit(bool& isSump, bool& isExit, bvector<long>::iterator sp, bvector<long>::iterator np, TPtrList& list)
     {
-    BeAssert(m_pointList[*np] <= 2);
     if (m_pointList[*np] == 1)
         IsSump(*sp, *np, *list.GetNext(np), isSump, isExit);
     else
@@ -761,7 +797,7 @@ struct RemoveZSlope
     PondAnalysisR m_analysis;
     bool m_doSumps = false;
 
-    RemoveZSlope(PondAnalysisR analysis) : m_analysis(analysis)
+    RemoveZSlope(PondAnalysisR analysis, bool doSumps) : m_analysis(analysis), m_doSumps(doSumps)
         {
         }
 
@@ -769,7 +805,7 @@ struct RemoveZSlope
         {
         // If this is not on the hull.
         const double npZ = pointAddrP(dtmP, *np)->z;
-        bool removePoint = false;
+
         if (npZ == testZ)
             {
             if (*sp == *np)
@@ -782,54 +818,56 @@ struct RemoveZSlope
                 if (next != np)
                     return true;
                 }
-            bool isOnHull = nodeAddrP(dtmP, *np)->hPtr != dtmP->nullPnt;
-            const double spZ = pointAddrP(dtmP, *sp)->z;
+            bool isOnHull = IsOnHull(dtmP, *np, m_analysis.DTMHasVoids());
 
             if (!isOnHull)
                 {
+                const double spZ = pointAddrP(dtmP, *sp)->z;
                 // Is it a flat triangle @ testZ
                 if (spZ == testZ)
                     {
                     long outerPt = bcdtmList_nextClkDtmObject(dtmP, *sp, *np);
                     BeAssert(outerPt != -99);
                     if (outerPt == -99)
-                        {
                         return false;
-                        }
-                    double outerZ = pointAddrP(dtmP, outerPt)->z;
-                    if (outerZ == testZ)
-                        removePoint = true;
-                    }
-                if (!removePoint)
-                    {
-                    bool isExit = false;
-                    bool isSump = false;
-                    m_analysis.IsSumpOrExit(isSump, isExit, sp, np, list);
 
-                    if (isOnHull || isExit)
-                        {
-                        isExit = true;
-                        }
-                    else
-                        {
-                        if (*sp == *np)
-                            removePoint = true;
-                        else
-                            {
-                            long outerPt = bcdtmList_nextClkDtmObject(dtmP, *sp, *np);
-                            double outerZ = pointAddrP(dtmP, outerPt)->z;
-                            if (outerZ == testZ)
-                                removePoint = true;
-                            else
-                                {
-                                isExit = isSump;
-                                }
-                            }
-                        }
+                    const double outerZ = pointAddrP(dtmP, outerPt)->z;
+                    if (outerZ == testZ)
+                        return true;
                     }
+
+                bool isExit = false;
+                bool isSump = false;
+                m_analysis.IsSumpOrExit(isSump, isExit, sp, np, list);
+
+                if (isExit)
+                    return false;
+
+                if (isSump && m_doSumps)
+                    return true;
+                //if (isOnHull || isExit)
+                //    {
+                //    isExit = true;
+                //    }
+                //else
+                //    {
+                //    if (*sp == *np)
+                //        removePoint = true;
+                //    else
+                //        {
+                //        long outerPt = bcdtmList_nextClkDtmObject(dtmP, *sp, *np);
+                //        double outerZ = pointAddrP(dtmP, outerPt)->z;
+                //        if (outerZ == testZ)
+                //            removePoint = true;
+                //        else
+                //            {
+                //            isExit = isSump;
+                //            }
+                //        }
+                //    }
                 }
             }
-        return removePoint;
+        return false;
         }
     };
 
@@ -838,9 +876,11 @@ struct RemoveZSlope
 // +---------------+---------------+---------------+---------------+---------------+------*
 bool PondAnalysis::GetExitPoints(double testZ)
     {
-    RemoveZSlope helper(*this);
+    RemoveZSlope helper(*this, testZ == m_lowZ);
 
-    bool ret = ExpandPolygon(helper, testZ);
+    bool ret = false;
+    //if (testZ == m_lowZ)
+        ret = ExpandPolygon(helper, testZ);
 
     if (DTM_SUCCESS != m_errorStatus)
         return false;
@@ -850,6 +890,7 @@ bool PondAnalysis::GetExitPoints(double testZ)
         if (startInfo.m_hasFinished)
             continue;
 
+        bool hasRealExit = false;
         auto& list = startInfo.tPtr;
         SetCurrentIndex(startInfo.index);
         for (auto sp = list.begin(); sp != list.end(); sp++)
@@ -858,7 +899,7 @@ bool PondAnalysis::GetExitPoints(double testZ)
 
             if (nodeAddrP(dtmP, *np)->tPtr != dtmP->nullPnt)
                 continue;
-            bool isOnHull = nodeAddrP(dtmP, *np)->hPtr != dtmP->nullPnt;
+            bool isOnHull = IsOnHull(dtmP, *np, DTMHasVoids());
             if (pointAddrP(dtmP, *np)->z == testZ)
                 {
                 bool isExit = false;
@@ -866,6 +907,12 @@ bool PondAnalysis::GetExitPoints(double testZ)
                 IsSumpOrExit(isSump, isExit, sp, np, list);
                 if (isOnHull || isExit)
                     {
+                    if (!hasRealExit)
+                        {
+                        hasRealExit = true;
+                        startInfo.m_exitPoints.clear();
+                        }
+
                     isExit = true;
                     }
                 else
@@ -875,12 +922,13 @@ bool PondAnalysis::GetExitPoints(double testZ)
                         }
                     else
                         {
-                        long outerPt = bcdtmList_nextClkDtmObject(dtmP, *sp, *np);
-                        double outerZ = pointAddrP(dtmP, outerPt)->z;
-                        if (outerZ == testZ)
-                            {
-                            }
-                        else
+                        //long outerPt = bcdtmList_nextClkDtmObject(dtmP, *sp, *np);
+                        //double outerZ = pointAddrP(dtmP, outerPt)->z;
+                        //if (outerZ == testZ)
+                        //    {
+                        //    }
+                        //else
+                        if (!hasRealExit)
                             {
                             isExit = isSump;
                             }
@@ -1010,7 +1058,7 @@ void PondAnalysis::GetLowestPoint(long& outLowPtNum, double& outLowZ)
         startInfo.lowZ = lowZ;
         startInfo.lowPtNum = lowPtNum;
 
-        if (outLowPtNum == -1 || outLowZ > lowZ)
+        if (lowPtNum != -1 && (outLowPtNum == -1 || outLowZ > lowZ))
             {
             outLowPtNum = lowPtNum;
             outLowZ = lowZ;
@@ -1103,7 +1151,7 @@ void PondAnalysis::InsertTPtrPolygonAtElevation()
             {
             long np = bcdtmList_nextClkDtmObject(dtmP, rotPnt, sp);
 
-            if (pointAddrP(dtmP, np)->z <= testZ && nodeAddrP(dtmP, np)->hPtr == dtmP->nullPnt)
+            if (pointAddrP(dtmP, np)->z <= testZ && !IsOnHull(dtmP, np, DTMHasVoids()))
                 {
                 rotPnt = np;
                 }
@@ -1116,8 +1164,11 @@ void PondAnalysis::InsertTPtrPolygonAtElevation()
                 break;
             }
         SetCurrentIndex(m_nextIndex);
-        m_startPoints.push_back(ExpandingPondInfo(TPtrList(m_pointList, pts.begin(), pts.end()), m_nextIndex++));
-        m_startPoints.back().m_location = ExpandingPondInfo::Location::Unknown;
+        if (!pts.empty())
+            {
+            m_startPoints.push_back(ExpandingPondInfo(TPtrList(m_pointList, pts.begin(), pts.end()), m_nextIndex++));
+            m_startPoints.back().m_location = ExpandingPondInfo::Location::Unknown;
+            }
         }
 
     m_outerUnknown = true;
@@ -1193,6 +1244,9 @@ void PondAnalysis::CreateInitialTPtr()
             epi.m_location = ExpandingPondInfo::Location::Outer;
             m_outerUnknown = false;
             m_startPoints.push_back(epi);
+            for (auto pnt : epi.tPtr)
+                TestLowPoint(pnt);
+
             TestLowPoint(m_lowPnt);
             break;
             }
@@ -1203,10 +1257,25 @@ void PondAnalysis::CreateInitialTPtr()
             TestLowPoint(m_lowPnt);
             TestLowPoint(m_pntNum2);
 
-            nodeAddrP(dtmP, m_lowPnt)->tPtr = clkPnt;
-            nodeAddrP(dtmP, clkPnt)->tPtr = m_pntNum2;
-            nodeAddrP(dtmP, m_pntNum2)->tPtr = antPnt;
-            nodeAddrP(dtmP, antPnt)->tPtr = m_lowPnt;
+            if (nodeAddrP(dtmP, m_lowPnt)->hPtr == m_pntNum2)
+                {
+                nodeAddrP(dtmP, m_lowPnt)->tPtr = m_pntNum2;
+                }
+            else
+                {
+                nodeAddrP(dtmP, m_lowPnt)->tPtr = clkPnt;
+                nodeAddrP(dtmP, clkPnt)->tPtr = m_pntNum2;
+                }
+            if (nodeAddrP(dtmP, m_pntNum2)->hPtr == m_lowPnt)
+                {
+                nodeAddrP(dtmP, m_pntNum2)->tPtr = m_lowPnt;
+                }
+            else
+                {
+                nodeAddrP(dtmP, m_pntNum2)->tPtr = antPnt;
+                nodeAddrP(dtmP, antPnt)->tPtr = m_lowPnt;
+                }
+
             AddTriangleToValues(m_lowPnt, m_pntNum2, antPnt, m_lowZ);
             AddTriangleToValues(m_lowPnt, m_pntNum2, clkPnt, m_lowZ);
 
@@ -1345,7 +1414,10 @@ void PondAnalysis::RefineTargetElevation()
     while (true)
         {
         if (maxZ - minZ < elevationTol)
+            {
+            z = minZ + ((maxZ - minZ) / 2);
             break;
+            }
 
         if (minZ >= maxZ || minVol >= maxVol)
             {
@@ -1492,7 +1564,7 @@ void PondAnalysis::FindBoundaryForVolume(bool& gotTargetvolume, double targetVol
             return;
             }
 
-        if (firstTime)
+        if (firstTime && m_currentZ < m_lowZ)
             m_currentZ = m_lowZ;
 #ifdef VOLUME_DEBUG
         if (checkVolumes)
@@ -1570,7 +1642,7 @@ const bvector<bvector<DPoint3d>>& PondAnalysis::GetCurrentVolumePoints()
     if (m_currentVolumePoints.empty() || m_targetVolumeNeedsRefining)
         {
         RefineTargetElevation();
-        m_currentVolumePoints = GetPolygonAtElevation(m_exitZ);
+        m_currentVolumePoints = GetPolygonAtElevation();
         }
 
     return m_currentVolumePoints;
@@ -1601,8 +1673,6 @@ bvector<DPoint3d> PondAnalysis::GetOuterBoundary()
 // +---------------+---------------+---------------+---------------+---------------+------*
 bvector<bvector<DPoint3d>> PondAnalysis::GetBoundary()
     {
-    BoundaryListHelper __helper(*this);
-
     return GetPolygonAtElevation();
     }
 
@@ -1727,7 +1797,7 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
 
     if (pointType == 2 || pointType == 3)
         {
-        if (bcdtmList_testForVoidLineDtmObject(dtmP, trgPnt1, trgPnt2, pntInVoid))
+        if (m_tracer.DTMHasVoids() && bcdtmList_testForVoidLineDtmObject(dtmP, trgPnt1, trgPnt2, pntInVoid))
             {
             SetError();
             return;
@@ -1735,7 +1805,7 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
         }
     if (pointType == 4)
         {
-        if (bcdtmList_testForVoidTriangleDtmObject(dtmP, trgPnt1, trgPnt2, trgPnt3, pntInVoid))
+        if (m_tracer.DTMHasVoids() && bcdtmList_testForVoidTriangleDtmObject(dtmP, trgPnt1, trgPnt2, trgPnt3, pntInVoid))
             {
             SetError();
             return;
@@ -1843,33 +1913,46 @@ void TraceInTriangle::Process(bvector<TraceFeaturePtr>& newFeatures)
     m_finished = true;
     if (nextPnt3 != dtmP->nullPnt)  // Check this doesn't flow off the edge of triangulation.
         {
-        double pnt1Z = pointAddrP(dtmP, nextPnt1)->z;
-        if (pnt1Z == pointAddrP(dtmP, nextPnt2)->z)
+        CreateAndAddEdge(newFeatures, nextPnt1, nextPnt2, nextPt, angle);
+#ifdef OLD
+        bool isOnHull = nodeAddrP(dtmP, nextPnt1)->hPtr == nextPnt2 || nodeAddrP(dtmP, nextPnt2)->hPtr == nextPnt1;
+        bool voidLine = false;
+
+        if (!isOnHull && m_tracer.DTMHasVoids())
+            bcdtmList_testForVoidLineDtmObject(dtmP, nextPnt1, nextPnt2, voidLine);
+
+        if (!voidLine && isOnHull) // Ignore if the edge is on the hull
             {
-            long sidePnt1 = bcdtmList_nextAntDtmObject(dtmP, nextPnt1, nextPnt2);
-            long sidePnt2 = bcdtmList_nextClkDtmObject(dtmP, nextPnt1, nextPnt2);
-
-            if (pointAddrP(dtmP, sidePnt1)->z > pnt1Z && pointAddrP(dtmP, sidePnt2)->z > pnt1Z)
+            double pnt1Z = pointAddrP(dtmP, nextPnt1)->z;
+            if (pnt1Z == pointAddrP(dtmP, nextPnt2)->z)
                 {
-                auto existingPond = m_tracer.FindPondLowPt(nextPnt1);
+                long sidePnt1 = bcdtmList_nextAntDtmObject(dtmP, nextPnt1, nextPnt2);
+                long sidePnt2 = bcdtmList_nextClkDtmObject(dtmP, nextPnt1, nextPnt2);
 
-                if (existingPond != nullptr)
+
+                if (pointAddrP(dtmP, sidePnt1)->z > pnt1Z && pointAddrP(dtmP, sidePnt2)->z > pnt1Z)
                     {
-                    m_children.push_back(existingPond);
+                    auto existingPond = m_tracer.FindPondLowPt(nextPnt1);
+
+                    if (existingPond != nullptr)
+                        {
+                        m_children.push_back(existingPond);
+                        }
+                    else
+                        {
+                        auto child = TracePondEdge::Create(m_tracer, *this, nextPnt1, nextPnt2, *pointAddrP(dtmP, nextPnt1));
+                        newFeatures.push_back(child);
+                        m_children.push_back(child);
+                        }
+                    return;
                     }
-                else
-                    {
-                    auto child = TracePondEdge::Create(m_tracer, *this, nextPnt1, nextPnt2, *pointAddrP(dtmP, nextPnt1));
-                    newFeatures.push_back(child);
-                    m_children.push_back(child);
-                    }
-                return;
                 }
             }
 
         auto child = TraceOnEdge::Create(m_tracer, *this, nextPnt1, nextPnt2, nextPnt3, nextPt, angle);
         newFeatures.push_back(child);
         m_children.push_back(child);
+#endif
         }
     }
 
@@ -1880,17 +1963,20 @@ TraceOnEdge::TraceOnEdge(DrainageTracer& tracer, TraceFeature& parent, long P1, 
     {
     m_points.push_back(startPt);
 
-#ifdef DEBUG
+#ifdef DEBUG_CHK
     BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
-    double pnt1Z = pointAddrP(dtmP, P1)->z;
-    if (pnt1Z == pointAddrP(dtmP, P2)->z)
+    if (nodeAddrP(dtmP, P1)->hPtr != P2 && nodeAddrP(dtmP, P2)->hPtr != P1) // Ignore if the edge is on the hull
         {
-        long sidePnt1 = bcdtmList_nextAntDtmObject(dtmP, P1, P2);
-        long sidePnt2 = bcdtmList_nextClkDtmObject(dtmP, P1, P2);
-
-        if (pointAddrP(dtmP, sidePnt1)->z > pnt1Z && pointAddrP(dtmP, sidePnt2)->z > pnt1Z)
+        double pnt1Z = pointAddrP(dtmP, P1)->z;
+        if (pnt1Z == pointAddrP(dtmP, P2)->z)
             {
-            BeAssert(false);
+            long sidePnt1 = bcdtmList_nextAntDtmObject(dtmP, P1, P2);
+            long sidePnt2 = bcdtmList_nextClkDtmObject(dtmP, P1, P2);
+
+            if (pointAddrP(dtmP, sidePnt1)->z > pnt1Z && pointAddrP(dtmP, sidePnt2)->z > pnt1Z)
+                {
+                BeAssert(false);
+                }
             }
         }
 #endif
@@ -1932,11 +2018,12 @@ void TraceOnEdge::ProcessZSlopeTriangle(bvector<TraceFeaturePtr>& newFeatures)
             m_children.push_back(child);
             return;
             }
-        long hullPoint = 0;
-        if (bcdtmList_checkForPointOnHullLineDtmObject(dtmP, nextPnt3, &hullPoint))
-            {
-            SetError(); return;
-            }
+
+        bool hullPoint = isLineOnHullOrVoidOrHole(dtmP, pnt1, pnt2);
+        //if (bcdtmList_checkForPointOnHullLineDtmObject(dtmP, nextPnt3, &hullPoint))
+        //    {
+        //    SetError(); return;
+        //    }
 
         // Flows of the edge of the triangulation.
         if (hullPoint)
@@ -1945,8 +2032,6 @@ void TraceOnEdge::ProcessZSlopeTriangle(bvector<TraceFeaturePtr>& newFeatures)
             return;
             }
 
-        if (!bcdtmList_testLineDtmObject(dtmP, nextPnt1, nextPnt2) || !bcdtmList_testLineDtmObject(dtmP, nextPnt1, nextPnt3) || !bcdtmList_testLineDtmObject(dtmP, nextPnt2, nextPnt3))
-            pnt3 = pnt3;
         m_pt = nextPt;
         pnt1 = nextPnt1;
         pnt2 = nextPnt2;
@@ -2000,20 +2085,89 @@ void TraceOnEdge::ProcessZSlopeLine(bvector<TraceFeaturePtr>& newFeatures)
         }
     else
         {
-        auto existingPond = m_tracer.FindPondLowPt(pnt1);
+        bool isOnHull = nodeAddrP(dtmP, pnt1)->hPtr == pnt2 || nodeAddrP(dtmP, pnt2)->hPtr == pnt1;
+        bool voidLine = false;
 
-        if (existingPond != nullptr)
+        if (!isOnHull && m_tracer.DTMHasVoids())
             {
-            m_children.push_back(existingPond);
+            voidLine = isLineOnVoidOrHole(dtmP, pnt1, pnt2);
+            //long pnt3a = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2);
+            //voidLine = bcdtmList_testForValidTriangleDtmObject(dtmP, pnt1, pnt2, pnt3a) != 0;
             }
-        else
+
+        if (!isOnHull && !voidLine)
             {
-            auto child = TracePondEdge::Create(m_tracer, *this, pnt1, pnt2, *pointAddrP(dtmP, pnt1));
-            newFeatures.push_back(child);
-            m_children.push_back(child);
+            auto existingPond = m_tracer.FindPondLowPt(pnt1);
+
+            if (existingPond != nullptr)
+                {
+                m_children.push_back(existingPond);
+                }
+            else
+                {
+                auto child = TracePondEdge::Create(m_tracer, *this, pnt1, pnt2, *pointAddrP(dtmP, pnt1));
+                newFeatures.push_back(child);
+                m_children.push_back(child);
+                }
             }
         }
     m_finished = true;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  06/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+TraceFeatureP TraceFeature::CreateAndAddEdge(bvector<TraceFeaturePtr>& newFeatures, long pnt1, long pnt2, DPoint3dCR pt, double m_lastAngle)
+    {
+    BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
+    bool isOnHull = nodeAddrP(dtmP, pnt1)->hPtr == pnt2 || nodeAddrP(dtmP, pnt2)->hPtr == pnt1;
+    bool voidLine = false;
+
+    if (!isOnHull && m_tracer.DTMHasVoids())
+        {
+        voidLine = isLineOnVoidOrHole(dtmP, pnt1, pnt2);
+        //long pnt3a = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2);
+        //voidLine = bcdtmList_testForValidTriangleDtmObject(dtmP, pnt1, pnt2, pnt3a) != 0;
+        //bool voidLine2 = bcdtmList_testForVoidOrHoleHullLineDtmObject(dtmP, pnt1, pnt2) != 0;
+
+        //if (voidLine != voidLine2)
+        //    voidLine2 = voidLine;
+        }
+
+    if (!isOnHull && !voidLine)
+        {
+        double pnt1Z = pointAddrP(dtmP, pnt1)->z;
+        if (pnt1Z == pointAddrP(dtmP, pnt2)->z)
+            {
+            long sidePnt1 = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2);
+            long sidePnt2 = bcdtmList_nextClkDtmObject(dtmP, pnt1, pnt2);
+
+            if (pointAddrP(dtmP, sidePnt1)->z > pnt1Z && pointAddrP(dtmP, sidePnt2)->z > pnt1Z)
+                {
+                auto existingPond = m_tracer.FindPondLowPt(pnt1);
+
+                if (existingPond != nullptr)
+                    {
+                    m_children.push_back(existingPond);
+                    return existingPond;
+                    }
+                else
+                    {
+                    auto child = TracePondEdge::Create(m_tracer, *this, pnt1, pnt2, *pointAddrP(dtmP, pnt1));
+                    newFeatures.push_back(child);
+                    m_children.push_back(child);
+                    return child.get();
+                    }
+                }
+            }
+        }
+
+    long pnt3 = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2);
+
+    auto child = TraceOnEdge::Create(m_tracer, *this, pnt1, pnt2, pnt3, pt, m_lastAngle);
+    newFeatures.push_back(child);
+    m_children.push_back(child);
+    return child.get();
     }
 
 //----------------------------------------------------------------------------------------*
@@ -2045,15 +2199,21 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
         return;
         }
 
+    if (m_tracer.DTMHasVoids() && (bcdtmList_testForPointOnAnIslandOrVoidHullDtmObject(dtmP, pnt1) != 0 || bcdtmList_testForPointOnAnIslandOrVoidHullDtmObject(dtmP, pnt2) != 0))
+        {
+        m_finished = true;
+        return;
+        }
+
     if (pointAddrP(dtmP, pnt1)->z == pointAddrP(dtmP, pnt2)->z  && pointAddrP(dtmP, pnt1)->z == pointAddrP(dtmP, pnt3)->z)
         {
         ProcessZSlopeTriangle(newFeatures);
         return;
         }
 
-    bool voidTriangle;
+    bool voidTriangle = false;
     int flowDirection;
-    if (bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject(dtmP, nullptr, pnt1, pnt2, pnt3, voidTriangle, flowDirection))
+    if (bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject(dtmP, nullptr, pnt1, pnt2, pnt3, m_tracer.DTMHasVoids(), voidTriangle, flowDirection))
         {
         SetError(); return;
         }
@@ -2087,7 +2247,7 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
         }
 
     double slope, descentAngle, ascentAngle;
-    if (bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject(dtmP, nullptr, pnt1, pnt3, pnt2, voidTriangle, slope, descentAngle, ascentAngle) != DTM_SUCCESS)
+    if (bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject(dtmP, nullptr, pnt1, pnt3, pnt2, m_tracer.DTMHasVoids(), voidTriangle, slope, descentAngle, ascentAngle) != DTM_SUCCESS)
         {
         SetError(); return;
         }
@@ -2196,10 +2356,20 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
     pnt3 = nextPnt3;
     }
 
+    //----------------------------------------------------------------------------------------*
+    // @bsimethod                                                    Daryl.Holmwood  06/17
+    // +---------------+---------------+---------------+---------------+---------------+------*
+    TraceOnPoint::TraceOnPoint(DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle, long prevPtNum) : TraceFeature(tracer, &parent), m_pt(startPoint), m_lastAngle(lastAngle), m_ptNum(startPtNum), m_prevPtNum(prevPtNum)
+    {
+    if (m_prevPtNum != -1)
+        m_points.push_back(*pointAddrP(m_tracer.GetDTM().GetTinHandle(), m_prevPtNum));
+    m_points.push_back(startPoint);
+    }
+
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TraceOnPoint* TraceOnPoint::GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle)
+TraceOnPoint* TraceOnPoint::GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle, long prevPt)
     {
     TraceOnPoint* existingPoint = tracer.FindExistingOnPoint(startPtNum);
 
@@ -2207,7 +2377,7 @@ TraceOnPoint* TraceOnPoint::GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, D
         {
         return existingPoint;
         }
-    TraceOnPointPtr child = new TraceOnPoint(tracer, parent, startPtNum, startPoint, lastAngle);
+    TraceOnPointPtr child = new TraceOnPoint(tracer, parent, startPtNum, startPoint, lastAngle, prevPt);
     newFeatures.push_back(child);
     tracer.AddOnPoint(startPtNum, *child);
     return child.get();
@@ -2275,20 +2445,30 @@ void TraceOnPoint::ProcessZSlope(bvector<TraceFeaturePtr>& newFeatures, long des
             }
         }
 
-    //if (dbg) bcdtmWrite_message(0, 0, 0, "** Placing Pond About Zero Slope Triangle");
-    //long exitPoint, priorPoint, nextPoint;
-    //if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, m_ptNum, descentPnt1, descentPnt2, nullptr, false, false, &exitPoint, &priorPoint, &nextPoint, nullptr, nullptr)) { SetError(); return; }
-    auto existingPond = m_tracer.FindPondLowPt(descentPnt1);
-    if (existingPond != nullptr)
+
+    bool voidLine = false;
+    if (m_tracer.DTMHasVoids())
         {
-        m_children.push_back(existingPond);
+        isLineOnVoidOrHole(dtmP, descentPnt1, descentPnt2);
         }
-    else
+
+    if (!voidLine)
         {
-        auto pond = TracePondEdge::Create(m_tracer, *this, descentPnt1, descentPnt2, *pointAddrP(dtmP, descentPnt1));
-        //m_tracer.AddPond(*pond);
-        newFeatures.push_back(pond);
-        m_children.push_back(pond);
+        //if (dbg) bcdtmWrite_message(0, 0, 0, "** Placing Pond About Zero Slope Triangle");
+        //long exitPoint, priorPoint, nextPoint;
+        //if (bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject(dtmP, m_ptNum, descentPnt1, descentPnt2, nullptr, false, false, &exitPoint, &priorPoint, &nextPoint, nullptr, nullptr)) { SetError(); return; }
+        auto existingPond = m_tracer.FindPondLowPt(descentPnt1);
+        if (existingPond != nullptr)
+            {
+            m_children.push_back(existingPond);
+            }
+        else
+            {
+            auto pond = TracePondEdge::Create(m_tracer, *this, descentPnt1, descentPnt2, *pointAddrP(dtmP, descentPnt1));
+            //m_tracer.AddPond(*pond);
+            newFeatures.push_back(pond);
+            m_children.push_back(pond);
+            }
         }
     }
 
@@ -2311,6 +2491,15 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
     if (hullPoint)
         {
         m_onHullPoint = true;
+        m_finished = true;
+        return;
+        }
+
+    TracePondP pond = m_tracer.FindPondLowPt(m_ptNum);
+
+    if (nullptr != pond)
+        {
+        m_children.push_back(pond);
         m_finished = true;
         return;
         }
@@ -2354,7 +2543,8 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
         }
     else if (type == 1)
         {
-        if (slope == 0) // ZeroSlope
+        // Check on Hull.
+        if (IsOnHull(dtmP, pnt1, m_tracer.DTMHasVoids()) && slope == 0) // ZeroSlope
             {
             auto existingPond = m_tracer.FindPondLowPt(m_ptNum);
             if (existingPond != nullptr)
@@ -2372,15 +2562,17 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
             }
         else
             {
-            // ToDo check for SumpLine.
             DPoint3d nextPt = *pointAddrP(dtmP, pnt1);
-            m_lastAngle = bcdtmMath_getAngle(m_pt.x, m_pt.y, nextPt.x, nextPt.y);
+            double lastAngle = bcdtmMath_getAngle(m_pt.x, m_pt.y, nextPt.x, nextPt.y);
 
-            m_prevPtNum = m_ptNum;
-            m_ptNum = pnt1;
-            m_pt = nextPt;
-            m_points.push_back(m_pt);
-            m_finished = false;
+            auto child = GetOrCreate(newFeatures, m_tracer, *this, pnt1, nextPt, lastAngle, m_ptNum);
+            m_children.push_back(child);
+
+            //m_prevPtNum = m_ptNum;
+            //m_ptNum = pnt1;
+            //m_pt = nextPt;
+            //m_points.push_back(m_pt);
+            m_finished = true;
             return;
             }
         }
@@ -2392,27 +2584,40 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
             return;
             }
 
-        double pnt1Z = pointAddrP(dtmP, pnt1)->z;
-        if (pnt1Z == pointAddrP(dtmP, pnt2)->z)
+        CreateAndAddEdge(newFeatures, pnt1, pnt2, m_pt, angle);
+#ifdef OLD
+        // ToDo need to get the point on the edge and add to m_points
+        // m_points.push_back();
+        bool isOnHull = nodeAddrP(dtmP, pnt1)->hPtr == pnt2 || nodeAddrP(dtmP, pnt2)->hPtr == pnt1;
+        bool voidLine = false;
+
+        if (!isOnHull && m_tracer.DTMHasVoids())
+            bcdtmList_testForVoidLineDtmObject(dtmP, pnt1, pnt2, voidLine);
+
+        if (!isOnHull && !voidLine)
             {
-            long sidePnt1 = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2);
-            long sidePnt2 = bcdtmList_nextClkDtmObject(dtmP, pnt1, pnt2);
-
-            if (pointAddrP(dtmP, sidePnt1)->z > pnt1Z && pointAddrP(dtmP, sidePnt2)->z > pnt1Z)
+            double pnt1Z = pointAddrP(dtmP, pnt1)->z;
+            if (pnt1Z == pointAddrP(dtmP, pnt2)->z)
                 {
-                auto existingPond = m_tracer.FindPondLowPt(pnt1);
+                long sidePnt1 = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2);
+                long sidePnt2 = bcdtmList_nextClkDtmObject(dtmP, pnt1, pnt2);
 
-                if (existingPond != nullptr)
+                if (pointAddrP(dtmP, sidePnt1)->z > pnt1Z && pointAddrP(dtmP, sidePnt2)->z > pnt1Z)
                     {
-                    m_children.push_back(existingPond);
+                    auto existingPond = m_tracer.FindPondLowPt(pnt1);
+
+                    if (existingPond != nullptr)
+                        {
+                        m_children.push_back(existingPond);
+                        }
+                    else
+                        {
+                        auto child = TracePondEdge::Create(m_tracer, *this, pnt1, pnt2, *pointAddrP(dtmP, pnt1));
+                        newFeatures.push_back(child);
+                        m_children.push_back(child);
+                        }
+                    return;
                     }
-                else
-                    {
-                    auto child = TracePondEdge::Create(m_tracer, *this, pnt1, pnt2, m_pt);
-                    newFeatures.push_back(child);
-                    m_children.push_back(child);
-                    }
-                return;
                 }
             }
 
@@ -2421,6 +2626,7 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
         auto child = TraceOnEdge::Create(m_tracer, *this, pnt1, pnt2, pnt3, m_pt, m_lastAngle);
         newFeatures.push_back(child);
         m_children.push_back(child);
+        #endif
         return;
         }
     else
@@ -2444,6 +2650,30 @@ void TracePondLowPoint::GetExitInfo(bvector<PondExitInfo>& exits)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
+TracePondEdge::TracePondEdge(DrainageTracer& tracer, TraceFeature& parent, long ptNum1, long ptNum2, DPoint3dCR pt) : TracePond(tracer, parent, pt, ptNum1), m_ptNum1(ptNum1), m_ptNum2(ptNum2)
+    {
+    if (ptNum1 == 26362 && ptNum2 == 26618)
+        ptNum1 = ptNum1;
+    #ifdef DEBUG_CHK
+    auto dtmP = tracer.GetDTM().GetTinHandle();
+    if (nodeAddrP(dtmP, ptNum1)->hPtr == ptNum2 || nodeAddrP(dtmP, ptNum2)->hPtr == ptNum1)
+        BeAssert(false);
+#endif
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+TracePondEdge::TracePondEdge(TracePondEdgeCR from, DrainageTracer& newTracer) : TracePond(from, newTracer)
+    {
+    m_ptNum1 = from.m_ptNum1;
+    m_ptNum2 = from.m_ptNum2;
+    m_sumpLines = from.m_sumpLines;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondEdge::GetExitInfo(bvector<PondExitInfo>& exits)
     {
     m_pondAnalysis = PondAnalysis::Create(m_tracer, m_ptNum, m_pt.z, PondAnalysis::LowPointType::Edge, m_ptNum2);
@@ -2460,36 +2690,36 @@ void TracePondEdge::GetExitInfo(bvector<PondExitInfo>& exits)
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondEdge::GetSumpLines()
     {
-    BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
-    DtmSumpLinesPtr sumpLines;
-    if (bcdtmDrainage_concatenateZeroSlopeSumpLinesDtmObject(dtmP, m_ptNum, m_ptNum2, &sumpLines.ptr, &sumpLines.num))
-        return;
-    else if (sumpLines.ptr != nullptr)
-        {
-        // Add Sumplines.
-        bvector<DPoint3d> pts;
-        long prevPtNum = -1;
-        DTM_SUMP_LINES* sumpLine = sumpLines.ptr;
-        for (int i = 0; i < sumpLines.num; i++, sumpLine++)
-            {
-            if (prevPtNum == sumpLine->sP2)
-                std::swap(sumpLine->sP1, sumpLine->sP2);
+    //BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
+    //DtmSumpLinesPtr sumpLines;
+    //if (bcdtmDrainage_concatenateZeroSlopeSumpLinesDtmObject(dtmP, m_ptNum, m_ptNum2, &sumpLines.ptr, &sumpLines.num))
+    //    return;
+    //else if (sumpLines.ptr != nullptr)
+    //    {
+    //    // Add Sumplines.
+    //    bvector<DPoint3d> pts;
+    //    long prevPtNum = -1;
+    //    DTM_SUMP_LINES* sumpLine = sumpLines.ptr;
+    //    for (int i = 0; i < sumpLines.num; i++, sumpLine++)
+    //        {
+    //        if (prevPtNum == sumpLine->sP2)
+    //            std::swap(sumpLine->sP1, sumpLine->sP2);
 
-            if (prevPtNum != sumpLine->sP1)
-                {
-                if (!pts.empty())
-                    {
-                    m_sumpLines.push_back(pts);
-                    pts.clear();
-                    }
-                pts.push_back(*pointAddrP(dtmP, sumpLine->sP1));
-                }
-            prevPtNum = sumpLine->sP2;
-            pts.push_back(*pointAddrP(dtmP, prevPtNum));
-            }
-        if (!pts.empty())
-            m_sumpLines.push_back(pts);
-        }
+    //        if (prevPtNum != sumpLine->sP1)
+    //            {
+    //            if (!pts.empty())
+    //                {
+    //                m_sumpLines.push_back(pts);
+    //                pts.clear();
+    //                }
+    //            pts.push_back(*pointAddrP(dtmP, sumpLine->sP1));
+    //            }
+    //        prevPtNum = sumpLine->sP2;
+    //        pts.push_back(*pointAddrP(dtmP, prevPtNum));
+    //        }
+    //    if (!pts.empty())
+    //        m_sumpLines.push_back(pts);
+    //    }
 
     }
 
@@ -2535,16 +2765,31 @@ void TracePondFromPondExit::GetExitInfo(bvector<PondExitInfo>& exits)
 TracePond::TracePond(TracePondCR from, DrainageTracer& newTracer) : TraceFeature(from, newTracer)
     {
     m_points = from.m_points;
-    m_exitPoints = from.m_exitPoints;
+    for (auto&& exit : from.m_exitPoints)
+        m_exitPoints.push_back(ExitPointInfo(exit.ptNum, exit.exit));
+
     m_depth = from.m_depth;
     m_pt = from.m_pt;
     m_ptNum = from.m_ptNum;
     m_maxVolume = from.m_maxVolume;
     m_pondAnalysis = from.m_pondAnalysis->Clone(newTracer);
-    m_allFull = m_allFull;
+    m_allFull = from.m_allFull;
+    m_topLevelPond = from.m_topLevelPond;
     }
 
+
 //----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePond::RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable)
+    {
+    __super::RemapFeatures(featureRemapTable);
+    for (auto& exit : m_exitPoints)
+        exit.exit = dynamic_cast<TracePondExitP>(featureRemapTable[exit.exit]);
+    m_topLevelPond = dynamic_cast<TracePondP>(featureRemapTable[m_topLevelPond]);
+    }
+
+//-------------------------------------------------------------------------OpenRo---------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 PondAnalysis& TracePond::GetPondAnalysis()
@@ -2562,16 +2807,40 @@ void TracePond::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunct
         {
         if (CurrentVolume() != 0)
             {
+            bvector<DPoint3d> points;
             if (IsFull())
                 {
-                for (auto& p : m_points)
-                    loadFunction(DTMFeatureType::LowPointPond, 0, 0, p.data(), p.size(), args);   //ToDO Remove.
+                bool draw = nullptr == m_topLevelPond;
+
+                if (draw)
+                    {
+                    if (!m_exitPoints.empty())
+                        {
+                        auto enclosedPond = m_exitPoints.front().exit->GetEnclosedPond();
+                        if (nullptr != enclosedPond)
+                            draw = enclosedPond->CurrentVolume() == 0;
+                        }
+                    }
+                if (draw)
+                    {
+                    for (auto& Tpoints : m_points)
+                        {
+                        if (points.empty())
+                            {
+                            points = Tpoints;
+                            }
+                        else
+                            {
+                            points.insert(points.end(), Tpoints.begin(), Tpoints.end());
+                            points.push_back(points.front());
+                            }
+                        }
+                    }
                 }
             else
                 {
                 if (m_pondAnalysis.IsValid())
                     {
-                    bvector<DPoint3d> points;
                     for (auto&& Tpoints : GetPondAnalysis().GetCurrentVolumePoints())
                         {
                         if (points.empty())
@@ -2583,13 +2852,13 @@ void TracePond::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunct
                             points.insert(points.end(), Tpoints.begin(), Tpoints.end());
                             points.push_back(points.front());
                             }
-                        loadFunction(DTMFeatureType::LowPointPond, 0, 0, const_cast<DPoint3dP>(points.data()), points.size(), args);
                         }
                     }
-
-                for (auto& p : m_points)
-                    loadFunction(DTMFeatureType::DescentTrace, 0, 0, p.data(), p.size(), args);   //ToDO Remove.
                 }
+            if (!points.empty())
+                loadFunction(DTMFeatureType::LowPointPond, 0, 0, const_cast<DPoint3dP>(points.data()), points.size(), args);
+            //for (auto& p : m_points)
+            //    loadFunction(DTMFeatureType::DescentTrace, 0, 0, p.data(), p.size(), args);   //ToDO Remove.
             }
         }
     else
@@ -2623,9 +2892,11 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
     GetExitInfo(exits);
 
     // Add Low Points.
-    for (auto pnt : m_pondAnalysis->GetLowPoints())
-        m_tracer.AddPondLowPond(pnt, *this);
-
+    if (nullptr == dynamic_cast<TracePondFromPondExitP>(this))
+        {
+        for (auto pnt : m_pondAnalysis->GetLowPoints())
+            m_tracer.AddPondLowPond(pnt, *this);
+        }
     if (exits.empty())
         {
         SetError(L"Pond Exit Not found.");
@@ -2651,35 +2922,34 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
             pondEdge->GetSumpLines();
             }
         }
-    for (auto& exitInfo : exits)
-        {
-        m_exitPoints.push_back(exitInfo.exitPoint);
-        }
-
     bool addedNewPond = false;
     bvector<TracePondExit*> existingPondsExits;
     for (auto& exitInfo : exits)
         {
-        TracePondExit* existingPondExit = m_tracer.FindPondExit(exitInfo.exitPoint);
+        TracePondExitP existingPondExit = m_tracer.FindPondExit(exitInfo.exitPoint);
 
         if (existingPondExit != nullptr)
             {
+            existingPondExit->CheckIsCalculated();
             existingPondsExits.push_back(existingPondExit);
-            existingPondExit->AddPond(*this);
+            existingPondExit->AddPond(*this, exitInfo);
             }
         else
             {
-
             // Check if Pond exit is back to the original pond exit.
-            auto pondExit = TracePondExit::Create(m_tracer, *this, exitInfo.exitPoint, exitInfo.priorPoint, exitInfo.nextPoint, *pointAddrP(dtmP, exitInfo.exitPoint));
+            auto pondExit = TracePondExit::Create(m_tracer, *this, exitInfo.exitPoint, *pointAddrP(dtmP, exitInfo.exitPoint));
             // Finished in a real pond/hill.
             newFeatures.push_back(pondExit);
 
-            pondExit->AddPond(*this);
-            m_tracer.AddPondExit(*pondExit);
             m_children.push_back(pondExit);
+
+            pondExit->AddPond(*this, exitInfo);
+            m_tracer.AddPondExit(*pondExit);
             addedNewPond = true;
+            existingPondExit = pondExit.get();
             }
+        m_exitPoints.push_back(ExitPointInfo(exitInfo.exitPoint, existingPondExit));
+
         }
 
     if (!existingPondsExits.empty() && !addedNewPond)
@@ -2705,9 +2975,9 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
                 {
                 for (auto pondExit : newPond->GetPondExits())
                     {
-                    if (std::find(existingPondsExits.begin(), existingPondsExits.end(), pondExit) == existingPondsExits.end())
+                    if (std::find(existingPondsExits.begin(), existingPondsExits.end(), pondExit.exit) == existingPondsExits.end())
                         {
-                        existingPondsExits.push_back(pondExit);
+                        existingPondsExits.push_back(pondExit.exit);
                         }
                     }
                 }
@@ -2716,9 +2986,9 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
         if (!hasNonDeadPond)
             {
             // Create new Pond from PondExit.
-            existingPondsExits[0]->ProcessDeadPond(newFeatures);
+            auto enclosingPond = existingPondsExits[0]->ProcessDeadPond(newFeatures);
             for (auto&& a : existingPondsExits)
-                a->SetHasProcessedDeadPond();
+                a->SetHasProcessedDeadPond(*enclosingPond);
             }
         }
     }
@@ -2745,35 +3015,21 @@ double TracePond::GetVolumeAtElevation(double z)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-bvector<TracePondExitP> TracePond::GetPondExits()
-    {
-    bvector<TracePondExitP> ret;
-    for (int exitIndex : m_exitPoints)
-        {
-        auto exit = m_tracer.FindPondExit(exitIndex);
-        if (nullptr != exit)
-            ret.push_back(exit);
-        }
-    //for (auto&& child : GetChildren())
-    //    {
-    //    auto pondExit = dynamic_cast<TracePondExit*>(child.get());
-    //    if (nullptr != pondExit)
-    //        ret.push_back(pondExit);
-    //    }
-    return ret;
-    }
-
-//----------------------------------------------------------------------------------------*
-// @bsimethod                                                    Daryl.Holmwood  05/17
-// +---------------+---------------+---------------+---------------+---------------+------*
 void TracePond::GetNewWaterVolumes(double totalVol, bvector<TraceFeature::WaterVolumeInfo>& newWaterVolume)
     {
-#ifdef DEBUG
+#ifdef TEST
     static const long ptNumToCheck = 10211;
 
     if (m_ptNum == ptNumToCheck)
         totalVol = totalVol;
 #endif
+    if (nullptr != m_topLevelPond)
+        {
+        newWaterVolume.push_back(WaterVolumeInfo(m_topLevelPond, totalVol));
+        m_topLevelPond->AddVolumeToProcess(totalVol);
+        return;
+        }
+
     if (m_maxVolume < 0)
         {
         bool gotTargetVol = false;
@@ -2782,87 +3038,221 @@ void TracePond::GetNewWaterVolumes(double totalVol, bvector<TraceFeature::WaterV
             return;
 
         m_maxVolume = GetPondAnalysis().GetCurrentVolume();
-        //GetPondAnalysis().SetToMax(m_points);
+
+
+        // as this pond is full Check all ponds are full.
+        for (auto&& pondExit : GetPondExits())
+            {
+            pondExit.exit->CheckIsCalculated();
+            }
+
+        // Get new volume.
+        double prevVolume = CurrentVolume() - totalVol;
+
+        double vol = CurrentVolume() - m_maxVolume;
+        if (prevVolume > m_maxVolume)
+            vol = totalVol;
+        BeAssert(vol >= 0);
+        totalVol = vol;
+        if (totalVol <= 0)
+            return;
         }
 
-    double prevVolume = CurrentVolume() - totalVol;
-
-    double vol = CurrentVolume() - m_maxVolume;
-    if (prevVolume > m_maxVolume)
-        vol = totalVol;
-
-    BeAssert(vol >= 0);
-    if (vol <= 0)
-        return;
-
-    bvector<TracePondExitP> exits;
     if (!m_allFull)
         {
+        bvector<TracePondExitP> exits;
         bvector<TracePondExitP> newPondExits;
         bvector<TracePondExitP> foundExits;
 
-        for (auto pondExit : GetPondExits())
+        for (auto&& pondExit : GetPondExits())
             {
-            newPondExits.push_back(pondExit);
-            foundExits.push_back(pondExit);
+            newPondExits.push_back(pondExit.exit);
+            foundExits.push_back(pondExit.exit);
             }
 
-        while (exits.empty() && !newPondExits.empty())
+        while (!newPondExits.empty())
             {
             bvector<TracePondExitP> currentPondExits;
 
             std::swap(currentPondExits, newPondExits);
-            for (auto pondExit : currentPondExits)
+            for (auto&& pondExit : currentPondExits)
                 {
-                if (!pondExit->IsCalculated())
+                pondExit->CheckIsCalculated();
+
+                if (!pondExit->IsDeadPond())
                     {
                     if (std::find(exits.begin(), exits.end(), pondExit) == exits.end())
                         exits.push_back(pondExit);
-                    break;
                     }
 
                 for (auto pond : pondExit->GetPonds())
                     {
+                    if (pond == this)
+                        continue;
+
                     if (!pond->IsFull())
                         {
                         if (std::find(exits.begin(), exits.end(), pondExit) == exits.end())
                             exits.push_back(pondExit);
-                        break;
+                        continue;
                         }
 
                     for (auto newPondExit : pond->GetPondExits())
                         {
-                        if (std::find(foundExits.begin(), foundExits.end(), newPondExit) == foundExits.end())
+                        if (pondExit != newPondExit.exit && std::find(foundExits.begin(), foundExits.end(), newPondExit.exit) == foundExits.end())
                             {
-                            foundExits.push_back(newPondExit);
-                            newPondExits.push_back(newPondExit);
+                            foundExits.push_back(newPondExit.exit);
+                            newPondExits.push_back(newPondExit.exit);
                             }
                         }
                     }
                 }
             }
-        }
-    if (!exits.empty())
-        {
-        vol /= exits.size();
-        for (auto exit : exits)
-            {
-            BeAssert(nullptr != exit);
-            newWaterVolume.push_back(WaterVolumeInfo(exit, vol));
-            }
-        }
-    else
-        {
-        m_allFull = true;
-        vol /= m_exitPoints.size();
-        for (int exitIndex : m_exitPoints)
-            {
-            auto exitPoint = m_tracer.FindPondExit(exitIndex);
-            BeAssert(nullptr != exitPoint);
-            if (nullptr != exitPoint)
-                newWaterVolume.push_back(WaterVolumeInfo(exitPoint, vol));
 
+        if (!exits.empty())
+            {
+            totalVol /= exits.size();
+            for (auto exit : exits)
+                {
+                BeAssert(nullptr != exit);
+                exit->ProcessWaterVolume(totalVol, newWaterVolume);
+                }
+            return;
             }
+
+        TracePondP topLevelPond = nullptr;
+        for (auto exit : foundExits)
+            {
+            if (nullptr != exit->GetEnclosedPond())
+                {
+                m_topLevelPond = exit->GetEnclosedPond();
+                break;
+                }
+            }
+
+        BeAssert(m_topLevelPond != nullptr);
+        if (m_topLevelPond == nullptr)
+            return;
+        for (auto exit : foundExits)
+            {
+            for (auto pond : exit->GetPonds())
+                pond->SetTopLevelPond(*m_topLevelPond);
+            }
+        m_allFull = true;
+        }
+
+    newWaterVolume.push_back(WaterVolumeInfo(m_topLevelPond, totalVol));
+    m_topLevelPond->AddVolumeToProcess(totalVol);
+
+    //vol /= m_exitPoints.size();
+    //for (auto exitPoint: GetPondExits())
+    //    {
+    //    BeAssert(nullptr != exitPoint.exit);
+    //    if (nullptr != exitPoint.exit)
+    //        {
+    //        exitPoint.exit->ProcessWaterVolume(vol, newWaterVolume);
+    //        //newWaterVolume.push_back(WaterVolumeInfo(exitPoint.exit, vol));Get
+    //        //exitPoint.exit->AddVolumeToProcess(vol);
+    //        }
+    //    }
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondExit::AddPond(TracePond& pond, const PondExitInfo& exitInfo)
+    {
+    BeAssert(exitInfo.exitPoint == m_exitPnt);
+
+    m_exits.push_back(ExitInfo(exitInfo.priorPoint, exitInfo.nextPoint, &pond));
+    m_ponds.push_back(&pond);
+
+    CheckFullPond(pond);
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondExit::CheckFullPond(TracePond& pond)
+    {
+    if (!m_calculated || m_children.empty())
+        return;
+
+    // Search m_children and see if it is in this exit range.
+    BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
+
+    for (auto& flow : m_flows)
+        {
+        auto child = flow.child;
+        if (flow.isNowPond)
+            continue;
+        long searchPnt = flow.pt;
+
+        for (auto&& exitInfo : m_exits)
+            {
+            long sp = exitInfo.priorPnt;
+            if (searchPnt == sp)
+                {
+                flow.isNowPond = true;
+                flow.thePond = &pond;
+                }
+            else
+                {
+                while (sp != exitInfo.nextPnt)
+                    {
+                    long np = bcdtmList_nextClkDtmObject(dtmP, m_exitPnt, sp);
+                    sp = np;
+                    if (searchPnt == sp)
+                        {
+                        flow.isNowPond = true;
+                        flow.thePond = &pond;
+                        break;
+                        }
+                    }
+                }
+            }
+        }
+    bool hasLoseExit = false;
+    for (auto& flow : m_flows)
+        {
+        if (!flow.isNowPond)
+            {
+            hasLoseExit = true;
+            break;
+            }
+        }
+    m_allEnclosed = !hasLoseExit;
+    }
+
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondExit::RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable)
+    {
+    __super::RemapFeatures(featureRemapTable);
+    m_enclosingPond = dynamic_cast<TracePondFromPondExitP>(featureRemapTable[m_enclosingPond]);
+    for (auto& pond : m_ponds)
+        pond = dynamic_cast<TracePondP>(featureRemapTable[pond]);
+    for (auto& exit: m_exits)
+        exit.pond = dynamic_cast<TracePondP>(featureRemapTable[exit.pond]);
+    for (auto& flow : m_flows)
+        {
+        flow.child = featureRemapTable[flow.child];
+        flow.thePond = featureRemapTable[flow.thePond];
+        }
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  05/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondExit::CheckIsCalculated()
+    {
+    if (!m_calculated)
+        {
+        bvector<TraceFeaturePtr> newFeatures;
+        Process(newFeatures, true);
+        m_tracer.AddAndProcessFeatures(newFeatures);
         }
     }
 
@@ -2871,44 +3261,148 @@ void TracePond::GetNewWaterVolumes(double totalVol, bvector<TraceFeature::WaterV
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondExit::GetNewWaterVolumes(double totalVol, bvector<TraceFeature::WaterVolumeInfo>& newWaterVolume)
     {
-    if (!m_calculated)
-        {
-        bvector<TraceFeaturePtr> newFeatures;
-        Process(newFeatures, true);
-        m_tracer.AddAndProcessFeatures(newFeatures);
-        }
+    BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
+    if (IsOnHull(dtmP, m_exitPnt, m_tracer.DTMHasVoids()))
+        return;
+
+    CheckIsCalculated();
 
     BeAssertOnce(m_ponds.size() <= m_numExitFlows);
-    if (m_ponds.size() >= m_numExitFlows)
+    if (m_allEnclosed) //m_ponds.size() >= m_numExitFlows)
         {
-        bvector<TracePond*> nonFullPonds;
+        if (m_numExitFlows == 1)
+            return;                 // No Exit.
+
+        if (!m_allPondsFull)
+            {
+            int numNonFullPonds = 0;
+            for (auto pond : m_ponds)
+                {
+                if (!pond->IsFull())
+                    {
+                    if (pond->CurrentVolume() == 0)
+                        {
+                        bool foundExit = false;
+                        for (auto&& flow : m_flows)
+                            {
+                            if (flow.thePond == pond)
+                                {
+                                foundExit = true;
+                                numNonFullPonds++;
+                                }
+                            }
+                        if (!foundExit)
+                            {
+                            BeAssert(m_processedInitialPondFlows == false);
+                            m_processedInitialPondFlows = true;
+                            bvector<TraceFeaturePtr> newFeatures;
+                            long priorPnt = m_exits.front().nextPnt;
+                            long nextPnt = m_exits.front().priorPnt;
+
+                            GetExitFlows(newFeatures, priorPnt, nextPnt);
+                            m_tracer.AddAndProcessFeatures(newFeatures);
+                            CheckFullPond(*pond);
+
+                            foundExit = false;
+                            for (auto&& flow : m_flows)
+                                {
+                                if (flow.thePond == pond)
+                                    {
+                                    foundExit = true;
+                                    numNonFullPonds++;
+                                    }
+                                }
+                            BeAssert(foundExit == true);
+                            }
+
+                        }
+                    else
+                        numNonFullPonds++;
+                    }
+                }
+
+            if (numNonFullPonds != 0)
+                {
+                double vol = totalVol / numNonFullPonds;
+                for (auto pond : m_ponds)
+                    {
+                    if (!pond->IsFull())
+                        {
+                        // The pond needs a volume to use it.
+                        if (pond->CurrentVolume() == 0)
+                            {
+                            for (auto&& flow : m_flows)
+                                {
+                                if (flow.thePond == pond)
+                                    {
+                                    newWaterVolume.push_back(WaterVolumeInfo(flow.child, vol));
+                                    flow.child->AddVolumeToProcess(vol);
+                                    }
+                                }
+                            }
+                        else
+                            {
+                            newWaterVolume.push_back(WaterVolumeInfo(pond, vol));
+                            pond->AddVolumeToProcess(vol);
+                            }
+                        }
+                    }
+
+                return;
+                }
+
+            m_allPondsFull = true;
+            }
+        //if (nullptr == m_enclosingPond)
+        //    {
+        //    for (auto&& child : m_children)
+        //        {
+        //        m_enclosingPond = dynamic_cast<TracePondFromPondExit*>(child.get());
+        //        if (nullptr != m_enclosingPond)
+        //            break;
+        //        }
+        //    }
+        if (nullptr != m_enclosingPond)
+            {
+            newWaterVolume.push_back(WaterVolumeInfo(m_enclosingPond, totalVol));
+            m_enclosingPond->AddVolumeToProcess(totalVol);
+            return;
+            }
+        BeAssert(false);
+        }
+    else
+        {
+        long num = 0;
+        for (auto& child : m_flows)
+            if (!child.isNowPond)
+                num++;
+
+        BeAssert(num != 0);
+
         for (auto pond : m_ponds)
             {
             if (!pond->IsFull())
-                nonFullPonds.push_back(pond);
+                num++;
             }
 
-        if (!nonFullPonds.empty())
-            {
-            double vol = totalVol / nonFullPonds.size();
-            bool stillNotFull = true;
-            for (auto pond : nonFullPonds)
-                newWaterVolume.push_back(WaterVolumeInfo(pond, vol));
+        double vol = totalVol / num;
 
-            return;
-            }
-
-        for (auto&& child : m_children)
+        for (auto pond : m_ponds)
             {
-            if (nullptr != dynamic_cast<TracePondFromPondExit*>(child.get()))
+            if (!pond->IsFull())
                 {
-                newWaterVolume.push_back(WaterVolumeInfo(child.get(), totalVol));
-                return;
+                newWaterVolume.push_back(WaterVolumeInfo(pond, vol));
+                pond->AddVolumeToProcess(vol);
                 }
             }
+
+        for (auto& child : m_flows)
+            if (!child.isNowPond)
+                {
+                newWaterVolume.push_back(WaterVolumeInfo(child.child, vol));
+                child.child->AddVolumeToProcess(vol);
+                }
         }
-    else
-        __super::GetNewWaterVolumes(totalVol, newWaterVolume);
     }
 
 //----------------------------------------------------------------------------------------*
@@ -2960,10 +3454,10 @@ void TracePondExit::HideInnerPonds()
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-void TracePondExit::ProcessDeadPond(bvector<TraceFeaturePtr>& newFeatures)
+TracePondP TracePondExit::ProcessDeadPond(bvector<TraceFeaturePtr>& newFeatures)
     {
     if (m_hasProcessedDeadPond)
-        return;
+        return m_enclosingPond;
 
     m_hasProcessedDeadPond = true;
 
@@ -2985,6 +3479,7 @@ void TracePondExit::ProcessDeadPond(bvector<TraceFeaturePtr>& newFeatures)
     //m_tracer.AddPond(*child);
     newFeatures.push_back(child);
     m_children.push_back(child);
+    return child.get();
     }
 
 //----------------------------------------------------------------------------------------*
@@ -3099,13 +3594,22 @@ errexit:
     if (ret == DTM_SUCCESS) ret = DTM_ERROR;
     goto cleanup;
     }
+struct Flow
+    {
+    long pnt1;
+    long pnt2;
+    DPoint3d pt;
+    Flow()
+        { }
+    Flow(long pnt1, long pnt2, DPoint3d pt) : pnt1(pnt1), pnt2(pnt2), pt(pt)
+        { }
+    };
+
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondExit::Process(bvector<TraceFeaturePtr>& newFeatures, bool ignoreFalseLow)
     {
-    BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
-
     if (m_calculated)
         return;
 
@@ -3124,6 +3628,7 @@ void TracePondExit::Process(bvector<TraceFeaturePtr>& newFeatures, bool ignoreFa
     m_calculated = true;
 
     long hullPoint = 0;
+    BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
     if (bcdtmList_checkForPointOnHullLineDtmObject(dtmP, m_exitPnt, &hullPoint))
         {
         SetError(); return;
@@ -3135,87 +3640,280 @@ void TracePondExit::Process(bvector<TraceFeaturePtr>& newFeatures, bool ignoreFa
         return;
         }
 
-    if (m_priorPnt == dtmP->nullPnt || m_nextPnt == dtmP->nullPnt)
+    GetExitFlows(newFeatures, m_exits.front().priorPnt, m_exits.front().nextPnt);
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  06/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondExit::GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long priorPnt, long nextPnt)
+    {
+    BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
+    if (priorPnt == dtmP->nullPnt || nextPnt == dtmP->nullPnt)
         {
         SetError();
         return;
         }
-    long nextPnt1, nextPnt2, nextPnt3;
-    DPoint3d nextPt;
-    bool process = true;
-    // Todo rewrite.
-    if (bcdtmDrainage_traceMaximumDescentFromPondExitPointDtmObject_IncludeZSlope(dtmP, nullptr, m_priorPnt, m_exitPnt, m_nextPnt, m_exitPt.x, m_exitPt.y, &nextPnt1, &nextPnt2, &nextPnt3, &nextPt.x, &nextPt.y, &nextPt.z, &process))
+
+    bvector<Flow> flows;
+    long sp = priorPnt;
+    bool voidTriangle;
+    double slope;
+    double descentAngle;
+    double ascentAngle;
+    double previousSlope = -1;
+    long useP1 = dtmP->nullPnt;
+    long useP2 = 0;
+    double useAngle;
+    double angleSpPnt = bcdtmMath_getPointAngleDtmObject(dtmP, m_exitPnt, sp);
+    bool rememberSteepest = false;
+    size_t currentChildrenNum = m_children.size();
+    bool isFlatPond = true;
+
+    for (auto&& pond : m_ponds)
         {
-        SetError(); return;
-        }
-
-    if (!process)
-        return;
-
-    m_points.push_back(nextPt);
-
-    m_numExitFlows++;
-    // Set Parameters For Next Maximum Descent Trace
-    double lastAngle = bcdtmMath_getAngle(m_exitPt.x, m_exitPt.y, nextPt.x, nextPt.y);
-    if (nextPnt2 == dtmP->nullPnt)  // Point
-        {
-        if (nextPt.z == m_exitPt.z)
+        if (pond->GetDepth() != 0)
             {
-            // Check next and previous points 
-            long pnt1 = bcdtmList_nextClkDtmObject(dtmP, m_exitPnt, nextPnt1);
-            long pnt2 = bcdtmList_nextAntDtmObject(dtmP, m_exitPnt, nextPnt1);
-            if (pointAddrP(dtmP, pnt1)->z > m_exitPt.z  && pointAddrP(dtmP, pnt2)->z > m_exitPt.z)
-                {
-                auto existingPond = m_tracer.FindPondLowPt(m_exitPnt);
-
-                if (existingPond != nullptr)
-                    {
-                    m_children.push_back(existingPond);
-                    }
-                else
-                    {
-                    auto child = TracePondEdge::Create(m_tracer, *this, m_exitPnt, nextPnt1, m_exitPt);
-                    newFeatures.push_back(child);
-                    m_children.push_back(child);
-                    }
-                return;
-                }
+            isFlatPond = false;
+            break;
             }
-        auto child = TraceOnPoint::GetOrCreate(newFeatures, m_tracer, *this, nextPnt1, nextPt, lastAngle);
-        m_children.push_back(child);
         }
-    else
+    while (sp != nextPnt)
         {
-        if (nextPt.z == pointAddrP(dtmP, nextPnt2)->z)
+        long np = bcdtmList_nextAntDtmObject(dtmP, m_exitPnt, sp);
+        double angleNpPnt = bcdtmMath_getPointAngleDtmObject(dtmP, m_exitPnt, np);
+        // If it is a valley/sump and not on the hull.
+        if (np != nextPnt &&
+            (
+            (isFlatPond && pointAddrP(dtmP, np)->z <= m_exitPt.z)
+                ||
+                (!isFlatPond && pointAddrP(dtmP, np)->z <= m_exitPt.z)
+                )
+            )
             {
-            // Check next and previous points 
-            long pnt1 = bcdtmList_nextClkDtmObject(dtmP, nextPnt1, nextPnt2);
-            long pnt2 = bcdtmList_nextAntDtmObject(dtmP, nextPnt1, nextPnt2);
-            if (pointAddrP(dtmP, pnt1)->z > nextPt.z  && pointAddrP(dtmP, pnt2)->z > nextPt.z)
-                {
-                auto existingPond = m_tracer.FindPondLowPt(nextPnt1);
+            long anp = bcdtmList_nextAntDtmObject(dtmP, m_exitPnt, np);
+            DTMFeatureType lineType;
+            if (bcdtmDrainage_checkForSumpOrRidgeLineDtmObject(dtmP, nullptr, m_exitPnt, np, sp, anp, &lineType)) { SetError(); return; }
 
-                if (existingPond != nullptr)
-                    {
-                    m_children.push_back(existingPond);
-                    }
-                else
-                    {
-                    auto child = TracePondEdge::Create(m_tracer, *this, nextPnt1, nextPnt2, nextPt);
-                    newFeatures.push_back(child);
-                    m_children.push_back(child);
-                    }
-                return;
-                }
+            // Check for Sump
+            if( lineType == DTMFeatureType::SumpLine )
+                flows.push_back(Flow(np, dtmP->nullPnt, *pointAddrP(dtmP, np)));
+            }
+        if (np < 0)
+            {
+            SetError(); return;
+            }
+        if (bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject(dtmP, nullptr, m_exitPnt, sp, np, voidTriangle, slope, descentAngle, ascentAngle) != DTM_SUCCESS)
+            {
+            SetError(); return;
             }
 
+        if (!voidTriangle)
+            {
+            bool add = false;
+            bool reset = false;
+            double a1 = angleNpPnt;
+            double a2 = m_tracer.AscentTrace() ? ascentAngle : descentAngle;
+            double a3 = angleSpPnt;
+            if (a1 < a3) a1 += DTM_2PYE;
+            if (a2 < a3) a2 += DTM_2PYE;
+            if (a2 <= a1 && a2 >= a3)
+                {
+                if (slope > previousSlope || useP1 == dtmP->nullPnt)
+                    {
+                    useP1 = np;
+                    useP2 = sp;
+                    useAngle = m_tracer.AscentTrace() ? ascentAngle : descentAngle;
+                    rememberSteepest = true;
+                    }
+                else if (slope < previousSlope)
+                    {
+                    add = useP1 != dtmP->nullPnt;
+                    }
+                if (np == nextPnt)
+                    add = rememberSteepest;
+                }
+            else
+                {
+                add = rememberSteepest;
+                reset = true;
+                }
+            previousSlope = slope;
 
-        auto child = TraceOnEdge::Create(m_tracer, *this, nextPnt1, nextPnt2, nextPnt3, nextPt, lastAngle);
-        newFeatures.push_back(child);
-        m_children.push_back(child);
+            if (add)
+                {
+                rememberSteepest = false;
+                long intPnt;
+                DPoint3d nextPt;
+                if (bcdtmDrainage_calculateIntersectOfApexRadialWithTriangleBaseDtmObject(dtmP, m_exitPnt, useP1, useP2, useAngle, &nextPt.x, &nextPt.y, &nextPt.z, &intPnt))
+                    {
+                    SetError(); return;
+                    }
+                if (intPnt != dtmP->nullPnt)
+                    flows.push_back(Flow(intPnt, dtmP->nullPnt, nextPt));
+                else
+                    flows.push_back(Flow(useP1, useP2, nextPt));
+                }
+            if (reset)
+                useP1 = dtmP->nullPnt;
+            }
+        angleSpPnt = angleNpPnt;
+        sp = np;
         }
+#ifdef TEST
+    //    else
+    bvector<Flow> oldFlows;
+        {
+        long nextPnt1, nextPnt2, nextPnt3;
+        DPoint3d nextPt;
+        bool process = true;
+        // Todo rewrite.
+        if (bcdtmDrainage_traceMaximumDescentFromPondExitPointDtmObject_IncludeZSlope(dtmP, nullptr, m_priorPnt, m_exitPnt, m_nextPnt, m_exitPt.x, m_exitPt.y, &nextPnt1, &nextPnt2, &nextPnt3, &nextPt.x, &nextPt.y, &nextPt.z, &process))
+            {
+            SetError(); return;
+            }
+
+        if (!process)
+            return;
+        oldFlows.push_back(Flow(nextPnt1, nextPnt2, nextPt));
+        }
+        if (flows.size() == 1)
+            {
+            BeAssert(oldFlows.size() == 1);
+            if (flows.front().pnt1 != oldFlows.front().pnt1 ||
+                flows.front().pnt2 != oldFlows.front().pnt2)
+                std::swap(oldFlows, flows);
+            }
+
+#endif
+        bool hasRealExit = false;
+        for (auto& flow : flows)
+        {
+        if (flow.pt.z < m_exitPt.z)
+            {
+            hasRealExit = true;
+            break;
+            }
+        }
+
+    for (auto& flow : flows)
+        {
+        if (hasRealExit && flow.pt.z == m_exitPt.z)
+            continue;
+
+        m_numExitFlows++;
+        m_points.push_back(flow.pt); // ToDo - Need to change the draw to handle multiple exits.
+        double lastAngle = bcdtmMath_getAngle(m_exitPt.x, m_exitPt.y, flow.pt.x, flow.pt.y);
+
+        if (flow.pnt2 == dtmP->nullPnt)
+            {
+            if (flow.pt.z == m_exitPt.z)
+                {
+                // Check next and previous points
+                bool isOnHull = nodeAddrP(dtmP, flow.pnt1)->hPtr == m_exitPnt || nodeAddrP(dtmP, m_exitPnt)->hPtr == flow.pnt1;
+                bool voidLine = false;
+
+                if (!isOnHull && m_tracer.DTMHasVoids())
+                    {
+                    voidLine = isLineOnVoidOrHole(dtmP, flow.pnt1, m_exitPnt);
+                    }
+
+                if (!isOnHull && !voidLine)
+                    {
+                    long pnt1 = bcdtmList_nextClkDtmObject(dtmP, m_exitPnt, flow.pnt1);
+                    long pnt2 = bcdtmList_nextAntDtmObject(dtmP, m_exitPnt, flow.pnt1);
+
+                    if (pointAddrP(dtmP, pnt1)->z > m_exitPt.z  && pointAddrP(dtmP, pnt2)->z > m_exitPt.z)
+                        {
+                        auto existingPond = m_tracer.FindPondLowPt(m_exitPnt);
+
+                        if (existingPond != nullptr)
+                            {
+                            m_children.push_back(existingPond);
+                            }
+                        else
+                            {
+                            auto child = TracePondEdge::Create(m_tracer, *this, m_exitPnt, flow.pnt1, m_exitPt);
+                            newFeatures.push_back(child);
+                            m_children.push_back(child);
+                            }
+                        continue;
+                        }
+                    }
+                }
+            auto child = TraceOnPoint::GetOrCreate(newFeatures, m_tracer, *this, flow.pnt1, flow.pt, lastAngle);
+            m_children.push_back(child);
+            }
+        else
+            {
+            CreateAndAddEdge(newFeatures, flow.pnt1, flow.pnt2, flow.pt, lastAngle);
+#ifdef OLD
+            long pnt3;
+            if ((pnt3 = bcdtmList_nextAntDtmObject(dtmP, flow.pnt1, flow.pnt2)) < 0)
+                {
+                SetError(); return;
+                }
+            if (flow.pt.z == pointAddrP(dtmP, flow.pnt2)->z)
+                {
+                CreateAndAddEdge(newFeatures, flow.pnt1, flow.pnt2, m_lastAngle);
+                bool isOnHull = nodeAddrP(dtmP, flow.pnt1)->hPtr == flow.pnt2 || nodeAddrP(dtmP, flow.pnt2)->hPtr == flow.pnt1;
+                bool voidLine = false;
+
+                if (!isOnHull && m_tracer.DTMHasVoids())
+                    bcdtmList_testForVoidLineDtmObject(dtmP, flow.pnt1, flow.pnt2, voidLine);
+
+                if (!isOnHull && !voidLine)
+                    {
+                    // Check next and previous points
+                    long pnt1 = bcdtmList_nextClkDtmObject(dtmP, flow.pnt1, flow.pnt2);
+                    long pnt2 = bcdtmList_nextAntDtmObject(dtmP, flow.pnt1, flow.pnt2);
+                    if (pointAddrP(dtmP, pnt1)->z > flow.pt.z  && pointAddrP(dtmP, pnt2)->z > flow.pt.z)
+                        {
+                        auto existingPond = m_tracer.FindPondLowPt(flow.pnt1);
+
+                        if (existingPond != nullptr)
+                            {
+                            m_children.push_back(existingPond);
+                            }
+                        else
+                            {
+                            auto child = TracePondEdge::Create(m_tracer, *this, flow.pnt1, flow.pnt2, flow.pt);
+                            newFeatures.push_back(child);
+                            m_children.push_back(child);
+                            }
+                        continue;
+                        }
+                    }
+                }
+
+
+            auto child = TraceOnEdge::Create(m_tracer, *this, flow.pnt1, flow.pnt2, pnt3, flow.pt, lastAngle);
+            newFeatures.push_back(child);
+            m_children.push_back(child);
+#endif
+            }
+        }
+
+    int i = 0;
+    for (auto& flow : flows)
+        {
+        if (hasRealExit && flow.pt.z == m_exitPt.z)
+            continue;
+        m_flows.push_back(FlowInfo(flow.pnt1, m_children[i++ + currentChildrenNum].get()));
+        }
+
+    BeAssert(!m_flows.empty());
     }
 
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  06/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+DrainageTracer::DrainageTracer(BcDTMR dtm) : m_dtm(dtm), m_dtmObj(dtm.GetTinHandle())
+    {
+    m_pointList.resize(m_dtmObj->numPoints);
+    bcdtmList_testForVoidsInDtmObject(m_dtmObj, m_dtmHasVoids) ;
+    }
 
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
@@ -3253,16 +3951,19 @@ int DrainageTracer::AddWaterVolume(DPoint3dCR startPt, double volume)
     bvector<TraceFeature::WaterVolumeInfo> newFeatures;
 
     newFeatures.push_back(TraceFeature::WaterVolumeInfo(startFeature.get(), volume));
+    startFeature->AddVolumeToProcess(volume);
     //bmap<TraceFeature*, bool> processedFeatureMap;  // Temporary to help with debug.
 
     while (!newFeatures.empty())
         {
         std::swap(features, newFeatures);
-
         newFeatures.clear();
         for (auto&& feature : features)
             {
-            feature.feature->ProcessWaterVolume(feature.vol, newFeatures);
+            double vol = feature.feature->GetVolumeToProcess();
+            feature.feature->ClearVolumeToProcess();
+            if (vol != 0)
+                feature.feature->ProcessWaterVolume(vol, newFeatures);
             }
         }
     return DTM_SUCCESS;
@@ -3458,6 +4159,7 @@ DrainageTracer::DrainageTracer(DrainageTracerCR from) : m_dtm(from.m_dtm), m_dtm
     m_forWater = from.m_forWater;
     m_pondElevationTolerance = from.m_pondElevationTolerance;
     m_pondVolumeTolerance = from.m_pondVolumeTolerance;
+    m_dtmHasVoids = from.m_dtmHasVoids;
 
     for (auto&& fromFeature : from.m_features)
         {
@@ -3521,23 +4223,14 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
     //startX = 773230; startY = 1784950;
     //startX = 290513.48747999995;
     //startY = 6242144.7302313335;
-    if (falseLowDepth < 0)
-        bcdtmDrainage_traceMaximumDescentDtmObjectOld(dtmP, drainageTablesP, loadFunctionP, -falseLowDepth, startX, startY, userP);
-    else
-        {
-        //bcdtmDrainage_traceMaximumDescentDtmObjectOld(dtmP, drainageTablesP, loadFunctionP, -falseLowDepth, startX, startY, userP);
-        TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*dtmP);
-        DrainageTracerPtr tracer = DrainageTracer::Create(*dtm);
+    //bcdtmDrainage_traceMaximumDescentDtmObjectOld(dtmP, drainageTablesP, loadFunctionP, -falseLowDepth, startX, startY, userP);
+    TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*dtmP);
+    DrainageTracerPtr tracer = DrainageTracer::Create(*dtm);
 
-        //tracer->m_falseLowDepth = 0;
-        //tracer->AddWaterVolume(DPoint3d::From(startX, startY, 0), falseLowDepth);
-
-        tracer->SetMinimumDepth(falseLowDepth);
-        tracer->DoTrace(DPoint3d::From(startX, startY, 0));
-        QuickFeatureJoiner joiner(loadFunctionP, userP);
-        tracer->DoTraceCallback(&QuickFeatureJoiner::callback, &joiner);
-
-        }
+    tracer->SetMinimumDepth(falseLowDepth);
+    tracer->DoTrace(DPoint3d::From(startX, startY, 0));
+    QuickFeatureJoiner joiner(loadFunctionP, userP);
+    tracer->DoTraceCallback(&QuickFeatureJoiner::callback, &joiner);
     return DTM_SUCCESS;
     }
 
@@ -3545,8 +4238,17 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
 
 // ToDo
 // 1. Add Inner pond analysis to the pond from exit analysis, this will copy the area and the inner ponds.
-// 2. Expose tolerances.
 // 3. Handle ponds in ponds, when they are reached, trace down and fill it up.
 //  a. Send in the other ponds analysis.
 //  b. Copy the area, and add the inner ponds.
+// 4. Implement new callback, with CurveVector,depth, volume.
+// 5. Fix display from pondexit if multiple exits.
+// 6. If a pond is deep enough dont show the enclosing pond.
+// ToDo sort out Zsumps on edit elevation.
 END_BENTLEY_TERRAINMODEL_NAMESPACE
+
+// ToDo.
+// 1. Add Inner pond analysis to the pond from exit analysis, this will copy the area and the inner ponds.
+// 2. For PondFromExit we need to get the other exit points, to make sure we have all boundaries.
+// 3. Cope with voids.
+// 4. Cope with inner ponds.
