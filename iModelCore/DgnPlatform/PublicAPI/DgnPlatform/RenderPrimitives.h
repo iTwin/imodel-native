@@ -127,6 +127,7 @@ public:
 
     TextureP GetTexture() const { return m_texture.get(); }
     MaterialP GetMaterial() const { return m_material.get(); }
+    GradientSymbCP GetGradient() const { return m_gradient.get(); }
     uint32_t GetLineWidth() const { return m_width; }
     LinePixels GetLinePixels() const { return m_linePixels; }
     FillFlags GetFillFlags() const { return m_fillFlags; }

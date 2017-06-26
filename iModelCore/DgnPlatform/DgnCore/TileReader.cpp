@@ -731,10 +731,20 @@ struct DgnCacheTileReader : GltfReader
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue) override
     {
+    GradientSymbPtr     gradient;
+
+    if (materialValue.isMember("gradient"))
+        {
+        gradient = GradientSymb::Create();
+
+        if (SUCCESS != gradient->FromJson(materialValue["gradient"]))
+            gradient = nullptr;
+        }
+
     return  DisplayParams::Create((DisplayParams::Type) materialValue["type"].asUInt(),
                                   DgnCategoryId(materialValue["categoryId"].asUInt64()),
                                   DgnSubCategoryId(materialValue["subCategoryId"].asUInt64()),
-                                  nullptr,     // TBD. Gradient.
+                                  gradient.get(),
                                   DgnMaterialId(materialValue["materialId"].asUInt64()),
                                   ColorDef(materialValue["lineColor"].asUInt()),
                                   ColorDef(materialValue["fillColor"].asUInt()),

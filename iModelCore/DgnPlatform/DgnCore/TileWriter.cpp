@@ -2213,6 +2213,8 @@ BentleyStatus  CreateMaterialJson(Json::Value& matJson, MeshCR mesh,  DisplayPar
     matJson["lineWidth"]  = displayParams.GetLineWidth();
     matJson["linePixels"] = (uint32_t) displayParams.GetLinePixels();     // Edges?
     
+    if (nullptr != displayParams.GetGradient())
+        matJson["gradient"] = displayParams.GetGradient()->ToJson();
 
     return SUCCESS;
     }

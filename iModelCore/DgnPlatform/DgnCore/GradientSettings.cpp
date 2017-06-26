@@ -272,3 +272,74 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
     return image;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GradientSymb::GetKey(ColorDef& color, double& value, uint32_t iKey) const
+    {
+    if (iKey >= m_nKeys)
+        return ERROR;
+
+    color = m_colors[iKey];
+    value = m_values[iKey];
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   GradientSymb::FromJson(Json::Value const& json)
+    {
+    if (!json.isMember("mode") ||
+        !json["keys"].isArray())
+        return ERROR;
+    
+    m_mode  = (Mode) json["mode"].asUInt();
+    m_flags = (Flags) json["flags"].asUInt();
+    m_angle = json["angle"].asDouble(); 
+    m_tint  = json["tint"].asDouble();
+    m_shift = json["shift"].asDouble(); 
+    
+    m_nKeys = std::min((uint32_t) json["keys"].size(), (uint32_t) MAX_GRADIENT_KEYS);
+
+    for (uint32_t i=0; i<m_nKeys; i++)
+        {
+        m_colors[i] = ColorDef(json["keys"][i]["color"].asUInt());
+        m_values[i] = json["keys"][i]["value"].asDouble();
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     GradientSymb::ToJson () const
+    {
+    Json::Value     value;
+
+    value["mode"]  = (int) GetMode();
+    value["flags"] = (int) GetFlags();
+    value["angle"] = GetAngle(); 
+    value["tint"] = GetTint();
+    value["shift"] = GetShift();
+
+    ColorDef    color;
+    double      keyValue;
+
+    for (uint32_t i=0; SUCCESS == GetKey(color, keyValue, i); i++)
+        {
+        Json::Value keyJson;
+
+        keyJson["value"] = keyValue;
+        keyJson["color"] = color.GetValue();
+
+        value["keys"].append(keyJson);
+        }
+    
+    return value;
+    }
+
+

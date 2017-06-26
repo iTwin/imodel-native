@@ -2537,7 +2537,7 @@ Triangle  TriangleList::GetTriangle(size_t index) const
     for (size_t i=0; i<3; i++)
         {
         triangle.m_indices[i] = pIndex[i];
-        triangle.m_edgeFlags[i] = (0 == (flags & (0x0002 << i))) ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible;
+        triangle.m_edgeFlags[i] = (0 == (flags & (0x0002 << i))) ? MeshEdge::Flags::Invisible : MeshEdge::Flags::Visible;
         }
 
     return triangle;

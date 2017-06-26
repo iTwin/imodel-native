@@ -919,9 +919,13 @@ public:
     void SetAngle(double angle) {m_angle = angle;}
     void SetTint(double tint) {m_tint = tint;}
     void SetShift(double shift) {m_shift = shift;}
+    BentleyStatus GetKey(ColorDef& color, double& value, uint32_t iKey) const;
     DGNPLATFORM_EXPORT void SetKeys(uint32_t nKeys, ColorDef const* colors, double const* values);
     ColorDef MapColor(double value) const;
     DGNPLATFORM_EXPORT Image GetImage(uint32_t width, uint32_t height) const;
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& json);
+
 };
 
 //=======================================================================================
