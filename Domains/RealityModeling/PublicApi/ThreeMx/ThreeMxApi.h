@@ -56,11 +56,11 @@ struct Geometry : RefCountedBase, NonCopyableClass
         Dgn::Render::TexturePtr m_texture;
 
         Dgn::Render::QPoint3dList QuantizePoints() const;
-        Dgn::Render::QPoint3dList QuantizeNormals() const;
+        Dgn::Render::OctEncodedNormalList QuantizeNormals() const;
     };
 protected:
     Dgn::Render::QPoint3dList m_points = Dgn::Render::QPoint3dList(DRange3d::NullRange());
-    Dgn::Render::QPoint3dList m_normals = Dgn::Render::QPoint3dList(DRange3d::NullRange());
+    Dgn::Render::OctEncodedNormalList m_normals;
     bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
     bvector<Dgn::Render::GraphicPtr> m_graphics;

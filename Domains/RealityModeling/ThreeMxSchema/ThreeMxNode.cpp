@@ -149,13 +149,21 @@ Render::QPoint3dList Geometry::CreateParams::QuantizePoints() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::QPoint3dList Geometry::CreateParams::QuantizeNormals() const
+Render::OctEncodedNormalList Geometry::CreateParams::QuantizeNormals() const
     {
-    Render::QPoint3dList qpts(Render::QPoint3d::Params::FromNormalizedRange());
+    OctEncodedNormalList oens;
     if (nullptr != m_normals)
-        quantize(qpts, m_normals, m_numPoints);
+        {
+        oens.resize(m_numPoints);
+        for (size_t i = 0; i < m_numPoints; i++)
+            {
+            FPoint3d normal = m_normals[i];
+            FVec3d vec = FVec3d::From(normal.x, normal.y, normal.z);
+            oens[i] = OctEncodedNormal::From(vec);
+            }
+        }
 
-    return qpts;
+    return oens;
     }
 
 /*---------------------------------------------------------------------------------**//**
