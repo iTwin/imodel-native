@@ -661,6 +661,7 @@ TEST_F(BeSQLiteDbTests, linestyleDB)
     m_db.DumpSqlResults("SELECT * from linestyles");
     }
 
+
 #ifdef PUBLISHER_WONT_PUBLISH_EXPIRED_FILES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/14

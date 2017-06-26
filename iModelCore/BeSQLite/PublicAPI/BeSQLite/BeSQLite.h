@@ -10,6 +10,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/bset.h>
 #include <Bentley/BeId.h>
+#include <json/value.h>
 #include <list>
 #include <type_traits>
 
@@ -283,14 +284,18 @@ public:
 struct BeBriefcaseBasedId : BeInt64Id
 {
     BEINT64_ID_DECLARE_MEMBERS(BeBriefcaseBasedId,BeInt64Id)
+    BE_JSON_NAME(b)
+    BE_JSON_NAME(l)
 
 public:
     static uint64_t const MaxLocal() {return 1LL<<40;} // top 24 bits are BeBriefcaseId, lower 40 bits are local id
+    static uint64_t const LocalMask() {return ~-(int64_t)MaxLocal();}
 
     //! CONSTRUCT a BeInt64Id from a BriefcaseId value and an id.
     BeBriefcaseBasedId(BeBriefcaseId briefcaseId, uint64_t id) {BeAssert(id<MaxLocal()); m_id = ((briefcaseId.GetValue() * MaxLocal()) + id);}
 
     BeBriefcaseId GetBriefcaseId() const {return BeBriefcaseId((uint32_t) (m_id / MaxLocal()));} //!< Get the BeBriefcaseId of this BeBriefcaseBasedId
+    uint64_t GetLocalId() const {return m_id & LocalMask();} //!< Get the local id
 
     //! Increment this BeBriefcaseBasedId
     //! @note If this BeBriefcaseBasedId is not valid, this method does nothing.
@@ -303,6 +308,12 @@ public:
     //! @note if the highest value of BeBriefcaseBasedId is already used (i.e. the id column is "full" for this BeBriefcaseId),
     //! this value will be invalid on return.
     BE_SQLITE_EXPORT BeBriefcaseBasedId(Db& db, Utf8CP tableName, Utf8CP columnName);
+
+    //! save this BeBriefcaseBasedId as a JSON value
+    Json::Value ToJson() const {Json::Value val; val[json_b()]=GetBriefcaseId().GetValue(); val[json_l()]=GetLocalId(); return val;}
+
+    //! create a new BeBriefcaseBasedId from a JSON value
+    static BeBriefcaseBasedId FromJson(Json::Value val) {return BeBriefcaseBasedId((BeBriefcaseId) val[json_b()].asUInt(), val[json_l()].asUInt64());}
 };
 
 #define BEBRIEFCASEBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \
@@ -352,7 +363,6 @@ enum DbProfileValues
     BEDB_SUPPORTED_VERSION_Sub1  = 0,
     BEDB_SUPPORTED_VERSION_Sub2  = 0,
     };
-
 
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
