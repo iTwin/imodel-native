@@ -3240,15 +3240,6 @@ static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTER
 
     return SUCCESS;
     }
-#endif
-
-//=======================================================================================
-// @bsiclass 
-//=======================================================================================
-struct IsSegmentEndPointEqual : std::binary_function <DSegment3d, DPoint3dCP, bool>
-    {
-    bool operator() (DSegment3dCR seg, DPoint3dCP pt) const {return seg.point[1].IsEqual(*pt, 1.0e-10);}
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/17
@@ -3328,12 +3319,148 @@ void getLoopVertices(bvector<ISubEntityPtr>& loopVertices, ISubEntityCR vertex, 
         }
     }
 
+//=======================================================================================
+// @bsiclass 
+//=======================================================================================
+struct ImprintIndices {size_t m_indices[2];};
+struct SurfaceIndices {size_t m_indices[3];};
+
+struct IsImprintIndex1Equal : std::binary_function <ImprintIndices, size_t const*, bool>
+    {
+    bool operator() (ImprintIndices const& imprint, size_t const* index) const {return imprint.m_indices[1] == *index;}
+    };
+
+struct IsImprintReversed : std::binary_function <ImprintIndices, ImprintIndices const*, bool>
+    {
+    bool operator() (ImprintIndices const& imprint, ImprintIndices const* check) const {return imprint.m_indices[0] == check->m_indices[1] && imprint.m_indices[1] == check->m_indices[0];}
+    };
+
+//=======================================================================================
+// @bsiclass 
+//=======================================================================================
+struct FaceVertexData
+{
+ISubEntityPtr           m_facePtr;
+DPoint3d                m_facePoint;
+DVec3d                  m_faceNormal;
+bvector<DPoint3d>       m_rawPts;
+bvector<DPoint3d>       m_adjPts;
+bvector<ImprintIndices> m_imprint;
+bvector<SurfaceIndices> m_surface;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& vertices, bvector<Transform> const& transforms, StepFacesOption addStep)
+bool SetupFromFace(ISubEntityR face)
     {
-#if defined (BENTLEYCONFIG_PARASOLID)
+    if (!BRepUtil::IsPlanarFace(face))
+        return false;
+
+    bvector<PK_LOOP_t> faceLoops;
+
+    if (SUCCESS != PSolidTopo::GetFaceLoops(faceLoops, PSolidSubEntity::GetSubEntityTag(face)) || faceLoops.size() > 1)
+        return false;
+
+    DRange1d uRange, vRange;
+
+    if (SUCCESS != BRepUtil::GetFaceParameterRange(face, uRange, vRange))
+        return false;
+
+    DPoint2d uvParam = DPoint2d::From((uRange.high+uRange.low) * 0.5, (vRange.high+vRange.low) * 0.5);
+    DVec3d   uDir, vDir;
+
+    if (SUCCESS != BRepUtil::EvaluateFace(face, m_facePoint, m_faceNormal, uDir, vDir, uvParam))
+        return false;
+
+    m_facePtr = &face;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsColinearIndices(size_t iPt0, size_t iPt1, size_t iPt2)
+    {
+    DPoint3d pts[3];
+
+    pts[0] = m_rawPts[iPt0];
+    pts[1] = m_rawPts[iPt1];
+    pts[2] = m_rawPts[iPt2];
+
+    if (bsiGeom_isDPoint3dArrayColinear(pts, 3, (1.0e-12 * (1.0 + pts[0].Magnitude()))))
+        return true;
+
+    DEllipse3d planeArc = DEllipse3d::FromArcCenterStartEnd(m_adjPts.at(iPt1), m_adjPts.at(iPt0), m_adjPts.at(iPt2));
+    DVec3d     zAxis = planeArc.CrossProductOfBasisVectors();
+
+    zAxis.Normalize();
+
+    return (fabs(zAxis.DotProduct(m_faceNormal)) > .99999 && DPlane3d::FromOriginAndNormal(m_facePoint, m_faceNormal).Evaluate(planeArc.center) < 1.0e-8);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GetNewSurfaceForResultFace(PK_PLANE_sf_t& plane, PK_FACE_t faceTag, TransformCR bodyToCurveTrans, TransformCR curveToBodyTrans)
+    {
+    bvector<PK_VERTEX_t> resultVertices;
+
+    if (SUCCESS != PSolidTopo::GetFaceVertices(resultVertices, faceTag))
+        return false;
+
+    for (PK_VERTEX_t vertexTag : resultVertices)
+        {
+        DPoint3d point;
+
+        if (SUCCESS != PSolidUtil::GetVertex(point, vertexTag))
+            continue;
+
+        bodyToCurveTrans.Multiply(point);
+
+        for (SurfaceIndices& surface : m_surface)
+            {
+            if (!point.IsEqual(m_rawPts.at(surface.m_indices[1]), 1.0e-5))
+                continue;
+
+            DEllipse3d planeArc = DEllipse3d::FromArcCenterStartEnd(m_adjPts.at(surface.m_indices[1]), m_adjPts.at(surface.m_indices[0]), m_adjPts.at(surface.m_indices[2]));
+
+            if (m_faceNormal.DotProduct(planeArc.CrossProductOfBasisVectors()) < 0.0)
+                planeArc = DEllipse3d::FromNegateVector90(planeArc); // Preserve original surface nornmal...
+
+            curveToBodyTrans.Multiply(planeArc);
+
+            DVec3d zAxis = planeArc.CrossProductOfBasisVectors();
+            DVec3d xAxis = planeArc.vector0;
+
+            zAxis.Normalize();
+            xAxis.Normalize();
+
+            plane.basis_set.location.coord[0] = planeArc.center.x;
+            plane.basis_set.location.coord[1] = planeArc.center.y;
+            plane.basis_set.location.coord[2] = planeArc.center.z;
+
+            plane.basis_set.axis.coord[0] = zAxis.x;
+            plane.basis_set.axis.coord[1] = zAxis.y;
+            plane.basis_set.axis.coord[2] = zAxis.z;
+
+            plane.basis_set.ref_direction.coord[0] = xAxis.x;
+            plane.basis_set.ref_direction.coord[1] = xAxis.y;
+            plane.basis_set.ref_direction.coord[2] = xAxis.z;
+
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+}; // FaceVertexData
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& vertices, bvector<Transform> const& transforms)
+    {
     if (vertices.empty())
         return ERROR;
 
@@ -3342,10 +3469,8 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
     if (PK_ENTITY_null == targetEntityTag)
         return ERROR;
 
-    bvector<ISubEntityPtr>  faces;
-    bvector<CurveVectorPtr> imprints;
-    bvector<CurveVectorPtr> planes;
-    bvector<CurveVectorPtr> fixedPts;
+    bvector<ISubEntityPtr>  facesChecked;
+    bvector<FaceVertexData> faceData;
 
     for (size_t iVertex = 0; iVertex < vertices.size(); ++iVertex)
         {
@@ -3359,29 +3484,16 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
 
         for (ISubEntityPtr facePtr : vertexFaces)
             {
-            bvector<ISubEntityPtr>::iterator it = std::find_if(faces.begin(), faces.end(), std::bind2nd(IsSubEntityPtrEqual(), facePtr.get()));
+            bvector<ISubEntityPtr>::iterator it = std::find_if(facesChecked.begin(), facesChecked.end(), std::bind2nd(IsSubEntityPtrEqual(), facePtr.get()));
 
-            if (it != faces.end())
+            if (it != facesChecked.end())
                 continue;
 
-            if (!BRepUtil::IsPlanarFace(*facePtr))
-                continue;
+            facesChecked.push_back(facePtr);
 
-            bvector<PK_LOOP_t> faceLoops;
+            FaceVertexData data;
 
-            if (SUCCESS != PSolidTopo::GetFaceLoops(faceLoops, PSolidSubEntity::GetSubEntityTag(*facePtr)) || faceLoops.size() > 1)
-                continue; // Leave faces with hole loops alone as we don't know how/if to split them...
-
-            DRange1d uRange, vRange;
-
-            if (SUCCESS != BRepUtil::GetFaceParameterRange(*facePtr, uRange, vRange))
-                continue;
-
-            DPoint2d uvParam = DPoint2d::From((uRange.high+uRange.low) * 0.5, (vRange.high+vRange.low) * 0.5);
-            DVec3d   faceNormal, uDir, vDir;
-            DPoint3d facePoint;
-
-            if (SUCCESS != BRepUtil::EvaluateFace(*facePtr, facePoint, faceNormal, uDir, vDir, uvParam))
+            if (!data.SetupFromFace(*facePtr))
                 continue;
 
             bvector<ISubEntityPtr> loopVertices;
@@ -3391,9 +3503,6 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
             if (loopVertices.size() < 3)
                 continue;
 
-            bvector<DPoint3d> vertexPts;
-            bvector<DPoint3d> facePts;
-
             for (ISubEntityPtr vertexPtr : loopVertices)
                 {
                 DPoint3d    vertexPoint;
@@ -3401,153 +3510,141 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
                 if (SUCCESS != BRepUtil::EvaluateVertex(*vertexPtr, vertexPoint))
                     continue;
 
-                vertexPts.push_back(vertexPoint);
+                data.m_rawPts.push_back(vertexPoint);
 
                 bvector<ISubEntityPtr>::iterator it2 = std::find_if(vertices.begin(), vertices.end(), std::bind2nd(IsSubEntityPtrEqual(), vertexPtr.get()));
 
                 if (it2 != vertices.end())
                     transforms[it2 - vertices.begin()].Multiply(vertexPoint);
 
-                facePts.push_back(vertexPoint);
+                data.m_adjPts.push_back(vertexPoint);
                 }
 
-            if (vertexPts.size() != loopVertices.size())
+            if (data.m_rawPts.size() != loopVertices.size())
                 continue;
 
-            bvector<DSegment3d> segs;
-            bvector<DEllipse3d> arcs;
-            bvector<DPoint3d> centers;
-            size_t  iNextLimit = vertexPts.size()-1, iPrevLimit = 0;
+            size_t  iNextLimit = data.m_rawPts.size()-1, iPrevLimit = 0;
 
-            for (size_t iPt = 0; iPt < vertexPts.size(); ++iPt)
+            for (size_t iPt = 0; iPt < data.m_rawPts.size(); ++iPt)
                 {
-                if (!vertexPts[iPt].IsEqual(facePts[iPt], 1.0e-10))
+                if (!data.m_rawPts[iPt].IsEqual(data.m_adjPts[iPt], 1.0e-10))
                     continue; // If this vertex moves we won't create an imprint from it (may create imprint to it)...
 
-                size_t  iNext = (iPt < vertexPts.size()-1) ? iPt+1 : 0;
+                size_t  iNext = (iPt < data.m_rawPts.size()-1) ? iPt+1 : 0;
 
-                if (!vertexPts[iNext].IsEqual(facePts[iNext], 1.0e-10)) // Next point moves, need imprint and new surface for split face...
+                if (!data.m_rawPts[iNext].IsEqual(data.m_adjPts[iNext], 1.0e-10)) // Next point moves, need imprint and new surface for split face...
                     {
-                    size_t     iNextNext = (iNext < vertexPts.size()-1) ? iNext+1 : 0;
+                    size_t     iNextNext = (iNext < data.m_rawPts.size()-1) ? iNext+1 : 0;
 
-                    if (iNext == iPrevLimit && !segs.empty())
+                    if (iNext == iPrevLimit && !data.m_imprint.empty())
                         {
-                        bvector<DSegment3d>::iterator it2 = std::find_if(segs.begin(), segs.end(), std::bind2nd(IsSegmentEndPointEqual(), &vertexPts[iNext]));
+                        bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), std::bind2nd(IsImprintIndex1Equal(), &iNext));
 
-                        if (it2 != segs.end())
-                            it2->point[1] = vertexPts[iPt]; // Crossing segment, may not require split but still needs replace surface!
+                        if (it2 != data.m_imprint.end())
+                            it2->m_indices[1] = iPt; // Crossing segment, may not require split but still needs replace surface!
 
                         continue;
                         }
 
-                    DPoint3d pts[3];
+                    iNextLimit = iNextNext;
 
-                    pts[0] = vertexPts[iPt];
-                    pts[1] = vertexPts[iNext];
-                    pts[2] = vertexPts[iNextNext];
-
-                    if (bsiGeom_isDPoint3dArrayColinear(pts, 3, (1.0e-12 * (1.0 + pts[0].Magnitude()))))
+                    if (data.IsColinearIndices(iPt, iNext, iNextNext))
                         continue;
 
-                    centers.push_back(vertexPts[iNext]);
-                    arcs.push_back(DEllipse3d::FromArcCenterStartEnd(facePts[iNext], facePts[iPt], facePts[iNextNext]));
-                    segs.push_back(DSegment3d::From(vertexPts[iPt], vertexPts[iNextNext]));
-                    iNextLimit = iNextNext;
+                    ImprintIndices imprint;
+
+                    imprint.m_indices[0] = iPt;
+                    imprint.m_indices[1] = iNextNext;
+
+                    bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), std::bind2nd(IsImprintReversed(), &imprint));
+
+                    if (it2 == data.m_imprint.end()) // NOTE: Parasolid seems ok with duplicate imprint...but it's easy enough to filter out...
+                        data.m_imprint.push_back(imprint);
+
+                    SurfaceIndices surface;
+
+                    surface.m_indices[0] = iPt;
+                    surface.m_indices[1] = iNext;
+                    surface.m_indices[2] = iNextNext;
+
+                    data.m_surface.push_back(surface);
                     }
 
-                size_t  iPrev = (iPt > 0) ? iPt-1 : vertexPts.size()-1;
+                size_t  iPrev = (iPt > 0) ? iPt-1 : data.m_rawPts.size()-1;
 
-                if (!vertexPts[iPrev].IsEqual(facePts[iPrev], 1.0e-10)) // Previous point moves, need imprint and new surface for split face...
+                if (!data.m_rawPts[iPrev].IsEqual(data.m_adjPts[iPrev], 1.0e-10)) // Previous point moves, need imprint and new surface for split face...
                     {
-                    size_t     iPrevPrev = (iPrev > 0) ? iPrev-1 : vertexPts.size()-1;
+                    size_t     iPrevPrev = (iPrev > 0) ? iPrev-1 : data.m_rawPts.size()-1;
 
-                    if (iPrev == iNextLimit && !segs.empty())
+                    if (iPrev == iNextLimit && !data.m_imprint.empty())
                         {
-                        bvector<DSegment3d>::iterator it2 = std::find_if(segs.begin(), segs.end(), std::bind2nd(IsSegmentEndPointEqual(), &vertexPts[iPrev]));
+                        bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), std::bind2nd(IsImprintIndex1Equal(), &iPrev));
 
-                        if (it2 != segs.end())
-                            it2->point[1] = vertexPts[iPt]; // Crossing segment, may not require split but still needs replace surface!
+                        if (it2 != data.m_imprint.end())
+                            it2->m_indices[1] = iPt; // Crossing segment, may not require split but still needs replace surface!
 
                         continue;
                         }
 
-                    DPoint3d pts[3];
+                    iPrevLimit = iPrevPrev;
 
-                    pts[0] = vertexPts[iPt];
-                    pts[1] = vertexPts[iPrev];
-                    pts[2] = vertexPts[iPrevPrev];
-
-                    if (bsiGeom_isDPoint3dArrayColinear(pts, 3, (1.0e-12 * (1.0 + pts[0].Magnitude()))))
+                    if (data.IsColinearIndices(iPt, iPrev, iPrevPrev))
                         continue;
 
-                    centers.push_back(vertexPts[iPrev]);
-                    arcs.push_back(DEllipse3d::FromArcCenterStartEnd(facePts[iPrev], facePts[iPt], facePts[iPrevPrev]));
-                    segs.push_back(DSegment3d::From(vertexPts[iPt], vertexPts[iPrevPrev]));
-                    iPrevLimit = iPrevPrev;
+                    ImprintIndices imprint;
+
+                    imprint.m_indices[0] = iPt;
+                    imprint.m_indices[1] = iPrevPrev;
+
+                    bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), std::bind2nd(IsImprintReversed(), &imprint));
+
+                    if (it2 == data.m_imprint.end()) // NOTE: Parasolid seems ok with duplicate imprint...but it's easy enough to filter out...
+                        data.m_imprint.push_back(imprint);
+
+                    SurfaceIndices surface;
+
+                    surface.m_indices[0] = iPt;
+                    surface.m_indices[1] = iPrev;
+                    surface.m_indices[2] = iPrevPrev;
+
+                    data.m_surface.push_back(surface);
                     }
                 }
 
-            if (0 == segs.size())
+            if (0 == data.m_imprint.size() && 0 == data.m_surface.size())
                 continue;
 
-            CurveVectorPtr segCurves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-
-            for (DSegment3d& seg : segs)
-                {
-                if (seg.IsSinglePoint())
-                    continue;
-
-                segCurves->push_back(ICurvePrimitive::CreateLine(seg));
-                }
-
-            CurveVectorPtr arcCurves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-
-            for (DEllipse3d& arc : arcs)
-                {
-                DVec3d zAxis = arc.CrossProductOfBasisVectors();
-
-                zAxis.Normalize();
-
-                if (zAxis.DotProduct(faceNormal) < 0.0)
-                    arc = DEllipse3d::FromNegateVector90(arc);
-
-                arcCurves->push_back(ICurvePrimitive::CreateArc(arc));
-                }
-
-            faces.push_back(facePtr);
-            imprints.push_back(segCurves);
-            planes.push_back(arcCurves);
-            fixedPts.push_back(CurveVector::CreateLinear(centers));
+            faceData.push_back(data);
             }
         }
 
-    if (faces.empty())
+    if (faceData.empty())
         return ERROR;
 
     bvector<PK_FACE_t>    replaceFaces;
     bvector<PK_SURF_t>    replaceSurfs;
     bvector<PK_LOGICAL_t> replaceSenses;
 
-    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+    for (FaceVertexData& data : faceData)
         {
-        ISubEntityPtr           facePtr = faces[iFace];
-        CurveVectorPtr          curvePtr = imprints[iFace];
-        CurveVectorPtr          planePtr = planes[iFace];
-        CurveVectorPtr          fixedPtr = fixedPts[iFace];
-        Transform               curveToBodyTrans;
         bvector<PK_ENTITY_t>    toolBodies;
         bvector<PK_CURVE_t>     toolCurves;
         bvector<PK_INTERVAL_t>  toolIntervals;
+        Transform               bodyToCurveTrans = PSolidSubEntity::GetSubEntityTransform(*data.m_facePtr), curveToBodyTrans;
 
-        curveToBodyTrans.InverseOf(PSolidSubEntity::GetSubEntityTransform(*facePtr));
+        curveToBodyTrans.InverseOf(bodyToCurveTrans);
 
-        for (ICurvePrimitivePtr seg : *curvePtr)
+        for (ImprintIndices& imprint : data.m_imprint)
             {
-            PK_ENTITY_t    toolTag = PK_ENTITY_null;
-            CurveVectorPtr imprintCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, seg);
+            DSegment3d segment = DSegment3d::From(data.m_rawPts.at(imprint.m_indices[0]), data.m_rawPts.at(imprint.m_indices[1]));
 
-            if (SUCCESS != PSolidGeom::BodyFromCurveVector(toolTag, nullptr, *imprintCurve, curveToBodyTrans, false, nullptr))
-                return ERROR;
+            if (segment.IsSinglePoint())
+                continue;
+
+            PK_ENTITY_t toolTag = PK_ENTITY_null;
+
+            if (SUCCESS != PSolidGeom::BodyFromCurveVector(toolTag, nullptr, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment)), curveToBodyTrans, false, nullptr))
+                continue;
 
             toolBodies.push_back(toolTag);
             getBodyCurves(toolCurves, toolIntervals, toolTag);
@@ -3556,7 +3653,7 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
         if (toolBodies.empty())
             return ERROR;
 
-        PK_ENTITY_t          targetTag = PSolidSubEntity::GetSubEntityTag(*facePtr);
+        PK_ENTITY_t          targetTag = PSolidSubEntity::GetSubEntityTag(*data.m_facePtr);
         PK_CURVE_project_o_t options;
         PK_CURVE_project_r_t results;
         PK_ENTITY_track_r_t  tracking;
@@ -3566,10 +3663,6 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
 
         memset(&results, 0, sizeof(results));
         memset(&tracking, 0, sizeof(tracking));
-
-        PK_MARK_t   markTag = PK_ENTITY_null;
-
-        PK_MARK_create(&markTag);
 
         BentleyStatus status = (SUCCESS == PK_CURVE_project((int) toolCurves.size(), &toolCurves.front(), &toolIntervals.front(), 1, &targetTag, &options, &results, &tracking)) ? SUCCESS : ERROR;
 
@@ -3603,75 +3696,23 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
         PK_ENTITY_track_r_f(&tracking);
         PK_CURVE_project_r_f(&results);
     
-        if (SUCCESS != status)
-            PK_MARK_goto(markTag);
-
-        PK_MARK_delete(markTag);
         PK_ENTITY_delete((int) toolBodies.size(), &toolBodies.front());
 
         if (SUCCESS != status)
-            return ERROR;
+            {
+            PK_ENTITY_delete((int) replaceSurfs.size(), &replaceSurfs.front());
 
-        planePtr->TransformInPlace(curveToBodyTrans);
-        fixedPtr->TransformInPlace(curveToBodyTrans);
+            return ERROR;
+            }
 
         for (size_t iResult = 0; iResult < resultFaces.size(); ++iResult)
             {
-            bvector<PK_VERTEX_t> resultVertices;
-
-            if (SUCCESS != PSolidTopo::GetFaceVertices(resultVertices, resultFaces[iResult]))
-                continue;
-
-            bool found = false;
-            DEllipse3d foundArc = DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), 1.0);
-
-            for (PK_VERTEX_t vertexTag : resultVertices)
-                {
-                DPoint3d point;
-
-                if (SUCCESS != PSolidUtil::GetVertex(point, vertexTag))
-                    continue;
-
-                bvector<DPoint3d> const* centers = fixedPtr->front()->GetLineStringCP();
-
-                for (size_t iCenter = 0; iCenter < centers->size(); ++iCenter)
-                    {
-                    if (!point.IsEqual(centers->at(iCenter), 1.0e-5))
-                        continue;
-
-                    foundArc = *planePtr->at(iCenter)->GetArcCP();
-                    found = true;
-                    break;
-                    }
-
-                if (found)
-                    break;
-                }
-
-            if (!found)
-                continue;
-
-            DVec3d zAxis = foundArc.CrossProductOfBasisVectors();
-            DVec3d xAxis = foundArc.vector0;
-
-            zAxis.Normalize();
-            xAxis.Normalize();
-
             PK_PLANE_sf_t plane;
 
-            plane.basis_set.location.coord[0] = foundArc.center.x;
-            plane.basis_set.location.coord[1] = foundArc.center.y;
-            plane.basis_set.location.coord[2] = foundArc.center.z;
+            if (!data.GetNewSurfaceForResultFace(plane, resultFaces[iResult], bodyToCurveTrans, curveToBodyTrans))
+                continue;
 
-            plane.basis_set.axis.coord[0] = zAxis.x;
-            plane.basis_set.axis.coord[1] = zAxis.y;
-            plane.basis_set.axis.coord[2] = zAxis.z;
-
-            plane.basis_set.ref_direction.coord[0] = xAxis.x;
-            plane.basis_set.ref_direction.coord[1] = xAxis.y;
-            plane.basis_set.ref_direction.coord[2] = xAxis.z;
-
-            PK_PLANE_t   planeTag;
+            PK_PLANE_t planeTag;
 
             if (SUCCESS != PK_PLANE_create(&plane, &planeTag))
                 continue;
@@ -3696,22 +3737,34 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
     memset(&tracking, 0, sizeof(tracking));
     memset(&results, 0, sizeof(results));
 
-    PK_MARK_t   markTag = PK_ENTITY_null;
-    
-    PK_MARK_create(&markTag);
-
     BentleyStatus status = (SUCCESS == PK_FACE_replace_surfs_3((int) replaceFaces.size(), &replaceFaces.front(), &replaceSurfs.front(), &replaceSenses.front(), 1.0e-5, &options, &tracking, &results) && PK_local_status_ok_c == results.status) ? SUCCESS : ERROR;
 
     PK_TOPOL_local_r_f(&results);
     PK_TOPOL_track_r_f(&tracking);
     
     if (SUCCESS != status)
+        PK_ENTITY_delete((int) replaceSurfs.size(), &replaceSurfs.front());
+
+    return status;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& vertices, bvector<Transform> const& transforms, StepFacesOption addStep)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_MARK_t   markTag = PK_ENTITY_null;
+    
+    PK_MARK_create(&markTag);
+
+    BentleyStatus status = transformVertices(targetEntity, vertices, transforms);
+
+    if (SUCCESS != status)
         PK_MARK_goto(markTag);
 
     PK_MARK_delete(markTag);
-
-    if (SUCCESS != status)
-        PK_ENTITY_delete((int) replaceSurfs.size(), &replaceSurfs.front());
 
     return status;
 #else
