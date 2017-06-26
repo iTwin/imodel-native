@@ -1964,6 +1964,8 @@ struct KindOfQuantity : NonCopyableClass
         ECOBJECTS_EXPORT bool AddPresentationUnit(Formatting::FormatUnitSet value);
         //! Removes the specified presentation Unit from this KindOfQuantity
         ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSet value);
+        //! Removes all presentation Units from this KindOfQuantity
+        void RemoveAllPresentationUnits() {m_presentationFUS.clear();}
         //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
         bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const { return m_presentationFUS; }
         //! Returns true if one or more presentation units exist

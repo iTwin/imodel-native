@@ -17,7 +17,7 @@ struct KindOfQuantityTest : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, Test)
+TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     {
     ECSchemaPtr schema;
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
@@ -56,6 +56,39 @@ TEST_F(KindOfQuantityTest, Test)
     EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName());
     EXPECT_STREQ("MILLIINCH", presUnitList.at(1).GetUnit()->GetName());
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityTest, RemoveAllPresentationUnits)
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+
+    
+    KindOfQuantityP kindOfQuantity;
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDescription("Kind of a Description here"));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDisplayLabel("best quantity of all times"));
+    EXPECT_TRUE(kindOfQuantity->SetPersistenceUnit("CM"));
+    kindOfQuantity->SetRelativeError(10e-3);
+    
+    EXPECT_EQ(0, kindOfQuantity->GetPresentationUnitList().size());
+
+    EXPECT_TRUE(kindOfQuantity->SetDefaultPresentationUnit("FT"));
+    EXPECT_EQ(1, kindOfQuantity->GetPresentationUnitList().size());
+    kindOfQuantity->RemoveAllPresentationUnits();
+    EXPECT_EQ(0, kindOfQuantity->GetPresentationUnitList().size());
+
+    EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("IN"));
+    EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("MILLIINCH"));
+    EXPECT_EQ(2, kindOfQuantity->GetPresentationUnitList().size());
+
+    kindOfQuantity->RemoveAllPresentationUnits();
+    EXPECT_EQ(0, kindOfQuantity->GetPresentationUnitList().size());
     }
 
 //---------------------------------------------------------------------------------------
