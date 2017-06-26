@@ -60,22 +60,22 @@ void TestsHost::SetupTestEnvironment()
     BeFileName::CreateNewDirectory(tempDir);
     }
 
-static BeFileName getSqlangFile ()
+static BeFileName getSqlangFile()
     {
-    BeFileName wsClientSqlangFile = s_pathProvider->GetAssetsRootDirectory ();
-    wsClientSqlangFile.AppendToPath (L"sqlang\\platform\\WSClient_test.sqlang.db3");
-
-    return wsClientSqlangFile;
+    BeFileName testsSqlangFile = s_pathProvider->GetAssetsRootDirectory();
+    testsSqlangFile.AppendToPath(L"sqlang\\WSClient_test.sqlang.db3");
+    return testsSqlangFile;
     }
 
 void TestsHost::InitLibraries()
     {
-    CachingDataSource::Initialize (s_pathProvider->GetTemporaryDirectory ());
+    HttpClient::Initialize(s_pathProvider->GetAssetsRootDirectory());
+    CachingDataSource::Initialize(s_pathProvider->GetAssetsRootDirectory());
     BeSQLiteLib::Initialize(s_pathProvider->GetTemporaryDirectory());
     BeSQLite::EC::ECDb::Initialize(s_pathProvider->GetTemporaryDirectory(), &s_pathProvider->GetAssetsRootDirectory());
-    
-    L10N::SqlangFiles sqlangFiles (getSqlangFile ());
-    BeSQLite::L10N::Initialize (sqlangFiles);
+
+    L10N::SqlangFiles sqlangFiles(getSqlangFile());
+    BeSQLite::L10N::Initialize(sqlangFiles);
     }
 
 void TestsHost::InitLogging(int logLevel)
@@ -140,7 +140,7 @@ void TestsHost::_GetTempDir(BeFileName& path)
     path = s_pathProvider->GetTemporaryDirectory();
     }
 
-void TestsHost::_GetFrameworkSqlangFiles (BeFileName& path)
+void TestsHost::_GetFrameworkSqlangFiles(BeFileName& path)
     {
-    path = getSqlangFile ();
+    path = getSqlangFile();
     }
