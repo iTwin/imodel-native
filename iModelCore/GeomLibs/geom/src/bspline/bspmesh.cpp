@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspmesh.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1642,10 +1642,10 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
                     *wVDtr = 0, *rowVWDtr = 0, tmpVWgt = 0.0, uDelta, vDelta;
     DPoint2d         uv;
     DPoint3d        rowPoles[MAX_ORDER], rowUPoDiff[MAX_ORDER], rowVPoDiff[MAX_ORDER],
-                    rowUParPoles[MAX_ORDER], rowVParPoles[MAX_ORDER], dPdU, dPdV,
+                    rowUParPoles[MAX_ORDER], rowVParPoles[MAX_ORDER],
                     *poleP,  *rowPtr, *rowUPtr, *rowUPDtr,
                     *pUDtr, *rowVPtr, *pVDtr, *rowVPDtr;
-
+    DVec3d dPdU, dPdV;
     rational = (0 != patchBezP->rational);
     uOrder = patchBezP->uParams.order;
     vOrder = patchBezP->vParams.order;
@@ -1682,7 +1682,7 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
             }
 
         /* Evaluate the column to get the point on the surface */
-        DPoint3d xyz;
+        DVec3d xyz;
         double   weight = 1.0;
         bspmesh_hornerSchemeBezier(&xyz, rational ? &weight : NULL,
                                    rowPoles, rational ? rowWgts : NULL, vOrder, uv.y);
@@ -1809,9 +1809,9 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
 
             DVec3d normal;
             if (reverseNormal)
-                bsiDPoint3d_crossProduct (&normal, &dPdV, &dPdU);
+                normal.CrossProduct (dPdV, dPdU);
             else
-                bsiDPoint3d_crossProduct (&normal, &dPdU, &dPdV);
+                normal.CrossProduct (dPdU, dPdV);
 
             bsiDPoint3d_normalizeInPlace (&normal);
             normals.push_back (normal);

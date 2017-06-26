@@ -63,6 +63,7 @@ typedef struct strokeargs
 
 
 /*---------------------------------------------------------------------------------**//**
+// edl june 2017 no callers in geomlibs.
 * @bsimethod                                                    Lu.Han          02/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public GEOMDLLIMPEXP  int      mdlBspline_setInterpolationTangents

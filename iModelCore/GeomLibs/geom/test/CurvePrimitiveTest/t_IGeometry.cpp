@@ -681,3 +681,39 @@ TEST(FlatBuffer,CurvePrimitiveId)
             }
         }
     }
+
+
+TEST(FlatBuffer,CurvePrimitiveIdInSolidPrimitive)
+    {
+    for (auto attachId : bvector<bool> {false, true})
+        {
+        uint32_t myIndex = 322;
+        auto cp0 = ICurvePrimitive::CreateLineString (bvector<DPoint3d>{
+                DPoint3d::From (1,2,3),
+                DPoint3d::From (4,2,5),
+                DPoint3d::From (1,0,1)
+                });
+        if (attachId)
+            {
+            auto id = CurvePrimitiveId::Create (
+                    CurvePrimitiveId::Type::ConceptStationAlignmentIndex,
+                    (void*)&myIndex, sizeof (myIndex)
+                    );
+            if (id.IsValid ())
+                {
+                bvector<uint8_t> myBytes {1,2,3,0};
+                id->Store (myBytes);
+                cp0->SetId (id.get ());
+                }
+            }
+        CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+        cv->push_back (cp0);
+        DgnExtrusionDetail extrusionDetail (cv, DVec3d::From (0,0,2), true);
+        auto sp0 = ISolidPrimitive::CreateDgnExtrusion (extrusionDetail);
+        auto g0 = IGeometry::Create (sp0);
+        bvector<Byte> buffer;
+        BentleyGeometryFlatBuffer::GeometryToBytes (*g0, buffer);
+        IGeometryPtr g1 = BentleyGeometryFlatBuffer::BytesToGeometry (buffer);
+        Check::True (g0->IsSameStructureAndGeometry (*g1));
+        }
+    }

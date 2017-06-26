@@ -1466,4 +1466,70 @@ TEST(DPoint3d,FromIntersectUnitPerpendicularsXY)
     Check::False (failureCase.IsValid (), "Parallel lines do not intersect");
     Check::Near (basePoint, failureCase, "Parallel case returns base point");
     }
+template <typename TScalar, typename TPoint>
+void TestAlmostEqual (bvector<TPoint> &stroke0)
+    {
+    auto stroke1 = stroke0;
+    double fluff = 0.0001;      // big numbers to deal with float !!!
+    double tol = fluff * 0.1;
+    Check::True (TPoint::AlmostEqual (stroke0, stroke1, tol));
+    Check::True (TPoint::AlmostEqualXY (stroke0, stroke1, tol));
+    stroke1.pop_back();
+    Check::False (TPoint::AlmostEqual (stroke0, stroke1, tol));
+    Check::False (TPoint::AlmostEqual (stroke1, stroke0, tol));
+
+    Check::False (TPoint::AlmostEqualXY (stroke0, stroke1, tol));
+    Check::False (TPoint::AlmostEqualXY (stroke1, stroke0, tol));
+
+
+    stroke0.pop_back ();
+    Check::True (TPoint::AlmostEqual (stroke0, stroke1, tol));
+    Check::True (TPoint::AlmostEqualXY (stroke0, stroke1, tol));
+    TScalar a = (TScalar)(fluff * 0.5);
+    for (size_t i = 0; i < stroke0.size (); i++)
+        {
+        auto save = stroke0[i];
+
+        stroke0[i].x += a;
+        Check::False (TPoint::AlmostEqual (stroke0, stroke1, tol));
+        Check::True (TPoint::AlmostEqual (stroke0, stroke1, fluff));
+
+        Check::False (TPoint::AlmostEqualXY (stroke0, stroke1, tol));
+        Check::True (TPoint::AlmostEqualXY (stroke0, stroke1, fluff));
+
+        stroke0[i] = save;
+
+        stroke0[i].y += a;
+        Check::False (TPoint::AlmostEqual (stroke0, stroke1, tol));
+        Check::True (TPoint::AlmostEqual (stroke0, stroke1, fluff));
+
+        Check::False (TPoint::AlmostEqualXY (stroke0, stroke1, tol));
+        Check::True (TPoint::AlmostEqualXY (stroke0, stroke1, fluff));
+        stroke0[i] = save;
+
+        stroke0[i].z += a;
+        Check::False (TPoint::AlmostEqual (stroke0, stroke1, tol));
+        Check::True (TPoint::AlmostEqual (stroke0, stroke1, fluff));
+
+        Check::True (TPoint::AlmostEqualXY (stroke0, stroke1, tol));
+        Check::True (TPoint::AlmostEqualXY (stroke0, stroke1, fluff));
+
+        stroke0[i] = save;
+        }
+    }
+
+
+TEST(DPoint3d,AlmostEqualBvector)
+    {
+    auto arc = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,2,3), 2.5);
+    size_t numPoint = 5;
+    DPoint3dDoubleArrays stroke0 (arc, numPoint);
+    bvector<FPoint3d> stroke1;
+    for (auto xyz : stroke0.m_xyz)
+        stroke1.push_back (FPoint3d::From (xyz));
+
+
+    TestAlmostEqual <double, DPoint3d> (stroke0.m_xyz);
+    TestAlmostEqual <float, FPoint3d>(stroke1);
+    }
 
