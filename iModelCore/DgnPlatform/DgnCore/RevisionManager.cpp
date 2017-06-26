@@ -825,6 +825,8 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
     BeAssert(elemClass != nullptr);
     ECClassCP modelClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
     BeAssert(modelClass != nullptr);
+    ECClassCP codeSpecClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_CodeSpec);
+    BeAssert(codeSpecClass != nullptr);
 
     RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
     ChangeIterator changeIter(dgndb, changeStream);
@@ -863,7 +865,7 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
         }
 
-    // Any models directly changed?
+    // Any models or CodeSpecs directly changed?
     for (ChangeIterator::RowEntry const& entry : changeIter)
         {
         if (!entry.IsMapped())
@@ -872,10 +874,13 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         ECClassCP primaryClass = entry.GetPrimaryClass();
         BeAssert(primaryClass != nullptr);
 
-        if (!entry.IsPrimaryTable() || !primaryClass->Is(modelClass))
+        if (!entry.IsPrimaryTable())
             continue;
 
-        lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        if (primaryClass->Is(modelClass))
+            lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        else if (primaryClass->Is(codeSpecClass))
+            lockRequest.InsertCodeSpecsLock(dgndb);
         }
 
     // Anything changed at all?

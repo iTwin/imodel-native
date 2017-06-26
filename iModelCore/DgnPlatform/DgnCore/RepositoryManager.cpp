@@ -1813,6 +1813,7 @@ bool RepositoryJson::LockableTypeFromUInt(LockableType& type, unsigned int value
         case LockableType::Model:
         case LockableType::Element:
         case LockableType::Schemas:
+        case LockableType::CodeSpecs:
             type = static_cast<LockableType>(value);
             return true;
         }

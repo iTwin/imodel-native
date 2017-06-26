@@ -134,6 +134,12 @@ DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
     if (QueryCodeSpecId(codeSpec.GetName().c_str()).IsValid())
         return DgnDbStatus::DuplicateName;
 
+    if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().LockCodeSpecs().Result())
+        {
+        BeAssert(false && "CodeSpecs lock not held");
+        return DgnDbStatus::LockNotHeld;
+        }
+
     CodeSpecId newId;
     auto status = m_dgndb.GetServerIssuedId(newId, BIS_TABLE(BIS_CLASS_CodeSpec), "Id");
     if (BE_SQLITE_OK != status)

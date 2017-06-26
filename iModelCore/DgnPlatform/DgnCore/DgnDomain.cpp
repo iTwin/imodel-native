@@ -687,6 +687,12 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
         return SchemaStatus::SchemaLockFailed;
         }
 
+    if (RepositoryStatus::Success != dgndb.BriefcaseManager().LockCodeSpecs().Result()) // the best practice is to import CodeSpecs via _OnSchemaImported, so acquire that lock now to prevent problems later
+        {
+        BeAssert(false && "Unable to obtain the CodeSpecs lock");
+        return SchemaStatus::CouldNotAcquireLocksOrCodes;
+        }
+
     if (LOG.isSeverityEnabled(SEVERITY::LOG_DEBUG))
         {
         LOG.debug("Schemas to be imported:");

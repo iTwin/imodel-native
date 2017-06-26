@@ -2420,6 +2420,43 @@ TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DoubleBriefcaseTest, CodeSpecsLock)
+    {
+    SetupDbs();
+
+    // briefcase A
+        {
+        DgnDbR dbA = *m_dbA;
+        CodeSpecPtr codeSpecA1 = CodeSpec::Create(dbA, "A1", CodeScopeSpec::CreateModelScope());
+        CodeSpecPtr codeSpecA2 = CodeSpec::Create(dbA, "A2", CodeScopeSpec::CreateModelScope());
+        EXPECT_TRUE(codeSpecA1.IsValid());
+        EXPECT_TRUE(codeSpecA2.IsValid());
+
+        EXPECT_EQ(DgnDbStatus::Success, codeSpecA1->Insert());
+
+        dbA.BriefcaseManager().StartBulkOperation();
+        EXPECT_EQ(DgnDbStatus::Success, codeSpecA2->Insert());
+        dbA.SaveChanges();
+
+        EXPECT_TRUE(dbA.CodeSpecs().GetCodeSpec(codeSpecA1->GetName().c_str()).IsValid());
+        EXPECT_TRUE(dbA.CodeSpecs().GetCodeSpec(codeSpecA2->GetName().c_str()).IsValid());
+        }
+
+    // briefcase B
+        {
+        DgnDbR dbB = *m_dbB;
+        CodeSpecPtr codeSpecB = CodeSpec::Create(dbB, "B", CodeScopeSpec::CreateModelScope());
+        EXPECT_TRUE(codeSpecB.IsValid());
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus insertStatus = codeSpecB->Insert();
+        BeTest::SetFailOnAssert(true);
+        EXPECT_EQ(DgnDbStatus::LockNotHeld, insertStatus);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * For queries which need to be fast and not necessarily 100% up to date with server,
 * IBriefcaseManager supplies a FastQuery option which queries a local copy of locks+codes
 * known to be unavailable to this briefcase, either because another briefcase owns them
