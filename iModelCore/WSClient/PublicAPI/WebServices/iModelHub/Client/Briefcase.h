@@ -63,6 +63,7 @@ public:
 
     //! Gets used iModelConnection
     //! @returns iModelConnection
+    //! @private
     iModelConnectionPtr GetiModelConnectionPtr() const {return m_imodelConnection;}
 
     //! Pull incomming ChangeSets.

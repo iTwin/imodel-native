@@ -41,7 +41,7 @@ enum class InitializationState
 struct FileInfo : RefCountedBase
 {
 friend struct iModelConnection;
-friend struct iModelConnectionImpl;
+friend struct Client;
 
 private:
     int32_t     m_index;
@@ -57,28 +57,26 @@ private:
     FileAccessKeyPtr m_fileAccessKey;
     bool        m_containsFileAccessKey;
 
+    FileInfo() : m_index(-1), m_fileSize(0), m_areFileDetailsAvailable(false) {}
     FileInfo(BeSQLite::BeGuid fileId) : m_fileId(fileId), m_areFileDetailsAvailable(false), m_index(-1), m_fileSize(0) {}
     IMODELHUBCLIENT_EXPORT FileInfo(Dgn::DgnDbCR db, Utf8StringCR description);
-    IMODELHUBCLIENT_EXPORT FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedChangeSetId,
+    FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedChangeSetId,
         Utf8StringCR description, uint64_t size, Utf8StringCR user, DateTimeCR date);
 
-    IMODELHUBCLIENT_EXPORT static FileInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR instanceId, FileInfoCR fileInfo = FileInfo());
+    static FileInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR instanceId, FileInfoCR fileInfo = FileInfo());
 
     bool GetContainsFileAccessKey() const {return m_containsFileAccessKey;}
     FileAccessKeyPtr GetFileAccessKey() const {return m_fileAccessKey;}
     void SetFileAccessKey(FileAccessKeyPtr fileAccessKey) {m_containsFileAccessKey = true; m_fileAccessKey = fileAccessKey;}
 
-public:
-    FileInfo() : m_index(-1), m_fileSize(0), m_areFileDetailsAvailable(false) {}
-
-    static FileInfoPtr Create(BeSQLite::BeGuid fileId) {return FileInfoPtr(new FileInfo(fileId));}
+    static FileInfoPtr Create(BeSQLite::BeGuid fileId) { return FileInfoPtr(new FileInfo(fileId)); }
     //! DEPRECATED: Use Parsing from Instance
-    IMODELHUBCLIENT_EXPORT static FileInfoPtr Parse(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
-    IMODELHUBCLIENT_EXPORT static FileInfoPtr Parse(WebServices::WSObjectsReader::Instance instance, FileInfoCR fileInfo = FileInfo());
-    IMODELHUBCLIENT_EXPORT void ToPropertiesJson(JsonValueR json) const;
-    IMODELHUBCLIENT_EXPORT WebServices::ObjectId GetObjectId() const;
-    bool AreFileDetailsAvailable() const {return m_areFileDetailsAvailable;}
-
+    static FileInfoPtr Parse(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
+    static FileInfoPtr Parse(WebServices::WSObjectsReader::Instance instance, FileInfoCR fileInfo = FileInfo());
+    void ToPropertiesJson(JsonValueR json) const;
+    WebServices::ObjectId GetObjectId() const;
+    bool AreFileDetailsAvailable() const { return m_areFileDetailsAvailable; }
+public:
     static FileInfoPtr Create(Dgn::DgnDbCR db, Utf8StringCR description) {return FileInfoPtr(new FileInfo(db, description));}
     int32_t GetIndex() const {return m_index;} //!< Index of the file.
     Utf8StringCR GetFileName() const {return m_fileName;} //!< Name of the file.
@@ -94,6 +92,7 @@ public:
 //=======================================================================================
 //! File access key info for Azure blobs.
 //@bsiclass                                   Algirdas.Mikoliunas             02/2017
+//! @private
 //=======================================================================================
 struct FileAccessKey : RefCountedBase
 {
@@ -103,7 +102,6 @@ private:
     DateTime    m_createDate;
 
     friend struct iModelConnection;
-    friend struct iModelConnectionImpl;
 
     static Utf8String GetProperty(RapidJsonValueCR properties, Utf8StringCR member);
 

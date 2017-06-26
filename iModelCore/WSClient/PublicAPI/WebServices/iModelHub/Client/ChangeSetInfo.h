@@ -35,6 +35,8 @@ public:
         };
 
 private:
+    friend struct iModelConnection;
+    friend struct PredownloadManager;
     Utf8String m_id;
     Utf8String m_parentChangeSetId;
     Utf8String m_dbGuid;
@@ -45,28 +47,24 @@ private:
     DateTime   m_pushDate;
     BeSQLite::BeBriefcaseId m_briefcaseId;
     ContainingChanges       m_containingChanges;
+    FileAccessKeyPtr        m_fileAccessKey;
+    bool                    m_containsFileAccessKey;
 
-    friend struct iModelConnectionImpl;
-    friend struct iModelConnection;
-    friend struct PredownloadManager;
-    FileAccessKeyPtr m_fileAccessKey;
-    bool                        m_containsFileAccessKey;
-
-    bool GetContainsFileAccessKey() const {return m_containsFileAccessKey;}
-    FileAccessKeyPtr GetFileAccessKey() const {return m_fileAccessKey;}
-    void SetFileAccessKey(FileAccessKeyPtr fileAccessKey) {m_fileAccessKey = fileAccessKey; m_containsFileAccessKey = true;}
-
-public:
     ChangeSetInfo(Utf8String id, Utf8String parentChangeSetId, Utf8String dbGuid, int64_t index,
-        Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, ContainingChanges containingChanges) 
-        : m_id(id), m_parentChangeSetId(parentChangeSetId), m_dbGuid(dbGuid), m_index(index), m_description(description), m_fileSize(fileSize), 
+        Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, ContainingChanges containingChanges)
+        : m_id(id), m_parentChangeSetId(parentChangeSetId), m_dbGuid(dbGuid), m_index(index), m_description(description), m_fileSize(fileSize),
         m_briefcaseId(briefcaseId), m_userCreated(userCreated), m_pushDate(pushDate), m_containingChanges(containingChanges) {}
 
-    bool operator==(ChangeSetInfoCR changeSet) const {return changeSet.GetId() == GetId();}
+    bool GetContainsFileAccessKey() const { return m_containsFileAccessKey; }
+    FileAccessKeyPtr GetFileAccessKey() const { return m_fileAccessKey; }
+    void SetFileAccessKey(FileAccessKeyPtr fileAccessKey) { m_fileAccessKey = fileAccessKey; m_containsFileAccessKey = true; }
+
+    bool operator==(ChangeSetInfoCR changeSet) const { return changeSet.GetId() == GetId(); }
+    static ChangeSetInfoPtr ParseRapidJson(RapidJsonValueCR properties);
     static ChangeSetInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
     //! DEPRECATED: Use Parse from Instance
     static ChangeSetInfoPtr Parse(JsonValueCR json);
-
+public:
     Utf8String GetId() const {return m_id;}
     Utf8String GetParentChangeSetId() const {return m_parentChangeSetId;}
     Utf8String GetDbGuid() const {return m_dbGuid;}

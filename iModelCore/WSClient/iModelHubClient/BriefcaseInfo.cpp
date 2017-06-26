@@ -24,13 +24,10 @@ bool GuidFromJson(BeGuid& guid, RapidJsonValueCR json)
         return false;
     }
 
-// avoid collision of a static function with the same name in another CPP file in this compiland...
-BEGIN_UNNAMED_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-BriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
+BriefcaseInfoPtr BriefcaseInfo::ParseRapidJson(RapidJsonValueCR json)
     {
     BeBriefcaseId id;
     id = BeBriefcaseId(json[ServerSchema::Property::BriefcaseId].GetUint());
@@ -41,8 +38,6 @@ BriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
 
     return new BriefcaseInfo(id, userOwned, fileId, isReadOnly);
     }
-
-END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
