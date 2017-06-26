@@ -164,9 +164,9 @@ Render::QPoint3dList Geometry::CreateParams::QuantizeNormals() const
 Render::TriMeshArgs Geometry::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
     {
     TriMeshArgs trimesh;
-    trimesh.m_numIndices = (int32_t) m_indices.size();
-    trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
-    trimesh.m_numPoints = (int32_t) m_points.size();
+    trimesh.m_numIndices = m_indices.size();
+    trimesh.m_vertIndex = (uint32_t const*) (m_indices.empty() ? nullptr : &m_indices.front());
+    trimesh.m_numPoints = (uint32_t) m_points.size();
     trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
     trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
     trimesh.m_textureUV = textureUV;
