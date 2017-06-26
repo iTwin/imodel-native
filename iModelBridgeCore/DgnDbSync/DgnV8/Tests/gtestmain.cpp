@@ -30,7 +30,19 @@ struct BeGTestHost : RefCounted<BeTest::Host>
         m_programPath.BeGetFullPathName ();
         m_programName = BeFileName::GetFileNameWithoutExtension (programFullPath.c_str());
         }
-
+    void GetRunRoot (char const* argv0, BeFileName& path)
+        {
+        WString programFullPath = WString(argv0, true);
+        BeFileName programPathCurr = BeFileName (BeFileName::DevAndDir, programFullPath.c_str());
+        if ( programPathCurr.IsEmpty() ) // We get progdir from argv[0] , if we execute it from CWD argv[0] is blank. in which case BeFileName is not able to resolve full path. So creating path ".\" 
+            {
+            programPathCurr.AppendString(L".");
+            programPathCurr.AppendSeparator();
+            }
+        programPathCurr.BeGetFullPathName ();
+        path = programPathCurr;
+        path.AppendToPath (L"run");
+        }
     virtual void _GetDocumentsRoot (BeFileName& path) override              {path = m_programPath;}
     virtual void _GetDgnPlatformAssetsDirectory (BeFileName& path) override {path = m_programPath;}
     virtual void _GetTempDir(BeFileName& path) override
@@ -295,6 +307,7 @@ extern "C" int main (int argc, char **argv)
 
     auto hostPtr = BeGTestHost::Create(argv[0]);
     
+
     BeTest::Initialize (*hostPtr);
 
     BeTest::SetRunningUnderGtest ();
@@ -331,17 +344,19 @@ extern "C" int main (int argc, char **argv)
     Utf8String pathComparison;
     Utf8String umdhPathJoin;
     Utf8String symbolPath;
+    Utf8String gflagsPathJoin;
     
     if (umdh_Use(argc, argv))
         {
         RUN_ALL_TESTS();
-        
+
+        BeFileName rundirPath;
+        hostPtr->GetRunRoot(argv[0] , rundirPath);
+        WString currentDirectory(rundirPath.GetName());
+
         check = 1;
         //set _NT_SYMBOL_PATH
-        WString currentDirectory;
-        BeFileName::GetCwd(currentDirectory);
         BeFileName pathRun(currentDirectory);
-        pathRun.AppendToPath(L"run");
         if(!BeFileName::DoesPathExist(pathRun))
             ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::CreateNewDirectory(pathRun));
         ASSERT_TRUE(BeFileName::DoesPathExist(pathRun));
@@ -356,7 +371,7 @@ extern "C" int main (int argc, char **argv)
         bvector<Utf8CP> umdhPath2 = {winSdkDir,"Debuggers\\", defArch,"\\umdh.exe" };
         bvector<Utf8CP> gflagsPath2 = {winSdkDir,"Debuggers\\", defArch,"\\gflags.exe" };
         umdhPathJoin =  BeStringUtilities::Join(umdhPath2);
-        Utf8String gflagsPathJoin =  BeStringUtilities::Join(gflagsPath2);
+        gflagsPathJoin =  BeStringUtilities::Join(gflagsPath2);
         
         WString currentDirectoryExe = currentDirectory ;
         currentDirectoryExe.AppendUtf8("\\");
@@ -371,7 +386,7 @@ extern "C" int main (int argc, char **argv)
         //first snapshot
         //if (!BeFileName::DoesPathExist (L"run"))
 
-        CharP log1Name = "\\run\\FirstSnapshot.log";
+        CharP log1Name = "\\FirstSnapshot.log";
         currentDirectory.AppendUtf8(log1Name);
         
         BeStringUtilities::WCharToUtf8(pathSnapshot1, currentDirectory.c_str());
@@ -395,13 +410,13 @@ extern "C" int main (int argc, char **argv)
     if (umdh_Use(argc, argv))
         {
         for (int i = 0; i < 5; i++)
-            {
             RUN_ALL_TESTS();
-            }
-        WString currentDirectory2;
-        BeFileName::GetCwd(currentDirectory2);
+
+        BeFileName rundirPath;
+        hostPtr->GetRunRoot(argv[0] , rundirPath);
+        WString currentDirectory2(rundirPath.GetName());
         WString currentDirectory3 = currentDirectory2;
-        CharP log2Name = "\\run\\SecondSnapshot.log";
+        CharP log2Name = "\\SecondSnapshot.log";
         CharP logComparisonName = "";
 
         CharCP testName = getTestName(no, args);
@@ -410,12 +425,12 @@ extern "C" int main (int argc, char **argv)
 
         if (utf8Str.Equals(""))
             {
-            logComparisonName = "\\run\\Comparison.log";
+            logComparisonName = "\\Comparison.log";
             currentDirectory3.AppendUtf8(logComparisonName);
             }
         else
             {
-            sprintf_s(pathCompComm, sizeof(pathCompComm), "\\run\\%s.log", testName);
+            sprintf_s(pathCompComm, sizeof(pathCompComm), "\\%s.log", testName);
             currentDirectory3.AppendUtf8(pathCompComm);
             }
 
@@ -440,7 +455,12 @@ extern "C" int main (int argc, char **argv)
         spawnRet = SpawnProcessWin32(strCommand, retCode);
         
         printf(strCommand, "\n");
-        
+
+        bvector<Utf8CP> gflagsDisable = { gflagsPathJoin.c_str(), " -i ", gflagsSet.c_str(), " -ust" };
+        Utf8String disGflags = BeStringUtilities::Join(gflagsDisable);
+
+        sprintf_s(strCommand, sizeof(strCommand), disGflags.c_str());
+        spawnRet = SpawnProcessWin32(strCommand, retCode);
         }
 #endif
 

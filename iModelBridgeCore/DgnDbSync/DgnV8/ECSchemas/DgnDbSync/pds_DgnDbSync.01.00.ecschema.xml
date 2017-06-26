@@ -51,5 +51,15 @@
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="WIREWAY_OL" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WIREWAY_OL" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
 </ECSchema>
 
