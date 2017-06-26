@@ -20,6 +20,7 @@
     <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke">
       <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
       <SubPart PartName="ConstraintModel"/>
+      <RequiredRepository>DgnDomains-ConstraintSystem</RequiredRepository>
       <Bindings>
         <Libs>Delivery/$(libprefix)GridElements$(libext)</Libs>
         <Assemblies>Delivery/$(shlibprefix)GridElements$(shlibext)</Assemblies>
