@@ -13,10 +13,10 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 
 #define REVISION_LZMA_MARKER    "RevLzma"
-#define CURRENT_REV_END_TXN_ID  "CurrentRevisionEndTxnId"
-#define INITIAL_PARENT_REV_ID   "InitialParentRevisionId"
-#define PARENT_REV_ID           "ParentRevisionId"
-#define REVERSED_REV_ID         "ReversedRevisionId"
+#define CURRENT_REV_END_TXN_ID  "CurrentChangeSetEndTxnId"
+#define INITIAL_PARENT_REV_ID   "InitialParentChangeSetId"
+#define PARENT_REV_ID           "ParentChangeSetId"
+#define REVERSED_REV_ID         "ReversedChangeSetId"
 #define CONTAINS_SCHEMA_CHANGES "ContainsSchemaChanges"
 #define REVISION_FORMAT_VERSION  0x10
 #define JSON_PROP_DDL                   "DDL"
