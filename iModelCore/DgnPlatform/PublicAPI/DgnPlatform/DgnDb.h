@@ -13,6 +13,7 @@
 #include "MemoryManager.h"
 #include "RepositoryManager.h"
 #include "UpdatePlan.h"
+#include "RealityDataCache.h"
 #include <Bentley/BeFileName.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 
@@ -199,6 +200,7 @@ protected:
     DgnSearchableText m_searchableText;
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
+    mutable RealityData::CachePtr m_elementTileCache;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
@@ -284,6 +286,7 @@ public:
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnGeoLocation& GeoLocation() const {return const_cast<DgnGeoLocation&>(m_geoLocation);}  //!< The geolocation information for this DgnDb
+    RealityData::CachePtr ElementTileCache() const;                                          //! < The element tile cache for this DgnDb
     DgnLineStyles& LineStyles() const {return const_cast<DgnLineStyles&>(*m_lineStyles);}//!< The line styles for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts);}                    //!< The fonts for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.

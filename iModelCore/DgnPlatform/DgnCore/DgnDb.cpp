@@ -52,6 +52,25 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RealityData::CachePtr DgnDb::ElementTileCache() const
+    {
+    if (!m_elementTileCache.IsValid())
+        {
+        BeFileName  cacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+
+        cacheName.AppendToPath(GetFileName().GetBaseName());
+        cacheName.AppendExtension(L"TileCache");
+
+        m_elementTileCache = new TileTree::TileCache(1024*1024*1024);
+        if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
+            m_elementTileCache = nullptr;
+        }
+    return m_elementTileCache;
+    }
+
 //--------------------------------------------------------------------------------------
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016

@@ -46,8 +46,8 @@ struct TileIO
 
 
     // DgnTiles are tiles with GLTF meshes - but optimized for caching RenderPrimitives (storing feature table directly etc.)
-    static BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
-    static ReadStatus ReadDgnTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem);
+    static BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
+    static ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem);
 };  
 
 

@@ -27,6 +27,13 @@ BEGIN_UNNAMED_NAMESPACE
 
 struct TileContext;
 
+#ifdef TILECACHE_DEBUG
+#define TILECACHE_PRINTF THREADLOG.debugv
+#else
+#define TILECACHE_PRINTF(...)
+
+#endif
+
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
 // The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
@@ -893,7 +900,7 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 
 
 
-static bool s_useRealityCache = false;      // Still WIP.
+static bool s_useRealityCache = true;      // Still WIP.
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -918,8 +925,11 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
         return ERROR;
         }
 
+    StopWatch   stopWatch(true);
+    TILECACHE_PRINTF("Loading %s From Model...", tile.GetDebugId().c_str());
     LoadContext loadContext(this);
     geometry = tile.GenerateGeometry(loadContext);
+    TILECACHE_PRINTF(" Loaded %d Meshes to %s in %f seconds", geometry.Meshes().size(), tile.GetDebugId().c_str(), m_loadTime = stopWatch.GetCurrentSeconds());
 
     return loadContext.WasAborted() ? ERROR : SUCCESS;
     }
@@ -929,20 +939,32 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::_LoadTile() 
     { 
-    TileR   tile = static_cast<TileR> (*m_tile);
-    RootR   root = tile.GetElementRoot();
-    Render::Primitives::GeometryCollection geometry;
-
+    TileR                                   tile = static_cast<TileR> (*m_tile);
+    RootR                                   root = tile.GetElementRoot();
+    Render::Primitives::GeometryCollection  geometry;
+    ElementAlignedBox3d                     contentRange;
+#ifdef TILECACHE_DEBUG
+    StopWatch                               stopWatch(true);
+    double                                  cacheReadSeconds = 0.0;
+#endif
     if (!s_useRealityCache)
         {
         if (SUCCESS != LoadGeometryFromModel(geometry))
-            return ERROR;
+            return ERROR;                                            
         }
     else
         {
-        if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
+        if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
+            {
+            BeAssert(false);
             return ERROR;
+            }
+#ifdef TILECACHE_DEBUG
+        cacheReadSeconds = stopWatch.GetCurrentSeconds();
+#endif
         }
+
+    tile.SetContentRange(contentRange);
 
     // No point subdividing empty nodes - improves performance if we don't
     // Also not much point subdividing nodes containing no curved geometry
@@ -985,13 +1007,14 @@ BentleyStatus Loader::_LoadTile()
         if (graphic.IsValid())
             tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
         }
+    TILECACHE_PRINTF(" Loaded: %d Meshes from %s. Read: %f, Graphic: %f, Creation: %f. Create/Read Ratio: %f", geometry.Meshes().size(), tile.GetDebugId().c_str(), cacheReadSeconds, stopWatch.GetCurrentSeconds() - cacheReadSeconds, m_loadTime, m_loadTime / cacheReadSeconds);
 
     tile.SetIsReady();
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
+* @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::DoGetFromSource()
     {
@@ -1005,9 +1028,17 @@ BentleyStatus Loader::DoGetFromSource()
     if (SUCCESS != LoadGeometryFromModel(geometry))
         return ERROR;
 
+
+    ByteStream      uncompressed;
+    if (SUCCESS != TileTree::TileIO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter()))    // TBD -- Avoid round trip through m_tileBytes when loading from elements.
+        return ERROR;
+
+    
+    SnappyToBlob    toBlob;
+
     m_saveToCache = true;
-        
-    return TileTree::TileIO::WriteDgnTile (m_tileBytes, geometry, *root.GetModel(), tile.GetCenter());     // TBD -- Avoid round trip through m_tileBytes when loading from elements.
+
+    return SUCCESS;
     }
 
 
@@ -1019,7 +1050,8 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
-    CreateCache(model.GetName().c_str(), 1024*1024*1024, false); // 1 GB
+
+    m_cache = model.GetDgnDb().ElementTileCache();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1420,7 +1452,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::_GetTileCacheKey() const
     {
-    return Utf8PrintfString("%d/%d/%d/%d:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
+    return m_root._GetName() + Utf8PrintfString("%d/%d/%d/%d:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1744,7 +1776,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     uint32_t                fillColor = displayParams.GetFillColor();
 
     
-    BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
+//  BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
     builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {

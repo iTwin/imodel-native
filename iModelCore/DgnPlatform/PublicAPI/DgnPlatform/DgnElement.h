@@ -3439,6 +3439,8 @@ public:
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
+
+    DGNPLATFORM_EXPORT DateTime GetLastModifiedTime() const;
 };
 
 //=======================================================================================

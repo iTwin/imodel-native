@@ -35,7 +35,7 @@ DEFINE_REF_COUNTED_PTR(GeomPartBuilder);
 typedef bvector<TilePtr>    TileList;
 typedef bvector<TileP>      TilePList;
 
-#define REALITY_CACHE_SUPPORT
+//#define TILECACHE_DEBUG
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
@@ -44,16 +44,15 @@ struct Loader : TileTree::TileLoader
 {
     DEFINE_T_SUPER(TileTree::TileLoader);
 
+#ifdef TILECACHE_DEBUG
+    double  m_loadTime = 0.0;
+#endif
+
 private:
     Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
     folly::Future<BentleyStatus> _GetFromSource() override;
     BentleyStatus _LoadTile() override;
-
-#ifndef REALITY_CACHE_SUPPORT
-    folly::Future<BentleyStatus> _ReadFromDb() override { return ERROR; }
-    folly::Future<BentleyStatus> _SaveToDb() override { return SUCCESS; }
-#endif
 
     BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
     BentleyStatus DoGetFromSource();
@@ -248,6 +247,8 @@ public:
     void SetZoomFactor(double zoom) { BeAssert(!IsLeaf()); m_zoomFactor = zoom; m_hasZoomFactor = true; }
     bool HasZoomFactor() const { return m_hasZoomFactor; }
     double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 1.0; }
+    void SetContentRange (ElementAlignedBox3dCR contentRange) { m_contentRange = contentRange; }
+    Utf8String GetDebugId() const { return _GetTileCacheKey(); }
 };
 
 END_ELEMENT_TILETREE_NAMESPACE
