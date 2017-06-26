@@ -99,11 +99,8 @@ struct DbMap final : NonCopyableClass
         BentleyStatus PurgeOrphanTables() const;
         ClassMappingStatus AddClassMap(ClassMapPtr&) const;
         BentleyStatus GetClassMapsFromRelationshipEnd(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
-        
         static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
-
-        BentleyStatus ValidateClassMap(SchemaImportContext& ctx, ClassMapCR classMap) const;
-        BentleyStatus ValidateDbMappings(SchemaImportContext& ctx, bool failOnError) const;
+        BentleyStatus Validate(SchemaImportContext& ctx, bool failOnError) const;
 
     public:
         explicit DbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_lightweightCache(ecdb) {}

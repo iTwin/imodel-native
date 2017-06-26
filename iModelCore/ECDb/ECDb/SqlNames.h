@@ -204,36 +204,4 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 //The SQL returns the issues as JSON string. JSON in a CSV file means that the double quotes must be escaped by preceding
 //them with another double quote
 
-#define SQL_ValidateDbMapping R"sql(SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, 1, 'Multiple ECProperties mapped to same column',
-        'Column: ' || ec_Column.Name || ' Properties: ' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString)
-        FROM ec_PropertyMap
-        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
-        INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
-        INNER JOIN ec_Schema ON ec_Schema.Id=ec_Class.SchemaId
-        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
-        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
-        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
-        WHERE mappedpropertyclass.Id NOT IN (SELECT CA.ContainerId FROM ec_Class C  INNER JOIN ec_Schema S ON S.Id = C.SchemaId  INNER JOIN ec_CustomAttribute CA ON CA.ClassId = C.Id WHERE C.Name ='IsMixin' AND S.Name = 'CoreCustomAttributes') AND 
-        ec_Column.IsVirtual=)sql" SQLVAL_False " AND (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") " \
-        R"sql(GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1
-
-        UNION ALL
-
-        SELECT mappedpropertyschema.Name, mappedpropertyschema.Alias, mappedpropertyclass.Name, ec_Table.Name, 2, 'ECProperty mapped to multiple columns',
-            'Property: ' || ec_PropertyPath.AccessString || ' Columns: ' || GROUP_CONCAT(DISTINCT ec_Column.Name)
-        FROM ec_PropertyMap
-        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
-        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
-        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
-        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
-        WHERE  mappedpropertyclass.Id NOT IN (SELECT CA.ContainerId FROM ec_Class C  INNER JOIN ec_Schema S ON S.Id = C.SchemaId  INNER JOIN ec_CustomAttribute CA ON CA.ClassId = C.Id WHERE C.Name ='IsMixin' AND S.Name = 'CoreCustomAttributes') AND )sql" \
-        " ec_Column.IsVirtual=" SQLVAL_False " AND " \
-        "(ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") AND " \
-        "mappedpropertyschema.Alias<>'" ECSCHEMA_ALIAS_ECDbSystem "' " \
-        "GROUP BY ec_Table.Id, ec_PropertyPath.Id HAVING COUNT(DISTINCT ec_Column.Id) > 1"
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
