@@ -209,6 +209,7 @@ private:
     double                      m_zoomFactor = 1.0;
     bool                        m_hasZoomFactor = false;
     bool                        m_displayable = true;
+    uint64_t                    m_debugId;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
     explicit Tile(Tile const& parent);

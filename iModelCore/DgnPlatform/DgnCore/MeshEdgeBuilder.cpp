@@ -88,9 +88,9 @@ MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const
     // assume that the polyface indices are properly shared, this should be true as a seperate index array is used
     // for Polyfaces.
 
-    for (uint32_t triangleIndex = builderPolyface.m_baseTriangleIndex; triangleIndex < triangles.size(); triangleIndex++)
+    for (uint32_t triangleIndex = builderPolyface.m_baseTriangleIndex; triangleIndex < triangles.Count(); triangleIndex++)
         {
-        auto const&     triangle = triangles[triangleIndex];
+        auto const&     triangle = triangles.GetTriangle(triangleIndex);
         DPoint3d        polyfacePoints[3];
         uint32_t        polyfaceIndices[3];      // Use (unquantized) polyface points to calculate triangle normals.
         bool            indexNotFound = false;
@@ -142,9 +142,9 @@ MeshEdgesBuilder (TriMeshArgsCR args, DRange3dCR tileRange, MeshEdgeCreationOpti
     uint32_t            triangleIndex = 0;
     bool                anyHidden = false;
 
-    for (int32_t i = 0; i < args.m_numIndices; i+= 3, triangleIndex++)
+    for (uint32_t i = 0; i < args.m_numIndices; i+= 3, triangleIndex++)
         {
-        int32_t const* triIndex = args.m_vertIndex + i;
+        uint32_t const* triIndex = args.m_vertIndex + i;
 
         DPoint3d dpts[3] =
             {
@@ -318,7 +318,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options) 
     { 
-    m_currentPolyface = (options.GenerateNoEdges()) ? nullptr : new Polyface (polyface, options, m_mesh->Triangles().size()); 
+    m_currentPolyface = (options.GenerateNoEdges()) ? nullptr : new Polyface (polyface, options, m_mesh->Triangles().Count()); 
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2072,15 +2072,15 @@ ENUM_IS_FLAGS(FillFlags);
 //=======================================================================================
 struct TriMeshArgs
 {
-    int32_t             m_numIndices = 0;
-    int32_t const*      m_vertIndex = nullptr;
-    int32_t             m_numPoints = 0;
+    uint32_t            m_numIndices = 0;
+    uint32_t const*     m_vertIndex = nullptr;
+    uint32_t            m_numPoints = 0;
     QPoint3dCP          m_points= nullptr;
     QPoint3dCP          m_normals= nullptr; // Quantized using QPoint3d::Params::FromNormalizedRange()
     FPoint2d const*     m_textureUV= nullptr;
     uint8_t const*      m_edgeFlags = nullptr;
     TexturePtr          m_texture;
-    int32_t             m_flags = 0; // don't generate normals
+    uint32_t            m_flags = 0; // don't generate normals
     ColorIndex          m_colors;
     FeatureIndex        m_features;
     QPoint3d::Params    m_pointParams;
@@ -2128,7 +2128,7 @@ struct IndexedPolylineArgs
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
-//=======================================================================================
+//=======================================================================================                                                           
 struct  MeshEdge
     {
     enum    Flags

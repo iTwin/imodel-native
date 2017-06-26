@@ -1807,17 +1807,7 @@ Utf8String AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t num
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String AddMeshTriangleIndices(Utf8StringCR name, TriangleList const& triangles, Utf8StringCR idStr, size_t maxIndex)
     {
-    bvector<uint32_t>       indices;
-    
-    indices.reserve(triangles.size() * 3);
-
-    for (auto&  triangle : triangles)
-        {
-        indices.push_back(triangle.m_indices[0]);
-        indices.push_back(triangle.m_indices[1]);
-        indices.push_back(triangle.m_indices[2]);
-        }
-    return AddMeshIndices(name, indices.data(), indices.size(), idStr, maxIndex);
+    return AddMeshIndices(name, triangles.Indices().data(), triangles.Indices().size(), idStr, maxIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2265,7 +2255,7 @@ virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
  
     primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
 
-    if ((!mesh.Triangles().empty() && SUCCESS == CreateTriMesh(primitiveJson, mesh, idStr)) ||
+    if ((!mesh.Triangles().Empty() && SUCCESS == CreateTriMesh(primitiveJson, mesh, idStr)) ||
         (!mesh.Polylines().empty() && SUCCESS == CreatePolylines(primitiveJson, mesh, idStr)))
         {
         Utf8String  materialName = "Material" + idStr;

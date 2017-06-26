@@ -416,9 +416,9 @@ PolyfaceHeaderPtr TriMeshArgs::ToPolyface() const
 
     BlockedVectorIntR pointIndex = polyFace->PointIndex();
     pointIndex.resize(m_numIndices);
-    int32_t const* pIndex = m_vertIndex;
-    int32_t const* pEnd = pIndex + m_numIndices;
-    int32_t* pOut = &pointIndex.front();
+    uint32_t const* pIndex = m_vertIndex;
+    uint32_t const* pEnd = pIndex + m_numIndices;
+    int* pOut = &pointIndex.front();
 
     for (; pIndex < pEnd; )
         *pOut++ = 1 + *pIndex++;

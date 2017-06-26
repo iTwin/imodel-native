@@ -479,15 +479,18 @@ bool Mesh::HasNonPlanarNormals() const
     if (m_normals.empty())
         return false;
 
-    QPoint3d normals[3];
-    for (auto const& triangle : m_triangles)
+    QPoint3d            normals[3];
+    uint32_t const*     pIndex = m_triangles.Indices().data();
+    uint32_t const*     pEnd = pIndex + m_triangles.Indices().size();
+
+    for (pIndex = 0; pIndex < pEnd; pIndex += 3)
         {
-        normals[0] = m_normals[triangle[0]];
-        normals[1] = m_normals[triangle[1]];
+        normals[0] = m_normals[pIndex[0]];
+        normals[1] = m_normals[pIndex[1]];
         if (normals[0] != normals[1])
             return true;
 
-        normals[2] = m_normals[triangle[3]];
+        normals[2] = m_normals[pIndex[2]];
         if (normals[0] != normals[2] || normals[1] != normals[2])
             return true;
         }
@@ -500,7 +503,7 @@ bool Mesh::HasNonPlanarNormals() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, GetMeshGraphicsArgs& args, DgnDbR db) const
     {
-    bool haveMesh = !Triangles().empty();
+    bool haveMesh = !Triangles().Empty();
     bool havePolyline = !haveMesh && !Polylines().empty();
 
     if (!haveMesh && !havePolyline)
@@ -1743,19 +1746,12 @@ void  TextStringGeometry::InitGlyphCurves() const
 bool MeshArgs::Init(MeshCR mesh)
     {
     Clear();
-    if (mesh.Triangles().empty())
+    if (mesh.Triangles().Empty())
         return false;
-
-    for (auto const& triangle : mesh.Triangles())
-        {
-        m_indices.push_back(static_cast<int32_t>(triangle[0]));
-        m_indices.push_back(static_cast<int32_t>(triangle[1]));
-        m_indices.push_back(static_cast<int32_t>(triangle[2]));
-        }
 
     m_pointParams = mesh.Points().GetParams();
 
-    Set(m_numIndices, m_vertIndex, m_indices);
+    Set(m_numIndices, m_vertIndex, mesh.Triangles().Indices());
     Set(m_numPoints, m_points, mesh.Points());
     Set(m_textureUV, mesh.Params());
     if (!mesh.GetDisplayParams().IgnoresLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
@@ -1776,7 +1772,6 @@ bool MeshArgs::Init(MeshCR mesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshArgs::Clear()
     {
-    m_indices.clear();
     m_numIndices = 0;
     m_vertIndex = nullptr;
     m_numPoints = 0;
@@ -1970,7 +1965,7 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     rasterTile.m_points = vertex;
     rasterTile.m_numPoints = 4;
 
-    static int32_t indices[] = {0,1,2,2,1,3};
+    static uint32_t indices[] = {0,1,2,2,1,3};
     rasterTile.m_numIndices = 6;
     rasterTile.m_vertIndex = indices;
     
@@ -2505,3 +2500,45 @@ void QVertex3dList::Init(DRange3dCR range, QPoint3dCP qPoints, size_t nPoints)
     memcpy (m_qpoints.data(), qPoints, nPoints * sizeof(QPoint3d));
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriangleList::AddTriangle(TriangleCR triangle)
+    {
+    uint8_t         flags = triangle.m_singleSided ? 1 : 0;
+
+    for (size_t i=0; i<3; i++)
+        {
+        if (triangle.GetEdgeVisible(i))
+            flags |= (0x0002 << i);
+        
+        m_indices.push_back(triangle.m_indices[i]);
+        }
+    m_flags.push_back(flags);
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Triangle  TriangleList::GetTriangle(size_t index) const
+    {
+    if (index > m_flags.size())
+        {
+        BeAssert(false);
+        return Triangle();
+        }
+    
+    uint8_t         flags = m_flags.at(index);
+    Triangle        triangle(0 != (flags & 0x0001));
+    uint32_t const* pIndex = &m_indices.at(index*3);
+
+    for (size_t i=0; i<3; i++)
+        {
+        triangle.m_indices[i] = pIndex[i];
+        triangle.m_edgeFlags[i] = (0 == (flags & (0x0002 << i))) ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible;
+        }
+
+    return triangle;
+    }

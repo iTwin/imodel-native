@@ -1452,7 +1452,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::_GetTileCacheKey() const
     {
-    return m_root._GetName() + Utf8PrintfString("%d/%d/%d/%d:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
+    return GetElementRoot().GetModelId().ToString() + Utf8PrintfString("%d/%d/%d/%d:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1478,6 +1478,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
         m_range.Extend(*range);
 
     InitTolerance();
+    m_debugId = (octRoot.GetModelId().GetValue() << 32) + (id.m_level << 24) + (id.m_i << 16) + (id.m_j << 8) + id.m_k;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -49,7 +49,6 @@ DEFINE_REF_COUNTED_PTR(GeomPart);
 
 typedef bvector<MeshInstance>           MeshInstanceList;
 typedef bvector<MeshPartPtr>            MeshPartList;
-typedef bvector<Triangle>               TriangleList;
 typedef bvector<Polyface>               PolyfaceList;
 typedef bvector<Strokes>                StrokesList;
 typedef bvector<Render::MeshPolyline>   PolylineList;
@@ -319,6 +318,23 @@ struct Triangle
 };
 
 //=======================================================================================
+// @bsistruct                                                   Ray.Bentley     06/2017
+//=======================================================================================
+struct TriangleList
+{
+private:
+    bvector<uint8_t>    m_flags;
+    bvector<uint32_t>   m_indices;
+
+public:
+    size_t Count() const { return m_indices.size() / 3; }
+    bool Empty() const { return m_indices.empty(); }
+    bvector<uint32_t> const& Indices() const { return m_indices; }
+    void AddTriangle(TriangleCR triangle);
+    Triangle  GetTriangle(size_t index) const;
+};
+
+//=======================================================================================
 //! Represents a possibly-quantized position. Used during mesh generation.
 //! See QVertex3dList.
 // @bsistruct                                                   Paul.Connelly   05/17
@@ -433,6 +449,7 @@ struct Mesh : RefCountedBase
         Point
     };
 
+
 private:
     struct Features
     {
@@ -495,7 +512,7 @@ public:
     MeshEdgesPtr&                   GetEdgesR() { return m_edges; }
     void                            SetFeatureIndices (bvector<uint32_t>&& indices) { m_features.SetIndices(std::move(indices)); }
 
-    bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
+    bool IsEmpty() const { return m_triangles.Empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }
     PrimitiveType GetType() const { return m_type; }
 
@@ -504,7 +521,7 @@ public:
 
     void Close() { m_verts.Requantize(); }
 
-    void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.push_back(triangle); }
+    void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
     uint32_t AddVertex(QVertex3dCR vertex, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
     void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db) const;
@@ -897,14 +914,12 @@ struct ToleranceRatio
 //=======================================================================================
 struct MeshArgs : TriMeshArgs
 {
-    bvector<int32_t>                m_indices;
     bvector<uint32_t>               m_colorTable;
 
     template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = (0 != src.size() ? src.data() : nullptr); }
-
-    template<typename T, typename U> void Set(int32_t& count, T& ptr, U const& src)
+    template<typename T, typename U> void Set(uint32_t& count, T& ptr, U const& src)
         {
-        count = static_cast<int32_t>(src.size());
+        count = static_cast<uint32_t>(src.size());
         Set(ptr, src);
         }
 
