@@ -115,6 +115,7 @@ private:
     DisplayParamsCPtr Clone() const;
     
     DGNPLATFORM_EXPORT DisplayParams(Type, GraphicParamsCR, GeometryParamsCP, bool filled);
+    DGNPLATFORM_EXPORT DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, DgnMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
     DisplayParams(DisplayParamsCR rhs) = default;
     void Resolve(DgnDbR, System&);
 public:
@@ -167,6 +168,11 @@ public:
         return new DisplayParams(Type::Text, gf, geom, false);
         }
     static DisplayParamsCPtr CreateForGeomPartInstance(DisplayParamsCR partParams, DisplayParamsCR instanceParams);
+
+    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, DgnMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys)
+        {
+        return new DisplayParams(type, catId, subCatId, gradient, matId, lineColor, fillColor, width, linePixels, fillFlags, geomClass, ignoreLights, dgnDb, renderSys);
+        }
 };
 
 //=======================================================================================

@@ -2542,3 +2542,12 @@ Triangle  TriangleList::GetTriangle(size_t index) const
 
     return triangle;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams::DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, DgnMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys) :
+            m_type(type), m_categoryId(catId), m_subCategoryId(subCatId), m_gradient(gradient), m_materialId(matId), m_lineColor(lineColor), m_fillColor(fillColor), m_width(width), m_linePixels(linePixels), m_fillFlags(fillFlags), m_class(geomClass), m_ignoreLighting(ignoreLights), m_resolved(false) 
+    { 
+    Resolve (dgnDb, renderSys); 
+    }
