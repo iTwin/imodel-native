@@ -1224,10 +1224,10 @@ void RealityDataConsole::ChangeProps()
     std::string str;
     Utf8String propertyString = "";
     Utf8String value;
-    while (input != "-Finish-")
+    while (!input.Equals("-Finish-"))
         {
         Choice(m_realityDataProperties, input);
-        if (input == "-Finish-")
+        if (input.Equals("-Finish-"))
             break;
         else
             {
@@ -1238,7 +1238,7 @@ void RealityDataConsole::ChangeProps()
                 propertyString.append(",");
 
             value = Utf8String(str.c_str()).Trim();
-            if (input == "Listable")
+            if (input.Equals("Listable"))
                 {
                 if (value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
                     propertyString.append("\"Listable\" : false");
@@ -1247,10 +1247,22 @@ void RealityDataConsole::ChangeProps()
                 else
                     DisplayInfo("Listable is boolean. Value must be true or false\n", DisplayOption::Error);
                 }
+            else if (input.Equals("Streamed"))
+                {
+                if (value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
+                    propertyString.append("\"Streamed\" : false");
+                else if (value.EqualsI("true"))
+                    propertyString.append("\"Streamed\" : true");
+                else
+                    DisplayInfo("Streamed is boolean. Value must be true or false\n", DisplayOption::Error);
+                }
             else
                 propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input, value));
             }
         }
+
+    if(propertyString.empty())
+        return Details();
 
     RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_currentNode->node.GetRootId(), propertyString);
 
