@@ -32,10 +32,11 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus ImportRelationshipConstraint(ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
         BentleyStatus ImportCustomAttributes(ECN::IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
-        BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveECPropertyCR);
-        BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveArrayECPropertyCR);
-        BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::ECPropertyCR);
-        BentleyStatus BindPropertyCategoryId(Statement&, int paramIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyMinMaxValue(Statement&, int paramIndex, ECN::ECPropertyCR, ECN::ECValueCR);
+        BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyPrimTypeOrEnumeration(Statement&, int primTypeParamIndex, int enumParamIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyKindOfQuantity(Statement&, int paramIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyCategory(Statement&, int paramIndex, ECN::ECPropertyCR);
 
         BentleyStatus InsertSchemaEntry(ECN::ECSchemaCR);
         BentleyStatus InsertBaseClassEntry(ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);

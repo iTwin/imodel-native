@@ -135,6 +135,7 @@ END_BENTLEY_NAMESPACE
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 void PrintTo(ECClassId, std::ostream*);
+void PrintTo(ECValue const&, std::ostream*);
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

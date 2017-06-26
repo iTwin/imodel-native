@@ -961,6 +961,10 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             bool m_isReadonly = false;
             Nullable<int64_t> m_priority;
             Nullable<int> m_primType;
+            Nullable<int64_t> m_primTypeMinLength;
+            Nullable<int64_t> m_primTypeMaxLength;
+            ECValue m_primTypeMinValue;
+            ECValue m_primTypeMaxValue;
             ECClassId m_structClassId;
             Utf8String m_extendedTypeName;
             ECEnumerationId m_enumId;
@@ -982,18 +986,23 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             const int isReadonlyIx = 5;
             const int priorityIx = 6;
             const int primTypeIx = 7;
-            const int enumIdIx = 8;
-            const int structClassIdIx = 9;
-            const int extendedTypeIx = 10;
-            const int koqIdIx = 11;
-            const int catIdIx = 12;
-            const int minOccursIx = 13;
-            const int maxOccursIx = 14;
-            const int navRelationshipClassId = 15;
-            const int navPropDirectionIx = 16;
+            const int primTypeMinLengthIx = 8;
+            const int primTypeMaxLengthIx = 9;
+            const int primTypeMinValueIx = 10;
+            const int primTypeMaxValueIx = 11;
+            const int enumIdIx = 12;
+            const int structClassIdIx = 13;
+            const int extendedTypeIx = 14;
+            const int koqIdIx = 15;
+            const int catIdIx = 16;
+            const int minOccursIx = 17;
+            const int maxOccursIx = 18;
+            const int navRelationshipClassId = 19;
+            const int navPropDirectionIx = 20;
 
             CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
-                                                              "PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
+                                                              "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
+                                                              "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
                                                               "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
                                                               "FROM ec_Property WHERE ClassId=? ORDER BY Ordinal");
             if (stmt == nullptr)
@@ -1026,14 +1035,21 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 if (!stmt->IsColumnNull(primTypeIx))
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
 
+                //MinLength/MaxLength is persisted as int64 to not lose unsigned-ness
+                if (!stmt->IsColumnNull(primTypeMinLengthIx))
+                    rowInfo.m_primTypeMinLength = stmt->GetValueInt64(primTypeMinLengthIx);
+
+                if (!stmt->IsColumnNull(primTypeMaxLengthIx))
+                    rowInfo.m_primTypeMaxLength = stmt->GetValueInt64(primTypeMaxLengthIx);
+
+                if (SUCCESS != ReadMinMaxValue(rowInfo.m_primTypeMinValue, rowInfo, *stmt, primTypeMinValueIx))
+                    return ERROR;
+
+                if (SUCCESS != ReadMinMaxValue(rowInfo.m_primTypeMaxValue, rowInfo, *stmt, primTypeMaxValueIx))
+                    return ERROR;
+
                 if (!stmt->IsColumnNull(enumIdIx))
                     rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIdIx);
-
-                if (kind == PropertyKind::Primitive && rowInfo.m_primType.IsNull() && !rowInfo.m_enumId.IsValid())
-                    {
-                    BeAssert(false && "Either PrimitiveType or EnumerationId column must not be NULL for primitive property");
-                    return ERROR;
-                    }
 
                 if (stmt->IsColumnNull(structClassIdIx))
                     {
@@ -1102,6 +1118,50 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
 
                 rows.push_back(rowInfo);
+                }
+
+            return SUCCESS;
+            }
+
+        static BentleyStatus ReadMinMaxValue(ECN::ECValueR val, RowInfo const& rowInfo, Statement& stmt, int colIx)
+            {
+            if (stmt.IsColumnNull(colIx))
+                return SUCCESS;
+
+            if (rowInfo.m_primType.IsNull())
+                {
+                BeAssert(false && "PrimitiveTypeMinValue or PrimitiveTypeMaxValue must not be set if PrimitiveType is NULL");
+                return ERROR;
+                }
+
+            switch (rowInfo.m_primType.Value())
+                {
+                    case PrimitiveType::PRIMITIVETYPE_DateTime:
+                    {
+                    double jd = stmt.GetValueDouble(colIx);
+                    const uint64_t jdMsec = DateTime::RationalDayToMsec(jd);
+                    val.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec));
+                    break;
+                    }
+                    case PrimitiveType::PRIMITIVETYPE_Double:
+                        val.SetDouble(stmt.GetValueDouble(colIx));
+                        break;
+
+                    case PrimitiveType::PRIMITIVETYPE_Integer:
+                        val.SetInteger(stmt.GetValueInt(colIx));
+                        break;
+
+                    case PrimitiveType::PRIMITIVETYPE_Long:
+                        val.SetLong(stmt.GetValueInt64(colIx));
+                        break;
+
+                    case PrimitiveType::PRIMITIVETYPE_String:
+                        val.SetUtf8CP(stmt.GetValueText(colIx), true);
+                        break;
+
+                    default:
+                        BeAssert(false && "ECProperty MinimumValue/MaximumValue is of unexpected type");
+                        return ERROR;
                 }
 
             return SUCCESS;
@@ -1193,13 +1253,27 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
                 case PropertyKind::PrimitiveArray:
                 {
-                BeAssert(!rowInfo.m_primType.IsNull());
-
-                PrimitiveType primType = (PrimitiveType) rowInfo.m_primType.Value();
+                BeAssert(!rowInfo.m_primType.IsNull() || rowInfo.m_enumId.IsValid());
 
                 PrimitiveArrayECPropertyP arrayProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, primType))
+                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name))
                     return ERROR;
+
+                if (rowInfo.m_enumId.IsValid())
+                    {
+                    ECEnumerationP ecenum = nullptr;
+                    if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
+                        return ERROR;
+
+                    if (ECObjectsStatus::Success != arrayProp->SetType(*ecenum))
+                        return ERROR;
+                    }
+                else
+                    {
+                    BeAssert(!rowInfo.m_primType.IsNull());
+                    if (ECObjectsStatus::Success != arrayProp->SetPrimitiveElementType((PrimitiveType) rowInfo.m_primType.Value()))
+                        return ERROR;
+                    }
 
                 if (!rowInfo.m_extendedTypeName.empty())
                     {
@@ -1291,6 +1365,18 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
         if (!rowInfo.m_displayLabel.empty())
             prop->SetDisplayLabel(rowInfo.m_displayLabel);
+
+        if (!rowInfo.m_primTypeMinLength.IsNull())
+            prop->SetMinimumLength((uint32_t) rowInfo.m_primTypeMinLength.Value());
+
+        if (!rowInfo.m_primTypeMaxLength.IsNull())
+            prop->SetMaximumLength((uint32_t) rowInfo.m_primTypeMaxLength.Value());
+
+        if (!rowInfo.m_primTypeMinValue.IsNull())
+            prop->SetMinimumValue(rowInfo.m_primTypeMinValue);
+
+        if (!rowInfo.m_primTypeMaxValue.IsNull())
+            prop->SetMaximumValue(rowInfo.m_primTypeMaxValue);
 
         if (rowInfo.m_koqId.IsValid())
             {

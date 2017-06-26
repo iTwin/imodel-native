@@ -121,6 +121,10 @@
         <ECProperty propertyName="Ordinal" typeName="int" description="Position of the ECProperty in its ECClass"/>
         <ECProperty propertyName="Kind" typeName="ECPropertyKind"/>
         <ECProperty propertyName="PrimitiveType" typeName="PrimitiveType" description="ECPropertyKind::Primitive: data type. ECPropertyKind::PrimitiveArray: data type of array elements."/>
+        <ECProperty propertyName="PrimitiveTypeMinLength" typeName="int" description="Minimum length of strings or blobs."/>
+        <ECProperty propertyName="PrimitiveTypeMaxLength" typeName="int" description="Maximum length of strings or blobs."/>
+        <ECProperty propertyName="PrimitiveTypeMinValue" typeName="double" description="Minimum value of numeric primitives."/>
+        <ECProperty propertyName="PrimitiveTypeMaxValue" typeName="double" description="Maximum value of numeric primitives."/>
         <ECNavigationProperty propertyName="Enumeration" description="ECPropertyKind::Primitive: Id of this property's ECEnumerationDef." relationshipName="PropertyHasEnumeration" direction="forward"/>
         <ECProperty propertyName="ExtendedTypeName" typeName="string" description="ECPropertyKind::Primitive or ECPropertyKind::PrimitiveArray: Extended type name further describing PrimitiveType."/>
         <ECNavigationProperty propertyName="StructClass" description="ECPropertyKind::Struct: ECClassId of property's struct type. ECPropertyKind::StructArray: ECClassId of array element struct type." relationshipName="PropertyHasStructType" direction="forward"/>

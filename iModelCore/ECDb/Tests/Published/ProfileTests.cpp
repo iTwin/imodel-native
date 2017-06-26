@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-static const ProfileVersion EXPECTED_PROFILEVERSION (3, 121, 0, 0);
+static const ProfileVersion EXPECTED_PROFILEVERSION (4, 0, 0, 0);
 
 static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 
@@ -186,16 +186,17 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
             {ProfileVersion(3,100,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
             {ProfileVersion(3,100,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
             {ProfileVersion(3,100,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,121,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(3,121,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {ProfileVersion(3,121,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(3,121,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {ProfileVersion(3,121,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(3,121,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
-            {ProfileVersion(3,122,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {ProfileVersion(3,122,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {ProfileVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {ProfileVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false}
+            {ProfileVersion(3,100,1,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {ProfileVersion(4,0,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(4,0,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {ProfileVersion(4,0,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(4,0,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
+            {ProfileVersion(4,1,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {ProfileVersion(4,1,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {ProfileVersion(5,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {ProfileVersion(5,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false}
         };
 
     Statement stmt;

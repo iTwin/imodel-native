@@ -854,6 +854,435 @@ TEST_F(SchemaManagerTests, GetMixin)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, GetPropertyMinMaxLength)
+    {
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="string" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength supported for String";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="binary" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength supported for Binary";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="boolean" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for bools";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="int" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for int";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="long" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Long";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="double" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for double";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="dateTime" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for DateTime";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="point2d" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Point2d";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="point3d" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Point3d";
+
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECEntityClass typeName="Foo" modifier="None" >
+                <ECProperty propertyName="Prop" typeName="Bentley.Geometry.Common.IGeometry" MinimumLength="5" MaximumLength="10"/>
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for IGeometry";
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("GetPropertyMinMaxLength.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECStructClass typeName="MyStruct">
+               <ECProperty propertyName="StrProp1" typeName="string" MinimumLength="5" MaximumLength="10"/>
+               <ECProperty propertyName="StrProp2" typeName="string" MinimumLength="5"/>
+               <ECProperty propertyName="StrProp3" typeName="string" MaximumLength="5"/>
+               <ECProperty propertyName="BinaryProp1" typeName="string" MinimumLength="5" MaximumLength="10"/>
+               <ECProperty propertyName="BinaryProp2" typeName="string" MinimumLength="5"/>
+               <ECProperty propertyName="BinaryProp3" typeName="string" MaximumLength="5"/>
+            </ECStructClass>
+            <ECEntityClass typeName="Foo" modifier="None" >
+               <ECProperty propertyName="StrProp1" typeName="string" MinimumLength="5" MaximumLength="10"/>
+               <ECProperty propertyName="StrProp2" typeName="string" MinimumLength="5"/>
+               <ECProperty propertyName="StrProp3" typeName="string" MaximumLength="5"/>
+               <ECProperty propertyName="BinaryProp1" typeName="string" MinimumLength="5" MaximumLength="10"/>
+               <ECProperty propertyName="BinaryProp2" typeName="string" MinimumLength="5"/>
+               <ECProperty propertyName="BinaryProp3" typeName="string" MaximumLength="5"/>
+               <ECStructProperty propertyName="MyStruct" typeName="MyStruct"/>
+            </ECEntityClass>
+       </ECSchema>)xml")));
+
+    for (Utf8CP className : std::vector<Utf8CP>{"Foo", "MyStruct"})
+        {
+        ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", className);
+        ASSERT_TRUE(testClass != nullptr) << className;
+        EXPECT_TRUE(testClass->GetPropertyP("StrProp1")->IsMinimumLengthDefined()) << className;
+        EXPECT_EQ(5, testClass->GetPropertyP("StrProp1")->GetMinimumLength()) << className;
+        EXPECT_TRUE(testClass->GetPropertyP("StrProp1")->IsMaximumLengthDefined()) << className;
+        EXPECT_EQ(10, testClass->GetPropertyP("StrProp1")->GetMaximumLength()) << className;
+
+        EXPECT_TRUE(testClass->GetPropertyP("BinaryProp1")->IsMinimumLengthDefined()) << className;
+        EXPECT_EQ(5, testClass->GetPropertyP("BinaryProp1")->GetMinimumLength()) << className;
+        EXPECT_TRUE(testClass->GetPropertyP("BinaryProp1")->IsMaximumLengthDefined()) << className;
+        EXPECT_EQ(10, testClass->GetPropertyP("BinaryProp1")->GetMaximumLength()) << className;
+
+        EXPECT_TRUE(testClass->GetPropertyP("StrProp2")->IsMinimumLengthDefined()) << className;
+        EXPECT_EQ(5, testClass->GetPropertyP("StrProp2")->GetMinimumLength()) << className;
+        EXPECT_FALSE(testClass->GetPropertyP("StrProp2")->IsMaximumLengthDefined()) << className;
+
+        EXPECT_TRUE(testClass->GetPropertyP("BinaryProp2")->IsMinimumLengthDefined()) << className;
+        EXPECT_EQ(5, testClass->GetPropertyP("BinaryProp2")->GetMinimumLength()) << className;
+        EXPECT_FALSE(testClass->GetPropertyP("BinaryProp2")->IsMaximumLengthDefined()) << className;
+
+        EXPECT_FALSE(testClass->GetPropertyP("StrProp3")->IsMinimumLengthDefined()) << className;
+        EXPECT_TRUE(testClass->GetPropertyP("StrProp3")->IsMaximumLengthDefined()) << className;
+        EXPECT_EQ(5, testClass->GetPropertyP("StrProp3")->GetMaximumLength()) << className;
+
+        EXPECT_FALSE(testClass->GetPropertyP("BinaryProp3")->IsMinimumLengthDefined()) << className;
+        EXPECT_TRUE(testClass->GetPropertyP("BinaryProp3")->IsMaximumLengthDefined()) << className;
+        EXPECT_EQ(5, testClass->GetPropertyP("BinaryProp3")->GetMaximumLength()) << className;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, GetPropertyMinMaxValue)
+    {
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="int" MinimumValue="5" MaximumValue="10"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue supported for int";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="long" MinimumValue="-5" MaximumValue="10"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue supported for long";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="double" MinimumValue="-5.3" MaximumValue="10.13"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue supported for double";
+
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="bool" MinimumValue="0" MaximumValue="1"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for bool";
+
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="bool" MinimumValue="false"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for bool";
+
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="bool" MaximumValue="true"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for bool";
+
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="dateTime" MinimumValue="250000.5"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue is expected to be supported for date times";
+
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="dateTime" MinimumValue="2000-01-01T12:00:00"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue is expected to be supported for date times";
+
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="Bentley.Geometry.Common.IGeometry" MaximumValue="1"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for IGeometry";
+
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="Point2d" MinimumValue="0" MaximumValue="1"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for Point2d";
+
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="Point3d" MinimumValue="0" MaximumValue="1"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for Point3d";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="string" MinimumValue="0" MaximumValue="1"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue is expected to be supported for string";
+
+    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="Prop" typeName="string" MinimumValue="aaa" MaximumValue="DDD"/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue is expected to be supported for string";
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("getpropertyminmaxvalue.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+        <ECStructClass typeName="MyStruct" modifier="None" >
+            <ECProperty propertyName="IntProp1" typeName="int" MinimumValue="0"/>
+            <ECProperty propertyName="IntProp2" typeName="int" MaximumValue="10"/>
+            <ECProperty propertyName="IntProp3" typeName="int" MinimumValue="-10" MaximumValue="10"/>
+            <ECProperty propertyName="LongProp1" typeName="long" MinimumValue="0"/>
+            <ECProperty propertyName="LongProp2" typeName="long" MaximumValue="10"/>
+            <ECProperty propertyName="LongProp3" typeName="long" MinimumValue="-10" MaximumValue="10"/>
+            <ECProperty propertyName="DoubleProp1" typeName="double" MinimumValue="0"/>
+            <ECProperty propertyName="DoubleProp2" typeName="double" MaximumValue="10"/>
+            <ECProperty propertyName="DoubleProp3" typeName="double" MinimumValue="-10.5" MaximumValue="10.5"/>
+    
+            <ECArrayProperty propertyName="IntArrayProp1" typeName="int" MinimumValue="0"/>
+            <ECArrayProperty propertyName="IntArrayProp2" typeName="int" MaximumValue="10"/>
+            <ECArrayProperty propertyName="IntArrayProp3" typeName="int" MinimumValue="-10" MaximumValue="10"/>
+
+            <ECArrayProperty propertyName="LongArrayProp1" typeName="long" MinimumValue="0"/>
+            <ECArrayProperty propertyName="LongArrayProp2" typeName="long" MaximumValue="10"/>
+            <ECArrayProperty propertyName="LongArrayProp3" typeName="long" MinimumValue="-10" MaximumValue="10"/>
+
+            <ECArrayProperty propertyName="DoubleArrayProp1" typeName="double" MinimumValue="0"/>
+            <ECArrayProperty propertyName="DoubleArrayProp2" typeName="double" MaximumValue="10"/>
+            <ECArrayProperty propertyName="DoubleArrayProp3" typeName="double" MinimumValue="-10.5" MaximumValue="10.5"/>
+        </ECStructClass>
+        <ECEntityClass typeName="Foo" modifier="None" >
+            <ECProperty propertyName="IntProp1" typeName="int" MinimumValue="0"/>
+            <ECProperty propertyName="IntProp2" typeName="int" MaximumValue="10"/>
+            <ECProperty propertyName="IntProp3" typeName="int" MinimumValue="-10" MaximumValue="10"/>
+            <ECProperty propertyName="LongProp1" typeName="long" MinimumValue="0"/>
+            <ECProperty propertyName="LongProp2" typeName="long" MaximumValue="10"/>
+            <ECProperty propertyName="LongProp3" typeName="long" MinimumValue="-10" MaximumValue="10"/>
+            <ECProperty propertyName="DoubleProp1" typeName="double" MinimumValue="0"/>
+            <ECProperty propertyName="DoubleProp2" typeName="double" MaximumValue="10"/>
+            <ECProperty propertyName="DoubleProp3" typeName="double" MinimumValue="-10.5" MaximumValue="10.5"/>
+    
+            <ECArrayProperty propertyName="IntArrayProp1" typeName="int" MinimumValue="0"/>
+            <ECArrayProperty propertyName="IntArrayProp2" typeName="int" MaximumValue="10"/>
+            <ECArrayProperty propertyName="IntArrayProp3" typeName="int" MinimumValue="-10" MaximumValue="10"/>
+
+            <ECArrayProperty propertyName="LongArrayProp1" typeName="long" MinimumValue="0"/>
+            <ECArrayProperty propertyName="LongArrayProp2" typeName="long" MaximumValue="10"/>
+            <ECArrayProperty propertyName="LongArrayProp3" typeName="long" MinimumValue="-10" MaximumValue="10"/>
+
+            <ECArrayProperty propertyName="DoubleArrayProp1" typeName="double" MinimumValue="0"/>
+            <ECArrayProperty propertyName="DoubleArrayProp2" typeName="double" MaximumValue="10"/>
+            <ECArrayProperty propertyName="DoubleArrayProp3" typeName="double" MinimumValue="-10.5" MaximumValue="10.5"/>
+
+            <ECStructProperty propertyName="MyStruct" typeName="MyStruct" />
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    for (Utf8CP className : std::vector<Utf8CP> {"Foo", "MyStruct"})
+        {
+        ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", className);
+        ASSERT_TRUE(testClass != nullptr) << className;
+        ECPropertyCP prop = testClass->GetPropertyP("IntProp1");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ECValue v;
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(0, v.GetInteger()) << className << "." << prop->GetName().c_str();
+        EXPECT_FALSE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("IntProp2");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_FALSE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(10, v.GetInteger()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("IntProp3");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(-10, v.GetInteger()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(10, v.GetInteger()) << className << "." << prop->GetName().c_str();
+
+
+        prop = testClass->GetPropertyP("LongProp1");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(0, v.GetLong()) << className << "." << prop->GetName().c_str();
+        EXPECT_FALSE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("LongProp2");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_FALSE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(10, v.GetLong()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("LongProp3");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(-10, v.GetLong()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(10, v.GetLong()) << className << "." << prop->GetName().c_str();
+
+
+        prop = testClass->GetPropertyP("DoubleProp1");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_DOUBLE_EQ(0, v.GetDouble()) << className << "." << prop->GetName().c_str();
+        EXPECT_FALSE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("DoubleProp2");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_FALSE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_DOUBLE_EQ(10, v.GetDouble()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("DoubleProp3");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_DOUBLE_EQ(-10.5, v.GetDouble()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_DOUBLE_EQ(10.5, v.GetDouble()) << className << "." << prop->GetName().c_str();
+
+
+        prop = testClass->GetPropertyP("IntArrayProp1");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(0, v.GetInteger()) << className << "." << prop->GetName().c_str();
+        EXPECT_FALSE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("IntArrayProp2");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_FALSE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(10, v.GetInteger()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("IntArrayProp3");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(-10, v.GetInteger()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(10, v.GetInteger()) << className << "." << prop->GetName().c_str();
+
+
+        prop = testClass->GetPropertyP("LongArrayProp1");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(0, v.GetLong()) << className << "." << prop->GetName().c_str();
+        EXPECT_FALSE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("LongArrayProp2");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_FALSE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(10, v.GetLong()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("LongArrayProp3");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(-10, v.GetLong()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(10, v.GetLong()) << className << "." << prop->GetName().c_str();
+
+
+        prop = testClass->GetPropertyP("DoubleArrayProp1");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_DOUBLE_EQ(0, v.GetDouble()) << className << "." << prop->GetName().c_str();
+        EXPECT_FALSE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("DoubleArrayProp2");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_FALSE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_DOUBLE_EQ(10, v.GetDouble()) << className << "." << prop->GetName().c_str();
+
+        prop = testClass->GetPropertyP("DoubleArrayProp3");
+        ASSERT_TRUE(prop != nullptr) << className;
+        EXPECT_TRUE(prop->IsMinimumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMinimumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_DOUBLE_EQ(-10.5, v.GetDouble()) << className << "." << prop->GetName().c_str();
+        EXPECT_TRUE(prop->IsMaximumValueDefined()) << className << "." << prop->GetName().c_str();
+        ASSERT_EQ(ECObjectsStatus::Success, prop->GetMaximumValue(v)) << className << "." << prop->GetName().c_str();
+        ASSERT_DOUBLE_EQ(10.5, v.GetDouble()) << className << "." << prop->GetName().c_str();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetPropertyPriority)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("GetPropertyPriority.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -936,25 +1365,19 @@ TEST_F(SchemaManagerTests, GetEnumeration)
                                      "  </ECEntityClass>"
                                      "</ECSchema>")));
 
-    Utf8String ecdbPath(m_ecdb.GetDbFileName());
-
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
-
-    ECEnumerationCP ecEnum = ecdb.Schemas().GetEnumeration("ECDbFileInfo", "StandardRootFolderType");
+    ECEnumerationCP ecEnum = m_ecdb.Schemas().GetEnumeration("ECDbFileInfo", "StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
     ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
     }
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECDbFileInfo", false);
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("ECDbFileInfo", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetEnumerationCount());
-    ECClassCP classWithEnum = ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo");
+    ECClassCP classWithEnum = m_ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo");
     ASSERT_TRUE(classWithEnum != nullptr);
 
     ECPropertyCP prop = classWithEnum->GetPropertyP("RootFolder");
@@ -963,6 +1386,7 @@ TEST_F(SchemaManagerTests, GetEnumeration)
     ASSERT_TRUE(primProp != nullptr);
     ECEnumerationCP ecEnum = primProp->GetEnumeration();
     ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_STREQ("StandardRootFolderType", ecEnum->GetName().c_str());
     ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
 
     ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
@@ -971,13 +1395,12 @@ TEST_F(SchemaManagerTests, GetEnumeration)
     }
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECDbFileInfo", false);
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("ECDbFileInfo", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetEnumerationCount());
-    ECClassCP classWithEnum = ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ECClassCP classWithEnum = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(classWithEnum != nullptr);
 
     ECPropertyCP prop = classWithEnum->GetPropertyP("Folder");
@@ -986,6 +1409,16 @@ TEST_F(SchemaManagerTests, GetEnumeration)
     ASSERT_TRUE(primProp != nullptr);
     ECEnumerationCP ecEnum = primProp->GetEnumeration();
     ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_STREQ("StandardRootFolderType", ecEnum->GetName().c_str());
+    ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
+
+    prop = classWithEnum->GetPropertyP("FavoriteFolders");
+    ASSERT_TRUE(prop != nullptr);
+    PrimitiveArrayECPropertyCP primArrayProp = prop->GetAsPrimitiveArrayProperty();
+    ASSERT_TRUE(primArrayProp != nullptr);
+    ecEnum = primArrayProp->GetEnumeration();
+    ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_STREQ("StandardRootFolderType", ecEnum->GetName().c_str());
     ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
 
     ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
@@ -994,10 +1427,9 @@ TEST_F(SchemaManagerTests, GetEnumeration)
     }
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECDbFileInfo", true);
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("ECDbFileInfo", true);
     ASSERT_TRUE(schema != nullptr);
     ECEnumerationCP ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
