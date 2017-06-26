@@ -756,53 +756,19 @@ struct DgnCacheTileReader : GltfReader
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue) override
     {
-    GraphicParams   graphicParams;
-    GeometryParams  geometryParams, *geometryParamsP = nullptr;
-    bool            categoryValid;
-
-    if (materialValue.isMember("categoryId"))
-        {
-        geometryParamsP = &geometryParams;
-        geometryParams.SetCategoryId(DgnCategoryId(materialValue["categoryId"].asUInt64()));
-        }
-        
-    if (materialValue.isMember("subCategoryId"))
-        geometryParams.SetSubCategoryId(DgnSubCategoryId(materialValue["subCategoryId"].asUInt64()));
-
-    geometryParams.SetGeometryClass((DgnGeometryClass) materialValue["class"].asUInt());
-
-    graphicParams.SetFillColor(ColorDef(materialValue["fillColor"].asUInt()));
-    graphicParams.SetLineColor(ColorDef(materialValue["lineColor"].asUInt()));
-    graphicParams.SetLinePixels((LinePixels) materialValue["linePixels"].asUInt());
-    graphicParams.SetWidth(materialValue["lineWidth"].asUInt());
-
-    // TBD.  FillFlags.
-
-    if (materialValue.isMember("materialId"))
-        {
-        DgnMaterialId       materialId = DgnMaterialId(materialValue["materialId"].asUInt64());
-
-        geometryParams.SetMaterialId(materialId);
-        if (materialId.IsValid())
-            graphicParams.SetMaterial(m_renderSystem._GetMaterial(materialId, m_model.GetDgnDb()).get());
-        }
-
-    geometryParams.Resolve(m_model.GetDgnDb());
-    switch (materialValue["type"].asUInt())
-        {
-        case DisplayParams::Type::Mesh:
-            return DisplayParams::CreateForMesh(graphicParams, geometryParamsP, true, m_model.GetDgnDb(), m_renderSystem);
-
-        case DisplayParams::Type::Linear:
-            return DisplayParams::CreateForLinear(graphicParams, geometryParamsP);
-
-        case DisplayParams::Type::Text:
-            return DisplayParams::CreateForText(graphicParams, geometryParamsP);
-
-        default:
-            BeAssert(false);
-            return nullptr;
-        }
+    return  DisplayParams::Create((DisplayParams::Type) materialValue["type"].asUInt(),
+                                  DgnCategoryId(materialValue["categoryId"].asUInt64()),
+                                  DgnSubCategoryId(materialValue["subCategoryId"].asUInt64()),
+                                  nullptr,     // TBD. Gradient.
+                                  DgnMaterialId(materialValue["materialId"].asUInt64()),
+                                  ColorDef(materialValue["lineColor"].asUInt()),
+                                  ColorDef(materialValue["fillColor"].asUInt()),
+                                  materialValue["lineWidth"].asUInt(),
+                                  (LinePixels) materialValue["linePixels"].asUInt(),
+                                  (FillFlags) materialValue["fillFlags"].asUInt(),
+                                  (DgnGeometryClass) materialValue["class"].asUInt(),
+                                  materialValue["ignoreLighting"].asBool(),
+                                  m_model.GetDgnDb(), m_renderSystem);
     }
 
 /*---------------------------------------------------------------------------------**//**
