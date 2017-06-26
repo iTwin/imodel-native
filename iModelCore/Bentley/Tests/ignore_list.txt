@@ -98,3 +98,6 @@ LimitingTaskQueueTests.Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEven
     #            ntdll.dll!TppWorkerThread()  
     #            kernel32.dll!BaseThreadInitThunk()  
     #            ntdll.dll!RtlUserThreadStart()  
+
+LimitingTaskQueueTests.Push_TaskReturnsValue_SameValueReturned
+    # bim0200dev, x64, NDEBUG, firebug, random hang
