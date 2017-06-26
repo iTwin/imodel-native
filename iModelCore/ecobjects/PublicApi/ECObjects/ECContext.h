@@ -192,15 +192,21 @@ struct ECInstanceReadContext : RefCountedBase
         virtual PrimitiveType       _ResolvePrimitiveArrayType (PrimitiveArrayECPropertyCR ecproperty) const = 0;
         };
 
+    struct IUnitResolver
+        {
+        virtual Utf8CP _ResolveUnitName(ECPropertyCR ecProperty) const = 0;
+        };
+
 private:
     IStandaloneEnablerLocaterP          m_standaloneEnablerLocater;
     ECSchemaCR                          m_fallBackSchema;
     IPrimitiveTypeResolver const*       m_typeResolver;
+    IUnitResolver const*                m_unitResolver;
     IECSchemaRemapperCP                 m_schemaRemapper;
 
 protected:
     ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver) 
-        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (NULL)
+        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (NULL), m_unitResolver(nullptr)
         {
         }
 
@@ -213,8 +219,10 @@ protected:
 public:
     PrimitiveType           GetSerializedPrimitiveType (PrimitiveECPropertyCR ecprop) const  { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveType (ecprop) : ecprop.GetType(); }
     PrimitiveType           GetSerializedPrimitiveArrayType (PrimitiveArrayECPropertyCR ecprop) const { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveArrayType (ecprop) : ecprop.GetPrimitiveElementType(); }
+    Utf8CP                  GetOldUnitName(ECPropertyCR property) const { if (nullptr != m_unitResolver) return m_unitResolver->_ResolveUnitName(property); else return ""; }
 
     void                    SetSchemaRemapper (IECSchemaRemapperCP remapper) { m_schemaRemapper = remapper; }
+    void                    SetUnitResolver(IUnitResolver const* resolver) {m_unitResolver = resolver;}
     void                    SetTypeResolver (IPrimitiveTypeResolver const* resolver) { m_typeResolver = resolver; }
     void                    ResolveSerializedPropertyName (Utf8StringR name, ECClassCR ecClass) const  { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
     void                    ResolveSerializedClassName (Utf8StringR name, ECSchemaCR schema) const     { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }

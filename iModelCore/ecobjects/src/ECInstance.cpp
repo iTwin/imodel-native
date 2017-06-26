@@ -2751,7 +2751,7 @@ struct  InstanceXmlReader
         //--------------------------------------------------------------------------------------
         // @bsimethod                                    Colin.Kerr                     12/15
         //---------------+---------------+---------------+---------------+---------------+------
-        InstanceReadStatus  ReadSimplePropertyValue(Utf8StringCR propertyName, PrimitiveType propertyType, Utf8StringP baseAccessString, IECInstanceP ecInstance, BeXmlNodeR propertyValueNode, PrimitiveType serializedType)
+        InstanceReadStatus  ReadSimplePropertyValue(Utf8StringCR propertyName, PrimitiveType propertyType, Utf8StringP baseAccessString, IECInstanceP ecInstance, BeXmlNodeR propertyValueNode, PrimitiveType serializedType, KindOfQuantityCP koq, Utf8String oldUnitName)
             {
             // on entry, propertyValueNode is the xml node for the primitive property value.
             InstanceReadStatus   ixrStatus;
@@ -2763,6 +2763,15 @@ struct  InstanceXmlReader
                 {
                 //A malformed value was found.  A warning was shown; just move on.
                 return InstanceReadStatus::Success;
+                }
+
+            if (nullptr != koq && !oldUnitName.empty())
+                {
+                Units::UnitCP oldUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnitName.c_str());
+                double convertedValue;
+                oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
+                
+                ecValue.SetDouble(convertedValue);
                 }
 
             ECObjectsStatus setStatus;
@@ -2865,7 +2874,8 @@ struct  InstanceXmlReader
         +---------------+---------------+---------------+---------------+---------------+------*/
         InstanceReadStatus   ReadPrimitivePropertyValue(PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, Utf8String* baseAccessString, BeXmlNodeR propertyValueNode)
             {
-            return ReadSimplePropertyValue(primitiveProperty->GetName(), primitiveProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, m_context.GetSerializedPrimitiveType(*primitiveProperty));
+            return ReadSimplePropertyValue(primitiveProperty->GetName(), primitiveProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, m_context.GetSerializedPrimitiveType(*primitiveProperty), 
+                    primitiveProperty->GetKindOfQuantity(), m_context.GetOldUnitName(*primitiveProperty));
             }
 
         /*---------------------------------------------------------------------------------**//**

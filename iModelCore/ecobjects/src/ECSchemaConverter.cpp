@@ -857,6 +857,30 @@ ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enume
     return ECObjectsStatus::Success;
     }
 
+ECObjectsStatus AddOldUnitCustomAttribute(ECSchemaR schema, ECPropertyP prop, Utf8CP oldUnitName)
+    {
+    ECObjectsStatus status;
+
+    IECInstancePtr oldUnitInstance = ConversionCustomAttributeHelper::CreateCustomAttributeInstance("OldPersistenceUnit");
+    ECValue oldUnitNameValue(oldUnitName);
+    oldUnitInstance->SetValue("Name", oldUnitNameValue);
+
+    if (!ECSchema::IsSchemaReferenced(schema, oldUnitInstance->GetClass().GetSchema()))
+        {
+        ECClassP nonConstClass = const_cast<ECClassP>(&oldUnitInstance->GetClass());
+        if (ECObjectsStatus::Success != (status = schema.AddReferencedSchema(nonConstClass->GetSchemaR())))
+            {
+            LOG.warningv("Failed to add %s as a referenced schema to %s.", oldUnitInstance->GetClass().GetSchema().GetName().c_str(), schema.GetName().c_str());
+            LOG.warningv("Failed to add 'OldPersistenceUnit' custom attribute to ECProperty '%s.%s'.", prop->GetClass().GetFullName(), prop->GetName().c_str());
+            return status;
+            }
+        }
+
+    status = prop->SetCustomAttribute(*oldUnitInstance);
+
+    return status;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                  06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -930,6 +954,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                     newKOQ->SetPersistenceUnit(basePropKoQ->GetPersistenceUnit());
                     newKOQ->SetRelativeError(basePropKoQ->GetRelativeError());
                     newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
+
+                    AddOldUnitCustomAttribute(schema, prop, oldUnit.GetName());
                     }
                 else
                     {

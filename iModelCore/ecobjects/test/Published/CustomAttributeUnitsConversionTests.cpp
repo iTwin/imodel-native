@@ -16,6 +16,23 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct UnitSpecificationConversionTest : ECTestFixture {};
 
+struct UnitInstanceConversionTest : ECTestFixture
+    {
+    struct TestUnitResolver : ECInstanceReadContext::IUnitResolver
+        {
+        explicit TestUnitResolver(){}
+        ~TestUnitResolver() {}
+        Utf8CP _ResolveUnitName(ECPropertyCR ecProperty) const override;
+        };
+
+    mutable TestUnitResolver m_testUnitResolver;
+
+    virtual void SetUp() override
+        {
+        ECTestFixture::SetUp();
+        }
+    };
+
 void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR originalSchema)
     {
     for (const auto& ecClass : originalSchema.GetClasses())
@@ -172,6 +189,11 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
     EXPECT_STRNE(lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName(), specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName());
     EXPECT_STREQ("DM", lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName());
     EXPECT_STREQ("FT", specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName());
+
+    auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
+    ECValue oldUnitName;
+    oldPersistenceUnit->GetValue(oldUnitName, "PersistenceUnitName");
+    EXPECT_STREQ("FOOT", oldUnitName.GetUtf8CP());
     }
 
 //---------------------------------------------------------------------------------------
@@ -257,6 +279,112 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     EXPECT_STREQ("KM", lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName());
     EXPECT_STREQ("CM", specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName());
     EXPECT_EQ(2, specialLengthKOQ->GetPresentationUnitList().size());
+
+    auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
+    ECValue oldUnitName;
+    oldPersistenceUnit->GetValue(oldUnitName, "PersistenceUnitName");
+    EXPECT_STREQ("FOOT", oldUnitName.GetUtf8CP());
+    }
+
+//=======================================================================================
+//! UnitInstanceConversionTest
+//=======================================================================================
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP UnitInstanceConversionTest::TestUnitResolver::_ResolveUnitName(ECPropertyCR ecProperty) const
+    {
+    if (!ecProperty.IsDefinedLocal("ECv3ConversionAttributes", "OldPersistenceUnit"))
+        return "";
+
+    IECInstancePtr instance = ecProperty.GetCustomAttribute("ECv3ConversionAttributes", "OldPersistenceUnit");
+    ECValue unitName;
+    instance->GetValue(unitName, "PersistenceUnitName");
+
+    if (unitName.IsNull() || !unitName.IsUtf8())
+        return "";
+
+    return unitName.GetUtf8CP();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitInstanceConversionTest, BasicTest)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+            <ECClass typeName="Pipe" displayLabel="A generic pipe" isDomainClass="True">
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                            <DimensionName>L</DimensionName>
+                            <UnitName>DECIMETRE</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+
+            <ECClass typeName="SpecialPipe" displayLabel="A more specialized pipe" isDomainClass="True">
+                <BaseClass>Pipe</BaseClass>
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                            <DimensionName>L</DimensionName>
+                            <UnitName>FOOT</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+
+    {
+    Utf8CP instanceXml = R"xml(
+        <SpecialPipe xmlns="OldUnits.01.00">
+            <Length>50</Length>
+        </SpecialPipe>
+        )xml";
+
+    IECInstancePtr testInstance;
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+    instanceContext->SetUnitResolver(&m_testUnitResolver);
+    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+
+    ECValue length;
+    testInstance->GetValue(length, "Length");
+    EXPECT_EQ(50*3.048, length.GetDouble());
+    }
+    {
+    Utf8CP instanceXml = R"xml(
+        <SpecialPipe xmlns="OldUnits.01.00">
+            <Length>50</Length>
+        </SpecialPipe>
+        )xml";
+
+    IECInstancePtr testInstance;
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+
+    ECValue length;
+    testInstance->GetValue(length, "Length");
+    EXPECT_EQ(50, length.GetDouble());
+    }
+
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
