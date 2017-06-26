@@ -192,7 +192,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
 
     auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
     ECValue oldUnitName;
-    oldPersistenceUnit->GetValue(oldUnitName, "PersistenceUnitName");
+    oldPersistenceUnit->GetValue(oldUnitName, "Name");
     EXPECT_STREQ("FOOT", oldUnitName.GetUtf8CP());
     }
 
@@ -282,7 +282,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
 
     auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
     ECValue oldUnitName;
-    oldPersistenceUnit->GetValue(oldUnitName, "PersistenceUnitName");
+    oldPersistenceUnit->GetValue(oldUnitName, "Name");
     EXPECT_STREQ("FOOT", oldUnitName.GetUtf8CP());
     }
 
@@ -300,7 +300,7 @@ Utf8CP UnitInstanceConversionTest::TestUnitResolver::_ResolveUnitName(ECProperty
 
     IECInstancePtr instance = ecProperty.GetCustomAttribute("ECv3ConversionAttributes", "OldPersistenceUnit");
     ECValue unitName;
-    instance->GetValue(unitName, "PersistenceUnitName");
+    instance->GetValue(unitName, "Name");
 
     if (unitName.IsNull() || !unitName.IsUtf8())
         return "";
