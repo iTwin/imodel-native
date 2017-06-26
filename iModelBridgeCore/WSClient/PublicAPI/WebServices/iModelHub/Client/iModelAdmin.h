@@ -22,11 +22,12 @@ typedef struct Client* ClientP;
 //=======================================================================================
 struct iModelAdmin : public Dgn::DgnPlatformLib::Host::RepositoryAdmin
 {
+friend struct Client;
 private:
     std::unique_ptr<bmap<Utf8String, iModelManagerPtr>> m_managers;
     ClientP m_client;
-public:
     iModelAdmin(ClientP client);
+public:
     IMODELHUBCLIENT_EXPORT Dgn::IRepositoryManagerP _GetRepositoryManager(Dgn::DgnDbR db) const override;
 };
 

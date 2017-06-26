@@ -57,19 +57,24 @@ private:
 public:
     //! Set custom handler.
     //! @param[in] customHandler
+    //! @private
     void SetHttpHandler(IHttpHandlerPtr customHandler) {m_customHandler = customHandler;}
 
     //! Get custom handler.
     //! @return Returns HttpHandler
+    //! @private
     IHttpHandlerPtr GetHttpHandler() {return m_customHandler;}
 
     //! Get the server URL
+    //! @private
     Utf8StringCR GetServerUrl() const {return m_serverUrl;}
 
     //! Get the project ID
+    //! @private
     Utf8StringCR GetProjectId() const {return m_projectId;}
 
     //! Get the client's credentials
+    //! @private
     CredentialsCR GetCredentials() const {return m_credentials;}
 
     //! Address of the server.
