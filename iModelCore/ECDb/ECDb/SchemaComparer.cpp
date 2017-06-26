@@ -475,11 +475,103 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
     if (a.GetPriority() != b.GetPriority())
         change.GetPriority().SetValue(a.GetPriority(), b.GetPriority());
 
-    //if (a.GetMaximumValue() != b.GetMaximumValue())
-    //    change.GetMaximumValue().SetValue(a.GetMaximumValue(), b.GetMaximumValue());
+    // MinimumLength
+    {
+    const bool aMinLengthDefined = a.IsMinimumLengthDefined();
+    const bool bMinLengthDefined = b.IsMinimumLengthDefined();
+    if (aMinLengthDefined && bMinLengthDefined)
+        {
+        const uint32_t aMinLength = a.GetMinimumLength();
+        const uint32_t bMinLength = b.GetMinimumLength();
+        if (aMinLength != bMinLength)
+            change.GetMinimumLength().SetValue(aMinLength, bMinLength);
+        }
+    else if (aMinLengthDefined && !bMinLengthDefined)
+        change.GetMinimumLength().SetValue(ValueId::Deleted, a.GetMinimumLength());
+    else if (!aMinLengthDefined && bMinLengthDefined)
+        change.GetMinimumLength().SetValue(ValueId::New, b.GetMinimumLength());
+    }
 
-    //if (a.GetMinimumValue() != b.GetMinimumValue())
-    //    change.GetMinimumValue().SetValue(a.GetMinimumValue(), b.GetMinimumValue());
+    // MaximumLength
+    {
+    const bool aMaxLengthDefined = a.IsMaximumLengthDefined();
+    const bool bMaxLengthDefined = b.IsMaximumLengthDefined();
+    if (aMaxLengthDefined && bMaxLengthDefined)
+        {
+        const uint32_t aMaxLength = a.GetMaximumLength();
+        const uint32_t bMaxLength = b.GetMaximumLength();
+        if (aMaxLength != bMaxLength)
+            change.GetMaximumLength().SetValue(aMaxLength, bMaxLength);
+        }
+    else if (aMaxLengthDefined && !bMaxLengthDefined)
+        change.GetMaximumLength().SetValue(ValueId::Deleted, a.GetMaximumLength());
+    else if (!aMaxLengthDefined && bMaxLengthDefined)
+        change.GetMaximumLength().SetValue(ValueId::New, b.GetMaximumLength());
+    }
+
+    // MinimumValue
+    {
+    const bool aMinValueDefined = a.IsMinimumValueDefined();
+    const bool bMinValueDefined = b.IsMinimumValueDefined();
+    if (aMinValueDefined && bMinValueDefined)
+        {
+        ECValue aVal, bVal;
+        if (ECObjectsStatus::Success != a.GetMinimumValue(aVal) ||
+            ECObjectsStatus::Success != b.GetMinimumValue(bVal))
+            return ERROR;
+
+        if (aVal != bVal)
+            change.GetMinimumValue().SetValue(aVal, bVal);
+        }
+    else if (aMinValueDefined && !bMinValueDefined)
+        {
+        ECValue aVal;
+        if (ECObjectsStatus::Success != a.GetMinimumValue(aVal))
+            return ERROR;
+
+        change.GetMinimumValue().SetValue(ValueId::Deleted, aVal);
+        }
+    else if (!aMinValueDefined && bMinValueDefined)
+        {
+        ECValue bVal;
+        if (ECObjectsStatus::Success != b.GetMinimumValue(bVal))
+            return ERROR;
+
+        change.GetMinimumValue().SetValue(ValueId::New, bVal);
+        }
+    }
+
+    // MaximumValue
+    {
+    const bool aMaxValueDefined = a.IsMaximumValueDefined();
+    const bool bMaxValueDefined = b.IsMaximumValueDefined();
+    if (aMaxValueDefined && bMaxValueDefined)
+        {
+        ECValue aVal, bVal;
+        if (ECObjectsStatus::Success != a.GetMaximumValue(aVal) ||
+            ECObjectsStatus::Success != b.GetMaximumValue(bVal))
+            return ERROR;
+
+        if (aVal != bVal)
+            change.GetMaximumValue().SetValue(aVal, bVal);
+        }
+    else if (aMaxValueDefined && !bMaxValueDefined)
+        {
+        ECValue aVal;
+        if (ECObjectsStatus::Success != a.GetMinimumValue(aVal))
+            return ERROR;
+
+        change.GetMinimumValue().SetValue(ValueId::Deleted, aVal);
+        }
+    else if (!aMaxValueDefined && bMaxValueDefined)
+        {
+        ECValue bVal;
+        if (ECObjectsStatus::Success != b.GetMaximumValue(bVal))
+            return ERROR;
+
+        change.GetMaximumValue().SetValue(ValueId::New, bVal);
+        }
+    }
 
     // KOQ
     KindOfQuantityCP aKoq = a.GetKindOfQuantity();
@@ -531,15 +623,31 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
 
     //ExtendedType
     Utf8StringCP aExtendedType = nullptr, bExtendedType = nullptr;
-    if (aPrimProp != nullptr && aPrimProp->HasExtendedType())
-        aExtendedType = &aPrimProp->GetExtendedTypeName();
-    else if (aPrimArrayProp != nullptr && aPrimArrayProp->HasExtendedType())
-        aExtendedType = &aPrimArrayProp->GetExtendedTypeName();
+    if (a.HasExtendedType())
+        {
+        if (aPrimProp != nullptr)
+            aExtendedType = &aPrimProp->GetExtendedTypeName();
+        else if (aPrimArrayProp != nullptr)
+            aExtendedType = &aPrimArrayProp->GetExtendedTypeName();
+        else
+            {
+            BeAssert(false && "Property type which is not expected to have an extended type name. Code needs to be adjusted");
+            return ERROR;
+            }
+        }
 
-    if (bPrimProp != nullptr && bPrimProp->HasExtendedType())
-        bExtendedType = &bPrimProp->GetExtendedTypeName();
-    else if (bPrimArrayProp != nullptr && bPrimArrayProp->HasExtendedType())
-        bExtendedType = &bPrimArrayProp->GetExtendedTypeName();
+    if (b.HasExtendedType())
+        {
+        if (bPrimProp != nullptr)
+            bExtendedType = &bPrimProp->GetExtendedTypeName();
+        else if (bPrimArrayProp != nullptr)
+            bExtendedType = &bPrimArrayProp->GetExtendedTypeName();
+        else
+            {
+            BeAssert(false && "Property type which is not expected to have an extended type name. Code needs to be adjusted");
+            return ERROR;
+            }
+        }
 
     if (aExtendedType != nullptr && bExtendedType != nullptr)
         {
@@ -1926,6 +2034,7 @@ Utf8String Int64Change::_ToString(ValueId id) const
     return str;
     }
 
+
 //======================================================================================>
 //StrengthTypeChange
 //======================================================================================>
@@ -2019,6 +2128,19 @@ Utf8String ClassTypeChange::_ToString(ValueId id) const
         }
     return str;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String MinMaxValueChange::_ToString(ValueId id) const
+    {
+    Nullable<ECValue> const& v = GetValue(id);
+    if (v.IsNull())
+        return Utf8String(NULL_TEXT);
+
+    return v.Value().ToString();
+    }
+
 //======================================================================================>
 //ECPropertyValueChange
 //======================================================================================>

@@ -152,9 +152,10 @@
     </ECEntityClass>
     <ECEntityClass typeName="PASpatial" description="Class including a CommonGeometry prop and a CommonGeometry array prop">
         <ECProperty propertyName="B" typeName="boolean"/>
-        <ECProperty propertyName="D" typeName="double" kindOfQuantity="Volume"/>
-        <ECProperty propertyName="I" typeName="int" kindOfQuantity="Length"/>
-        <ECProperty propertyName="S" typeName="string"/>
+        <ECProperty propertyName="D" typeName="double" kindOfQuantity="Volume" MinimumValue="-1.5" MaximumValue="10.0" />
+        <ECProperty propertyName="I" typeName="int" kindOfQuantity="Length" MinimumValue="0" MaximumValue="20"/>
+        <ECProperty propertyName="S" typeName="string" MinimumLength="0" MaximumLength="30"/>
+        <ECProperty propertyName="Bi" typeName="binary" category="Core" MinimumLength="10" MaximumLength="100"/>
         <ECProperty propertyName="Geometry" typeName="Bentley.Geometry.Common.IGeometry"/>
         <ECArrayProperty propertyName="Geometry_Array" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>

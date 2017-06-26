@@ -670,14 +670,10 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
         if (SUCCESS != ImportClass(ecProperty.GetAsStructProperty()->GetType()))
             return ERROR;
         }
-    else if (ecProperty.GetIsArray())
+    else if (ecProperty.GetIsStructArray())
         {
-        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
-        if (nullptr != structArrayProperty)
-            {
-            if (SUCCESS != ImportClass(structArrayProperty->GetStructElementType()))
-                return ERROR;
-            }
+        if (SUCCESS != ImportClass(ecProperty.GetAsStructArrayProperty()->GetStructElementType()))
+            return ERROR;
         }
     else if (ecProperty.GetIsNavigation())
         {
@@ -686,7 +682,9 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
         }
 
     //now insert the actual property
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Priority,Ordinal,Kind,PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Priority,Ordinal,Kind,"
+                                                        "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
+                                                        "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -716,6 +714,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
 
     if (ecProperty.IsPriorityLocallyDefined())
         {
+        //priority is persisted as int64 to not lose unsignedness
         if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) ecProperty.GetPriority()))
             return ERROR;
         }
@@ -725,39 +724,78 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
 
     const int kindIndex = 9;
     const int primitiveTypeIndex = 10;
-    const int enumIdIndex = 11;
-    const int structClassIdIndex = 12;
-    const int extendedTypeIndex = 13;
-    const int koqIdIndex = 14;
-    const int catIdIndex = 15;
-    const int arrayMinIndex = 16;
-    const int arrayMaxIndex = 17;
-    const int navRelClassIdIndex = 18;
-    const int navDirIndex = 19;
+    const int primitiveTypeMinLengthIndex = 11;
+    const int primitiveTypeMaxLengthIndex = 12;
+    const int primitiveTypeMinValueIndex = 13;
+    const int primitiveTypeMaxValueIndex = 14;
+    const int enumIdIndex = 15;
+    const int structClassIdIndex = 16;
+    const int extendedTypeIndex = 17;
+    const int koqIdIndex = 18;
+    const int catIdIndex = 19;
+    const int arrayMinIndex = 20;
+    const int arrayMaxIndex = 21;
+    const int navRelClassIdIndex = 22;
+    const int navDirIndex = 23;
+
+    if (ecProperty.IsMinimumLengthDefined())
+        {
+        //min length is persisted as int64 to not lose unsignedness
+        if (BE_SQLITE_OK != stmt->BindInt64(primitiveTypeMinLengthIndex, (int64_t) ecProperty.GetMinimumLength()))
+            return ERROR;
+        }
+
+    if (ecProperty.IsMaximumLengthDefined())
+        {
+        //max length is persisted as int64 to not lose unsignedness
+        if (BE_SQLITE_OK != stmt->BindInt64(primitiveTypeMaxLengthIndex, (int64_t) ecProperty.GetMaximumLength()))
+            return ERROR;
+        }
+
+    if (ecProperty.IsMinimumValueDefined())
+        {
+        ECValue v;
+        if (ECObjectsStatus::Success != ecProperty.GetMinimumValue(v))
+            {
+            BeAssert(false && "Failed to read MinimumValue from ECProperty");
+            return ERROR;
+            }
+
+        if (SUCCESS != BindPropertyMinMaxValue(*stmt, primitiveTypeMinValueIndex, ecProperty, v))
+            return ERROR;
+        }
+
+    if (ecProperty.IsMaximumValueDefined())
+        {
+        ECValue v;
+        if (ECObjectsStatus::Success != ecProperty.GetMaximumValue(v))
+            {
+            BeAssert(false && "Failed to read MaximumValue from ECProperty");
+            return ERROR;
+            }
+
+        if (SUCCESS != BindPropertyMinMaxValue(*stmt, primitiveTypeMaxValueIndex, ecProperty, v))
+            return ERROR;
+        }
+
+    if (ecProperty.HasExtendedType())
+        {
+        if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, ecProperty))
+            return ERROR;
+        }
+
+    if (SUCCESS != BindPropertyKindOfQuantity(*stmt, koqIdIndex, ecProperty))
+        return ERROR;
+
+    if (SUCCESS != BindPropertyCategory(*stmt, catIdIndex, ecProperty))
+        return ERROR;
 
     if (ecProperty.GetIsPrimitive())
         {
-        PrimitiveECPropertyCP primProp = ecProperty.GetAsPrimitiveProperty();
         if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(PropertyKind::Primitive)))
             return ERROR;
 
-        ECEnumerationCP ecenum = primProp->GetEnumeration();
-        if (ecenum == nullptr)
-            {
-            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) primProp->GetType()))
-                return ERROR;
-            }
-        else
-            {
-            if (SUCCESS != ImportEnumeration(*ecenum))
-                return ERROR;
-
-            BeAssert(ecenum->HasId());
-            if (BE_SQLITE_OK != stmt->BindId(enumIdIndex, ecenum->GetId()))
-                return ERROR;
-            }
-
-        if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, *primProp))
+        if (SUCCESS != BindPropertyPrimTypeOrEnumeration(*stmt, primitiveTypeIndex, enumIdIndex, ecProperty))
             return ERROR;
         }
     else if (ecProperty.GetIsStruct())
@@ -776,10 +814,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
             if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(PropertyKind::PrimitiveArray)))
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) arrayProp->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()))
-                return ERROR;
-
-            if (SUCCESS != BindPropertyExtendedTypeName(*stmt, extendedTypeIndex, *arrayProp->GetAsPrimitiveArrayProperty()))
+            if (SUCCESS != BindPropertyPrimTypeOrEnumeration(*stmt, primitiveTypeIndex, enumIdIndex, ecProperty))
                 return ERROR;
             }
         else
@@ -817,15 +852,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
             return ERROR;
         }
 
-    //KOQs are allowed for all property kinds except for nav props (this will be caught be ECObjects already
-    //and is checked again within this method)
-    if (SUCCESS != BindPropertyKindOfQuantityId(*stmt, koqIdIndex, ecProperty))
-        return ERROR;
-
-    //PropertyCategories are allowed for all property kinds
-    if (SUCCESS != BindPropertyCategoryId(*stmt, catIdIndex, ecProperty))
-        return ERROR;
-
+    
     DbResult stat = stmt->Step();
     if (BE_SQLITE_DONE != stat)
         {
@@ -931,32 +958,151 @@ BentleyStatus SchemaWriter::InsertBaseClassEntry(ECClassId ecClassId, ECClassCR 
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    06/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int paramIndex, PrimitiveECPropertyCR prop)
-    {
-    if (!prop.HasExtendedType() || prop.GetExtendedTypeName().empty())
-        return SUCCESS;
 
-    return stmt.BindText(paramIndex, prop.GetExtendedTypeName(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::BindPropertyMinMaxValue(Statement& stmt, int paramIndex, ECN::ECPropertyCR prop, ECN::ECValueCR val)
+    {
+    if (!val.IsPrimitive())
+        {
+        BeAssert(false && "Min/MaxValue ECValue is expected to always be a primitive value");
+        return ERROR;
+        }
+
+    Nullable<PrimitiveType> propPrimType;
+    PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
+    if (primProp != nullptr)
+        propPrimType = primProp->GetType();
+    else
+        {
+        PrimitiveArrayECPropertyCP primArrayProp = prop.GetAsPrimitiveArrayProperty();
+        propPrimType = primArrayProp->GetPrimitiveElementType();
+        }
+
+    if (propPrimType.IsNull())
+        {
+        BeAssert(false && "Min/MaxValue ECValue is expected to only be defined for primitive and primitive array properties");
+        return ERROR;
+        }
+
+    switch (propPrimType.Value())
+        {
+            case PRIMITIVETYPE_DateTime:
+            {
+            if (val.IsDateTime())
+                {
+                const uint64_t jdMsec = DateTime::CommonEraMillisecondsToJulianDay(val.GetDateTimeTicks());
+                return BE_SQLITE_OK == stmt.BindDouble(paramIndex, DateTime::MsecToRationalDay(jdMsec)) ? SUCCESS : ERROR;
+                }
+
+            break;
+            }
+
+            case PRIMITIVETYPE_Double:
+                if (val.IsDouble())
+                    return BE_SQLITE_OK == stmt.BindDouble(paramIndex, val.GetDouble()) ? SUCCESS : ERROR;
+
+                break;
+
+            case PRIMITIVETYPE_Integer:
+                if (val.IsInteger())
+                    return BE_SQLITE_OK == stmt.BindInt(paramIndex, val.GetInteger()) ? SUCCESS : ERROR;
+
+                break;
+
+            case PRIMITIVETYPE_Long:
+                if (val.IsLong())
+                    return BE_SQLITE_OK == stmt.BindInt64(paramIndex, val.GetLong()) ? SUCCESS : ERROR;
+
+                break;
+
+            case PRIMITIVETYPE_String:
+                if (val.IsString())
+                    return BE_SQLITE_OK == stmt.BindText(paramIndex, val.GetUtf8CP(), Statement::MakeCopy::Yes) ? SUCCESS : ERROR;
+
+                break;
+
+            default:
+                break;
+        }
+
+    m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import schema. The ECProperty '%s.%s' has a minimum/maximum value of an unsupported type.",
+                                                    prop.GetClass().GetFullName(), prop.GetName().c_str());
+    return ERROR;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    06/2016
+// @bsimethod                                                   Krischan.Eberle    06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int paramIndex, PrimitiveArrayECPropertyCR prop)
+BentleyStatus SchemaWriter::BindPropertyExtendedTypeName(Statement& stmt, int paramIndex, ECPropertyCR prop)
     {
-    if (!prop.HasExtendedType() || prop.GetExtendedTypeName().empty())
+    if (!prop.HasExtendedType())
         return SUCCESS;
 
-    return stmt.BindText(paramIndex, prop.GetExtendedTypeName(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    Utf8StringCP extendedTypeName = nullptr;
+    if (prop.GetIsPrimitive())
+        extendedTypeName = &prop.GetAsPrimitiveProperty()->GetExtendedTypeName();
+    else if (prop.GetIsPrimitiveArray())
+        extendedTypeName = &prop.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
+    else
+        {
+        BeAssert(false && "Property which is not expected to support extended type names");
+        return ERROR;
+        }
+
+    if (extendedTypeName->empty())
+        return SUCCESS;
+
+    return stmt.BindText(paramIndex, *extendedTypeName, Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::BindPropertyPrimTypeOrEnumeration(Statement& stmt, int primTypeParamIndex, int enumParamIndex, ECPropertyCR prop)
+    {
+    ECEnumerationCP ecenum = nullptr;
+    Nullable<PrimitiveType> primType;
+    if (prop.GetIsPrimitive())
+        {
+        PrimitiveECPropertyCR primProp = *prop.GetAsPrimitiveProperty();
+        ecenum = primProp.GetEnumeration();
+        if (ecenum == nullptr)
+            primType = primProp.GetType();
+        }
+    else if (prop.GetIsPrimitiveArray())
+        {
+        PrimitiveArrayECPropertyCR arrayProp = *prop.GetAsPrimitiveArrayProperty();
+        ecenum = arrayProp.GetEnumeration();
+        if (ecenum == nullptr)
+            primType = arrayProp.GetPrimitiveElementType();
+        }
+    else
+        {
+        BeAssert(false && "Property which is not expected to support enumerations");
+        return ERROR;
+        }
+
+    if (ecenum == nullptr)
+        {
+        BeAssert(!primType.IsNull());
+        return BE_SQLITE_OK == stmt.BindInt(primTypeParamIndex, primType.Value()) ? SUCCESS : ERROR;
+        }
+
+    if (SUCCESS != ImportEnumeration(*ecenum))
+        return ERROR;
+
+    BeAssert(ecenum->HasId());
+    return stmt.BindId(enumParamIndex, ecenum->GetId()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int paramIndex, ECPropertyCR prop)
+BentleyStatus SchemaWriter::BindPropertyKindOfQuantity(Statement& stmt, int paramIndex, ECPropertyCR prop)
     {
     if (!prop.IsKindOfQuantityDefinedLocally() || prop.GetKindOfQuantity() == nullptr)
         return SUCCESS;
@@ -978,7 +1124,7 @@ BentleyStatus SchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, int pa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::BindPropertyCategoryId(Statement& stmt, int paramIndex, ECPropertyCR prop)
+BentleyStatus SchemaWriter::BindPropertyCategory(Statement& stmt, int paramIndex, ECPropertyCR prop)
     {
     if (!prop.IsCategoryDefinedLocally() || prop.GetCategory() == nullptr)
         return SUCCESS;
