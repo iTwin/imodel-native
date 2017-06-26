@@ -24,6 +24,7 @@ DEFINE_TASK_TYPEDEFS(iModelInfoPtr, iModel);
 //=======================================================================================
 struct iModelInfo : RefCountedBase
 {
+friend struct Client;
 private:
     Utf8String m_serverUrl;
     Utf8String m_id;
@@ -32,21 +33,18 @@ private:
     Utf8String m_userCreated;
     DateTime   m_createdDate;
 
+    iModelInfo() {}
     iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id) : m_serverUrl(serverUrl), m_id(id) {}
     iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date)
         : m_serverUrl(serverUrl), m_id(id), m_name(name), m_description(description), m_userCreated(user), m_createdDate(date) {}
 
-    static iModelInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, Utf8StringCR url);
-
-public:
-    iModelInfo() {}
-
-    bool operator==(iModelInfoCR rhs) const {return rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL();}
+    bool operator==(iModelInfoCR rhs) const { return rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL(); }
     //! DEPRECATED: Use Parsing from Instance
     static iModelInfoPtr Parse(JsonValueCR json, Utf8StringCR url);
     static iModelInfoPtr Parse(WSObjectsReader::Instance instnace, Utf8StringCR url);
+    static iModelInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, Utf8StringCR url);
     static iModelInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id) { return iModelInfoPtr(new iModelInfo(serverUrl, id)); }
-
+public:
     IMODELHUBCLIENT_EXPORT static iModelResult ReadiModelInfo(Dgn::DgnDbCR db);
     StatusResult WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledChangeSetId = false) const;
 

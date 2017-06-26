@@ -23,6 +23,9 @@ DEFINE_TASK_TYPEDEFS(bvector<BriefcaseInfoPtr>, BriefcasesInfo);
 //=======================================================================================
 struct BriefcaseInfo : RefCountedBase
 {
+friend struct iModelAdmin;
+friend struct iModelConnection;
+friend struct Client;
 private:
     BeSQLite::BeBriefcaseId m_id;
     BeSQLite::BeGuid m_fileId;
@@ -30,19 +33,18 @@ private:
     BeFileName m_localPath;
     bool m_isReadOnly;
 
-public:
     BriefcaseInfo() {}
     BriefcaseInfo(BeSQLite::BeBriefcaseId id) : m_id(id) {}
-    BriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeSQLite::BeGuid fileId, bool isReadOnly) 
+    BriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeSQLite::BeGuid fileId, bool isReadOnly)
         : m_id(id), m_fileId(fileId), m_userOwned(userOwned), m_isReadOnly(isReadOnly) {}
 
     static BriefcaseInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
     //! DEPRECATED: Use Parse from Instance
     static BriefcaseInfoPtr Parse(JsonValueCR json);
-
-    bool operator==(BriefcaseInfoCR briefcase) const {return briefcase.GetId() == GetId();}
-    void SetLocalPath(BeFileName localPath) {m_localPath = localPath;}
-
+    static BriefcaseInfoPtr BriefcaseInfo::ParseRapidJson(RapidJsonValueCR json);
+    bool operator==(BriefcaseInfoCR briefcase) const { return briefcase.GetId() == GetId(); }
+    void SetLocalPath(BeFileName localPath) { m_localPath = localPath; }
+public:
     BeSQLite::BeBriefcaseId GetId() const {return m_id; }
     Utf8StringCR GetUserOwned() const {return m_userOwned;}
     BeSQLite::BeGuid GetFileId() const {return m_fileId;}

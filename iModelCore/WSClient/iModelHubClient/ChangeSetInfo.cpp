@@ -42,10 +42,12 @@ Utf8String ParseString(RapidJsonValueCR properties, Utf8String stringName, Utf8S
     return defaultValue;
     }
 
+END_UNNAMED_NAMESPACE
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas          01/2017
 //---------------------------------------------------------------------------------------
-ChangeSetInfoPtr ParseRapidJson(RapidJsonValueCR properties)
+ChangeSetInfoPtr ChangeSetInfo::ParseRapidJson(RapidJsonValueCR properties)
     {
     auto id = properties[ServerSchema::Property::Id].GetString();
     auto dbGuid = ParseString(properties, ServerSchema::Property::SeedFileId, "");
@@ -63,8 +65,6 @@ ChangeSetInfoPtr ParseRapidJson(RapidJsonValueCR properties)
 
     return new ChangeSetInfo(id, parentChangeSetId, dbGuid, index, description, fileSize, briefcaseId, userCreated, pushDate, containingChanges);
     }
-
-END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas          01/2017

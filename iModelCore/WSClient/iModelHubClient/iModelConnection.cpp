@@ -23,261 +23,12 @@ USING_NAMESPACE_BENTLEY_DGN
 
 # define MAX_AsyncQueries 10
 
-BEGIN_BENTLEY_IMODELHUB_NAMESPACE
-
-struct iModelConnectionImpl : RefCountedBase
-{
-friend struct iModelConnection;
-
-private:
-    static PredownloadManagerPtr s_preDownloadManager;
-    bool m_subscribedForPreDownload = false;
-
-    iModelInfo                 m_iModelInfo;
-
-    IWSRepositoryClientPtr     m_wsRepositoryClient;
-    IAzureBlobStorageClientPtr m_azureClient;
-
-    EventServiceClient*        m_eventServiceClient = nullptr;
-    BeMutex                    m_eventServiceClientMutex;
-    EventSubscriptionPtr       m_eventSubscription;
-    AzureServiceBusSASDTOPtr   m_eventSAS;
-    EventManagerPtr            m_eventManagerPtr;
-
-    iModelConnectionImpl(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
-    
-    //!< Gets RepositoryClient.
-    //! @return Returns repository client
-    IWSRepositoryClientPtr GetRepositoryClient() const { return m_wsRepositoryClient; }
-
-    //! Sets RepositoryClient.
-    //! @param[in] client
-    void  SetRepositoryClient(IWSRepositoryClientPtr client) { m_wsRepositoryClient.swap(client); }
-
-    //!< Returns iModel information for this connection.
-    iModelInfoCR GetiModelInfo() const { return m_iModelInfo; }
-    
-    void SubscribeChangeSetsDownload(iModelConnectionP iModelConnection);
-
-    //! Download the file for this change set from server.
-    ChangeSetTaskPtr DownloadChangeSetFile(ChangeSetInfoPtr changeSet, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    StatusTaskPtr DownloadFileInternal(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, Http::Request::ProgressCallbackCR callback,
-        ICancellationTokenPtr cancellationToken) const;
-
-    //! Download a copy of the file from the iModel.
-    StatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    FileAccessKeyTaskPtr QueryFileAccessKey(ObjectId objectId, ICancellationTokenPtr cancellationToken) const;
-
-    //! Sets AzureBlobStorageClient. 
-    void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
-
-    //! Creates a new file instance on the server. 
-    FileTaskPtr CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Performs a file upload to azure blob storage.
-    StatusTaskPtr AzureFileUpload(BeFileNameCR filePath, FileAccessKeyPtr url, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Uploads a BIM file to the server.
-    StatusTaskPtr UploadServerFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Performs a file upload to on-premise server. 
-    StatusTaskPtr OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Updates existing file instance on the server. 
-    StatusTaskPtr UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Finalizes the file upload.
-    StatusTaskPtr InitializeServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Internal seed files query.
-    FilesTaskPtr SeedFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Write the briefcaseId into the file.
-    StatusResult WriteBriefcaseIdIntoFile(BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
-
-    //! Sends a request from changeset.
-    StatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Sends a request from changeset.
-    StatusTaskPtr SendChangesetRequestInternal(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-        ICancellationTokenPtr cancellationToken = nullptr, IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr) const;
-
-    //! Download a copy of the seed file from the iModel and initialize it as briefcase
-    StatusResult DownloadBriefcaseFile(BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId,
-        Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Acquire the requested set of locks.
-    StatusTaskPtr AcquireCodesLocksInternal(LockRequestCR locks, Dgn::DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //Returns birefcases information for given query. Query should have its filter already set.
-    BriefcasesInfoTaskPtr QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const;
-    
-    //Returns all codes by code id
-    StatusTaskPtr QueryCodesInternal
-        (
-        Dgn::DgnCodeSet const& codes,
-        BeSQLite::BeBriefcaseId const* briefcaseId,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken
-        ) const;
-
-    //Returns all codes by briefcase id
-    StatusTaskPtr QueryCodesInternal
-    (
-        BeSQLite::BeBriefcaseId const*  briefcaseId,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken
-    ) const;
-
-    //Returns all locks by lock id
-    StatusTaskPtr QueryLocksInternal
-        (
-        LockableIdSet const& locks,
-        BeSQLite::BeBriefcaseId const*  briefcaseId,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken
-        ) const;
-
-    //Returns all locks by briefcase id
-    StatusTaskPtr QueryLocksInternal
-        (
-        BeSQLite::BeBriefcaseId const*  briefcaseId,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken
-        ) const;
-
-    //! Returns all available codes and locks for given briefcase id.
-    CodeLockSetTaskPtr QueryCodesLocksInternal
-    (
-        Dgn::DgnCodeSet const* codes,
-        LockableIdSet const* locks,
-        BeSQLite::BeBriefcaseId const* briefcaseId,
-        ICancellationTokenPtr cancellationToken
-    ) const;
-
-    //! Returns all available codes and locks by executing given query.
-    StatusTaskPtr QueryCodesLocksInternal
-    (
-        WSQuery query,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        CodeLocksSetAddFunction addFunction,
-        ICancellationTokenPtr cancellationToken
-    ) const;
-
-    StatusTaskPtr QueryUnavailableCodesInternal(BeSQLite::BeBriefcaseId const briefcaseId, CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken) const;
-
-    StatusTaskPtr QueryUnavailableLocksInternal(BeSQLite::BeBriefcaseId const briefcaseId, uint64_t const lastChangeSetIndex,
-        CodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;
-
-    CodeSequenceTaskPtr QueryCodeMaximumIndexInternal(std::shared_ptr<WSChangeset> changeSet, ICancellationTokenPtr cancellationToken = nullptr) const;
-    CodeSequenceTaskPtr QueryCodeNextAvailableInternal(std::shared_ptr<WSChangeset> changeSet, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Create a new briefcase instance for this iModel.
-    AsyncTaskPtr<WSCreateObjectResult> CreateBriefcaseInstance(ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Queries briefcase file instance from this iModel.
-    FileTaskPtr GetBriefcaseFileInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const;
-
-    //! Gets single ChangeSet by Id
-    ChangeSetInfoTaskPtr GetChangeSetByIdInternal(Utf8StringCR changeSetId, bool loadAccessKey, ICancellationTokenPtr cancellationToken) const;
-
-    //! Sets the EventSASToken in the EventServiceClient
-    bool SetEventSASToken(ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Sets the EventSubscription in the EventServiceClient
-    bool SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Sets EventServiceClient.
-    bool SetEventServiceClient(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Gets the Event SAS Token from EventServiceClient
-    AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    // This pointer needs to change to be generic
-    EventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get EventSubscription with the given Event Types
-    EventSubscriptionTaskPtr GetEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Update the EventSubscription to the given EventTypes
-    EventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get Responses from the EventServiceClient
-    EventReponseTaskPtr GetEventServiceResponse(int numOfRetries, bool longpolling = true);
-
-    bool IsSubscribedToEvents() const;
-
-    //! Update the Event Subscription
-    StatusTaskPtr   SubscribeToEvents(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Receive Events from EventService
-    EventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Cancel Events from EventService
-    StatusTaskPtr    UnsubscribeToEvents();
-
-    //! Subscribe callback for the events
-    StatusTaskPtr SubscribeEventsCallback(EventTypeSet* eventTypes, EventCallbackPtr callback, iModelConnectionP imodelConnectionP);
-
-    //! Unsubscribe callback for events
-    StatusTaskPtr UnsubscribeEventsCallback(EventCallbackPtr callback);
-
-    //! Get all ChangeSet information based on a query.
-    ChangeSetsInfoTaskPtr ChangeSetsFromQueryInternal(WSQuery const& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get all ChangeSet information based on a query (repeated).
-    ChangeSetsInfoTaskPtr ChangeSetsFromQuery(WSQuery const& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get all of the changeSets after the specific ChangeSetId.
-    ChangeSetsInfoTaskPtr GetChangeSetsInternal(WSQuery const& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get all of the changeSets.
-    ChangeSetsInfoTaskPtr GetAllChangeSetsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get all of the changeSets after the specific ChangeSetId.
-    ChangeSetsInfoTaskPtr GetChangeSetsAfterIdInternal(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), bool loadAccessKey = false, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Download the ChangeSet files.
-    ChangeSetsTaskPtr DownloadChangeSetsInternal(bvector<ChangeSetInfoPtr> const& changeSets, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Download the ChangeSet files.
-    ChangeSetsTaskPtr DownloadChangeSets(std::deque<ObjectId>& changeSetIds, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    WSQuery CreateChangeSetsAfterIdQuery(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
-    WSQuery CreateChangeSetsByIdQuery(std::deque<ObjectId>& changeSetIds) const;
-
-    // Wait while bim file is initialized
-    void WaitForInitializedBIMFile(BeSQLite::BeGuid fileGuid, FileResultPtr finalResult) const;
-
-    //! Push this ChangeSet file to server.
-    StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Initializes the changeSet.
-    StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, bool relinquishCodesLocks,
-        Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
-
-    FileTaskPtr GetSeedFileById(BeSQLite::BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
-};
-
-END_BENTLEY_IMODELHUB_NAMESPACE
-
-PredownloadManagerPtr iModelConnectionImpl::s_preDownloadManager = new PredownloadManager();
+PredownloadManagerPtr iModelConnection::s_preDownloadManager = new PredownloadManager();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-iModelConnectionImpl::iModelConnectionImpl
+iModelConnection::iModelConnection
 (
 iModelInfoCR           iModel,
 WebServices::CredentialsCR credentials,
@@ -296,65 +47,9 @@ IHttpHandlerPtr            customHandler
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             01/2017
-//---------------------------------------------------------------------------------------
-void iModelConnectionImpl::SubscribeChangeSetsDownload(iModelConnectionP iModelConnection)
-    {
-    if (m_subscribedForPreDownload)
-        return;
-
-    m_subscribedForPreDownload = true;
-    s_preDownloadManager->SubscribeChangeSetsDownload(iModelConnection);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-ChangeSetTaskPtr iModelConnectionImpl::DownloadChangeSetFile
-(
-ChangeSetInfoPtr        changeSet,
-Http::Request::ProgressCallbackCR callback,
-ICancellationTokenPtr             cancellationToken
-) const
-    {
-    const Utf8String methodName = "iModelConnection::DownloadChangeSetFile";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-
-    RevisionStatus changeSetStatus;
-    DgnRevisionPtr changeSetPtr = DgnRevision::Create(&changeSetStatus, changeSet->GetId(), changeSet->GetParentChangeSetId(), changeSet->GetDbGuid());
-    auto changeSetFileName = changeSetPtr->GetRevisionChangesFile();
-
-    if (s_preDownloadManager->TryGetChangeSetFile(changeSetFileName, changeSet->GetId()))
-        return CreateCompletedAsyncTask<ChangeSetResult>(ChangeSetResult::Success(changeSetPtr));
-
-    ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSet->GetId());
-
-    if (changeSet->GetContainsFileAccessKey())
-        {
-        return DownloadFileInternal(changeSetFileName, fileObject, changeSet->GetFileAccessKey(), callback, cancellationToken)
-            ->Then<ChangeSetResult>([=](StatusResultCR downloadResult)
-            {
-            if (!downloadResult.IsSuccess())
-                return ChangeSetResult::Error(downloadResult.GetError());
-
-            return ChangeSetResult::Success(changeSetPtr);
-            });
-        }
-
-    return DownloadFile(changeSetFileName, fileObject, callback, cancellationToken)
-        ->Then<ChangeSetResult>([=](StatusResultCR downloadResult)
-        {
-        if (!downloadResult.IsSuccess())
-            return ChangeSetResult::Error(downloadResult.GetError());
-
-        return ChangeSetResult::Success(changeSetPtr);
-        });
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::DownloadFileInternal
+StatusTaskPtr iModelConnection::DownloadFileInternal
 (
     BeFileName                        localFile,
     ObjectIdCR                        fileId,
@@ -409,7 +104,7 @@ StatusTaskPtr iModelConnectionImpl::DownloadFileInternal
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::DownloadFile
+StatusTaskPtr iModelConnection::DownloadFile
 (
 BeFileName                        localFile,
 ObjectIdCR                        fileId,
@@ -428,7 +123,7 @@ ICancellationTokenPtr             cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-FileAccessKeyTaskPtr iModelConnectionImpl::QueryFileAccessKey
+FileAccessKeyTaskPtr iModelConnection::QueryFileAccessKey
 (
 ObjectId              objectId,
 ICancellationTokenPtr cancellationToken
@@ -460,17 +155,9 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             03/2016
-//---------------------------------------------------------------------------------------
-void iModelConnectionImpl::SetAzureClient(WebServices::IAzureBlobStorageClientPtr azureClient)
-    {
-    m_azureClient = azureClient;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-Json::Value CreateFileJson(FileInfoCR fileInfo)
+Json::Value iModelConnection::CreateFileJson(FileInfoCR fileInfo)
     {
     Json::Value createFileJson = Json::objectValue;
     createFileJson[ServerSchema::Instance] = Json::objectValue;
@@ -483,7 +170,7 @@ Json::Value CreateFileJson(FileInfoCR fileInfo)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-FileTaskPtr iModelConnectionImpl::CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
+FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::CreateNewServerFile";
     std::shared_ptr<FileResult> finalResult = std::make_shared<FileResult>();
@@ -561,7 +248,7 @@ FileTaskPtr iModelConnectionImpl::CreateNewServerFile(FileInfoCR fileInfo, ICanc
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::AzureFileUpload(BeFileNameCR filePath, FileAccessKeyPtr url, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr iModelConnection::AzureFileUpload(BeFileNameCR filePath, FileAccessKeyPtr url, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::AzureFileUpload";
     return m_azureClient->SendUpdateFileRequest(url->GetUploadUrl(), filePath, callback, cancellationToken)
@@ -580,7 +267,7 @@ StatusTaskPtr iModelConnectionImpl::AzureFileUpload(BeFileNameCR filePath, FileA
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::UploadServerFile(BeFileNameCR filePath, FileInfoCR downloadInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr iModelConnection::UploadServerFile(BeFileNameCR filePath, FileInfoCR downloadInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     auto fileAccessKey = downloadInfo.GetFileAccessKey();
     
@@ -593,7 +280,7 @@ StatusTaskPtr iModelConnectionImpl::UploadServerFile(BeFileNameCR filePath, File
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr iModelConnection::OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::OnPremiseFileUpload";
     if (objectId.remoteId.empty())
@@ -618,7 +305,7 @@ StatusTaskPtr iModelConnectionImpl::OnPremiseFileUpload(BeFileNameCR filePath, O
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr iModelConnection::UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::UpdateServerFile";
     Json::Value properties = Json::objectValue;
@@ -639,7 +326,7 @@ StatusTaskPtr iModelConnectionImpl::UpdateServerFile(FileInfoCR fileInfo, ICance
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::InitializeServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr iModelConnection::InitializeServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::InitializeServerFile";
     Json::Value fileProperties;
@@ -662,7 +349,7 @@ StatusTaskPtr iModelConnectionImpl::InitializeServerFile(FileInfoCR fileInfo, IC
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-FilesTaskPtr iModelConnectionImpl::SeedFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken) const
+FilesTaskPtr iModelConnection::SeedFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken) const
     {
     return ExecutionManager::ExecuteWithRetry<bvector<FileInfoPtr>>([=]() {
         return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<FilesResult>([=] (WSObjectsResult const& result)
@@ -680,7 +367,7 @@ FilesTaskPtr iModelConnectionImpl::SeedFilesQuery(WSQuery query, ICancellationTo
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-StatusResult iModelConnectionImpl::WriteBriefcaseIdIntoFile
+StatusResult iModelConnection::WriteBriefcaseIdIntoFile
 (
 BeFileName                     filePath,
 BeBriefcaseId                  briefcaseId
@@ -713,7 +400,7 @@ BeBriefcaseId                  briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2015
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::SendChangesetRequest
+StatusTaskPtr iModelConnection::SendChangesetRequest
 (
 std::shared_ptr<WSChangeset> changeset,
 IBriefcaseManager::ResponseOptions options,
@@ -726,7 +413,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2015
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::SendChangesetRequestInternal
+StatusTaskPtr iModelConnection::SendChangesetRequestInternal
 (
 std::shared_ptr<WSChangeset> changeset,
 IBriefcaseManager::ResponseOptions options,
@@ -764,7 +451,7 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-StatusResult iModelConnectionImpl::DownloadBriefcaseFile
+StatusResult iModelConnection::DownloadBriefcaseFile
 (
 BeFileName                        localFile,
 BeBriefcaseId                     briefcaseId,
@@ -1288,7 +975,7 @@ const BeBriefcaseId*  briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::AcquireCodesLocksInternal
+StatusTaskPtr iModelConnection::AcquireCodesLocksInternal
 (
     LockRequestCR                       locks,
     DgnCodeSet                          codes,
@@ -1315,7 +1002,7 @@ StatusTaskPtr iModelConnectionImpl::AcquireCodesLocksInternal
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-BriefcasesInfoTaskPtr iModelConnectionImpl::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
+BriefcasesInfoTaskPtr iModelConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::QueryBriefcaseInfoInternal";
     return ExecutionManager::ExecuteWithRetry<bvector<BriefcaseInfoPtr>>([=]()
@@ -1343,7 +1030,7 @@ BriefcasesInfoTaskPtr iModelConnectionImpl::QueryBriefcaseInfoInternal(WSQuery c
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-CodeLockSetTaskPtr iModelConnectionImpl::QueryCodesLocksInternal
+CodeLockSetTaskPtr iModelConnection::QueryCodesLocksInternal
 (
 DgnCodeSet const* codes,
 LockableIdSet const* locks,
@@ -1393,7 +1080,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::QueryCodesLocksInternal
+StatusTaskPtr iModelConnection::QueryCodesLocksInternal
 (
 WSQuery query,
 CodeLockSetResultInfoPtr codesLocksOut,
@@ -1441,7 +1128,7 @@ void AddCodes(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr c
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                01/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::QueryCodesInternal
+StatusTaskPtr iModelConnection::QueryCodesInternal
 (
 const DgnCodeSet& codes,
 const BeSQLite::BeBriefcaseId*  briefcaseId,
@@ -1463,7 +1150,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                01/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::QueryCodesInternal
+StatusTaskPtr iModelConnection::QueryCodesInternal
 (
 const BeSQLite::BeBriefcaseId*  briefcaseId,
 CodeLockSetResultInfoPtr codesLocksOut,
@@ -1498,7 +1185,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                01/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::QueryUnavailableCodesInternal
+StatusTaskPtr iModelConnection::QueryUnavailableCodesInternal
 (
 const BeBriefcaseId briefcaseId, 
 CodeLockSetResultInfoPtr codesLocksOut,
@@ -1519,7 +1206,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                01/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::QueryLocksInternal
+StatusTaskPtr iModelConnection::QueryLocksInternal
 (
 const LockableIdSet& locks,
 const BeSQLite::BeBriefcaseId*  briefcaseId,
@@ -1554,7 +1241,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                01/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::QueryLocksInternal
+StatusTaskPtr iModelConnection::QueryLocksInternal
 (
 const BeSQLite::BeBriefcaseId*  briefcaseId,
 CodeLockSetResultInfoPtr codesLocksOut,
@@ -1589,7 +1276,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                01/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::QueryUnavailableLocksInternal
+StatusTaskPtr iModelConnection::QueryUnavailableLocksInternal
 (
 const BeBriefcaseId briefcaseId, 
 const uint64_t lastChangeSetIndex,
@@ -1650,7 +1337,7 @@ Json::Value GetChangedInstances(Utf8String response)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             08/2016
 //---------------------------------------------------------------------------------------
-CodeSequenceTaskPtr iModelConnectionImpl::QueryCodeMaximumIndexInternal
+CodeSequenceTaskPtr iModelConnection::QueryCodeMaximumIndexInternal
 (
 std::shared_ptr<WSChangeset> changeSet,
 ICancellationTokenPtr cancellationToken
@@ -1695,7 +1382,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-CodeSequenceTaskPtr iModelConnectionImpl::QueryCodeNextAvailableInternal
+CodeSequenceTaskPtr iModelConnection::QueryCodeNextAvailableInternal
 (
 std::shared_ptr<WSChangeset> changeSet,
 ICancellationTokenPtr cancellationToken
@@ -1739,7 +1426,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<WSCreateObjectResult> iModelConnectionImpl::CreateBriefcaseInstance(ICancellationTokenPtr cancellationToken) const
+AsyncTaskPtr<WSCreateObjectResult> iModelConnection::CreateBriefcaseInstance(ICancellationTokenPtr cancellationToken) const
     {
     Json::Value briefcaseIdJson = Json::objectValue;
     briefcaseIdJson[ServerSchema::Instance] = Json::objectValue;
@@ -1751,7 +1438,7 @@ AsyncTaskPtr<WSCreateObjectResult> iModelConnectionImpl::CreateBriefcaseInstance
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-FileTaskPtr iModelConnectionImpl::GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
+FileTaskPtr iModelConnection::GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::GetBriefcaseFileInfo";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1775,7 +1462,7 @@ FileTaskPtr iModelConnectionImpl::GetBriefcaseFileInfo(BeBriefcaseId briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ChangeSetInfoTaskPtr iModelConnectionImpl::GetChangeSetByIdInternal
+ChangeSetInfoTaskPtr iModelConnection::GetChangeSetByIdInternal
 (
 Utf8StringCR          changeSetId,
 bool                  loadAccessKey,
@@ -1966,7 +1653,7 @@ EventTypeSet oldEventTypes
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-bool iModelConnectionImpl::SetEventSASToken(ICancellationTokenPtr cancellationToken)
+bool iModelConnection::SetEventSASToken(ICancellationTokenPtr cancellationToken)
     {
     const Utf8String methodName = "iModelConnection::SetEventSASToken";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1989,7 +1676,7 @@ bool iModelConnectionImpl::SetEventSASToken(ICancellationTokenPtr cancellationTo
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-bool iModelConnectionImpl::SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken)
+bool iModelConnection::SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken)
     {
     EventSubscriptionTaskPtr eventSubscription = nullptr;
 
@@ -2010,7 +1697,7 @@ bool iModelConnectionImpl::SetEventSubscription(EventTypeSet* eventTypes, ICance
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            05/2016
 //---------------------------------------------------------------------------------------
-bool iModelConnectionImpl::SetEventServiceClient
+bool iModelConnection::SetEventServiceClient
 (
 EventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
@@ -2031,7 +1718,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-AzureServiceBusSASDTOTaskPtr iModelConnectionImpl::GetEventServiceSASToken(ICancellationTokenPtr cancellationToken) const
+AzureServiceBusSASDTOTaskPtr iModelConnection::GetEventServiceSASToken(ICancellationTokenPtr cancellationToken) const
     {
     //POST to https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSAS
     std::shared_ptr<AzureServiceBusSASDTOResult> finalResult = std::make_shared<AzureServiceBusSASDTOResult>();
@@ -2064,7 +1751,7 @@ AzureServiceBusSASDTOTaskPtr iModelConnectionImpl::GetEventServiceSASToken(ICanc
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran           07/2016
 //---------------------------------------------------------------------------------------
-EventSubscriptionTaskPtr iModelConnectionImpl::SendEventChangesetRequest
+EventSubscriptionTaskPtr iModelConnection::SendEventChangesetRequest
 (
 std::shared_ptr<WSChangeset> changeset,
 ICancellationTokenPtr cancellationToken
@@ -2125,7 +1812,7 @@ const WSChangeset::ChangeState&                  changeState
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-EventSubscriptionTaskPtr iModelConnectionImpl::GetEventServiceSubscriptionId
+EventSubscriptionTaskPtr iModelConnection::GetEventServiceSubscriptionId
 (
 EventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
@@ -2157,7 +1844,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                    06/2016
 //---------------------------------------------------------------------------------------
-EventSubscriptionTaskPtr iModelConnectionImpl::UpdateEventServiceSubscriptionId
+EventSubscriptionTaskPtr iModelConnection::UpdateEventServiceSubscriptionId
 (
 EventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
@@ -2189,7 +1876,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            08/2016
 //---------------------------------------------------------------------------------------
-EventReponseTaskPtr iModelConnectionImpl::GetEventServiceResponse
+EventReponseTaskPtr iModelConnection::GetEventServiceResponse
 (
 int numOfRetries, 
 bool longpolling
@@ -2246,7 +1933,7 @@ bool longpolling
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-bool iModelConnectionImpl::IsSubscribedToEvents() const
+bool iModelConnection::IsSubscribedToEvents() const
     {
     return m_eventServiceClient != nullptr && m_eventSubscription != nullptr && m_eventSAS != nullptr;
     }
@@ -2254,7 +1941,7 @@ bool iModelConnectionImpl::IsSubscribedToEvents() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-EventTaskPtr iModelConnectionImpl::GetEvent
+EventTaskPtr iModelConnection::GetEvent
 (
 bool longPolling,
 ICancellationTokenPtr cancellationToken
@@ -2297,7 +1984,7 @@ ICancellationTokenPtr cancellationToken
 //@bsimethod                                     Caleb.Shafer                    06/2016
 //                                               Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::SubscribeToEvents
+StatusTaskPtr iModelConnection::SubscribeToEvents
 (
 EventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
@@ -2317,7 +2004,7 @@ ICancellationTokenPtr cancellationToken
 //@bsimethod                                     Arvind.Venkateswaran            06/2016
 //Todo: Add another method to only cancel GetEvent Operation and not the entire connection
 //---------------------------------------------------------------------------------------
-StatusTaskPtr  iModelConnectionImpl::UnsubscribeToEvents()
+StatusTaskPtr  iModelConnection::UnsubscribeToEvents()
     {
     BeMutexHolder lock(m_eventServiceClientMutex);
 
@@ -2334,7 +2021,7 @@ StatusTaskPtr  iModelConnectionImpl::UnsubscribeToEvents()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::SubscribeEventsCallback(EventTypeSet* eventTypes, EventCallbackPtr callback, iModelConnectionP imodelConnectionP)
+StatusTaskPtr iModelConnection::SubscribeEventsCallback(EventTypeSet* eventTypes, EventCallbackPtr callback, iModelConnectionP imodelConnectionP)
     {
     if (m_eventManagerPtr.IsNull())
         {
@@ -2346,7 +2033,7 @@ StatusTaskPtr iModelConnectionImpl::SubscribeEventsCallback(EventTypeSet* eventT
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::UnsubscribeEventsCallback(EventCallbackPtr callback)
+StatusTaskPtr iModelConnection::UnsubscribeEventsCallback(EventCallbackPtr callback)
     {
     if (m_eventManagerPtr.IsNull())
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
@@ -2365,7 +2052,7 @@ StatusTaskPtr iModelConnectionImpl::UnsubscribeEventsCallback(EventCallbackPtr c
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnectionImpl::ChangeSetsFromQueryInternal
+ChangeSetsInfoTaskPtr iModelConnection::ChangeSetsFromQueryInternal
 (
 const WebServices::WSQuery& query,
 bool                        parseFileAccessKey,
@@ -2411,7 +2098,7 @@ ICancellationTokenPtr       cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnectionImpl::ChangeSetsFromQuery
+ChangeSetsInfoTaskPtr iModelConnection::ChangeSetsFromQuery
 (
 const WebServices::WSQuery& query,
 bool                        parseFileAccessKey,
@@ -2427,7 +2114,7 @@ ICancellationTokenPtr       cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnectionImpl::GetChangeSetsInternal
+ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsInternal
 (
 const WebServices::WSQuery& query,
 bool                        parseFileAccessKey,
@@ -2464,7 +2151,7 @@ ICancellationTokenPtr       cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnectionImpl::GetChangeSetsAfterIdInternal
+ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsAfterIdInternal
 (
 Utf8StringCR          changeSetId,
 BeGuidCR              fileId,
@@ -2488,7 +2175,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-WSQuery iModelConnectionImpl::CreateChangeSetsAfterIdQuery
+WSQuery iModelConnection::CreateChangeSetsAfterIdQuery
 (
 Utf8StringCR          changeSetId,
 BeGuidCR              fileId
@@ -2522,7 +2209,7 @@ BeGuidCR              fileId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr iModelConnectionImpl::DownloadChangeSetsInternal
+ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsInternal
 (
 const bvector<ChangeSetInfoPtr>& changeSets,
 Http::Request::ProgressCallbackCR      callback,
@@ -2578,7 +2265,7 @@ ICancellationTokenPtr                  cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr iModelConnectionImpl::DownloadChangeSets(std::deque<ObjectId>& changeSetIds, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& changeSetIds, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     auto query = CreateChangeSetsByIdQuery(changeSetIds);
 
@@ -2595,9 +2282,53 @@ ChangeSetsTaskPtr iModelConnectionImpl::DownloadChangeSets(std::deque<ObjectId>&
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+ChangeSetTaskPtr iModelConnection::DownloadChangeSetFile
+(
+ChangeSetInfoPtr        changeSet,
+Http::Request::ProgressCallbackCR callback,
+ICancellationTokenPtr             cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::DownloadChangeSetFile";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    RevisionStatus changeSetStatus;
+    DgnRevisionPtr changeSetPtr = DgnRevision::Create(&changeSetStatus, changeSet->GetId(), changeSet->GetParentChangeSetId(), changeSet->GetDbGuid());
+    auto changeSetFileName = changeSetPtr->GetRevisionChangesFile();
+
+    if (s_preDownloadManager->TryGetChangeSetFile(changeSetFileName, changeSet->GetId()))
+        return CreateCompletedAsyncTask<ChangeSetResult>(ChangeSetResult::Success(changeSetPtr));
+
+    ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSet->GetId());
+
+    if (changeSet->GetContainsFileAccessKey())
+        {
+        return DownloadFileInternal(changeSetFileName, fileObject, changeSet->GetFileAccessKey(), callback, cancellationToken)
+            ->Then<ChangeSetResult>([=](StatusResultCR downloadResult)
+            {
+            if (!downloadResult.IsSuccess())
+                return ChangeSetResult::Error(downloadResult.GetError());
+
+            return ChangeSetResult::Success(changeSetPtr);
+            });
+        }
+
+    return DownloadFile(changeSetFileName, fileObject, callback, cancellationToken)
+        ->Then<ChangeSetResult>([=](StatusResultCR downloadResult)
+        {
+        if (!downloadResult.IsSuccess())
+            return ChangeSetResult::Error(downloadResult.GetError());
+
+        return ChangeSetResult::Success(changeSetPtr);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-WSQuery iModelConnectionImpl::CreateChangeSetsByIdQuery
+WSQuery iModelConnection::CreateChangeSetsByIdQuery
 (
 std::deque<ObjectId>& changeSetIds
 ) const
@@ -2610,7 +2341,7 @@ std::deque<ObjectId>& changeSetIds
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnectionImpl::GetAllChangeSetsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken) const
+ChangeSetsInfoTaskPtr iModelConnection::GetAllChangeSetsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::GetAllChangeSetsInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -2629,7 +2360,7 @@ bool IsInitializationFinished(InitializationState state)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-void iModelConnectionImpl::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr finalResult) const
+void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr finalResult) const
     {
     InitializationState initializationState = InitializationState::NotStarted;
     int retriesLeft = 300;
@@ -2704,7 +2435,7 @@ bool                containsSchemaChanges
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::Push
+StatusTaskPtr iModelConnection::Push
 (
 Dgn::DgnRevisionPtr               changeSet,
 Dgn::DgnDbCR                      dgndb,
@@ -2810,7 +2541,7 @@ ICancellationTokenPtr             cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-FileTaskPtr iModelConnectionImpl::GetSeedFileById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
+FileTaskPtr iModelConnection::GetSeedFileById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
     {
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::File);
     Utf8String filter;
@@ -2829,7 +2560,7 @@ FileTaskPtr iModelConnectionImpl::GetSeedFileById(BeGuidCR fileId, ICancellation
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              02/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnectionImpl::InitializeChangeSet
+StatusTaskPtr iModelConnection::InitializeChangeSet
 (
 Dgn::DgnRevisionPtr             changeSet,
 Dgn::DgnDbCR                    dgndb,
@@ -3003,48 +2734,10 @@ bool CodeSequence::operator<(CodeSequence const& rhs) const
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-iModelConnection::iModelConnection
-(
-iModelInfoCR           iModel,
-WebServices::CredentialsCR credentials,
-WebServices::ClientInfoPtr clientInfo,
-IHttpHandlerPtr            customHandler
-)
-    {
-    m_impl = new iModelConnectionImpl(iModel, credentials, clientInfo, customHandler);
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
 iModelConnection::~iModelConnection()
     {
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-IWSRepositoryClientPtr iModelConnection::GetRepositoryClient() const
-    {
-    return m_impl->GetRepositoryClient();
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-void  iModelConnection::SetRepositoryClient(IWSRepositoryClientPtr client)
-    {
-    m_impl->SetRepositoryClient(client);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-iModelInfoCR iModelConnection::GetiModelInfo() const
-    {
-    return m_impl->GetiModelInfo();
     }
 
 //---------------------------------------------------------------------------------------
@@ -3078,7 +2771,7 @@ IHttpHandlerPtr  customHandler
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     iModelConnectionPtr imodelConnection(new iModelConnection(iModel, credentials, clientInfo, customHandler));
-    imodelConnection->m_impl->SetAzureClient(AzureBlobStorageClient::Create());
+    imodelConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
@@ -3109,28 +2802,6 @@ StatusTaskPtr iModelConnection::ValidateBriefcase(BeGuidCR fileId, BeBriefcaseId
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-FileTaskPtr iModelConnection::GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
-    {
-    return m_impl->GetBriefcaseFileInfo(briefcaseId, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-StatusResult iModelConnection::DownloadBriefcaseFile
-    (
-    BeFileName                        localFile,
-    BeBriefcaseId                     briefcaseId,
-    Http::Request::ProgressCallbackCR callback,
-    ICancellationTokenPtr             cancellationToken
-    ) const
-    {
-    return m_impl->DownloadBriefcaseFile(localFile, briefcaseId, callback, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::LockiModel(ICancellationTokenPtr cancellationToken) const
@@ -3145,7 +2816,7 @@ StatusTaskPtr iModelConnection::LockiModel(ICancellationTokenPtr cancellationTok
         iModelLockJson[ServerSchema::Instance][ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
         iModelLockJson[ServerSchema::Instance][ServerSchema::ClassName] = ServerSchema::Class::iModelLock;
 
-        return m_impl->m_wsRepositoryClient->SendCreateObjectRequest(iModelLockJson, BeFileName(), nullptr, cancellationToken)
+        return m_wsRepositoryClient->SendCreateObjectRequest(iModelLockJson, BeFileName(), nullptr, cancellationToken)
             ->Then<StatusResult>([=](const WSCreateObjectResult& result)
             {
             if (!result.IsSuccess())
@@ -3172,7 +2843,7 @@ StatusTaskPtr iModelConnection::UnlockiModel(ICancellationTokenPtr cancellationT
     return ExecutionManager::ExecuteWithRetry<void>([=] ()
         {
         ObjectId id = ObjectId::ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::iModelLock, ServerSchema::Class::iModelLock);
-        return m_impl->m_wsRepositoryClient->SendDeleteObjectRequest(id, cancellationToken)
+        return m_wsRepositoryClient->SendDeleteObjectRequest(id, cancellationToken)
             ->Then<StatusResult>([=] (const WSDeleteObjectResult& result)
             {
             if (!result.IsSuccess())
@@ -3199,7 +2870,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
     std::shared_ptr<FileResult> finalResult = std::make_shared<FileResult>();
     return ExecutionManager::ExecuteWithRetry<FileInfoPtr>([=]()
         {
-        return m_impl->CreateNewServerFile(fileInfo, cancellationToken)->Then([=] (FileResultCR fileCreationResult)
+        return CreateNewServerFile(fileInfo, cancellationToken)->Then([=] (FileResultCR fileCreationResult)
             {
 #if defined (ENABLE_BIM_CRASH_TESTS)
             BreakHelper::HitBreakpoint(Breakpoints::iModelConnection_AfterCreateNewServerFile);
@@ -3214,7 +2885,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
             auto createdFileInfo = fileCreationResult.GetValue();
             if (!createdFileInfo->AreFileDetailsAvailable())
                 {
-                auto fileUpdateResult = m_impl->UpdateServerFile(*createdFileInfo, cancellationToken)->GetResult();
+                auto fileUpdateResult = UpdateServerFile(*createdFileInfo, cancellationToken)->GetResult();
                 if (!fileUpdateResult.IsSuccess())
                     {
                     finalResult->SetError(fileUpdateResult.GetError());
@@ -3224,7 +2895,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
                 }
             finalResult->SetSuccess(createdFileInfo);
 
-            m_impl->UploadServerFile(filePath, *createdFileInfo, callback, cancellationToken)->Then([=] (StatusResultCR uploadResult)
+            UploadServerFile(filePath, *createdFileInfo, callback, cancellationToken)->Then([=] (StatusResultCR uploadResult)
                 {
 #if defined (ENABLE_BIM_CRASH_TESTS)
                 BreakHelper::HitBreakpoint(Breakpoints::iModelConnection_AfterUploadServerFile);
@@ -3235,7 +2906,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
                     LogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadResult.GetError().GetMessage().c_str());
                     return;
                     }
-                m_impl->InitializeServerFile(*createdFileInfo, cancellationToken)->Then([=] (StatusResultCR initializationResult)
+                InitializeServerFile(*createdFileInfo, cancellationToken)->Then([=] (StatusResultCR initializationResult)
                     {
                     if (!initializationResult.IsSuccess())
                         {
@@ -3246,7 +2917,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
 
                     if (waitForInitialized)
                         {
-                        m_impl->WaitForInitializedBIMFile(createdFileInfo->GetFileId(), finalResult);
+                        WaitForInitializedBIMFile(createdFileInfo->GetFileId(), finalResult);
                         }
                     });
                 });
@@ -3272,7 +2943,7 @@ StatusTaskPtr iModelConnection::CancelSeedFileCreation(ICancellationTokenPtr can
     filter.Sprintf("%s+gt+0", ServerSchema::Property::InitializationState);
     query.SetFilter(filter);
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
-    return m_impl->m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& result)
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
             {
@@ -3289,7 +2960,7 @@ StatusTaskPtr iModelConnection::CancelSeedFileCreation(ICancellationTokenPtr can
             }
 
         auto fileInfo = FileInfo::Parse(*instances.begin(), FileInfo());
-        m_impl->m_wsRepositoryClient->SendDeleteObjectRequest(fileInfo->GetObjectId(), cancellationToken)->Then([=] (WSVoidResult const& deleteResult)
+        m_wsRepositoryClient->SendDeleteObjectRequest(fileInfo->GetObjectId(), cancellationToken)->Then([=] (WSVoidResult const& deleteResult)
             {
             if (!deleteResult.IsSuccess())
                 {
@@ -3315,15 +2986,7 @@ StatusTaskPtr iModelConnection::CancelSeedFileCreation(ICancellationTokenPtr can
 FilesTaskPtr iModelConnection::GetSeedFiles(ICancellationTokenPtr cancellationToken) const
     {
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::File);
-    return m_impl->SeedFilesQuery(query, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-FileTaskPtr iModelConnection::GetSeedFileById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
-    {
-    return m_impl->GetSeedFileById(fileId, cancellationToken);
+    return SeedFilesQuery(query, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3335,22 +2998,7 @@ StatusTaskPtr iModelConnection::DownloadSeedFile(BeFileName localFile, Utf8Strin
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     ObjectId fileObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::File, fileId);
-    return m_impl->DownloadFile(localFile, fileObjectId, callback, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             02/2017
-//---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::DownloadFileInternal
-        (
-    BeFileName                        localFile,
-    ObjectIdCR                        fileId,
-    FileAccessKeyPtr                  fileAccessKey,
-    Http::Request::ProgressCallbackCR callback,
-    ICancellationTokenPtr             cancellationToken
-) const
-    {
-    return m_impl->DownloadFileInternal(localFile, fileId, fileAccessKey, callback, cancellationToken);
+    return DownloadFile(localFile, fileObjectId, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3367,7 +3015,7 @@ StatusTaskPtr iModelConnection::AcquireCodesLocks
     ICancellationTokenPtr               cancellationToken
 ) const 
     {
-    return ExecutionManager::ExecuteWithRetry<void>([=]() { return m_impl->AcquireCodesLocksInternal(locks, codes, briefcaseId, seedFileId, lastChangeSetId, options, cancellationToken); });
+    return ExecutionManager::ExecuteWithRetry<void>([=]() { return AcquireCodesLocksInternal(locks, codes, briefcaseId, seedFileId, lastChangeSetId, options, cancellationToken); });
     }
 
 //---------------------------------------------------------------------------------------
@@ -3392,7 +3040,7 @@ StatusTaskPtr iModelConnection::QueryCodesLocksAvailability
     state.SetReserved(briefcaseId);
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Created, true);
 
-    return m_impl->SendChangesetRequest(changeset, options, cancellationToken);
+    return SendChangesetRequest(changeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3418,7 +3066,7 @@ ICancellationTokenPtr                   cancellationToken
     state.SetAvailable();
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Modified);
 
-    return m_impl->SendChangesetRequestInternal(changeset, options, cancellationToken);
+    return SendChangesetRequestInternal(changeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3436,7 +3084,7 @@ ICancellationTokenPtr                   cancellationToken
     std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
     LockDeleteAllJsonRequest (changeset, briefcaseId);
     CodeDiscardReservedJsonRequest(changeset, briefcaseId);
-    return m_impl->SendChangesetRequest(changeset, options, cancellationToken);
+    return SendChangesetRequest(changeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3448,7 +3096,7 @@ BriefcasesInfoTaskPtr iModelConnection::QueryAllBriefcasesInfo(ICancellationToke
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase);
-    return m_impl->QueryBriefcaseInfoInternal(query, cancellationToken);
+    return QueryBriefcaseInfoInternal(query, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3465,7 +3113,7 @@ BriefcaseInfoTaskPtr iModelConnection::QueryBriefcaseInfo(BeSQLite::BeBriefcaseI
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase);
     query.SetFilter(filter);
 
-    return m_impl->QueryBriefcaseInfoInternal(query, cancellationToken)->Then<BriefcaseInfoResult>([=] (BriefcasesInfoResultCR briefcasesResult)
+    return QueryBriefcaseInfoInternal(query, cancellationToken)->Then<BriefcaseInfoResult>([=] (BriefcasesInfoResultCR briefcasesResult)
         {
         if (!briefcasesResult.IsSuccess())
             {
@@ -3505,7 +3153,7 @@ ICancellationTokenPtr cancellationToken
         {
         WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase);
         query.AddFilterIdsIn(queryIds);
-        auto task = m_impl->QueryBriefcaseInfoInternal(query, cancellationToken);
+        auto task = QueryBriefcaseInfoInternal(query, cancellationToken);
 
         tasks.insert(task);
         }
@@ -3540,7 +3188,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesLocksById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return m_impl->QueryCodesLocksInternal(&codes, &locks, nullptr, cancellationToken);
+    return QueryCodesLocksInternal(&codes, &locks, nullptr, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3556,7 +3204,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesLocksById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return m_impl->QueryCodesLocksInternal(&codes, &locks, &briefcaseId, cancellationToken);
+    return QueryCodesLocksInternal(&codes, &locks, &briefcaseId, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3570,7 +3218,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return m_impl->QueryCodesLocksInternal(nullptr, nullptr, &briefcaseId, cancellationToken);
+    return QueryCodesLocksInternal(nullptr, nullptr, &briefcaseId, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3611,9 +3259,9 @@ ICancellationTokenPtr cancellationToken
             CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
             bset<StatusTaskPtr> tasks;
 
-            auto task = m_impl->QueryUnavailableCodesInternal(briefcaseId, finalValue, cancellationToken);
+            auto task = QueryUnavailableCodesInternal(briefcaseId, finalValue, cancellationToken);
             tasks.insert(task);
-            task = m_impl->QueryUnavailableLocksInternal(briefcaseId, changeSetIndex, finalValue, cancellationToken);
+            task = QueryUnavailableLocksInternal(briefcaseId, changeSetIndex, finalValue, cancellationToken);
             tasks.insert(task);
 
             AsyncTask::WhenAll(tasks)
@@ -3658,7 +3306,7 @@ ICancellationTokenPtr cancellationToken
     if (DgnDbStatus::Success != status)
         return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeSequenceRequestError)}));
 
-    return m_impl->QueryCodeMaximumIndexInternal(changeset, cancellationToken);
+    return QueryCodeMaximumIndexInternal(changeset, cancellationToken);
     }
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             04/2017
@@ -3677,7 +3325,7 @@ ICancellationTokenPtr cancellationToken
     if (DgnDbStatus::Success != status)
         return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({ Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeSequenceRequestError) }));
 
-    return m_impl->QueryCodeMaximumIndexInternal(changeset, cancellationToken);
+    return QueryCodeMaximumIndexInternal(changeset, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3697,7 +3345,7 @@ ICancellationTokenPtr cancellationToken
     if (DgnDbStatus::Success != status)
         return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeSequenceRequestError)}));
 
-    return m_impl->QueryCodeNextAvailableInternal(changeset, cancellationToken);
+    return QueryCodeNextAvailableInternal(changeset, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3719,15 +3367,7 @@ ICancellationTokenPtr cancellationToken
     if (DgnDbStatus::Success != status)
         return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({ Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeSequenceRequestError) }));
 
-    return m_impl->QueryCodeNextAvailableInternal(changeset, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-AsyncTaskPtr<WSCreateObjectResult> iModelConnection::CreateBriefcaseInstance(ICancellationTokenPtr cancellationToken) const
-    {
-    return m_impl->CreateBriefcaseInstance(cancellationToken);
+    return QueryCodeNextAvailableInternal(changeset, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3759,20 +3399,7 @@ ChangeSetsInfoTaskPtr iModelConnection::GetAllChangeSets (ICancellationTokenPtr 
     {
     const Utf8String methodName = "iModelConnection::GetAllChangeSets";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return m_impl->GetAllChangeSetsInternal(false, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-ChangeSetInfoTaskPtr iModelConnection::GetChangeSetByIdInternal
-(
-    Utf8StringCR          changeSetId,
-    bool                  loadAccessKey,
-    ICancellationTokenPtr cancellationToken
-) const
-    {
-    return m_impl->GetChangeSetByIdInternal(changeSetId, loadAccessKey, cancellationToken);
+    return GetAllChangeSetsInternal(false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3794,59 +3421,9 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-bool iModelConnection::IsSubscribedToEvents() const
-    {
-    return m_impl->IsSubscribedToEvents();
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Arvind.Venkateswaran            07/2016
-//---------------------------------------------------------------------------------------
-EventTaskPtr iModelConnection::GetEvent
-(
-bool longPolling,
-ICancellationTokenPtr cancellationToken
-)
-    {
-    return m_impl->GetEvent(longPolling, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Caleb.Shafer                    06/2016
-//                                               Arvind.Venkateswaran            07/2016
-//---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::SubscribeToEvents
-(
-EventTypeSet* eventTypes,
-ICancellationTokenPtr cancellationToken
-)
-    {
-    return m_impl->SubscribeToEvents(eventTypes, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Arvind.Venkateswaran            06/2016
-//Todo: Add another method to only cancel GetEvent Operation and not the entire connection
-//---------------------------------------------------------------------------------------
-StatusTaskPtr  iModelConnection::UnsubscribeToEvents()
-    {
-    return m_impl->UnsubscribeToEvents();
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas            12/2016
-//---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::SubscribeEventsCallback(EventTypeSet* eventTypes, EventCallbackPtr callback)
     {
-    return m_impl->SubscribeEventsCallback(eventTypes, callback, this);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas            12/2016
-//---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::UnsubscribeEventsCallback(EventCallbackPtr callback)
-    {
-    return m_impl->UnsubscribeEventsCallback(callback);
+    return SubscribeEventsCallback(eventTypes, callback, this);
     }
 
 /* Public methods end */
@@ -3863,7 +3440,7 @@ BeGuidCR              fileId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return m_impl->GetChangeSetsAfterIdInternal(changeSetId, fileId, false, cancellationToken);
+    return GetChangeSetsAfterIdInternal(changeSetId, fileId, false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3877,7 +3454,7 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(const bvector<Utf8String>
         queryIds.push_back(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSetId));
         }
 
-    return m_impl->DownloadChangeSets(queryIds, callback, cancellationToken);
+    return DownloadChangeSets(queryIds, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3891,7 +3468,7 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(const bvector<ChangeSetIn
         queryIds.push_back(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSet->GetId()));
         }
 
-    return m_impl->DownloadChangeSets(queryIds, callback, cancellationToken);
+    return DownloadChangeSets(queryIds, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3909,11 +3486,11 @@ ICancellationTokenPtr               cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
-    return m_impl->GetChangeSetsAfterIdInternal(changeSetId, fileId, true, cancellationToken)->Then([=] (ChangeSetsInfoResultCR changeSetsResult)
+    return GetChangeSetsAfterIdInternal(changeSetId, fileId, true, cancellationToken)->Then([=] (ChangeSetsInfoResultCR changeSetsResult)
         {
         if (changeSetsResult.IsSuccess())
             {
-            m_impl->DownloadChangeSetsInternal(changeSetsResult.GetValue(), callback, cancellationToken)->Then([=](ChangeSetsResultCR downloadResult)
+            DownloadChangeSetsInternal(changeSetsResult.GetValue(), callback, cancellationToken)->Then([=](ChangeSetsResultCR downloadResult)
                 {
                 if (downloadResult.IsSuccess())
                     {
@@ -3944,21 +3521,11 @@ ICancellationTokenPtr               cancellationToken
 //---------------------------------------------------------------------------------------
 void iModelConnection::SubscribeChangeSetsDownload()
     {
-    m_impl->SubscribeChangeSetsDownload(this);
-    }
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::Push
-    (
-    Dgn::DgnRevisionPtr               changeSet,
-    Dgn::DgnDbCR                      dgndb,
-    bool                              relinquishCodesLocks,
-    Http::Request::ProgressCallbackCR callback,
-    ICancellationTokenPtr             cancellationToken
-    ) const
-    {
-    return m_impl->Push(changeSet, dgndb, relinquishCodesLocks, callback, cancellationToken);
+    if (m_subscribedForPreDownload)
+        return;
+
+    m_subscribedForPreDownload = true;
+    s_preDownloadManager->SubscribeChangeSetsDownload(this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3968,7 +3535,7 @@ StatusTaskPtr iModelConnection::VerifyConnection(ICancellationTokenPtr cancellat
     {
     return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
-        return m_impl->m_wsRepositoryClient->VerifyAccess(cancellationToken)->Then<StatusResult>([] (const AsyncResult<void, WSError>& result)
+        return m_wsRepositoryClient->VerifyAccess(cancellationToken)->Then<StatusResult>([] (const AsyncResult<void, WSError>& result)
             {
             const Utf8String methodName = "iModelConnection::VerifyConnection";
             LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
