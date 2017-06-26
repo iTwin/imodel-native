@@ -9,13 +9,4 @@ This document only covers aspects unique to the RDS load tester. General informa
 Servers:
 +---------------------+
 
-Currently, the RDS load tester is configured to use the following servers
-dev:
-dev-realitydataservices-eus.cloudapp.net
-qa:
-qa-connect-realitydataservices.bentley.com
-prod:
-connect-realitydataservices.bentley.com
-
-These may need to be updated, if they become invalidated. Time permitting, these hard coded adresses should be replaced
-with a call to Buddi
+The RDS load tester will attempt to set the server url with a call to Buddi

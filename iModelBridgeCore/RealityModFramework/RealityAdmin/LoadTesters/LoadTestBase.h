@@ -132,6 +132,7 @@ struct LoadTester
 
     REALITYDATAPLATFORM_EXPORT static void SetupStaticClasses(Stats* stats, RPS* rps);
     REALITYDATAPLATFORM_EXPORT static void SetupInactiveUsers(std::queue<User*>& inactiveUsers);
+    REALITYDATAPLATFORM_EXPORT static Utf8String MakeBuddiCall(WString service, int region = 0);
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

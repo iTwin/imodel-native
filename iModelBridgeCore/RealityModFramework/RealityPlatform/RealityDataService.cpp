@@ -875,8 +875,9 @@ void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
         }
     if(m_filter.length() > 0)
         {
+        Utf8String encodedFilter = BeStringUtilities::UriEncode(m_filter.c_str());
         m_httpRequestString.append("&prefix=");
-        m_httpRequestString.append(m_filter);
+        m_httpRequestString.append(encodedFilter);
         }
 
     m_validRequestString = true;
