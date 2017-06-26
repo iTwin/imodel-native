@@ -65,23 +65,34 @@ SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(filePath));
 
     auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="TestClass" >
+        <ECSchema schemaName="TestSchema" alias="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="A" />
+            <ECEntityClass typeName="B">
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="TestClass">
                 <ECNavigationProperty propertyName="Parent" relationshipName="EmbeddingRel" direction="Backward"/>
             </ECClass>
-            <ECClass typeName="TestClass2" />
-            <ECClass typeName="TestClass3" />
-            <ECRelationshipClass typeName="ReferencingRel" strength="referencing">
-                <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
-                <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
+            <ECEntityClass typeName="TestClass2" />
+            <ECEntityClass typeName="TestClass3" />
+            <ECRelationshipClass typeName="ReferencingRel" strength="referencing" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
-            <ECRelationshipClass typeName="HoldingRel" strength="holding">
-                <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
-                <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
+            <ECRelationshipClass typeName="HoldingRel" strength="holding" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
-            <ECRelationshipClass typeName="EmbeddingRel" strength="embedding">
-                <Source cardinality="(0,1)"><Class class="TestClass" /></Source>
-                <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
+            <ECRelationshipClass typeName="EmbeddingRel" strength="embedding" modifier="Sealed">
+                <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..*)" polymorphic="false" roleLabel="CachedFileInfo"><Class class="TestClass" /></Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="TestChildClass">
+                <ECNavigationProperty propertyName="ParentId" relationshipName="EmbeddingRequiredRel" direction="backward" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="EmbeddingRequiredRel" strength="embedding" modifier="Sealed">
+                <Source multiplicity="(1..1)" polymorphic="false" roleLabel="TestClass"><Class class="TestClass" /></Source>
+                <Target multiplicity="(0..1)" polymorphic="false" roleLabel="TestChildClass"><Class class="TestChildClass" /></Target>
             </ECRelationshipClass>
         </ECSchema>)xml");
 
@@ -1368,6 +1379,30 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChild_DeletesPar
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+TEST_F(ECDbAdapterTests, DeleteInstance_DeletingParentThatHoldsChild_DeletesParentAndChild)
+    {
+    auto db = GetTestDb();
+    ECDbAdapter adapter(*db);
+
+    auto ecClass = adapter.GetECClass("TestSchema.TestClass");
+    auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
+
+    ECInstanceKey parent, child, rel;
+    INSERT_INSTANCE(*db, ecClass, parent);
+    INSERT_INSTANCE(*db, ecClass, child);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child, rel);
+
+    CREATE_MockECDbAdapterDeleteListener(listener);
+    EXPECT_CALL_OnBeforeDelete(listener, db, parent);
+    EXPECT_CALL_OnBeforeDelete(listener, db, child);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel);
+    adapter.RegisterDeleteListener(&listener);
+
+    EXPECT_EQ(SUCCESS, adapter.DeleteInstance(parent));
+    auto notDeletedInstances = adapter.FindInstances(ecClass);
+    EXPECT_EQ(0, notDeletedInstances.size());
+    }
+
 TEST_F(ECDbAdapterTests, DeleteInstnace_DeletingNotExistingHoldingRelationship_NotifiesBeforeDeleteAndAndSuccess)
     {
     auto db = GetTestDb();
@@ -2148,6 +2183,40 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationship_DeletesRelatio
     EXPECT_EQ(0, adapter.FindInstances(relClass).size());
     }
 
+TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithRequiredParent_DeletesRelationshipAndChild)
+    {
+    auto db = GetTestDb();
+    ECDbAdapter adapter(*db);
+
+    auto parentClass = adapter.GetECClass("TestSchema.TestClass");
+    auto childClass = adapter.GetECClass("TestSchema.TestChildClass");
+    auto relClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRequiredRel");
+
+    ECInstanceKey a, b, rel;
+    INSERT_INSTANCE(*db, parentClass, a);
+
+    ASSERT_FALSE(childClass == nullptr); 
+    Json::Value instance;
+    instance["ParentId"]["id"] = a.GetInstanceId().ToString();
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *childClass, nullptr).Insert(b, instance));
+    rel = ECInstanceKey(relClass->GetId(), b.GetInstanceId());
+
+    EXPECT_EQ(1, adapter.FindInstances(relClass).size());
+
+    CREATE_MockECDbAdapterDeleteListener(listener);
+    EXPECT_CALL_OnBeforeDelete(listener, db, b);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel);
+    adapter.RegisterDeleteListener(&listener);
+
+    EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
+
+    auto notDeletedInstances = adapter.FindInstances(parentClass);
+    EXPECT_EQ(1, notDeletedInstances.size());
+    EXPECT_CONTAINS(notDeletedInstances, a.GetInstanceId());
+    EXPECT_EQ(0, adapter.FindInstances(childClass).size());
+    EXPECT_EQ(0, adapter.FindInstances(relClass).size());
+    }
+
 TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationshipWithChildWithMultipleParents_DeletesRelationshipLeavingChild)
     {
     auto db = GetTestDb();
@@ -2289,28 +2358,29 @@ TEST_F(ECDbAdapterTests, DeleteInstances_MultipleClassInstances_DeletesInstances
     EXPECT_EQ(0, adapter.FindInstances(ecClass3).size());
     }
 
+TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_InvalidStatement_ReturnsErrorAndEmptyList)
+    {
+    auto db = GetTestDb();
+    ECDbAdapter adapter(*db);
+
+    ECSqlStatement statement;
+    ECInstanceKeyMultiMap keys;
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, adapter.PrepareStatement(statement, "Invalid statement"));
+    BeTest::SetFailOnAssert(true);
+    ASSERT_EQ(ERROR, adapter.ExtractECInstanceKeys(statement, keys));
+    EXPECT_EQ(0, keys.size());
+    }
+
 TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKeys)
     {
-    auto schema = ParseSchema(R"(
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="A" />
-            <ECClass typeName="B">
-                <BaseClass>A</BaseClass>
-            </ECClass>
-        </ECSchema>)");
-
-    ObservableECDb db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
-
-    auto cache = ECSchemaCache::Create();
-    cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportSchemas(cache->GetSchemas()));
-
-    ECDbAdapter adapter(db);
+    auto db = GetTestDb();
+    ECDbAdapter adapter(*db);
 
     ECInstanceKey a, b;
-    ASSERT_EQ(SUCCESS, JsonInserter(db, *adapter.GetECClass("TestSchema.A"), nullptr).Insert(a, Json::Value()));
-    ASSERT_EQ(SUCCESS, JsonInserter(db, *adapter.GetECClass("TestSchema.B"), nullptr).Insert(b, Json::Value()));
+    ASSERT_EQ(SUCCESS, JsonInserter(*db, *adapter.GetECClass("TestSchema.A"), nullptr).Insert(a, Json::Value()));
+    ASSERT_EQ(SUCCESS, JsonInserter(*db, *adapter.GetECClass("TestSchema.B"), nullptr).Insert(b, Json::Value()));
 
     ECSqlStatement statement;
     ECInstanceKeyMultiMap keys;
@@ -2329,15 +2399,6 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKey
     EXPECT_CONTAINS(keys, ECDbHelper::ToPair(a));
     EXPECT_CONTAINS(keys, ECDbHelper::ToPair(b));
     EXPECT_EQ(2, keys.size());
-
-    statement.Finalize();
-    keys.clear();
-
-    BeTest::SetFailOnAssert(false);
-    ASSERT_EQ(ERROR, adapter.PrepareStatement(statement, "Invalid statement"));
-    BeTest::SetFailOnAssert(true);
-    ASSERT_EQ(ERROR, adapter.ExtractECInstanceKeys(statement, keys));
-    EXPECT_EQ(0, keys.size());
     }
 
 TEST_F(ECDbAdapterTests, ECDb_DeleteRelationship_ShouldNotDeleteEnds1)

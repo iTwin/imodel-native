@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/MockECDbAdapter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -112,6 +112,8 @@ struct MockECDbAdapter : public IECDbAdapter
             bool (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target));
         MOCK_METHOD3 (DeleteRelationship,
             BentleyStatus (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target));
+        MOCK_METHOD1(DeleteInstance,
+            BentleyStatus(ECInstanceKeyCR));
         MOCK_METHOD1(DeleteInstances,
             BentleyStatus(const ECInstanceKeyMultiMap&));
         MOCK_METHOD1(RegisterDeleteListener,
