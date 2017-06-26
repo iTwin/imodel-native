@@ -7,7 +7,7 @@
 # KNOWN issues
 #--------------------------------------------------------------------------------
 
-# Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
+# Graphite05x ECDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
 DataSourceCacheUpgradeTests.CachingDataSource_OpenOrCreate_V5*
 DataSourceCacheUpgradeTests.Open_V5*
 DataSourceCacheUpgradeTests.Open_V7*
@@ -46,7 +46,7 @@ BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnecti
     # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
 
 #--------------------------------------------------------------------------------
-# RANDOM crashes/hangs on PRG (usually can be ran on DEV x64 builds)
+# RANDOM crashes/hangs on PRG/FIREBUG (usually can be ran on DEV x64 builds with no problems)
 #--------------------------------------------------------------------------------
 
 ChangeManagerTests.*
@@ -337,9 +337,9 @@ DataSourceCacheTests.*
     # bim0200dev, x64, DEBUG
     # These will fail one-by-one as you start ignoring them.
 
+ChunkedUploadRequestTests.PerformAsync_FirtResponseNotResumeIncomplete_StopsRequest
+    # bim0200dev, x64, NDEBUG, firebug, random hang
+
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
-
-ChunkedUploadRequestTests.PerformAsync_FirtResponseNotResumeIncomplete_StopsRequest
-    # bim0200dev, x64, NDEBUG, firebug, random hang
