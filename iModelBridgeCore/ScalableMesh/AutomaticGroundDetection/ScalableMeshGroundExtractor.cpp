@@ -31,6 +31,8 @@
 #include <Bentley\BeDirectoryIterator.h>
 #include <Bentley\BeConsole.h>
 
+#include <DgnGeoCoord\DgnGeoCoord.h>
+
 USING_NAMESPACE_GROUND_DETECTION
 
 /*----------------------------------------------+
@@ -255,8 +257,8 @@ ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrai
     m_smTerrainPath = smTerrainPath;
 	m_limitTextureResolution = false;
 
-    const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());
-    m_smGcsRatioToMeter = gcs.GetUnit().GetRatioToBase();
+    const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());    
+    m_smGcsRatioToMeter = m_scalableMesh->IsCesium3DTiles() ? 1.0 : gcs.GetUnit().GetRatioToBase();
     }
 
 ScalableMeshGroundExtractor::~ScalableMeshGroundExtractor()
@@ -609,6 +611,20 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
 
     if (m_createProgress.IsCanceled()) return SUCCESS;
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
+
+    if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && m_scalableMesh->IsCesium3DTiles())
+        {
+        BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
+
+        auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
+
+        smPtsProviderCreator = ScalableMeshPointsProviderCreator::Create(m_scalableMesh, sourceGcs, m_destinationGcs, coordInterp);
+        }
+    else
+        {
+        smPtsProviderCreator = ScalableMeshPointsProviderCreator::Create(m_scalableMesh);
+        }
+
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
 
     DRange3d availableRange;
@@ -628,7 +644,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
 
     IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator(m_groundPreviewer, m_scalableMesh->GetReprojectionTransform()));
 
-    if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid())
+    if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && !m_scalableMesh->IsCesium3DTiles())
         {                 
         auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
 

@@ -1159,6 +1159,9 @@ static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;
 #else
 static double s_firstNodeSearchingDelay = (double)1 / 10 * CLOCKS_PER_SEC;
 #endif
+
+
+
 //static int    s_nbIterClock;
 
 void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNodes, DRange3d& extentToCover, HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, bool loadTexture, const bset<uint64_t>& clipVisibilities, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
