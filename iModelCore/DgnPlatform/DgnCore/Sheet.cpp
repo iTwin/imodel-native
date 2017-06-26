@@ -629,7 +629,7 @@ void Sheet::ViewController::_LoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Model::DrawBorder(ViewContextR context, DPoint2dCR size)
+Render::GraphicPtr Sheet::Model::CreateBorder(ViewContextR context, DPoint2dCR size)
     {
     Render::GraphicBuilderPtr border = context.CreateGraphic();
     RectanglePoints rect(0, 0, size.x, size.y);
@@ -659,8 +659,11 @@ void Sheet::Model::DrawBorder(ViewContextR context, DPoint2dCR size)
     params.SetGradient(gradient.get());
     border->ActivateGraphicParams(params);
 
-    border->AddShape2d(7, points, true, 0.0);
-    context.OutputGraphic(*border->Finish(), nullptr);
+    // Make sure drop shadow displays behind border...
+    int32_t priority = Render::Target::GetMinDisplayPriority();
+    border->AddShape2d(7, points, true, static_cast<double>(priority));
+
+    return border->Finish();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -671,8 +674,18 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     for (auto& attach : m_attachments)
         attach->Draw(context);
 
-    Sheet::Model::DrawBorder(context, m_size);
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewController::_DrawDecorations(DecorateContextR context)
+    {
+    // On the trunk, the border is 'terrain', so gradient not affected by view's 'fill' flag.
+    // Draw it as a decoration in tile world.
+    auto border = Sheet::Model::CreateBorder(context, m_size);
+    context.AddWorldDecoration(*border);
     }
 
 /*---------------------------------------------------------------------------------**//**

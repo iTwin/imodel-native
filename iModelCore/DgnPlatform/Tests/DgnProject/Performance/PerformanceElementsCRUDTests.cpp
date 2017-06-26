@@ -445,11 +445,13 @@ void PerformanceElementsCRUDTestFixture::ApiSelectTime(Utf8CP className, int ini
     WPrintfString dbName(L"ElementApiSelect%ls_%d.ibim", wClassName.c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
+    int minElemId = GetfirstElementId(className);
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
+
     StopWatch timer(true);
     for (uint64_t i = 0; i < opCount; i++)
         {
-        const DgnElementId id(s_firstElementId + i*elementIdIncrement);
+        const DgnElementId id(minElemId + i*elementIdIncrement);
         DgnElementCPtr element = m_db->Elements().GetElement(id);
         ASSERT_TRUE(element != nullptr);
         ASSERT_EQ(DgnDbStatus::Success, GetPropertyValues(*element, className));
@@ -468,13 +470,14 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
     WPrintfString dbName(L"ElementApiUpdate%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
+    int minElemId = GetfirstElementId(className);
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     //First build dgnelements with modified Geomtry
     bvector<DgnElementPtr> elements;
     for (uint64_t i = 0; i < opCount; i++)
         {
-        const DgnElementId id(s_firstElementId + i*elementIdIncrement);
+        const DgnElementId id(minElemId + i*elementIdIncrement);
         DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(id);
         ASSERT_TRUE(element != nullptr);
 
@@ -506,12 +509,13 @@ void PerformanceElementsCRUDTestFixture::ApiDeleteTime(Utf8CP className, int ini
     WPrintfString dbName(L"ElementApiDelete%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
+    int minElemId = GetfirstElementId(className);
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer(true);
     for (uint64_t i = 0; i < opCount; i++)
         {
-        const DgnElementId id(s_firstElementId + i*elementIdIncrement);
+        const DgnElementId id(minElemId + i*elementIdIncrement);
         STATEMENT_DIAGNOSTICS_LOGCOMMENT("Elements::Delete - START");
         const DgnDbStatus stat = m_db->Elements().Delete(id);
         STATEMENT_DIAGNOSTICS_LOGCOMMENT("Elements::Delete - END");
@@ -537,6 +541,34 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
 #endif
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Majd.Uddin                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+int  PerformanceElementsCRUDTestFixture::GetfirstElementId(Utf8CP className)
+{
+
+    uint64_t firstElemId = s_firstElementId;
+    const DgnElementId id(firstElemId);
+    DgnElementCPtr element = m_db->Elements().GetElement(id);
+    if (!element.IsValid())
+    {// Get the minimum Id from bis_Element table.
+        Statement stat1;
+        DgnClassId classId = m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, className);
+        
+        DbResult result = stat1.Prepare(*m_db, "SELECT min(Id) from bis_Element where ECClassId=?");
+        stat1.BindId(1, classId);
+        EXPECT_EQ(result, BE_SQLITE_OK);
+        EXPECT_TRUE(stat1.IsPrepared());
+
+        EXPECT_EQ(BE_SQLITE_ROW, stat1.Step());
+        firstElemId = stat1.GetValueInt(0);
+        const DgnElementId id2(firstElemId);
+        DgnElementCPtr element2 = m_db->Elements().GetElement(id2);
+        EXPECT_TRUE(element2.IsValid());
+    }
+    return firstElemId;
+}
+
 
 /*******************************************************Class Hierarchy For Performance Tests***********************************************************************************
 

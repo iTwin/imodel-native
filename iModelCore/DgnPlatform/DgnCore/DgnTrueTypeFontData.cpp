@@ -71,15 +71,25 @@ static bool haveEmbeddingRights(FT_Face face)
     return (0 == (0x1 & os2Table->fsType));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Exists so we can access DgnFonts' mutex in FreeTypeFace template member func before
+* DgnFonts is defined...
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeMutex& FreeTypeFace::GetMutex() { return DgnFonts::GetMutex(); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-static BentleyStatus createAndConfigFace(FT_Face& face, FT_Long faceIndex, Utf8CP path, ByteCP buffer, size_t bufferSize, Utf8CP bufferFamilyName)
+FreeTypeFace FreeTypeFace::CreateAndConfigFace(FT_Long faceIndex, Utf8CP path, ByteCP buffer, size_t bufferSize, Utf8CP bufferFamilyName)
     {
+    BeMutexHolder lock(GetMutex());
+
     FT_Library ftLib = T_HOST.GetFontAdmin().GetFreeTypeLibrary();
     if (nullptr == ftLib)
-        return ERROR;
+        return nullptr;
     
+    FT_Face face = nullptr;
     FT_Error ftStatus = FT_Err_Ok;
     if (!Utf8String::IsNullOrEmpty(path))
         ftStatus = FT_New_Face(ftLib, path, faceIndex, &face);
@@ -87,7 +97,10 @@ static BentleyStatus createAndConfigFace(FT_Face& face, FT_Long faceIndex, Utf8C
         ftStatus = FT_New_Memory_Face(ftLib, buffer, (FT_Long)bufferSize, faceIndex, &face);
     
     if ((FT_Err_Ok != ftStatus) || (nullptr == face))
-        return ERROR;
+        {
+        DestroyFace(face); // unlikely that FT_Err_Ok would be returned if face was allocated, but paranoia...
+        return nullptr;
+        }
 
 #ifdef FONT_DESIGNER_SCALE
     /*
@@ -117,9 +130,24 @@ static BentleyStatus createAndConfigFace(FT_Face& face, FT_Long faceIndex, Utf8C
 #endif
     
     if (FT_Err_Ok != FT_Set_Pixel_Sizes(face, pixelScale, 0))
-        return ERROR;
+        {
+        DestroyFace(face);
+        return nullptr;
+        }
 
-    return SUCCESS;
+    return FreeTypeFace(face);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FreeTypeFace::DestroyFace(FT_Face& face)
+    {
+    if (nullptr != face)
+        {
+        FT_Done_Face(face);
+        face = nullptr;
+        }
     }
 
 //=======================================================================================
@@ -130,7 +158,7 @@ struct DgnTrueTypeFileFontData : IDgnTrueTypeFontData
 private:
     typedef bset<FT_Long> T_FaceIndices;
     typedef bmap<BeFileName, bset<FT_Long>> T_FileMap;
-    typedef bmap<DgnFontStyle, FT_Face> T_FaceMap;
+    typedef bmap<DgnFontStyle, FreeTypeFace> T_FaceMap;
     
     size_t m_openCount;
     T_FileMap m_fileMap;
@@ -146,7 +174,7 @@ public:
     BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
     BentleyStatus _AddDataRef() override;
     void _ReleaseDataRef() override;
-    FT_Face _GetFaceP(DgnFontStyle) override;
+    FreeTypeFace _GetFaceP(DgnFontStyle) override;
 };
 
 //---------------------------------------------------------------------------------------
@@ -154,11 +182,9 @@ public:
 //---------------------------------------------------------------------------------------
 void DgnTrueTypeFileFontData::FreeAllFaces()
     {
-    for (T_FaceMap::const_reference faceMapEntry : m_faceMap)
+    for (auto& faceMapEntry : m_faceMap)
         {
-        FT_Error ftStatus = FT_Done_Face(faceMapEntry.second);
-        if (FT_Err_Ok != ftStatus)
-            { BeAssert(false); }
+        faceMapEntry.second.Destroy();
         }
     
     m_faceMap.clear();
@@ -196,9 +222,13 @@ IDgnFontData* DgnTrueTypeFileFontData::_CloneWithoutData()
 //=======================================================================================
 struct FTFaceAutoFree
 {
-    FT_Face m_face;
-    FTFaceAutoFree(FT_Face face) : m_face(face) {}
-    ~FTFaceAutoFree() { if (nullptr != m_face) { FT_Done_Face(m_face); m_face = nullptr; } }
+    FreeTypeFace m_face;
+    FTFaceAutoFree(FreeTypeFace face) : m_face(face) {}
+    ~FTFaceAutoFree()
+        {
+        if (m_face.IsValid())
+           m_face.Destroy();
+        }
 };
 
 //---------------------------------------------------------------------------------------
@@ -235,29 +265,31 @@ BentleyStatus DgnTrueTypeFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceDa
         FT_Long numFaces = 1;
         for (FT_Long iFace = 0; iFace < numFaces; ++iFace)
             {
-            FT_Face face;
-            if (SUCCESS != createAndConfigFace(face, iFace, Utf8String(file.first).c_str(), nullptr, 0, nullptr))
+            FreeTypeFace face = FreeTypeFace::CreateAndConfigFace(iFace, Utf8String(file.first).c_str(), nullptr, 0, nullptr);
+            if (!face.IsValid())
                 return ERROR;
 
             FTFaceAutoFree faceAutoFree(face);
+            face.Execute([&](FT_Face ftFace)
+                {
+                if (0 == iFace)
+                    numFaces = ftFace->num_faces;
 
-            if (0 == iFace)
-                numFaces = face->num_faces;
-
-            if (!haveEmbeddingRights(face))
-                continue;
-            
-            Utf8String familyName;
-            IDgnTrueTypeFontData::GetFamilyName(familyName, face);
-            
-            DgnFontStyle style = ftStyleIndexToDgnFontStyle(face->style_flags);
-            Utf8String styleName = dgnFontStyleToStyleName(style);
-            DgnFonts::DbFaceDataDirect::FaceKey key(DgnFontType::TrueType, familyName.c_str(), styleName.c_str());
-            
-            if (faceData.Exists(key))
-                continue;
-            
-            faceMap[face->face_index] = key;
+                if (!haveEmbeddingRights(ftFace))
+                    return;
+                
+                Utf8String familyName;
+                IDgnTrueTypeFontData::GetFamilyName(familyName, ftFace);
+                
+                DgnFontStyle style = ftStyleIndexToDgnFontStyle(ftFace->style_flags);
+                Utf8String styleName = dgnFontStyleToStyleName(style);
+                DgnFonts::DbFaceDataDirect::FaceKey key(DgnFontType::TrueType, familyName.c_str(), styleName.c_str());
+                
+                if (faceData.Exists(key))
+                    return;
+                
+                faceMap[ftFace->face_index] = key;
+                });
             }
 
         if (faceMap.empty())
@@ -288,11 +320,11 @@ BentleyStatus DgnTrueTypeFileFontData::_AddDataRef()
         {
         for (FT_Long const& faceIndex : fileMapEntry.second)
             {
-            FT_Face face = nullptr;
-            if (SUCCESS != createAndConfigFace(face, faceIndex, Utf8String(fileMapEntry.first).c_str(), nullptr, 0, nullptr))
+            FreeTypeFace face = FreeTypeFace::CreateAndConfigFace(faceIndex, Utf8String(fileMapEntry.first).c_str(), nullptr, 0, nullptr);
+            if (!face.IsValid())
                 continue;
             
-            DgnFontStyle style = ftStyleIndexToDgnFontStyle(face->style_flags);
+            DgnFontStyle style = face.Execute([&](FT_Face ftFace) { return ftStyleIndexToDgnFontStyle(ftFace->style_flags); });
             if (m_faceMap.end() == m_faceMap.find(style))
                 m_faceMap[style] = face;
             }
@@ -315,7 +347,7 @@ BentleyStatus DgnTrueTypeFileFontData::_AddDataRef()
             return ERROR;
             }
         
-        FT_Face effectiveFace = foundFace->second;
+        FreeTypeFace effectiveFace = foundFace->second;
         m_faceMap.erase(foundFace);
         m_faceMap[DgnFontStyle::Regular] = effectiveFace;
         }
@@ -345,7 +377,7 @@ void DgnTrueTypeFileFontData::_ReleaseDataRef()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2015
 //---------------------------------------------------------------------------------------
-FT_Face DgnTrueTypeFileFontData::_GetFaceP(DgnFontStyle style)
+FreeTypeFace DgnTrueTypeFileFontData::_GetFaceP(DgnFontStyle style)
     {
     T_FaceMap::iterator foundFace = m_faceMap.find(style);
     if (m_faceMap.end() == foundFace)
@@ -363,7 +395,7 @@ private:
     struct FTFaceAndData
     {
         bvector<Byte> m_data;
-        FT_Face m_face;
+        FreeTypeFace m_face;
         FTFaceAndData() : m_face(nullptr) {}
     };
     
@@ -383,7 +415,7 @@ public:
     BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
     BentleyStatus _AddDataRef() override;
     void _ReleaseDataRef() override;
-    FT_Face _GetFaceP(DgnFontStyle) override;
+    FreeTypeFace _GetFaceP(DgnFontStyle) override;
 };
 
 //---------------------------------------------------------------------------------------
@@ -391,20 +423,15 @@ public:
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnTrueTypeDbFontData::FreeAllFaces()
     {
-    bool didAnyFail = false;
-    
     for (T_FaceMap::reference faceEntry : m_faceMap)
         {
-        FT_Error ftStatus = FT_Done_Face(faceEntry.second->m_face);
-        if (FT_Err_Ok != ftStatus)
-            didAnyFail = true;
-        
+        faceEntry.second->m_face.Destroy();
         delete faceEntry.second;
         }
 
     m_faceMap.clear();
 
-    return (didAnyFail ? ERROR : SUCCESS);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -482,7 +509,8 @@ BentleyStatus DgnTrueTypeDbFontData::LoadFace(DgnFontStyle style)
     if (nullptr == ftLib)
         return ERROR;
 
-    if (SUCCESS != createAndConfigFace(faceAndData->m_face, (FT_Long)faceSubId, nullptr, &faceAndData->m_data[0], (FT_Long)faceAndData->m_data.size(), m_familyName.c_str()))
+    faceAndData->m_face = FreeTypeFace::CreateAndConfigFace((FT_Long)faceSubId, nullptr, &faceAndData->m_data[0], (FT_Long)faceAndData->m_data.size(), m_familyName.c_str());
+    if (!faceAndData->m_face.IsValid())
         return ERROR;
         
     m_faceMap[style] = faceAndData.release();
@@ -556,7 +584,7 @@ void DgnTrueTypeDbFontData::_ReleaseDataRef()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-FT_Face DgnTrueTypeDbFontData::_GetFaceP(DgnFontStyle style)
+FreeTypeFace DgnTrueTypeDbFontData::_GetFaceP(DgnFontStyle style)
     {
     T_FaceMap::iterator foundFace = m_faceMap.find(style);
     if (m_faceMap.end() == foundFace)
@@ -634,7 +662,7 @@ struct Win32TrueTypeFontData : IDgnTrueTypeFontData
     struct FTFaceAndData
     {
         bvector<Byte> m_data;
-        FT_Face m_face;
+        FreeTypeFace m_face;
         FTFaceAndData() : m_face(nullptr) {}
     };
     
@@ -655,7 +683,7 @@ public:
     BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
     BentleyStatus _AddDataRef() override;
     void _ReleaseDataRef() override;
-    FT_Face _GetFaceP(DgnFontStyle) override;
+    FreeTypeFace _GetFaceP(DgnFontStyle) override;
 };
 
 //---------------------------------------------------------------------------------------
@@ -663,20 +691,15 @@ public:
 //---------------------------------------------------------------------------------------
 BentleyStatus Win32TrueTypeFontData::FreeAllFaces()
     {
-    bool didAnyFail = false;
-
     for (T_FaceMap::reference faceEntry : m_faceMap)
         {
-        FT_Error ftStatus = FT_Done_Face(faceEntry.second->m_face);
-        if (FT_Err_Ok != ftStatus)
-            didAnyFail = true;
-
+        faceEntry.second->m_face.Destroy();
         delete faceEntry.second;
         }
 
     m_faceMap.clear();
 
-    return (didAnyFail ? ERROR : SUCCESS);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -731,7 +754,8 @@ BentleyStatus Win32TrueTypeFontData::LoadFace(DgnFontStyle style)
     if (SUCCESS != GetFontData(faceAndData->m_data, style))
         return ERROR;
     
-    if (SUCCESS != createAndConfigFace(faceAndData->m_face, 0, nullptr, &faceAndData->m_data[0], (FT_Long)faceAndData->m_data.size(), m_familyName.c_str()))
+    faceAndData->m_face = FreeTypeFace::CreateAndConfigFace(0, nullptr, &faceAndData->m_data[0], (FT_Long)faceAndData->m_data.size(), m_familyName.c_str());
+    if (!faceAndData->m_face.IsValid())
         return ERROR;
 
     m_faceMap[style] = faceAndData.release();
@@ -756,29 +780,31 @@ BentleyStatus Win32TrueTypeFontData::EmbedFace(DgnFonts::DbFaceDataDirect& faceD
     FT_Long numFaces = 1;
     for (FT_Long iFace = 0; iFace < numFaces; ++iFace)
         {
-        FT_Face face;
-        if (SUCCESS != createAndConfigFace(face, iFace, nullptr, &data[0], (FT_Long)data.size(), m_familyName.c_str()))
+        FreeTypeFace face = FreeTypeFace::CreateAndConfigFace(iFace, nullptr, &data[0], (FT_Long)data.size(), m_familyName.c_str());
+        if (!face.IsValid())
             return ERROR;
 
         FTFaceAutoFree faceAutoFree(face);
+        face.Execute([&](FT_Face ftFace)
+            {
+            if (0 == iFace)
+                numFaces = ftFace->num_faces;
 
-        if (0 == iFace)
-            numFaces = face->num_faces;
+            if (!haveEmbeddingRights(ftFace))
+                return;
 
-        if (!haveEmbeddingRights(face))
-            continue;
+            Utf8String familyName;
+            IDgnTrueTypeFontData::GetFamilyName(familyName, ftFace);
 
-        Utf8String familyName;
-        IDgnTrueTypeFontData::GetFamilyName(familyName, face);
+            DgnFontStyle style = ftStyleIndexToDgnFontStyle(ftFace->style_flags);
+            Utf8String styleName = dgnFontStyleToStyleName(style);
+            DgnFonts::DbFaceDataDirect::FaceKey key(DgnFontType::TrueType, familyName.c_str(), styleName.c_str());
 
-        DgnFontStyle style = ftStyleIndexToDgnFontStyle(face->style_flags);
-        Utf8String styleName = dgnFontStyleToStyleName(style);
-        DgnFonts::DbFaceDataDirect::FaceKey key(DgnFontType::TrueType, familyName.c_str(), styleName.c_str());
+            if (faceData.Exists(key))
+                return;
 
-        if (faceData.Exists(key))
-            continue;
-
-        faceMap[face->face_index] = key;
+            faceMap[ftFace->face_index] = key;
+            });
         }
 
     if (faceMap.empty())
@@ -874,7 +900,7 @@ void Win32TrueTypeFontData::_ReleaseDataRef()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2015
 //---------------------------------------------------------------------------------------
-FT_Face Win32TrueTypeFontData::_GetFaceP(DgnFontStyle style)
+FreeTypeFace Win32TrueTypeFontData::_GetFaceP(DgnFontStyle style)
     {
     T_FaceMap::iterator foundFace = m_faceMap.find(style);
     if (m_faceMap.end() == foundFace)
@@ -1080,29 +1106,27 @@ T_DgnFontPtrs DgnFontPersistence::File::FromTrueTypeFiles(bvector<BeFileName> co
         FT_Long numFaces = 1;
         for (FT_Long iFace = 0; iFace < numFaces; ++iFace)
             {
-            FT_Face face = nullptr;
-            if (SUCCESS != createAndConfigFace(face, iFace, Utf8String(path).c_str(), nullptr, 0, nullptr))
+            FreeTypeFace face = FreeTypeFace::CreateAndConfigFace(iFace, Utf8String(path).c_str(), nullptr, 0, nullptr);
+            if (!face.IsValid())
                 continue;
 
-            if (0 == iFace)
-                numFaces = face->num_faces;
-
-            Utf8String familyName;
-            if (SUCCESS != IDgnTrueTypeFontData::GetFamilyName(familyName, face))
-                continue;
-            
-            T_FamilyFaceMap::iterator foundFamilyEntry = familyFaceMap.find(familyName);
-            if (familyFaceMap.end() != foundFamilyEntry)
-                foundFamilyEntry->second.push_back(FaceIndexAndPath(path, face->face_index));
-            else
-                familyFaceMap[familyName] = { FaceIndexAndPath(path, face->face_index) };
-            
-            FT_Error ftStatus = FT_Done_Face(face);
-            if (FT_Err_Ok != ftStatus)
+            face.Execute([&](FT_Face ftFace)
                 {
-                BeAssert(false);
-                continue;
-                }
+                if (0 == iFace)
+                    numFaces = ftFace->num_faces;
+
+                Utf8String familyName;
+                if (SUCCESS != IDgnTrueTypeFontData::GetFamilyName(familyName, ftFace))
+                    return;
+                
+                T_FamilyFaceMap::iterator foundFamilyEntry = familyFaceMap.find(familyName);
+                if (familyFaceMap.end() != foundFamilyEntry)
+                    foundFamilyEntry->second.push_back(FaceIndexAndPath(path, ftFace->face_index));
+                else
+                    familyFaceMap[familyName] = { FaceIndexAndPath(path, ftFace->face_index) };
+                
+                FT_Done_Face(ftFace);
+                });
             }
         }
     

@@ -749,7 +749,7 @@ void DgnFonts::Update()
     DgnFonts::FlagHolder lock(m_isFontMapLoaded);
     if (lock.IsSet())
         return;
-    
+
     for (DbFontMapDirect::Iterator::Entry const& entry : DbFontMap().MakeIterator())
         {
         DgnFontId id = entry.GetId();

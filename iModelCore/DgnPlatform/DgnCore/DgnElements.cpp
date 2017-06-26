@@ -1632,14 +1632,20 @@ Utf8StringCR DgnElements::GetSelectEcPropsECSql(ECSqlClassInfo& classInfo, ECN::
     return classInfo.m_selectEcProps;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR DgnElements::GetAutoHandledPropertiesSelectECSql(ECN::ECClassCR ecclass) const
+    {
+    ECSqlClassInfo& classInfo = FindClassInfo(DgnClassId(ecclass.GetId().GetValue())); // Note: This "Find" method will create a ClassInfo if necessary
+    return GetSelectEcPropsECSql(classInfo, ecclass);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
+ECSqlClassInfo& DgnElements::FindClassInfo(DgnClassId classId) const
     {
-    DgnClassId classId = el.GetElementClassId();
-
     BeMutexHolder _v(m_mutex);
     auto found = m_classInfos.find(classId);
     if (m_classInfos.end() != found)
@@ -1653,6 +1659,14 @@ ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     UNUSED_VARIABLE(populated);
 
     return classInfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
+    {
+    return FindClassInfo(el.GetElementClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**

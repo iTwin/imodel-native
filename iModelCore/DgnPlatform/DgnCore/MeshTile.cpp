@@ -2732,7 +2732,8 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
-            Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
+            auto border = Sheet::Model::CreateBorder(context, sheetModel->GetSheetSize());
+            context.OutputGraphic(*border, nullptr);
             PushCurrentGeometry();
             }
 

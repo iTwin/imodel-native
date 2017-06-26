@@ -109,7 +109,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         void InvalidateDecorations() {m_decorations=false;}
         void InvalidateScene() {m_scene=false; InvalidateDecorations();}
         void InvalidateRenderPlan() {m_renderPlan=false; InvalidateScene();}
-        void InvalidateController() {m_controller=false; InvalidateRenderPlan();}
+        void InvalidateController() {m_controller=false; InvalidateRenderPlan(); InvalidateFirstDrawComplete();}
         void InvalidateRotatePoint() {m_rotatePoint=false;}
         void InvalidateFirstDrawComplete() {m_firstDrawComplete=false;}
         void SetValidDecorations() {m_decorations=true;}

@@ -687,20 +687,17 @@ struct Tile : TileTree::Tile
 
     Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {m_isLeaf = (id.m_level == quadRoot.m_maxZoom);}
 
-    TileId      GetTileId() const     {return m_id;}
-
-    uint8_t     GetZoomLevel() const  { return m_id.m_level; }
-    uint32_t    GetRow() const        { return m_id.m_row; }
-    uint32_t    GetColumn() const     { return m_id.m_column; }
-
+    TileId GetTileId() const {return m_id;}
+    uint8_t GetZoomLevel() const {return m_id.m_level;}
+    uint32_t GetRow() const {return m_id.m_row;}
+    uint32_t GetColumn() const {return m_id.m_column;}
     virtual TilePtr _CreateChild(TileId) const = 0;
     bool _HasChildren() const override {return !m_isLeaf;}
     bool _HasGraphics() const override {return IsReady() && m_graphic.IsValid();}
     void SetIsLeaf() {m_isLeaf = true; /*m_children.clear();*/}
     ChildTiles const* _GetChildren(bool load) const override;
     void _DrawGraphics(TileTree::DrawArgsR) const override;
-
-    Utf8String _GetTileCacheKey () const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
+    Utf8String _GetTileCacheKey() const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
     Root& GetQuadRoot() const {return (Root&) m_root;}
     double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
     void _Invalidate() override { m_graphic = nullptr; }

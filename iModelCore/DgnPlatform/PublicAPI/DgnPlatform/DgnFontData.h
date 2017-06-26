@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnFontData.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,8 +10,6 @@
 
 #include "DgnPlatform.h"
 #include "DgnDbTables.h"
-
-typedef struct FT_FaceRec_* FT_Face; // Shield users from freetype.h because they have a bad include scheme.
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -33,7 +31,7 @@ struct IDgnFontData
 struct IDgnTrueTypeFontData : IDgnFontData
 {
     static BentleyStatus GetFamilyName(Utf8StringR familyName, FT_Face);
-    virtual FT_Face _GetFaceP(DgnFontStyle) = 0;
+    virtual FreeTypeFace _GetFaceP(DgnFontStyle) = 0;
 };
 
 //=======================================================================================

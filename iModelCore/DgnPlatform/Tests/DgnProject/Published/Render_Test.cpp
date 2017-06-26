@@ -24,11 +24,19 @@ void ExpectPointsEqual(QPoint3dCR lhs, QPoint3dCR rhs)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ToString(DPoint3dCR p)
+    {
+    return Utf8PrintfString("(%f,%f,%f)", p.x, p.y, p.z);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExpectPointsEqual(DPoint3dCR lhs, DPoint3dCR rhs, double tolerance)
     {
-    EXPECT_TRUE(lhs.IsEqual(rhs, tolerance));
+    EXPECT_TRUE(lhs.IsEqual(rhs, tolerance)) << ToString(lhs).c_str() << " != " << ToString(rhs).c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -193,5 +201,70 @@ TEST(Render_Tests, QVert)
     ExpectPointsEqual(qpts.Unquantize(1), range.low, 0.0031);
     ExpectPointsEqual(qpts.Unquantize(2), range.high, 0.0023);
     ExpectPointsEqual(qpts.Unquantize(3), tooHigh, 0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpectSignsEqual(double a, double b)
+    {
+    if (0.0 != a)
+        {
+        EXPECT_EQ(a < 0.0, b < 0.0);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpectSignsEqual(DVec3dCR a, DVec3dCR b)
+    {
+    ExpectSignsEqual(a.x, b.x);
+    ExpectSignsEqual(a.y, b.y);
+    ExpectSignsEqual(a.z, b.z);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoundTrip(DVec3d in, bool normalized, double tolerance)
+    {
+    if (!normalized)
+        in.Normalize();
+
+    OctEncodedNormal oen = OctEncodedNormal::From(in);
+    DVec3d out = oen.Decode();
+    ExpectPointsEqual(in, out, tolerance);
+    ExpectSignsEqual(in, out);
+
+    OctEncodedNormal rep = OctEncodedNormal::From(out);
+    EXPECT_EQ(oen.Value(), rep.Value());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoundTrip(double x, double y, double z, bool normalized=true, double tolerance=0.005)
+    {
+    RoundTrip(DVec3d::From(x, y, z), normalized, tolerance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Render_Tests, OctEncodedNormals)
+    {
+    RoundTrip(1.0, 0.0, 0.0);
+    RoundTrip(0.0, 1.0, 0.0);
+    RoundTrip(0.0, 0.0, 1.0);
+
+    RoundTrip(-1.0, 0.0, 0.0);
+    RoundTrip(0.0, -1.0, 0.0);
+    RoundTrip(0.0, 0.0, -1.0);
+
+    RoundTrip(0.5, 2.5, 0.0, false);
+    RoundTrip(-25.0, 25.0, 5.0, false, 0.012);
+    RoundTrip(0.0001, -1900.0, 22.5, false, 0.01);
+    RoundTrip(-1.0, -1.0, -1.0, false, 0.03);
     }
 
