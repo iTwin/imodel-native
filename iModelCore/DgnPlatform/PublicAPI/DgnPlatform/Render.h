@@ -13,6 +13,7 @@
 #include "Lighting.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
+#include <cmath>
 
 #if defined (BENTLEYCONFIG_DISPLAY_WIN32)
     struct HICON__;
@@ -1637,6 +1638,81 @@ struct FeatureIndex
     constexpr bool IsEmpty() const { return Type::Empty == m_type; }
 
     void Reset() { *this = FeatureIndex(); }
+};
+
+//=======================================================================================
+//! Represents a normal vector compressed to a 16-bit unsigned integer value. This is
+//! a lossy compression.
+//! Oct encoding is a compact representation of unit length vectors.
+//! The 'oct' encoding is described in "A Survey of Efficient Representations of Independent Unit Vectors",
+//! Cigolle et al 2014: {@link http://jcgt.org/published/0003/02/01/}
+//! @bsistruct                                                   Paul.Connelly   06/17
+//=======================================================================================
+struct OctEncodedNormal
+{
+private:
+    uint16_t    m_value;
+
+    static constexpr double Clamp(double val, double minVal, double maxVal) { return val < minVal ? minVal : (val > maxVal ? maxVal : val); }
+    static constexpr double SignNotZero(double val) { return val < 0.0 ? -1.0 : 1.0; }
+    static constexpr uint16_t ToUInt16(double val) { return static_cast<uint16_t>(.5 + (Clamp(val, -1.0, 1.0) * 0.5 + 0.5) * 255.0); }
+
+    static DVec3d Decode(uint16_t value)
+        {
+        auto ex = static_cast<double>(value & 0xff),
+             ey = static_cast<double>(value >> 8);
+        ex = ex / 255.0 * 2.0 - 1.0;
+        ey = ey / 255.0 * 2.0 - 1.0;
+
+        DVec3d n = DVec3d::From(ex, ey, 1.0 - (std::fabs(ex) + std::fabs(ey)));
+        if (n.z < 0.0)
+            {
+            double x = n.x, y = n.y;
+            n.x = (1.0 - std::fabs(y)) * SignNotZero(x);
+            n.y = (1.0 - std::fabs(x)) * SignNotZero(y);
+            }
+
+        n.Normalize();
+        return n;
+        }
+
+    static uint16_t Encode(DVec3dCR vec)
+        {
+        BeAssert(DoubleOps::AlmostEqual(vec.MagnitudeSquared(), 1.0));
+
+        double denom = std::fabs(vec.x) + std::fabs(vec.y) + std::fabs(vec.z),
+               rx = vec.x / denom,
+               ry = vec.y / denom;
+        if (vec.z < 0)
+            {
+            double x = rx, y = ry;
+            rx = (1.0 - std::fabs(y)) * SignNotZero(x);
+            ry = (1.0 - std::fabs(x)) * SignNotZero(y);
+            }
+
+        return ToUInt16(ry) << 8 | ToUInt16(rx);
+        }
+public:
+    //! Directly initialize from a previously-computed oct-encoding.
+    void InitFrom(uint16_t value) { m_value = value; }
+
+    //! Initialize from a vector. The input vector must be normalized. This function will not attempt to normalize it for you.
+    void InitFrom(DVec3dCR vec)
+        {
+        BeAssert(DoubleOps::AlmostEqual(vec.MagnitudeSquared(), 1.0));
+        m_value = Encode(vec);
+        }
+
+    //! Returns an OctEncodedNormal computed from the input vector. The input vector must be normalized beforehand.
+    static OctEncodedNormal From(DVec3dCR vec) { OctEncodedNormal n; n.InitFrom(vec); return n; }
+    //! Returns an OctEncodedNormal initialized from a previously-computed oct-encoding.
+    static OctEncodedNormal From(uint16_t val) { OctEncodedNormal n; n.InitFrom(val); return n; }
+
+    //! Returns the 16-bit encoded value.
+    uint16_t Value() const { return m_value; }
+
+    //! Returns the decoded normalized vector represented by this OctEncodedNormal.
+    DVec3d Decode() const { return Decode(Value()); }
 };
 
 //! Common operations for QPoint2d and QPoint3d
