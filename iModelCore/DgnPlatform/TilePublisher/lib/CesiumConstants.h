@@ -22,11 +22,9 @@ R"HTML(
 <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
-<script src="scripts/Cesium/Cesium.js"></script>
-<script data-main="scripts/index.js" src="scripts/require.js"></script>
+<link href="scripts/Bimium/bimium.css" rel="stylesheet" />
+<script src="scripts/Bimium/bimium.js"></script>
 <style>
-@import url(scripts/Cesium/Widgets/widgets.css);
-@import url(scripts/Bentley/Bentley.css);
 
 html, body, #cesiumContainer {
 width: 100%;
@@ -48,10 +46,8 @@ var viewJsonUrl = ')HTML";
 
 Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
-require(['scripts/SampleApp/App'], function(App)
-    {
-    App.start(viewJsonUrl, 'cesiumContainer');
-    });
+var viewer = new Bentley.TileSetViewer({ bimiumPath: './scripts/Bimium'});
+viewer.activate(viewJsonUrl);
 
 </script>
 </body>

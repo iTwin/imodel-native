@@ -104,14 +104,7 @@ BentleyStatus SetupGraph(double gapTolerance, bool mergeHoles)
             }
         }
 
-    DVec3d zAxis, zAxisWorld;
-
-    zAxisWorld.Init(0.0, 0.0, 1.0);
-    m_viewToWorldTrans.GetMatrixColumn(zAxis, 2);
-
-    if (!zAxis.IsParallelTo(zAxisWorld) || m_context.GetViewport())
-        jmdlRG_multiplyByTransform(m_pRG, &m_worldToViewTrans);
-
+    jmdlRG_multiplyByTransform(m_pRG, &m_worldToViewTrans);
     jmdlRG_mergeWithGapTolerance(m_pRG, gapTolerance, gapTolerance);
     jmdlRG_buildFaceRangeTree(m_pRG, 0.0, jmdlRG_getTolerance(m_pRG));
 

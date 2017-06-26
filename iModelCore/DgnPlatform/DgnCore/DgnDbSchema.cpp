@@ -582,7 +582,7 @@ SchemaStatus DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvec
             return status;
             }
 
-        BeAssert(status == SchemaStatus::SchemaNotFound);
+        BeAssert(status == SchemaStatus::SchemaNotFound || status == SchemaStatus::SchemaUpgradeRequired);
         importSchemas.push_back(appSchema);
         }
 

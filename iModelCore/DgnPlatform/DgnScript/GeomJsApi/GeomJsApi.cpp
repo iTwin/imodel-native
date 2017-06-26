@@ -103,7 +103,7 @@ JsSolidPrimitiveP JsSolidPrimitive::StronglyTypedJsSolidPrimitive (ISolidPrimiti
 
 
 
-//=======================================================================================
+//=========================================.==============================================
 //                                                                      Eariln.Lutz     12/15
 //=======================================================================================
 JsCurveVectorP JsCurveVector::StronglyTypedJsCurveVector (CurveVectorPtr &data)

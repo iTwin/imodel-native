@@ -52,7 +52,7 @@ DgnTrueTypeFont::~DgnTrueTypeFont()
 struct DgnTrueTypeGlyph : DgnGlyph
 {
 private:
-    FT_Face m_face;
+    FreeTypeFace m_face;
     FT_UInt m_glyphIndex;
     mutable bool m_isRangeValid;
     mutable DRange2d m_range;
@@ -61,13 +61,13 @@ private:
     mutable enum { IS_BLANK_Untested, IS_BLANK_Yes, IS_BLANK_No } m_isBlank;
     
 public:
-    DgnTrueTypeGlyph(FT_Face face, FT_UInt glyphIndex) : m_face(face), m_glyphIndex(glyphIndex), m_isRangeValid(false), m_isExactRangeValid(false), m_isBlank(IS_BLANK_Untested) {}
+    DgnTrueTypeGlyph(FreeTypeFace face, FT_UInt glyphIndex) : m_face(face), m_glyphIndex(glyphIndex), m_isRangeValid(false), m_isExactRangeValid(false), m_isBlank(IS_BLANK_Untested) {}
     T_Id _GetId() const override { return (T_Id)m_glyphIndex; }
     DRange2d _GetRange() const override;
     DRange2d _GetExactRange() const override;
     BentleyStatus _FillGpa(GPArrayR) const override;
     bool _IsBlank() const override;
-    FT_Face GetFace() const { return m_face; }
+    FreeTypeFace GetFace() const { return m_face; }
     DoFixup _DoFixup () const override { return DoFixup::Always; }
 };
 
@@ -79,20 +79,23 @@ DRange2d DgnTrueTypeGlyph::_GetRange() const
     DgnFonts::FlagHolder flagLock(m_isRangeValid);
     if (!flagLock.IsSet())
         {
-        if (FT_Err_Ok != FT_Load_Glyph(m_face, m_glyphIndex, FT_LOAD_DEFAULT))
+        m_face.Execute([&](FT_Face ftFace)
             {
-            m_range.low.Zero();
-            m_range.high.Zero();
-            }
-        else
-            {
-            m_range.low.x = 0.0;
-            m_range.low.y = 0.0;
-            m_range.high.x = (m_face->glyph->metrics.horiAdvance / (64.0 * (double)m_face->units_per_EM));
-            m_range.high.y = 1.0;
-            }
-        }
-    
+            if (FT_Err_Ok != FT_Load_Glyph(ftFace, m_glyphIndex, FT_LOAD_DEFAULT))
+                {
+                m_range.low.Zero();
+                m_range.high.Zero();
+                }
+            else
+                {
+                m_range.low.x = 0.0;
+                m_range.low.y = 0.0;
+                m_range.high.x = (ftFace->glyph->metrics.horiAdvance / (64.0 * (double)ftFace->units_per_EM));
+                m_range.high.y = 1.0;
+                }
+            });
+        };
+        
     return m_range;
     }
 
@@ -104,19 +107,22 @@ DRange2d DgnTrueTypeGlyph::_GetExactRange() const
     DgnFonts::FlagHolder flagLock(m_isExactRangeValid);
     if (!flagLock.IsSet())
         {
-        if (FT_Err_Ok != FT_Load_Glyph(m_face, m_glyphIndex, FT_LOAD_DEFAULT))
+        m_face.Execute([&](FT_Face ftFace)
             {
-            m_exactRange.low.Zero();
-            m_exactRange.high.Zero();
-            }
-        else
-            {
-            m_exactRange.low.x = (m_face->glyph->metrics.horiBearingX / (64.0 * (double)m_face->units_per_EM));
-            m_exactRange.high.y = (m_face->glyph->metrics.horiBearingY / (64.0 * (double)m_face->units_per_EM));
-            m_exactRange.low.y = (m_exactRange.high.y - (m_face->glyph->metrics.height / (64.0 * (double)m_face->units_per_EM)));
-            m_exactRange.high.x = (m_exactRange.low.x + (m_face->glyph->metrics.width / (64.0 * (double)m_face->units_per_EM)));
-            }
-        }
+            if (FT_Err_Ok != FT_Load_Glyph(ftFace, m_glyphIndex, FT_LOAD_DEFAULT))
+                {
+                m_exactRange.low.Zero();
+                m_exactRange.high.Zero();
+                }
+            else
+                {
+                m_exactRange.low.x = (ftFace->glyph->metrics.horiBearingX / (64.0 * (double)ftFace->units_per_EM));
+                m_exactRange.high.y = (ftFace->glyph->metrics.horiBearingY / (64.0 * (double)ftFace->units_per_EM));
+                m_exactRange.low.y = (m_exactRange.high.y - (ftFace->glyph->metrics.height / (64.0 * (double)ftFace->units_per_EM)));
+                m_exactRange.high.x = (m_exactRange.low.x + (ftFace->glyph->metrics.width / (64.0 * (double)ftFace->units_per_EM)));
+                }
+            });
+        };
 
     return m_exactRange;
     }
@@ -481,23 +487,24 @@ static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGO
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnTrueTypeGlyph::_FillGpa(GPArrayR gpa) const
     {
-    BeMutexHolder lock(DgnFonts::GetMutex());
+    return m_face.Execute([&](FT_Face ftFace)
+        {
+        if (FT_Err_Ok != FT_Load_Glyph(ftFace, m_glyphIndex, FT_LOAD_DEFAULT))
+            return ERROR;
 
-    if (FT_Err_Ok != FT_Load_Glyph(m_face, m_glyphIndex, FT_LOAD_DEFAULT))
-        return ERROR;
+        size_t dataSize = decomposeOutline(ftFace->glyph->outline, nullptr, 0);
+        if (0 == dataSize)
+            return SUCCESS;
 
-    size_t dataSize = decomposeOutline(m_face->glyph->outline, nullptr, 0);
-    if (0 == dataSize)
+        bvector<Byte> data;
+        data.resize(dataSize);
+        decomposeOutline(ftFace->glyph->outline, &data[0], dataSize);
+        
+        convertNativeGlyphToGraphicsPoints(gpa, reinterpret_cast<TTPOLYGONHEADER*>(&data[0]), data.size(), ftFace->units_per_EM);
+        gpa.SetArrayMask(HPOINT_ARRAYMASK_FILL);
+        
         return SUCCESS;
-
-    bvector<Byte> data;
-    data.resize(dataSize);
-    decomposeOutline(m_face->glyph->outline, &data[0], dataSize);
-    
-    convertNativeGlyphToGraphicsPoints(gpa, reinterpret_cast<TTPOLYGONHEADER*>(&data[0]), data.size(), m_face->units_per_EM);
-    gpa.SetArrayMask(HPOINT_ARRAYMASK_FILL);
-    
-    return SUCCESS;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -514,11 +521,11 @@ bool DgnTrueTypeGlyph::_IsBlank() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
+static FreeTypeFace determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
     {
     style = DgnFont::FontStyleFromBoldItalic(isBold, isItalic);
-    FT_Face face = data._GetFaceP(style);
-    if (nullptr == face)
+    FreeTypeFace face = data._GetFaceP(style);
+    if (!face.IsValid())
         face = data._GetFaceP(DgnFontStyle::Regular);
 
     return face;
@@ -527,7 +534,7 @@ static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, ID
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-DgnGlyphCP DgnTrueTypeFont::FindGlyphCP(FT_Face face, FT_UInt id, DgnFontStyle style) const
+DgnGlyphCP DgnTrueTypeFont::FindGlyphCP(FreeTypeFace face, FT_UInt id, DgnFontStyle style) const
     {
     BeMutexHolder lock(DgnFonts::GetMutex());
 
@@ -562,7 +569,7 @@ DgnGlyphCP DgnTrueTypeFont::_FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle fo
 
     bool isBold, isItalic;
     DgnFont::FontStyleToBoldItalic(isBold, isItalic, fontStyle);
-    FT_Face effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
+    FreeTypeFace effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
 
     return FindGlyphCP(effectiveFace, glyphId, fontStyle);
     }
@@ -576,55 +583,61 @@ BentleyStatus DgnTrueTypeFont::GetTrueTypeGlyphDataDirect(bvector<Byte>& data, d
     if (nullptr == ttGlyph)
         return ERROR;
     
-    if (FT_Err_Ok != FT_Load_Glyph(ttGlyph->GetFace(), ttGlyph->GetId(), FT_LOAD_DEFAULT))
-        return ERROR;
+    return ttGlyph->GetFace().Execute([&](FT_Face ftFace)
+        {
+        if (FT_Err_Ok != FT_Load_Glyph(ftFace, ttGlyph->GetId(), FT_LOAD_DEFAULT))
+            return ERROR;
 
-    size_t dataSize = decomposeOutline(ttGlyph->GetFace()->glyph->outline, nullptr, 0);
-    if (0 == dataSize)
+        size_t dataSize = decomposeOutline(ftFace->glyph->outline, nullptr, 0);
+        if (0 == dataSize)
+            return SUCCESS;
+
+        data.resize(dataSize);
+        decomposeOutline(ftFace->glyph->outline, &data[0], dataSize);
+
+        // ftPosToFIXED, used by our decomposition functions, already takes out the 64.0 to increase precision at that level.
+        scaleFactor = (double)ftFace->units_per_EM;
+
         return SUCCESS;
-
-    data.resize(dataSize);
-    decomposeOutline(ttGlyph->GetFace()->glyph->outline, &data[0], dataSize);
-
-    // ftPosToFIXED, used by our decomposition functions, already takes out the 64.0 to increase precision at that level.
-    scaleFactor = (double)ttGlyph->GetFace()->units_per_EM;
-
-    return SUCCESS;
+        });
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnTrueTypeFont::ComputeAdvanceWidths(T_DoubleVectorR advanceWidths, FT_Face face, uint32_t const* ucs4Chars, size_t numChars) const
+BentleyStatus DgnTrueTypeFont::ComputeAdvanceWidths(T_DoubleVectorR advanceWidths, FreeTypeFace face, uint32_t const* ucs4Chars, size_t numChars) const
     {
     // Currently only supports unidirectional, left-to-right text. Need to consider libraries like harfbuzz, pango, and cairo for complex and bidirectional scripts.
-    for (size_t iChar = 0; iChar < numChars; ++iChar)
+    return face.Execute([&](FT_Face ftFace)
         {
-        FT_UInt glyphIndex = FT_Get_Char_Index(face, ucs4Chars[iChar]);
-        if (0 == glyphIndex)
+        for (size_t iChar = 0; iChar < numChars; ++iChar)
             {
-            advanceWidths.push_back(0.0);
-            continue;
+            FT_UInt glyphIndex = FT_Get_Char_Index(ftFace, ucs4Chars[iChar]);
+            if (0 == glyphIndex)
+                {
+                advanceWidths.push_back(0.0);
+                continue;
+                }
+
+            if (FT_Err_Ok != FT_Load_Glyph(ftFace, glyphIndex, FT_LOAD_DEFAULT))
+                {
+                advanceWidths.push_back(0.0);
+                continue;
+                }
+
+            FT_Vector kerning;
+            FT_UInt nextGlyphIndex = (((numChars - 1) == iChar) ? 0 : FT_Get_Char_Index(ftFace, ucs4Chars[iChar + 1]));
+
+            if ((0 == nextGlyphIndex) || (FT_Err_Ok != FT_Get_Kerning(ftFace, glyphIndex, nextGlyphIndex, FT_KERNING_DEFAULT, &kerning)))
+                memset(&kerning, 0, sizeof(kerning));
+
+            // Freetype normally exposes lengths as "26.6 fractional pixel" units. This means they're integers made of a 26-bit integer mantissa, and a 6-bit fractional part. In other words, all coordinates are multiplied by 64.
+            // This allows an integer to represent sub-pixel positions. The goal of this function is to operate in a 0..1 nominal space, so divide.
+            advanceWidths.push_back((ftFace->glyph->advance.x / (64.0 * (double)ftFace->units_per_EM)) + (kerning.x / (64.0 * (double)ftFace->units_per_EM)));
             }
 
-        if (FT_Err_Ok != FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT))
-            {
-            advanceWidths.push_back(0.0);
-            continue;
-            }
-
-        FT_Vector kerning;
-        FT_UInt nextGlyphIndex = (((numChars - 1) == iChar) ? 0 : FT_Get_Char_Index(face, ucs4Chars[iChar + 1]));
-
-        if ((0 == nextGlyphIndex) || (FT_Err_Ok != FT_Get_Kerning(face, glyphIndex, nextGlyphIndex, FT_KERNING_DEFAULT, &kerning)))
-            memset(&kerning, 0, sizeof(kerning));
-
-        // Freetype normally exposes lengths as "26.6 fractional pixel" units. This means they're integers made of a 26-bit integer mantissa, and a 6-bit fractional part. In other words, all coordinates are multiplied by 64.
-        // This allows an integer to represent sub-pixel positions. The goal of this function is to operate in a 0..1 nominal space, so divide.
-        advanceWidths.push_back((face->glyph->advance.x / (64.0 * (double)face->units_per_EM)) + (kerning.x / (64.0 * (double)face->units_per_EM)));
-        }
-
-    return SUCCESS;
+        return SUCCESS;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -642,7 +655,7 @@ BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGl
 
     // Determine the best face data to use.
     DgnFontStyle style;
-    FT_Face face = determineFace(style, context.m_isBold, context.m_isItalic, (IDgnTrueTypeFontData&)*m_data);
+    FreeTypeFace face = determineFace(style, context.m_isBold, context.m_isItalic, (IDgnTrueTypeFontData&)*m_data);
     
     // UTF-8 is mulit-byte; need to figure out each UCS "character" so we can look up the glyph.
     bvector<Byte> ucs4CharsBuffer;
@@ -660,8 +673,11 @@ BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGl
     // Acquire the glyphs.
     // We need a 1:1 correlation between widths and glyphs, so this means we can insert null glyphs.
     result.m_glyphs.reserve(numUcs4Chars);
-    for (size_t iGlyph = 0; iGlyph < numUcs4Chars; ++iGlyph)
-        result.m_glyphs.push_back(FindGlyphCP(face, FT_Get_Char_Index(face, ucs4Chars[iGlyph]), style));
+    face.Execute([&](FT_Face ftFace)
+        {
+        for (size_t iGlyph = 0; iGlyph < numUcs4Chars; ++iGlyph)
+            result.m_glyphs.push_back(FindGlyphCP(face, FT_Get_Char_Index(ftFace, ucs4Chars[iGlyph]), style));
+        });
 
     // Right-justified text needs to ignore trailing blanks.
     size_t numNonBlankGlyphs = result.m_glyphs.size();
@@ -712,7 +728,10 @@ double DgnTrueTypeFont::_GetDescenderRatio(DgnFontStyle fontStyle) const
     
     bool isBold, isItalic;
     DgnFont::FontStyleToBoldItalic(isBold, isItalic, fontStyle);
-    FT_Face effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
+    FreeTypeFace effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
 
-    return fabs ((double)effectiveFace->descender / (double)effectiveFace->ascender);
+    return effectiveFace.Execute([&](FT_Face ftFace)
+        {
+        return fabs ((double)ftFace->descender / (double)ftFace->ascender);
+        });
     }
