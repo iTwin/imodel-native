@@ -407,6 +407,16 @@ template<typename T> static void toDPoints(T& dpts, QPoint3dCP qpts, QPoint3d::P
         dpts[i] = qpts[i].UnquantizeAsVector(qparams);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void toNormals(BlockedVectorDVec3dR normals, OctEncodedNormalCP encoded, int32_t count)
+    {
+    normals.resize(count);
+    for (int32_t i = 0; i < count; i++)
+        normals[i] = encoded[i].Decode();
+    }
+
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -427,7 +437,7 @@ PolyfaceHeaderPtr TriMeshArgs::ToPolyface() const
         toDPoints(polyFace->Point(), m_points, m_pointParams, m_numPoints);
 
     if (nullptr != m_normals)
-        toDPoints(polyFace->Normal(), m_normals, QPoint3d::Params::FromNormalizedRange(), m_numPoints);
+        toNormals(polyFace->Normal(), m_normals, m_numPoints);
 
     if (nullptr != m_textureUV)
         {
@@ -874,9 +884,35 @@ bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d
     m_pointParams   = params;
     m_edges         = meshEdges.m_silhouette.data();
     m_numEdges      = meshEdges.m_silhouette.size();
-    m_normals0      = meshEdges.m_silhouetteNormals0.data();
-    m_normals1      = meshEdges.m_silhouetteNormals1.data();
+    m_normals       = meshEdges.m_silhouetteNormals.data();
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This lives here because (1) annoying out-of-sync headers on rebuild and (2) want to
+* catch the actual delta when assertion triggered. Only used in non-optimized builds.
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void OctEncodedNormal::VerifyNormalized(DVec3dCR vec)
+    {
+    auto magSq = vec.MagnitudeSquared();
+    bool normalized = DoubleOps::WithinTolerance(magSq, 1.0, 0.001);
+    BeAssert(normalized);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void OctEncodedNormal::VerifyEncoded(uint16_t val, DVec3dCR in)
+    {
+    OctEncodedNormal enc = OctEncodedNormal::From(val);
+    DVec3d out = enc.Decode();
+    bool vecEqual = in.IsEqual(out, 0.05);
+    BeAssert(vecEqual);
+
+    //auto roundtripped = OctEncodedNormal::From(out);
+    //bool encEqual = roundtripped == enc;
+    //BeAssert(encEqual);
     }
 

@@ -284,8 +284,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
                     {
                     // Potential silhouettes.
                     edges.m_silhouette.push_back(edge.second.m_edge);
-                    edges.m_silhouetteNormals0.Add(*((FPoint3d*) &normal0));  // TBD -- Oct Encode
-                    edges.m_silhouetteNormals1.Add(*((FPoint3d*) &normal1));
+                    edges.m_silhouetteNormals.push_back(OctEncodedNormalPair(OctEncodedNormal::From(normal0), OctEncodedNormal::From(normal1)));
                     }
                 }
             }

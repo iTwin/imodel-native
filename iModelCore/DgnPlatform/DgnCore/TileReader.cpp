@@ -315,11 +315,10 @@ BentleyStatus ReadVertices(QVertex3dListR vertexList, Json::Value const& primiti
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ReadNormals(QPoint3dListR normals, Json::Value const& value, Utf8CP accessorName)
+BentleyStatus ReadNormals(OctEncodedNormalListR normals, Json::Value const& value, Utf8CP accessorName)
     {
     void const*     pData;
     size_t          count, byteLength;
@@ -328,17 +327,44 @@ BentleyStatus ReadNormals(QPoint3dListR normals, Json::Value const& value, Utf8C
 
     if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, value, accessorName))
         return ERROR;
-        
-     switch (type)
+
+    switch (accessor["componentType"].asInt())
         {
-        case GLTF_UNSIGNED_SHORT:
+        case GLTF_UNSIGNED_BYTE:
+                {
+                normals.resize(count);
+                memcpy (normals.data(), pData, count * sizeof(OctEncodedNormal));
+                return SUCCESS;
+                }
+
+        default:
+            BeAssert(false && "Unsupported component type");
+            return ERROR;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ReadNormalPairs(OctEncodedNormalPairListR pairs, Json::Value const& value, Utf8CP accessorName)
+    {
+    void const*     pData;
+    size_t          count, byteLength;
+    uint32_t        type;
+    Json::Value     accessor;
+
+    if (SUCCESS != GetBufferView(pData, count, byteLength, type, accessor, value, accessorName))
+        return ERROR;
+
+
+    switch (accessor["componentType"].asInt())
+        {
+        case GLTF_UNSIGNED_BYTE:
             {
-            // TBD.  Verify that these are quantized to  Quantized using QPoint3d::Params::FromNormalizedRange()
-            normals.resize(count);
-            memcpy (normals.data(), pData, count * sizeof(QPoint3d));
+            pairs.resize(count);
+            memcpy(pairs.data(), pData, count * sizeof(OctEncodedNormalPair));
             return SUCCESS;
             }
-
         default:
             BeAssert(false && "Unsupported component type");
             return ERROR;
@@ -499,8 +525,7 @@ MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue)
     Json::Value const&  silhouettesValue = edgesValue["silhouettes"];
 
     if (!silhouettesValue.isNull() &&
-        SUCCESS == ReadNormals(meshEdges->m_silhouetteNormals0, silhouettesValue, "normals0") &&
-        SUCCESS == ReadNormals(meshEdges->m_silhouetteNormals1, silhouettesValue, "normals1") &&
+        SUCCESS == ReadNormalPairs(meshEdges->m_silhouetteNormals, silhouettesValue, "normalPairs") &&
         SUCCESS == ReadIndices(indices, silhouettesValue, "indices"))
         {
         meshEdges->m_silhouette.resize(indices.size()/2);
