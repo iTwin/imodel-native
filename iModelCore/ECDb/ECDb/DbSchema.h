@@ -578,7 +578,16 @@ public:
     BentleyStatus SynchronizeExistingTables();
     ECDbCR GetECDb() const { return m_ecdb; }
     void Reset() const;
-
+    void RemoveCacheTable(Utf8StringCR table) const
+        {
+        auto itor = m_tableMapByName.find(table);
+        if (itor != m_tableMapByName.end())
+            {
+            if (itor->second != nullptr)
+                m_tableNamesById.erase(m_tableNamesById.find(itor->second->GetId()));
+            m_tableMapByName.erase(itor);
+            }
+        }
     //!Update existing table in db so any new columns added would be save to disk.
     BentleyStatus UpdateTableOnDisk(DbTable const& table) const { return UpdateTable(table); }
     //!This function save or update table as required. It skip if a table is not loaded

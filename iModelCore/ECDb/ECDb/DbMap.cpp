@@ -565,6 +565,11 @@ BentleyStatus DbMap::PurgeOrphanTables() const
         return ERROR;
         }
 
+    for (Utf8StringCR table : tablesToDrop)
+        {
+        GetDbSchema().RemoveCacheTable(table);
+        }
+
     stmt.Finalize();
 
     if (tablesToDrop.empty())
@@ -595,6 +600,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
             BeAssert(false && "failed to drop a table");
             return ERROR;
             }
+
         }
 
     return SUCCESS;
@@ -1085,12 +1091,11 @@ BentleyStatus DbMap::Validator::CheckDbTrigger(DbTrigger const& trigger) const {
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMap::Validator::CheckDbColumn(DbColumn const& column) const 
     { 
-    const bool isPersisted = column.GetTable().GetType() != DbTable::Type::Virtual;
-    if (column.IsShared() && column.GetConstraints().HasNotNullConstraint())
-        return Error("DbColumn '%s.%s' has constraint 'NOT NULL' and is also marked as 'Shared' column which is invalid.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+    //if (column.IsShared() && column.GetConstraints().HasNotNullConstraint())
+    //    return Error("DbColumn '%s.%s' has constraint 'NOT NULL' and is also marked as 'Shared' column which is invalid.", column.GetTable().GetName().c_str(), column.GetName().c_str());
 
-    if (column.IsShared() && column.GetConstraints().HasUniqueConstraint())
-        return Error("DbColumn '%s.%s' has constraint 'UNIOUE' and is also marked as 'Shared' column which is invalid.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+    //if (column.IsShared() && column.GetConstraints().HasUniqueConstraint())
+    //    return Error("DbColumn '%s.%s' has constraint 'UNIOUE' and is also marked as 'Shared' column which is invalid.", column.GetTable().GetName().c_str(), column.GetName().c_str());
    
 
     if (column.GetType()!=DbColumn::Type::Any &&
@@ -1189,8 +1194,8 @@ BentleyStatus DbMap::Validator::CheckPropertyMap(PropertyMap const& propertyMap)
                 if (Enum::Contains(perTableProp->GetColumn().GetKind(), DbColumn::Kind::SharedDataColumn))
                     return Error("PropertyMap '%s.%s' is mapped to column %s.%s is of kind 'DbColumn::Kind::ECInstanceId' and therefore it cannot be of kind SharedDataColumn at the same time. ", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(), perTableProp->GetColumn().GetTable().GetName().c_str(), perTableProp->GetColumn().GetName().c_str());
 
-                if (perTableProp->GetColumn().GetType() != DbColumn::Type::Integer)
-                    return Error("PropertyMap '%s.%s' is mapped to column %s.%s is of kind 'DbColumn::Kind::ECInstanceId' but column is not of type 'Integer'.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(), perTableProp->GetColumn().GetTable().GetName().c_str(), perTableProp->GetColumn().GetName().c_str());
+                //if (perTableProp->GetColumn().GetType() != DbColumn::Type::Integer)
+                //    return Error("PropertyMap '%s.%s' is mapped to column %s.%s is of kind 'DbColumn::Kind::ECInstanceId' but column is not of type 'Integer'.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(), perTableProp->GetColumn().GetTable().GetName().c_str(), perTableProp->GetColumn().GetName().c_str());
                 }
             } break;
             //====================================================================================
