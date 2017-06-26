@@ -161,6 +161,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::ChoiceIndex, &RealityDataConsole::DummyFunction);
     m_functionMap.Insert(Command::ChoiceValue, &RealityDataConsole::DummyFunction);
     m_functionMap.Insert(Command::Dummy, &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Cancel, &RealityDataConsole::DummyFunction);
 
     m_realityDataProperties = bvector<Utf8String>();
     //m_realityDataProperties.push_back("Id");
