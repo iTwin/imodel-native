@@ -687,8 +687,7 @@
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
         
-        
-        <ProductDirectory Name="sqlang"                             Path="sqlang/platform"/>
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
         <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
         <ProductDirectory Name="ecschemas"                          Path=""/>
         <ProductDirectory Name="loggingnativeassemblies"            Path=""/>

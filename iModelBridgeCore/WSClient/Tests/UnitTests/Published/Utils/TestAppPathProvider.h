@@ -23,9 +23,9 @@ struct TestAppPathProvider
         BeFileName m_localStateDirectory;
 
     private:
-        void InitPaths(BeFileNameCR programDir, BeFileNameCR outputDir)
+        void InitPaths(BeFileNameCR assetsDir, BeFileNameCR outputDir)
             {
-            m_platformAssetsDirectory = programDir;
+            m_platformAssetsDirectory = assetsDir;
 
             m_temporaryDirectory = outputDir;
             m_temporaryDirectory.AppendToPath(L"AppTemp").AppendSeparator();
@@ -71,7 +71,9 @@ struct TestAppPathProvider
 
         TestAppPathProvider(BeFileNameCR programDir, BeFileNameCR outputDir)
             {
-            InitPaths(programDir, outputDir);
+            BeFileName assetsDir = programDir;
+            assetsDir.AppendToPath(L"Assets").AppendSeparator();
+            InitPaths(assetsDir, outputDir);
             }
     };
 
