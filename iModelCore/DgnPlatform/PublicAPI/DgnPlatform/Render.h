@@ -1682,8 +1682,7 @@ private:
 
     static uint16_t Encode(DVec3dCR vec)
         {
-        BeAssert(DoubleOps::AlmostEqual(vec.MagnitudeSquared(), 1.0));
-
+        VerifyNormalized(vec);
         double denom = std::fabs(vec.x) + std::fabs(vec.y) + std::fabs(vec.z),
                rx = vec.x / denom,
                ry = vec.y / denom;
@@ -1694,8 +1693,19 @@ private:
             ry = (1.0 - std::fabs(x)) * SignNotZero(y);
             }
 
-        return ToUInt16(ry) << 8 | ToUInt16(rx);
+        uint16_t value = ToUInt16(ry) << 8 | ToUInt16(rx);
+        VerifyEncoded(value, vec);
+
+        return value;
         }
+
+#if !defined(NDEBUG)
+    DGNPLATFORM_EXPORT static void VerifyNormalized(DVec3dCR);
+    DGNPLATFORM_EXPORT static void VerifyEncoded(uint16_t encoded, DVec3dCR input);
+#else
+    static void VerifyNormalized(DVec3dCR) { }
+    static void VerifyEncoded(uint16_t, DVec3dCR) { }
+#endif
 public:
     //! Directly initialize from a previously-computed oct-encoding.
     void InitFrom(uint16_t value) { m_value = value; }
@@ -1703,24 +1713,41 @@ public:
     //! Initialize from a vector. The input vector must be normalized. This function will not attempt to normalize it for you.
     void InitFrom(DVec3dCR vec)
         {
-        BeAssert(DoubleOps::AlmostEqual(vec.MagnitudeSquared(), 1.0));
         m_value = Encode(vec);
         }
+
+    //! Initialize from a vector. The input vector must be normalized. This function will not attempt to normalize it for you.
+    void InitFrom(FVec3dCR vec) { InitFrom(DVec3d::From(vec)); }
 
     //! Returns an OctEncodedNormal computed from the input vector. The input vector must be normalized beforehand.
     static OctEncodedNormal From(DVec3dCR vec) { OctEncodedNormal n; n.InitFrom(vec); return n; }
     //! Returns an OctEncodedNormal initialized from a previously-computed oct-encoding.
     static OctEncodedNormal From(uint16_t val) { OctEncodedNormal n; n.InitFrom(val); return n; }
+    //! Returns an OctEncodedNormal computed from the input vector. The input vector must be normalized beforehand.
+    static OctEncodedNormal From(FVec3dCR vec) { return From(DVec3d::From(vec)); }
 
     //! Returns the 16-bit encoded value.
     uint16_t Value() const { return m_value; }
 
     //! Returns the decoded normalized vector represented by this OctEncodedNormal.
     DVec3d Decode() const { return Decode(Value()); }
+    //! Returns the decoded normalized vector represented by this OctEncodedNormal.
+    FVec3d Decode32() const { return FVec3d::From(Decode(Value())); }
+
+    bool operator==(OctEncodedNormal rhs) const { return Value() == rhs.Value(); }
+    bool operator!=(OctEncodedNormal rhs) const { return !(*this == rhs); }
+    bool operator<(OctEncodedNormal rhs) const { return Value() < rhs.Value(); }
+    bool operator>(OctEncodedNormal rhs) const { return Value() > rhs.Value(); }
+    OctEncodedNormalR operator=(OctEncodedNormal rhs) { m_value = rhs.Value(); return *this; }
 };
 
 typedef bvector<OctEncodedNormal> OctEncodedNormalList;
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalList)
+
+typedef bpair<OctEncodedNormal,OctEncodedNormal> OctEncodedNormalPair;
+typedef bvector<OctEncodedNormalPair> OctEncodedNormalPairList;
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalPair)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalPairList)
 
 //! Common operations for QPoint2d and QPoint3d
 namespace Quantization
@@ -1882,6 +1909,7 @@ struct QPoint3d
             }
 
         //! Create params suitable for quantizing points with components in the range [-1.0,1.0].
+        //! Depending on precision needs, consider using OctEncodedNormal instead of QPoint3d to quantize normals.
         static Params FromNormalizedRange()
             {
             return Params(DRange3d::From(DPoint3d::FromXYZ(-1.0,-1.0,-1.0), DPoint3d::FromXYZ(1.0,1.0,1.0)));
@@ -2080,11 +2108,10 @@ struct TriMeshArgs
     uint32_t const*     m_vertIndex = nullptr;
     uint32_t            m_numPoints = 0;
     QPoint3dCP          m_points= nullptr;
-    QPoint3dCP          m_normals= nullptr; // Quantized using QPoint3d::Params::FromNormalizedRange()
+    OctEncodedNormalCP  m_normals = nullptr;
     FPoint2d const*     m_textureUV= nullptr;
     uint8_t const*      m_edgeFlags = nullptr;
     TexturePtr          m_texture;
-    uint32_t            m_flags = 0; // don't generate normals
     ColorIndex          m_colors;
     FeatureIndex        m_features;
     QPoint3d::Params    m_pointParams;
@@ -2183,12 +2210,10 @@ struct MeshEdges : RefCountedBase
     bvector<MeshEdge>           m_visible;
     bvector<MeshEdge>           m_silhouette;
     bvector<MeshPolyline>       m_polylines;
-    QPoint3dList                m_silhouetteNormals0 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
-    QPoint3dList                m_silhouetteNormals1 = QPoint3dList(QPoint3d::Params::FromNormalizedRange());
+    OctEncodedNormalPairList    m_silhouetteNormals;
 
     MeshEdges() {}
 };
-
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
@@ -2205,7 +2230,6 @@ struct MeshEdgeArgs
     LinePixels                  m_linePixels = LinePixels::Solid;
 
     DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
-
 }; 
 
 //=======================================================================================
@@ -2214,11 +2238,9 @@ struct MeshEdgeArgs
 struct SilhouetteEdgeArgs   : MeshEdgeArgs
 {
     // two normals per edge - define the triangle normals for silhouette calculation.
-    QPoint3dCP                  m_normals0;
-    QPoint3dCP                  m_normals1;
+    OctEncodedNormalPairCP  m_normals;
 
     DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
-
 };  
 
 //=======================================================================================

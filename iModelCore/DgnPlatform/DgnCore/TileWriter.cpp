@@ -1874,9 +1874,35 @@ BentleyStatus  CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh, MeshMat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value AddNormals (QPoint3dCP normals, size_t numNormals, Utf8CP name, Utf8CP id)
+Json::Value AddNormals (OctEncodedNormalCP normals, size_t numNormals, Utf8String name, Utf8CP id)
     {
-    return AddQuantizedPointsAttribute(normals, numNormals, QPoint3d::Params::FromNormalizedRange(), name, id);
+    Utf8String nameId = name + id,
+               accessorId = Utf8String("acc") + nameId,
+               bufferViewId = Utf8String("bv") + nameId;
+
+    AddBufferView(bufferViewId.c_str(), normals, numNormals);
+    AddAccessor(GLTF_UNSIGNED_BYTE, accessorId, bufferViewId, numNormals, "VEC2");
+
+    m_json["bufferViews"][bufferViewId]["target"] = GLTF_ARRAY_BUFFER;
+
+    return accessorId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs, Utf8String name, Utf8CP id)
+    {
+    Utf8String nameId = name + id,
+               accessorId = Utf8String("acc") + nameId,
+               bufferViewId = Utf8String("bv") + nameId;
+
+    AddBufferView(bufferViewId.c_str(), pairs, numPairs);
+    AddAccessor(GLTF_UNSIGNED_BYTE, accessorId, bufferViewId, numPairs, "VEC4");
+
+    m_json["bufferViews"][bufferViewId]["target"] = GLTF_ARRAY_BUFFER;
+
+    return accessorId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1899,7 +1925,7 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, MeshArgs co
     BeAssert (meshMaterial.IgnoresLighting() || nullptr != meshArgs.m_normals);
 
     if (nullptr != meshArgs.m_normals && !meshMaterial.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
-        primitiveJson["attributes"]["NORMAL"]  = AddQuantizedPointsAttribute(meshArgs.m_normals, meshArgs.m_numPoints, QPoint3d::Params::FromNormalizedRange(), "Normal", idStr.c_str());
+        primitiveJson["attributes"]["NORMAL"] = AddNormals(meshArgs.m_normals, meshArgs.m_numPoints, "Normal", idStr.c_str());
 
     primitiveJson["indices"] = AddMeshIndices ("Indices", (uint32_t const*) meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr, meshArgs.m_numPoints);
     AddMeshPointRange(m_json["accessors"][accPositionId], meshArgs.m_pointParams.GetRange());
@@ -2138,8 +2164,7 @@ Json::Value CreateMeshEdges(MeshEdgesCR meshEdges, size_t maxIndex, Utf8StringCR
     if (!meshEdges.m_silhouette.empty())
         {
         edgesValue["silhouettes"]["indices"]  = AddMeshIndices("silhouettes", meshEdges.m_silhouette.front().m_indices, 2 * meshEdges.m_silhouette.size(), idStr, maxIndex);
-        edgesValue["silhouettes"]["normals0"] = AddNormals (meshEdges.m_silhouetteNormals0.data(), meshEdges.m_silhouetteNormals0.size(), "normals0", idStr.c_str());
-        edgesValue["silhouettes"]["normals1"] = AddNormals (meshEdges.m_silhouetteNormals1.data(), meshEdges.m_silhouetteNormals1.size(), "normals1", idStr.c_str());
+        edgesValue["silhouettes"]["normalPairs"] = AddNormalPairs(meshEdges.m_silhouetteNormals.data(), meshEdges.m_silhouetteNormals.size(), "normalPairs", idStr.c_str());
         }
 
     if (!meshEdges.m_polylines.empty())
@@ -2163,7 +2188,7 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
     BeAssert(displayParams.IgnoresLighting() || !mesh.Normals().empty());
 
     if (!mesh.Normals().empty() && !displayParams.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
-        primitiveJson["attributes"]["NORMAL"]  = AddQuantizedPointsAttribute(mesh.Normals().data(), mesh.Normals().size(), QPoint3d::Params::FromNormalizedRange(), "Normal", idStr.c_str());
+        primitiveJson["attributes"]["NORMAL"]  = AddNormals(mesh.Normals().data(), mesh.Normals().size(), "Normal", idStr.c_str());
 
     primitiveJson["indices"] = AddMeshTriangleIndices ("Indices", mesh.Triangles(), idStr, mesh.Points().size());
 

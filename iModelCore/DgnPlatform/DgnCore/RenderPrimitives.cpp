@@ -16,8 +16,6 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
 BEGIN_UNNAMED_NAMESPACE
 
-static QPoint3d::Params s_normalQParams = QPoint3d::Params::FromNormalizedRange();
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -479,7 +477,7 @@ bool Mesh::HasNonPlanarNormals() const
     if (m_normals.empty())
         return false;
 
-    QPoint3d            normals[3];
+    OctEncodedNormal    normals[3];
     uint32_t const*     pIndex = m_triangles.Indices().data();
     uint32_t const*     pEnd = pIndex + m_triangles.Indices().size();
 
@@ -568,7 +566,7 @@ template<typename T, typename U> static void insertVertexAttribute(bvector<uint1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(QVertex3dCR vert, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
+uint32_t Mesh::AddVertex(QVertex3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
     {
     auto index = static_cast<uint32_t>(m_verts.size());
 
@@ -791,11 +789,7 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
 
     if (lhs.m_normalValid)
-        {
-        COMPARE_VALUES(lhs.m_normal.x, rhs.m_normal.x);
-        COMPARE_VALUES(lhs.m_normal.y, rhs.m_normal.y);
-        COMPARE_VALUES(lhs.m_normal.z, rhs.m_normal.z);
-        }
+        COMPARE_VALUES(lhs.m_normal, rhs.m_normal);
 
     COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
 
@@ -819,7 +813,7 @@ VertexKey::VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QP
     : m_position(point, qParams), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
     {
     if (m_normalValid)
-        m_normal = QPoint3d(*normal, s_normalQParams);
+        m_normal.InitFrom(*normal);
 
     if (m_paramValid)
         m_param = *param;
@@ -1779,7 +1773,6 @@ void MeshArgs::Clear()
     m_normals = nullptr;
     m_textureUV = nullptr;
     m_texture = nullptr;
-    m_flags = 0;
 
     m_colors.Reset();
     m_colorTable.clear();
@@ -1832,8 +1825,7 @@ bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh)
         return false;
 
     m_points    = mesh.Points().data();
-    m_normals0  = meshEdges->m_silhouetteNormals0.data();
-    m_normals1  = meshEdges->m_silhouetteNormals1.data();
+    m_normals   = meshEdges->m_silhouetteNormals.data();
     m_edges     = meshEdges->m_silhouette.data();
     m_numEdges  = meshEdges->m_silhouette.size();
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());

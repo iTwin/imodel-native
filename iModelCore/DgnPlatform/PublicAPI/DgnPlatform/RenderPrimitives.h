@@ -476,7 +476,7 @@ private:
     TriangleList                    m_triangles;
     PolylineList                    m_polylines;
     QVertex3dList                   m_verts;
-    QPoint3dList                    m_normals;                          
+    OctEncodedNormalList            m_normals;
     bvector<FPoint2d>               m_uvParams;
     ColorTable                      m_colorTable;
     bvector<uint16_t>               m_colors;
@@ -486,7 +486,7 @@ private:
     bool                            m_is2d;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d)
-        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_normals(QPoint3d::Params::FromNormalizedRange()), m_is2d(is2d) { }
+        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d) { }
 
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
@@ -506,8 +506,8 @@ public:
     QPoint3dListCR                  Points() const { return m_verts.GetQuantizedPoints(); } //!< Position vertex attribute array
     QVertex3dListCR                 Verts() const { return m_verts; }
     QVertex3dListR                  VertsR() { return m_verts; }
-    QPoint3dListCR                  Normals() const { return m_normals; }   //!< Normal vertex attribute array
-    QPoint3dListR                   NormalsR()  { return m_normals; }       //!< Normal vertex attribute array
+    OctEncodedNormalListCR          Normals() const { return m_normals; }   //!< Normal vertex attribute array
+    OctEncodedNormalListR           NormalsR()  { return m_normals; }       //!< Normal vertex attribute array
     bvector<FPoint2d> const&        Params() const { return m_uvParams; }   //!< UV params vertex attribute array
     bvector<FPoint2d>&              ParamsR() { return m_uvParams; }        //!< UV params vertex attribute array
     bvector<uint16_t> const&        Colors() const { return m_colors; }     //!< Vertex attribute array specifying an index into the color table
@@ -530,7 +530,7 @@ public:
 
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline) { BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); m_polylines.push_back(polyline); }
-    uint32_t AddVertex(QVertex3dCR vertex, QPoint3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
+    uint32_t AddVertex(QVertex3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
     void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db) const;
 };
 
@@ -565,18 +565,18 @@ struct MeshMergeKey
 //=======================================================================================
 struct VertexKey
 {
-    QPoint3d        m_normal;
-    DPoint2d        m_param;
-    uint32_t        m_fillColor = 0;
-    Feature         m_feature;
-    QVertex3d       m_position;
-    bool            m_normalValid;
-    bool            m_paramValid;
+    DPoint2d            m_param;
+    uint32_t            m_fillColor = 0;
+    Feature             m_feature;
+    QVertex3d           m_position;
+    OctEncodedNormal    m_normal;
+    bool                m_normalValid;
+    bool                m_paramValid;
 
     VertexKey() { }
     VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr);
 
-    QPoint3dCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
+    OctEncodedNormalCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
     DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
 
     //=======================================================================================
